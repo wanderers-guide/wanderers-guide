@@ -47,6 +47,7 @@ import { displayPatronOnly } from '@utils/notifications';
 import { rollDie } from '@utils/random';
 import { Dice } from '@schemas/content';
 import { openContextModal } from '@mantine/modals';
+import { useSwipeGesture } from '@utils/use-swipe-gesture';
 
 const AUTH_KEY = (import.meta.env.VITE_DDDICE_AUTH_KEY ?? '') as string;
 const OVERLAY_INDEX = 99999;
@@ -69,6 +70,7 @@ export default function DiceRoller(props: {
   const theme = useMantineTheme();
   const isTablet = useMediaQuery(tabletQuery());
   const isWideDesktop = useMediaQuery(wideDesktopQuery());
+  const swipeHandlers = useSwipeGesture({ onSwipeLeft: props.onClose });
   const [character, setCharacter] = useAtom(characterState);
   const [useFallback, setUseFallback] = useState(false);
 
@@ -616,6 +618,7 @@ export default function DiceRoller(props: {
         }}
         transitionProps={{ duration: 200 }}
       >
+        <Box onTouchStart={swipeHandlers.onTouchStart} onTouchEnd={swipeHandlers.onTouchEnd} style={{ height: '100%' }}>
         <Stack justify='space-between' h='100%'>
           <Stack gap={10}>
             <Group wrap='nowrap' justify='space-between' align='start'>
@@ -926,6 +929,7 @@ export default function DiceRoller(props: {
             )}
           </Box>
         </Stack>
+        </Box>
       </Drawer>
       <Portal
         style={{

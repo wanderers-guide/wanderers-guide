@@ -57,7 +57,7 @@ export default function CampaignDrawer(props: { opened: boolean; onClose: () => 
     refetchInterval: 400,
   });
 
-  const swipeHandlers = useSwipeGesture({ onSwipeRight: props.onClose });
+  const swipeHandlers = useSwipeGesture({ onSwipeLeft: props.onClose });
 
   const campaignSharedPages = campaign?.notes?.pages?.filter((p) => p.shared) ?? [];
   const characterSharedSources = (characters ?? [])

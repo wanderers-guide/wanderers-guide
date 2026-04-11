@@ -71,6 +71,13 @@ import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 // Use lazy imports here to prevent a huge amount of js on initial load (3d dice smh)
 const DiceRoller = lazy(() => import('@common/dice/DiceRoller'));
 
+/**
+ * Top-level route component for the character sheet page.
+ * Handles fetching the content package and showing a loading screen
+ * until the data is ready. Once loaded, renders CharacterSheetInner
+ * while keeping the loader visible until the inner component signals
+ * that it has finished its own initialization (EXECUTE_OPS).
+ */
 export function Component(props: {}) {
   useEffect(() => {
     setPageTitle(`Sheet`);
@@ -102,7 +109,9 @@ export function Component(props: {}) {
     refetchOnWindowFocus: false,
   });
 
-  // Just load progress manually
+  // Manually animate the loader progress bar so it feels responsive even
+  // while waiting for the server. Once content arrives the bar jumps to
+  // at least 50%, then CharacterSheetInner drives it to 100 via onFinishLoading.
   const [_p, setPercentage] = useState(0);
   const percentage = content && !doneLoading ? Math.max(_p, 50) : _p;
   const interval = useInterval(() => setPercentage(percentage + 2), 50);
@@ -134,6 +143,9 @@ export function Component(props: {}) {
   if (isFetching || !content) {
     return loader;
   } else {
+    // Render both elements simultaneously so CharacterSheetInner can run
+    // EXECUTE_OPS in the background while the loader is still visible.
+    // CSS display toggling avoids unmounting/remounting the heavy inner tree.
     return (
       <>
         <div style={{ display: doneLoading ? 'none' : undefined }}>{loader}</div>
@@ -152,15 +164,23 @@ export function Component(props: {}) {
   }
 }
 
+/**
+ * Main character sheet layout. Renders the top info/stat sections and the
+ * tabbed panel area. Also owns the floating action buttons anchored to the
+ * bottom-left corner (modes, campaign, dice roller).
+ */
 function CharacterSheetInner(props: { content: ContentPackage; characterId: number; onFinishLoading: () => void }) {
   const isTablet = useMediaQuery(tabletQuery());
   const isPhone = useMediaQuery(phoneQuery());
   const { ref, width, height } = useElementSize();
 
+  // Reserve 60px for the tab bar; clamp panel height based on screen height
   const panelWidth = width ? width - 60 : 2000;
   const panelHeight = height > 800 ? 555 : 500;
   const [hideSections, setHideSections] = useState(false);
 
+  // EXECUTE_OPS triggers the character's operation pipeline and calls
+  // onFinishLoading when it completes, which dismisses the loading screen.
   const { character, setCharacter, isLoading } = useCharacter(props.characterId, {
     type: 'EXECUTE_OPS',
     data: {
@@ -174,12 +194,16 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
 
   const activeModes = getVariable<VariableListStr>('CHARACTER', 'ACTIVE_MODES')?.value || [];
 
+  // Dice roller is lazy-loaded; loadedDiceRoller tracks whether to keep it
+  // mounted after the first open (so it doesn't remount on subsequent opens).
   const [openedDiceRoller, setOpenedDiceRoller] = useState(false);
   const [loadedDiceRoller, setLoadedDiceRoller] = useState(false);
 
   const [openedCampaign, setOpenedCampaign] = useState(false);
   const [openedModes, setOpenedModes] = useState(false);
 
+  // Filter ability blocks to only those of type 'mode' that are listed in MODE_IDS.
+  // Recalculates whenever character state or loading status changes.
   const modes = useMemo(() => {
     const givenModeIds = getVariable<VariableListStr>('CHARACTER', 'MODE_IDS')?.value || [];
     return props.content.abilityBlocks.filter((block) => block.type === 'mode' && givenModeIds.includes(block.id + ''));
@@ -188,11 +212,13 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
 
   return (
     <Center>
-      <Box maw={1000} w='100%' pb='sm'>
+      <Box maw={1000} w='100%' pb={isPhone ? 100 : 'sm'}>
         <Box ref={ref}>
           <Stack gap='xs' style={{ position: 'relative' }}>
+            {/* Top stat sections: layout collapses from 3 → 2 → 1 columns on smaller screens */}
             <SimpleGrid cols={isPhone ? 1 : isTablet ? 2 : 3} spacing='xs' verticalSpacing='xs'>
               <EntityInfoSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
+              {/* On phone, these sections are hidden when a full-screen panel is active */}
               {!hideSections && (
                 <>
                   <HealthSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
@@ -216,8 +242,11 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
           </Stack>
         </Box>
       </Box>
+
+      {/* Floating action buttons anchored to the bottom-left corner */}
       <Box style={getAnchorStyles({ l: 20, b: 20 })}>
         <Stack>
+          {/* Modes button – only shown when the character has at least one mode */}
           {modes.length > 0 && (
             <Indicator disabled={activeModes.length === 0} label={activeModes.length} size={14} offset={4}>
               <ActionIcon
@@ -236,6 +265,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
               </ActionIcon>
             </Indicator>
           )}
+          {/* Campaign button – only shown when the character belongs to a campaign */}
           {character?.campaign_id && (
             <ActionIcon
               size={40}
@@ -252,6 +282,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
               <IconFlag size='1.7rem' stroke={1.5} />
             </ActionIcon>
           )}
+          {/* Dice roller button – only shown when the option is enabled in character settings */}
           {character?.options?.dice_roller && (
             <ActionIcon
               size={40}
@@ -262,6 +293,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
               radius={100}
               aria-label='Dice Roller'
               onClick={() => {
+                // Trigger the lazy load on first open, then just toggle visibility
                 if (!loadedDiceRoller) {
                   setLoadedDiceRoller(true);
                 }
@@ -273,6 +305,8 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
           )}
         </Stack>
       </Box>
+
+      {/* Keep DiceRoller mounted once loaded so it doesn't lose its state between opens */}
       {loadedDiceRoller && (
         <Suspense fallback={<></>}>
           <DiceRoller
@@ -291,6 +325,18 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   );
 }
 
+/**
+ * Renders the tabbed panel area of the character sheet.
+ *
+ * On phone: shows a single full-screen panel at a time, with a floating
+ * grid button (bottom-right) that opens a popover to switch panels.
+ * The top stat sections are hidden while a panel is active to maximise
+ * vertical space.
+ *
+ * On desktop/tablet: renders a standard Mantine Tabs bar. Tabs that the
+ * user has marked as "primary" appear directly in the bar; the rest are
+ * accessible via the "..." overflow menu.
+ */
 function SectionPanels(props: {
   content: ContentPackage;
   entity: LivingEntity | null;
@@ -304,12 +350,16 @@ function SectionPanels(props: {
   const theme = useMantineTheme();
   const isPhone = isPhoneSized(props.panelWidth);
 
+  // Controls visibility of the mobile panel-picker popover
   const [openedPhonePanel, setOpenedPhonePanel] = useState(false);
 
+  // null until the character finishes loading, then defaults to 'skills-actions'
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const { hovered: hoveredTabOptions, ref: tabOptionsRef } = useHover<HTMLButtonElement>();
 
   const iconStyle = { width: rem(12), height: rem(12) };
+
+  // Full ordered list of all available sheet tabs
   const allSheetTabs = [
     'skills-actions',
     'inventory',
@@ -320,9 +370,16 @@ function SectionPanels(props: {
     'notes',
     'extras',
   ];
+
+  // PRIMARY_SHEET_TABS is a character-level variable that determines which tabs
+  // are shown directly in the tab bar vs hidden behind the "..." overflow menu.
   const primarySheetTabs = getVariable<VariableListStr>('CHARACTER', 'PRIMARY_SHEET_TABS')?.value ?? [];
   const tabOptions = allSheetTabs.filter((tab) => !primarySheetTabs.includes(tab));
+
+  // True when the currently active tab is one of the overflow (non-primary) tabs,
+  // used to highlight the "..." button to indicate a hidden tab is selected.
   const openedTabOption = tabOptions.find((tab) => tab === activeTab);
+
   const getTabIcon = (tab: string) => {
     switch (tab) {
       case 'skills-actions':
@@ -361,9 +418,11 @@ function SectionPanels(props: {
     }
   }, [isPhone]);
 
+  // ── Phone layout ────────────────────────────────────────────────────────────
   if (isPhone) {
     return (
       <Box>
+        {/* Only render the active panel when sections are hidden (i.e. a panel is selected) */}
         {props.hideSections && (
           <BlurBox p='sm' mih={props.panelHeight}>
             {activeTab === 'skills-actions' && (
@@ -423,6 +482,7 @@ function SectionPanels(props: {
           </BlurBox>
         )}
 
+        {/* Floating grid button anchored bottom-right that opens the panel picker */}
         <Box style={getAnchorStyles({ r: 20, b: 20 })}>
           <Popover
             position='top'
@@ -431,8 +491,14 @@ function SectionPanels(props: {
             onChange={setOpenedPhonePanel}
             styles={(t) => ({
               dropdown: {
-                backgroundColor: 'rgba(20, 21, 23)',
-                maxWidth: '100dvw',
+                // Force the dropdown to span the full viewport width.
+                // `left: 0 !important` overrides Mantine's floating-ui positioning
+                // which would otherwise anchor it relative to the target button.
+                ...glassStyle(),
+                backgroundColor: 'rgba(0,0,0,0.4)',
+                border: `1px solid ` + IMPRINT_BORDER_COLOR,
+                width: '100dvw',
+                left: '0 !important',
                 borderRadius: t.radius.lg,
                 padding: t.spacing.sm,
               },
@@ -452,6 +518,7 @@ function SectionPanels(props: {
             <Popover.Dropdown>
               <Box>
                 <Stack>
+                  {/* "Health, Attributes, Saves" restores the top stat sections */}
                   <Button
                     leftSection={<IconLayoutList size='1.2rem' stroke={2} />}
                     variant={!props.hideSections ? 'filled' : 'light'}
@@ -566,6 +633,9 @@ function SectionPanels(props: {
       </Box>
     );
   } else {
+    // ── Desktop / tablet layout ────────────────────────────────────────────────
+
+    // Shared fade-in animation applied to each panel on mount
     const panelMotion = {
       initial: { opacity: 0 },
       animate: { opacity: 1 },
@@ -584,6 +654,7 @@ function SectionPanels(props: {
             height: props.panelHeight + 65,
           }}
         >
+          {/* keepMounted={false} ensures inactive panels are unmounted to save memory */}
           <Tabs
             color='dark.6'
             variant='pills'
@@ -594,6 +665,7 @@ function SectionPanels(props: {
             activateTabWithKeyboard={false}
           >
             <Tabs.List pb={10} grow>
+              {/* Only render tabs that are in the character's PRIMARY_SHEET_TABS variable */}
               {primarySheetTabs.includes('skills-actions') && (
                 <Tabs.Tab
                   value='skills-actions'
@@ -673,6 +745,8 @@ function SectionPanels(props: {
                   Notes
                 </Tabs.Tab>
               )}
+
+              {/* Overflow "..." menu for non-primary tabs; highlighted when an overflow tab is active */}
               <Menu shadow='md' width={160} trigger='hover' openDelay={100} closeDelay={100}>
                 <Menu.Target>
                   <ActionIcon
@@ -713,6 +787,7 @@ function SectionPanels(props: {
               </Menu>
             </Tabs.List>
 
+            {/* Each panel is wrapped in AnimatePresence + motion.div for the fade-in transition */}
             <Tabs.Panel value='skills-actions'>
               <AnimatePresence mode='wait'>
                 <motion.div key='skills-actions' {...panelMotion}>

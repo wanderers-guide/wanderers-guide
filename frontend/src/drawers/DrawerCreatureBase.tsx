@@ -31,7 +31,7 @@ export default function DrawerCreatureBase() {
     refreshTitle();
   }, [_drawer]);
 
-  const swipeHandlers = useSwipeGesture({ onSwipeLeft: handleDrawerClose });
+  const swipeHandlers = useSwipeGesture({ onSwipeRight: handleDrawerClose });
 
   const opened = !!_drawer;
   return (

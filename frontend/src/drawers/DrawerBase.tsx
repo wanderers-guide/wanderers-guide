@@ -122,7 +122,7 @@ export default function DrawerBase() {
     refreshTitle();
   }, [_drawer]);
 
-  const swipeHandlers = useSwipeGesture({ onSwipeLeft: handleDrawerGoBack });
+  const swipeHandlers = useSwipeGesture({ onSwipeRight: handleDrawerGoBack });
 
   const opened = !!_drawer;
   return (
@@ -204,42 +204,42 @@ export default function DrawerBase() {
           </ScrollArea>
 
           {_drawer && !NO_FEEDBACK_DRAWERS.includes(_drawer.type) && _drawer.data?.noFeedback !== true && (
-          <>
-            <HoverCard shadow='md' openDelay={500} zIndex={1000} withArrow withinPortal>
-              <HoverCard.Target>
-                <ActionIcon
-                  variant='subtle'
-                  aria-label='Help and Feedback'
-                  radius='xl'
-                  color='dark.3'
-                  style={getAnchorStyles({ r: 5, b: 5 })}
-                  onClick={() => {
-                    const type = isAbilityBlockType(_drawer.type)
-                      ? _drawer.type
-                      : convertToContentType(_drawer.type as ContentType);
-                    const data = cloneDeep(_drawer.data);
+            <>
+              <HoverCard shadow='md' openDelay={500} zIndex={1000} withArrow withinPortal>
+                <HoverCard.Target>
+                  <ActionIcon
+                    variant='subtle'
+                    aria-label='Help and Feedback'
+                    radius='xl'
+                    color='dark.3'
+                    style={getAnchorStyles({ r: 5, b: 5 })}
+                    onClick={() => {
+                      const type = isAbilityBlockType(_drawer.type)
+                        ? _drawer.type
+                        : convertToContentType(_drawer.type as ContentType);
+                      const data = cloneDeep(_drawer.data);
 
-                    // Use creature id from .creature to allow edited creatures to get content updates on original
-                    if (type === 'creature' && data.creature?.id) {
-                      data.id = data.creature.id;
-                      data.content_source_id = data.creature.content_source_id;
-                    }
+                      // Use creature id from .creature to allow edited creatures to get content updates on original
+                      if (type === 'creature' && data.creature?.id) {
+                        data.id = data.creature.id;
+                        data.content_source_id = data.creature.content_source_id;
+                      }
 
-                    setFeedbackData({
-                      type: type,
-                      data: data,
-                    });
-                  }}
-                >
-                  <IconHelpTriangleFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
-                </ActionIcon>
-              </HoverCard.Target>
-              <HoverCard.Dropdown py={0} px={10}>
-                <Text size='sm'>Something wrong?</Text>
-              </HoverCard.Dropdown>
-            </HoverCard>
-          </>
-        )}
+                      setFeedbackData({
+                        type: type,
+                        data: data,
+                      });
+                    }}
+                  >
+                    <IconHelpTriangleFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                  </ActionIcon>
+                </HoverCard.Target>
+                <HoverCard.Dropdown py={0} px={10}>
+                  <Text size='sm'>Something wrong?</Text>
+                </HoverCard.Dropdown>
+              </HoverCard>
+            </>
+          )}
         </Box>
       </Drawer>
       {feedbackData && (
