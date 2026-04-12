@@ -93,6 +93,7 @@ export const CharacterInfo = forwardRef(
                 <Text
                   fz={props.character && props.character.name.length >= 16 ? '0.9rem' : 'lg'}
                   fw={500}
+                  c='gray.2'
                   className={classes.name}
                 >
                   {truncate(props.character?.name, {
@@ -300,6 +301,7 @@ export function CharacterDetailedInfo(props: { character: Character | null; name
                 <Text
                   fz={props.character && props.character.name.length >= 16 ? '0.9rem' : 'lg'}
                   fw={500}
+                  c='gray.2'
                   className={classes.name}
                 >
                   {truncate(props.character?.name, {

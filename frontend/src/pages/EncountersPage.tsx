@@ -24,26 +24,20 @@ export function Component() {
       <Box maw={isPhoneSized(viewWidth) ? viewWidth - 30 : 1000} w='100%'>
         <BlurBox>
           <Box ref={ref}>
-            <Group px='sm' justify='space-between' wrap='nowrap'>
-              <Group gap={10} py={5}>
+            {/* Header */}
+            <Group px='md' py='sm' justify='space-between' wrap='nowrap'>
+              <Group gap={10} wrap='nowrap'>
                 {!isPhone && <IconSwords size='1.8rem' stroke={1.5} />}
-                <Title size={28} c='gray.0'>
-                  Encounters
-                  {/* <Text pl={10} fz='xl' fw={500} c='gray.2' span>
-                  {encounters && reachedEncounterLimit ? `(${encounters.length}/${ENCOUNTER_SLOT_CAP})` : ''}
-                </Text> */}
-                </Title>
+                <Title size={28}>Encounters</Title>
               </Group>
             </Group>
-          </Box>
-        </BlurBox>
-        <Box pt='sm'>
-          <BlurBox h={panelHeight + 30} w={panelWidth + 60} p={15}>
-            <Box w={panelWidth + 30}>
+            <Divider />
+            {/* Body */}
+            <Box p='md'>
               <EncountersPanel panelHeight={panelHeight} panelWidth={panelWidth} />
             </Box>
-          </BlurBox>
-        </Box>
+          </Box>
+        </BlurBox>
       </Box>
     </Center>
   );

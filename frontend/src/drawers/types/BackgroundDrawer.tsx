@@ -4,7 +4,8 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { fetchContentById } from '@content/content-store';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
-import { Anchor, Box, Button, Group, Image, Loader, Paper, Stack, Text, Title, useMantineTheme } from '@mantine/core';
+import { Anchor, Box, Button, Group, Image, Loader, Stack, Text, Title, useMantineTheme } from '@mantine/core';
+import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 import { OperationResult } from '@schemas/operations';
 import { useQuery } from '@tanstack/react-query';
 import { Background, Character } from '@schemas/content';
@@ -194,14 +195,13 @@ export function BackgroundInitialOverview(props: {
               return (a.uuid ?? '').localeCompare(b.uuid ?? '');
             })
             .map((attribute, index) => (
-              <Paper
+              <Box
                 key={index}
-                shadow='xs'
                 p='sm'
-                radius='md'
                 style={{
-                  backgroundColor: theme.colors.dark[8],
-                  position: 'relative',
+                  backgroundColor: IMPRINT_BG_COLOR,
+                  border: `1px solid ${IMPRINT_BORDER_COLOR}`,
+                  borderRadius: theme.radius.md,
                 }}
               >
                 <Text c='gray.2' ta='center'>
@@ -210,7 +210,7 @@ export function BackgroundInitialOverview(props: {
                 <Text c='gray.4' fw={700} ta='center' style={{ display: 'flex', justifyContent: 'center' }}>
                   {attribute.ui}
                 </Text>
-              </Paper>
+              </Box>
             ))}
         </Group>
       </Box>

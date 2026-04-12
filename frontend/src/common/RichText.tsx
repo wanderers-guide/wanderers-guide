@@ -254,7 +254,17 @@ export default function RichText(props: RichTextProps) {
         blockquote(innerProps) {
           const { children, className } = innerProps;
           return (
-            <Blockquote className={className} icon={<IconQuote size='1.3rem' />} iconSize={40} ml={5} my={10}>
+            <Blockquote
+              className={className}
+              icon={<IconQuote size='1.3rem' />}
+              iconSize={40}
+              ml={5}
+              my={10}
+              styles={{
+                root: { '--bq-bg-dark': 'rgba(222, 226, 230, 0.06)' },
+                icon: { backgroundColor: 'transparent' },
+              }}
+            >
               {children}
             </Blockquote>
           );

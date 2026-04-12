@@ -21,12 +21,12 @@ import {
   HoverCard,
   Image,
   Loader,
-  Paper,
   Stack,
   Text,
   Title,
   useMantineTheme,
 } from '@mantine/core';
+import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 import { addedAncestryLanguages, getAdjustedAncestryOperations } from '@operations/operation-controller';
 import { IconChevronsDown, IconChevronsUp, IconHelpCircle } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
@@ -344,12 +344,12 @@ export function AncestryInitialOverview(props: {
         </Anchor>
       </Box>
       <Group align='flex-start' grow>
-        <Paper
-          shadow='xs'
+        <Box
           py='sm'
-          radius='md'
           style={{
-            backgroundColor: theme.colors.dark[8],
+            backgroundColor: IMPRINT_BG_COLOR,
+            border: `1px solid ${IMPRINT_BORDER_COLOR}`,
+            borderRadius: theme.radius.md,
             position: 'relative',
           }}
         >
@@ -379,13 +379,13 @@ export function AncestryInitialOverview(props: {
           <Text c='gray.4' fw={700} ta='center'>
             {display.ancestryHp.ui ?? 'Varies'}
           </Text>
-        </Paper>
-        <Paper
-          shadow='xs'
+        </Box>
+        <Box
           py='sm'
-          radius='md'
           style={{
-            backgroundColor: theme.colors.dark[8],
+            backgroundColor: IMPRINT_BG_COLOR,
+            border: `1px solid ${IMPRINT_BORDER_COLOR}`,
+            borderRadius: theme.radius.md,
             position: 'relative',
           }}
         >
@@ -423,13 +423,13 @@ export function AncestryInitialOverview(props: {
           >
             {display.size.ui ?? 'Varies'}
           </Text>
-        </Paper>
-        <Paper
-          shadow='xs'
+        </Box>
+        <Box
           py='sm'
-          radius='md'
           style={{
-            backgroundColor: theme.colors.dark[8],
+            backgroundColor: IMPRINT_BG_COLOR,
+            border: `1px solid ${IMPRINT_BORDER_COLOR}`,
+            borderRadius: theme.radius.md,
             position: 'relative',
           }}
         >
@@ -462,7 +462,7 @@ export function AncestryInitialOverview(props: {
           <Text c='gray.4' fw={700} ta='center' style={{ display: 'flex', justifyContent: 'center' }}>
             {display.speed.ui ?? 'Varies'}
           </Text>
-        </Paper>
+        </Box>
       </Group>
       {display.boostAttributes.length > 0 && (
         <Box>

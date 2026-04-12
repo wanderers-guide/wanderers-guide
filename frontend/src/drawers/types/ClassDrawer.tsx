@@ -20,13 +20,13 @@ import {
   HoverCard,
   Image,
   Loader,
-  Paper,
   Stack,
   Table,
   Text,
   Title,
   useMantineTheme,
 } from '@mantine/core';
+import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 import {
   getClassOperations,
   getClassSkillTrainings,
@@ -347,12 +347,12 @@ export function ClassInitialOverview(props: {
         </Anchor>
       </Box>
       <Group align='flex-start' grow>
-        <Paper
-          shadow='xs'
+        <Box
           p='sm'
-          radius='md'
           style={{
-            backgroundColor: theme.colors.dark[8],
+            backgroundColor: IMPRINT_BG_COLOR,
+            border: `1px solid ${IMPRINT_BORDER_COLOR}`,
+            borderRadius: theme.radius.md,
             position: 'relative',
           }}
         >
@@ -382,13 +382,13 @@ export function ClassInitialOverview(props: {
           <Text c='gray.4' fw={700} ta='center' style={{ display: 'flex', justifyContent: 'center' }}>
             {display.keyAttribute.ui ?? 'Varies'}
           </Text>
-        </Paper>
-        <Paper
-          shadow='xs'
+        </Box>
+        <Box
           p='sm'
-          radius='md'
           style={{
-            backgroundColor: theme.colors.dark[8],
+            backgroundColor: IMPRINT_BG_COLOR,
+            border: `1px solid ${IMPRINT_BORDER_COLOR}`,
+            borderRadius: theme.radius.md,
             position: 'relative',
           }}
         >
@@ -420,7 +420,7 @@ export function ClassInitialOverview(props: {
           <Text c='gray.4' fw={700} ta='center'>
             {display.classHp.ui ?? 'Varies'}
           </Text>
-        </Paper>
+        </Box>
       </Group>
       <Box>
         <Divider

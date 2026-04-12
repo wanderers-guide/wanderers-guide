@@ -5,7 +5,7 @@ import BlurBox from '@common/BlurBox';
 import { glassStyle } from '@utils/colors';
 import { ContentSourceInfo } from '@common/ContentSourceInfo';
 import Paginator from '@common/Paginator';
-import { IMPRINT_BG_COLOR_HOVER } from '@constants/data';
+import { IMPRINT_BG_COLOR, IMPRINT_BG_COLOR_2, IMPRINT_BORDER_COLOR } from '@constants/data';
 import { deleteContent, upsertContentSource } from '@content/content-creation';
 import { fetchContentSources, resetContentStore } from '@content/content-store';
 import { updateSubscriptions } from '@content/homebrew';
@@ -22,29 +22,18 @@ import {
   Text,
   Menu,
   Stack,
+  Tabs,
   Title,
   VisuallyHidden,
   rem,
   useMantineTheme,
   TextInput,
-  Select,
 } from '@mantine/core';
 import { useMediaQuery, useHover } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
 import { CreateContentSourceModal } from '@modals/CreateContentSourceModal';
 import { makeRequest } from '@requests/request-manager';
-import {
-  IconUpload,
-  IconBookmarks,
-  IconListDetails,
-  IconHammer,
-  IconSearch,
-  IconDots,
-  IconTrash,
-  IconChevronDown,
-  IconX,
-  IconAsset,
-} from '@tabler/icons-react';
+import { IconUpload, IconSearch, IconDots, IconTrash, IconChevronDown, IconX, IconAsset } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { ContentSource } from '@schemas/content';
 import { setPageTitle } from '@utils/document-change';
@@ -60,142 +49,158 @@ export function Component() {
   const isPhone = useMediaQuery(phoneQuery());
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [tab, setTab] = useState(0);
+  const [tab, setTab] = useState('browse');
 
   return (
     <Center>
       <Box maw={875} w='100%'>
-        <BlurBox bgColor='rgba(20, 21, 23, 0.827)'>
-          <Group px='sm' justify='space-between' wrap='nowrap'>
-            <Group gap={10} py={5}>
+        <BlurBox>
+          {/* Header row — title + inline search (desktop only) */}
+          <Group px='md' py='sm' justify='space-between' wrap='nowrap'>
+            <Group gap='sm' wrap='nowrap' style={{ flexShrink: 0 }}>
               {!isPhone && <IconAsset size='1.8rem' stroke={1.5} />}
-              <Title size={28} c='gray.0'>
-                Homebrew
-              </Title>
+              <Title size={28}>Homebrew</Title>
             </Group>
-            {isPhone ? (
-              <Select
-                value={`${tab}`}
-                onChange={(v) => {
-                  if (v) {
-                    setTab(parseInt(v));
-                  }
-                }}
-                variant='default'
-                data={[
-                  {
-                    value: '0',
-                    label: 'Browse',
-                  },
-                  {
-                    value: '1',
-                    label: 'Subscriptions',
-                  },
-                  {
-                    value: '2',
-                    label: 'My Creations',
-                  },
-                ]}
-              />
-            ) : (
-              <Group gap={5} wrap='nowrap'>
-                <Button
-                  w={140}
-                  leftSection={<IconListDetails size='1rem' />}
-                  variant='outline'
-                  size='xs'
-                  radius='xl'
-                  style={
-                    tab === 0
-                      ? { backgroundColor: '#fff', color: theme.colors.gray[7], borderColor: '#fff' }
-                      : { color: theme.colors.gray[0], backgroundColor: 'transparent', borderColor: '#fff' }
-                  }
-                  onClick={() => setTab(0)}
-                >
-                  Browse
-                </Button>
-                <Button
-                  w={140}
-                  leftSection={<IconBookmarks size='1rem' />}
-                  variant='outline'
-                  size='xs'
-                  radius='xl'
-                  style={
-                    tab === 1
-                      ? { backgroundColor: '#fff', color: theme.colors.gray[7], borderColor: '#fff' }
-                      : { color: theme.colors.gray[0], backgroundColor: 'transparent', borderColor: '#fff' }
-                  }
-                  onClick={() => setTab(1)}
-                >
-                  Subscriptions
-                </Button>
-                <Button
-                  w={140}
-                  leftSection={<IconHammer size='1rem' />}
-                  variant='outline'
-                  size='xs'
-                  radius='xl'
-                  style={
-                    tab === 2
-                      ? { backgroundColor: '#fff', color: theme.colors.gray[7], borderColor: '#fff' }
-                      : {
-                          backgroundColor: 'transparent',
-                          color: theme.colors.gray[0],
-                          borderColor: '#fff',
-                        }
-                  }
-                  onClick={() => {
-                    if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
-                      displayPatronOnly('This feature is only available to Wanderer-tier patrons!');
-                      return;
-                    }
 
-                    setTab(2);
-                  }}
-                >
-                  My Creations
-                </Button>
-              </Group>
+            {/* Inline search — desktop only; mobile gets its own row below */}
+            {!isPhone && (
+              <TextInput
+                style={{ flex: 1, maxWidth: 280 }}
+                leftSection={<IconSearch size='0.9rem' />}
+                placeholder='Search bundles'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                variant='unstyled'
+                rightSection={
+                  searchQuery.trim() ? (
+                    <ActionIcon
+                      variant='subtle'
+                      size='md'
+                      color='gray'
+                      radius='xl'
+                      aria-label='Clear search'
+                      onClick={() => setSearchQuery('')}
+                    >
+                      <IconX size='1.2rem' stroke={2} />
+                    </ActionIcon>
+                  ) : undefined
+                }
+                styles={(theme) => ({
+                  wrapper: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.18)',
+                    border: '1px solid rgba(255, 255, 255, 0.07)',
+                    borderRadius: theme.radius.md,
+                    padding: '2px 4px',
+                    transition: 'border-color 150ms ease, box-shadow 150ms ease',
+                    '&:focus-within': {
+                      borderColor: theme.colors[theme.primaryColor][8],
+                      boxShadow: `0 0 0 2px color-mix(in srgb, ${theme.colors[theme.primaryColor][9]} 30%, transparent)`,
+                    },
+                  },
+                  input: { '--input-placeholder-color': theme.colors.gray[5] },
+                })}
+              />
+            )}
+
+            {/* Pill tabs — desktop: inline in header row */}
+            {!isPhone && (
+              <Tabs
+                variant='pills'
+                radius='xl'
+                value={tab}
+                onChange={(value) => {
+                  if (value === 'creations' && !hasPatreonAccess(getCachedPublicUser(), 2)) {
+                    displayPatronOnly('This feature is only available to Wanderer-tier patrons!');
+                    return;
+                  }
+                  setTab(value ?? 'browse');
+                }}
+                styles={{
+                  list: { flexWrap: 'nowrap', gap: 4 },
+                }}
+              >
+                <Tabs.List>
+                  <Tabs.Tab value='browse' size='xs'>
+                    Browse
+                  </Tabs.Tab>
+                  <Tabs.Tab value='subscriptions' size='xs'>
+                    Subscriptions
+                  </Tabs.Tab>
+                  <Tabs.Tab value='creations' size='xs'>
+                    My Creations
+                  </Tabs.Tab>
+                </Tabs.List>
+              </Tabs>
             )}
           </Group>
-          <Divider color='gray.2' />
-          <Box py={5}>
-            <TextInput
-              style={{ flex: 1 }}
-              leftSection={<IconSearch size='0.9rem' />}
-              placeholder={`Search bundles`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              variant='unstyled'
-              rightSection={
-                searchQuery.trim() ? (
-                  <ActionIcon
-                    variant='subtle'
-                    size='md'
-                    color='gray'
-                    radius='xl'
-                    aria-label='Clear search'
-                    onClick={() => {
-                      setSearchQuery('');
-                    }}
-                  >
-                    <IconX size='1.2rem' stroke={2} />
-                  </ActionIcon>
-                ) : undefined
-              }
-              styles={(theme) => ({
-                input: {
-                  '--input-placeholder-color': theme.colors.gray[5],
-                },
-              })}
-            />
+
+          {/* Mobile: search + pill tabs on their own rows */}
+          {isPhone && (
+            <Stack px='sm' pb='xs' gap='xs'>
+              <TextInput
+                style={{ flex: 1 }}
+                leftSection={<IconSearch size='0.9rem' />}
+                placeholder='Search bundles'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                variant='unstyled'
+                rightSection={
+                  searchQuery.trim() ? (
+                    <ActionIcon
+                      variant='subtle'
+                      size='md'
+                      color='gray'
+                      radius='xl'
+                      aria-label='Clear search'
+                      onClick={() => setSearchQuery('')}
+                    >
+                      <IconX size='1.2rem' stroke={2} />
+                    </ActionIcon>
+                  ) : undefined
+                }
+                styles={(theme) => ({
+                  wrapper: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.18)',
+                    border: '1px solid rgba(255, 255, 255, 0.07)',
+                    borderRadius: theme.radius.md,
+                    padding: '2px 4px',
+                  },
+                  input: { '--input-placeholder-color': theme.colors.gray[5] },
+                })}
+              />
+              <Tabs
+                variant='pills'
+                radius='xl'
+                value={tab}
+                onChange={(value) => {
+                  if (value === 'creations' && !hasPatreonAccess(getCachedPublicUser(), 2)) {
+                    displayPatronOnly('This feature is only available to Wanderer-tier patrons!');
+                    return;
+                  }
+                  setTab(value ?? 'browse');
+                }}
+                styles={{
+                  list: { gap: 4 },
+                }}
+              >
+                <Tabs.List>
+                  <Tabs.Tab value='browse'>Browse</Tabs.Tab>
+                  <Tabs.Tab value='subscriptions'>Subscriptions</Tabs.Tab>
+                  <Tabs.Tab value='creations'>My Creations</Tabs.Tab>
+                </Tabs.List>
+              </Tabs>
+            </Stack>
+          )}
+
+          <Divider />
+
+          {/* Tab content — all inside the same glass panel */}
+          <Box p='md'>
+            <Group>{tab === 'browse' && <BrowseSection searchQuery={searchQuery.trim()} />}</Group>
+            <Group>{tab === 'subscriptions' && <SubscriptionsSection searchQuery={searchQuery.trim()} />}</Group>
+            <Group>{tab === 'creations' && <CreationsSection searchQuery={searchQuery.trim()} />}</Group>
           </Box>
         </BlurBox>
-        <Box pt='sm'>
-          <Group>{tab === 0 && <BrowseSection searchQuery={searchQuery.trim()} />}</Group>
-          <Group>{tab === 1 && <SubscriptionsSection searchQuery={searchQuery.trim()} />}</Group>
-          <Group>{tab === 2 && <CreationsSection searchQuery={searchQuery.trim()} />}</Group>
-        </Box>
       </Box>
     </Center>
   );
@@ -233,16 +238,9 @@ function BrowseSection(props: { searchQuery: string }) {
     <Stack w='100%' gap={15}>
       <Group>
         {isFetching && (
-          <Loader
-            size='lg'
-            type='bars'
-            style={{
-              position: 'absolute',
-              top: '30%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-            }}
-          />
+          <Center w='100%' py='xl'>
+            <Loader size='sm' type='dots' />
+          </Center>
         )}
 
         {bundles.length > 0 && (
@@ -255,7 +253,7 @@ function BrowseSection(props: { searchQuery: string }) {
                 ))}
                 numPerPage={isPhone ? 4 : 12}
                 numInRow={isPhone ? 1 : 3}
-                gap='xs'
+                gap='sm'
                 pagSize='md'
               />
             </Stack>
@@ -312,16 +310,9 @@ function SubscriptionsSection(props: { searchQuery: string }) {
     <Stack w='100%' gap={15}>
       <Group>
         {isLoading && (
-          <Loader
-            size='lg'
-            type='bars'
-            style={{
-              position: 'absolute',
-              top: '30%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-            }}
-          />
+          <Center w='100%' py='xl'>
+            <Loader size='sm' type='dots' />
+          </Center>
         )}
 
         {bundles.length > 0 && (
@@ -347,7 +338,7 @@ function SubscriptionsSection(props: { searchQuery: string }) {
                 ))}
                 numPerPage={isPhone ? 3 : 12}
                 numInRow={isPhone ? 1 : 3}
-                gap='xs'
+                gap='sm'
                 pagSize='md'
               />
             </Stack>
@@ -515,17 +506,8 @@ function CreationsSection(props: { searchQuery: string }) {
 
       <Group>
         {isFetching && (
-          <Center h={100}>
-            <Loader
-              size='lg'
-              type='bars'
-              style={{
-                position: 'absolute',
-                top: '30%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-              }}
-            />
+          <Center w='100%' py='xl'>
+            <Loader size='sm' type='dots' />
           </Center>
         )}
         {!isFetching &&
@@ -575,16 +557,9 @@ function CreationsSection(props: { searchQuery: string }) {
 
       <Group>
         {isFetching && (
-          <Loader
-            size='lg'
-            type='bars'
-            style={{
-              position: 'absolute',
-              top: '30%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-            }}
-          />
+          <Center w='100%' py='xl'>
+            <Loader size='sm' type='dots' />
+          </Center>
         )}
         {!isFetching &&
           bundles
@@ -640,6 +615,7 @@ function CreationsSection(props: { searchQuery: string }) {
   );
 }
 
+/** Homebrew bundle card — uses imprint styling (lighter panel) inside the outer BlurBox */
 function ContentSourceCard(props: {
   source: ContentSource;
   onEdit?: () => void;
@@ -651,51 +627,50 @@ function ContentSourceCard(props: {
   const isPhone = useMediaQuery(phoneQuery());
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const { hovered: hoveredMain, ref: refMain } = useHover();
-  const { hovered: hoveredEdit, ref: refEdit } = useHover<HTMLButtonElement>();
-  const { hovered: hoveredOptions, ref: refOptions } = useHover<HTMLButtonElement>();
+  const { hovered: hoveredCard, ref: refCard } = useHover();
 
   return (
-    <BlurBox miw={isPhone ? '100%' : 280}>
-      <Box
-        w='100%'
-        h='100%'
-        px='xs'
-        ref={refMain}
-        style={{
-          cursor: 'pointer',
-          borderTopLeftRadius: theme.radius.md,
-          borderTopRightRadius: theme.radius.md,
-          backgroundColor: hoveredMain ? 'rgba(0, 0, 0, 0.15)' : undefined,
-          position: 'relative',
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          openDrawer({
-            type: 'content-source',
-            data: {
-              id: props.source.id,
-              showOperations: true,
-            },
-          });
-        }}
-      >
+    <Box
+      ref={refCard}
+      w='100%'
+      style={{
+        // Imprint styling — lighter semi-transparent panel inside the outer BlurBox
+        backgroundColor: hoveredCard ? IMPRINT_BG_COLOR_2 : IMPRINT_BG_COLOR,
+        border: `1px solid ${IMPRINT_BORDER_COLOR}`,
+        borderRadius: theme.radius.md,
+        cursor: 'pointer',
+        // Hover lift on the entire card
+        transition: 'transform 200ms ease, box-shadow 200ms ease, background-color 200ms ease',
+        ...(hoveredCard
+          ? {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+            }
+          : {}),
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        openDrawer({
+          type: 'content-source',
+          data: {
+            id: props.source.id,
+            showOperations: true,
+          },
+        });
+      }}
+    >
+      <Box w='100%' h='100%' px='sm' style={{ position: 'relative' }}>
         <ContentSourceInfo source={props.source} />
       </Box>
       {(props.onEdit || props.onDelete) && (
-        <Group gap='xs' pb='xs' px='xs'>
+        <Group gap={5} pb='xs' px='sm'>
           {props.onEdit ? (
             <Button
               size='xs'
-              variant='light'
-              color='gray'
+              variant='default'
               radius='xl'
-              ref={refEdit}
-              style={{
-                flex: 1,
-                backgroundColor: hoveredEdit ? IMPRINT_BG_COLOR_HOVER : undefined,
-              }}
+              style={{ flex: 1 }}
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
@@ -711,36 +686,23 @@ function ContentSourceCard(props: {
             <Menu shadow='md' width={200} withArrow withinPortal>
               <Menu.Target>
                 <ActionIcon
-                  size='lg'
-                  variant='light'
+                  size={30}
+                  variant='subtle'
                   color='gray'
                   radius='xl'
                   aria-label='Options'
-                  ref={refOptions}
-                  style={{
-                    backgroundColor: hoveredOptions ? IMPRINT_BG_COLOR_HOVER : undefined,
-                  }}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <IconDots style={{ width: '60%', height: '60%' }} stroke={1.5} />
                 </ActionIcon>
               </Menu.Target>
 
               <Menu.Dropdown>
-                <Menu.Label>
-                  <Group justify='space-between'>
-                    <Box>Options</Box>
-                    <Text fz={10} c='dimmed'>
-                      # {55}
-                    </Text>
-                  </Group>
-                </Menu.Label>
-
-                <Menu.Divider />
-
                 <Menu.Item
                   color='red'
                   leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     modals.openConfirmModal({
                       id: 'delete-source',
                       title: <Title order={4}>{props.deleteTitle ?? 'Delete'}</Title>,
@@ -760,6 +722,6 @@ function ContentSourceCard(props: {
           )}
         </Group>
       )}
-    </BlurBox>
+    </Box>
   );
 }

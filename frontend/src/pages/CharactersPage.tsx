@@ -5,7 +5,7 @@ import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { CharacterInfo } from '@common/CharacterInfo';
 import Paginator from '@common/Paginator';
-import { CHARACTER_SLOT_CAP } from '@constants/data';
+import { CHARACTER_SLOT_CAP, IMPRINT_BG_COLOR, IMPRINT_BG_COLOR_2, IMPRINT_BORDER_COLOR } from '@constants/data';
 import { resetContentStore } from '@content/content-store';
 import exportToJSON from '@export/export-to-json';
 import exportToPDF from '@export/export-to-pdf';
@@ -22,6 +22,7 @@ import {
   Divider,
   FileButton,
   Group,
+  Kbd,
   Loader,
   LoadingOverlay,
   Menu,
@@ -32,7 +33,6 @@ import {
   Tooltip,
   VisuallyHidden,
   rem,
-  useMantineColorScheme,
   useMantineTheme,
 } from '@mantine/core';
 import { useForceUpdate, useHover, useMediaQuery } from '@mantine/hooks';
@@ -93,9 +93,23 @@ export function Component() {
 
   const jsonImportRef = useRef<HTMLButtonElement>(null);
   const guidecharImportRef = useRef<HTMLButtonElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const [openedPathbuilderModal, setOpenedPathbuilderModal] = useState(false);
 
   const forceUpdate = useForceUpdate();
+
+  // Press '/' anywhere on the page to jump focus to the character search input
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (document.activeElement as HTMLElement)?.tagName ?? '';
+      if (e.key === '/' && tag !== 'INPUT' && tag !== 'TEXTAREA') {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
   useEffect(() => {
     setCharacter(null);
     resetContentStore();
@@ -138,8 +152,9 @@ export function Component() {
     <Center>
       <Box maw={875} w='100%'>
         <BlurBox>
-          <Group px='sm' justify='space-between' wrap='nowrap'>
-            <Group gap={10} py={5} wrap='nowrap'>
+          {/* Header row — title, inline search (desktop only), and action buttons */}
+          <Group px='md' py='sm' justify='space-between' wrap='nowrap'>
+            <Group gap={10} wrap='nowrap' style={{ flexShrink: 0 }}>
               {!isPhone && <IconUsers size='1.8rem' stroke={1.5} />}
               <Title size={28}>
                 Characters
@@ -148,15 +163,66 @@ export function Component() {
                 </Text>
               </Title>
             </Group>
-            <Group gap={15} wrap='nowrap'>
+
+            {/* Inline search — only shown on desktop; mobile gets its own row below */}
+            {!isPhone && (
+              <TextInput
+                ref={searchRef}
+                style={{ flex: 1, maxWidth: 340 }}
+                leftSection={<IconSearch size='0.9rem' />}
+                placeholder='Search characters…'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setSearchQuery('');
+                    searchRef.current?.blur();
+                  }
+                }}
+                variant='unstyled'
+                rightSection={
+                  searchQuery.trim() ? (
+                    <ActionIcon
+                      variant='subtle'
+                      size='md'
+                      color='gray'
+                      radius='xl'
+                      aria-label='Clear search'
+                      onClick={() => setSearchQuery('')}
+                    >
+                      <IconX size='1.2rem' stroke={2} />
+                    </ActionIcon>
+                  ) : (
+                    <Kbd size='xs' style={{ opacity: 0.45, pointerEvents: 'none', userSelect: 'none' }}>
+                      /
+                    </Kbd>
+                  )
+                }
+                styles={(theme) => ({
+                  wrapper: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.18)',
+                    border: '1px solid rgba(255, 255, 255, 0.07)',
+                    borderRadius: theme.radius.md,
+                    padding: '2px 4px',
+                    transition: 'border-color 150ms ease, box-shadow 150ms ease',
+                    '&:focus-within': {
+                      borderColor: theme.colors[theme.primaryColor][8],
+                      boxShadow: `0 0 0 2px color-mix(in srgb, ${theme.colors[theme.primaryColor][9]} 30%, transparent)`,
+                    },
+                  },
+                  input: {
+                    '--input-placeholder-color': theme.colors.gray[5],
+                  },
+                })}
+              />
+            )}
+
+            <Group gap={15} wrap='nowrap' style={{ flexShrink: 0 }}>
               <Tooltip label='Create Character' openDelay={500}>
                 <ActionIcon
                   disabled={reachedCharacterLimit}
-                  style={{
-                    backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : 'transparent',
-                  }}
                   loading={loadingCreateCharacter}
-                  variant='outline'
+                  variant='light'
                   color='gray'
                   size='lg'
                   radius='lg'
@@ -174,11 +240,8 @@ export function Component() {
                   <Tooltip label='Import Character' openDelay={500}>
                     <ActionIcon
                       disabled={reachedCharacterLimit}
-                      style={{
-                        backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : 'transparent',
-                      }}
                       loading={loadingImportCharacter}
-                      variant='outline'
+                      variant='light'
                       color='gray'
                       size='lg'
                       radius='lg'
@@ -219,21 +282,18 @@ export function Component() {
               <Tooltip label='Random Character' openDelay={500}>
                 <ActionIcon
                   disabled={reachedCharacterLimit}
-                  style={{
-                    backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : 'transparent',
-                  }}
                   loading={loadingCreateRandomCharacter}
-                  variant='outline'
+                  variant='light'
                   color='gray'
                   size='lg'
                   radius='lg'
-                  aria-label='Create Character'
+                  aria-label='Create Random Character'
                   onClick={async () => {
                     setLoadingCreateRandomCharacter(true);
                     showNotification({
                       id: `create-random-character`,
                       title: `Creating random character`,
-                      message: `This may take a minute...`,
+                      message: `This may take a minute…`,
                       autoClose: false,
                       withCloseButton: false,
                       loading: true,
@@ -266,7 +326,7 @@ export function Component() {
             </Group>
 
             <VisuallyHidden>
-              {/* This is a hack to get the FileButton to work with the Menu component */}
+              {/* Hidden file inputs that get triggered by the import menu items */}
               <FileButton
                 onChange={async (file) => {
                   if (!file) return;
@@ -312,93 +372,114 @@ export function Component() {
               onClose={() => setOpenedPathbuilderModal(false)}
             />
           </Group>
+
+          {/* Mobile-only: search on its own row below the header */}
+          {isPhone && (
+            <Box px='md' pb='sm'>
+              <TextInput
+                ref={searchRef}
+                style={{ flex: 1 }}
+                leftSection={<IconSearch size='0.9rem' />}
+                placeholder='Search characters…'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setSearchQuery('');
+                    searchRef.current?.blur();
+                  }
+                }}
+                variant='unstyled'
+                rightSection={
+                  searchQuery.trim() ? (
+                    <ActionIcon
+                      variant='subtle'
+                      size='md'
+                      color='gray'
+                      radius='xl'
+                      aria-label='Clear search'
+                      onClick={() => setSearchQuery('')}
+                    >
+                      <IconX size='1.2rem' stroke={2} />
+                    </ActionIcon>
+                  ) : (
+                    <Kbd size='xs' style={{ opacity: 0.45, pointerEvents: 'none', userSelect: 'none' }}>
+                      /
+                    </Kbd>
+                  )
+                }
+                styles={(theme) => ({
+                  wrapper: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.18)',
+                    border: '1px solid rgba(255, 255, 255, 0.07)',
+                    borderRadius: theme.radius.md,
+                    padding: '2px 4px',
+                    transition: 'border-color 150ms ease, box-shadow 150ms ease',
+                    '&:focus-within': {
+                      borderColor: theme.colors[theme.primaryColor][8],
+                      boxShadow: `0 0 0 2px color-mix(in srgb, ${theme.colors[theme.primaryColor][9]} 30%, transparent)`,
+                    },
+                  },
+                  input: {
+                    '--input-placeholder-color': theme.colors.gray[5],
+                  },
+                })}
+              />
+            </Box>
+          )}
           <Divider />
-          <Box py={5}>
-            <TextInput
-              style={{ flex: 1 }}
-              leftSection={<IconSearch size='0.9rem' />}
-              placeholder={`Search characters`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              variant='unstyled'
-              rightSection={
-                searchQuery.trim() ? (
-                  <ActionIcon
-                    variant='subtle'
-                    size='md'
-                    color='gray'
-                    radius='xl'
-                    aria-label='Clear search'
-                    onClick={() => {
-                      setSearchQuery('');
-                    }}
-                  >
-                    <IconX size='1.2rem' stroke={2} />
-                  </ActionIcon>
-                ) : undefined
-              }
-              styles={(theme) => ({
-                input: {
-                  '--input-placeholder-color': theme.colors.gray[5],
-                },
-              })}
-            />
-          </Box>
-        </BlurBox>
-        <Group pt='sm'>
-          {isLoading && (
-            <Loader
-              size='lg'
-              type='bars'
-              style={{
-                position: 'absolute',
-                top: '30%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-              }}
-            />
-          )}
+          {/* Card grid — unified inside the same glass panel as the header so the
+              background shows around the panel, not through a gap between two panels. */}
+          <Box p='md'>
+            {isLoading && (
+              <Center h={200}>
+                <Loader size='lg' type='bars' />
+              </Center>
+            )}
 
-          {characters.length > 0 && (
-            <Center w='100%'>
-              <Stack w='100%'>
-                <Paginator
-                  h={480}
-                  records={characters.map((c, i) => (
-                    <CharacterCard key={i} character={c} reachedCharacterLimit={reachedCharacterLimit} />
-                  ))}
-                  numPerPage={isPhone ? 3 : 9}
-                  numInRow={isPhone ? 1 : 3}
-                  gap='xs'
-                  pagSize='md'
-                />
+            {characters.length > 0 && (
+              <Paginator
+                h={520}
+                records={characters.map((c) => (
+                  // Use character id (not index) as key to avoid reconciliation bugs on sort changes
+                  <CharacterCard key={c.id} character={c} reachedCharacterLimit={reachedCharacterLimit} />
+                ))}
+                numPerPage={isPhone ? 3 : 9}
+                numInRow={isPhone ? 1 : 3}
+                gap='sm'
+                pagSize='md'
+              />
+            )}
+
+            {/* Empty state when search yields no results */}
+            {!isLoading && characters.length === 0 && searchQuery.trim() && (
+              <Stack py={50} gap={5}>
+                <Text ta='center' c='dimmed' fs='italic'>
+                  No characters match "{searchQuery.trim()}"
+                </Text>
               </Stack>
-            </Center>
-          )}
+            )}
 
-          {!isLoading && (data ?? []).length === 0 && (
-            <BlurBox w={'100%'} h={200}>
-              <Stack mt={50} gap={10}>
+            {!isLoading && (data ?? []).length === 0 && (
+              <Stack py={50} gap={10}>
                 <Text ta='center' c='dimmed' fs='italic'>
                   No characters found, want to create one?
                 </Text>
                 <Center>
-                  <Box>
-                    <BlurButton
-                      loading={loadingCreateZeroCharacter}
-                      onClick={() => {
-                        setLoadingCreateZeroCharacter(true);
-                        handleCreateCharacter();
-                      }}
-                    >
-                      Create Character
-                    </BlurButton>
-                  </Box>
+                  <BlurButton
+                    loading={loadingCreateZeroCharacter}
+                    onClick={() => {
+                      setLoadingCreateZeroCharacter(true);
+                      handleCreateCharacter();
+                    }}
+                  >
+                    Create Character
+                  </BlurButton>
                 </Center>
               </Stack>
-            </BlurBox>
-          )}
-        </Group>
+            )}
+          </Box>
+        </BlurBox>
       </Box>
     </Center>
   );
@@ -406,16 +487,14 @@ export function Component() {
 
 function CharacterCard(props: { character: Character; reachedCharacterLimit: boolean }) {
   const theme = useMantineTheme();
-  const { colorScheme } = useMantineColorScheme();
   const navigate = useNavigate();
   const isPhone = useMediaQuery(phoneQuery());
   const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(false);
 
-  const { hovered: hoveredMain, ref: refMain } = useHover();
+  const { hovered: hoveredCard, ref: refCard } = useHover();
   const { ref: refEdit } = useHover<HTMLAnchorElement>();
-  const { ref: refOptions } = useHover<HTMLButtonElement>();
 
   const openConfirmDeleteModal = (character: Character) =>
     modals.openConfirmModal({
@@ -437,51 +516,51 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
     });
 
   return (
-    <BlurBox>
+    <Box
+      ref={refCard}
+      style={{
+        // Imprint styling — lighter semi-transparent panel inside the outer BlurBox,
+        // matching the character sheet's inner panel design
+        position: 'relative',
+        backgroundColor: hoveredCard ? IMPRINT_BG_COLOR_2 : IMPRINT_BG_COLOR,
+        border: `1px solid ${IMPRINT_BORDER_COLOR}`,
+        borderRadius: theme.radius.md,
+        // Hover lift applies to the entire card
+        cursor: isPlayable(props.character) ? 'pointer' : undefined,
+        transition: 'transform 200ms ease, box-shadow 200ms ease, background-color 200ms ease',
+        ...(hoveredCard
+          ? {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+            }
+          : {}),
+      }}
+      onClick={(e) => {
+        if (!isPlayable(props.character)) return;
+        e.stopPropagation();
+        e.preventDefault();
+        navigate(`/sheet/${props.character.id}`);
+      }}
+    >
       <LoadingOverlay visible={loading} />
+      {/* Hidden anchor for accessibility — lets search engines and screen readers
+          discover the sheet link without affecting visual layout */}
+      {/* Hidden anchor for SEO / screen readers — pointer events disabled so it
+          doesn't intercept hover or click on the card itself */}
       <Box
-        w='100%'
-        pt='xs'
-        pb={5}
-        px='xs'
-        ref={refMain}
-        style={{
-          cursor: isPlayable(props.character) ? 'pointer' : undefined,
-          borderTopLeftRadius: theme.radius.md,
-          borderTopRightRadius: theme.radius.md,
-          backgroundColor:
-            hoveredMain && isPlayable(props.character)
-              ? colorScheme === 'light'
-                ? 'rgba(255, 255, 255, 0.2)'
-                : 'rgba(0, 0, 0, 0.15)'
-              : undefined,
-          position: 'relative',
-        }}
-        onClick={(e) => {
-          if (!isPlayable(props.character)) return;
-          e.stopPropagation();
-          e.preventDefault();
-          navigate(`/sheet/${props.character.id}`);
-        }}
-      >
-        <Box
-          component='a'
-          href={isPlayable(props.character) ? `/sheet/${props.character.id}` : undefined}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            height: '100%',
-            width: '100%',
-          }}
-        ></Box>
-        <CharacterInfo character={props.character} />
+        component='a'
+        href={isPlayable(props.character) ? `/sheet/${props.character.id}` : undefined}
+        style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: '100%', pointerEvents: 'none' }}
+      ></Box>
+      <Box w='100%' pt='sm' pb='xs' px='sm' style={{ position: 'relative' }}>
+        <CharacterInfo character={props.character} nameCutOff={22} />
       </Box>
-      <Group gap='xs' pb='xs' px='xs'>
+      {/* Action row — Edit navigates to builder, menu holds secondary actions */}
+      <Group gap={5} pb='xs' px='sm'>
         <Button
           size='xs'
           variant='light'
-          color='gray'
+          color={isPlayable(props.character) ? 'gray' : 'yellow'}
           radius='xl'
           ref={refEdit}
           style={{ flex: 1 }}
@@ -497,7 +576,14 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
         </Button>
         <Menu shadow='md' width={200} withArrow withinPortal>
           <Menu.Target>
-            <ActionIcon size={30} variant='light' color='gray' radius='xl' aria-label='Options' ref={refOptions}>
+            <ActionIcon
+              size={30}
+              variant='subtle'
+              color='gray'
+              radius='xl'
+              aria-label='Options'
+              onClick={(e) => e.stopPropagation()}
+            >
               <IconDots style={{ width: '60%', height: '60%' }} stroke={1.5} />
             </ActionIcon>
           </Menu.Target>
@@ -514,7 +600,8 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
             <Menu.Item
               disabled={props.reachedCharacterLimit}
               leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
-              onClick={async () => {
+              onClick={async (e) => {
+                e.stopPropagation();
                 const newCharacter = await createCharacterCopy(props.character);
                 queryClient.refetchQueries({ queryKey: ['find-character'] });
               }}
@@ -523,7 +610,8 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
             </Menu.Item>
             <Menu.Item
               leftSection={<IconAlignBoxLeftMiddle style={{ width: rem(14), height: rem(14) }} />}
-              onClick={async () => {
+              onClick={async (e) => {
+                e.stopPropagation();
                 window.open(`/stat-block/character/${props.character.id}`, '_blank');
               }}
             >
@@ -531,7 +619,8 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
             </Menu.Item>
             <Menu.Item
               leftSection={<IconCodeDots style={{ width: rem(14), height: rem(14) }} />}
-              onClick={async () => {
+              onClick={async (e) => {
+                e.stopPropagation();
                 setLoading(true);
                 await exportToJSON(props.character);
                 setLoading(false);
@@ -541,7 +630,8 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
             </Menu.Item>
             <Menu.Item
               leftSection={<IconFileTypePdf style={{ width: rem(14), height: rem(14) }} />}
-              onClick={async () => {
+              onClick={async (e) => {
+                e.stopPropagation();
                 setLoading(true);
                 await exportToPDF(props.character);
                 setLoading(false);
@@ -556,14 +646,17 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
             <Menu.Item
               color='red'
               leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
-              onClick={() => openConfirmDeleteModal(props.character)}
+              onClick={(e) => {
+                e.stopPropagation();
+                openConfirmDeleteModal(props.character);
+              }}
             >
               Delete Character
             </Menu.Item>
           </Menu.Dropdown>
         </Menu>
       </Group>
-    </BlurBox>
+    </Box>
   );
 }
 

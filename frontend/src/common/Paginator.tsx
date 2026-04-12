@@ -48,7 +48,7 @@ export default function Paginator(props: {
   return (
     <>
       <ScrollArea viewportRef={viewport} h={props.h ?? 372} scrollbars='y' style={{ position: 'relative' }}>
-        <Stack gap={props.gap ?? 0}>
+        <Stack gap={props.gap ?? 0} pt={4}>
           {rows.map((row, rowIndex) => (
             <Group key={rowIndex} justify='stretch' wrap='nowrap'>
               {row.map((option, i) => (

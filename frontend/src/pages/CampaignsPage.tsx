@@ -2,20 +2,17 @@ import { sessionState } from '@atoms/supabaseAtoms';
 import { getCachedPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
-import { glassStyle } from '@utils/colors';
 import Paginator from '@common/Paginator';
-import { CAMPAIGN_SLOT_CAP } from '@constants/data';
+import { CAMPAIGN_SLOT_CAP, IMPRINT_BG_COLOR, IMPRINT_BG_COLOR_2, IMPRINT_BORDER_COLOR } from '@constants/data';
 import classes from '@css/UserInfoIcons.module.css';
 import {
   ActionIcon,
   Box,
   Image,
-  Card,
   Center,
   Divider,
   Group,
   Loader,
-  LoadingOverlay,
   Stack,
   Text,
   Title,
@@ -28,8 +25,8 @@ import {
 } from '@mantine/core';
 import { useHover, useMediaQuery } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';
-import { IconFlag, IconFlagPlus, IconPlus, IconSearch, IconUserPlus, IconX } from '@tabler/icons-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { IconFlag, IconPlus, IconSearch, IconX } from '@tabler/icons-react';
+import { useQuery } from '@tanstack/react-query';
 import { Campaign, Character } from '@schemas/content';
 import { getDefaultCampaignBackgroundImage } from '@utils/background-images';
 import { setPageTitle } from '@utils/document-change';
@@ -87,26 +84,65 @@ export function Component() {
     <Center>
       <Box maw={875} w='100%'>
         <BlurBox>
-          <Group px='sm' justify='space-between' wrap='nowrap'>
-            <Group gap={10} py={5}>
+          {/* Header row — title, inline search (desktop), create button */}
+          <Group px='md' py='sm' justify='space-between' wrap='nowrap'>
+            <Group gap={10} wrap='nowrap' style={{ flexShrink: 0 }}>
               {!isPhone && <IconFlag size='1.8rem' stroke={1.5} />}
-              <Title size={28} c='gray.0'>
+              <Title size={28}>
                 Campaigns
                 <Text pl={10} fz='xl' fw={500} c='gray.2' span>
                   {data && reachedCampaignLimit ? `(${data.length}/${CAMPAIGN_SLOT_CAP})` : ''}
                 </Text>
               </Title>
             </Group>
+
+            {/* Inline search — desktop only */}
+            {!isPhone && (
+              <TextInput
+                style={{ flex: 1, maxWidth: 280 }}
+                leftSection={<IconSearch size='0.9rem' />}
+                placeholder='Search campaigns'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                variant='unstyled'
+                rightSection={
+                  searchQuery.trim() ? (
+                    <ActionIcon
+                      variant='subtle'
+                      size='md'
+                      color='gray'
+                      radius='xl'
+                      aria-label='Clear search'
+                      onClick={() => setSearchQuery('')}
+                    >
+                      <IconX size='1.2rem' stroke={2} />
+                    </ActionIcon>
+                  ) : undefined
+                }
+                styles={(theme) => ({
+                  wrapper: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.18)',
+                    border: '1px solid rgba(255, 255, 255, 0.07)',
+                    borderRadius: theme.radius.md,
+                    padding: '2px 4px',
+                    transition: 'border-color 150ms ease, box-shadow 150ms ease',
+                    '&:focus-within': {
+                      borderColor: theme.colors[theme.primaryColor][8],
+                      boxShadow: `0 0 0 2px color-mix(in srgb, ${theme.colors[theme.primaryColor][9]} 30%, transparent)`,
+                    },
+                  },
+                  input: { '--input-placeholder-color': theme.colors.gray[5] },
+                })}
+              />
+            )}
+
             <Group gap={5} wrap='nowrap'>
               <Tooltip label='Create Campaign' openDelay={500}>
                 <ActionIcon
                   disabled={reachedCampaignLimit}
-                  style={{
-                    backgroundColor: reachedCampaignLimit ? 'rgba(0, 0, 0, 0.05)' : 'transparent',
-                  }}
                   loading={loadingCreateCampaign}
-                  variant='outline'
-                  color='gray.0'
+                  variant='light'
+                  color='gray'
                   size='lg'
                   radius='lg'
                   aria-label='Create Campaign'
@@ -120,105 +156,109 @@ export function Component() {
               </Tooltip>
             </Group>
           </Group>
-          <Divider color='gray.2' />
-          <Box py={5}>
-            <TextInput
-              style={{ flex: 1 }}
-              leftSection={<IconSearch size='0.9rem' />}
-              placeholder={`Search campaigns`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              variant='unstyled'
-              rightSection={
-                searchQuery.trim() ? (
-                  <ActionIcon
-                    variant='subtle'
-                    size='md'
-                    color='gray'
-                    radius='xl'
-                    aria-label='Clear search'
-                    onClick={() => {
-                      setSearchQuery('');
-                    }}
-                  >
-                    <IconX size='1.2rem' stroke={2} />
-                  </ActionIcon>
-                ) : undefined
-              }
-              styles={(theme) => ({
-                input: {
-                  '--input-placeholder-color': theme.colors.gray[5],
-                },
-              })}
-            />
-          </Box>
-        </BlurBox>
-        <Group pt='sm'>
-          {isLoading && (
-            <Loader
-              size='lg'
-              type='bars'
-              style={{
-                position: 'absolute',
-                top: '30%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-              }}
-            />
+
+          {/* Mobile-only: search on its own row */}
+          {isPhone && (
+            <Box px='md' pb='xs'>
+              <TextInput
+                style={{ flex: 1 }}
+                leftSection={<IconSearch size='0.9rem' />}
+                placeholder='Search campaigns'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                variant='unstyled'
+                rightSection={
+                  searchQuery.trim() ? (
+                    <ActionIcon
+                      variant='subtle'
+                      size='md'
+                      color='gray'
+                      radius='xl'
+                      aria-label='Clear search'
+                      onClick={() => setSearchQuery('')}
+                    >
+                      <IconX size='1.2rem' stroke={2} />
+                    </ActionIcon>
+                  ) : undefined
+                }
+                styles={(theme) => ({
+                  wrapper: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.18)',
+                    border: '1px solid rgba(255, 255, 255, 0.07)',
+                    borderRadius: theme.radius.md,
+                    padding: '2px 4px',
+                  },
+                  input: { '--input-placeholder-color': theme.colors.gray[5] },
+                })}
+              />
+            </Box>
           )}
 
-          {campaigns.length > 0 && (
-            <Center w='100%'>
-              <Stack w='100%'>
-                <Paginator
-                  h={500}
-                  records={campaigns.map((c, i) => (
-                    <CampaignCard key={i} campaign={c} />
-                  ))}
-                  numPerPage={isPhone ? 3 : 9}
-                  numInRow={isPhone ? 1 : 3}
-                  gap='xs'
-                  pagSize='md'
-                />
+          <Divider />
+
+          {/* Content area — all inside the same glass panel */}
+          <Box p='md'>
+            {isLoading && (
+              <Center w='100%' py='xl'>
+                <Loader size='sm' type='dots' />
+              </Center>
+            )}
+
+            {campaigns.length > 0 && (
+              <Paginator
+                h={500}
+                records={campaigns.map((c, i) => (
+                  <CampaignCard key={i} campaign={c} />
+                ))}
+                numPerPage={isPhone ? 3 : 9}
+                numInRow={isPhone ? 1 : 3}
+                gap='sm'
+                pagSize='md'
+              />
+            )}
+
+            {/* Empty state when search yields no results */}
+            {!isLoading && campaigns.length === 0 && searchQuery.trim() && (
+              <Stack py={50} gap={5}>
+                <Text ta='center' c='dimmed' fs='italic'>
+                  No campaigns match "{searchQuery.trim()}"
+                </Text>
               </Stack>
-            </Center>
-          )}
+            )}
 
-          {!isLoading && (data ?? []).length === 0 && (
-            <BlurBox w={'100%'} h={200}>
-              <Stack mt={50} gap={10}>
-                <Text ta='center' c='gray.2' fs='italic'>
+            {!isLoading && (data ?? []).length === 0 && (
+              <Stack py={50} gap={10}>
+                <Text ta='center' c='dimmed' fs='italic'>
                   No campaigns found, want to create one?
                 </Text>
                 <Center>
-                  <Box>
-                    <BlurButton
-                      loading={loadingCreateZeroCampaign}
-                      onClick={() => {
-                        setLoadingCreateZeroCampaign(true);
-                        handleCreateCampaign();
-                      }}
-                    >
-                      Create Campaign
-                    </BlurButton>
-                  </Box>
+                  <BlurButton
+                    loading={loadingCreateZeroCampaign}
+                    onClick={() => {
+                      setLoadingCreateZeroCampaign(true);
+                      handleCreateCampaign();
+                    }}
+                  >
+                    Create Campaign
+                  </BlurButton>
                 </Center>
               </Stack>
-            </BlurBox>
-          )}
-        </Group>
+            )}
+          </Box>
+        </BlurBox>
       </Box>
     </Center>
   );
 }
 
+/** Campaign card — uses imprint styling inside the outer BlurBox */
 function CampaignCard(props: { campaign: Campaign }) {
   const theme = useMantineTheme();
   const navigate = useNavigate();
 
-  const { hovered: hoveredMain, ref: refMain } = useHover();
+  const { hovered: hoveredCard, ref: refCard } = useHover();
 
-  const { data: characters, isLoading } = useQuery({
+  const { data: characters } = useQuery({
     queryKey: [`find-campaign-characters`, { campaign_id: props.campaign.id }],
     queryFn: async () => {
       return await makeRequest<Character[]>('find-character', {
@@ -228,95 +268,91 @@ function CampaignCard(props: { campaign: Campaign }) {
   });
 
   return (
-    <BlurBox>
+    <Box
+      ref={refCard}
+      style={{
+        position: 'relative',
+        backgroundColor: hoveredCard ? IMPRINT_BG_COLOR_2 : IMPRINT_BG_COLOR,
+        border: `1px solid ${IMPRINT_BORDER_COLOR}`,
+        borderRadius: theme.radius.md,
+        cursor: 'pointer',
+        transition: 'transform 200ms ease, box-shadow 200ms ease, background-color 200ms ease',
+        overflow: 'hidden',
+        ...(hoveredCard
+          ? {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+            }
+          : {}),
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        navigate(`/campaign/${props.campaign.id}`);
+      }}
+    >
+      {/* Hidden anchor for SEO / screen readers */}
       <Box
-        w='100%'
-        ref={refMain}
+        component='a'
+        href={`/campaign/${props.campaign.id}`}
+        style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: '100%', pointerEvents: 'none' }}
+      ></Box>
+
+      {/* Background image */}
+      <Image
+        src={props.campaign?.meta_data?.image_url}
+        alt={props.campaign?.name}
+        fallbackSrc={getDefaultCampaignBackgroundImage().url}
         style={{
-          cursor: 'pointer',
-          borderTopLeftRadius: theme.radius.md,
-          borderTopRightRadius: theme.radius.md,
-          backgroundColor: hoveredMain ? 'rgba(0, 0, 0, 0.15)' : undefined,
-          position: 'relative',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          height: '100%',
+          width: '100%',
+          objectFit: 'cover',
+          opacity: 0.35,
         }}
-        onClick={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          navigate(`/campaign/${props.campaign.id}`);
+      />
+
+      {/* Player count badge */}
+      <Badge
+        size='xs'
+        variant='light'
+        color='gray'
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          zIndex: 1,
         }}
       >
-        <Box
-          component='a'
-          href={`/campaign/${props.campaign.id}`}
-          style={{
-            zIndex: 1,
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            height: '100%',
-            width: '100%',
-          }}
-        ></Box>
-        <Card radius='md' style={{ backgroundColor: 'transparent' }}>
-          <Image
-            src={props.campaign?.meta_data?.image_url}
-            alt={props.campaign?.name}
-            fallbackSrc={getDefaultCampaignBackgroundImage().url}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              height: '100%',
-              width: '100%',
-            }}
-          />
-          <Badge
-            size='xs'
-            variant='light'
-            style={{
-              position: 'absolute',
-              top: 5,
-              right: 5,
-              color: theme.colors.gray[4],
-              ...glassStyle(),
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            }}
-          >
-            {(characters?.length || 0) + ' players'}
-          </Badge>
+        {(characters?.length || 0) + ' players'}
+      </Badge>
 
-          <Card.Section className={classes.section} mb={0} px='md'>
-            <Group justify='apart'>
-              <BlurBox px='xs' py={5}>
-                <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
-                  <HoverCard.Target>
-                    <Title c='gray.2' order={4} className={classes.name}>
-                      {truncate(props.campaign?.name || 'My Campaign', {
-                        length: 30,
-                      })}
-                    </Title>
-                  </HoverCard.Target>
-                  <HoverCard.Dropdown py={5} px={10}>
-                    <Text c='gray.2' size='sm'>
-                      {props.campaign?.name || 'My Campaign'}
-                    </Text>
-                  </HoverCard.Dropdown>
-                </HoverCard>
-              </BlurBox>
-            </Group>
-            {props.campaign?.description?.trim() ? (
-              <BlurBox px='xs' py={5} mt={10}>
-                <ScrollArea h={60} my={5}>
-                  <Text fz='xs'>{props.campaign.description.trim()}</Text>
-                </ScrollArea>
-              </BlurBox>
-            ) : (
-              <Box h={90}></Box>
-            )}
-          </Card.Section>
-        </Card>
+      {/* Card content */}
+      <Box p='sm' style={{ position: 'relative', zIndex: 1 }}>
+        <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
+          <HoverCard.Target>
+            <Title order={4} c='gray.2' className={classes.name}>
+              {truncate(props.campaign?.name || 'My Campaign', { length: 30 })}
+            </Title>
+          </HoverCard.Target>
+          <HoverCard.Dropdown py={5} px={10}>
+            <Text size='sm'>{props.campaign?.name || 'My Campaign'}</Text>
+          </HoverCard.Dropdown>
+        </HoverCard>
+
+        {props.campaign?.description?.trim() ? (
+          <ScrollArea h={60} mt={8}>
+            <Text fz='xs' c='dimmed'>
+              {props.campaign.description.trim()}
+            </Text>
+          </ScrollArea>
+        ) : (
+          <Box h={68}></Box>
+        )}
       </Box>
-    </BlurBox>
+    </Box>
   );
 }
 
