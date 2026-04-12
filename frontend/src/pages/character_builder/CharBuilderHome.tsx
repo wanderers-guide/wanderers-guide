@@ -1341,7 +1341,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
                           size={22}
                           loading={loadingGenerateName}
                           radius='xl'
-                          color='dark'
+                          color='gray'
                           variant='subtle'
                           onClick={async () => {
                             if (!character) return;

@@ -237,12 +237,17 @@ export default function useCharacter(
     } else {
       // Because of the drained condition, let's confirm health
       const maxHealth = getFinalHealthValue('CHARACTER');
-      confirmHealth(
-        `${debouncedCharacter.hp_current}`,
-        maxHealth,
-        debouncedCharacter,
-        convertToSetEntity(setCharacterDebounced)
-      );
+      const prevMaxHealth = debouncedCharacter.meta_data?.calculated_stats?.hp_max;
+      const currentHp = debouncedCharacter.hp_current ?? maxHealth;
+
+      // If max HP grew and the character was at full HP before (e.g. class added after
+      // ancestry in the builder), bump current HP up to the new max automatically.
+      const effectiveHp =
+        prevMaxHealth !== undefined && currentHp === prevMaxHealth && maxHealth > prevMaxHealth
+          ? maxHealth
+          : currentHp;
+
+      confirmHealth(`${effectiveHp}`, maxHealth, debouncedCharacter, convertToSetEntity(setCharacterDebounced));
     }
 
     // Save calculated stats

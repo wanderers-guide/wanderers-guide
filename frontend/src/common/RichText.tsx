@@ -41,8 +41,11 @@ export default function RichText(props: RichTextProps) {
 
   // Convert action symbol text of abbr to code markdown (then convert it back)
   // This is a hack to get around the fact that markdown doesn't really support abbr
-  const regex = /<abbr[^>]*class="action-symbol"[^>]*>(\d+)<\/abbr>/gm;
+  const regex = /<abbr[^>]*class="action-symbol"[^>]*>([A-Z0-9]+)<\/abbr>/gm;
   convertedChildren = convertedChildren?.replace(regex, '`action_symbol_$1`');
+
+  // Add spaces around em dashes between letters
+  convertedChildren = convertedChildren?.replace(/(\w)—(\w)/g, '$1 — $2');
 
   // Convert the string output from editor table format to be read by react-markdown
   convertedChildren = convertedChildren?.replace(/\|\n\n\|/g, '|\n|');
