@@ -10,7 +10,6 @@ import {
   Badge,
   Text,
   Image,
-  ScrollArea,
   Paper,
   Tabs,
 } from '@mantine/core';
@@ -29,6 +28,7 @@ import BlurBox from '@common/BlurBox';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { JSONContent } from '@tiptap/react';
 import { useSwipeGesture } from '@utils/use-swipe-gesture';
+import { IMPRINT_BG_COLOR } from '@constants/data';
 
 export default function CampaignDrawer(props: { opened: boolean; onClose: () => void; campaignId: number }) {
   const theme = useMantineTheme();
@@ -95,9 +95,9 @@ export default function CampaignDrawer(props: { opened: boolean; onClose: () => 
 
   const getCharacterDetailedCard = (character: Character) => {
     return (
-      <Paper withBorder p={10}>
+      <Box p='xs' bg={'rgba(0,0,0,0.15)'} bdrs='md'>
         {<CharacterDetailedInfo character={character} />}
-      </Paper>
+      </Box>
     );
   };
 
@@ -134,121 +134,151 @@ export default function CampaignDrawer(props: { opened: boolean; onClose: () => 
           },
           body: {
             height: 'calc(100% - 64px)',
+            padding: 0,
           },
         }}
         transitionProps={{ duration: 200 }}
       >
+        {/* Swipe-to-close wrapper; background image fills the entire drawer body */}
         <Box
           onTouchStart={swipeHandlers.onTouchStart}
           onTouchEnd={swipeHandlers.onTouchEnd}
-          style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+          style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}
         >
-          <Stack
-            m={0}
-            p={0}
-            gap={0}
-            justify='space-between'
-            style={{ position: 'relative', height: 160, flexShrink: 0 }}
-          >
-            <Image
-              src={campaign?.meta_data?.image_url}
-              alt={campaign?.name}
-              fallbackSrc={getDefaultCampaignBackgroundImage().url}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                height: '100%',
-                width: '100%',
-                borderRadius: 10,
-              }}
-            />
-            <Box></Box>
-            {campaign?.description?.trim() && (
-              <BlurBox px='xs' py={5} m={10}>
-                <ScrollArea h={55} my={5}>
-                  <Text fz='xs'>{campaign.description.trim()}</Text>
-                </ScrollArea>
-              </BlurBox>
-            )}
-          </Stack>
+          {/* Full-height campaign background image */}
+          <Image
+            src={campaign?.meta_data?.image_url}
+            alt={campaign?.name}
+            fallbackSrc={getDefaultCampaignBackgroundImage().url}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              height: '100%',
+              width: '100%',
+              objectFit: 'cover',
+            }}
+          />
 
+          {/* Tabs float above the background image via z-index */}
           <Tabs
             defaultValue='party'
             variant='outline'
-            style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', marginTop: 10 }}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              flex: 1,
+              overflow: 'hidden',
+              position: 'relative',
+              zIndex: 1,
+            }}
           >
-            <Tabs.List justify='center' mb='xs' style={{ flexShrink: 0 }}>
-              <Tabs.Tab value='party'>Party</Tabs.Tab>
-              <Tabs.Tab value='notes'>Notes</Tabs.Tab>
-            </Tabs.List>
+            <BlurBox m='xs' p='xs' style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              {/* Tab list sits at the top, inside a BlurBox for readability over the image */}
+              <Tabs.List justify='center'>
+                <Tabs.Tab value='description'>Description</Tabs.Tab>
+                <Tabs.Tab value='party'>Party</Tabs.Tab>
+                <Tabs.Tab value='notes'>Notes</Tabs.Tab>
+              </Tabs.List>
 
-            <Tabs.Panel value='party' style={{ flex: 1, overflow: 'auto' }}>
-              {campaign?.meta_data?.settings?.show_party_member_status &&
-                campaign.meta_data.settings.show_party_member_status !== 'OFF' && (
-                  <Box>
-                    {characters?.map((character, index) => (
-                      <Box key={index}>
-                        {campaign?.meta_data?.settings?.show_party_member_status === 'STATUS'
-                          ? getCharacterStatusCard(character)
-                          : getCharacterDetailedCard(character)}
-                      </Box>
-                    ))}
-                  </Box>
-                )}
-            </Tabs.Panel>
-
-            <Tabs.Panel value='notes' style={{ flex: 1, overflow: 'auto' }}>
-              {campaignSharedPages.length === 0 && characterSharedSources.length === 0 ? (
-                <Text fz='sm' c='dimmed' ta='center' mt='xl'>
-                  No shared notes yet.
-                </Text>
-              ) : (
-                <Accordion chevronPosition='right' variant='contained'>
-                  {campaignSharedPages.map((page, i) => (
-                    <Accordion.Item key={`campaign-${i}`} value={`campaign-${i}`}>
-                      <Accordion.Control
-                        icon={
-                          <ActionIcon variant='transparent' color={page.color} size='xs'>
-                            <Icon name={page.icon} size='1rem' />
-                          </ActionIcon>
-                        }
-                      >
-                        <Group gap={6} wrap='nowrap'>
-                          <Text span>{page.name}</Text>
-                        </Group>
-                      </Accordion.Control>
-                      <Accordion.Panel>
-                        <RichTextInput value={page.contents} readOnly />
-                      </Accordion.Panel>
-                    </Accordion.Item>
-                  ))}
-                  {characterSharedSources.flatMap(({ character, pages }) =>
-                    pages.map((page, i) => (
-                      <Accordion.Item key={`char-${character.id}-${i}`} value={`char-${character.id}-${i}`}>
-                        <Accordion.Control
-                          icon={
-                            <ActionIcon variant='transparent' color={page.color} size='xs'>
-                              <Icon name={page.icon} size='1rem' />
-                            </ActionIcon>
-                          }
-                        >
-                          <Group gap={6} wrap='nowrap'>
-                            <Text span>{page.name}</Text>
-                            <Text span fz='xs' c='dimmed' fs='italic'>
-                              ({character.name})
-                            </Text>
-                          </Group>
-                        </Accordion.Control>
-                        <Accordion.Panel>
-                          <RichTextInput value={page.contents} readOnly />
-                        </Accordion.Panel>
-                      </Accordion.Item>
-                    ))
+              {/* Description tab — campaign description in a blur panel */}
+              <Tabs.Panel value='description' style={{ flex: 1, overflow: 'auto' }}>
+                <Box p='xs' bg={IMPRINT_BG_COLOR} bdrs='md'>
+                  {campaign?.description?.trim() ? (
+                    <Text fz='sm'>{campaign.description.trim()}</Text>
+                  ) : (
+                    <Text fz='sm' c='dimmed' ta='center' py='sm'>
+                      No description yet.
+                    </Text>
                   )}
-                </Accordion>
-              )}
-            </Tabs.Panel>
+                </Box>
+              </Tabs.Panel>
+
+              {/* Party tab — character status/detail cards in a blur panel */}
+              <Tabs.Panel value='party' style={{ flex: 1, overflow: 'auto' }}>
+                <Box p='xs' bg={IMPRINT_BG_COLOR} bdrs='md'>
+                  {campaign?.meta_data?.settings?.show_party_member_status &&
+                  campaign.meta_data.settings.show_party_member_status !== 'OFF' ? (
+                    <Stack gap={5}>
+                      {characters?.map((character, index) => (
+                        <Box key={index}>
+                          {campaign?.meta_data?.settings?.show_party_member_status === 'STATUS'
+                            ? getCharacterStatusCard(character)
+                            : getCharacterDetailedCard(character)}
+                        </Box>
+                      ))}
+                    </Stack>
+                  ) : (
+                    <Text fz='sm' c='dimmed' ta='center' py='sm'>
+                      Party info is not shared.
+                    </Text>
+                  )}
+                </Box>
+              </Tabs.Panel>
+
+              {/* Notes tab — shared campaign and character notes in a blur panel */}
+              <Tabs.Panel value='notes' style={{ flex: 1, overflow: 'auto' }}>
+                <Box bg={IMPRINT_BG_COLOR} bdrs='md'>
+                  {campaignSharedPages.length === 0 && characterSharedSources.length === 0 ? (
+                    <Text fz='sm' c='dimmed' ta='center' py='sm'>
+                      No shared notes yet.
+                    </Text>
+                  ) : (
+                    <Accordion
+                      chevronPosition='right'
+                      variant='filled'
+                      styles={{
+                        content: {
+                          padding: 0,
+                        },
+                      }}
+                    >
+                      {campaignSharedPages.map((page, i) => (
+                        <Accordion.Item key={`campaign-${i}`} value={`campaign-${i}`}>
+                          <Accordion.Control
+                            icon={
+                              <ActionIcon variant='transparent' color={page.color} size='xs'>
+                                <Icon name={page.icon} size='1rem' />
+                              </ActionIcon>
+                            }
+                          >
+                            <Group gap={6} wrap='nowrap'>
+                              <Text span>{page.name}</Text>
+                            </Group>
+                          </Accordion.Control>
+                          <Accordion.Panel>
+                            <RichTextInput value={page.contents} readOnly />
+                          </Accordion.Panel>
+                        </Accordion.Item>
+                      ))}
+                      {characterSharedSources.flatMap(({ character, pages }) =>
+                        pages.map((page, i) => (
+                          <Accordion.Item key={`char-${character.id}-${i}`} value={`char-${character.id}-${i}`}>
+                            <Accordion.Control
+                              icon={
+                                <ActionIcon variant='transparent' color={page.color} size='xs'>
+                                  <Icon name={page.icon} size='1rem' />
+                                </ActionIcon>
+                              }
+                            >
+                              <Group gap={6} wrap='nowrap'>
+                                <Text span>{page.name}</Text>
+                                <Text span fz='xs' c='dimmed' fs='italic'>
+                                  ({character.name})
+                                </Text>
+                              </Group>
+                            </Accordion.Control>
+                            <Accordion.Panel>
+                              <RichTextInput value={page.contents} readOnly />
+                            </Accordion.Panel>
+                          </Accordion.Item>
+                        ))
+                      )}
+                    </Accordion>
+                  )}
+                </Box>
+              </Tabs.Panel>
+            </BlurBox>
           </Tabs>
         </Box>
       </Drawer>
