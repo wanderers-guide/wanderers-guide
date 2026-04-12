@@ -22,7 +22,7 @@ import { IconRefresh, IconAlertCircle } from '@tabler/icons-react';
 import { hashData } from './numbers';
 import { getDeepDiff } from './objects';
 import { addExtraItems, checkBulkLimit } from '@items/inv-handlers';
-import { getFinalHealthValue } from '@variables/variable-helpers';
+import { getFinalHealthValue, getHealthValueParts } from '@variables/variable-helpers';
 import { supabase } from '../main';
 
 interface CharStateOptionsGeneric {
@@ -225,8 +225,11 @@ export default function useCharacter(
       // To reset hp, we need to confirm health
 
       const handleRestHP = () => {
+        const { classHp } = getHealthValueParts('CHARACTER');
         const maxHealth = getFinalHealthValue('CHARACTER');
-        confirmHealth(`${maxHealth}`, maxHealth, debouncedCharacter, convertToSetEntity(setCharacterDebounced));
+        // Don't clear reset_hp until the character has class HP - otherwise ancestry-only HP
+        // gets locked in before the class is selected, resulting in a too-low starting HP.
+        confirmHealth(`${maxHealth}`, maxHealth, debouncedCharacter, convertToSetEntity(setCharacterDebounced), classHp === 0);
       };
 
       // We run it twice for it to break out of the debouncing lock (not a perfect solution, but works)
@@ -237,17 +240,12 @@ export default function useCharacter(
     } else {
       // Because of the drained condition, let's confirm health
       const maxHealth = getFinalHealthValue('CHARACTER');
-      const prevMaxHealth = debouncedCharacter.meta_data?.calculated_stats?.hp_max;
-      const currentHp = debouncedCharacter.hp_current ?? maxHealth;
-
-      // If max HP grew and the character was at full HP before (e.g. class added after
-      // ancestry in the builder), bump current HP up to the new max automatically.
-      const effectiveHp =
-        prevMaxHealth !== undefined && currentHp === prevMaxHealth && maxHealth > prevMaxHealth
-          ? maxHealth
-          : currentHp;
-
-      confirmHealth(`${effectiveHp}`, maxHealth, debouncedCharacter, convertToSetEntity(setCharacterDebounced));
+      confirmHealth(
+        `${debouncedCharacter.hp_current}`,
+        maxHealth,
+        debouncedCharacter,
+        convertToSetEntity(setCharacterDebounced)
+      );
     }
 
     // Save calculated stats

@@ -13,7 +13,8 @@ export function confirmHealth(
   hp: string,
   maxHealth: number,
   entity: LivingEntity,
-  setEntity?: SetterOrUpdater<LivingEntity | null>
+  setEntity?: SetterOrUpdater<LivingEntity | null>,
+  keepResetHp?: boolean
 ) {
   let result = -1;
   try {
@@ -60,7 +61,7 @@ export function confirmHealth(
     },
     meta_data: {
       ...c.meta_data,
-      reset_hp: false,
+      reset_hp: keepResetHp ? c.meta_data?.reset_hp : false,
     },
   });
   setEntity?.((c) => {
