@@ -1575,7 +1575,7 @@ export function SelectionPredefinedCustomOption(props: {
         my='xs'
         label={
           <Group gap={3} wrap='nowrap'>
-            <Button variant={openedOperations ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
+            <Button variant={openedOperations ? 'filled' : 'subtle'} size='compact-sm' color='gray'>
               Operations
             </Button>
             {props.option.operations && props.option.operations.length > 0 && (
