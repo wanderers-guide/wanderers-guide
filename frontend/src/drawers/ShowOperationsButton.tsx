@@ -17,8 +17,8 @@ export default function ShowOperationsButton(props: { name: string; operations?:
         size='compact-sm'
         fullWidth
         rightSection={
-          <Badge mr='sm' variant='outline' color='guide.5' size='xs'>
-            <Text fz='sm' c='guide.5' span>
+          <Badge mr='sm' variant='outline' color='guide.5' size='sm'>
+            <Text c='guide.5' span>
               {props.operations.length}
             </Text>
           </Badge>

@@ -1191,7 +1191,7 @@ function LevelSection(props: {
             )}
           </Text>
           {choiceCounts.max > 0 && (
-            <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+            <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
               <Text
                 fz='sm'
                 c={choiceCounts.current === choiceCounts.max ? 'gray.5' : theme.colors[theme.primaryColor][5]}
@@ -1200,7 +1200,7 @@ function LevelSection(props: {
               >
                 {choiceCounts.current}
               </Text>
-              <Text fz='sm' c='gray.2' span>
+              <Text c='gray.2' span>
                 /{choiceCounts.max}
               </Text>
             </Badge>

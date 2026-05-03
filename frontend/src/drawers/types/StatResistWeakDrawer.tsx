@@ -70,8 +70,8 @@ A single effect can activate more than one resistance at a time, but subtracts e
                   <Text c='gray.2' fw={700} fz='sm'>
                     Active
                   </Text>
-                  <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-                    <Text fz='sm' c='gray.2' span>
+                  <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
+                    <Text c='gray.2' span>
                       {resists.length}
                     </Text>
                   </Badge>
@@ -138,8 +138,8 @@ Some weaknesses can apply when a creature wouldn’t normally take damage, as de
                   <Text c='gray.2' fw={700} fz='sm'>
                     Active
                   </Text>
-                  <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-                    <Text fz='sm' c='gray.2' span>
+                  <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
+                    <Text c='gray.2' span>
                       {weaks.length}
                     </Text>
                   </Badge>
@@ -205,8 +205,8 @@ If you have immunity to effects with a certain trait (such as ${convertToHardcod
                   <Text c='gray.2' fw={700} fz='sm'>
                     Active
                   </Text>
-                  <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-                    <Text fz='sm' c='gray.2' span>
+                  <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
+                    <Text c='gray.2' span>
                       {immuneVar?.value.length}
                     </Text>
                   </Badge>

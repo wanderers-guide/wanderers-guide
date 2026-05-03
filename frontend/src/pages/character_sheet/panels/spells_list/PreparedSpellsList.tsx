@@ -188,8 +188,8 @@ export default function PreparedSpellsList(props: {
                       <Text c='gray.2' fw={700} fz='sm'>
                         {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
                       </Text>
-                      <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-                        <Text fz='sm' c='gray.2' span>
+                      <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
+                        <Text c='gray.2' span>
                           {props.hasFilters ? slots[rank].filter((s) => s.spell).length : slots[rank].length}
                         </Text>
                       </Badge>

@@ -143,8 +143,8 @@ export function ClassDrawerContent(props: {
           <Text c='gray.2' fw={700} fz='md'>
             Level {level}
           </Text>
-          <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-            <Text fz='sm' c='gray.2' span>
+          <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
+            <Text c='gray.2' span>
               {feats[level].filter((feat) => isAbilityBlockVisible('CHARACTER', feat)).length}
             </Text>
           </Badge>

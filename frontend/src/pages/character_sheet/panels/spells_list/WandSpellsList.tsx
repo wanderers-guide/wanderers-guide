@@ -102,7 +102,7 @@ export default function WandSpellsList(props: {
               Wands
             </Text>
             <Badge variant='outline' color='gray.5' size='xs'>
-              <Text fz='sm' c='gray.2' span>
+              <Text c='gray.2' span>
                 {props.wands.length}
               </Text>
             </Badge>

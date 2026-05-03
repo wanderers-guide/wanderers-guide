@@ -231,8 +231,8 @@ export default function SpontaneousSpellsList(props: {
                           />
                         )}
                       </Group>
-                      <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-                        <Text fz='sm' c='gray.2' span>
+                      <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
+                        <Text c='gray.2' span>
                           {spells[rank]?.length ?? 0}
                         </Text>
                       </Badge>
