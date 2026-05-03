@@ -131,7 +131,8 @@ const STARFINDER_SPECIALIZATIONS = [
   },
 ];
 
-export function getWeaponSpecialization(group: string) {
+export function getWeaponSpecialization(group: string | null | undefined) {
+  if (!group) return undefined;
   return getWeaponSpecializations().find((s) => s.name.trim().toLowerCase() === group.trim().toLowerCase());
 }
 
