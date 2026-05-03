@@ -1,0 +1,198 @@
+# Wanderer's Guide — minimal self-host stack (skeleton).
+#
+# Brings up the frontend plus the Supabase services it needs to run end to end.
+# Hardening (TLS, real secrets management, backups, OAuth providers, SMTP,
+# observability) is intentionally out of scope. See docs/docker.md.
+
+name: wanderers-guide
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_SUPABASE_URL: ${PUBLIC_SUPABASE_URL}
+        VITE_SUPABASE_KEY: ${ANON_KEY}
+        VITE_ENV: ${VITE_ENV:-production}
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      kong:
+        condition: service_started
+    restart: unless-stopped
+
+  kong:
+    image: kong:2.8.1
+    ports:
+      - "${KONG_HTTP_PORT:-8000}:8000/tcp"
+      - "${KONG_HTTPS_PORT:-8443}:8443/tcp"
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
+      KONG_DNS_ORDER: LAST,A,CNAME
+      KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
+      KONG_NGINX_PROXY_PROXY_BUFFER_SIZE: 160k
+      KONG_NGINX_PROXY_PROXY_BUFFERS: 64 160k
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
+    volumes:
+      - ./docker/kong.yml:/home/kong/kong.template.yml:ro
+    # Kong 2.8 doesn't substitute env vars in declarative config, so we render
+    # the template via shell expansion before kong starts. (Same pattern the
+    # Supabase reference self-host stack uses.)
+    entrypoint:
+      - sh
+      - -c
+      - 'sed -e "s|\$$SUPABASE_ANON_KEY|$$SUPABASE_ANON_KEY|g" -e "s|\$$SUPABASE_SERVICE_KEY|$$SUPABASE_SERVICE_KEY|g" /home/kong/kong.template.yml > /home/kong/kong.yml && exec /docker-entrypoint.sh kong docker-start'
+    restart: unless-stopped
+
+  auth:
+    image: supabase/gotrue:v2.158.1
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${PUBLIC_SUPABASE_URL}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      GOTRUE_SITE_URL: ${SITE_URL:-http://localhost:3000}
+      GOTRUE_URI_ALLOW_LIST: ${ADDITIONAL_REDIRECT_URLS:-}
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: ${JWT_EXPIRY:-3600}
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: ${EMAIL_AUTOCONFIRM:-true}
+      # Configure OAuth providers and SMTP via additional GOTRUE_* env vars
+      # (see docs/docker.md).
+    restart: unless-stopped
+
+  rest:
+    image: postgrest/postgrest:v12.2.0
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@db:5432/postgres
+      PGRST_DB_SCHEMAS: public,storage,graphql_public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET}
+      PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXPIRY:-3600}
+    restart: unless-stopped
+
+  storage:
+    image: supabase/storage-api:v1.10.1
+    depends_on:
+      db:
+        condition: service_healthy
+      rest:
+        condition: service_started
+    environment:
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      POSTGREST_URL: http://rest:3000
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      FILE_SIZE_LIMIT: 52428800
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: stub
+      GLOBAL_S3_BUCKET: stub
+    volumes:
+      - storage-data:/var/lib/storage
+    restart: unless-stopped
+
+  meta:
+    image: supabase/postgres-meta:v0.83.2
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: db
+      PG_META_DB_PORT: 5432
+      PG_META_DB_NAME: postgres
+      PG_META_DB_USER: supabase_admin
+      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD}
+    restart: unless-stopped
+
+  functions:
+    image: supabase/edge-runtime:v1.58.2
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./supabase/functions:/home/deno/functions:ro
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      SUPABASE_DB_URL: postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
+      VERIFY_JWT: "false"
+    command:
+      - start
+      - --main-service
+      - /home/deno/functions/main
+    restart: unless-stopped
+
+  studio:
+    image: supabase/studio:20240729-ce42139
+    profiles: ["studio"]
+    ports:
+      - "${STUDIO_PORT:-54323}:3000"
+    depends_on:
+      meta:
+        condition: service_started
+    environment:
+      STUDIO_PG_META_URL: http://meta:8080
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DEFAULT_ORGANIZATION_NAME: ${DEFAULT_ORG_NAME:-Default}
+      DEFAULT_PROJECT_NAME: ${DEFAULT_PROJECT_NAME:-Wanderer's Guide}
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_PUBLIC_URL: ${PUBLIC_SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      AUTH_JWT_SECRET: ${JWT_SECRET}
+    restart: unless-stopped
+
+  db:
+    image: supabase/postgres:15.6.1.146
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "${POSTGRES_PORT:-54322}:5432"
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      PGPORT: 5432
+      POSTGRES_PORT: 5432
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: postgres
+      POSTGRES_DB: postgres
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXP: ${JWT_EXPIRY:-3600}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # Init scripts run only when the data dir is empty (first boot or after `down -v`).
+      # Postgres scans /docker-entrypoint-initdb.d/* non-recursively, so mount each file
+      # directly (not the parent directory).
+      # zzz- prefix so our password-fix runs AFTER supabase/postgres's
+      # baked-in init scripts (which create the standard Supabase roles).
+      - ./docker/db-init/zzz-passwords.sh:/docker-entrypoint-initdb.d/zzz-passwords.sh:ro
+      - ./supabase/seed.sql:/docker-entrypoint-initdb.d/zzz-seed.sql:ro
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  storage-data:

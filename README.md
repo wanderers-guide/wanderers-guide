@@ -45,3 +45,55 @@ id,created_at,user_id,display_name,image_url,background_image_url,site_theme,is_
 1,2024-04-03 21:30:01.720023+00,UUID HERE,User Name,,,,false,false,false,,,,,true,
 ```
 4. Login with the email and password
+
+## Self-hosting with Docker
+
+The repo includes a `docker-compose.yml` skeleton that bundles the frontend with a self-hosted Supabase stack (Postgres, auth, REST, storage, edge functions, kong gateway). Only Docker is required — no Node, Postgres, or Supabase CLI on the host.
+
+```bash
+# 1. Configure
+cp .env.docker.example .env
+# Edit .env — set JWT_SECRET, ANON_KEY, SERVICE_ROLE_KEY, POSTGRES_PASSWORD.
+# For local testing, the demo values from
+# https://github.com/supabase/supabase/blob/master/docker/.env.example
+# work as a matched set (do not use them on a publicly reachable host).
+
+# 2. Bring it up
+docker compose up -d
+
+# 3. Load the project's schema and content data into the dockerized DB.
+#    (Wipes and reloads the public schema — safe to re-run.)
+./data/create-db-docker.sh
+
+# 4. (Optional) Supabase Studio for inspecting the DB
+docker compose --profile studio up -d
+
+# 5. Tail logs / check status
+docker compose ps
+docker compose logs -f auth rest storage functions kong
+
+# 6. Open the app
+# http://localhost:3000
+```
+
+To register a user: just sign up at http://localhost:3000 with email + password. The DB has a trigger that auto-creates the matching `public_user` profile, so the manual Studio insert from the section above is **not needed for the docker stack**. (The `data/auth-trigger.sql` script applied by `create-db-docker.sh` is what wires this up.)
+
+To rebuild after changing `PUBLIC_SUPABASE_URL` or `ANON_KEY` (Vite envs are baked into the bundle at build time):
+
+```bash
+docker compose build frontend && docker compose up -d frontend
+```
+
+To tear it all down (keeping volumes):
+
+```bash
+docker compose down
+```
+
+To wipe everything including the database and storage volumes:
+
+```bash
+docker compose down -v
+```
+
+See [docs/docker.md](docs/docker.md) for the full wiring notes, what's included, and what you'll have to set up yourself (OAuth providers, SMTP, TLS termination, schema/content seed).

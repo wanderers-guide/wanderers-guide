@@ -466,15 +466,17 @@ export function Component() {
                   No characters found, want to create one?
                 </Text>
                 <Center>
-                  <BlurButton
-                    loading={loadingCreateZeroCharacter}
-                    onClick={() => {
-                      setLoadingCreateZeroCharacter(true);
-                      handleCreateCharacter();
-                    }}
-                  >
-                    Create Character
-                  </BlurButton>
+                  <Group>
+                    <BlurButton
+                      loading={loadingCreateZeroCharacter}
+                      onClick={() => {
+                        setLoadingCreateZeroCharacter(true);
+                        handleCreateCharacter();
+                      }}
+                    >
+                      Create Character
+                    </BlurButton>
+                  </Group>
                 </Center>
               </Stack>
             )}
