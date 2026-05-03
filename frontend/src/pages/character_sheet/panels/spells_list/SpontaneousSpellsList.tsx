@@ -232,7 +232,7 @@ export default function SpontaneousSpellsList(props: {
                         )}
                       </Group>
                       <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                        <Text c='gray.2' span>
+                        <Text c='gray.2' span inherit>
                           {spells[rank]?.length ?? 0}
                         </Text>
                       </Badge>

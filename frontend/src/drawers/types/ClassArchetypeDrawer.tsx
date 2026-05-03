@@ -132,7 +132,7 @@ export function ClassArchetypeDrawerContent(props: {
             Level {level}
           </Text>
           <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-            <Text c='gray.2' span>
+            <Text c='gray.2' span inherit>
               {adjustments[level].length}
             </Text>
           </Badge>

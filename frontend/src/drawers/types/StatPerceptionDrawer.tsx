@@ -171,7 +171,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                           Active
                         </Text>
                         <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                          <Text c='gray.2' span>
+                          <Text c='gray.2' span inherit>
                             {senses.precise.length}
                           </Text>
                         </Badge>
@@ -259,7 +259,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                           Active
                         </Text>
                         <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                          <Text c='gray.2' span>
+                          <Text c='gray.2' span inherit>
                             {senses.imprecise.length}
                           </Text>
                         </Badge>
@@ -344,7 +344,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                           Active
                         </Text>
                         <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                          <Text c='gray.2' span>
+                          <Text c='gray.2' span inherit>
                             {senses.vague.length}
                           </Text>
                         </Badge>

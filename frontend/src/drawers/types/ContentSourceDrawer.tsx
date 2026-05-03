@@ -264,7 +264,7 @@ export function ContentSourceDrawerContent(props: {
                     Actions
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span>
+                    <Text c='gray.2' span inherit>
                       {actions.length}
                     </Text>
                   </Badge>
@@ -297,7 +297,7 @@ export function ContentSourceDrawerContent(props: {
                     Ancestries
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span>
+                    <Text c='gray.2' span inherit>
                       {content.ancestries.length}
                     </Text>
                   </Badge>
@@ -330,7 +330,7 @@ export function ContentSourceDrawerContent(props: {
                     Backgrounds
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span>
+                    <Text c='gray.2' span inherit>
                       {content.backgrounds.length}
                     </Text>
                   </Badge>
@@ -363,7 +363,7 @@ export function ContentSourceDrawerContent(props: {
                     Classes
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span>
+                    <Text c='gray.2' span inherit>
                       {content.classes.length}
                     </Text>
                   </Badge>
@@ -396,7 +396,7 @@ export function ContentSourceDrawerContent(props: {
                     Class Archetypes
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span>
+                    <Text c='gray.2' span inherit>
                       {content.classArchetypes.length}
                     </Text>
                   </Badge>
@@ -429,7 +429,7 @@ export function ContentSourceDrawerContent(props: {
                     Archetypes
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span>
+                    <Text c='gray.2' span inherit>
                       {content.archetypes.length}
                     </Text>
                   </Badge>
@@ -462,7 +462,7 @@ export function ContentSourceDrawerContent(props: {
                     Versatile Heritages
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span>
+                    <Text c='gray.2' span inherit>
                       {content.versatileHeritages.length}
                     </Text>
                   </Badge>
@@ -495,7 +495,7 @@ export function ContentSourceDrawerContent(props: {
                     Creatures
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span>
+                    <Text c='gray.2' span inherit>
                       {content.creatures.length}
                     </Text>
                   </Badge>
@@ -529,7 +529,7 @@ export function ContentSourceDrawerContent(props: {
                     Feats
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span>
+                    <Text c='gray.2' span inherit>
                       {feats.length}
                     </Text>
                   </Badge>
@@ -562,7 +562,7 @@ export function ContentSourceDrawerContent(props: {
                     Items
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span>
+                    <Text c='gray.2' span inherit>
                       {content.items.length}
                     </Text>
                   </Badge>
@@ -595,7 +595,7 @@ export function ContentSourceDrawerContent(props: {
                     Languages
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span>
+                    <Text c='gray.2' span inherit>
                       {content.languages.length}
                     </Text>
                   </Badge>
@@ -628,7 +628,7 @@ export function ContentSourceDrawerContent(props: {
                     Modes
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span>
+                    <Text c='gray.2' span inherit>
                       {modes.length}
                     </Text>
                   </Badge>
@@ -661,7 +661,7 @@ export function ContentSourceDrawerContent(props: {
                     Physical Features
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span>
+                    <Text c='gray.2' span inherit>
                       {physicalFeatures.length}
                     </Text>
                   </Badge>
@@ -694,7 +694,7 @@ export function ContentSourceDrawerContent(props: {
                     Senses
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span>
+                    <Text c='gray.2' span inherit>
                       {senses.length}
                     </Text>
                   </Badge>
@@ -727,7 +727,7 @@ export function ContentSourceDrawerContent(props: {
                     Spells
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span>
+                    <Text c='gray.2' span inherit>
                       {content.spells.length}
                     </Text>
                   </Badge>
@@ -760,7 +760,7 @@ export function ContentSourceDrawerContent(props: {
                     Traits
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span>
+                    <Text c='gray.2' span inherit>
                       {content.traits.length}
                     </Text>
                   </Badge>
@@ -793,7 +793,7 @@ export function ContentSourceDrawerContent(props: {
                     Uncategorized
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span>
+                    <Text c='gray.2' span inherit>
                       {uncategorizedAbilities.length}
                     </Text>
                   </Badge>

@@ -62,7 +62,7 @@ export default function RitualSpellsList(props: {
               Rituals
             </Text>
             <Badge variant='outline' color='gray.5' size='xs'>
-              <Text c='gray.2' span>
+              <Text c='gray.2' span inherit>
                 {props.spellIds.length}
               </Text>
             </Badge>

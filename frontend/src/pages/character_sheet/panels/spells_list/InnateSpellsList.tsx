@@ -118,7 +118,7 @@ export default function InnateSpellsList(props: {
                         {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
                       </Text>
                       <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                        <Text c='gray.2' span>
+                        <Text c='gray.2' span inherit>
                           {props.hasFilters
                             ? innateSpells[rank].filter((s) => s.spell).length
                             : innateSpells[rank].length}

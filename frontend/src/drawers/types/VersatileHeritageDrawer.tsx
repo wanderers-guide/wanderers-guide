@@ -113,7 +113,7 @@ export function VersatileHeritageDrawerContent(props: {
             Level {level}
           </Text>
           <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-            <Text c='gray.2' span>
+            <Text c='gray.2' span inherit>
               {feats[level].filter((feat) => isAbilityBlockVisible('CHARACTER', feat)).length}
             </Text>
           </Badge>
