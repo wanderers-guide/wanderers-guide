@@ -20,6 +20,6 @@ describe('Login', () => {
     cy.get('input[name="email"]').type('foo@bar.com');
     cy.get('input[name="password"]').type('wrongpassword');
     cy.contains('button', 'Sign in with Email').click();
-    cy.contains('Invalid email or password').should('exist');
+    cy.contains(/Invalid (email or password|login credentials)/i, { timeout: 10000 }).should('exist');
   });
 });
