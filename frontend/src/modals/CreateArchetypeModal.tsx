@@ -37,7 +37,7 @@ export function CreateArchetypeModal(props: {
     queryKey: [`get-archetype-${props.editId}`, { editId: props.editId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { editId }] = queryKey;
 
       const archetype = await fetchContentById<Archetype>('archetype', editId);

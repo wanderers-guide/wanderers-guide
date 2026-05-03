@@ -423,7 +423,7 @@ function SkillActionsSection(props: { variableName: string }) {
     queryKey: [`find-skill-actions-${props.variableName}`, { variableName: props.variableName }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { variableName }] = queryKey;
       const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('PAGE'));
       return abilityBlocks.filter((block) => {

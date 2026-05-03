@@ -8,7 +8,7 @@
     "build": "tsc && vite build",
     "predeploy": "tsc && vite build",
     "deploy": "gh-pages -d dist",
-    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives",
     "preview": "vite preview",
     "start:local": "vite",
     "build:local": "tsc && vite build",

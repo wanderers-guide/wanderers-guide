@@ -73,7 +73,7 @@ export function CreateAbilityBlockModal(props: {
     queryKey: [`get-ability-block-${props.editId}`, { editId: props.editId, editAbilityBlock: props.editAbilityBlock }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { editId, editAbilityBlock }] = queryKey as [
         string,
         { editId: number | undefined; editAbilityBlock: AbilityBlock | undefined },

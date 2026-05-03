@@ -94,16 +94,20 @@ jobs:
 
       # The auth-trigger.sql installed by create-db-docker.sh auto-creates the
       # matching public_user row, so no manual psql INSERT is needed.
+      # display_name lands in raw_user_meta_data, which the auth-trigger.sql
+      # reads first when populating public_user.display_name. Tests rely on the
+      # user-menu button text matching this value.
       - name: Create test user
         env:
           TEST_EMAIL: test@wanderersguide.app
           TEST_PASSWORD: test1234
+          TEST_DISPLAY_NAME: User Name
         run: |
           response=$(curl -sf -X POST "$PUBLIC_SUPABASE_URL/auth/v1/admin/users" \
             -H "apikey: $SERVICE_ROLE_KEY" \
             -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
             -H "Content-Type: application/json" \
-            -d "{\"email\":\"$TEST_EMAIL\",\"password\":\"$TEST_PASSWORD\",\"email_confirm\":true}")
+            -d "{\"email\":\"$TEST_EMAIL\",\"password\":\"$TEST_PASSWORD\",\"email_confirm\":true,\"user_metadata\":{\"display_name\":\"$TEST_DISPLAY_NAME\"}}")
           user_id=$(node -e "process.stdout.write(JSON.parse(require('fs').readFileSync(0, 'utf8')).id || '')" <<< "$response")
           if [ -z "$user_id" ]; then
             echo "::error::Test user creation failed. Response: $response"

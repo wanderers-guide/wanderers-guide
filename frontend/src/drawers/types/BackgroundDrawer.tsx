@@ -28,7 +28,7 @@ export function BackgroundDrawerTitle(props: {
     queryKey: [`find-background-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       return await fetchContentById<Background>('background', id);
     },
@@ -76,7 +76,7 @@ export function BackgroundDrawerContent(props: {
     queryKey: [`find-background-details-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       const background = await fetchContentById<Background>('background', id);
       return {

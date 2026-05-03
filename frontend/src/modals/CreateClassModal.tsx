@@ -48,7 +48,7 @@ export function CreateClassModal(props: {
     queryKey: [`get-class-${props.editId}`, { editId: props.editId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { editId }] = queryKey;
 
       const class_ = await fetchContentById<Class>('class', editId);

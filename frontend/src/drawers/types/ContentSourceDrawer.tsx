@@ -41,7 +41,7 @@ export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: 
     queryKey: [`find-content-source-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       const sources = await fetchContentSources([id]);
       return sources?.find((s) => s.id === id) ?? null;
@@ -148,7 +148,7 @@ export function ContentSourceDrawerContent(props: {
     queryKey: [`find-content-source-package-${id}`, { id, source: props.data.source }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id, source }] = queryKey;
       const _id = id ?? source?.id;
       return await fetchContentPackage([_id], { fetchSources: true, fetchCreatures: true });

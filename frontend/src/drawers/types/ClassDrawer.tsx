@@ -62,7 +62,7 @@ export function ClassDrawerTitle(props: { data: { id?: number; class_?: Class; o
     queryKey: [`find-class-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       return await fetchContentById<Class>('class', id);
     },
@@ -110,7 +110,7 @@ export function ClassDrawerContent(props: {
     queryKey: [`find-class-details-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       const class_ = await fetchContentById<Class>('class', id);
       const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('INFO'));

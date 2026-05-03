@@ -18,7 +18,7 @@ export function TraitDrawerTitle(props: { data: { id?: number; trait?: Trait } }
     queryKey: [`find-trait-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       return await fetchContentById<Trait>('trait', id);
     },
@@ -49,7 +49,7 @@ export function TraitDrawerContent(props: { data: { id?: number; trait?: Trait }
     queryKey: [`find-trait-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       return await fetchContentById<Trait>('trait', id);
     },

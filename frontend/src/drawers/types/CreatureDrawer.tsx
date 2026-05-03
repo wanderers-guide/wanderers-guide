@@ -74,7 +74,7 @@ export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Cre
     queryKey: [`find-creature-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       return await fetchContentById<Creature>('creature', id);
     },
@@ -125,7 +125,7 @@ export function CreatureDrawerContent(props: {
     queryKey: [`find-creature-details-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
 
       if (id) {

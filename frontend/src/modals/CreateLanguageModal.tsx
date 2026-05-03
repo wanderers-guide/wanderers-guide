@@ -38,7 +38,7 @@ export function CreateLanguageModal(props: {
     queryKey: [`get-language-${props.editId}`, { editId: props.editId, editLanguage: props.editLanguage }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { editId, editLanguage }] = queryKey as [string, { editId?: number; editLanguage?: Language }];
 
       const language = editId ? await fetchContentById<Language>('language', editId) : editLanguage;

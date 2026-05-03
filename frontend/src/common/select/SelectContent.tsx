@@ -441,7 +441,7 @@ export default function SelectContentModal({
     queryKey: [`select-content-selected-class-feat`, { selectedId: innerProps.options?.selectedId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { selectedId }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', selectedId ?? -1);
     },
@@ -491,7 +491,7 @@ export default function SelectContentModal({
     queryKey: [`select-content-vers-heritage-data`, { selectedId: innerProps.options?.selectedId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { selectedId }] = queryKey;
       const heritage = await fetchContentById<AbilityBlock>('ability-block', selectedId ?? -1);
       const versHeritages = await fetchContentAll<VersatileHeritage>('versatile-heritage', getDefaultSources('PAGE'));
@@ -780,7 +780,7 @@ function SelectionOptions(props: {
     queryKey: [`select-content-options-${props.type}`, { sourceId: props.sourceId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { sourceId }] = queryKey;
       return (
         (await fetchContentAll(props.type, sourceId === 'all' || !sourceId ? getDefaultSources('PAGE') : [sourceId])) ??

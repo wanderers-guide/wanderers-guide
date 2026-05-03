@@ -56,7 +56,7 @@ export function CreateTraitModal(props: {
     queryKey: [`get-trait-${props.editId}`, { editId: props.editId, editTrait: props.editTrait }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { editId, editTrait }] = queryKey as [string, { editId?: number; editTrait?: Trait }];
 
       const trait = editId ? await fetchContentById<Trait>('trait', editId) : editTrait;

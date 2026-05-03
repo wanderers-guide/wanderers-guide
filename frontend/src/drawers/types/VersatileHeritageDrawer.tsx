@@ -36,7 +36,7 @@ export function VersatileHeritageDrawerTitle(props: {
     queryKey: [`find-versatile-heritage-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       return await fetchContentById<VersatileHeritage>('versatile-heritage', id);
     },
@@ -84,7 +84,7 @@ export function VersatileHeritageDrawerContent(props: {
     queryKey: [`find-versatileHeritage-details-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       const versatileHeritage = await fetchContentById<VersatileHeritage>('versatile-heritage', id);
       const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('INFO'));

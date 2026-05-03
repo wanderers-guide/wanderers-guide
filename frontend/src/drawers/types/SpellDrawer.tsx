@@ -27,7 +27,7 @@ export function SpellDrawerTitle(props: { data: { id?: number; spell?: Spell; en
     queryKey: [`find-spell-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       return await fetchContentById<Spell>('spell', id);
     },
@@ -86,7 +86,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
     queryKey: [`find-spell-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       return await fetchContentById<Spell>('spell', id);
     },

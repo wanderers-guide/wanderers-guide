@@ -75,7 +75,7 @@ export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
     queryKey: [`find-item-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       const item = await fetchContentById<Item>('item', id);
 
@@ -122,7 +122,7 @@ export function ItemDrawerContent(props: {
     queryKey: [`find-item-with-base-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       const item = await fetchContentById<Item>('item', id);
 

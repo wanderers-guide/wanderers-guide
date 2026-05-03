@@ -71,7 +71,7 @@ export function CreateSpellModal(props: {
     queryKey: [`get-spell-${props.editId}`, { editId: props.editId, editSpell: props.editSpell }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { editId, editSpell }] = queryKey as [string, { editId?: number; editSpell?: Spell }];
 
       const spell = editId ? await fetchContentById<Spell>('spell', editId) : editSpell;

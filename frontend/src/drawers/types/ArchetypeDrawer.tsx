@@ -34,7 +34,7 @@ export function ArchetypeDrawerTitle(props: { data: { id?: number; archetype?: A
     queryKey: [`find-archetype-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       return await fetchContentById<Archetype>('archetype', id);
     },
@@ -82,7 +82,7 @@ export function ArchetypeDrawerContent(props: {
     queryKey: [`find-archetype-details-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       const archetype = await fetchContentById<Archetype>('archetype', id);
       const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('INFO'));

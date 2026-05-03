@@ -15,7 +15,7 @@ export function LanguageDrawerTitle(props: { data: { id?: number; language?: Lan
     queryKey: [`find-language-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       return await fetchContentById<Language>('language', id);
     },
@@ -48,7 +48,7 @@ export function LanguageDrawerContent(props: { data: { id?: number; language?: L
     queryKey: [`find-language-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       return await fetchContentById<Language>('language', id);
     },

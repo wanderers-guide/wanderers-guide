@@ -28,7 +28,7 @@ export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBloc
     queryKey: [`find-feat-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', id);
     },
@@ -90,7 +90,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
     queryKey: [`find-feat-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', id);
     },
@@ -274,7 +274,7 @@ export function PrerequisiteForSection(props: { name: string }) {
     queryKey: [`find-prereqs-for-${props.name}`, { name: props.name }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { name }] = queryKey;
       return await fetchAllPrereqs(name);
     },

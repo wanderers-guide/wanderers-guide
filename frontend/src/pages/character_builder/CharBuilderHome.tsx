@@ -1076,7 +1076,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
     queryKey: [`find-campaign-${character?.campaign_id}`, { campaign_id: character?.campaign_id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { campaign_id }] = queryKey;
 
       const campaigns = await makeRequest<Campaign[]>('find-campaign', {

@@ -93,7 +93,7 @@ export function CreateCreatureModal(props: {
     queryKey: [`get-creature-${props.editId}`, { editId: props.editId, editCreature: props.editCreature }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { editId, editCreature }] = queryKey as [string, { editId?: number; editCreature?: Creature }];
 
       const creature = editId ? await fetchContentById<Creature>('creature', editId) : editCreature;

@@ -47,7 +47,7 @@ export function CreateBackgroundModal(props: {
     queryKey: [`get-background-${props.editId}`, { editId: props.editId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { editId }] = queryKey;
 
       const background = await fetchContentById<Background>('background', editId);
