@@ -441,7 +441,7 @@ export default function SelectContentModal({
     queryKey: [`select-content-selected-class-feat`, { selectedId: innerProps.options?.selectedId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { selectedId }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', selectedId ?? -1);
     },
@@ -491,7 +491,7 @@ export default function SelectContentModal({
     queryKey: [`select-content-vers-heritage-data`, { selectedId: innerProps.options?.selectedId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { selectedId }] = queryKey;
       const heritage = await fetchContentById<AbilityBlock>('ability-block', selectedId ?? -1);
       const versHeritages = await fetchContentAll<VersatileHeritage>('versatile-heritage', getDefaultSources('PAGE'));
@@ -723,44 +723,6 @@ export default function SelectContentModal({
   );
 }
 
-function ContentSourceOption(props: { name: string; description: string; onClick: () => void; selected?: boolean }) {
-  const theme = useMantineTheme();
-  const { hovered, ref } = useHover();
-
-  return (
-    <Group
-      ref={ref}
-      p='sm'
-      style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-      }}
-      onClick={props.onClick}
-      justify='space-between'
-      align='center'
-    >
-      <Box>
-        <Text>{props.name}</Text>
-      </Box>
-      <Badge
-        variant='dot'
-        size='xs'
-        styles={{
-          root: {
-            // @ts-ignore
-            '--badge-dot-size': 0,
-            textTransform: 'initial',
-            color: theme.colors.dark[1],
-          },
-        }}
-      >
-        {props.description}
-      </Badge>
-    </Group>
-  );
-}
-
 function SelectionOptions(props: {
   searchQuery: string;
   type: ContentType;
@@ -776,11 +738,16 @@ function SelectionOptions(props: {
   showButton?: boolean;
   limitSelectedOptions: boolean;
 }) {
+  // Read character to honor `auto_detect_prerequisites`. When the user has
+  // enabled prereq detection on a feat selector, we sort feats they qualify
+  // for ahead of feats they don't.
+  const character = useAtomValue(characterState);
+  const sortByPrereqs = props.abilityBlockType === 'feat' && (character?.options?.auto_detect_prerequisites ?? false);
+
   const { data, isFetching } = useQuery({
     queryKey: [`select-content-options-${props.type}`, { sourceId: props.sourceId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
       const [_key, { sourceId }] = queryKey;
       return (
         (await fetchContentAll(props.type, sourceId === 'all' || !sourceId ? getDefaultSources('PAGE') : [sourceId])) ??
@@ -838,7 +805,23 @@ function SelectionOptions(props: {
     ? (search.current.search(props.searchQuery) as Record<string, any>[])
     : options;
 
-  // Sort by level/rank then name
+  // Pre-compute the prereq-met rank per option once (rather than re-running
+  // `meetsPrerequisites` on every comparator call). Lower rank = better fit:
+  // FULLY (0) → PARTIALLY (1) → UNKNOWN/null (2) → NOT (3). Items with no
+  // prerequisites are treated as fully met since they always qualify.
+  const prereqRank = new Map<number, number>();
+  if (sortByPrereqs) {
+    for (const opt of filteredOptions) {
+      if (!opt.prerequisites || opt.prerequisites.length === 0) {
+        prereqRank.set(opt.id, 0);
+        continue;
+      }
+      const r = meetsPrerequisites('CHARACTER', opt.prerequisites).result;
+      prereqRank.set(opt.id, r === 'FULLY' ? 0 : r === 'PARTIALLY' ? 1 : r === 'NOT' ? 3 : 2);
+    }
+  }
+
+  // Sort by level/rank, then prereqs-met (when enabled for feats), then name
   filteredOptions = filteredOptions.sort((a, b) => {
     if (a.level !== undefined && b.level !== undefined) {
       if (a.level !== b.level) {
@@ -858,6 +841,10 @@ function SelectionOptions(props: {
           return a.rank - b.rank;
         }
       }
+    }
+    if (sortByPrereqs) {
+      const diff = (prereqRank.get(a.id) ?? 2) - (prereqRank.get(b.id) ?? 2);
+      if (diff !== 0) return diff;
     }
     return a.name.localeCompare(b.name);
   });
