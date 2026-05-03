@@ -1,0 +1,10 @@
+{
+  "name": "wanderers-guide",
+  "private": true,
+  "scripts": {
+    "docker:start": "docker compose up -d",
+    "docker:stop": "docker compose down",
+    "docker:rebuild": "docker compose up -d --build frontend",
+    "docker:reset": "docker compose down -v && docker compose up -d --wait && ./data/create-db-docker.sh && ./data/seed-test-user.sh"
+  }
+}
