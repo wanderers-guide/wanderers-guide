@@ -176,10 +176,10 @@ export function Component() {
               {message}
             </Text>
           )}
-          <Anchor underline='always' onClick={() => changePageType('forgot-password')} c='gray.6' ta='center' size='sm'>
+          <Anchor underline='always' onClick={() => changePageType('forgot-password')} c='dimmed' ta='center' size='sm'>
             Forgot your password?
           </Anchor>
-          <Anchor underline='always' onClick={() => changePageType('register')} c='gray.6' ta='center' size='sm'>
+          <Anchor underline='always' onClick={() => changePageType('register')} c='dimmed' ta='center' size='sm'>
             Don't have an account? Sign up
           </Anchor>
         </Stack>
@@ -271,7 +271,7 @@ export function Component() {
               {message}
             </Text>
           )}
-          <Anchor underline='always' onClick={() => changePageType('signin')} c='gray.6' ta='center' size='sm'>
+          <Anchor underline='always' onClick={() => changePageType('signin')} c='dimmed' ta='center' size='sm'>
             Already have an account? Sign in
           </Anchor>
         </Stack>
@@ -330,7 +330,7 @@ export function Component() {
               {message}
             </Text>
           )}
-          <Anchor underline='always' onClick={() => changePageType('signin')} c='gray.6' ta='center' size='sm'>
+          <Anchor underline='always' onClick={() => changePageType('signin')} c='dimmed' ta='center' size='sm'>
             Know your password? Sign in
           </Anchor>
         </Stack>
