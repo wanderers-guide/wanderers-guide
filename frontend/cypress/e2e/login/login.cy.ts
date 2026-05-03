@@ -22,4 +22,14 @@ describe('Login', () => {
     cy.contains('button', 'Sign in with Email').click();
     cy.contains(/Invalid (email or password|login credentials)/i, { timeout: 10000 }).should('exist');
   });
+
+  it('should logout and return to the public homepage', () => {
+    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+
+    cy.get('button').contains('User Name').click();
+    cy.get('div.mantine-Menu-dropdown').contains('Logout').click();
+
+    // Logout clears the session; the home page should re-show the public sign-in CTA.
+    cy.contains('button', /Sign in/i, { timeout: 10000 }).should('exist');
+  });
 });
