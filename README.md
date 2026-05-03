@@ -59,7 +59,7 @@ cp .env.docker.example .env
 # work as a matched set (do not use them on a publicly reachable host).
 
 # 2. Bring it up
-docker compose up -d
+npm run docker:start
 
 # 3. Load the project's schema and content data into the dockerized DB.
 #    (Wipes and reloads the public schema — safe to re-run.)
@@ -68,32 +68,43 @@ docker compose up -d
 # 4. (Optional) Supabase Studio for inspecting the DB
 docker compose --profile studio up -d
 
-# 5. Tail logs / check status
-docker compose ps
-docker compose logs -f auth rest storage functions kong
-
-# 6. Open the app
+# 5. Open the app
 # http://localhost:3000
 ```
 
 To register a user: just sign up at http://localhost:3000 with email + password. The DB has a trigger that auto-creates the matching `public_user` profile, so the manual Studio insert from the section above is **not needed for the docker stack**. (The `data/auth-trigger.sql` script applied by `create-db-docker.sh` is what wires this up.)
 
-To rebuild after changing `PUBLIC_SUPABASE_URL` or `ANON_KEY` (Vite envs are baked into the bundle at build time):
+### Common operations
 
 ```bash
-docker compose build frontend && docker compose up -d frontend
-```
+npm run docker:start    # bring the stack up
+npm run docker:stop     # stop containers (keeps the db volume)
+npm run docker:rebuild  # rebuild + recreate the frontend container
+                        # (needed after changing frontend source — Vite
+                        # envs are baked in at build time)
+npm run docker:reset    # nuke: down -v, up --wait, reseed schema/data
+                        # and the cypress test user
 
-To tear it all down (keeping volumes):
-
-```bash
-docker compose down
-```
-
-To wipe everything including the database and storage volumes:
-
-```bash
-docker compose down -v
+docker compose ps                 # status
+docker compose logs -f frontend   # tail one service's logs
 ```
 
 See [docs/docker.md](docs/docker.md) for the full wiring notes, what's included, and what you'll have to set up yourself (OAuth providers, SMTP, TLS termination, schema/content seed).
+
+## Running end-to-end tests
+
+Cypress runs against the Docker stack from above. With `npm run docker:start` already running:
+
+```bash
+./data/seed-test-user.sh                  # one-time per fresh DB
+npm --prefix frontend run cy:e2e          # headless run of all specs
+npm --prefix frontend run cy:e2e:open     # interactive Cypress UI
+```
+
+`cy:e2e` bakes in `CYPRESS_BASE_URL=http://localhost:3000` and the default test creds (`test@wanderersguide.app` / `test1234`). To scope to a single spec:
+
+```bash
+npm --prefix frontend run cy:e2e -- --spec "cypress/e2e/login/*.cy.ts"
+```
+
+The same suite runs in CI on every PR via the `e2e` workflow — see `.github/workflows/e2e.yml`.
