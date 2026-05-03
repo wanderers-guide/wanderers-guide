@@ -17,7 +17,7 @@ export function SlotSelect(props: {
         {new Array(h).fill(0).map((_, i) => (
           <>
             {i === 0 ? (
-              <Text fz={10} ta='center' truncate>
+              <Text fz={10} ta='center'>
                 {w === 1 ? 'Can.' : rankNumber(w - 1)}
               </Text>
             ) : (
@@ -26,6 +26,7 @@ export function SlotSelect(props: {
                 clampBehavior='strict'
                 size='xs'
                 hideControls
+                w={30}
                 min={0}
                 max={9}
                 value={slots?.find((s) => s.lvl === i && s.rank === w - 1)?.amt}
@@ -61,7 +62,7 @@ export function SlotSelect(props: {
               {new Array(LEVELS).fill(0).map((_, i) => (
                 <>
                   {i !== 0 && (
-                    <Text key={i} fz={10} ta='center' truncate>
+                    <Text key={i} fz={10} ta='center' style={{ textWrap: 'nowrap' }}>
                       Lvl. {i}
                     </Text>
                   )}

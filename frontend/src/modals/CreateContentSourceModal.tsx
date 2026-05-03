@@ -243,7 +243,7 @@ export function ContentSourceEditor(props: {
           <Divider
             label={
               <Group gap={3} wrap='nowrap'>
-                <Button variant={openedOperations ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
+                <Button variant={openedOperations ? 'filled' : 'subtle'} size='compact-sm' color='gray'>
                   Operations
                 </Button>
                 {form.values.operations && form.values.operations.length > 0 && (
