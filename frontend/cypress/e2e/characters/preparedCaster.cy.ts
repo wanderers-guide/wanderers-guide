@@ -2,8 +2,8 @@ describe('Character builder', () => {
   before(() => {
     cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
     cy.visit('/characters');
-    cy.get('.tabler-icon-user-plus').click();
-    cy.location('pathname').should('include', '/builder');
+    cy.get('button[aria-label="Create Character"]').click();
+    cy.location('pathname', { timeout: 10000 }).should('include', '/builder');
 
     cy.get('input[placeholder="Unknown Wanderer"]').type('Wizard 1');
     cy.get('button[aria-label="Next Page"]').click();
@@ -19,10 +19,8 @@ describe('Character builder', () => {
   });
 
   after(() => {
-    cy.get('button').contains('User Name').click({ force: true });
-    cy.get('div.mantine-Menu-dropdown').contains('Characters').click();
-    cy.wait(500);
-    cy.location('pathname').should('eq', '/characters');
+    cy.visit('/characters');
+    cy.location('pathname', { timeout: 10000 }).should('eq', '/characters');
 
     const removeCharacter = ($el: HTMLElement) => {
       cy.wrap($el).as('btn');

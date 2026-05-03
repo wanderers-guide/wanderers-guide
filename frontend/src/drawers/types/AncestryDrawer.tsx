@@ -50,7 +50,7 @@ export function AncestryDrawerTitle(props: { data: { id?: number; ancestry?: Anc
     queryKey: [`find-ancestry-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       return await fetchContentById<Ancestry>('ancestry', id);
     },
@@ -98,7 +98,7 @@ export function AncestryDrawerContent(props: {
     queryKey: [`find-ancestry-details-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       const ancestry = await fetchContentById<Ancestry>('ancestry', id);
       const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('INFO'));

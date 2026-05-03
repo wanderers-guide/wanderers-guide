@@ -19,7 +19,7 @@ export function ClassFeatureDrawerTitle(props: { data: { id?: number; classFeatu
     queryKey: [`find-class-feature-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', id);
     },
@@ -55,7 +55,7 @@ export function ClassFeatureDrawerContent(props: {
     queryKey: [`find-class-feature-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', id);
     },

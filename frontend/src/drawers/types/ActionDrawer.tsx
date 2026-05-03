@@ -36,7 +36,7 @@ export function ActionDrawerTitle(props: { data: { id?: number; action?: Ability
     queryKey: [`find-action-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', id);
     },
@@ -85,7 +85,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
     queryKey: [`find-action-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { id }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', id);
     },

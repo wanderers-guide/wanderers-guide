@@ -37,7 +37,7 @@ export function CreateVersatileHeritageModal(props: {
     queryKey: [`get-versatile-heritage-${props.editId}`, { editId: props.editId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { editId }] = queryKey;
 
       const versatileHeritage = await fetchContentById<VersatileHeritage>('versatile-heritage', editId);

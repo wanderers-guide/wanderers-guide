@@ -48,7 +48,7 @@ export default function UploadContent() {
     queryKey: [`upload-stats`, {}],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, {}] = queryKey;
       return getUploadStats();
     },

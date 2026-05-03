@@ -49,7 +49,7 @@ export default function TraitsDisplay(props: {
     ],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { traitIds }] = queryKey;
 
       if (traitIds.length === 0) return [];

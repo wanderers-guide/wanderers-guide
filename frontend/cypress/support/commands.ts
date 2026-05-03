@@ -27,8 +27,8 @@ Cypress.Commands.add('login', (email: string, password: string) => {
   cy.visit('/login?redirect=characters');
   cy.get('input[name="email"]').type(email);
   cy.get('input[name="password"]').type(password);
-  cy.get('button[type="submit"]').contains('Sign in').click();
-  cy.location('pathname', { timeout: 1000 }).should('eq', '/characters');
+  cy.contains('button', 'Sign in with Email').click();
+  cy.location('pathname', { timeout: 10000 }).should('eq', '/characters');
 });
 
 Cypress.Commands.add('buildABC', (ancestry: string, background: string, playerClass: string) => {

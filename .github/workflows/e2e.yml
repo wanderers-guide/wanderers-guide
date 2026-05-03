@@ -1,0 +1,163 @@
+name: E2E
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # Mint a fresh JWT_SECRET + signed anon/service_role JWTs for this run.
+      # docker compose reads these from process env (via $GITHUB_ENV), so no
+      # .env file is needed. Heredoc is quoted ('EOF') so the JS template
+      # literals aren't expanded by the shell.
+      - name: Generate Supabase keys
+        run: |
+          cat > /tmp/mint-keys.js <<'EOF'
+          const crypto = require('crypto');
+          const fs = require('fs');
+          const secret = crypto.randomBytes(32).toString('hex');
+          const sign = (role) => {
+            const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+            const now = Math.floor(Date.now() / 1000);
+            const payload = Buffer.from(JSON.stringify({
+              iss: 'supabase',
+              role,
+              iat: now,
+              exp: now + 86400,
+            })).toString('base64url');
+            const sig = crypto.createHmac('sha256', secret).update(`${header}.${payload}`).digest('base64url');
+            return `${header}.${payload}.${sig}`;
+          };
+          const env = [
+            `JWT_SECRET=${secret}`,
+            `ANON_KEY=${sign('anon')}`,
+            `SERVICE_ROLE_KEY=${sign('service_role')}`,
+            `POSTGRES_PASSWORD=${crypto.randomBytes(16).toString('hex')}`,
+            `PUBLIC_SUPABASE_URL=http://localhost:8000`,
+            `SITE_URL=http://localhost:3000`,
+            `VITE_ENV=production`,
+            `FRONTEND_PORT=3000`,
+            `POSTGRES_PORT=54322`,
+            `KONG_HTTP_PORT=8000`,
+            `KONG_HTTPS_PORT=8443`,
+          ].join('\n') + '\n';
+          fs.appendFileSync(process.env.GITHUB_ENV, env);
+          EOF
+          node /tmp/mint-keys.js
+
+      - name: Bring up docker stack
+        run: docker compose up -d --wait --wait-timeout 180
+
+      # `--wait` only blocks on services with healthchecks (currently just db).
+      # Backstop with a curl loop on kong + the frontend.
+      - name: Wait for kong + frontend
+        run: |
+          for i in {1..60}; do
+            if curl -sf "$PUBLIC_SUPABASE_URL/auth/v1/health" > /dev/null \
+               && curl -sf "http://localhost:${FRONTEND_PORT}/" > /dev/null; then
+              echo "Services are up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Services failed to come up within 120s"
+          docker compose ps
+          docker compose logs --no-color --tail 80
+          exit 1
+
+      - name: Seed schema and content data
+        working-directory: ./data
+        run: ./create-db-docker.sh
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+
+      # The auth-trigger.sql installed by create-db-docker.sh auto-creates the
+      # matching public_user row, so no manual psql INSERT is needed.
+      # display_name lands in raw_user_meta_data, which the auth-trigger.sql
+      # reads first when populating public_user.display_name. Tests rely on the
+      # user-menu button text matching this value.
+      - name: Create test user
+        env:
+          TEST_EMAIL: test@wanderersguide.app
+          TEST_PASSWORD: test1234
+          TEST_DISPLAY_NAME: User Name
+        run: |
+          response=$(curl -sf -X POST "$PUBLIC_SUPABASE_URL/auth/v1/admin/users" \
+            -H "apikey: $SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"email\":\"$TEST_EMAIL\",\"password\":\"$TEST_PASSWORD\",\"email_confirm\":true,\"user_metadata\":{\"display_name\":\"$TEST_DISPLAY_NAME\"}}")
+          user_id=$(node -e "process.stdout.write(JSON.parse(require('fs').readFileSync(0, 'utf8')).id || '')" <<< "$response")
+          if [ -z "$user_id" ]; then
+            echo "::error::Test user creation failed. Response: $response"
+            exit 1
+          fi
+          echo "Created test user $user_id"
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: ./frontend
+          install: false
+          browser: chrome
+        env:
+          CYPRESS_BASE_URL: http://localhost:3000
+          CYPRESS_TEST_EMAIL: test@wanderersguide.app
+          CYPRESS_TEST_PASSWORD: test1234
+
+      - name: Upload Cypress screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: frontend/cypress/screenshots
+          if-no-files-found: ignore
+
+      - name: Upload Cypress videos
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-videos
+          path: frontend/cypress/videos
+          if-no-files-found: ignore
+
+      - name: Dump docker compose logs
+        if: failure()
+        run: |
+          echo "::group::docker compose ps"
+          docker compose ps
+          echo "::endgroup::"
+          docker compose logs --no-color > compose-logs.txt
+
+      - name: Upload compose logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compose-logs
+          path: compose-logs.txt
+          if-no-files-found: ignore
+
+      - name: Tear down docker stack
+        if: always()
+        run: docker compose down -v

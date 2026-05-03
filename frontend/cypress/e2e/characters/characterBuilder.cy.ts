@@ -10,9 +10,8 @@ describe('Characters', () => {
 
   describe('Character builder', () => {
     beforeEach(() => {
-      cy.get('.tabler-icon-user-plus').click();
-      cy.wait(2000);
-      cy.location('pathname').should('include', '/builder');
+      cy.get('button[aria-label="Create Character"]').click();
+      cy.location('pathname', { timeout: 10000 }).should('include', '/builder');
     });
 
     afterEach(() => {

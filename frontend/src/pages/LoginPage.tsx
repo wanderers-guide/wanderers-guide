@@ -109,12 +109,14 @@ export function Component() {
         <Stack gap={10}>
           <Stack gap={0}>
             <TextInput
+              name='email'
               label='Email address'
               placeholder='Your email address'
               value={email}
               onChange={(e) => setEmail(e.currentTarget.value)}
             />
             <PasswordInput
+              name='password'
               label='Password'
               placeholder='Your password'
               value={password}
@@ -193,12 +195,14 @@ export function Component() {
         <Stack gap={10}>
           <Stack gap={0}>
             <TextInput
+              name='email'
               label='Email address'
               placeholder='Your email address'
               value={email}
               onChange={(e) => setEmail(e.currentTarget.value)}
             />
             <PasswordInput
+              name='password'
               label='Password'
               placeholder='Your password'
               value={password}
@@ -285,6 +289,7 @@ export function Component() {
         <Stack gap={10}>
           <Stack gap={0}>
             <TextInput
+              name='email'
               label='Email address'
               placeholder='Your email address'
               value={email}

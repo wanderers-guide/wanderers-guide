@@ -64,7 +64,7 @@ export function CreateClassArchetypeModal(props: {
     queryKey: [`get-class-archetype-${props.editId}`, { editId: props.editId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { editId }] = queryKey;
 
       const archetype = await fetchContentById<ClassArchetype>('class-archetype', editId);

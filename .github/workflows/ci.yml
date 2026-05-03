@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # `npm install` (not `ci`) because the committed lockfile is out of sync
+      # with package.json (Mantine 8 vs 9, React 18 vs 19, missing entries).
+      # Once the lockfile is regenerated and committed, swap this back to
+      # `npm ci --legacy-peer-deps` for reproducible builds. Mirrors the
+      # comment in frontend/Dockerfile.
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit -p tsconfig.json
+
+      # Vite envs are baked in at build time; createClient() throws on empty
+      # values, so use placeholders for a build-only check.
+      - name: Build
+        env:
+          VITE_SUPABASE_URL: http://localhost:8000
+          VITE_SUPABASE_KEY: ci-placeholder
+          VITE_ENV: production
+        run: npm run build

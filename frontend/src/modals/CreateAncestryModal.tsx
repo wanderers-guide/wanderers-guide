@@ -47,7 +47,7 @@ export function CreateAncestryModal(props: {
     queryKey: [`get-ancestry-${props.editId}`, { editId: props.editId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-      // eslint-disable-next-line
+       
       const [_key, { editId }] = queryKey;
 
       const ancestry = await fetchContentById<Ancestry>('ancestry', editId);
