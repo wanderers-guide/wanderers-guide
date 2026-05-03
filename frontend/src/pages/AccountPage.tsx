@@ -29,8 +29,6 @@ import {
   Slider,
   PasswordInput,
   Accordion,
-  SegmentedControl,
-  useMantineColorScheme,
 } from '@mantine/core';
 import { setPageTitle } from '@utils/document-change';
 import BlurBox from '@common/BlurBox';
@@ -39,7 +37,15 @@ import { getPublicUser } from '@auth/user-manager';
 import { getDefaultBackgroundImage } from '@utils/background-images';
 import { toLabel } from '@utils/strings';
 import { GUIDE_BLUE } from '@constants/data';
-import { IconBrandPatreon, IconCirclePlus, IconUpload, IconPalette, IconCode, IconShield } from '@tabler/icons-react';
+import {
+  IconBrandPatreon,
+  IconCirclePlus,
+  IconUpload,
+  IconPalette,
+  IconCode,
+  IconShield,
+  IconTrash,
+} from '@tabler/icons-react';
 import { Campaign, Character, PublicUser } from '@schemas/content';
 import { useState } from 'react';
 import { getHotkeyHandler, useDebouncedValue, useDidUpdate, useHover } from '@mantine/hooks';
@@ -120,7 +126,6 @@ function SettingRow({
 
 function ProfileSection() {
   const theme = useMantineTheme();
-  const { colorScheme, setColorScheme } = useMantineColorScheme();
   const [loading, setLoading] = useState(false);
   const [_user, setUser] = useAtom(userState);
   const queryClient = useQueryClient();
@@ -567,7 +572,19 @@ function ProfileSection() {
               </Paper>
             </Box>
           )}
-          <Accordion defaultValue='' variant='contained' styles={{ control: { backgroundColor: 'var(--mantine-color-default-hover)', '&:hover': { backgroundColor: 'var(--mantine-color-default-hover)' } } }}>
+          <Accordion
+            defaultValue=''
+            variant='contained'
+            styles={{
+              control: {
+                backgroundColor: 'var(--mantine-color-default-hover)',
+                '&:hover': { backgroundColor: 'var(--mantine-color-default-hover)' },
+              },
+              // Match the panel bg to the control so the whole accordion item reads
+              // as one dark surface instead of a dark header on top of a transparent body.
+              panel: { backgroundColor: 'var(--mantine-color-default-hover)' },
+            }}
+          >
             {/* Appearance */}
             <Accordion.Item value='appearance'>
               <Accordion.Control icon={<IconPalette size='0.9rem' />}>Appearance</Accordion.Control>
@@ -616,27 +633,6 @@ function ProfileSection() {
                         />
                       </Popover.Dropdown>
                     </Popover>
-                  </SettingRow>
-
-                  <SettingRow label='Color Scheme' description='Switch between dark and light mode'>
-                    <SegmentedControl
-                      size='xs'
-                      value={colorScheme === 'light' ? 'light' : 'dark'}
-                      onChange={(value) => {
-                        setColorScheme(value as 'light' | 'dark');
-                        setUser((prev) => {
-                          if (!prev) return prev;
-                          return {
-                            ...prev,
-                            site_theme: { ...prev.site_theme, light_mode: value === 'light' },
-                          };
-                        });
-                      }}
-                      data={[
-                        { label: 'Dark', value: 'dark' },
-                        { label: 'Light', value: 'light' },
-                      ]}
-                    />
                   </SettingRow>
 
                   <SettingRow label='Dyslexia Font' description='Use OpenDyslexic for improved readability'>
@@ -819,43 +815,53 @@ function ProfileSection() {
             <Accordion.Item value='account'>
               <Accordion.Control icon={<IconShield size='0.9rem' />}>Account</Accordion.Control>
               <Accordion.Panel>
-                <Anchor
-                  underline='always'
-                  onClick={() => {
-                    modals.openConfirmModal({
-                      id: 'delete-account',
-                      title: <Title order={4}>{`Delete Account`}</Title>,
-                      children: (
-                        <Stack>
-                          <Text>Are you absolutely, positively sure you want to delete your account?</Text>
-                          <Text>
-                            All your characters, homebrew, campaigns, and encounters will be deleted forever! 😱
-                          </Text>
-                        </Stack>
-                      ),
-                      labels: { confirm: 'Delete It.', cancel: 'Cancel' },
-                      onCancel: () => {},
-                      onConfirm: async () => {
-                        const result = await makeRequest('delete-user', {});
-                        if (result) {
-                          supabase.auth.signOut();
-                          localStorage.clear();
-                          queryClient.clear();
-                        } else {
-                          showNotification({
-                            title: `Failed to Delete Account`,
-                            message: `There was an error deleting your account. Please get support on our Discord.`,
-                            color: 'red',
-                          });
-                        }
-                      },
-                    });
-                  }}
-                  c='red.5'
-                  size='sm'
-                >
-                  Delete Account
-                </Anchor>
+                <Stack gap={0}>
+                  <SettingRow
+                    label='Delete Account'
+                    description='Permanently delete your account and all associated data. This cannot be undone.'
+                    last
+                  >
+                    <Button
+                      variant='light'
+                      color='red'
+                      size='xs'
+                      leftSection={<IconTrash size={14} />}
+                      onClick={() => {
+                        modals.openConfirmModal({
+                          id: 'delete-account',
+                          title: <Title order={4}>{`Delete Account`}</Title>,
+                          children: (
+                            <Stack>
+                              <Text>Are you absolutely, positively sure you want to delete your account?</Text>
+                              <Text>
+                                All your characters, homebrew, campaigns, and encounters will be deleted forever! 😱
+                              </Text>
+                            </Stack>
+                          ),
+                          labels: { confirm: 'Delete It.', cancel: 'Cancel' },
+                          confirmProps: { color: 'red' },
+                          onCancel: () => {},
+                          onConfirm: async () => {
+                            const result = await makeRequest('delete-user', {});
+                            if (result) {
+                              supabase.auth.signOut();
+                              localStorage.clear();
+                              queryClient.clear();
+                            } else {
+                              showNotification({
+                                title: `Failed to Delete Account`,
+                                message: `There was an error deleting your account. Please get support on our Discord.`,
+                                color: 'red',
+                              });
+                            }
+                          },
+                        });
+                      }}
+                    >
+                      Delete Account
+                    </Button>
+                  </SettingRow>
+                </Stack>
               </Accordion.Panel>
             </Accordion.Item>
           </Accordion>

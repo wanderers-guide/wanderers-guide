@@ -2,25 +2,10 @@
   --_text-line-height: 1.75;
 }
 
-html[data-mantine-color-scheme='light'] {
-  --mantine-color-dimmed: var(--mantine-color-gray-9) !important;
-}
-
 [data-mantine-color-scheme='dark'] {
   --glass-bg-color: var(--mantine-color-dark-7);
   --glass-border-color: rgba(255, 255, 255, 0.125);
   --avatar-placeholder-bg: var(--mantine-color-dark-6);
-  --imprint-bg-color: rgba(222, 226, 230, 0.06);
-  --imprint-bg-color-2: rgba(222, 226, 230, 0.12);
-  --imprint-bg-color-hover: rgba(128, 128, 130, 0.05);
-  --imprint-bg-color-hover-2: rgba(222, 226, 230, 0.08);
-  --imprint-border-color: rgba(209, 213, 219, 0.2);
-}
-
-[data-mantine-color-scheme='light'] {
-  --glass-bg-color: var(--mantine-color-gray-0);
-  --glass-border-color: var(--mantine-color-gray-3);
-  --avatar-placeholder-bg: var(--mantine-color-gray-2);
   --imprint-bg-color: rgba(222, 226, 230, 0.06);
   --imprint-bg-color-2: rgba(222, 226, 230, 0.12);
   --imprint-bg-color-hover: rgba(128, 128, 130, 0.05);

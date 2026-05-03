@@ -638,13 +638,15 @@ function ContentSourceCard(props: {
         backgroundColor: hoveredCard ? IMPRINT_BG_COLOR_2 : IMPRINT_BG_COLOR,
         border: `1px solid ${IMPRINT_BORDER_COLOR}`,
         borderRadius: theme.radius.md,
+        // Subtle base shadow gives the card a "lifted" feel even at rest;
+        // hover then escalates to a bigger lift + shadow for clear feedback.
+        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.18)',
         cursor: 'pointer',
-        // Hover lift on the entire card
         transition: 'transform 200ms ease, box-shadow 200ms ease, background-color 200ms ease',
         ...(hoveredCard
           ? {
               transform: 'translateY(-2px)',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+              boxShadow: '0 6px 24px rgba(0, 0, 0, 0.3)',
             }
           : {}),
       }}

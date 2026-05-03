@@ -184,7 +184,7 @@ console.error = function (message, ...args) {
 const root = createRoot(document.getElementById('root') as HTMLElement);
 root.render(
   <StrictMode>
-    <MantineProvider defaultColorScheme='dark'>
+    <MantineProvider forceColorScheme='dark'>
       <QueryClientProvider client={queryClient}>
           <RouterProvider router={router} />
       </QueryClientProvider>

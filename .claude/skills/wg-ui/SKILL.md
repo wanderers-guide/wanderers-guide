@@ -18,6 +18,15 @@ Use the available `mcp__mantine__*` tools to look up components, props, and docs
 - `mcp__mantine__get_item_props` — get prop types for a component
 - `mcp__mantine__search_docs` — search across Mantine docs
 
+### Where shared styling lives
+
+**Prefer top-level theming over one-off custom styles.** Two files own all shared styling — make changes there instead of hand-tuning values inline:
+
+- **[frontend/src/App.tsx](frontend/src/App.tsx)** — Mantine theme via `createTheme(...)` (search for `generateTheme`). Color scales (`dark`, `gray`), `primaryColor`, `defaultRadius`, fonts, and per-component `vars` (Popover, Menu, HoverCard, …) live here. Component-wide overrides ("all Popovers should use color X") go in the theme's `components` map.
+- **[frontend/src/index.css](frontend/src/index.css)** — global CSS variables (`--glass-bg-color`, `--imprint-bg-color`, `--imprint-border-color`, …) keyed off `data-mantine-color-scheme` so they exist on both light and dark.
+
+If you're writing inline `style={{ ... }}` with hand-tuned colors/paddings/typography that don't reference a theme value, promote the value into `App.tsx` or `index.css` instead. Use Mantine tokens — `theme.radius.md`, `c='gray.2'`, `c='dimmed'`, `gap={10}`, `px='sm'` — instead of literal pixel/hex values.
+
 ## Design Patterns
 
 Follow these established visual patterns across all pages:
@@ -34,12 +43,20 @@ Follow these established visual patterns across all pages:
   - `IMPRINT_BG_COLOR_2` (`rgba(222, 226, 230, 0.12)`) — hover card background
   - `IMPRINT_BORDER_COLOR` (`rgba(209, 213, 219, 0.2)`) — card border
 
-### Card Hover
-- **Lighten**: background from `IMPRINT_BG_COLOR` → `IMPRINT_BG_COLOR_2` (6% → 12%)
-- **Lift**: `translateY(-2px)`
-- **Shadow**: `boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)'`
+### Card Resting State & Hover
+Cards are **always visibly lifted** — never flat against the page. The hover then escalates that lift for clear feedback. Two-tier shadow:
+
+- **Resting** (always applied):
+  - `boxShadow: '0 2px 10px rgba(0, 0, 0, 0.18)'` — subtle base pop
+  - background `IMPRINT_BG_COLOR` (6%)
+- **Hover** (overrides on hover):
+  - `transform: 'translateY(-2px)'`
+  - `boxShadow: '0 6px 24px rgba(0, 0, 0, 0.3)'` — bigger spread + opacity than the resting shadow
+  - background `IMPRINT_BG_COLOR_2` (12%)
 - **Transition**: `200ms ease` on transform, box-shadow, and background-color
 - Use `useHover()` from `@mantine/hooks` with a `ref` on the outer card container
+
+The base shadow goes outside the conditional spread so it's always applied; the hover spread comes after and overrides `boxShadow` when active.
 
 ### Buttons & Controls
 - Card actions (Edit, etc): `variant='light'` — buttons blend into cards, not sit on top.

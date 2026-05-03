@@ -292,22 +292,19 @@ export default function App() {
   return (
     <MantineProvider
       theme={theme}
-      defaultColorScheme='dark'
+      forceColorScheme='dark'
       cssVariablesResolver={(theme) => {
         const v8 = v8CssVariablesResolver(theme);
         return {
           variables: { ...v8.variables },
-          light: {
-            ...v8.light,
-            '--mantine-color-text': 'rgb(33, 37, 41)',
-            '--mantine-color-dimmed': 'rgb(35, 36, 37)',
-            '--mantine-color-body': 'rgba(255, 255, 255, 1)',
-          },
+          // Light scheme is intentionally empty — `forceColorScheme='dark'` locks the app to dark.
+          // Mantine's resolver typing requires this key, but its values are never applied.
+          light: {},
           dark: {
             ...v8.dark,
             '--mantine-color-text': 'rgb(202, 202, 202)',
-            '--mantine-color-dimmed': 'rgb(180, 180, 180)',
-            '--mantine-color-body': 'rgba(26,  27,  30,  1)',
+            '--mantine-color-dimmed': 'rgb(200, 200, 200)',
+            '--mantine-color-body': 'rgba(26, 27, 30, 1)',
           },
         };
       }}
