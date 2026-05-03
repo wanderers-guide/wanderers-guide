@@ -23,7 +23,7 @@ serve(async (req: Request) => {
       dedication_feat_id,
     } = body as Archetype;
 
-    let traitId: number | null = trait_id ?? null;
+    let traitId: number | null = trait_id && trait_id > 0 ? trait_id : null;
     if (!traitId) {
       traitId = await handleAssociatedTrait(client, id, 'archetype', name, content_source_id);
       if (!traitId) {

@@ -24,7 +24,7 @@ serve(async (req: Request) => {
       trait_id,
     } = body as Class;
 
-    let traitId: number | null = trait_id ?? null;
+    let traitId: number | null = trait_id && trait_id > 0 ? trait_id : null;
     if (!traitId) {
       traitId = await handleAssociatedTrait(client, id, 'class', name, content_source_id);
       if (!traitId) {

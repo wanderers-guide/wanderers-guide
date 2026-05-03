@@ -23,7 +23,7 @@ serve(async (req: Request) => {
       version,
     } = body as Ancestry;
 
-    let traitId: number | null = trait_id ?? null;
+    let traitId: number | null = trait_id && trait_id > 0 ? trait_id : null;
     if (!traitId) {
       traitId = await handleAssociatedTrait(client, id, 'ancestry', name, content_source_id);
       if (!traitId) {

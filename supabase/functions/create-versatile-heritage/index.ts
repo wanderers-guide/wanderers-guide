@@ -22,7 +22,7 @@ serve(async (req: Request) => {
       heritage_id,
     } = body as VersatileHeritage;
 
-    let traitId: number | null = trait_id ?? null;
+    let traitId: number | null = trait_id && trait_id > 0 ? trait_id : null;
     if (!traitId) {
       traitId = await handleAssociatedTrait(
         client,
