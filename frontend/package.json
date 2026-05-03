@@ -17,7 +17,9 @@
     "start:prod": "vite --mode production",
     "build:prod": "tsc && vite build",
     "cy:open": "cypress open",
-    "cy:run": "cypress run"
+    "cy:run": "cypress run",
+    "cy:e2e": "CYPRESS_BASE_URL=http://localhost:3000 CYPRESS_TEST_EMAIL=test@wanderersguide.app CYPRESS_TEST_PASSWORD=test1234 cypress run",
+    "cy:e2e:open": "CYPRESS_BASE_URL=http://localhost:3000 CYPRESS_TEST_EMAIL=test@wanderersguide.app CYPRESS_TEST_PASSWORD=test1234 cypress open"
   },
   "dependencies": {
     "@mantine/carousel": "^9.0.0",
