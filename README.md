@@ -15,8 +15,8 @@
 - [Serverless API](./supabase)
 - [Legacy App Repo](https://github.com/wanderers-guide/wanderers-guide-legacy)
 
-## Setup, self-hosting, and tests
+## Documentation
 
-- **[Local development](https://docs.wanderersguide.app/development)** — running the app locally (Supabase CLI or Docker Compose), creating a user, running the Cypress E2E suite, and running the Edge Function (`test:api`) suite.
-- **[Self-hosting with Docker](https://docs.wanderersguide.app/docker)** — full wiring notes for `docker-compose.yml`: what's included, what you have to set up yourself (OAuth, SMTP, TLS), and known limitations.
-- **[API reference](https://docs.wanderersguide.app/api-reference/introduction)** — public HTTP API: every endpoint, schemas, auth flow, rate limits.
+- [Local development](https://docs.wanderersguide.app/development) — run the app locally.
+- [Self-hosting with Docker](https://docs.wanderersguide.app/docker) — host your own instance.
+- [API reference](https://docs.wanderersguide.app/api-reference/introduction) — build your own client or integration.
