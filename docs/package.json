@@ -1,0 +1,13 @@
+{
+  "name": "wanderers-guide-docs",
+  "private": true,
+  "description": "Mintlify docs site for Wanderer's Guide. Run `npm run dev` to preview locally.",
+  "scripts": {
+    "dev": "mint dev --port 3210",
+    "build": "mint build",
+    "broken-links": "mint broken-links"
+  },
+  "devDependencies": {
+    "mint": "latest"
+  }
+}

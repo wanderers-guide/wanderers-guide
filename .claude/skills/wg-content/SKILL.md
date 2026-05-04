@@ -12,6 +12,19 @@ Two related concerns this skill covers:
 
 If you're only writing prose, the linking section is enough. If you're touching anything that handles content programmatically (variables, operations, schema validation, AI-cleaning, drawers that render content), read the data section too.
 
+## Authoritative docs in the repo
+
+The `docs/` folder is the canonical user-facing documentation site (Mintlify). When you need a high-level explanation rather than spelunking through the code, start there:
+
+- **[docs/guides/content-model.mdx](docs/guides/content-model.mdx)** — narrative overview of the data model, operations engine, and content-link syntax. Read this first if you're new to the WG content layer.
+- **[docs/api-reference/openapi.json](docs/api-reference/openapi.json)** — full request / response schemas for every public Edge Function, including the `find-*`, `create-*`, `update-*`, `delete-content`, and `search-data` endpoints that touch content.
+- **[docs/api-reference/content/](docs/api-reference/content/)** — per-endpoint MDX shells (one file per content endpoint).
+- **[docs/api-reference/authentication.mdx](docs/api-reference/authentication.mdx)** — auth flow + character access grants + rate limits (relevant when scripts you write talk to the content API).
+
+These docs are the source of truth for *contract*; the code is the source of truth for *implementation*. If they disagree, treat that as a bug worth fixing in whichever is wrong.
+
+**Edge Function changes ship with their docs.** When you touch a `supabase/functions/<name>/` handler that affects what callers see (request body, response shape, error codes, permission rules, side effects), update [`docs/api-reference/openapi.json`](docs/api-reference/openapi.json) in the same change. The per-endpoint MDX shells re-render from the spec automatically, but new endpoints also need a shell in `docs/api-reference/<group>/` and a nav entry in [`docs/docs.json`](docs/docs.json). See `claude-workspace` for the full table.
+
 # Part 1 — Content Linking
 
 Any prose that the user reads in-app — drawer descriptions, AI-generated text, hardcoded help blurbs — should turn references to game content into clickable drawer links.

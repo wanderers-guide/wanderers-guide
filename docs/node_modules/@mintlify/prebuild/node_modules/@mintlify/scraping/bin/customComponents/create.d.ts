@@ -1,0 +1,10 @@
+import type { Root as HastRoot } from 'hast';
+export declare function createLinks(): (tree: HastRoot) => undefined;
+export declare function createCard(): (tree: HastRoot) => undefined;
+export declare function createAccordion(): (tree: HastRoot) => undefined;
+export declare function createAccordionGroup(): (tree: HastRoot) => undefined;
+export declare function createFrame(): (tree: HastRoot) => undefined;
+export declare function createCodeGroup(): (tree: HastRoot) => undefined;
+export declare function createTabs(): (tree: HastRoot) => undefined;
+export declare function createCallout(): (tree: HastRoot) => undefined;
+export declare function createCardGroup(): (tree: HastRoot) => undefined;

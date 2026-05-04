@@ -19,7 +19,9 @@ import {
 import { useDisclosure, useMediaQuery, useViewportSize } from '@mantine/hooks';
 import {
   IconAsset,
+  IconBook,
   IconChevronDown,
+  IconCode,
   IconFlag,
   IconLayersIntersect,
   IconLogout,
@@ -38,7 +40,7 @@ import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import { PublicUser } from '@schemas/content';
 import { useQueryClient } from '@tanstack/react-query';
 import { isTouchDevice, phoneQuery, tabletQuery } from '@utils/mobile-responsive';
-import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/urls';
+import { DISCORD_URL, DOCS_URL, LEGACY_URL, PATREON_URL } from '@constants/urls';
 
 export default function Layout(props: { children: React.ReactNode }) {
   const theme = useMantineTheme();
@@ -275,6 +277,17 @@ export default function Layout(props: { children: React.ReactNode }) {
                         </Menu.Item>
                       )}
 
+                      <Menu.Label>Reference</Menu.Label>
+                      <Menu.Item
+                        leftSection={<IconCode style={{ width: rem(16), height: rem(16) }} stroke={1.5} />}
+                        component='a'
+                        href={DOCS_URL}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                      >
+                        Docs & API
+                      </Menu.Item>
+
                       <Menu.Label>Settings</Menu.Label>
                       <Menu.Item
                         leftSection={<IconSettings style={{ width: rem(16), height: rem(16) }} stroke={1.5} />}
@@ -381,6 +394,16 @@ export default function Layout(props: { children: React.ReactNode }) {
                 Admin Panel
               </UnstyledButton>
             )}
+            <UnstyledButton
+              className={classes.control}
+              component='a'
+              href={DOCS_URL}
+              target='_blank'
+              rel='noopener noreferrer'
+              onClick={() => close()}
+            >
+              Docs & API
+            </UnstyledButton>
             <Divider />
             <UnstyledButton
               className={classes.control}

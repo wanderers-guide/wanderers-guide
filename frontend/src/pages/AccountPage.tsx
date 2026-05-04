@@ -678,9 +678,9 @@ function ProfileSection() {
               </Accordion.Panel>
             </Accordion.Item>
 
-            {/* Developer Tools */}
+            {/* Developer */}
             <Accordion.Item value='developer'>
-              <Accordion.Control icon={<IconCode size='0.9rem' />}>Developer Tools</Accordion.Control>
+              <Accordion.Control icon={<IconCode size='0.9rem' />}>Developer</Accordion.Control>
               <Accordion.Panel>
                 <Stack gap={0}>
                   <SettingRow label='View Operations' description='Show operation data on content entries'>

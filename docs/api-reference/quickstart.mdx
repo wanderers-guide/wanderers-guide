@@ -1,0 +1,98 @@
+---
+title: 'Quickstart'
+description: 'Make your first request: find a spell by name, then parse the JSend response.'
+---
+
+This walks through the smallest useful request: looking up the spell **Fireball** by name. The same shape works for `find-item`, `find-creature`, `find-ability-block`, and every other `find-*` endpoint.
+
+## 1. Get an API key
+
+1. Sign in at [wanderersguide.app](https://wanderersguide.app).
+2. Open your account settings and find the **API Clients** section.
+3. Create a new client. Copy the 36-character key. It’s shown once.
+
+See [Authentication](/api-reference/authentication) if you’d rather use a Supabase JWT.
+
+## 2. Make the request
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://wanderersguide.app/functions/v1/find-spell \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Fireball"}'
+```
+
+```js JavaScript
+const res = await fetch(
+  'https://wanderersguide.app/functions/v1/find-spell',
+  {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.WG_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name: 'Fireball' }),
+  }
+);
+
+const json = await res.json();
+if (json.status !== 'success') {
+  throw new Error(json.data?.message ?? json.message ?? 'request failed');
+}
+const spells = json.data; // array because we didn’t pass a single integer `id`
+console.log(spells[0]?.description);
+```
+
+```py Python
+import os, requests
+
+resp = requests.post(
+    "https://wanderersguide.app/functions/v1/find-spell",
+    headers={
+        "Authorization": f"Bearer {os.environ['WG_API_KEY']}",
+        "Content-Type": "application/json",
+    },
+    json={"name": "Fireball"},
+)
+payload = resp.json()
+if payload["status"] != "success":
+    raise RuntimeError(payload.get("data", {}).get("message") or payload.get("message"))
+
+spells = payload["data"]  # list, since we didn’t pass a single integer id
+print(spells[0]["description"])
+```
+
+</CodeGroup>
+
+## 3. Read the response
+
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 1234,
+      "name": "Fireball",
+      "rank": 3,
+      "traditions": ["arcane", "primal"],
+      "description": "...",
+      "content_source_id": 1,
+      "version": "1.0.0"
+    }
+  ]
+}
+```
+
+A few quirks worth knowing up front:
+
+- **`data` is sometimes an array, sometimes a single object.** When you pass a single integer `id`, you get one object (or `null`). Otherwise you get an array.
+- **Filtering by `name` is exact, case-insensitive.** Need fuzzy match? Use [`/search-data`](/api-reference/search/search-data) instead.
+- **By default, only official published content is returned.** Pass `content_sources` (an array of source ids) to scope to specific books, including any homebrew sources you own.
+
+## What to try next
+
+- [`find-item`](/api-reference/content/find-item), [`find-creature`](/api-reference/content/find-creature), [`find-ability-block`](/api-reference/content/find-ability-block): same body shape.
+- [`search-data`](/api-reference/search/search-data): full-text and advanced filter search across every content type.
+- [`find-character`](/api-reference/characters/find-character): read your characters. Note: API keys need an explicit access grant per character ([details](/api-reference/authentication#character-access-grants)).

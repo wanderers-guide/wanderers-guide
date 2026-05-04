@@ -1,0 +1,5 @@
+import { MintConfig } from '@mintlify/models';
+import type { Result } from '../types/result.js';
+export declare function scrapeAllSiteTabs(html: string, url: string | URL, opts?: {
+    filter?: string;
+}): Promise<Result<MintConfig>>;

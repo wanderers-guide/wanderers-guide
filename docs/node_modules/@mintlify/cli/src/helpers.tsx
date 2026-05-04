@@ -1,0 +1,244 @@
+import { getConfigPath } from '@mintlify/prebuild';
+import { MintConfigUpdater } from '@mintlify/prebuild';
+import {
+  addLog,
+  ErrorLog,
+  getClientVersion,
+  SuccessLog,
+  InfoLog,
+  SpinnerLog,
+  removeLastLog,
+  LOCAL_LINKED_CLI_VERSION,
+  WarningLog,
+} from '@mintlify/previewing';
+import { upgradeToDocsConfig, validatePathWithinCwd } from '@mintlify/validation';
+import detect from 'detect-port';
+import fse from 'fs-extra';
+import inquirer from 'inquirer';
+import yaml from 'js-yaml';
+import { exec, execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import fs from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
+import path from 'path';
+import type { ArgumentsCamelCase } from 'yargs';
+
+import { shutdownPostHog } from './telemetry/client.js';
+
+export const CMD_EXEC_PATH = process.cwd();
+
+export const checkPort = async (argv: ArgumentsCamelCase): Promise<number | undefined> => {
+  const initialPort = typeof argv.port === 'number' ? argv.port : 3000;
+  if (initialPort === (await detect(initialPort))) return initialPort;
+
+  for (let port = initialPort + 1; port < initialPort + 10; port++) {
+    addLog(<InfoLog message={`port ${port - 1} is already in use. trying ${port} instead`} />);
+    if (port === (await detect(port))) return port;
+  }
+};
+
+export const checkNodeVersion = async () => {
+  let nodeVersionString = process.version;
+  if (nodeVersionString.charAt(0) === 'v') {
+    nodeVersionString = nodeVersionString.slice(1);
+  }
+  const versionArr = nodeVersionString.split('.');
+  const majorVersion = parseInt(versionArr[0]!, 10);
+  const minorVersion = parseInt(versionArr[1]!, 10);
+
+  if (majorVersion >= 25) {
+    addLog(
+      <ErrorLog
+        message={`mintlify is not supported on node versions 25+ (current version ${nodeVersionString}). Please downgrade to an LTS node version.`}
+      />
+    );
+    await terminate(1);
+  }
+
+  if (majorVersion < 20 || (majorVersion === 20 && minorVersion < 17)) {
+    addLog(
+      <ErrorLog message="mintlify requires node 20.17 or higher. Please upgrade to an LTS node version." />
+    );
+    await terminate(1);
+  }
+};
+
+export const checkForMintJson = async () => {
+  return !!(await getConfigPath(CMD_EXEC_PATH, 'mint'));
+};
+
+export const checkForDocsJson = async () => {
+  const docsJsonPath = path.join(CMD_EXEC_PATH, 'docs.json');
+  if (!(await fse.pathExists(docsJsonPath))) {
+    addLog(<InfoLog message="new docs.json file is available" />);
+    const promptResult = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'action',
+        message: 'would you like to upgrade your mint.json to docs.json?',
+        choices: [
+          { name: 'upgrade (migrate from mint.json to docs.json)', value: 'upgrade' },
+          { name: 'continue (use existing mint.json)', value: 'continue' },
+        ],
+      },
+    ]);
+
+    const { action } = promptResult;
+
+    if (action === 'continue') {
+      addLog(<InfoLog message="proceeding with the existing mint.json..." />);
+    }
+
+    if (action === 'upgrade') {
+      addLog(<SpinnerLog message="upgrading docs.json..." />);
+      await upgradeConfig();
+    }
+  }
+};
+
+export const autoUpgradeIfNeeded = async () => {
+  const hasMintJson = await checkForMintJson();
+  if (!hasMintJson) return;
+
+  const docsJsonPath = path.join(CMD_EXEC_PATH, 'docs.json');
+  const hasDocsJson = await fse.pathExists(docsJsonPath);
+  if (!hasDocsJson) {
+    addLog(<WarningLog message="Legacy mint.json detected, auto-upgrading to docs.json" />);
+    addLog(<SpinnerLog message="upgrading mint.json to docs.json..." />);
+    await upgradeConfig();
+  }
+};
+
+export const upgradeConfig = async () => {
+  try {
+    const mintJsonPath = path.join(CMD_EXEC_PATH, 'mint.json');
+    const docsJsonPath = path.join(CMD_EXEC_PATH, 'docs.json');
+    const mintJsonFileContent = await fs.readFile(mintJsonPath, 'utf8');
+    const validationResult = await MintConfigUpdater.validateConfigJsonString(mintJsonFileContent);
+    const mintConfig = validationResult.data;
+    const upgradedDocsConfig = upgradeToDocsConfig(mintConfig, {
+      shouldUpgradeTheme: true,
+    });
+    await fs.writeFile(docsJsonPath, JSON.stringify(upgradedDocsConfig, null, 2));
+    removeLastLog();
+    addLog(<SuccessLog message="mint.json file has been upgraded to docs.json." />);
+  } catch (err) {
+    removeLastLog();
+    addLog(<ErrorLog message={err instanceof Error ? err.message : 'an unknown error occurred'} />);
+  }
+};
+
+const require = createRequire(import.meta.url);
+
+const isRunningFromLinkedBuild = (): boolean => {
+  try {
+    const thisFile = fileURLToPath(import.meta.url);
+    return !thisFile.split(path.sep).includes('node_modules');
+  } catch {
+    return false;
+  }
+};
+
+const readPackageVersion = (packageName: string): string | undefined => {
+  try {
+    const pkgPath = require.resolve(`${packageName}/package.json`);
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { version?: string };
+    return typeof pkg.version === 'string' ? pkg.version : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+export const getCliVersion = (
+  packageName: string = process.env.MINTLIFY_PACKAGE_NAME ?? 'mint'
+): string | undefined => {
+  if (process.env.CLI_TEST_MODE === 'true') {
+    return 'test-cli';
+  }
+  if (isRunningFromLinkedBuild()) {
+    return LOCAL_LINKED_CLI_VERSION;
+  }
+  return readPackageVersion(packageName);
+};
+
+export const getVersions = (
+  packageName: string = process.env.MINTLIFY_PACKAGE_NAME ?? 'mint'
+): {
+  cli: string | undefined;
+  client: string | undefined;
+} => {
+  const cli = getCliVersion(packageName);
+  const client = getClientVersion().trim();
+  return { cli, client };
+};
+
+export const getLatestCliVersion = (packageName: string) => {
+  return execSync(`npm view ${packageName} version --silent`, {
+    encoding: 'utf-8',
+    stdio: ['pipe', 'pipe', 'pipe'],
+  }).trim();
+};
+
+export const suppressConsoleWarnings = (): void => {
+  // Ignore tailwind warnings and punycode deprecation warning
+  const ignoredMessages = [
+    'No utility classes were detected',
+    'https://tailwindcss.com/docs/content-configuration',
+    'DeprecationWarning',
+  ];
+  const originalConsoleError = console.error;
+  console.error = (...args) => {
+    const message = args.join(' ');
+    if (ignoredMessages.some((ignoredMessage) => message.includes(ignoredMessage))) {
+      return;
+    }
+    originalConsoleError.apply(console, args);
+  };
+  const originalConsoleWarn = console.warn;
+  console.warn = (...args) => {
+    const message = args.join(' ');
+    if (ignoredMessages.some((ignoredMessage) => message.includes(ignoredMessage))) {
+      return;
+    }
+    originalConsoleWarn.apply(console, args);
+  };
+};
+
+export const readLocalOpenApiFile = async (
+  filename: string
+): Promise<Record<string, unknown> | undefined> => {
+  const { resolvedPath } = validatePathWithinCwd(filename, CMD_EXEC_PATH);
+  const file = await fs.readFile(resolvedPath, 'utf-8');
+  const document = yaml.load(file) as Record<string, unknown> | undefined;
+  return document;
+};
+
+export const terminate = async (code: number) => {
+  // Wait for the logs to be fully rendered before exiting
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  await shutdownPostHog();
+  process.exit(code);
+};
+
+export const execAsync = promisify(exec);
+
+export function isAI(): boolean {
+  return (
+    !process.stdin.isTTY || process.env.CLAUDECODE === '1' || process.env.TERM_PROGRAM === 'claude'
+  );
+}
+
+export const detectPackageManager = async ({ packageName }: { packageName: string }) => {
+  try {
+    const { stdout: packagePath } = await execAsync(`which ${packageName}`);
+    if (packagePath.includes('pnpm')) {
+      return 'pnpm';
+    } else {
+      return 'npm';
+    }
+  } catch (error) {
+    return 'npm';
+  }
+};

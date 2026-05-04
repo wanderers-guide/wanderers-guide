@@ -1,0 +1,42 @@
+import type { BaseParseContext, BaseRoot } from "@ark/schema";
+import { type requireKeys, type Scanner } from "@ark/util";
+import type { LimitLiteral } from "../../attributes.ts";
+import type { FinalizingLookahead, InfixToken } from "../shift/tokens.ts";
+import { type BranchOperator, type Comparator, type MinComparator, type OpenLeftBound, type StringifiablePrefixOperator } from "./shared.ts";
+type BranchState = {
+    prefixes: StringifiablePrefixOperator[];
+    leftBound: OpenLeftBound | null;
+    intersection: BaseRoot | null;
+    union: BaseRoot | null;
+    pipe: BaseRoot | null;
+};
+export type RootedRuntimeState = requireKeys<RuntimeState, "root">;
+export declare class RuntimeState {
+    root: BaseRoot | undefined;
+    branches: BranchState;
+    finalizer: FinalizingLookahead | undefined;
+    groups: BranchState[];
+    scanner: Scanner;
+    ctx: BaseParseContext;
+    constructor(scanner: Scanner, ctx: BaseParseContext);
+    error(message: string): never;
+    hasRoot(): this is RootedRuntimeState;
+    setRoot(root: BaseRoot): void;
+    unsetRoot(): this["root"];
+    constrainRoot(...args: Parameters<BaseRoot<any>["constrain"]>): void;
+    finalize(finalizer: FinalizingLookahead): void;
+    reduceLeftBound(limit: LimitLiteral, comparator: Comparator): void;
+    finalizeBranches(): void;
+    finalizeGroup(): void;
+    addPrefix(prefix: StringifiablePrefixOperator): void;
+    applyPrefixes(): void;
+    pushRootToBranch(token: BranchOperator): void;
+    parseUntilFinalizer(): RootedRuntimeState;
+    parseOperator(this: RootedRuntimeState): void;
+    parseOperand(): void;
+    private assertRangeUnset;
+    reduceGroupOpen(): void;
+    previousOperator(): MinComparator | StringifiablePrefixOperator | InfixToken | undefined;
+    shiftedByOne(): this;
+}
+export {};

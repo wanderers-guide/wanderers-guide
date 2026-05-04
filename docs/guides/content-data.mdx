@@ -1,0 +1,74 @@
+---
+title: 'Content Data'
+description: 'How spells, feats, ancestries and the rest are stored, linked, and turned into the rules that drive a character sheet.'
+---
+
+This page is for anyone authoring or programmatically reading Wanderer’s Guide content: homebrew creators, tool builders, and contributors. If you only want to call the public API, the [API reference](/api-reference/introduction) is enough; this is the layer underneath.
+
+## The data model
+
+WG content lives in Postgres, with one table per primary content type:
+
+| Table                                                                                   | What it holds                                                                                                                                                               |
+| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `trait`                                                                                 | Tags / keywords (e.g. _Fire_, _Concentrate_, _Dwarf_). Most other rows reference these by id.                                                                               |
+| `ability_block`                                                                         | Feats, actions, class features, heritages, senses, physical features, modes. Anything action-block-shaped. The `type` column distinguishes them.                            |
+| `spell`                                                                                 | Spells.                                                                                                                                                                     |
+| `item`                                                                                  | Equipment, weapons, armor, consumables, runes, materials.                                                                                                                   |
+| `ancestry`, `versatile_heritage`, `class`, `class_archetype`, `archetype`, `background` | Character-build options. Each is its own table because the schemas differ.                                                                                                  |
+| `creature`                                                                              | Monsters, NPCs, animal companions.                                                                                                                                          |
+| `language`                                                                              | Languages.                                                                                                                                                                  |
+| `content_source`                                                                        | The “book” a row belongs to. Every content row has a `content_source_id`. Sources are owned (`user_id`) by the user who created them, or `null` for official Paizo sources. |
+| `content_update`                                                                        | A pending edit submitted by the community for moderator review.                                                                                                             |
+
+A second layer, the **frontend cache**, mirrors a subset of these tables in the browser so the character sheet doesn’t hit the database for every lookup. The cache is populated at app start from `find-*` calls and refreshed when the active character’s `content_sources.enabled` list changes.
+
+### Public vs. homebrew
+
+`find-*` endpoints implicitly filter to **official, published** sources unless you pass `content_sources` (or query by a specific `id`). This is the rule baked into [`fetchData()`](https://github.com/wanderers-guide/wanderers-guide/blob/main/supabase/functions/_shared/helpers.ts). Without it, a search would surface every random homebrew row in the database.
+
+Every entity that lives in a content source carries a generated `uuid` (a hash of `name + type + level/rank + content_source_id`) so duplicate entries within the same source are caught at insert time.
+
+## Operations
+
+The `operations` column on each content row is what makes WG content actually *do* something to a character. See **[Operations](/guides/operations)** for the full catalog of types and their JSON shapes.
+
+When you `POST` a content row to a `create-*` endpoint, you’re sending operations in raw JSON. The API treats them as opaque (the OpenAPI schema uses `additionalProperties: true`); validation happens at character-build time on the frontend.
+
+## Linking content from prose
+
+Descriptions, special clauses, and notes can reference other content. The convention is a flat marker the frontend rewrites into a real link:
+
+```
+link_<type>_<id>
+```
+
+Examples:
+
+- `link_spell_1234` links to spell #1234
+- `link_action_42` links to ability block #42 of type `action`
+- `link_trait_7` links to trait #7
+
+In React code, [`convertToHardcodedLink(type, name)`](https://github.com/wanderers-guide/wanderers-guide/blob/main/frontend/src/process/content/hardcoded-links.ts) does the lookup-by-name against the cache and emits the marker:
+
+```ts
+import { convertToHardcodedLink } from '@content/hardcoded-links';
+
+`${convertToHardcodedLink('action', 'Seek')} basic action`;
+// -> "[Seek](link_action_42) basic action"
+```
+
+If the name isn’t in the cache, it falls back to plain text, so prose still reads correctly when the cache hasn’t loaded.
+
+### What to link in prose
+
+Link **proper nouns** that have a row in the database: feat names, action names, spell names, traits, conditions, damage types. Don’t link generic phrases (“a basic strike”, “any spell”), and don’t link the same thing twice in a paragraph. Once is enough.
+
+When in doubt: if a reader would benefit from clicking through to the rules, link it. If not, leave it plain.
+
+## See also
+
+- [`find-content-source`](/api-reference/content/find-content-source): list books, including homebrew you own.
+- [`create-content-source`](/api-reference/content/create-content-source): start a new homebrew book (Patreon tier 2+).
+- [`create-content-update`](/api-reference/content/create-content-update): submit an edit or erratum for community review.
+- [`search-data`](/api-reference/search/search-data): full-text search across every content type.

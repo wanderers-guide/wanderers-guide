@@ -1,0 +1,12 @@
+{
+  "extends": "@mintlify/ts-config",
+  "compilerOptions": {
+    "target": "ES2021",
+    "sourceMap": true,
+    "outDir": "bin",
+    "declaration": true,
+    "types": ["vitest/globals"]
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "bin"]
+}

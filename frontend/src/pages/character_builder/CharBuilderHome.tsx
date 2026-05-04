@@ -1016,7 +1016,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
                         </Group>
                         {client?.description && <Text fz='xs'>{client?.description}</Text>}
                         <Anchor
-                          underline='always'
+                          underline='hover'
                           onClick={() => {
                             modals.openConfirmModal({
                               id: 'remove-client-access',
@@ -1052,11 +1052,11 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
                               },
                             });
                           }}
-                          c='gray.7'
+                          c='gray.5'
                           ta='center'
                           size='xs'
                         >
-                          Revoke Access
+                          [ Revoke Access ]
                         </Anchor>
                       </Stack>
                     </BlurBox>
@@ -1076,7 +1076,6 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
     queryKey: [`find-campaign-${character?.campaign_id}`, { campaign_id: character?.campaign_id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
       const [_key, { campaign_id }] = queryKey;
 
       const campaigns = await makeRequest<Campaign[]>('find-campaign', {

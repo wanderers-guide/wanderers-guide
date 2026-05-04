@@ -49,3 +49,25 @@ jobs:
           VITE_SUPABASE_KEY: ci-placeholder
           VITE_ENV: production
         run: npm run build
+
+  docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: ./docs
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+
+      - name: Install Mintlify CLI
+        run: npm install --no-audit --no-fund
+
+      - name: Check for broken links
+        run: npm run broken-links

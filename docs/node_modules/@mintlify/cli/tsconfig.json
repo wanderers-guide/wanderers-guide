@@ -1,0 +1,10 @@
+{
+  "extends": "@mintlify/ts-config",
+  "compilerOptions": {
+    "outDir": "bin",
+    "types": ["vitest/globals"],
+    "jsx": "react-jsx"
+  },
+  "include": ["**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "bin"]
+}

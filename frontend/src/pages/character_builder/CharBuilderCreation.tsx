@@ -1200,7 +1200,7 @@ function LevelSection(props: {
               >
                 {choiceCounts.current}
               </Text>
-              <Text c='gray.2' span>
+              <Text fz='sm' c='gray.2' span>
                 /{choiceCounts.max}
               </Text>
             </Badge>

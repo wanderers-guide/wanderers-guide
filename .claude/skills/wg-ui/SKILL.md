@@ -5,6 +5,17 @@ description: Use whenever creating, editing, or reviewing any UI or frontend cod
 
 # Wanderers Guide UI Guidelines
 
+## Authoritative docs in the repo
+
+Before changing UI that's tied to a documented user-facing flow (auth, API key management, character API access, rate limits, content editing), check the Mintlify docs site at `docs/`. Keep them in sync with the code.
+
+- **[docs/development.mdx](docs/development.mdx)** — setup, Docker self-hosting, running tests. Mention here if you change a script or env var name.
+- **[docs/guides/content-model.mdx](docs/guides/content-model.mdx)** — narrative explanation of the content / operations model that powers most of the UI.
+- **[docs/api-reference/](docs/api-reference/)** — public API surface. Endpoints exposed to UI changes (e.g. character access grants in `details.api_clients.client_access`) are documented here.
+- **[docs/docker.md](docs/docker.md)** — self-hosting wiring notes.
+
+These docs are the source of truth for behavior contracts. If your UI change alters a contract (a request shape, a response field, a permission rule), update the matching doc in the same change.
+
 ## Mantine UI
 
 **Always use [Mantine](https://mantine.dev) components** for all UI work in this repo. Do not reach for raw HTML elements or custom CSS when a Mantine component covers the use case.

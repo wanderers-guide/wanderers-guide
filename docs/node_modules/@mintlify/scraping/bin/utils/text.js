@@ -1,0 +1,11 @@
+import { visit } from 'unist-util-visit';
+export function getText(element) {
+    if (!element)
+        return '';
+    let text = '';
+    visit(element, 'text', function (node) {
+        text += node.value;
+    });
+    return text;
+}
+//# sourceMappingURL=text.js.map

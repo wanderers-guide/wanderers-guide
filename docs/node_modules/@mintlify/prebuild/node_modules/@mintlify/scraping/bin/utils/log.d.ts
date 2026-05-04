@@ -1,0 +1,52 @@
+export declare const colors: {
+    readonly red: "\u001B[31m";
+    readonly green: "\u001B[32m";
+    readonly yellow: "\u001B[33m";
+    readonly blue: "\u001B[34m";
+    readonly magenta: "\u001B[35m";
+    readonly cyan: "\u001B[36m";
+    readonly grey: "\u001B[90m";
+    readonly default: "\u001B[0m";
+    readonly bold: "\u001B[1m";
+    readonly dim: "\u001B[2m";
+    readonly italic: "\u001B[3m";
+};
+declare const statuses: readonly ["success", "failure", "error", "warn", "warning", "info"];
+export declare const activeColors: {
+    readonly red: "\u001B[31m";
+    readonly green: "\u001B[32m";
+    readonly yellow: "\u001B[33m";
+    readonly blue: "\u001B[34m";
+    readonly magenta: "\u001B[35m";
+    readonly cyan: "\u001B[36m";
+    readonly grey: "\u001B[90m";
+    readonly default: "\u001B[0m";
+    readonly bold: "\u001B[1m";
+    readonly dim: "\u001B[2m";
+    readonly italic: "\u001B[3m";
+} | {
+    readonly red: "";
+    readonly green: "";
+    readonly yellow: "";
+    readonly blue: "";
+    readonly magenta: "";
+    readonly cyan: "";
+    readonly grey: "";
+    readonly default: "";
+    readonly bold: "";
+    readonly dim: "";
+    readonly italic: "";
+};
+export type Status = (typeof statuses)[number];
+export type Color = keyof typeof colors;
+export declare const checkIcon: "✔ ";
+export declare const xIcon: "✘ ";
+export declare const infoIcon: "ⓘ ";
+export declare const warningIcon: "⚠ ";
+export declare function log(message: string | unknown, statusOrColor?: Status | undefined, opts?: {
+    trailingNewLine?: boolean;
+    leadingNewLine?: boolean;
+    omitStatusMessage?: boolean;
+    omitIcon?: boolean;
+}): void;
+export {};

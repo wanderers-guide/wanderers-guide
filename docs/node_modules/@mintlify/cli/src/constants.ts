@@ -1,0 +1,33 @@
+import { LOCAL_LINKED_CLI_VERSION } from '@mintlify/previewing';
+import os from 'os';
+import path from 'path';
+
+import { getCliVersion } from './helpers.js';
+
+export const HOME_DIR = os.homedir();
+
+export const CONFIG_DIR = path.join(HOME_DIR, '.config', 'mintlify');
+export const CLI_CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
+export const TELEMETRY_ASYNC_TIMEOUT_MS = 10_000;
+
+export const CALLBACK_PORT = 11582;
+
+const IS_LOCAL_BUILD =
+  process.env.CLI_TEST_MODE === 'true' ? true : getCliVersion() == LOCAL_LINKED_CLI_VERSION;
+
+export const API_URL =
+  process.env.MINTLIFY_API_URL ??
+  (IS_LOCAL_BUILD ? 'http://localhost:5000' : 'https://leaves.mintlify.com');
+export const DASHBOARD_URL =
+  process.env.MINTLIFY_DASHBOARD_URL ??
+  (IS_LOCAL_BUILD ? 'http://localhost:3000' : 'https://dashboard.mintlify.com');
+
+const DEV_TOKEN_ENDPOINT =
+  'https://test.stytch.com/v1/public/project-test-2d86347b-dfdb-4609-be69-12d8146220bd/oauth2/token';
+const DEV_STYTCH_CLIENT_ID = 'connected-app-test-b597afb3-304a-420f-bc13-dacca566c59f';
+const PROD_TOKEN_ENDPOINT =
+  'https://api.stytch.com/v1/public/project-live-731b7a04-9ac3-4923-90b8-0806d4aa29d4/oauth2/token';
+const PROD_STYTCH_CLIENT_ID = 'connected-app-live-d813eedd-dbb0-434b-a1f9-2ce69e5efc49';
+
+export const TOKEN_ENDPOINT = IS_LOCAL_BUILD ? DEV_TOKEN_ENDPOINT : PROD_TOKEN_ENDPOINT;
+export const STYTCH_CLIENT_ID = IS_LOCAL_BUILD ? DEV_STYTCH_CLIENT_ID : PROD_STYTCH_CLIENT_ID;

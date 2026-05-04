@@ -1,0 +1,33 @@
+import { type Scanner } from "@ark/util";
+import type { Comparator } from "../reduce/shared.ts";
+export declare const terminatingChars: {
+    readonly " ": 1;
+    readonly "\n": 1;
+    readonly "\t": 1;
+    readonly "<": 1;
+    readonly ">": 1;
+    readonly "=": 1;
+    readonly "|": 1;
+    readonly "&": 1;
+    readonly ")": 1;
+    readonly "[": 1;
+    readonly "%": 1;
+    readonly ",": 1;
+    readonly ":": 1;
+    readonly "?": 1;
+    readonly "#": 1;
+};
+export type TerminatingChar = keyof typeof terminatingChars;
+export declare const finalizingLookaheads: {
+    readonly ">": 1;
+    readonly ",": 1;
+    readonly "": 1;
+    readonly "=": 1;
+    readonly "?": 1;
+};
+export type FinalizingLookahead = keyof typeof finalizingLookaheads;
+export declare const lookaheadIsFinalizing: (lookahead: string, unscanned: string) => lookahead is ">" | "," | "=" | "?";
+export type lookaheadIsFinalizing<lookahead extends string, unscanned extends string> = lookahead extends ">" ? unscanned extends `=${infer nextUnscanned}` ? nextUnscanned extends `=${string}` ? true : false : Scanner.skipWhitespace<unscanned> extends ("" | `${TerminatingChar}${string}`) ? true : false : lookahead extends "=" ? unscanned extends `=${string}` ? false : true : lookahead extends "," | "?" ? true : false;
+export type InfixToken = Comparator | "|" | "&" | "%" | ":" | "=>" | "|>" | "#" | "@" | "=";
+export type PostfixToken = "[]" | "?";
+export type OperatorToken = InfixToken | PostfixToken;
