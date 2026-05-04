@@ -1,0 +1,143 @@
+---
+title: 'Authentication'
+description: 'Pick the right auth flow (API key for tools and integrations, JWT for the web app) and understand how character-level access grants work.'
+---
+
+Every endpoint authenticates the same way: an `Authorization: Bearer <token>` header. The token is one of two things, and the API picks the right path automatically based on length.
+
+| Flow | When to use it | What you send |
+| --- | --- | --- |
+| [API key](#api-keys) | Scripts, integrations, third-party tools | A 36-character UUID created in your account settings |
+| [JWT](#jwts) | Embedding inside a Wanderer’s Guide-authenticated frontend | A Supabase Auth access token |
+
+Internally, [`connect()`](https://github.com/wanderers-guide/wanderers-guide/blob/main/supabase/functions/_shared/helpers.ts) treats any 36-character token as an API key (UUIDs with hyphens are exactly 36 chars) and anything else as a JWT.
+
+## API keys
+
+API keys grant a tool the ability to act as you against the API. They’re the right choice for anything other than the WG web app itself.
+
+### Create one
+
+1. Sign in at [wanderersguide.app](https://wanderersguide.app).
+2. Open account settings and find **API Clients**.
+3. **+ New client**, give it a name (e.g. `foundry-importer`) and an optional description.
+4. Copy the 36-char `api_key`. You won’t see it again.
+
+You can keep multiple clients per account (one per tool, for example), and revoke individual ones from the same screen without affecting others.
+
+### Use one
+
+```http
+POST /functions/v1/find-spell
+Authorization: Bearer 1f2c8b80-4b0d-4d0a-9f17-7f0c3a9c1f9d
+Content-Type: application/json
+
+{ "name": "Fireball" }
+```
+
+### What an API key actually grants
+
+An API key authenticates a request **as the user who created the key**. The API generates a short-lived Supabase JWT for that user, then runs your request through the same Postgres row-level security policies as if you’d signed into the web app yourself. There is no “API mode” with elevated access. Anything you can do with a key, you could already do by signing in.
+
+What that means in practice:
+
+- Read all official, published content (this is open to everyone, even unauthenticated browsing).
+- Read and write your own homebrew content sources and the content within them.
+- Read and write your own campaigns and encounters.
+
+What it deliberately can **not** do:
+
+- Read or modify your **characters** via [`find-character`](/api-reference/characters/find-character) or [`update-character`](/api-reference/characters/update-character) without an explicit per-character grant. See [Character access grants](#character-access-grants).
+- Act on another user’s data, even if you share a campaign with them. RLS enforces this regardless of how you authenticate.
+
+If a key leaks, anyone holding it can act as you (within the limits above) until you revoke it. Treat keys like passwords. Use a separate key per tool so you can revoke one without locking out the rest.
+
+### Errors
+
+| Status | JSend | Meaning |
+| --- | --- | --- |
+| `401` | `{ status: "fail", data: { message: "Invalid API Key" } }` | Key doesn’t match any registered client. |
+| `401` | `{ status: "fail", data: { message: "Invalid API Key, no client found" } }` | Public user row was found but the client entry is missing. Usually a stale key after deletion. |
+| `403` | `{ status: "fail", data: { message: "You do not have access to this character" } }` | Hit a character endpoint without a grant. See below. |
+
+## JWTs
+
+If you’re building a frontend that signs users in via Supabase Auth, send the access token. The Wanderer’s Guide web app does this; most third-party integrations don’t need to.
+
+```http
+POST /functions/v1/find-spell
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+Content-Type: application/json
+```
+
+JWT requests are subject to the same Postgres row-level security policies as direct database access. You can only read what your role permits.
+
+## Character access grants
+
+Character data is sensitive, so even a valid API key gets `403` from [`find-character`](/api-reference/characters/find-character), [`update-character`](/api-reference/characters/update-character), and the rest unless the character’s owner has explicitly granted that key access. The grant is per-character; one key with grants on three characters works for those three and 403s on every other.
+
+The grant flow is OAuth-style: the API client (the tool/integration) hands the character owner a URL, the owner reviews and clicks Authorize, the grant is written.
+
+### Granting access (as the integration)
+
+1. Sign in to Wanderer’s Guide and open **Account → API Clients**.
+2. Find the client you want to grant access to. Each client has a **Character Authorization URL** template:
+
+   ```
+   https://wanderersguide.app/oauth/access?user_id=<your-user-id>&client_id=<client-id>&character_id=<ID>
+   ```
+
+3. Replace `<ID>` with the character id you want access to and send that URL to the character owner. (If you’re writing a tool, this is the URL to redirect them to.)
+
+### Authorizing access (as the character owner)
+
+1. Open the URL the integration sent.
+2. WG shows a consent screen describing what access is being requested (read character, edit stats, manage inventory).
+3. Click **Authorize**.
+4. From here on, calls from that key against that character work. The API-key flow generates a short-lived JWT for the **character owner** (not the integration’s account) so RLS sees their context.
+
+You authorize each character separately; there is no "all my characters" grant.
+
+### Revoking access
+
+The character owner opens the character in the builder, scrolls to the **Authorized Clients** section in the home tab, finds the integration, and clicks **Revoke Access**. The next call from that key against that character returns `403`.
+
+Revocation is per-character. Revoking on one character doesn’t affect others. Revoking the API client itself in **Account → API Clients** kills the key entirely, so character-level grants no longer matter.
+
+## Rate limits
+
+Every request runs through a per-token sliding window limiter. The bucket is the auth token itself, so multiple keys on the same account each get their own budget.
+
+| Bucket | Window | Limit |
+| --- | --- | --- |
+| API key (`Authorization: Bearer <36-char-key>`) | 60s | 120 requests |
+| Signed-in user (Supabase JWT) | 60s | 240 requests |
+| Service webhook (`bypassAuth`) | 60s | 600 requests |
+| No / unrecognized auth (per IP) | 60s | 30 requests |
+
+Every response includes:
+
+```http
+X-RateLimit-Limit: 120
+X-RateLimit-Remaining: 117
+X-RateLimit-Reset: 60
+```
+
+When you blow through the budget you get `HTTP 429` with JSend `fail` and a `Retry-After` header (in seconds). Failed requests count too, so repeatedly hitting an endpoint with a bad key won’t let you bypass the limit.
+
+Other limits not enforced by the rate limiter:
+
+- **Supabase Edge Function quotas** on the hosting tier (request count and execution time per month). The hosted instance at `wanderersguide.app` runs on Supabase’s production limits; if you self-host, your limits are whatever your own Supabase project enforces.
+- **Patreon-tier slot caps** on resource creation, not request rate: free accounts get 6 character slots and zero campaign / encounter creates, tier 1+ unlocks campaigns and encounters, tier 2+ removes the character cap. These are checked inside the relevant `create-*` endpoints.
+
+Tips for staying under the cap: cache content responses (spells, items, feats rarely change), batch by passing arrays of ids where the endpoint accepts them (e.g. `find-spell` with `id: [1, 2, 3]`), and avoid tight polling loops.
+
+## Endpoint with a different auth model
+
+A handful of internal endpoints use a shared service secret instead. Most consumers never call them. They exist for the Discord moderation bot:
+
+- [`/update-content-update`](/api-reference/integrations/update-content-update): `Authorization: Bearer $CONTENT_UPDATE_KEY`. Not a user token; it’s a process-to-process secret. The route uses `connect()`’s `bypassAuth` option so the value isn’t mistaken for a JWT or API key.
+
+## Want to look at the source?
+
+The auth flow lives entirely in [`supabase/functions/_shared/helpers.ts`](https://github.com/wanderers-guide/wanderers-guide/blob/main/supabase/functions/_shared/helpers.ts). `connect()` and `handleApiRouting()` are short and worth a read if you’re wiring up automated tests or building a client SDK.

@@ -1,33 +1,68 @@
 ---
 title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+description: 'The Wanderer’s Guide HTTP API: base URL, response format, and how to get started.'
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+The Wanderer’s Guide API lets external tools read and write the same content and characters the web app uses: spells, items, feats, ancestries, classes, characters, campaigns, and everything in between.
 
-## Welcome
+## Base URL
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+```
+https://wanderersguide.app/functions/v1
+```
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+If you’re running a self-hosted Supabase stack (see the [development guide](/development)), point at your local instance instead. Typically that’s `http://127.0.0.1:54321/functions/v1`.
+
+## Every request is `POST` with a JSON body
+
+There are no GET endpoints, no path parameters, no query strings. Every endpoint is a Supabase Edge Function reached as:
+
+```http
+POST /functions/v1/<function-name>
+Content-Type: application/json
+Authorization: Bearer <your-key>
+```
+
+If your call has no parameters, send `{}` (or omit the body where the spec marks it optional).
+
+## JSend response format
+
+Every response is a [JSend](https://github.com/omniti-labs/jsend) envelope:
+
+```json
+{ "status": "success", "data": { /* ... */ } }
+{ "status": "fail",    "data": { "message": "Invalid API Key" } }
+{ "status": "error",   "message": "Server error" }
+```
+
+- **`success`**: operation completed. Read `data` for the result.
+- **`fail`**: operation refused due to bad input or insufficient permissions. Read `data.message`.
+- **`error`**: server-side problem. Read `message`.
+
+Always check `status` before using `data`. The HTTP status code is `200` for `success` and `fail` alike, and only flips to 4xx/5xx when the request never reached the function (e.g. invalid API key returns `401`).
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+Two flows:
 
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
-```
+- **API key**, for tools, scripts, and integrations. Create one in your Wanderer’s Guide account settings.
+- **Supabase JWT**, used by the web app itself.
+
+See [Authentication](/api-reference/authentication) for the full picture, including character-level access grants.
+
+## Where to next
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/api-reference/quickstart">
+    Make your first request in curl, JavaScript, or Python.
+  </Card>
+  <Card title="Authentication" icon="key" href="/api-reference/authentication">
+    API keys, JWTs, and how character access grants work.
+  </Card>
+  <Card title="Content model" icon="book" href="/guides/content-data">
+    How spells, feats, ancestries, and the rest fit together, and what the operations engine does to them at character build time.
+  </Card>
+  <Card title="Search" icon="magnifying-glass" href="/api-reference/search/search-data">
+    Full-text and advanced search across every content type.
+  </Card>
+</CardGroup>

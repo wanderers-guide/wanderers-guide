@@ -1,0 +1,5 @@
+---
+title: "(Discord webhook) Approve, reject, or vote on a content update"
+description: "Service-to-service webhook for the WG Discord moderation bot. Authenticates via the shared CONTENT_UPDATE_KEY secret in the Authorization: Bearer <secret> header (NOT a user JWT or API key). When state=APPROVE, applies the underlying content change."
+openapi: "POST /update-content-update"
+---

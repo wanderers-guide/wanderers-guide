@@ -1,92 +1,133 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "theme": "willow",
-  "name": "Wanderer's Guide Docs",
-  "colors": {
-    "primary": "#359fdf",
-    "light": "#359fdf",
-    "dark": "#359fdf"
-  },
-  "favicon": "/favicon.svg",
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Guides",
-        "groups": [
-          {
-            "group": "Getting started",
-            "pages": ["index", "development"]
-          },
-          {
-            "group": "Operations",
-            "pages": ["operations/basics"]
-          }
-        ]
-      },
-      {
-        "tab": "API reference",
-        "groups": [
-          {
-            "group": "API documentation",
-            "pages": ["api-reference/introduction"]
-          },
-          {
-            "group": "Endpoint examples",
-            "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
-            ]
-          }
-        ]
-      }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Community",
-          "href": "https://discord.com/invite/FxsFZVvedr",
-          "icon": "discord"
-        },
-        {
-          "anchor": "GitHub",
-          "href": "https://github.com/wanderers-guide/wanderers-guide",
-          "icon": "github"
-        },
-        {
-          "anchor": "Legacy Docs",
-          "href": "https://legacy.wanderersguide.app/wsc_docs/#code_basics",
-          "icon": "scroll-old"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.png",
-    "dark": "/logo/dark.png"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "https://discord.com/invite/FxsFZVvedr"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Wanderer's Guide",
-      "href": "https://wanderersguide.app/"
-    }
-  },
-  "contextual": {
-    "options": ["copy", "view", "chatgpt", "claude", "perplexity", "mcp", "cursor", "vscode"]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
-  }
+	"$schema": "https://mintlify.com/docs.json",
+	"theme": "maple",
+	"name": "Wanderer's Guide Docs",
+	"colors": {
+		"primary": "#359fdf",
+		"light": "#359fdf",
+		"dark": "#359fdf"
+	},
+	"favicon": "/favicon.svg",
+	"navigation": {
+		"groups": [
+			{
+				"group": "Getting started",
+				"pages": ["index", "development", "docker"]
+			},
+			{
+				"group": "Guides",
+				"pages": ["guides/content-data", "guides/operations"]
+			},
+			{
+				"group": "API reference",
+				"pages": ["api-reference/introduction", "api-reference/quickstart", "api-reference/authentication"]
+			},
+			{
+				"group": "Content",
+				"pages": [
+					"api-reference/content/find-spell",
+					"api-reference/content/find-item",
+					"api-reference/content/find-ability-block",
+					"api-reference/content/find-ancestry",
+					"api-reference/content/find-archetype",
+					"api-reference/content/find-background",
+					"api-reference/content/find-class",
+					"api-reference/content/find-class-archetype",
+					"api-reference/content/find-creature",
+					"api-reference/content/find-language",
+					"api-reference/content/find-trait",
+					"api-reference/content/find-versatile-heritage",
+					"api-reference/content/find-content-source",
+					"api-reference/content/find-content-update",
+					"api-reference/content/create-spell",
+					"api-reference/content/create-item",
+					"api-reference/content/create-ability-block",
+					"api-reference/content/create-ancestry",
+					"api-reference/content/create-archetype",
+					"api-reference/content/create-background",
+					"api-reference/content/create-class",
+					"api-reference/content/create-class-archetype",
+					"api-reference/content/create-creature",
+					"api-reference/content/create-language",
+					"api-reference/content/create-trait",
+					"api-reference/content/create-versatile-heritage",
+					"api-reference/content/create-content-source",
+					"api-reference/content/delete-content"
+				]
+			},
+			{
+				"group": "Characters",
+				"pages": ["api-reference/characters/find-character", "api-reference/characters/create-character", "api-reference/characters/update-character"]
+			},
+			{
+				"group": "Campaigns & encounters",
+				"pages": [
+					"api-reference/campaigns/find-campaign",
+					"api-reference/campaigns/create-campaign",
+					"api-reference/campaigns/find-encounter",
+					"api-reference/campaigns/create-encounter",
+					"api-reference/campaigns/remove-from-campaign",
+					"api-reference/campaigns/reset-campaign-key"
+				]
+			},
+			{
+				"group": "Game master",
+				"pages": ["api-reference/gm/gm-add-to-group", "api-reference/gm/gm-remove-from-group", "api-reference/gm/gm-users-in-group", "api-reference/gm/gm-regenerate-code"]
+			},
+			{
+				"group": "Users",
+				"pages": ["api-reference/users/get-user", "api-reference/users/update-user"]
+			},
+			{
+				"group": "Search & utility",
+				"pages": ["api-reference/search/search-data", "api-reference/search/get-content-source-stats"]
+			}
+		],
+		"global": {
+			"anchors": [
+				{
+					"anchor": "Community",
+					"href": "https://discord.com/invite/FxsFZVvedr",
+					"icon": "discord"
+				},
+				{
+					"anchor": "GitHub",
+					"href": "https://github.com/wanderers-guide/wanderers-guide",
+					"icon": "github"
+				},
+				{
+					"anchor": "Legacy Docs",
+					"href": "https://legacy.wanderersguide.app/wsc_docs/#code_basics",
+					"icon": "scroll-old"
+				}
+			]
+		}
+	},
+	"logo": {
+		"light": "/logo/light.png",
+		"dark": "/logo/dark.png"
+	},
+	"navbar": {
+		"links": [
+			{
+				"label": "Support",
+				"href": "https://discord.com/invite/FxsFZVvedr"
+			}
+		],
+		"primary": {
+			"type": "button",
+			"label": "Wanderer's Guide",
+			"href": "https://wanderersguide.app/"
+		}
+	},
+	"contextual": {
+		"options": ["copy", "view", "chatgpt", "claude", "perplexity", "mcp", "cursor", "vscode"]
+	},
+	"openapi": ["api-reference/openapi.json"],
+	"footer": {
+		"socials": {
+			"github": "https://github.com/wanderers-guide/wanderers-guide",
+			"x": "https://x.com/WanderersGuide"
+		}
+	}
 }

@@ -7,6 +7,41 @@ description: General developer workflow guidance for the wanderers-guide repo �
 
 This skill covers the cross-cutting how-to-work-in-this-repo basics: verifying changes, accessing content without authentication, and where shared styling lives. It complements `wg-ui` (visual/Mantine patterns) and `wg-content` (data model + linking).
 
+## Where the user-facing docs live
+
+The repo ships its own Mintlify documentation site at `docs/`. **Read these whenever you need to know how something is supposed to work for end users**, not just how it's implemented:
+
+- **[docs/index.mdx](docs/index.mdx)** — homepage and entry point.
+- **[docs/development.mdx](docs/development.mdx)** — local-dev setup (Supabase CLI + Docker), running the API and Cypress tests. Mirrors what you'd give a new contributor.
+- **[docs/docker.md](docs/docker.md)** — full self-hosting wiring notes.
+- **[docs/guides/content-model.mdx](docs/guides/content-model.mdx)** — the WG data model, operations engine, and content-link syntax (the `wg-content` skill is the deeper version).
+- **[docs/api-reference/introduction.mdx](docs/api-reference/introduction.mdx)** — public API overview, JSend response format, base URL.
+- **[docs/api-reference/quickstart.mdx](docs/api-reference/quickstart.mdx)** — first-request example in curl / JS / Python.
+- **[docs/api-reference/authentication.mdx](docs/api-reference/authentication.mdx)** — JWT vs API key, character access grants, rate limits.
+- **[docs/api-reference/openapi.json](docs/api-reference/openapi.json)** — full OpenAPI 3.1 spec for all 53 Edge Function endpoints. Source of truth for request/response shapes.
+- **[docs/api-reference/<group>/](docs/api-reference/)** — per-endpoint MDX shells (one per OpenAPI path), grouped by `content/`, `characters/`, `campaigns/`, `gm/`, `users/`, `search/`, `files/`, `integrations/`.
+
+The docs site is wired up via [docs/docs.json](docs/docs.json) (Maple theme, sidebar groups). To preview locally: `npm run docs:dev` (binds to `:3210`). To check for broken links: `npm run docs:check`.
+
+### Keeping docs in sync (mandatory)
+
+**Treat the docs as part of the code.** Any change in the same conversation that touches one of the artifacts below MUST update the matching doc page in the same change set. No "I'll do the docs later" — they rot in days.
+
+| You changed... | Update at minimum... |
+|---|---|
+| An Edge Function in `supabase/functions/<name>/` (request body shape, response shape, error codes, auth rules, side effects, what gets deleted/created) | [docs/api-reference/openapi.json](docs/api-reference/openapi.json) — path schema, summary/description if behavior changed. The per-endpoint MDX shell at `docs/api-reference/<group>/<name>.mdx` re-renders from OpenAPI automatically. |
+| Added a new Edge Function | New entry in [openapi.json](docs/api-reference/openapi.json), new MDX shell under the right group, add it to the right group in [docs/docs.json](docs/docs.json) so it shows in the sidebar. |
+| Removed an Edge Function | Drop the path from [openapi.json](docs/api-reference/openapi.json), delete its MDX shell, remove from [docs/docs.json](docs/docs.json) nav. |
+| `_shared/helpers.ts` (auth flow, `connect()`, rate limits, JWT generation) | [docs/api-reference/authentication.mdx](docs/api-reference/authentication.mdx). |
+| `_shared/rate-limit.ts` (limits, buckets, headers) | The "Rate limits" section of [authentication.mdx](docs/api-reference/authentication.mdx). |
+| Content schema (`schema.sql` columns), entity types in `_shared/content.d.ts`, or `operations.d.ts` | Component schemas in [openapi.json](docs/api-reference/openapi.json). For data-model concepts, [docs/guides/content-model.mdx](docs/guides/content-model.mdx). |
+| docker-compose, Dockerfile, env vars | [docs/docker.md](docs/docker.md) and the Docker section in [docs/development.mdx](docs/development.mdx). |
+| Local setup steps, `npm` script names, `data/*.sh` scripts | [docs/development.mdx](docs/development.mdx) (and the README if it duplicates anything). |
+
+**Verification step before reporting any API/setup change as "done":** run `npm run docs:check` (mint broken-links). If you renamed or removed something, also run `mint dev` and click through the affected page to make sure the playground renders.
+
+When you spot drift in passing (the doc says X but the code does Y), flag it and fix in the same change. The docs are the contract.
+
 ## Verifying changes — render, screenshot, read the DOM
 
 **You should actually run the app and look at it**, not just rely on type checking. The repo's UI behavior is rarely fully provable from the code alone.

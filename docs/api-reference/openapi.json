@@ -1,94 +1,765 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
-    "license": {
-      "name": "MIT"
+    "title": "Wanderer's Guide API",
+    "description": "Public HTTP API for Wanderer's Guide, the Pathfinder 2e character builder. Every endpoint is a Supabase Edge Function reached via `POST /functions/v1/<name>`. All responses follow the [JSend](https://github.com/omniti-labs/jsend) convention: `{ status: 'success' | 'fail' | 'error', data?, message? }`.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Wanderer's Guide Discord",
+      "url": "https://discord.com/invite/FxsFZVvedr"
     },
-    "version": "1.0.0"
+    "license": {
+      "name": "MIT",
+      "url": "https://github.com/wanderers-guide/wanderers-guide/blob/main/LICENSE"
+    }
   },
   "servers": [
     {
-      "url": "http://sandbox.mintlify.com"
-    }
-  ],
-  "security": [
+      "url": "https://wanderersguide.app/functions/v1",
+      "description": "Production"
+    },
     {
-      "bearerAuth": []
+      "url": "{supabaseUrl}/functions/v1",
+      "description": "Self-hosted Supabase",
+      "variables": {
+        "supabaseUrl": {
+          "default": "http://127.0.0.1:54321",
+          "description": "Base URL of your Supabase instance, including scheme and port."
+        }
+      }
     }
   ],
-  "paths": {
-    "/plants": {
-      "get": {
-        "description": "Returns all plants from the system that the user has access to",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "The maximum number of results to return",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
+  "security": [{ "apiKeyAuth": [] }],
+  "tags": [
+    { "name": "Content", "description": "Pathfinder 2e content: spells, items, feats, ancestries, classes, etc." },
+    { "name": "Characters", "description": "Player characters." },
+    { "name": "Campaigns", "description": "Campaigns and encounters." },
+    { "name": "GM", "description": "Game-master tools: group management, access codes." },
+    { "name": "Users", "description": "Public user profiles, account management, Patreon integration." },
+    { "name": "Search", "description": "Full-text and advanced search across content." },
+    { "name": "Files", "description": "User-uploaded portrait and background images." },
+    { "name": "Integrations", "description": "Vector DB and Discord webhooks." }
+  ],
+  "components": {
+    "securitySchemes": {
+      "apiKeyAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "API Key (UUID, 36 chars)",
+        "description": "API key created in your Wanderer's Guide account settings. Send as `Authorization: Bearer <key>`. Used for direct API access from external tools and scripts."
+      },
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Supabase JWT",
+        "description": "Supabase Auth JWT issued to the signed-in user. Used by the Wanderer's Guide web app. Subject to the same row-level security policies as the user's database access."
+      }
+    },
+    "schemas": {
+      "Rarity": {
+        "type": "string",
+        "enum": ["COMMON", "UNCOMMON", "RARE", "UNIQUE"]
+      },
+      "Availability": {
+        "type": "string",
+        "enum": ["STANDARD", "LIMITED", "RESTRICTED"]
+      },
+      "Size": {
+        "type": "string",
+        "enum": ["TINY", "SMALL", "MEDIUM", "LARGE", "HUGE", "GARGANTUAN"]
+      },
+      "ItemGroup": {
+        "type": "string",
+        "enum": ["GENERAL", "WEAPON", "ARMOR", "SHIELD", "RUNE", "UPGRADE", "MATERIAL"]
+      },
+      "ActionCost": {
+        "type": ["string", "null"],
+        "enum": [
+          "ONE-ACTION",
+          "TWO-ACTIONS",
+          "THREE-ACTIONS",
+          "REACTION",
+          "FREE-ACTION",
+          "ONE-TO-TWO-ACTIONS",
+          "ONE-TO-THREE-ACTIONS",
+          "TWO-TO-THREE-ACTIONS",
+          null
+        ]
+      },
+      "AbilityBlockType": {
+        "type": "string",
+        "enum": ["action", "feat", "physical-feature", "sense", "class-feature", "heritage", "mode"]
+      },
+      "ContentType": {
+        "type": "string",
+        "enum": [
+          "trait",
+          "item",
+          "spell",
+          "class",
+          "archetype",
+          "versatile-heritage",
+          "class-archetype",
+          "ability-block",
+          "creature",
+          "ancestry",
+          "background",
+          "language",
+          "content-source"
+        ]
+      },
+      "JSendSuccess": {
+        "type": "object",
+        "required": ["status", "data"],
+        "properties": {
+          "status": { "type": "string", "enum": ["success"] },
+          "data": {}
+        }
+      },
+      "JSendFail": {
+        "type": "object",
+        "required": ["status", "data"],
+        "properties": {
+          "status": { "type": "string", "enum": ["fail"] },
+          "data": {
+            "type": "object",
+            "properties": { "message": { "type": "string" } }
+          }
+        }
+      },
+      "JSendError": {
+        "type": "object",
+        "required": ["status", "message"],
+        "properties": {
+          "status": { "type": "string", "enum": ["error"] },
+          "message": { "type": "string" },
+          "data": {},
+          "code": { "type": "integer" }
+        }
+      },
+      "JSendBoolean": {
+        "type": "object",
+        "required": ["status", "data"],
+        "properties": {
+          "status": { "type": "string", "enum": ["success"] },
+          "data": { "type": "boolean" }
+        }
+      },
+      "Operation": {
+        "description": "An entry in the operations engine. See the Content Model guide. Shape varies by `type`; treated as opaque JSON by the API.",
+        "type": "object",
+        "additionalProperties": true
+      },
+      "Trait": {
+        "type": "object",
+        "required": ["name", "content_source_id"],
+        "properties": {
+          "id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "content_source_id": { "type": "integer" },
+          "meta_data": {
+            "type": "object",
+            "properties": {
+              "important": { "type": "boolean" },
+              "creature_trait": { "type": "boolean" },
+              "unselectable": { "type": "boolean" },
+              "class_trait": { "type": "boolean" },
+              "ancestry_trait": { "type": "boolean" },
+              "archetype_trait": { "type": "boolean" },
+              "versatile_heritage_trait": { "type": "boolean" }
             }
           }
-        ],
+        }
+      },
+      "Spell": {
+        "type": "object",
+        "required": ["name", "rank", "traditions", "rarity", "description", "content_source_id", "version"],
+        "properties": {
+          "id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "name": { "type": "string" },
+          "rank": { "type": "integer", "minimum": 0, "maximum": 10 },
+          "traditions": { "type": "array", "items": { "type": "string" } },
+          "rarity": { "$ref": "#/components/schemas/Rarity" },
+          "availability": { "$ref": "#/components/schemas/Availability" },
+          "cast": { "type": "string" },
+          "traits": { "type": "array", "items": { "type": "integer" } },
+          "defense": { "type": "string" },
+          "cost": { "type": "string" },
+          "trigger": { "type": "string" },
+          "requirements": { "type": "string" },
+          "range": { "type": "string" },
+          "area": { "type": "string" },
+          "targets": { "type": "string" },
+          "duration": { "type": "string" },
+          "description": { "type": "string" },
+          "heightened": { "type": "object", "additionalProperties": true },
+          "meta_data": { "type": "object", "additionalProperties": true },
+          "content_source_id": { "type": "integer" },
+          "version": { "type": "string" }
+        }
+      },
+      "Item": {
+        "type": "object",
+        "required": ["name", "level", "rarity", "description", "group", "size", "content_source_id", "version"],
+        "properties": {
+          "id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "name": { "type": "string" },
+          "price": {
+            "type": "object",
+            "properties": {
+              "cp": { "type": "integer" },
+              "sp": { "type": "integer" },
+              "gp": { "type": "integer" },
+              "pp": { "type": "integer" }
+            }
+          },
+          "bulk": { "type": "string" },
+          "level": { "type": "integer" },
+          "rarity": { "$ref": "#/components/schemas/Rarity" },
+          "availability": { "$ref": "#/components/schemas/Availability" },
+          "traits": { "type": "array", "items": { "type": "integer" } },
+          "description": { "type": "string" },
+          "group": { "$ref": "#/components/schemas/ItemGroup" },
+          "hands": { "type": "string" },
+          "size": { "$ref": "#/components/schemas/Size" },
+          "craft_requirements": { "type": "string" },
+          "usage": { "type": "string" },
+          "meta_data": { "type": "object", "additionalProperties": true },
+          "operations": { "type": "array", "items": { "$ref": "#/components/schemas/Operation" } },
+          "content_source_id": { "type": "integer" },
+          "version": { "type": "string" }
+        }
+      },
+      "AbilityBlock": {
+        "type": "object",
+        "required": ["name", "rarity", "description", "type", "content_source_id"],
+        "properties": {
+          "id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "operations": { "type": "array", "items": { "$ref": "#/components/schemas/Operation" } },
+          "name": { "type": "string" },
+          "actions": { "$ref": "#/components/schemas/ActionCost" },
+          "level": { "type": "integer" },
+          "rarity": { "$ref": "#/components/schemas/Rarity" },
+          "availability": { "$ref": "#/components/schemas/Availability" },
+          "prerequisites": { "type": "array", "items": { "type": "string" } },
+          "frequency": { "type": "string" },
+          "cost": { "type": "string" },
+          "trigger": { "type": "string" },
+          "requirements": { "type": "string" },
+          "access": { "type": "string" },
+          "description": { "type": "string" },
+          "special": { "type": "string" },
+          "type": { "$ref": "#/components/schemas/AbilityBlockType" },
+          "meta_data": { "type": "object", "additionalProperties": true },
+          "traits": { "type": "array", "items": { "type": "integer" } },
+          "content_source_id": { "type": "integer" },
+          "version": { "type": "string" }
+        }
+      },
+      "Ancestry": {
+        "type": "object",
+        "required": ["name", "rarity", "description", "content_source_id", "version"],
+        "properties": {
+          "id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "name": { "type": "string" },
+          "rarity": { "$ref": "#/components/schemas/Rarity" },
+          "description": { "type": "string" },
+          "trait_id": { "type": "integer" },
+          "artwork_url": { "type": "string" },
+          "content_source_id": { "type": "integer" },
+          "version": { "type": "string" },
+          "operations": { "type": "array", "items": { "$ref": "#/components/schemas/Operation" } }
+        }
+      },
+      "Background": {
+        "type": "object",
+        "required": ["name", "rarity", "description", "operations", "content_source_id", "version"],
+        "properties": {
+          "id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "name": { "type": "string" },
+          "rarity": { "$ref": "#/components/schemas/Rarity" },
+          "description": { "type": "string" },
+          "operations": { "type": "array", "items": { "$ref": "#/components/schemas/Operation" } },
+          "content_source_id": { "type": "integer" },
+          "version": { "type": "string" }
+        }
+      },
+      "Class": {
+        "type": "object",
+        "required": ["name", "rarity", "description", "content_source_id", "version"],
+        "properties": {
+          "id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "name": { "type": "string" },
+          "rarity": { "$ref": "#/components/schemas/Rarity" },
+          "description": { "type": "string" },
+          "operations": { "type": "array", "items": { "$ref": "#/components/schemas/Operation" } },
+          "skill_training_base": { "type": "integer" },
+          "trait_id": { "type": "integer" },
+          "artwork_url": { "type": "string" },
+          "content_source_id": { "type": "integer" },
+          "version": { "type": "string" }
+        }
+      },
+      "ClassArchetype": {
+        "type": "object",
+        "required": ["name", "rarity", "description", "class_id", "content_source_id", "version"],
+        "properties": {
+          "id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "class_id": { "type": "integer" },
+          "archetype_id": { "type": "integer" },
+          "name": { "type": "string" },
+          "rarity": { "$ref": "#/components/schemas/Rarity" },
+          "description": { "type": "string" },
+          "artwork_url": { "type": "string" },
+          "operations": { "type": "array", "items": { "$ref": "#/components/schemas/Operation" } },
+          "feature_adjustments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "fa_id": { "type": "string" },
+                "type": { "type": "string", "enum": ["ADD", "REPLACE", "REMOVE"] },
+                "prev_id": { "type": "integer" },
+                "data": { "$ref": "#/components/schemas/AbilityBlock" }
+              }
+            }
+          },
+          "override_skill_training_base": { "type": ["integer", "null"] },
+          "override_class_operations": { "type": "boolean" },
+          "content_source_id": { "type": "integer" },
+          "deprecated": { "type": "boolean" },
+          "version": { "type": "string" }
+        }
+      },
+      "Archetype": {
+        "type": "object",
+        "required": ["name", "rarity", "description", "content_source_id", "version"],
+        "properties": {
+          "id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "name": { "type": "string" },
+          "rarity": { "$ref": "#/components/schemas/Rarity" },
+          "description": { "type": "string" },
+          "trait_id": { "type": "integer" },
+          "artwork_url": { "type": "string" },
+          "content_source_id": { "type": "integer" },
+          "version": { "type": "string" },
+          "dedication_feat_id": { "type": "integer" }
+        }
+      },
+      "VersatileHeritage": {
+        "type": "object",
+        "required": ["name", "rarity", "description", "content_source_id", "version"],
+        "properties": {
+          "id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "name": { "type": "string" },
+          "rarity": { "$ref": "#/components/schemas/Rarity" },
+          "description": { "type": "string" },
+          "trait_id": { "type": "integer" },
+          "artwork_url": { "type": "string" },
+          "content_source_id": { "type": "integer" },
+          "version": { "type": "string" },
+          "heritage_id": { "type": "integer" }
+        }
+      },
+      "Language": {
+        "type": "object",
+        "required": ["name", "description", "content_source_id"],
+        "properties": {
+          "id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "name": { "type": "string" },
+          "speakers": { "type": "string" },
+          "script": { "type": "string" },
+          "description": { "type": "string" },
+          "content_source_id": { "type": "integer" },
+          "rarity": { "$ref": "#/components/schemas/Rarity" },
+          "availability": { "$ref": "#/components/schemas/Availability" }
+        }
+      },
+      "Creature": {
+        "type": "object",
+        "required": ["name", "level", "rarity", "details", "content_source_id", "version"],
+        "properties": {
+          "id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "name": { "type": "string" },
+          "level": { "type": "integer" },
+          "rarity": { "$ref": "#/components/schemas/Rarity" },
+          "traits": { "type": "array", "items": { "type": "integer" } },
+          "details": {
+            "type": "object",
+            "properties": {
+              "image_url": { "type": "string" },
+              "background_image_url": { "type": "string" },
+              "description": { "type": "string" },
+              "adjustment": { "type": "string", "enum": ["ELITE", "WEAK"] }
+            }
+          },
+          "operations": { "type": "array", "items": { "$ref": "#/components/schemas/Operation" } },
+          "abilities_base": { "type": "array", "items": { "$ref": "#/components/schemas/AbilityBlock" } },
+          "abilities_added": { "type": "array", "items": { "type": "integer" } },
+          "inventory": { "type": "object", "additionalProperties": true },
+          "spells": { "type": "object", "additionalProperties": true },
+          "meta_data": { "type": "object", "additionalProperties": true },
+          "content_source_id": { "type": "integer" },
+          "deprecated": { "type": "boolean" },
+          "version": { "type": "string" }
+        }
+      },
+      "Character": {
+        "type": "object",
+        "required": ["name", "level"],
+        "properties": {
+          "id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "campaign_id": { "type": ["integer", "null"] },
+          "user_id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "level": { "type": "integer" },
+          "experience": { "type": "integer" },
+          "hero_points": { "type": "integer" },
+          "hp_current": { "type": "integer" },
+          "hp_temp": { "type": "integer" },
+          "stamina_current": { "type": "integer" },
+          "resolve_current": { "type": "integer" },
+          "inventory": { "type": "object", "additionalProperties": true },
+          "details": { "type": "object", "additionalProperties": true },
+          "notes": { "type": "object", "additionalProperties": true },
+          "roll_history": { "type": "object", "additionalProperties": true },
+          "spells": { "type": "object", "additionalProperties": true },
+          "operation_data": { "type": "object", "additionalProperties": true },
+          "meta_data": { "type": "object", "additionalProperties": true },
+          "custom_operations": { "type": "array", "items": { "$ref": "#/components/schemas/Operation" } },
+          "options": { "type": "object", "additionalProperties": true },
+          "variants": { "type": "object", "additionalProperties": true },
+          "content_sources": {
+            "type": "object",
+            "properties": {
+              "enabled": { "type": "array", "items": { "type": "integer" } }
+            }
+          },
+          "companions": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "Campaign": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "user_id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "description": {
+            "type": "object",
+            "properties": { "contents": { "type": "object", "additionalProperties": true } }
+          },
+          "join_key": { "type": "string" },
+          "notes": { "type": "object", "additionalProperties": true },
+          "recommended_options": { "type": "object", "additionalProperties": true },
+          "recommended_variants": { "type": "object", "additionalProperties": true },
+          "recommended_content_sources": {
+            "type": "object",
+            "properties": {
+              "enabled": { "type": "array", "items": { "type": "integer" } }
+            }
+          },
+          "custom_operations": { "type": "array", "items": { "$ref": "#/components/schemas/Operation" } },
+          "meta_data": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "Encounter": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "user_id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "icon": { "type": "string" },
+          "color": { "type": "string" },
+          "campaign_id": { "type": "integer" },
+          "combatants": {
+            "type": "object",
+            "properties": {
+              "list": { "type": "array", "items": { "type": "object", "additionalProperties": true } }
+            }
+          },
+          "meta_data": {
+            "type": "object",
+            "properties": {
+              "description": { "type": "string" },
+              "party_level": { "type": "integer" },
+              "party_size": { "type": "integer" }
+            }
+          }
+        }
+      },
+      "ContentSource": {
+        "type": "object",
+        "required": ["name", "url"],
+        "properties": {
+          "id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "name": { "type": "string" },
+          "foundry_id": { "type": "string" },
+          "url": { "type": "string" },
+          "description": { "type": "string" },
+          "operations": { "type": "array", "items": { "$ref": "#/components/schemas/Operation" } },
+          "user_id": { "type": ["string", "null"], "format": "uuid" },
+          "contact_info": { "type": "string" },
+          "require_key": { "type": "boolean" },
+          "keys": {
+            "type": "object",
+            "properties": { "access_key": { "type": "string" } }
+          },
+          "is_published": { "type": "boolean" },
+          "required_content_sources": { "type": "array", "items": { "type": "integer" } },
+          "group": { "type": "string" },
+          "artwork_url": { "type": "string" },
+          "meta_data": {
+            "type": "object",
+            "properties": {
+              "counts": { "type": "object", "additionalProperties": { "type": "integer" } }
+            }
+          }
+        }
+      },
+      "ContentUpdate": {
+        "type": "object",
+        "required": ["type", "action", "data", "content_source_id"],
+        "properties": {
+          "id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "user_id": { "type": "string", "format": "uuid" },
+          "type": { "$ref": "#/components/schemas/ContentType" },
+          "ref_id": { "type": "integer" },
+          "action": { "type": "string", "enum": ["UPDATE", "CREATE", "DELETE"] },
+          "data": { "type": "object", "additionalProperties": true },
+          "content_source_id": { "type": "integer" },
+          "status": {
+            "type": "object",
+            "properties": {
+              "state": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] },
+              "discord_user_id": { "type": "string" },
+              "discord_user_name": { "type": "string" }
+            }
+          },
+          "upvotes": {
+            "type": "array",
+            "items": { "type": "object", "properties": { "discord_user_id": { "type": "string" } } }
+          },
+          "downvotes": {
+            "type": "array",
+            "items": { "type": "object", "properties": { "discord_user_id": { "type": "string" } } }
+          },
+          "discord_msg_id": { "type": "string" }
+        }
+      },
+      "PublicUser": {
+        "type": "object",
+        "required": ["user_id", "display_name"],
+        "properties": {
+          "id": { "type": "integer" },
+          "user_id": { "type": "string", "format": "uuid" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "display_name": { "type": "string" },
+          "image_url": { "type": "string" },
+          "background_image_url": { "type": "string" },
+          "site_theme": {
+            "type": "object",
+            "properties": { "color": { "type": "string" } }
+          },
+          "is_admin": { "type": "boolean" },
+          "is_mod": { "type": "boolean" },
+          "is_developer": { "type": "boolean" },
+          "is_community_paragon": { "type": "boolean" },
+          "deactivated": { "type": "boolean" },
+          "summary": { "type": "string" },
+          "organized_play_id": { "type": "string" },
+          "subscribed_content_sources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "source_id": { "type": "integer" },
+                "source_name": { "type": "string" },
+                "added_at": { "type": "string" }
+              }
+            }
+          },
+          "patreon": { "type": "object", "additionalProperties": true },
+          "api": {
+            "type": "object",
+            "properties": {
+              "clients": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["id", "name", "api_key"],
+                  "properties": {
+                    "id": { "type": "string" },
+                    "name": { "type": "string" },
+                    "description": { "type": "string" },
+                    "image_url": { "type": "string" },
+                    "api_key": { "type": "string", "description": "36-char UUID" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ContentFilter": {
+        "type": "object",
+        "description": "Common filter shape for find-* endpoints.",
+        "properties": {
+          "id": {
+            "oneOf": [
+              { "type": "integer" },
+              { "type": "array", "items": { "type": "integer" } }
+            ],
+            "description": "Single id or array of ids. When omitted (or array), the response is an array. When a single id, the response is the matching object or null."
+          },
+          "name": { "type": "string", "description": "Case-insensitive exact match (ilike)." },
+          "content_sources": {
+            "type": "array",
+            "items": { "type": "integer" },
+            "description": "Restrict to these content_source_ids. When omitted, only official published sources are returned."
+          },
+          "traits": {
+            "type": "array",
+            "items": { "type": "integer" },
+            "description": "Match rows whose `traits` array contains all of these trait ids."
+          }
+        }
+      },
+      "SearchResults": {
+        "type": "object",
+        "required": ["ability_blocks", "ancestries", "archetypes", "backgrounds", "classes", "creatures", "items", "languages", "spells", "traits", "versatile_heritages", "class_archetypes"],
+        "properties": {
+          "ability_blocks": { "type": "array", "items": { "$ref": "#/components/schemas/AbilityBlock" } },
+          "ancestries": { "type": "array", "items": { "$ref": "#/components/schemas/Ancestry" } },
+          "archetypes": { "type": "array", "items": { "$ref": "#/components/schemas/Archetype" } },
+          "backgrounds": { "type": "array", "items": { "$ref": "#/components/schemas/Background" } },
+          "classes": { "type": "array", "items": { "$ref": "#/components/schemas/Class" } },
+          "creatures": { "type": "array", "items": { "$ref": "#/components/schemas/Creature" } },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Item" } },
+          "languages": { "type": "array", "items": { "$ref": "#/components/schemas/Language" } },
+          "spells": { "type": "array", "items": { "$ref": "#/components/schemas/Spell" } },
+          "traits": { "type": "array", "items": { "$ref": "#/components/schemas/Trait" } },
+          "versatile_heritages": { "type": "array", "items": { "$ref": "#/components/schemas/VersatileHeritage" } },
+          "class_archetypes": { "type": "array", "items": { "$ref": "#/components/schemas/ClassArchetype" } }
+        }
+      }
+    },
+    "responses": {
+      "JSendFail": {
+        "description": "Operation failed due to invalid input or insufficient permissions.",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/JSendFail" } }
+        }
+      },
+      "JSendError": {
+        "description": "Server-side error.",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/JSendError" } }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/find-spell": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Find spells",
+        "description": "Look up spells by id, name, content source, or trait. Omit `id` to get an array; pass a single integer `id` to get one row or `null`.",
+        "operationId": "findSpell",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  { "$ref": "#/components/schemas/ContentFilter" }
+                ]
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Plant response",
+            "description": "JSend success.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Plant"
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "type": "array", "items": { "$ref": "#/components/schemas/Spell" } },
+                        { "$ref": "#/components/schemas/Spell" },
+                        { "type": "null" }
+                      ]
+                    }
                   }
                 }
               }
             }
           },
-          "400": {
-            "description": "Unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
+          "401": { "$ref": "#/components/responses/JSendFail" }
+        }
+      }
+    },
+    "/find-item": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Find items",
+        "description": "Look up items by id, name, or content source.",
+        "operationId": "findItem",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "oneOf": [{ "type": "integer" }, { "type": "array", "items": { "type": "integer" } }] },
+                  "name": { "type": "string" },
+                  "content_sources": { "type": "array", "items": { "type": "integer" } }
                 }
               }
             }
           }
-        }
-      },
-      "post": {
-        "description": "Creates a new plant in the store",
-        "requestBody": {
-          "description": "Plant to add to the store",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewPlant"
-              }
-            }
-          },
-          "required": true
         },
         "responses": {
           "200": {
-            "description": "plant response",
+            "description": "JSend success.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Plant"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "type": "array", "items": { "$ref": "#/components/schemas/Item" } },
+                        { "$ref": "#/components/schemas/Item" },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
                 }
               }
             }
@@ -96,121 +767,1988 @@
         }
       }
     },
-    "/plants/{id}": {
-      "delete": {
-        "description": "Deletes a single plant based on the ID supplied",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "ID of plant to delete",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Plant deleted",
-            "content": {}
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  "webhooks": {
-    "/plant/webhook": {
+    "/find-ability-block": {
       "post": {
-        "description": "Information about a new plant added to the store",
+        "tags": ["Content"],
+        "summary": "Find ability blocks (feats, actions, class features, etc.)",
+        "description": "Ability blocks cover feats, actions, physical-features, senses, class-features, heritages, and modes. Filter by `type` to narrow.",
+        "operationId": "findAbilityBlock",
         "requestBody": {
-          "description": "Plant added to the store",
+          "required": false,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NewPlant"
+                "type": "object",
+                "properties": {
+                  "id": { "oneOf": [{ "type": "integer" }, { "type": "array", "items": { "type": "integer" } }] },
+                  "type": { "$ref": "#/components/schemas/AbilityBlockType" },
+                  "name": { "type": "string" },
+                  "content_sources": { "type": "array", "items": { "type": "integer" } },
+                  "traits": { "type": "array", "items": { "type": "integer" } },
+                  "prerequisites": { "type": "array", "items": { "type": "string" } }
+                }
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Return a 200 status to indicate that the data was received successfully"
-          }
-        }
-      }
-    }
-  },
-  "components": {
-    "schemas": {
-      "Plant": {
-        "required": [
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "description": "The name of the plant",
-            "type": "string"
-          },
-          "tag": {
-            "description": "Tag to specify the type",
-            "type": "string"
-          }
-        }
-      },
-      "NewPlant": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Plant"
-          },
-          {
-            "required": [
-              "id"
-            ],
-            "type": "object",
-            "properties": {
-              "id": {
-                "description": "Identification number of the plant",
-                "type": "integer",
-                "format": "int64"
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "type": "array", "items": { "$ref": "#/components/schemas/AbilityBlock" } },
+                        { "$ref": "#/components/schemas/AbilityBlock" },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
               }
             }
-          }
-        ]
-      },
-      "Error": {
-        "required": [
-          "error",
-          "message"
-        ],
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "message": {
-            "type": "string"
           }
         }
       }
     },
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer"
+    "/find-ancestry": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Find ancestries",
+        "operationId": "findAncestry",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "oneOf": [{ "type": "integer" }, { "type": "array", "items": { "type": "integer" } }] },
+                  "content_sources": { "type": "array", "items": { "type": "integer" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "type": "array", "items": { "$ref": "#/components/schemas/Ancestry" } },
+                        { "$ref": "#/components/schemas/Ancestry" },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/find-archetype": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Find archetypes",
+        "operationId": "findArchetype",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "oneOf": [{ "type": "integer" }, { "type": "array", "items": { "type": "integer" } }] },
+                  "content_sources": { "type": "array", "items": { "type": "integer" } },
+                  "dedication_feat_id": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "type": "array", "items": { "$ref": "#/components/schemas/Archetype" } },
+                        { "$ref": "#/components/schemas/Archetype" },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/find-background": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Find backgrounds",
+        "operationId": "findBackground",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "oneOf": [{ "type": "integer" }, { "type": "array", "items": { "type": "integer" } }] },
+                  "content_sources": { "type": "array", "items": { "type": "integer" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "type": "array", "items": { "$ref": "#/components/schemas/Background" } },
+                        { "$ref": "#/components/schemas/Background" },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/find-class": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Find classes",
+        "operationId": "findClass",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "oneOf": [{ "type": "integer" }, { "type": "array", "items": { "type": "integer" } }] },
+                  "content_sources": { "type": "array", "items": { "type": "integer" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "type": "array", "items": { "$ref": "#/components/schemas/Class" } },
+                        { "$ref": "#/components/schemas/Class" },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/find-class-archetype": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Find class archetypes",
+        "operationId": "findClassArchetype",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "oneOf": [{ "type": "integer" }, { "type": "array", "items": { "type": "integer" } }] },
+                  "content_sources": { "type": "array", "items": { "type": "integer" } },
+                  "class_id": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "type": "array", "items": { "$ref": "#/components/schemas/ClassArchetype" } },
+                        { "$ref": "#/components/schemas/ClassArchetype" },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/find-content-source": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Find content sources (books)",
+        "description": "Returns published official sources by default. Pass `homebrew: true` to include user-created sources.",
+        "operationId": "findContentSource",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "oneOf": [{ "type": "integer" }, { "type": "array", "items": { "type": "integer" } }] },
+                  "foundry_id": { "type": "string" },
+                  "group": { "type": "string" },
+                  "homebrew": { "type": "boolean" },
+                  "published": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "type": "array", "items": { "$ref": "#/components/schemas/ContentSource" } },
+                        { "$ref": "#/components/schemas/ContentSource" },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/find-content-update": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Find content updates / errata",
+        "operationId": "findContentUpdate",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "integer" },
+                  "user_id": { "type": "string", "format": "uuid" },
+                  "state": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] },
+                  "created": {
+                    "type": "object",
+                    "properties": {
+                      "from": { "type": "string", "format": "date-time" },
+                      "to": { "type": "string", "format": "date-time" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "type": "array", "items": { "$ref": "#/components/schemas/ContentUpdate" } },
+                        { "$ref": "#/components/schemas/ContentUpdate" },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/find-creature": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Find creatures",
+        "operationId": "findCreature",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "oneOf": [{ "type": "integer" }, { "type": "array", "items": { "type": "integer" } }] },
+                  "name": { "type": "string" },
+                  "content_sources": { "type": "array", "items": { "type": "integer" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "type": "array", "items": { "$ref": "#/components/schemas/Creature" } },
+                        { "$ref": "#/components/schemas/Creature" },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/find-language": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Find languages",
+        "operationId": "findLanguage",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "oneOf": [{ "type": "integer" }, { "type": "array", "items": { "type": "integer" } }] },
+                  "name": { "type": "string" },
+                  "content_sources": { "type": "array", "items": { "type": "integer" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "type": "array", "items": { "$ref": "#/components/schemas/Language" } },
+                        { "$ref": "#/components/schemas/Language" },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/find-trait": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Find traits",
+        "operationId": "findTrait",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "integer" },
+                  "name": { "type": "string" },
+                  "content_sources": { "type": "array", "items": { "type": "integer" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Trait" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/find-versatile-heritage": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Find versatile heritages",
+        "operationId": "findVersatileHeritage",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "oneOf": [{ "type": "integer" }, { "type": "array", "items": { "type": "integer" } }] },
+                  "content_sources": { "type": "array", "items": { "type": "integer" } },
+                  "heritage_id": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "type": "array", "items": { "$ref": "#/components/schemas/VersatileHeritage" } },
+                        { "$ref": "#/components/schemas/VersatileHeritage" },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create-spell": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Create or update a spell",
+        "description": "Pass `id` to update an existing row, omit `id` (or set to `-1`) to insert a new one.",
+        "operationId": "createSpell",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/Spell" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success. Inserted row on create, `true` on update.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "$ref": "#/components/schemas/Spell" },
+                        { "type": "boolean" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create-item": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Create or update an item",
+        "operationId": "createItem",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/Item" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "$ref": "#/components/schemas/Item" },
+                        { "type": "boolean" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create-ability-block": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Create or update an ability block (feat, action, etc.)",
+        "operationId": "createAbilityBlock",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/AbilityBlock" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "$ref": "#/components/schemas/AbilityBlock" },
+                        { "type": "boolean" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create-ancestry": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Create or update an ancestry",
+        "description": "Auto-creates the associated ancestry trait if `trait_id` is missing.",
+        "operationId": "createAncestry",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/Ancestry" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "$ref": "#/components/schemas/Ancestry" },
+                        { "type": "boolean" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create-archetype": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Create or update an archetype",
+        "operationId": "createArchetype",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/Archetype" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "$ref": "#/components/schemas/Archetype" },
+                        { "type": "boolean" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create-background": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Create or update a background",
+        "operationId": "createBackground",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/Background" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "$ref": "#/components/schemas/Background" },
+                        { "type": "boolean" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create-class": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Create or update a class",
+        "operationId": "createClass",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/Class" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "$ref": "#/components/schemas/Class" },
+                        { "type": "boolean" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create-class-archetype": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Create or update a class archetype",
+        "operationId": "createClassArchetype",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ClassArchetype" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "$ref": "#/components/schemas/ClassArchetype" },
+                        { "type": "boolean" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create-content-source": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Create or update a content source (book)",
+        "description": "Creating a new homebrew content source requires Patreon tier 2+. Updating an existing source requires ownership.",
+        "operationId": "createContentSource",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ContentSource" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "$ref": "#/components/schemas/ContentSource" },
+                        { "type": "boolean" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create-content-update": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Submit a content update / errata for community review",
+        "description": "Creates a content_update record in PENDING state. Discord moderators approve/reject via the bot, which calls `/update-content-update`.",
+        "operationId": "createContentUpdate",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["type", "action", "data", "content_source_id"],
+                "properties": {
+                  "type": { "$ref": "#/components/schemas/ContentType" },
+                  "ref_id": { "type": "integer", "description": "Required for UPDATE/DELETE actions; the id of the existing row." },
+                  "action": { "type": "string", "enum": ["UPDATE", "CREATE", "DELETE"] },
+                  "data": { "type": "object", "additionalProperties": true },
+                  "content_source_id": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success with the created update row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": { "$ref": "#/components/schemas/ContentUpdate" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create-creature": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Create or update a creature",
+        "operationId": "createCreature",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/Creature" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "$ref": "#/components/schemas/Creature" },
+                        { "type": "boolean" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create-language": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Create or update a language",
+        "operationId": "createLanguage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/Language" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "$ref": "#/components/schemas/Language" },
+                        { "type": "boolean" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create-trait": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Create or update a trait",
+        "operationId": "createTrait",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/Trait" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "$ref": "#/components/schemas/Trait" },
+                        { "type": "boolean" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create-versatile-heritage": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Create or update a versatile heritage",
+        "operationId": "createVersatileHeritage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/VersatileHeritage" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "$ref": "#/components/schemas/VersatileHeritage" },
+                        { "type": "boolean" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/delete-content": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Delete a content row",
+        "description": "Deletes any single row from a content table. Caller must be the row owner (or owner of the row's content source) or an admin/mod. Anyone else gets a JSend `fail`.",
+        "operationId": "deleteContent",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id", "type"],
+                "properties": {
+                  "id": { "type": "integer" },
+                  "type": {
+                    "oneOf": [
+                      { "$ref": "#/components/schemas/ContentType" },
+                      { "type": "string", "description": "Raw table name as fallback." }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend envelope. `success` if deleted, `fail` if forbidden, `error` for invalid type or unknown row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    { "$ref": "#/components/schemas/JSendBoolean" },
+                    { "$ref": "#/components/schemas/JSendFail" },
+                    { "$ref": "#/components/schemas/JSendError" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/find-character": {
+      "post": {
+        "tags": ["Characters"],
+        "summary": "Find characters",
+        "description": "When called with an API key, the caller must have a `client_access` grant on the requested character (set via the user UI). Without a grant, returns 403. Filtering by `campaign_id` only returns all characters in that campaign so members can see each other.",
+        "operationId": "findCharacter",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "oneOf": [{ "type": "integer" }, { "type": "array", "items": { "type": "integer" } }] },
+                  "user_id": { "type": "string", "format": "uuid" },
+                  "campaign_id": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "type": "array", "items": { "$ref": "#/components/schemas/Character" } },
+                        { "$ref": "#/components/schemas/Character" },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/JSendFail" }
+        }
+      }
+    },
+    "/create-character": {
+      "post": {
+        "tags": ["Characters"],
+        "summary": "Create or update a character",
+        "description": "Free users are limited to 6 characters. Patreon tier 2+ removes the cap. Pass `id` to update.",
+        "operationId": "createCharacter",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/Character" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": { "type": "string", "enum": ["success"] },
+                        "data": {
+                          "oneOf": [
+                            { "$ref": "#/components/schemas/Character" },
+                            { "type": "boolean" }
+                          ]
+                        }
+                      }
+                    },
+                    { "$ref": "#/components/schemas/JSendError" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/update-character": {
+      "post": {
+        "tags": ["Characters"],
+        "summary": "Update an existing character",
+        "description": "Same body shape as `create-character` but `id` is required. Forbidden keys (`id`, `created_at`, `content_source_id`, `user_id`) are stripped server-side.",
+        "operationId": "updateCharacter",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  { "$ref": "#/components/schemas/Character" },
+                  { "type": "object", "required": ["id"] }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/JSendBoolean" } }
+            }
+          }
+        }
+      }
+    },
+    "/find-campaign": {
+      "post": {
+        "tags": ["Campaigns"],
+        "summary": "Find campaigns",
+        "operationId": "findCampaign",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "oneOf": [{ "type": "integer" }, { "type": "array", "items": { "type": "integer" } }] },
+                  "user_id": { "type": "string", "format": "uuid" },
+                  "join_key": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Campaign" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create-campaign": {
+      "post": {
+        "tags": ["Campaigns"],
+        "summary": "Create or update a campaign",
+        "description": "Creating a new campaign requires Patreon tier 1+ (free users cannot create campaigns).",
+        "operationId": "createCampaign",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/Campaign" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": { "type": "string", "enum": ["success"] },
+                        "data": {
+                          "oneOf": [
+                            { "$ref": "#/components/schemas/Campaign" },
+                            { "type": "boolean" }
+                          ]
+                        }
+                      }
+                    },
+                    { "$ref": "#/components/schemas/JSendError" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/find-encounter": {
+      "post": {
+        "tags": ["Campaigns"],
+        "summary": "Find encounters",
+        "operationId": "findEncounter",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "oneOf": [{ "type": "integer" }, { "type": "array", "items": { "type": "integer" } }] },
+                  "user_id": { "type": "string", "format": "uuid" },
+                  "campaign_id": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Encounter" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create-encounter": {
+      "post": {
+        "tags": ["Campaigns"],
+        "summary": "Create or update an encounter",
+        "description": "Creating new encounters requires Patreon tier 1+.",
+        "operationId": "createEncounter",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/Encounter" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "oneOf": [
+                        { "$ref": "#/components/schemas/Encounter" },
+                        { "type": "boolean" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/remove-from-campaign": {
+      "post": {
+        "tags": ["Campaigns"],
+        "summary": "Remove a character (and its player) from a campaign",
+        "operationId": "removeFromCampaign",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["character_id", "campaign_id"],
+                "properties": {
+                  "character_id": { "type": "integer" },
+                  "campaign_id": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    { "$ref": "#/components/schemas/JSendBoolean" },
+                    { "$ref": "#/components/schemas/JSendError" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reset-campaign-key": {
+      "post": {
+        "tags": ["Campaigns"],
+        "summary": "Regenerate the campaign join key",
+        "description": "Only the campaign owner (GM) can reset the key. Existing join codes immediately stop working.",
+        "operationId": "resetCampaignKey",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id"],
+                "properties": { "id": { "type": "integer" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success with the new key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": { "type": "object", "properties": { "join_key": { "type": "string" } } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gm-add-to-group": {
+      "post": {
+        "tags": ["GM"],
+        "summary": "Join a Game Master's virtual-tier group",
+        "description": "A GM with the GAME-MASTER Patreon tier shares an `access_code` so members of their group inherit Patreon perks. The caller exchanges the code for membership.",
+        "operationId": "gmAddToGroup",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["gm_user_id", "access_code"],
+                "properties": {
+                  "gm_user_id": { "type": "string", "format": "uuid" },
+                  "access_code": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": { "type": "string", "enum": ["success"] },
+                        "data": { "type": "string" }
+                      }
+                    },
+                    { "$ref": "#/components/schemas/JSendError" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gm-remove-from-group": {
+      "post": {
+        "tags": ["GM"],
+        "summary": "Remove a user from your GM group",
+        "description": "Caller must be the GM. Removes the named user from the caller's virtual-tier group.",
+        "operationId": "gmRemoveFromGroup",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["user_id"],
+                "properties": { "user_id": { "type": "string", "format": "uuid" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": { "type": "string", "enum": ["success"] },
+                        "data": { "type": "string" }
+                      }
+                    },
+                    { "$ref": "#/components/schemas/JSendError" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gm-users-in-group": {
+      "post": {
+        "tags": ["GM"],
+        "summary": "List the users in your GM group",
+        "operationId": "gmUsersInGroup",
+        "requestBody": {
+          "required": false,
+          "content": { "application/json": { "schema": { "type": "object" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success with member list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "user_id": { "type": "string", "format": "uuid" },
+                          "display_name": { "type": "string" },
+                          "added_at": { "type": "string", "format": "date-time" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gm-regenerate-code": {
+      "post": {
+        "tags": ["GM"],
+        "summary": "Regenerate your GM access code",
+        "description": "Invalidates the previous code; existing members stay in the group.",
+        "operationId": "gmRegenerateCode",
+        "requestBody": {
+          "required": false,
+          "content": { "application/json": { "schema": { "type": "object" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": { "type": "string", "enum": ["success"] },
+                        "data": { "type": "string" }
+                      }
+                    },
+                    { "$ref": "#/components/schemas/JSendError" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/get-user": {
+      "post": {
+        "tags": ["Users"],
+        "summary": "Get a public user profile",
+        "description": "Without a body, returns the caller's own profile. Pass `id` (Supabase auth user id, UUID) or `_id` (numeric `public_user.id`) to look up another user. Sensitive fields (Patreon tokens, API keys) are stripped from the response.",
+        "operationId": "getUser",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string", "format": "uuid", "description": "Supabase auth user id." },
+                  "_id": { "type": "string", "description": "public_user.id (numeric) as a string." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success with the public user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": { "$ref": "#/components/schemas/PublicUser" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/update-user": {
+      "post": {
+        "tags": ["Users"],
+        "summary": "Update your own profile",
+        "description": "Updates a subset of `public_user` fields for the authenticated caller. Accepts `display_name`, `summary`, `image_url`, `background_image_url`, `organized_play_id`, `site_theme`, `subscribed_content_sources`, `api`. The user id and timestamps are never writable.",
+        "operationId": "updateUser",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/PublicUser" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/JSendBoolean" } }
+            }
+          }
+        }
+      }
+    },
+    "/delete-user": {
+      "post": {
+        "tags": ["Users"],
+        "summary": "Delete the caller's account",
+        "description": "Permanently deletes the authenticated user, their public_user row, and the auth identity. **Irreversible.**",
+        "operationId": "deleteUser",
+        "requestBody": {
+          "required": false,
+          "content": { "application/json": { "schema": { "type": "object" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success", "error"] },
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": { "userId": { "type": "string", "format": "uuid" } }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/handle-patreon-redirect": {
+      "post": {
+        "tags": ["Users"],
+        "summary": "Complete Patreon OAuth flow",
+        "description": "Receives the OAuth `code` from Patreon's redirect, exchanges it for tokens, and stores them on the caller's `public_user.patreon` field.",
+        "operationId": "handlePatreonRedirect",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["code", "redirectOrigin"],
+                "properties": {
+                  "code": { "type": "string" },
+                  "redirectOrigin": { "type": "string", "format": "uri" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": { "type": "string", "enum": ["success"] },
+                        "data": { "type": "object", "additionalProperties": true }
+                      }
+                    },
+                    { "$ref": "#/components/schemas/JSendError" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/get-content-source-stats": {
+      "post": {
+        "tags": ["Search"],
+        "summary": "Get usage stats for a content source",
+        "description": "Returns the source itself plus the count of subscribers (users with this source enabled).",
+        "operationId": "getContentSourceStats",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["content_source_id"],
+                "properties": { "content_source_id": { "type": "integer" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "source": { "$ref": "#/components/schemas/ContentSource" },
+                        "count": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search-data": {
+      "post": {
+        "tags": ["Search"],
+        "summary": "Search across all content",
+        "description": "Two modes:\n- **Simple**: set `text` (>= 2 chars). Runs a websearch full-text query against every content table, capped at 20 hits each. Best for spotlight-style search.\n- **Advanced**: set `is_advanced: true` plus a `type` and any of the per-type filters. Returns matching rows in the corresponding bucket only.\n\nAll responses include all twelve content buckets, even if empty.",
+        "operationId": "searchData",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": { "type": "string", "description": "Simple-mode search text." },
+                  "is_advanced": { "type": "boolean" },
+                  "type": { "$ref": "#/components/schemas/ContentType" },
+                  "content_sources": { "type": "array", "items": { "type": "integer" } },
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "rarity": { "$ref": "#/components/schemas/Rarity" },
+                  "availability": { "$ref": "#/components/schemas/Availability" },
+                  "traits": { "type": "array", "items": { "type": "integer" } },
+                  "size": { "$ref": "#/components/schemas/Size" },
+                  "cost": { "type": "string" },
+                  "trigger": { "type": "string" },
+                  "requirements": { "type": "string" },
+                  "level_min": { "type": "integer" },
+                  "level_max": { "type": "integer" },
+                  "rank_min": { "type": "integer" },
+                  "rank_max": { "type": "integer" },
+                  "cast": { "type": "string" },
+                  "traditions": { "type": "array", "items": { "type": "string" } },
+                  "defense": { "type": "string" },
+                  "range": { "type": "string" },
+                  "area": { "type": "string" },
+                  "targets": { "type": "string" },
+                  "duration": { "type": "string" },
+                  "spell_type": { "type": "string", "enum": ["FOCUS", "RITUAL", "NORMAL"] },
+                  "actions": { "$ref": "#/components/schemas/ActionCost" },
+                  "prerequisites": { "type": "array", "items": { "type": "string" } },
+                  "frequency": { "type": "string" },
+                  "access": { "type": "string" },
+                  "special": { "type": "string" },
+                  "ab_type": { "$ref": "#/components/schemas/AbilityBlockType" },
+                  "bulk": { "type": "string" },
+                  "group": { "$ref": "#/components/schemas/ItemGroup" },
+                  "hands": { "type": "string" },
+                  "craft_requirements": { "type": "string" },
+                  "usage": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success with the SearchResults envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": { "$ref": "#/components/schemas/SearchResults" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/upload-public-file": {
+      "post": {
+        "tags": ["Files"],
+        "summary": "Upload a portrait or background image",
+        "description": "Accepts a base64-encoded image. Patreon tier 1+ required. Files larger than ~5 MB are rejected.",
+        "operationId": "uploadPublicFile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["data", "category", "type"],
+                "properties": {
+                  "data": { "type": "string", "description": "Base64-encoded image bytes." },
+                  "category": { "type": "string", "enum": ["portraits", "backgrounds"] },
+                  "type": { "type": "string", "enum": ["png", "jpeg", "jpg", "webp"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend envelope. On success, `data` contains the uploaded file's public URL.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": { "type": "string", "enum": ["success"] },
+                        "data": { "type": "object", "properties": { "url": { "type": "string", "format": "uri" } } }
+                      }
+                    },
+                    { "$ref": "#/components/schemas/JSendError" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vector-db-query-collection": {
+      "post": {
+        "tags": ["Integrations"],
+        "summary": "Query the vector database for semantic search",
+        "description": "Proxies to the WG vector DB (Chroma). Use for semantic / nearest-neighbor lookups across spell or feat names and descriptions.",
+        "operationId": "vectorDbQueryCollection",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["collection"],
+                "properties": {
+                  "collection": { "type": "string", "description": "Collection name, e.g. `name` or `content`." },
+                  "nResults": { "type": "integer", "default": 1 },
+                  "maxDistance": { "type": "number", "description": "0.0 = identical; higher = more dissimilar." },
+                  "query": { "type": "string" },
+                  "where": {
+                    "type": "object",
+                    "additionalProperties": { "oneOf": [{ "type": "string" }, { "type": "number" }, { "type": "boolean" }] }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": { "type": "string", "enum": ["success"] },
+                        "data": { "type": "object", "additionalProperties": true }
+                      }
+                    },
+                    { "$ref": "#/components/schemas/JSendError" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vector-db-populate-collection": {
+      "post": {
+        "tags": ["Integrations"],
+        "summary": "Populate vector embeddings for a collection",
+        "description": "Indexer endpoint: takes a collection name (`name` or `content`), a content type, and a list of row ids; generates embeddings and stores them. Used by content-update flows; not generally called by external clients.",
+        "operationId": "vectorDbPopulateCollection",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["collection", "type", "ids"],
+                "properties": {
+                  "collection": { "type": "string", "enum": ["name", "content"] },
+                  "type": { "$ref": "#/components/schemas/ContentType" },
+                  "ids": { "type": "array", "items": { "type": "integer" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    { "$ref": "#/components/schemas/JSendBoolean" },
+                    { "$ref": "#/components/schemas/JSendError" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/update-content-update": {
+      "post": {
+        "tags": ["Integrations"],
+        "summary": "(Discord webhook) Approve, reject, or vote on a content update",
+        "description": "Service-to-service webhook for the WG Discord moderation bot. Authenticates via the shared `CONTENT_UPDATE_KEY` secret in the `Authorization: Bearer <secret>` header (NOT a user JWT or API key). When state=APPROVE, applies the underlying content change.",
+        "operationId": "updateContentUpdate",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["discord_msg_id", "discord_user_id", "discord_user_name", "state"],
+                "properties": {
+                  "discord_msg_id": { "type": "string" },
+                  "discord_user_id": { "type": "string" },
+                  "discord_user_name": { "type": "string" },
+                  "state": { "type": "string", "enum": ["APPROVE", "REJECT", "UPVOTE", "DOWNVOTE"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    { "$ref": "#/components/schemas/JSendBoolean" },
+                    { "$ref": "#/components/schemas/JSendFail" },
+                    { "$ref": "#/components/schemas/JSendError" }
+                  ]
+                }
+              }
+            }
+          }
+        }
       }
     }
   }

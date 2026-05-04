@@ -1,0 +1,432 @@
+---
+title: 'Operations'
+description: 'Every operation type that runs at character build time, what it does, and the JSON shape it expects.'
+---
+
+Most WG content rows aren’t static text. They describe **what they do** to a character, and that description is a list of _operations_ on the row’s `operations` column. When the character sheet builds, it walks every operation attached to every selected feat / ancestry / class / item / spell and applies them to a variables store.
+
+This page is the canonical reference for every operation type. The TypeScript schemas live in [`frontend/src/schemas/operations.ts`](https://github.com/wanderers-guide/wanderers-guide/blob/main/frontend/src/schemas/operations.ts); this page mirrors them in prose.
+
+## The shape
+
+Every operation looks like this:
+
+```ts
+{
+  id: string,           // UUID, unique per operation row (use crypto.randomUUID())
+  type: OperationType,  // see the catalog below
+  data: { ... }         // shape varies by type
+}
+```
+
+`id` is required by the engine for deduplication and result tracking. Never reuse one across operations.
+
+## Variables, briefly
+
+Most operations read or write a **variable** (proficiencies, attributes, HP, perception, resistances, etc.). The set of named variables is defined in [`frontend/src/process/variables/variable-manager.ts`](https://github.com/wanderers-guide/wanderers-guide/blob/main/frontend/src/process/variables/variable-manager.ts), there are ~166 of them. Each variable has a type:
+
+| Type       | Examples                                                         |
+| ---------- | ---------------------------------------------------------------- |
+| `num`      | `MAX_HEALTH`, `SPEED`, `FOCUS_POINTS`                            |
+| `str`      | `SIZE`, `CASTING_SOURCES`                                        |
+| `bool`     | `USE_PIERCING_DAMAGE_RESISTANCES`, `DUAL_CLASS`                  |
+| `prof`     | `SKILL_ATHLETICS`, `SAVE_FORT`, `WEAPON_SIMPLE`                  |
+| `attr`     | `ATTRIBUTE_STR`, `ATTRIBUTE_DEX`                                 |
+| `list-str` | `RESISTANCES`, `WEAKNESSES`, `IMMUNITIES`, `LANGUAGES`, `SENSES` |
+
+When writing operations, **always look up similar existing content first** and copy the exact variable name and value shape. The engine fails silently on unknown variable names.
+
+---
+
+## Variable operations
+
+These read and write the variable store. Most operations on a typical feat or ancestry are these.
+
+### `createValue`
+
+Introduce a new named variable on the character. Used for variables that aren’t in the default set (custom counters, archetype-specific bookkeeping).
+
+```jsonc
+{
+	"id": "<uuid>",
+	"type": "createValue",
+	"data": {
+		"variable": "MY_CUSTOM_COUNTER",
+		"type": "num", // 'num' | 'str' | 'bool' | 'prof' | 'attr' | 'list-str'
+		"value": 0,
+	},
+}
+```
+
+If the variable already exists, this is a no-op.
+
+### `setValue`
+
+Hard-set a variable. Wins over any prior value, including `setValue`s from other content (last-write-wins).
+
+```jsonc
+{
+	"id": "<uuid>",
+	"type": "setValue",
+	"data": { "variable": "SIZE", "value": "LARGE" },
+}
+```
+
+Use sparingly: it stomps any other contribution. Prefer `adjValue` or `addBonusToValue` when stacking matters.
+
+### `adjValue`
+
+Adjust a value. The exact behaviour depends on the variable type:
+
+- **`num`**: additive (`+1`, `-2`). Stacks with other `adjValue`s on the same variable.
+- **`prof`**: increase a proficiency rank (`'U' → 'T' → 'E' → 'M' → 'L'`). Pass `'1'` to step up, `'-1'` to step down.
+- **`list-str`**: append. The string is the entry to add (e.g. `"fire, 5"` for resistances).
+- **`bool`**: set to true.
+- **`str`**: replace.
+
+```jsonc
+// Numeric
+{ "id": "...", "type": "adjValue", "data": { "variable": "MAX_HEALTH", "value": 5 } }
+
+// Proficiency step up
+{ "id": "...", "type": "adjValue", "data": { "variable": "SKILL_ATHLETICS", "value": "1" } }
+
+// Resistance / weakness / immunity
+{ "id": "...", "type": "adjValue", "data": { "variable": "RESISTANCES", "value": "fire, 5" } }
+{ "id": "...", "type": "adjValue", "data": { "variable": "IMMUNITIES",  "value": "poison"  } }
+```
+
+### `addBonusToValue`
+
+A **typed** numeric bonus that respects PF2e bonus stacking rules (item / status / circumstance bonuses don’t stack with the same type). Use this rather than `adjValue` whenever the source describes a bonus type, and use it (with `value: null`) for any conditional or narrative note you want to surface beneath a stat without it being a literal numeric bonus.
+
+The three fields are `value` (number, or `null` for a non-numeric note), `type` (`"item"` / `"status"` / `"circumstance"` / `""` for untyped), and `text` (free-form rider).
+
+#### How it renders
+
+WG composes `value`, `type`, and `text` into a single line shown beneath the stat. The shape of that line is what makes this operation feel different from `adjValue`:
+
+| `value` | `type`           | `text`                                                        | Renders as                                                  |
+| ------- | ---------------- | ------------------------------------------------------------- | ----------------------------------------------------------- |
+| `1`     | `"item"`         | `""`                                                          | `+1 item bonus`                                             |
+| `1`     | `"circumstance"` | `"to Climb trees"`                                            | `+1 circumstance bonus to Climb trees`                      |
+| `null`  | `""`             | `"If you get a success, you get a critical success instead."` | `If you get a success, you get a critical success instead.` |
+
+That last form is the workhorse for "show this note under the proficiency, but it isn’t a number". Anything you want a player to see attached to a stat (situational rerolls, success-promotion clauses, "use this instead of normal rules" riders) goes in via `value: null` + `type: ""` + the prose in `text`.
+
+#### Examples
+
+```jsonc
+// Plain typed bonus
+{
+	"id": "<uuid>",
+	"type": "addBonusToValue",
+	"data": { "variable": "AC_BONUS", "value": 1, "type": "item", "text": "" }
+}
+
+// Conditional numeric bonus: value still renders, text qualifies it
+{
+	"id": "<uuid>",
+	"type": "addBonusToValue",
+	"data": { "variable": "SKILL_ATHLETICS", "value": 1, "type": "circumstance", "text": "to Climb trees" }
+}
+
+// Pure mechanical note shown under the stat, no number
+{
+	"id": "<uuid>",
+	"type": "addBonusToValue",
+	"data": {
+		"variable": "SAVE_FORT",
+		"value": null,
+		"type": "",
+		"text": "If you get a success, you get a critical success instead."
+	}
+}
+```
+
+### `bindValue`
+
+Bind one variable to another’s source so the bound value follows the original. Used for class DC inheritance, casting attribute mirroring, and a few other linked-stat patterns.
+
+```jsonc
+{
+	"id": "<uuid>",
+	"type": "bindValue",
+	"data": {
+		"variable": "CLASS_DC",
+		"value": { "storeId": "CHARACTER", "variable": "ATTRIBUTE_STR" },
+	},
+}
+```
+
+`storeId` is `'CHARACTER'` for the active character; companion stores use their own IDs.
+
+---
+
+## Granting and removing content
+
+These attach (or detach) other database rows to the character.
+
+### `giveAbilityBlock` / `removeAbilityBlock`
+
+Grant or revoke a feat, action, class feature, sense, heritage, mode, or physical feature by id. The `type` field here is the **AbilityBlock subtype**, not the row’s database type.
+
+```jsonc
+{
+  "id": "<uuid>",
+  "type": "giveAbilityBlock",
+  "data": { "type": "feat", "abilityBlockId": 20015 }
+}
+
+{
+  "id": "<uuid>",
+  "type": "removeAbilityBlock",
+  "data": { "type": "feat", "abilityBlockId": 20015 }
+}
+```
+
+`type` is one of: `'action' | 'feat' | 'physical-feature' | 'sense' | 'class-feature' | 'heritage' | 'mode'`.
+
+### `giveLanguage` / `removeLanguage`
+
+```jsonc
+{ "id": "...", "type": "giveLanguage",   "data": { "languageId": 42 } }
+{ "id": "...", "type": "removeLanguage", "data": { "languageId": 42 } }
+```
+
+For a player-chosen language, use a `select` with `optionType: 'LANGUAGE'` instead.
+
+### `giveSpell` / `removeSpell`
+
+Grant or revoke a single spell. `giveSpell` carries the metadata that determines how it shows up on the sheet (focus pool vs spell slot, casting source, fixed rank for innate spells).
+
+```jsonc
+{
+  "id": "<uuid>",
+  "type": "giveSpell",
+  "data": {
+    "spellId": 4623,
+    "type": "INNATE",          // 'NORMAL' | 'FOCUS' | 'INNATE'
+    "castingSource": "wizard", // optional, defaults vary
+    "tradition": "ARCANE",     // optional
+    "rank": 3,                 // optional, locks the rank
+    "casts": 1                 // optional, number of innate casts/day
+  }
+}
+
+{ "id": "...", "type": "removeSpell", "data": { "spellId": 4623 } }
+```
+
+### `giveSpellSlot`
+
+Add spell slots to a casting source. Each slot is `{ lvl, rank, amt }` where `lvl` is the character level the slot becomes available, `rank` the spell rank it casts, and `amt` the count (or `null` for unlimited / cantrip).
+
+```jsonc
+{
+	"id": "<uuid>",
+	"type": "giveSpellSlot",
+	"data": {
+		"castingSource": "wizard",
+		"slots": [
+			{ "lvl": 1, "rank": 1, "amt": 2 },
+			{ "lvl": 3, "rank": 2, "amt": 2 },
+		],
+	},
+}
+```
+
+### `giveItem`
+
+Add an item to the character’s starting inventory.
+
+```jsonc
+{ "id": "...", "type": "giveItem", "data": { "itemId": 4002 } }
+```
+
+### `giveTrait`
+
+Add a trait to the character itself. Rare; used when an ancestry or archetype literally makes you have a trait (e.g. _humanoid_).
+
+```jsonc
+{ "id": "...", "type": "giveTrait", "data": { "traitId": 1542 } }
+```
+
+---
+
+## Branching and choices
+
+### `conditional`
+
+Run nested operations only when conditions match. Conditions check variable state.
+
+```jsonc
+{
+	"id": "<uuid>",
+	"type": "conditional",
+	"data": {
+		"conditions": [
+			{
+				"id": "<uuid>",
+				"name": "When trained in Athletics",
+				"type": "prof",
+				"operator": "GREATER_THAN_OR_EQUALS",
+				"value": "T",
+			},
+		],
+		"trueOperations": [{ "id": "...", "type": "adjValue", "data": { "variable": "SKILL_ATHLETICS", "value": "1" } }],
+		"falseOperations": [],
+	},
+}
+```
+
+Operators: `INCLUDES`, `NOT_INCLUDES`, `EQUALS`, `NOT_EQUALS`, `LESS_THAN`, `GREATER_THAN`, `GREATER_THAN_OR_EQUALS`, `LESS_THAN_OR_EQUALS`. Multiple conditions are AND-ed; nest a second `conditional` inside `trueOperations` for OR semantics.
+
+### `select`
+
+Player-facing choice. Two modes:
+
+**Predefined**: you list the options inline.
+
+```jsonc
+{
+	"id": "<uuid>",
+	"type": "select",
+	"data": {
+		"title": "Choose a benefit",
+		"description": "Pick one of the following.",
+		"modeType": "PREDEFINED",
+		"optionType": "CUSTOM",
+		"optionsPredefined": [
+			{
+				"id": "<uuid>",
+				"type": "CUSTOM",
+				"title": "Tough",
+				"description": "+1 HP per level.",
+				"operations": [{ "id": "...", "type": "adjValue", "data": { "variable": "MAX_HEALTH_BONUS_PER_LEVEL", "value": 1 } }],
+			},
+			{
+				"id": "<uuid>",
+				"type": "CUSTOM",
+				"title": "Quick",
+				"description": "+5 ft Speed.",
+				"operations": [{ "id": "...", "type": "adjValue", "data": { "variable": "SPEED", "value": 5 } }],
+			},
+		],
+	},
+}
+```
+
+**Filtered**: you describe a content query and the engine renders all matches.
+
+```jsonc
+{
+	"id": "<uuid>",
+	"type": "select",
+	"data": {
+		"title": "Pick a 1st-level wizard feat",
+		"modeType": "FILTERED",
+		"optionType": "ABILITY_BLOCK",
+		"optionsFilters": {
+			"id": "<uuid>",
+			"type": "ABILITY_BLOCK",
+			"level": { "min": 1, "max": 1 },
+			"abilityBlockType": "feat",
+			"traits": ["wizard"],
+		},
+	},
+}
+```
+
+`optionType` and the matching filter `type` must agree. Valid pairs:
+
+| `optionType`    | Filter `type`           | What the player picks                        |
+| --------------- | ----------------------- | -------------------------------------------- |
+| `CUSTOM`        | (none, predefined only) | One of your inline `operations` blocks       |
+| `ABILITY_BLOCK` | `ABILITY_BLOCK`         | A feat / action / etc.                       |
+| `SPELL`         | `SPELL`                 | A spell (for grant)                          |
+| `LANGUAGE`      | `LANGUAGE`              | A language                                   |
+| `TRAIT`         | `TRAIT`                 | A trait                                      |
+| `ADJ_VALUE`     | `ADJ_VALUE`             | A skill / weapon group / armor group to bump |
+
+The chosen option id is recorded on `character.operation_data.selections`, keyed by the select operation’s id.
+
+---
+
+## Display and meta
+
+These don’t change stats; they affect what the player sees.
+
+### `injectText`
+
+Append prose to another piece of content’s description, conditionally. Used for archetype rewrites that say "instead of X, you can also Y" without forking the source row.
+
+```jsonc
+{
+	"id": "<uuid>",
+	"type": "injectText",
+	"data": {
+		"type": "feat",
+		"id": 20015,
+		"text": "If you took the Healer dedication, you can also use this with Medicine.",
+	},
+}
+```
+
+### `injectSelectOption`
+
+Inject a `CUSTOM` option into another `select` operation by writing into the engine variable `INJECT_SELECT_OPTIONS`. Used so an archetype or feat can extend a class’ choice list without rewriting the class.
+
+```jsonc
+{
+	"id": "<uuid>",
+	"type": "injectSelectOption",
+	"data": {
+		"variable": "INJECT_SELECT_OPTIONS",
+		"value": "{ ...InjectedSelectOption JSON... }",
+	},
+}
+```
+
+The `value` is a stringified [`InjectedSelectOption`](https://github.com/wanderers-guide/wanderers-guide/blob/main/frontend/src/schemas/operations.ts), shaped as `{ opId, option }` where `opId` is the target select operation’s id and `option` is the new `CUSTOM` option to add.
+
+### `sendNotification`
+
+Surface a Mantine toast on the sheet, for one-time reminders ("you regained Hero Points", "your familiar has a new ability available").
+
+```jsonc
+{
+	"id": "<uuid>",
+	"type": "sendNotification",
+	"data": {
+		"title": "Hero Points",
+		"message": "You start each session with 1 Hero Point.",
+		"color": "blue",
+	},
+}
+```
+
+### `defineCastingSource`
+
+Declare a casting source so spell-slot operations and the spell UI know it exists. The class (or archetype) that introduces the source emits this; subsequent `giveSpellSlot` / `giveSpell` operations reference its name.
+
+```jsonc
+{
+	"id": "<uuid>",
+	"type": "defineCastingSource",
+	"data": {
+		"variable": "CASTING_SOURCES",
+		"value": "wizard:::ARCANE:::PREPARED:::INT",
+	},
+}
+```
+
+The `value` shape is `<name>:::<tradition>:::<type>:::<attribute>`. The engine parses these out when computing spell DCs and slot counts.
+
+---
+
+## See also
+
+- [Content Data](/guides/content-data): the data layer these operations live on.
+- [`frontend/src/schemas/operations.ts`](https://github.com/wanderers-guide/wanderers-guide/blob/main/frontend/src/schemas/operations.ts): Zod schemas, source of truth.
+- [`frontend/src/process/variables/variable-manager.ts`](https://github.com/wanderers-guide/wanderers-guide/blob/main/frontend/src/process/variables/variable-manager.ts): full list of named variables.
+- [`/create-spell`](/api-reference/content/create-spell), [`/create-ability-block`](/api-reference/content/create-ability-block), and the rest of the `create-*` endpoints: how operations get persisted via the public API.

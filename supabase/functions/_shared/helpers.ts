@@ -1,6 +1,7 @@
 import { corsHeaders } from './cors.ts';
 import { SupabaseClient, createClient } from '@supabase/supabase-js';
 import { uniqueId } from './upload-utils.ts';
+import { bucketFor, checkRateLimit, rateLimitHeaders } from './rate-limit.ts';
 import _ from 'lodash';
 // @ts-ignore
 import { SignJWT } from 'npm:jose@5.9.6';
@@ -23,6 +24,13 @@ export async function connect<T = Record<string, any>>(
   ) => Promise<JSendResponse>,
   options?: {
     supportsCharacterAPI?: boolean;
+    /**
+     * Skip the JWT / API-key auth routing. Use for service-to-service endpoints
+     * (e.g. Discord webhooks) whose Authorization header carries a shared secret
+     * the handler validates itself. The handler still receives the raw token as
+     * its third argument, and the supplied client is anon-keyed (no Auth context).
+     */
+    bypassAuth?: boolean;
   }
 ) {
   if (req.method === 'OPTIONS') {
@@ -35,14 +43,41 @@ export async function connect<T = Record<string, any>>(
     // Create a Supabase client with the Auth context of the logged in user.
     const rawAuthHeader = req.headers.get('Authorization')?.trim() ?? '';
     const token = rawAuthHeader.replace('Bearer ', '').trim();
+    const is36 = token.length === 36 && !options?.bypassAuth;
 
-    if (token.length === 36) {
+    // Rate limit per token / IP. See rate-limit.ts for tunables.
+    const ip = (req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? '')
+      .split(',')[0]
+      .trim();
+    const { bucket, limit } = bucketFor({ token, is36, bypassAuth: options?.bypassAuth, ip });
+    const rl = checkRateLimit(bucket, limit);
+    const rlHeaders = rateLimitHeaders(rl);
+    if (!rl.allowed) {
+      return new Response(
+        JSON.stringify({
+          status: 'fail',
+          data: { message: `Rate limit exceeded. Try again in ${rl.resetSeconds}s.` },
+        } satisfies JSendResponse),
+        {
+          headers: { ...corsHeaders, ...rlHeaders, 'Content-Type': 'application/json' },
+          status: 429,
+        }
+      );
+    }
+
+    if (is36) {
       // Assume it's an API key - so this request is coming from someone trying to access the API directly.
 
-      return await handleApiRouting<T>(token, body, executeFn, options?.supportsCharacterAPI);
+      return await handleApiRouting<T>(
+        token,
+        body,
+        executeFn,
+        options?.supportsCharacterAPI,
+        rlHeaders
+      );
       //
     } else {
-      // Normal JWT request, this request is coming from the frontend.
+      // Normal JWT request (or bypassAuth: shared-secret webhook).
 
       const supabaseClient = createClient(
         // Supabase API URL - env var exported by default.
@@ -51,19 +86,22 @@ export async function connect<T = Record<string, any>>(
         // Supabase API ANON KEY - env var exported by default.
         // @ts-ignore
         Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-        // Create client with Auth context of the user that called the function.
-        // This way row-level-security (RLS) policies are applied.
-        {
-          global: {
-            headers: { Authorization: rawAuthHeader },
-          },
-        }
+        options?.bypassAuth
+          ? // No Auth context - the handler validates its own shared-secret token.
+            {}
+          : {
+              // Create client with Auth context of the user that called the function.
+              // This way row-level-security (RLS) policies are applied.
+              global: {
+                headers: { Authorization: rawAuthHeader },
+              },
+            }
       );
 
       const results = await executeFn(supabaseClient, body, token);
 
       return new Response(JSON.stringify(results), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, ...rlHeaders, 'Content-Type': 'application/json' },
         status: 200,
       });
       //
@@ -91,7 +129,8 @@ async function handleApiRouting<T = Record<string, any>>(
     body: T,
     token: string
   ) => Promise<JSendResponse>,
-  supportsCharacterAPI?: boolean
+  supportsCharacterAPI?: boolean,
+  rlHeaders: Record<string, string> = {}
 ): Promise<Response> {
   const adminClient = createClient(
     // @ts-ignore
@@ -115,7 +154,7 @@ async function handleApiRouting<T = Record<string, any>>(
         },
       } satisfies JSendResponse),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, ...rlHeaders, 'Content-Type': 'application/json' },
         status: 401,
       }
     );
@@ -133,7 +172,7 @@ async function handleApiRouting<T = Record<string, any>>(
         },
       } satisfies JSendResponse),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, ...rlHeaders, 'Content-Type': 'application/json' },
         status: 401,
       }
     );
@@ -166,7 +205,7 @@ async function handleApiRouting<T = Record<string, any>>(
           },
         } satisfies JSendResponse),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, ...rlHeaders, 'Content-Type': 'application/json' },
           status: 403,
         }
       );
@@ -184,7 +223,7 @@ async function handleApiRouting<T = Record<string, any>>(
         message: 'Failed to retrieve user data',
       } satisfies JSendResponse),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, ...rlHeaders, 'Content-Type': 'application/json' },
         status: 500,
       }
     );
@@ -212,15 +251,18 @@ async function handleApiRouting<T = Record<string, any>>(
   const results = await executeFn(supabaseClient, body, limitedUserToken);
 
   return new Response(JSON.stringify(results), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders, ...rlHeaders, 'Content-Type': 'application/json' },
     status: 200,
   });
 }
 
 async function generateUserJWT(userId: string) {
+  // Production sets SB_JWT_SECRET; the dockerized self-hosted stack sets JWT_SECRET
+  // (since `SUPABASE_*` is the reserved prefix the runtime treats specially).
+  // Accept either so both flows work without docker-compose changes.
   // @ts-ignore
-  const JWT_SECRET = Deno.env.get('SB_JWT_SECRET');
-  if (!JWT_SECRET) throw new Error('Missing SB_JWT_SECRET');
+  const JWT_SECRET = Deno.env.get('SB_JWT_SECRET') ?? Deno.env.get('JWT_SECRET');
+  if (!JWT_SECRET) throw new Error('Missing SB_JWT_SECRET / JWT_SECRET');
 
   const key = new TextEncoder().encode(JWT_SECRET);
 

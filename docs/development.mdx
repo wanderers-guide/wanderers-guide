@@ -11,6 +11,11 @@ description: "Running Wanderer's Guide locally"
   - [Postgres](https://www.postgresql.org/), need `psql` (the client command line)
 </Info>
 
+There are two ways to run the app locally:
+
+1. **Supabase CLI** (below). Best when you're actively editing Edge Functions, since `supabase functions serve` watches your TypeScript and reloads on save.
+2. **Docker Compose** (jump to [Self-hosting with Docker](#self-hosting-with-docker)). Best for trying the full stack end-to-end without installing Node, Postgres, or the Supabase CLI on your host. Also what the [Cypress E2E tests](#running-end-to-end-tests) target.
+
 Follow these steps to run Wanderer's Guide locally on your system.
 
 <Steps>
@@ -120,6 +125,102 @@ Back in the running Wanderer's Guide, you can now log in with the email and pass
 
 </Step>
 </Steps>
+
+## Self-hosting with Docker
+
+If you'd rather not install Node, Postgres, or the Supabase CLI on your host, the repo ships a `docker-compose.yml` that bundles the frontend with a self-hosted Supabase stack: Postgres, auth, REST, storage, edge functions, and the Kong gateway. Only Docker is required.
+
+<Steps>
+<Step title="Configure environment">
+
+```bash
+cp .env.docker.example .env
+```
+
+Edit `.env` to set `JWT_SECRET`, `ANON_KEY`, `SERVICE_ROLE_KEY`, and `POSTGRES_PASSWORD`.
+
+For local testing, the demo values from the [Supabase docker example](https://github.com/supabase/supabase/blob/master/docker/.env.example) work as a matched set.
+
+<Warning>Do not use those demo values on a publicly reachable host. Generate fresh keys for any deployment.</Warning>
+
+</Step>
+<Step title="Bring the stack up">
+
+```bash
+npm run docker:start
+```
+
+</Step>
+<Step title="Load schema and content data">
+
+```bash
+./data/create-db-docker.sh
+```
+
+This wipes and reloads the public schema, so it's safe to re-run.
+
+</Step>
+<Step title="(Optional) Open Supabase Studio">
+
+```bash
+docker compose --profile studio up -d
+```
+
+Studio is handy for inspecting the DB while developing.
+
+</Step>
+<Step title="Open the app">
+
+Visit [http://localhost:3000](http://localhost:3000) and sign up with email + password.
+
+The DB ships with a trigger (installed by `create-db-docker.sh`) that auto-creates the matching `public_user` row, so the manual Studio insert from the [Creating a user](#creating-a-user) section is **not needed for the docker stack**.
+
+</Step>
+</Steps>
+
+### Common docker operations
+
+```bash
+npm run docker:start    # bring the stack up
+npm run docker:stop     # stop containers (keeps the db volume)
+npm run docker:rebuild  # rebuild + recreate the frontend container after source changes
+                        # (Vite envs are baked in at build time)
+npm run docker:reset    # wipe and reseed: down -v, up --wait, schema/data, cypress test user
+
+docker compose ps                 # status
+docker compose logs -f frontend   # tail one service's logs
+```
+
+For the full wiring notes, what's included, and what you'll have to set up yourself (OAuth providers, SMTP, TLS termination, schema and content seed), see the [Docker self-hosting guide](/docker).
+
+## Running end-to-end tests
+
+Cypress runs against the Docker stack above. With `npm run docker:start` already running:
+
+```bash
+./data/seed-test-user.sh                  # one-time per fresh DB
+npm --prefix frontend run cy:e2e          # headless run of all specs
+npm --prefix frontend run cy:e2e:open     # interactive Cypress UI
+```
+
+`cy:e2e` bakes in `CYPRESS_BASE_URL=http://localhost:3000` and the default test creds (`test@wanderersguide.app` / `test1234`). To scope to a single spec:
+
+```bash
+npm --prefix frontend run cy:e2e -- --spec "cypress/e2e/login/*.cy.ts"
+```
+
+The same suite runs in CI on every PR via the `e2e` workflow. See [`.github/workflows/e2e.yml`](https://github.com/wanderers-guide/wanderers-guide/blob/main/.github/workflows/e2e.yml).
+
+## Running the API tests
+
+Beyond the UI Cypress suite, the Edge Functions have their own [Deno-based test harness](https://github.com/wanderers-guide/wanderers-guide/tree/main/supabase/functions/_tests):
+
+```bash
+npm run docker:start                      # supabase stack must be up
+npm run test:api                          # cd supabase && deno test --allow-net --allow-env --allow-read functions/_tests/
+```
+
+The harness covers the auth-routing flow plus one representative test per pattern (find / create / update / delete / search), so a regression in the shared `connect()` wrapper or one of those patterns shows up immediately.
 
 ## Troubleshooting
 

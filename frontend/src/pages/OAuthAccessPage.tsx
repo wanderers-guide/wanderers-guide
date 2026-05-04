@@ -33,6 +33,8 @@ export function Component() {
   const userId = searchParams.get('user_id');
   const clientId = searchParams.get('client_id');
 
+  const [loadingAuth, setLoadingAuth] = useState(false);
+
   const { data, isFetching } = useQuery({
     queryKey: [`find-oauth-data`, characterId, userId, clientId],
     queryFn: async () => {
@@ -121,7 +123,9 @@ export function Component() {
             Cancel
           </Button>
           <Button
+            loading={loadingAuth}
             onClick={async () => {
+              setLoadingAuth(true);
               await makeRequest('update-character', {
                 id: characterId,
                 details: {
@@ -142,6 +146,14 @@ export function Component() {
                   },
                 },
               });
+              // Drop any pending autosave for this character. If the user was on the
+              // builder before getting the OAuth link, useAutoSave saved their
+              // pre-grant character to localStorage on the way out. Without this,
+              // useCharacter would replay that stale snapshot on the next load and
+              // overwrite the grant we just persisted.
+              if (characterId) {
+                localStorage.removeItem(`autosave-character-${characterId}`);
+              }
               navigate(`/builder/${characterId}`);
             }}
           >
