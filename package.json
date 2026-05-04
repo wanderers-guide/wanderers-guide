@@ -9,6 +9,6 @@
     "docs:dev": "npm --prefix docs run dev",
     "docs:build": "npm --prefix docs run build",
     "docs:check": "npm --prefix docs run broken-links",
-    "test:api": "cd supabase && deno test --allow-net --allow-env --allow-read functions/_tests/"
+    "test:api": "cd supabase && deno test --no-check --allow-net --allow-env --allow-read functions/_tests/"
   }
 }

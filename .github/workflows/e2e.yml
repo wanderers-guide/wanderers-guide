@@ -25,6 +25,10 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
       # Mint a fresh JWT_SECRET + signed anon/service_role JWTs for this run.
       # docker compose reads these from process env (via $GITHUB_ENV), so no
       # .env file is needed. Heredoc is quoted ('EOF') so the JS template
@@ -114,6 +118,15 @@ jobs:
             exit 1
           fi
           echo "Created test user $user_id"
+
+      # Edge Function tests live in supabase/functions/_tests/ and exercise the
+      # live HTTP endpoints. Reuses the docker stack + env vars already minted
+      # above. seed.ts reads PUBLIC_SUPABASE_URL / SERVICE_ROLE_KEY / ANON_KEY
+      # from process env (already exported via GITHUB_ENV).
+      # --no-check skips the npm:@types/node type-check that fails in Deno
+      # without a node_modules dir (we don't ship one in supabase/).
+      - name: API tests (Edge Functions)
+        run: cd supabase && deno test --no-check --allow-net --allow-env --allow-read functions/_tests/
 
       - name: Cypress run
         uses: cypress-io/github-action@v6
