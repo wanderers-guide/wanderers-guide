@@ -7,7 +7,7 @@
 [![License](https://img.shields.io/github/license/wanderers-guide/wanderers-guide)](LICENSE.txt)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2?logo=discord&logoColor=white)](https://discord.gg/FxsFZVvedr)
 
-> An open-source character builder and rules engine for Pathfinder 2e and Starfinder 2e.
+> An open-source character builder and digital toolbox for Pathfinder 2e and Starfinder 2e.
 
 ## Quick links
 
