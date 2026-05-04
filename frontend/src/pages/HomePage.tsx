@@ -139,7 +139,7 @@ function UnderSection(props: { title: string; description: string; url: string; 
           onClick={() => window.open(props.url, '_blank')}
         />
         <Stack gap={5}>
-          <Anchor ta='center' c='gray.2' fz='lg' fw={500} target='_blank' href={props.url}>
+          <Anchor ta='center' c='gray.0' fz='lg' fw={500} target='_blank' href={props.url}>
             <span style={{ position: 'relative' }}>
               {props.title}
               <ActionIcon
