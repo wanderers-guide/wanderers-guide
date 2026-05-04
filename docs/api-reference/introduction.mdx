@@ -8,7 +8,7 @@ The Wanderer’s Guide API lets external tools read and write the same content a
 ## Base URL
 
 ```
-https://wanderersguide.app/functions/v1
+https://api.wanderersguide.app/functions/v1
 ```
 
 If you’re running a self-hosted Supabase stack (see the [development guide](/development)), point at your local instance instead. Typically that’s `http://127.0.0.1:54321/functions/v1`.
@@ -45,7 +45,7 @@ Always check `status` before using `data`. The HTTP status code is `200` for `su
 
 Two flows:
 
-- **API key**, for tools, scripts, and integrations. Create one in your Wanderer’s Guide account settings.
+- **API key**, for tools, scripts, and integrations. Create one in your [Wanderer’s Guide account settings](https://wanderersguide.app/account) (see Account → Developer → API Clients).
 - **Supabase JWT**, used by the web app itself.
 
 See [Authentication](/api-reference/authentication) for the full picture, including character-level access grants.
@@ -53,16 +53,16 @@ See [Authentication](/api-reference/authentication) for the full picture, includ
 ## Where to next
 
 <CardGroup cols={2}>
-  <Card title="Quickstart" icon="rocket" href="/api-reference/quickstart">
-    Make your first request in curl, JavaScript, or Python.
-  </Card>
-  <Card title="Authentication" icon="key" href="/api-reference/authentication">
-    API keys, JWTs, and how character access grants work.
-  </Card>
-  <Card title="Content model" icon="book" href="/guides/content-data">
-    How spells, feats, ancestries, and the rest fit together, and what the operations engine does to them at character build time.
-  </Card>
-  <Card title="Search" icon="magnifying-glass" href="/api-reference/search/search-data">
-    Full-text and advanced search across every content type.
-  </Card>
+	<Card title='Quickstart' icon='rocket' href='/api-reference/quickstart'>
+		Make your first request in curl, JavaScript, or Python.
+	</Card>
+	<Card title='Authentication' icon='key' href='/api-reference/authentication'>
+		API keys, JWTs, and how character access grants work.
+	</Card>
+	<Card title='Content model' icon='book' href='/guides/content-data'>
+		How spells, feats, ancestries, and the rest fit together, and what the operations engine does to them at character build time.
+	</Card>
+	<Card title='Search' icon='magnifying-glass' href='/api-reference/search/search-data'>
+		Full-text and advanced search across every content type.
+	</Card>
 </CardGroup>

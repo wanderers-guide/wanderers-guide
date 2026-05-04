@@ -5,10 +5,10 @@ description: 'Pick the right auth flow (API key for tools and integrations, JWT 
 
 Every endpoint authenticates the same way: an `Authorization: Bearer <token>` header. The token is one of two things, and the API picks the right path automatically based on length.
 
-| Flow | When to use it | What you send |
-| --- | --- | --- |
-| [API key](#api-keys) | Scripts, integrations, third-party tools | A 36-character UUID created in your account settings |
-| [JWT](#jwts) | Embedding inside a Wanderer’s Guide-authenticated frontend | A Supabase Auth access token |
+| Flow                 | When to use it                                             | What you send                                        |
+| -------------------- | ---------------------------------------------------------- | ---------------------------------------------------- |
+| [API key](#api-keys) | Scripts, integrations, third-party tools                   | A 36-character UUID created in your account settings |
+| [JWT](#jwts)         | Embedding inside a Wanderer’s Guide-authenticated frontend | A Supabase Auth access token                         |
 
 Internally, [`connect()`](https://github.com/wanderers-guide/wanderers-guide/blob/main/supabase/functions/_shared/helpers.ts) treats any 36-character token as an API key (UUIDs with hyphens are exactly 36 chars) and anything else as a JWT.
 
@@ -19,7 +19,7 @@ API keys grant a tool the ability to act as you against the API. They’re the r
 ### Create one
 
 1. Sign in at [wanderersguide.app](https://wanderersguide.app).
-2. Open account settings and find **API Clients**.
+2. Open [account settings](https://wanderersguide.app/account) and find **API Clients**.
 3. **+ New client**, give it a name (e.g. `foundry-importer`) and an optional description.
 4. Copy the 36-char `api_key`. You won’t see it again.
 
@@ -54,11 +54,11 @@ If a key leaks, anyone holding it can act as you (within the limits above) until
 
 ### Errors
 
-| Status | JSend | Meaning |
-| --- | --- | --- |
-| `401` | `{ status: "fail", data: { message: "Invalid API Key" } }` | Key doesn’t match any registered client. |
-| `401` | `{ status: "fail", data: { message: "Invalid API Key, no client found" } }` | Public user row was found but the client entry is missing. Usually a stale key after deletion. |
-| `403` | `{ status: "fail", data: { message: "You do not have access to this character" } }` | Hit a character endpoint without a grant. See below. |
+| Status | JSend                                                                               | Meaning                                                                                        |
+| ------ | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `401`  | `{ status: "fail", data: { message: "Invalid API Key" } }`                          | Key doesn’t match any registered client.                                                       |
+| `401`  | `{ status: "fail", data: { message: "Invalid API Key, no client found" } }`         | Public user row was found but the client entry is missing. Usually a stale key after deletion. |
+| `403`  | `{ status: "fail", data: { message: "You do not have access to this character" } }` | Hit a character endpoint without a grant. See below.                                           |
 
 ## JWTs
 
@@ -80,12 +80,12 @@ The grant flow is OAuth-style: the API client (the tool/integration) hands the c
 
 ### Granting access (as the integration)
 
-1. Sign in to Wanderer’s Guide and open **Account → API Clients**.
+1. Sign in to Wanderer’s Guide and open **Account → Developer → API Clients**.
 2. Find the client you want to grant access to. Each client has a **Character Authorization URL** template:
 
-   ```
-   https://wanderersguide.app/oauth/access?user_id=<your-user-id>&client_id=<client-id>&character_id=<ID>
-   ```
+    ```
+    https://wanderersguide.app/oauth/access?user_id=<your-user-id>&client_id=<client-id>&character_id=<ID>
+    ```
 
 3. Replace `<ID>` with the character id you want access to and send that URL to the character owner. (If you’re writing a tool, this is the URL to redirect them to.)
 
@@ -102,18 +102,18 @@ You authorize each character separately; there is no "all my characters" grant.
 
 The character owner opens the character in the builder, scrolls to the **Authorized Clients** section in the home tab, finds the integration, and clicks **Revoke Access**. The next call from that key against that character returns `403`.
 
-Revocation is per-character. Revoking on one character doesn’t affect others. Revoking the API client itself in **Account → API Clients** kills the key entirely, so character-level grants no longer matter.
+Revocation is per-character. Revoking on one character doesn’t affect others. Revoking the API client itself in **Account → Developer → API Clients** kills the key entirely, so character-level grants no longer matter.
 
 ## Rate limits
 
 Every request runs through a per-token sliding window limiter. The bucket is the auth token itself, so multiple keys on the same account each get their own budget.
 
-| Bucket | Window | Limit |
-| --- | --- | --- |
-| API key (`Authorization: Bearer <36-char-key>`) | 60s | 120 requests |
-| Signed-in user (Supabase JWT) | 60s | 240 requests |
-| Service webhook (`bypassAuth`) | 60s | 600 requests |
-| No / unrecognized auth (per IP) | 60s | 30 requests |
+| Bucket                                          | Window | Limit        |
+| ----------------------------------------------- | ------ | ------------ |
+| API key (`Authorization: Bearer <36-char-key>`) | 60s    | 120 requests |
+| Signed-in user (Supabase JWT)                   | 60s    | 240 requests |
+| Service webhook (`bypassAuth`)                  | 60s    | 600 requests |
+| No / unrecognized auth (per IP)                 | 60s    | 30 requests  |
 
 Every response includes:
 

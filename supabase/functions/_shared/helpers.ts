@@ -44,6 +44,26 @@ export async function connect<T = Record<string, any>>(
     const rawAuthHeader = req.headers.get('Authorization')?.trim() ?? '';
     const token = rawAuthHeader.replace('Bearer ', '').trim();
     const is36 = token.length === 36 && !options?.bypassAuth;
+    // A JWT is `header.payload.signature` — three base64url segments. Anything
+    // else handed to PostgREST surfaces an opaque "JWSError" 500 from the DB
+    // layer (see helpers.ts history). Reject upfront with a useful 401 so the
+    // common copy-paste-the-placeholder mistake produces actionable output.
+    const looksLikeJwt = token.split('.').length === 3;
+    if (token && !is36 && !looksLikeJwt && !options?.bypassAuth) {
+      return new Response(
+        JSON.stringify({
+          status: 'fail',
+          data: {
+            message:
+              'Invalid token format. Expected a 36-character API key (UUID) or a JWT. See https://docs.wanderersguide.app/api-reference/authentication.',
+          },
+        } satisfies JSendResponse),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401,
+        }
+      );
+    }
 
     // Rate limit per token / IP. See rate-limit.ts for tunables.
     const ip = (req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? '')

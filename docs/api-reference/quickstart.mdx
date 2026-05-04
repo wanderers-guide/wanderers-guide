@@ -8,7 +8,7 @@ This walks through the smallest useful request: looking up the spell **Fireball*
 ## 1. Get an API key
 
 1. Sign in at [wanderersguide.app](https://wanderersguide.app).
-2. Open your account settings and find the **API Clients** section.
+2. Open your [account settings](https://wanderersguide.app/account) and find the **API Clients** section.
 3. Create a new client. Copy the 36-character key. It’s shown once.
 
 See [Authentication](/api-reference/authentication) if you’d rather use a Supabase JWT.
@@ -18,7 +18,7 @@ See [Authentication](/api-reference/authentication) if you’d rather use a Supa
 <CodeGroup>
 
 ```bash curl
-curl -X POST https://wanderersguide.app/functions/v1/find-spell \
+curl -X POST https://api.wanderersguide.app/functions/v1/find-spell \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"name": "Fireball"}'
@@ -26,7 +26,7 @@ curl -X POST https://wanderersguide.app/functions/v1/find-spell \
 
 ```js JavaScript
 const res = await fetch(
-  'https://wanderersguide.app/functions/v1/find-spell',
+  'https://api.wanderersguide.app/functions/v1/find-spell',
   {
     method: 'POST',
     headers: {
@@ -49,7 +49,7 @@ console.log(spells[0]?.description);
 import os, requests
 
 resp = requests.post(
-    "https://wanderersguide.app/functions/v1/find-spell",
+    "https://api.wanderersguide.app/functions/v1/find-spell",
     headers={
         "Authorization": f"Bearer {os.environ['WG_API_KEY']}",
         "Content-Type": "application/json",
