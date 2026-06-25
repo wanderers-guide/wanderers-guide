@@ -5,13 +5,15 @@ on:
     branches: ['main']
   workflow_dispatch:
   schedule:
-    # 11:00 UTC daily = ~05:00 CT / 06:00 ET / 03:00 PT — lowest-traffic window for a
-    # US tabletop audience. This job runs a heavy pg_dump against PRODUCTION (secrets.DB_URI),
-    # which saturates DB I/O for its duration. It previously ran at 00:00 UTC (≈ 6-7 PM CST),
-    # i.e. right at evening peak, degrading builder/sheet load latency.
-    # TODO: dump from a read replica or a nightly snapshot instead of live prod to remove
-    # the production impact entirely.
-    - cron: '0 11 * * *'
+    # Weekly, Tuesday 11:00 UTC. This runs a heavy pg_dump against PRODUCTION
+    # (secrets.DB_URI) that saturates DB I/O for its duration, so it's kept off both our
+    # main audiences' peaks: 11:00 UTC is early-morning in the Americas and late-morning
+    # in Europe — well before evening tabletop peak in either region. It previously ran
+    # daily at 00:00 UTC (≈ 6-7 PM CST), right at peak. data.sql also refreshes on every
+    # push to main, so weekly is plenty.
+    # TODO: dump from a read replica or a snapshot instead of live prod to remove the
+    # production impact entirely.
+    - cron: '0 11 * * 2'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
