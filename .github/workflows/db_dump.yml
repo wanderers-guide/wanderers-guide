@@ -5,8 +5,15 @@ on:
     branches: ['main']
   workflow_dispatch:
   schedule:
-    # Every day at midnight
-    - cron: '0 0 * * *'
+    # Weekly, Tuesday 09:00 UTC — the quietest slot for an Americas + Europe audience:
+    # the Americas are mid-sleep (≈04:00 ET / 01:00 PT, clearing the US-West late-night
+    # tail even in winter PST) while Europe is in its low weekday-morning lull (≈10:00 CET)
+    # before the midday/evening rise. This pg_dump hits PRODUCTION (secrets.DB_URI) and
+    # saturates DB I/O while it runs; it previously ran daily at 00:00 UTC (≈ 6-7 PM CST),
+    # right at peak. data.sql also refreshes on every push to main, so weekly is plenty.
+    # TODO: dump from a read replica or a snapshot instead of live prod to remove the
+    # production impact entirely.
+    - cron: '0 9 * * 2'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

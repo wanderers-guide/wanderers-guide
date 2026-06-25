@@ -46,6 +46,56 @@ interface CharStateOptionsSimple extends CharStateOptionsGeneric {
 
 type CharStateOptions = CharStateOptionsExecuteOps | CharStateOptionsSimple;
 
+// Fields that update-character persists. Used to merge on an optimistic-concurrency conflict.
+const SAVED_CHARACTER_FIELDS = [
+  'name',
+  'level',
+  'experience',
+  'hp_current',
+  'hp_temp',
+  'hero_points',
+  'stamina_current',
+  'resolve_current',
+  'inventory',
+  'notes',
+  'details',
+  'roll_history',
+  'custom_operations',
+  'meta_data',
+  'options',
+  'variants',
+  'content_sources',
+  'operation_data',
+  'spells',
+  'companions',
+  'campaign_id',
+] as const;
+
+/**
+ * Three-way merge for a save conflict: start from the authoritative remote row, then
+ * re-apply only the top-level fields the user actually changed since `base` (their last
+ * synced state). This preserves a concurrent writer's changes to OTHER fields instead of
+ * clobbering them, while never silently dropping the user's own edits.
+ *
+ * Granularity is per top-level field: if two writers edited the SAME field (e.g. both
+ * touched `details`) the local edit wins for that whole field. That's still strictly
+ * better than the previous unconditional last-write-wins, and the user is notified.
+ */
+function mergeCharacterOnConflict(
+  base: Character | null,
+  local: Character | null,
+  remote: Character
+): Character {
+  const merged = cloneDeep(remote);
+  if (!base || !local) return merged;
+  for (const field of SAVED_CHARACTER_FIELDS) {
+    if (!isEqual((local as any)[field], (base as any)[field])) {
+      (merged as any)[field] = cloneDeep((local as any)[field]);
+    }
+  }
+  return merged;
+}
+
 /**
  * Custom hook to manage character state, including fetching from the database, executing operations, and auto-saving.
  * @param characterId - The ID of the character to manage
@@ -65,8 +115,21 @@ export default function useCharacter(
   const [character, setCharacter] = useAtom(characterState);
   useAutoSave(character, characterId);
 
+  // Always-current view of the atom (the `character` closure goes stale inside async
+  // mutation callbacks), and the last character state we know the server holds — the
+  // common ancestor used to merge on an optimistic-concurrency conflict.
+  const characterRef = useRef(character);
+  useEffect(() => {
+    characterRef.current = character;
+  }, [character]);
+  const lastSyncedRef = useRef<Character | null>(null);
+
   const handleFetchedCharacter = (resultCharacter: Character | null | undefined) => {
     if (resultCharacter) {
+      // This is authoritative server state — record it as the concurrency base even
+      // when the local atom already matches (so update-character keeps a fresh token).
+      lastSyncedRef.current = resultCharacter;
+
       // Don't update if they're the same
       if (isEqual(character, resultCharacter)) {
         return;
@@ -259,6 +322,17 @@ export default function useCharacter(
     }, 100);
   };
 
+  // Serialized, latest-wins auto-save.
+  //
+  // Saves must NOT overlap: update-character does a full-column replace of inventory,
+  // spells, etc. with no version guard, so if an older snapshot's write commits after
+  // a newer one, the newer inventory/spell edits are silently clobbered. We therefore
+  // keep at most ONE update-character in flight at a time and, while one is running,
+  // remember only the most recent pending snapshot to send next. This guarantees
+  // writes are strictly ordered and the final write always reflects the latest state.
+  const savingRef = useRef(false);
+  const pendingSaveRef = useRef<Record<string, any> | null>(null);
+
   // Update character in db when state changed
   useDidUpdate(() => {
     if (!debouncedCharacter) return;
@@ -286,17 +360,44 @@ export default function useCharacter(
       campaign_id: debouncedCharacter.campaign_id,
     });
   }, [debouncedCharacter]);
-  const { mutate: mutateCharacter } = useMutation({
+  const { mutate: mutateCharacterRaw } = useMutation({
     mutationFn: async (data: Record<string, any>) => {
+      // Send our last-known server token so the write is rejected (not silently
+      // applied) if the row changed since. Omitted when unknown (e.g. before the
+      // updated_at migration ships), which keeps the previous unconditional behavior.
+      const expected_updated_at = lastSyncedRef.current?.updated_at;
       const resData = await makeRequest('update-character', {
         id: characterId,
         ...data,
+        ...(expected_updated_at ? { expected_updated_at } : {}),
       });
-      return isArray(resData) && resData.length > 0 ? (resData[0] as Character) : null;
+      // Conflict: the server returned the current row instead of overwriting.
+      if (resData && !isArray(resData) && (resData as any).__conflict) {
+        return { conflict: true, server: ((resData as any).character ?? null) as Character | null };
+      }
+      const row = isArray(resData) && resData.length > 0 ? (resData[0] as Character) : null;
+      return { conflict: false, server: row };
     },
-    onSuccess: (c) => {
-      if (c) {
-        console.log('> Fetched updated character: #', getUpdateHash(character), 'vs.', getUpdateHash(c));
+    onSuccess: (result) => {
+      if (!result) return;
+      if (result.conflict) {
+        const remote = result.server;
+        if (!remote) return;
+        // Drop any stale queued snapshot — the merge produces the correct next save.
+        pendingSaveRef.current = null;
+        const merged = mergeCharacterOnConflict(lastSyncedRef.current, characterRef.current, remote);
+        lastSyncedRef.current = remote;
+        setCharacter(merged);
+        showNotification({
+          icon: <IconRefresh />,
+          title: 'Merged a remote update',
+          message: 'This character was changed elsewhere; your edits were merged in.',
+          autoClose: 2500,
+        });
+      } else if (result.server) {
+        // Record the authoritative post-write state (incl. the new updated_at token).
+        lastSyncedRef.current = result.server;
+        console.log('> Fetched updated character: #', getUpdateHash(character), 'vs.', getUpdateHash(result.server));
       }
     },
     onError: () => {
@@ -308,7 +409,27 @@ export default function useCharacter(
         autoClose: 5000,
       });
     },
+    onSettled: () => {
+      // Once the in-flight save resolves, flush the latest pending snapshot (if any).
+      const next = pendingSaveRef.current;
+      pendingSaveRef.current = null;
+      if (next) {
+        mutateCharacterRaw(next);
+      } else {
+        savingRef.current = false;
+      }
+    },
   });
+
+  const mutateCharacter = (data: Record<string, any>) => {
+    if (savingRef.current) {
+      // A save is already in flight — keep only the newest snapshot to send next.
+      pendingSaveRef.current = data;
+      return;
+    }
+    savingRef.current = true;
+    mutateCharacterRaw(data);
+  };
 
   // Poll remote character updates - only if the character hasn't been updated recently
   const [lDebouncedCharacter] = useDebouncedValue(character, 5000);
