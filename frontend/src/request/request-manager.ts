@@ -8,86 +8,118 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_KEY
 );
 
-const MAX_ATTEMPTS = 3;
+// A single logical request makes at most MAX_ATTEMPTS network calls, and we retry
+// ONLY genuine transient network failures — never timeouts or HTTP errors. This is
+// deliberate: the previous implementation re-fired every timed-out request 3x plus an
+// un-timed fallback, AND makeRequest recursed again on fetch errors, fanning one
+// logical call out to as many as ~16 concurrent in-flight requests. Under peak load
+// (when responses are already slow) that turned a transient slowdown into a
+// self-sustaining retry storm that saturated the edge functions and DB pool — the
+// builder/sheet (which fire ~12 heavy content requests each) never recovered.
+const MAX_ATTEMPTS = 2;
+// Heavy content fetches legitimately take several seconds under load. A short timeout
+// just produces false failures (and previously, a retry storm). Wait generously; the
+// important property is that we never DUPLICATE a slow-but-still-running request.
+const DEFAULT_TIMEOUT_MS = 30000;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export async function makeRequest<T = Record<string, any>>(
   type: RequestType,
   body: Record<string, any>,
-  notifyFailure = true,
-  attempt = 1
+  notifyFailure = true
 ): Promise<T | null> {
-  const { data, error } = await invokeWithRetries(type, body, MAX_ATTEMPTS);
-  if (error instanceof FunctionsHttpError) {
-    const errorMessage = await error.context.json();
-    console.error('Request Function returned an error', errorMessage);
-  } else if (error instanceof FunctionsRelayError) {
-    console.error('Request Relay error:', error.message);
-  } else if (error instanceof FunctionsFetchError) {
-    console.error('Request Fetch error:', error.message);
-    if (attempt <= MAX_ATTEMPTS) {
-      return await makeRequest<T>(type, body, notifyFailure, attempt + 1);
+  let lastError: any = null;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const { data, error } = await invokeWithTimeout(type, body, DEFAULT_TIMEOUT_MS);
+
+    if (!error) {
+      if (!data) {
+        return null;
+      }
+      const response = data as JSendResponse;
+      if (response.status === 'error') {
+        if (notifyFailure) {
+          throwError(response.message);
+        }
+        return null;
+      } else if (response.status === 'fail') {
+        if (notifyFailure) {
+          logError('Failed to make request');
+        }
+        return null;
+      }
+      return response.data as T;
     }
-  } else if (error) {
-    console.error('Request Unknown error:', error);
-  }
-  if (!data) {
-    return null;
+
+    lastError = error;
+
+    // Only retry genuine transient network errors. Timeouts and HTTP errors
+    // (4xx/5xx, including 429 rate-limits) are NOT retried — retrying them amplifies
+    // load exactly when the backend is already struggling.
+    const isTransientNetwork =
+      error instanceof FunctionsFetchError || error instanceof FunctionsRelayError;
+    if (attempt < MAX_ATTEMPTS && isTransientNetwork) {
+      // Backoff with jitter so many clients don't retry in lockstep.
+      await sleep(250 * attempt + Math.random() * 250);
+      continue;
+    }
+    break;
   }
 
-  const response = data as JSendResponse;
-  if (response.status === 'error') {
-    if (notifyFailure) {
-      throwError(response.message);
+  if (lastError instanceof FunctionsHttpError) {
+    try {
+      const errorMessage = await lastError.context.json();
+      console.error('Request Function returned an error', errorMessage);
+    } catch {
+      console.error('Request Function returned an HTTP error');
     }
-    return null;
-  } else if (response.status === 'fail') {
-    if (notifyFailure) {
-      logError('Failed to make request');
-    }
-    return null;
-  } else {
-    return response.data as T;
+  } else if (lastError instanceof FunctionsRelayError) {
+    console.error('Request Relay error:', lastError.message);
+  } else if (lastError instanceof FunctionsFetchError) {
+    console.error('Request Fetch error:', lastError.message);
+  } else if (lastError) {
+    console.error('Request error:', lastError?.message ?? lastError);
   }
+
+  return null;
 }
 
+/**
+ * Invoke an edge function, giving up (with a 'Timeout' error) if it takes too long.
+ *
+ * IMPORTANT: supabase-js's functions.invoke() cannot be aborted, so on timeout we
+ * stop waiting and surface an error — we deliberately do NOT fire a replacement
+ * request. Duplicating a slow-but-still-running request is what caused the retry
+ * storm. Always resolves to a normalized { data, error } shape (never rejects).
+ */
 async function invokeWithTimeout(
   type: RequestType,
   body: Record<string, any>,
-  timeout = 5000
+  timeout = DEFAULT_TIMEOUT_MS
 ): Promise<{ data: any; error: any }> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('Timeout')), timeout);
+  return new Promise((resolve) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      resolve({ data: null, error: new Error('Timeout') });
+    }, timeout);
 
     supabase.functions
       .invoke(type, { body })
       .then((res) => {
+        if (settled) return;
+        settled = true;
         clearTimeout(timer);
         resolve(res);
       })
       .catch((err) => {
+        if (settled) return;
+        settled = true;
         clearTimeout(timer);
-        reject(err);
+        resolve({ data: null, error: err });
       });
   });
-}
-
-async function invokeWithRetries(
-  type: RequestType,
-  body: Record<string, any>,
-  retries = 3,
-  timeout = 5000
-): Promise<{ data: any; error: any }> {
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await invokeWithTimeout(type, body, timeout);
-    } catch (e: any) {
-      console.warn(`Attempt ${i + 1} failed: ${e.message}`);
-    }
-  }
-
-  // Final fallback without timeout
-  try {
-    return await supabase.functions.invoke(type, { body });
-  } catch (e) {
-    return { data: null, error: e };
-  }
 }
