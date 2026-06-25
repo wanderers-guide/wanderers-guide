@@ -361,6 +361,8 @@ interface Creature extends LivingEntity {
 interface Character extends LivingEntity {
   id: number;
   created_at: string;
+  // Maintained by a DB trigger; used for optimistic-concurrency on update-character.
+  updated_at?: string;
   campaign_id?: number | null;
   user_id: string;
   hero_points: number;

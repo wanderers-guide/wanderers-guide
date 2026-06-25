@@ -772,6 +772,8 @@ export type Creature = z.infer<typeof CreatureSchema>;
 export const CharacterSchema = LivingEntitySchema.extend({
   id: z.number(),
   created_at: z.string(),
+  // Maintained by a DB trigger; used for optimistic-concurrency on update-character.
+  updated_at: z.string().optional(),
   campaign_id: z.number().nullable(),
   user_id: z.string(),
   hero_points: z.number(),

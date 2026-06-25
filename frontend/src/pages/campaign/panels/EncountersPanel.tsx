@@ -804,10 +804,23 @@ function EncounterView(props: {
                     }
 
                     if (combatant.type === 'CHARACTER') {
-                      // Send remote update to change character
+                      // Send remote update to change character.
+                      //
+                      // Only send the combat fields the encounter panel actually edits.
+                      // combatant.data is a clone of an up-to-400ms-stale poll snapshot of
+                      // the FULL player character, so spreading it would full-replace the
+                      // player's live inventory/spells/etc. with the GM's stale copy and
+                      // silently destroy anything the player changed since the last poll.
+                      const c = entity as Character;
                       makeRequest('update-character', {
-                        ...(entity as Character),
                         id: combatant.character!,
+                        hp_current: c.hp_current,
+                        hp_temp: c.hp_temp,
+                        stamina_current: c.stamina_current,
+                        resolve_current: c.resolve_current,
+                        hero_points: c.hero_points,
+                        details: c.details,
+                        meta_data: c.meta_data,
                       });
                     } else if (combatant.type === 'CREATURE') {
                       updateCombatant({

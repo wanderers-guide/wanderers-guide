@@ -780,8 +780,17 @@ export async function updateData(
   tableName: TableName,
   id: number,
   data: Record<string, undefined | null | string | number | boolean | Record<string, any>>,
-  returnData?: boolean
-): Promise<{ status: 'SUCCESS' | 'ERROR_DUPLICATE' | 'ERROR_UNKNOWN'; data: any }> {
+  returnData?: boolean,
+  options?: {
+    /**
+     * Optimistic-concurrency guard. The UPDATE additionally matches
+     * `guard.column = guard.value`; if no row matches (the column changed since the
+     * caller last read it) the write is skipped and a CONFLICT status is returned
+     * instead of silently overwriting newer data.
+     */
+    guard?: { column: string; value: string | number };
+  }
+): Promise<{ status: 'SUCCESS' | 'ERROR_DUPLICATE' | 'ERROR_UNKNOWN' | 'CONFLICT'; data: any }> {
   // Trim all string values
   for (let key in data) {
     const value = data[key];
@@ -816,12 +825,21 @@ export async function updateData(
   let error: any = null;
   let dataResult: any = null;
 
-  if (returnData) {
-    const res = await client.from(tableName).update(data).eq('id', id).select();
+  // When guarding we must always read back the affected rows so we can tell a
+  // concurrency conflict (0 rows matched the guard) apart from a successful write.
+  const needsSelect = returnData || !!options?.guard;
+
+  let query = client.from(tableName).update(data).eq('id', id);
+  if (options?.guard) {
+    query = query.eq(options.guard.column, options.guard.value);
+  }
+
+  if (needsSelect) {
+    const res = await query.select();
     error = res.error;
     dataResult = res.data;
   } else {
-    const res = await client.from(tableName).update(data).eq('id', id);
+    const res = await query;
     error = res.error;
   }
   if (error) {
@@ -832,6 +850,12 @@ export async function updateData(
       throw error;
       return { status: 'ERROR_UNKNOWN', data: dataResult };
     }
+  }
+
+  // Guarded update that matched no rows = the row changed since the caller's snapshot.
+  // (Distinguishing this from a non-existent / RLS-hidden row is left to the caller.)
+  if (options?.guard && Array.isArray(dataResult) && dataResult.length === 0) {
+    return { status: 'CONFLICT', data: null };
   }
 
   return { status: 'SUCCESS', data: dataResult };
