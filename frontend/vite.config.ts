@@ -114,6 +114,11 @@ export default defineConfig({
           // on the first-paint path (see src/common/Icon.tsx, which now dynamic-imports it),
           // this chunk is only fetched on demand when a game icon actually renders.
           if (id.includes('react-icons/gi')) return 'game-icons';
+          // The shared react-icons runtime (lib/GenIcon) and any small icon sets we DO import
+          // statically (e.g. react-icons/bi in the editor toolbar) must NOT land in the gi chunk:
+          // otherwise needing the tiny GenIcon helper drags the whole 6.9MB monolith onto the
+          // eager path. Keep them in a small, separate vendor chunk.
+          if (id.includes('react-icons')) return 'icons-vendor';
           if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id))
             return 'react';
           if (id.includes('@mantine')) return 'mantine';
