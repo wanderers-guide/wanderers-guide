@@ -32,9 +32,8 @@ import { tabletQuery, wideDesktopQuery } from '@utils/mobile-responsive';
 import { ThreeDDice } from 'dddice-js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { deleteDiceRoom, findDefaultPresets } from './dice-utils';
-import { GiRollingDiceCup, GiRollingDices } from 'react-icons/gi';
 import useRefresh from '@utils/use-refresh';
-import { IconArrowBigRightFilled, IconSquareRoundedArrowDown, IconTrash, IconX } from '@tabler/icons-react';
+import { IconArrowBigRightFilled, IconDice, IconSquareRoundedArrowDown, IconTrash, IconX } from '@tabler/icons-react';
 import { sign } from '@utils/numbers';
 import { DICE_THEMES, fetchDiceThemes, findDiceTheme } from './dice-tray';
 import { Carousel } from '@mantine/carousel';
@@ -577,7 +576,7 @@ export default function DiceRoller(props: {
         title={
           <Group wrap='nowrap' gap={10} justify='space-between'>
             <Group wrap='nowrap' gap={10}>
-              <GiRollingDices size='1.6rem' stroke={'1.5'} />
+              <IconDice size='1.6rem' stroke={1.5} />
               <Title order={3}>Dice Roller</Title>
             </Group>
             {rollHistory.length > 0 && (
@@ -957,7 +956,7 @@ export default function DiceRoller(props: {
               zIndex: OVERLAY_INDEX + 1,
             }}
           >
-            <GiRollingDiceCup size='1.3rem' />
+            <IconDice size='1.3rem' />
           </Box>
           <canvas
             ref={canvasRef}

@@ -84,6 +84,19 @@ const modals = {
 //   }
 // }
 
+// open-dyslexic is an opt-in account setting. Inject its stylesheet at runtime only for users
+// who enable it, so the ~99% who don't aren't blocked by a cross-origin font request on every
+// load (it used to be a render-blocking <link> in index.html for everyone).
+function ensureDyslexicFontLoaded() {
+  const id = 'open-dyslexic-font';
+  if (typeof document === 'undefined' || document.getElementById(id)) return;
+  const link = document.createElement('link');
+  link.id = id;
+  link.rel = 'stylesheet';
+  link.href = 'https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-regular.min.css';
+  document.head.appendChild(link);
+}
+
 export default function App() {
   const [_drawer, openDrawer] = useAtom(drawerState);
   const [_creatureDrawer, openCreatureDrawer] = useAtom(creatureDrawerState);
@@ -125,6 +138,13 @@ export default function App() {
       console.log('Updating background image...');
       setBackground(await getBackgroundImageFromURL(activeCharacer?.details?.background_image_url));
     })();
+  }, [activeCharacer]);
+
+  // Lazy-load the open-dyslexic font only when the user has the Dyslexia Font setting enabled.
+  useEffect(() => {
+    if (getCachedCustomization()?.sheet_theme?.dyslexia_font) {
+      ensureDyslexicFontLoaded();
+    }
   }, [activeCharacer]);
 
   const generateTheme = (theme?: { color?: string }) => {

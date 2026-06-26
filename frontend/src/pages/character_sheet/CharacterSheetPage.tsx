@@ -27,6 +27,7 @@ import {
   IconFlag,
   IconFlare,
   IconLayoutGrid,
+  IconDice,
   IconLayoutList,
   IconListDetails,
   IconNotebook,
@@ -59,7 +60,6 @@ import EntityInfoSection from './sections/EntityInfoSection';
 import ConditionSection from './sections/ConditionSection';
 import HealthSection from './sections/HealthSection';
 import SpeedSection from './sections/SpeedSection';
-import { GiRollingDices } from 'react-icons/gi';
 import { convertToSetEntity } from '@utils/type-fixing';
 import ModesDrawer from '@common/modes/ModesDrawer';
 import CampaignDrawer from '@pages/campaign/CampaignDrawer';
@@ -300,7 +300,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
                 setOpenedDiceRoller(true);
               }}
             >
-              <GiRollingDices size='1.8rem' stroke={'1.5px'} />
+              <IconDice size='1.8rem' stroke={1.5} />
             </ActionIcon>
           )}
         </Stack>

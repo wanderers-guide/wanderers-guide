@@ -25,10 +25,16 @@
 
     <title>Wanderer's Guide</title>
 
+    <!-- Warm up the data/image origin (Supabase behind a custom domain) during bundle download
+         so the first content/image request doesn't pay a cold handshake. -->
+    <link rel="preconnect" href="https://api.wanderersguide.app" crossorigin />
+    <link rel="dns-prefetch" href="https://api.wanderersguide.app" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Montserrat&family=Ubuntu+Mono&display=swap" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-regular.min.css" rel="stylesheet" />
+    <!-- open-dyslexic is an opt-in account setting; it is injected at runtime (see App.tsx)
+         only for users who enable it, instead of render-blocking every visitor here. -->
   </head>
   <body>
     <div id="root"></div>

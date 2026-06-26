@@ -1,4 +1,4 @@
-import { Icon, getAllIcons } from '@common/Icon';
+import { Icon, getAllIcons, loadGameIcons } from '@common/Icon';
 import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 import classes from '@css/ActionsGrid.module.css';
 import {
@@ -50,9 +50,19 @@ export function SelectIconModalContents(props: {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
 
+  // The full game-icon set is loaded lazily; pull it in when the picker opens, then refresh.
+  const [iconsReady, setIconsReady] = useState(false);
+  useEffect(() => {
+    loadGameIcons().then(() => setIconsReady(true));
+  }, []);
+
   // Infinite scroll
   const { ref, inViewport } = useInViewport();
   const [icons, setIcons] = useState(fetchIcons(0, 30));
+  useEffect(() => {
+    // Once the game icons finish loading, reset the list so they appear.
+    if (iconsReady) setIcons(fetchIcons(0, 30));
+  }, [iconsReady]);
   useEffect(() => {
     if (inViewport) {
       const newIcons = fetchIcons(icons.length, 30);

@@ -6,7 +6,11 @@ import { VitePWA, VitePWAOptions } from 'vite-plugin-pwa';
 import babel from '@rollup/plugin-babel';
 
 const manifestForPlugin: Partial<VitePWAOptions> = {
-  registerType: 'prompt',
+  // 'autoUpdate' lets a new deploy's service worker activate + claim clients immediately
+  // (skipWaiting + clientsClaim). Combined with Vite's content-hashed asset filenames this
+  // serves fresh assets without the old "wipe all caches every load" hack in main.tsx, so
+  // returning visitors get cache hits instead of re-downloading the whole app each visit.
+  registerType: 'autoUpdate',
   includeAssets: ['apple-icon-180.png', 'maskable_icon.png'],
   workbox: {
     maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15 MiB
@@ -92,5 +96,35 @@ export default defineConfig({
   ],
   build: {
     target: 'es2020',
+    modulePreload: {
+      // Don't eagerly <link rel="modulepreload"> the game-icons chunk: it's a 6.9MB on-demand
+      // monolith (loaded only when a game icon actually renders), so preloading it would pull
+      // the bytes back onto the first-paint path and undo the lazy split.
+      resolveDependencies: (_url, deps) => deps.filter((dep) => !dep.includes('game-icons')),
+    },
+    rollupOptions: {
+      output: {
+        // Split large, stable vendors into their own long-cached chunks so an app-code
+        // deploy doesn't invalidate the whole download, and so the browser can fetch them
+        // in parallel.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          // react-icons/gi is a ~6.9MB monolith. Pin it to its OWN chunk so Rollup doesn't
+          // hoist the shared module into the eager entry chunk. With no static importer left
+          // on the first-paint path (see src/common/Icon.tsx, which now dynamic-imports it),
+          // this chunk is only fetched on demand when a game icon actually renders.
+          if (id.includes('react-icons/gi')) return 'game-icons';
+          if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id))
+            return 'react';
+          if (id.includes('@mantine')) return 'mantine';
+          if (id.includes('@tiptap') || id.includes('prosemirror')) return 'editor';
+          if (id.includes('@supabase')) return 'supabase';
+          if (id.includes('mathjs') || id.includes('decimal.js')) return 'mathjs';
+          if (id.includes('recharts') || id.includes('/d3-') || id.includes('victory')) return 'charts';
+          if (id.includes('pdf-lib')) return 'pdf';
+          if (id.includes('framer-motion')) return 'framer';
+        },
+      },
+    },
   },
 });

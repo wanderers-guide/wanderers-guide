@@ -7,7 +7,7 @@ import { isCharacter, isCreature, isTruthy } from '@utils/type-fixing';
 import { getFinalProfValue } from '@variables/variable-helpers';
 import { getAllSkillVariables } from '@variables/variable-manager';
 import { useEffect, useState } from 'react';
-import { GiDiceTwentyFacesTwenty } from 'react-icons/gi';
+import { IconDice } from '@tabler/icons-react';
 
 export default function InitiativeRollModal({
   context,
@@ -123,7 +123,7 @@ export default function InitiativeRollModal({
         <Button
           size='compact-lg'
           fullWidth
-          rightSection={<GiDiceTwentyFacesTwenty size={20} />}
+          rightSection={<IconDice size={20} />}
           style={{
             fontStyle: 'italic',
           }}

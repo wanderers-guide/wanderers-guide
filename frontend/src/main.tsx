@@ -26,19 +26,22 @@ export const supabase = createClient(
   import.meta.env.VITE_SUPABASE_KEY
 );
 
-// Fixes cache issues on refresh
-(async () => {
-  // Clear the cache on startup
-  const keys = await caches.keys();
-  for (const key of keys) {
-    caches.delete(key);
-  }
-
-  // Unregister our service worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.ready.then(async (registration) => {
-      const result = await registration.unregister();
-    });
+// Warm up the connection to the data/API origin so the first content request
+// doesn't pay a cold DNS+TLS+TCP handshake after the bundle finishes loading.
+// (The static <link rel="preconnect"> in index.html covers the prod origin; this
+// also covers non-prod origins where VITE_SUPABASE_URL differs.)
+(() => {
+  try {
+    const apiOrigin = new URL(import.meta.env.VITE_SUPABASE_URL).origin;
+    for (const rel of ['preconnect', 'dns-prefetch']) {
+      const link = document.createElement('link');
+      link.rel = rel;
+      link.href = apiOrigin;
+      link.crossOrigin = 'anonymous';
+      document.head.appendChild(link);
+    }
+  } catch {
+    // VITE_SUPABASE_URL missing/invalid — skip; this is a pure optimization.
   }
 })();
 

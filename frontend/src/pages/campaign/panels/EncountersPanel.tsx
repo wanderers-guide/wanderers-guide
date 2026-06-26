@@ -37,6 +37,7 @@ import {
   IconBat,
   IconCheck,
   IconCylinder,
+  IconDice,
   IconExternalLink,
   IconPlus,
   IconSettings,
@@ -57,7 +58,6 @@ import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variab
 import { cloneDeep, debounce, isEqual, mean, truncate } from 'lodash-es';
 import { evaluate } from 'mathjs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { GiDiceTwentyFacesTwenty } from 'react-icons/gi';
 import { useAtom, useAtomValue } from 'jotai';
 import BlurBox from '@common/BlurBox';
 import ImprintButton from '@common/ImprintButton';
@@ -615,7 +615,7 @@ function EncounterView(props: {
                 variant='gradient'
                 gradient={{ from: props.encounter.color, to: props.encounter.color, deg: 90 }}
                 size='compact-sm'
-                rightSection={<GiDiceTwentyFacesTwenty size={16} />}
+                rightSection={<IconDice size={16} />}
                 style={{
                   fontStyle: 'italic',
                 }}

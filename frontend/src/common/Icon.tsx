@@ -1,4 +1,4 @@
-import React, { RefAttributes } from 'react';
+import React, { RefAttributes, useEffect, useState } from 'react';
 import {
   IconSphere,
   IconBrandThreejs,
@@ -129,12 +129,29 @@ import {
   IconUserCircle,
   IconProps as TablerIconsProps,
 } from '@tabler/icons-react';
-import * as GiIcons from 'react-icons/gi';
 import { IconType } from 'react-icons/lib';
-const allGameIcons = Object.entries(GiIcons).map(([name, Component]) => ({
-  name,
-  Component,
-}));
+
+// react-icons/gi is a ~6.9MB monolith (all ~4000 game icons inlined in one module). We load it
+// lazily via dynamic import so it stays OUT of the eager first-paint bundle, and only fetch it
+// when a game icon actually needs to render (a saved icon, or the icon picker). Resolved icons
+// are cached on `gameIcons` for synchronous lookups thereafter.
+const gameIcons: Record<string, IconType> = {};
+let gameIconsLoaded = false;
+let gameIconsPromise: Promise<void> | null = null;
+
+export function loadGameIcons(): Promise<void> {
+  if (gameIconsLoaded) return Promise.resolve();
+  if (!gameIconsPromise) {
+    gameIconsPromise = import('react-icons/gi').then((GiIcons) => {
+      for (const [name, Component] of Object.entries(GiIcons)) {
+        // strip the leading 'Gi' and lowercase, matching the previous lookup keys
+        gameIcons[name.slice(2).toLowerCase()] = Component as IconType;
+      }
+      gameIconsLoaded = true;
+    });
+  }
+  return gameIconsPromise;
+}
 
 // Tabler Icons
 const tablerIcons: Record<string, React.FC<TablerIconsProps>> = {
@@ -267,27 +284,40 @@ const tablerIcons: Record<string, React.FC<TablerIconsProps>> = {
   treemap: IconChartTreemap,
 };
 
-// Game Icons
-const gameIcons: Record<string, IconType> = {};
-allGameIcons.forEach(({ name, Component }) => {
-  // remove first two letters 'Gi' from name
-  name = name.slice(2);
-  name = name.toLowerCase();
-  gameIcons[name] = Component;
-});
-
 interface IconProps extends Partial<IconType>, Partial<TablerIconsProps> {
   name: string;
 }
 export const Icon = ({ name, ...restProps }: IconProps) => {
-  const IconComponent = tablerIcons[name] || gameIcons[name] || null;
+  // Cast to include undefined: tablerIcons is a Record (its index type omits undefined), but a
+  // missing name really is undefined at runtime, and we branch on that below.
+  const tablerIcon = tablerIcons[name] as React.FC<TablerIconsProps> | undefined;
 
+  // For non-tabler names we may need the lazily-loaded game-icon set: trigger the load and
+  // re-render once it resolves. `gameIcon` holds the resolved component (if already cached).
+  const [gameIcon, setGameIcon] = useState<IconType | null>(() => (tablerIcon ? null : gameIcons[name] ?? null));
+
+  useEffect(() => {
+    if (tablerIcon) return;
+    if (gameIconsLoaded) {
+      setGameIcon(gameIcons[name] ?? null);
+      return;
+    }
+    let active = true;
+    loadGameIcons().then(() => {
+      if (active) setGameIcon(gameIcons[name] ?? null);
+    });
+    return () => {
+      active = false;
+    };
+  }, [name, tablerIcon]);
+
+  // Both tabler and react-icons components accept the same loose set of props (size, color,
+  // style, stroke…); type as a permissive component so the shared restProps spread is valid.
+  const IconComponent: React.ComponentType<any> | null = tablerIcon || gameIcon || null;
   if (!IconComponent) {
-    console.warn(`Icon "${name}" not found`);
+    // Either a game icon still loading, or genuinely not found — render nothing for now.
     return null;
   }
-
-  restProps.style;
 
   return <IconComponent {...restProps} />;
 };

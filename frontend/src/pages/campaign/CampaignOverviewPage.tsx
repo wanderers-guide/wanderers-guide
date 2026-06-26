@@ -35,6 +35,7 @@ import {
   IconX,
   IconRefreshDot,
   IconCopy,
+  IconDice,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { Campaign, Character, Encounter } from '@schemas/content';
@@ -42,7 +43,6 @@ import { setPageTitle } from '@utils/document-change';
 import { isPhoneSized, tabletQuery } from '@utils/mobile-responsive';
 import { cloneDeep, truncate } from 'lodash-es';
 import { Suspense, useEffect, useState } from 'react';
-import { GiRollingDices } from 'react-icons/gi';
 import { useLoaderData } from 'react-router-dom';
 import classes from '@css/UserInfoIcons.module.css';
 import { getDefaultCampaignBackgroundImage } from '@utils/background-images';
@@ -364,7 +364,7 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
               setOpenedDiceRoller(true);
             }}
           >
-            <GiRollingDices size='1.8rem' stroke={'1.5px'} />
+            <IconDice size='1.8rem' stroke={1.5} />
           </ActionIcon>
         </Stack>
       </Box>

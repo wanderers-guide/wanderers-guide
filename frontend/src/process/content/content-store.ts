@@ -452,10 +452,12 @@ export async function fetchContentPackage(
     },
   } satisfies ContentPackage;
 
-  // Preload high-need images from package
+  // Preload high-need images from package. Ancestries and classes are shown prominently on
+  // the builder's first screen, so preloading those pays off. Backgrounds are NOT preloaded:
+  // there are hundreds of them and they only ever appear inside a picker, so eagerly fetching
+  // every full-res background image just competes with the content JSON for bandwidth on a phone.
   p.ancestries.forEach((a) => preloadImage(a.artwork_url));
   p.classes.forEach((c) => preloadImage(c.artwork_url));
-  p.backgrounds.forEach((b) => preloadImage(b.artwork_url));
 
   return p;
 }
@@ -577,6 +579,11 @@ export async function fetchCreatureByName(name?: string, sources?: SourceValue, 
  * @returns - Validated content record, or original record if validation failed
  */
 function validateAndWarn<T>(type: ContentType, schema: z.ZodTypeAny, record: unknown): T {
+  // The server is the source of truth for content shape. Running schema.safeParse on every
+  // record of the full corpus (thousands of items/spells/feats) on the client's main thread
+  // blocks first paint of the builder/sheet on a phone. Validate only in dev, where the
+  // warnings are actionable; in prod, return the record untouched.
+  if (!import.meta.env.DEV) return record as T;
   const parsed = schema.safeParse(record);
   if (!parsed.success) {
     const summary = formatZodError(record, parsed.error);

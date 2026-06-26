@@ -1,4 +1,4 @@
-import { getAllIcons } from '@common/Icon';
+import { getAllIcons, loadGameIcons } from '@common/Icon';
 import { convertTiptapToMarkdown } from '@common/rich_text_input/utils';
 import { GUIDE_BLUE } from '@constants/data';
 import { fetchContentPackage, getDefaultSources } from '@content/content-store';
@@ -473,6 +473,10 @@ export async function generateEncounters(partyLevel: number, partySize: number, 
 
   const encountersData = await buildEncounters(partyLevel, partySize, selectedCreatures, content.traits, description);
   if (!encountersData) return null;
+
+  // getAllIcons() below only includes game icons once the lazy set is loaded; ensure it's
+  // available so the random encounter icon is still picked from the full set.
+  await loadGameIcons();
 
   const encounters: Encounter[] = Object.values(encountersData).map((data) => {
     const creatures: Creature[] = [];
