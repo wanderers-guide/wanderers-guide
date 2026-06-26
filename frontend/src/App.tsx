@@ -22,67 +22,52 @@ import { Notifications } from '@mantine/notifications';
 import SearchSpotlight from '@nav/SearchSpotlight';
 import { IconBrush } from '@tabler/icons-react';
 import { getBackgroundImageFromURL } from '@utils/background-images';
-import { useEffect, useState } from 'react';
+import { sizeImageUrl, viewportImageWidth } from '@utils/images';
+import { ComponentType, lazy, Suspense, useEffect, useState } from 'react';
 import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import { useAtom, useAtomValue } from 'jotai';
 import { supabase } from './main';
 import Layout from './nav/Layout';
-import AddNewLoreModal from '@modals/AddNewLoreModal';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { resetContentStore } from '@content/content-store';
-import SelectContentModal from '@common/select/SelectContent';
-import ConditionModal from '@modals/ConditionModal';
-import CreateDicePresetModal from '@modals/CreateDicePresetModal';
-import SelectIconModal from '@modals/SelectIconModal';
-import SelectImageModal from '@modals/SelectImageModal';
-import UpdateCharacterPortraitModal from '@modals/UpdateCharacterPortraitModal';
-import UpdateNotePageModal from '@modals/UpdateNotePageModal';
-import AddItemsModal from '@modals/AddItemsModal';
 import { isEqual } from 'lodash-es';
-import SelectSpellSlotModal from '@modals/SelectSpellSlotModal';
-import SelectStaffCastingModal from '@modals/SelectStaffCastingModal';
-import InitiativeRollModal from '@modals/InitiativeRollModal';
-import UpdateEncounterModal from '@modals/UpdateEncounterModal';
-import GenerateEncounterModal from '@modals/GenerateEncounterModal';
-import UpdateApiClientModal from '@modals/UpdateApiClientModal';
 import { getAnchorStyles } from '@utils/anchor';
-import BuyItemModal from '@modals/BuyItemModal';
 import { generateColors } from '@mantine/colors-generator';
 import { ImageOption } from '@schemas/index';
+import { ContextModalProps } from '@mantine/modals';
 
-// TODO, it would be great to dynamically import these modals, but it with Mantine v7.6.2 it doesn't work
-// const SelectContentModal = lazy(() => import('@common/select/SelectContent'));
-// const SelectImageModal = lazy(() => import('@modals/SelectImageModal'));
-// const SelectIconModal = lazy(() => import('@modals/SelectIconModal'));
-// const UpdateCharacterPortraitModal = lazy(() => import('@modals/UpdateCharacterPortraitModal'));
-// const AddNewLoreModal = lazy(() => import('@modals/AddNewLoreModal'));
-// const UpdateNotePageModal = lazy(() => import('@modals/UpdateNotePageModal'));
-// const ConditionModal = lazy(() => import('@modals/ConditionModal'));
-// const CreateDicePresetModal = lazy(() => import('@modals/CreateDicePresetModal'));
+// Lazily load every context modal so their (often heavy) dependencies — the tiptap editor,
+// mathjs, the AI SDK, showdown/turndown, js-search — are code-split out of the eager first-paint
+// bundle and only fetched when a modal is actually opened. Each lazy component gets its own
+// Suspense boundary so it renders correctly inside Mantine's ModalsProvider portal (the bare
+// React.lazy approach attempted previously, under Mantine v7.6.2, lacked this and didn't work).
+function lazyModal(factory: () => Promise<{ default: ComponentType<any> }>) {
+  const LazyComponent = lazy(factory);
+  return (props: ContextModalProps<any>) => (
+    <Suspense fallback={null}>
+      <LazyComponent {...props} />
+    </Suspense>
+  );
+}
 
 const modals = {
-  selectContent: SelectContentModal,
-  selectImage: SelectImageModal,
-  selectIcon: SelectIconModal,
-  selectSpellSlot: SelectSpellSlotModal,
-  selectStaffCasting: SelectStaffCastingModal,
-  updateCharacterPortrait: UpdateCharacterPortraitModal,
-  addNewLore: AddNewLoreModal,
-  initiativeRoll: InitiativeRollModal,
-  updateNotePage: UpdateNotePageModal,
-  generateEncounter: GenerateEncounterModal,
-  updateEncounter: UpdateEncounterModal,
-  updateApiClient: UpdateApiClientModal,
-  condition: ConditionModal,
-  createDicePreset: CreateDicePresetModal,
-  addItems: AddItemsModal,
-  buyItem: BuyItemModal,
+  selectContent: lazyModal(() => import('@common/select/SelectContent')),
+  selectImage: lazyModal(() => import('@modals/SelectImageModal')),
+  selectIcon: lazyModal(() => import('@modals/SelectIconModal')),
+  selectSpellSlot: lazyModal(() => import('@modals/SelectSpellSlotModal')),
+  selectStaffCasting: lazyModal(() => import('@modals/SelectStaffCastingModal')),
+  updateCharacterPortrait: lazyModal(() => import('@modals/UpdateCharacterPortraitModal')),
+  addNewLore: lazyModal(() => import('@modals/AddNewLoreModal')),
+  initiativeRoll: lazyModal(() => import('@modals/InitiativeRollModal')),
+  updateNotePage: lazyModal(() => import('@modals/UpdateNotePageModal')),
+  generateEncounter: lazyModal(() => import('@modals/GenerateEncounterModal')),
+  updateEncounter: lazyModal(() => import('@modals/UpdateEncounterModal')),
+  updateApiClient: lazyModal(() => import('@modals/UpdateApiClientModal')),
+  condition: lazyModal(() => import('@modals/ConditionModal')),
+  createDicePreset: lazyModal(() => import('@modals/CreateDicePresetModal')),
+  addItems: lazyModal(() => import('@modals/AddItemsModal')),
+  buyItem: lazyModal(() => import('@modals/BuyItemModal')),
 };
-// declare module '@mantine/modals' {
-//   export interface MantineModalsOverride {
-//     modals: typeof modals;
-//   }
-// }
 
 // open-dyslexic is an opt-in account setting. Inject its stylesheet at runtime only for users
 // who enable it, so the ~99% who don't aren't blocked by a cross-origin font request on every
@@ -331,7 +316,7 @@ export default function App() {
     >
       <ModalsProvider modals={modals}>
         <BackgroundImage
-          src={background?.url ?? ''}
+          src={sizeImageUrl(background?.url, { width: viewportImageWidth() }) ?? ''}
           radius={0}
           style={{ position: 'fixed', top: 0, left: 0, zIndex: -1000, backgroundPosition: 'top' }}
           w='100dvw'

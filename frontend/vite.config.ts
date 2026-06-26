@@ -13,7 +13,35 @@ const manifestForPlugin: Partial<VitePWAOptions> = {
   registerType: 'autoUpdate',
   includeAssets: ['apple-icon-180.png', 'maskable_icon.png'],
   workbox: {
-    maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15 MiB
+    // Keep the ~6.9MB game-icons monolith out of the precache manifest so the service worker
+    // doesn't re-download it in the background on first visit — it loads on demand and is
+    // runtime-cached below. Also skip stats.html (the build-analysis report). The app shell
+    // (entry + react/mantine vendors) and the other lazy chunks stay precached for offline use.
+    globIgnores: ['**/game-icons-*.js', '**/stats.html'],
+    runtimeCaching: [
+      {
+        // Supabase Storage images (portraits, content artwork, backgrounds) — content-addressed,
+        // safe to cache for a long time. Covers both the raw object and render/image transform URLs.
+        urlPattern: ({ url }) =>
+          url.pathname.includes('/storage/v1/') && /\.(png|jpe?g|webp|gif|avif|svg)$/i.test(url.pathname),
+        handler: 'CacheFirst',
+        options: {
+          cacheName: 'wg-storage-images',
+          expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 30 },
+          cacheableResponse: { statuses: [0, 200] },
+        },
+      },
+      {
+        // External art (Archives of Nethys creature images, dicebear avatars) — opaque cross-origin.
+        urlPattern: ({ url }) => url.hostname === '2e.aonprd.com' || url.hostname === 'api.dicebear.com',
+        handler: 'StaleWhileRevalidate',
+        options: {
+          cacheName: 'wg-external-images',
+          expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 14 },
+          cacheableResponse: { statuses: [0, 200] },
+        },
+      },
+    ],
   },
   manifest: {
     name: "Wanderer's Guide",
@@ -97,10 +125,15 @@ export default defineConfig({
   build: {
     target: 'es2020',
     modulePreload: {
-      // Don't eagerly <link rel="modulepreload"> the game-icons chunk: it's a 6.9MB on-demand
-      // monolith (loaded only when a game icon actually renders), so preloading it would pull
-      // the bytes back onto the first-paint path and undo the lazy split.
-      resolveDependencies: (_url, deps) => deps.filter((dep) => !dep.includes('game-icons')),
+      // Keep first paint lean: don't eagerly <link rel="modulepreload"> heavy chunks that are
+      // only needed by lazy routes/modals (the game-icon monolith, the tiptap editor, mathjs,
+      // charts, framer-motion). They still load on demand when their route/modal/component is
+      // reached. We only strip them from the initial HTML preload (hostType 'html'); runtime
+      // route-transition preloading (hostType 'js') keeps them so navigations stay fast.
+      resolveDependencies: (_url, deps, { hostType }) =>
+        hostType === 'html'
+          ? deps.filter((dep) => !/(?:game-icons|editor|mathjs|charts|framer)-[A-Za-z0-9_-]+\.js$/.test(dep))
+          : deps,
     },
     rollupOptions: {
       output: {

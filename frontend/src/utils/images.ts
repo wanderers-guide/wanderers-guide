@@ -30,6 +30,44 @@ export async function isValidImage(url?: string): Promise<boolean> {
   }
 }
 
+/**
+ * Rewrite a Supabase Storage object URL to the on-the-fly image transform endpoint so the browser
+ * downloads a right-sized, re-encoded image instead of the full-res original (e.g. a portrait is
+ * ~160KB raw vs ~3KB at 80x80 — and the transform also serves webp). Non-Supabase URLs
+ * (artstation/imgur/aonprd/dicebear, data: URIs, etc.) are returned unchanged. Best-effort: any
+ * parse failure returns the original URL, so this can never break an image, only shrink it.
+ */
+export function sizeImageUrl(
+  url: string | null | undefined,
+  opts: { width: number; height?: number; resize?: 'cover' | 'contain' | 'fill'; quality?: number }
+): string | undefined {
+  if (!url || !url.trim()) return url ?? undefined;
+  // Only Supabase Storage object URLs support the render/image transform.
+  if (!url.includes('/storage/v1/object/public/')) return url;
+  try {
+    const u = new URL(url);
+    u.pathname = u.pathname.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+    u.searchParams.set('width', String(Math.round(opts.width)));
+    if (opts.height) {
+      u.searchParams.set('height', String(Math.round(opts.height)));
+      u.searchParams.set('resize', opts.resize ?? 'cover');
+    }
+    u.searchParams.set('quality', String(opts.quality ?? 75));
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
+/** Device-appropriate pixel width for a full-bleed background, capped so we never over-fetch. */
+export function viewportImageWidth(max = 1920): number {
+  if (typeof window === 'undefined') return max;
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.round((window.innerWidth || 0) * dpr);
+  // Guard against a 0/unknown viewport (headless, pre-layout) — never request a 0-width image.
+  return w > 0 ? Math.min(w, max) : max;
+}
+
 export async function preloadImage(url?: string | null): Promise<void> {
   if (!url || !url.trim()) return;
   return new Promise((resolve, reject) => {

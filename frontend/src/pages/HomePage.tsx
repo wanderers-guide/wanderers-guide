@@ -16,6 +16,7 @@ import { setPageTitle } from '@utils/document-change';
 import { glassStyle } from '@utils/colors';
 import BlurBox from '@common/BlurBox';
 import { getHomeBackgroundImage } from '@utils/background-images';
+import { sizeImageUrl, viewportImageWidth } from '@utils/images';
 import { IconBrush, IconExternalLink } from '@tabler/icons-react';
 import { DISCORD_URL } from '@constants/urls';
 import { useMediaQuery } from '@mantine/hooks';
@@ -93,7 +94,7 @@ export function Component() {
         </SimpleGrid>
       </Stack>
       <BackgroundImage
-        src={background?.url ?? ''}
+        src={sizeImageUrl(background?.url, { width: viewportImageWidth() }) ?? ''}
         radius={0}
         style={{ position: 'fixed', top: 0, left: 0, zIndex: -1000, backgroundPosition: 'top' }}
         w='100dvw'
