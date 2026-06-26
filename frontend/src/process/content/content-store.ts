@@ -487,9 +487,17 @@ export function resetContentStore(resetSources = true, clearPersisted = false) {
   idStore = emptyIdStore();
   inFlightFetches.clear();
 
+  // Cancel any pending debounced persist: it was scheduled to save the PRE-reset content,
+  // but the stores are now empty. If it fired after this reset it would overwrite the valid
+  // persisted cache with empty maps (defeating the re-hydration below).
+  if (persistTimer) {
+    clearTimeout(persistTimer);
+    persistTimer = null;
+  }
+  cacheDirty = false;
+
   if (clearPersisted) {
     // Underlying content changed: drop the persisted copy and don't re-hydrate stale data.
-    cacheDirty = false;
     void idbDelete(CONTENT_CACHE_KEY);
     hydrationPromise = Promise.resolve();
   } else {
