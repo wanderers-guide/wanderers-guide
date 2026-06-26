@@ -14,17 +14,20 @@ const manifestForPlugin: Partial<VitePWAOptions> = {
   includeAssets: ['apple-icon-180.png', 'maskable_icon.png'],
   workbox: {
     // Keep the ~6.9MB game-icons monolith out of the precache manifest so the service worker
-    // doesn't re-download it in the background on first visit — it loads on demand and is
-    // runtime-cached below. Also skip stats.html (the build-analysis report). The app shell
-    // (entry + react/mantine vendors) and the other lazy chunks stay precached for offline use.
+    // doesn't re-download it in the background on first visit — it loads on demand and is then
+    // served from the browser HTTP cache (it's a content-hashed, immutable asset). Also skip
+    // stats.html (the build-analysis report). The app shell and other lazy chunks stay precached.
     globIgnores: ['**/game-icons-*.js', '**/stats.html'],
     runtimeCaching: [
       {
-        // Supabase Storage images (portraits, content artwork, backgrounds) — content-addressed,
-        // safe to cache for a long time. Covers both the raw object and render/image transform URLs.
+        // Supabase Storage images (portraits, content artwork, backgrounds). Use
+        // StaleWhileRevalidate (NOT CacheFirst): portraits are mutable at a stable URL, so
+        // CacheFirst could pin a stale portrait for weeks after a user changes it — SWR serves
+        // the cached copy instantly and refreshes it in the background. Covers both the raw
+        // object and render/image transform URLs.
         urlPattern: ({ url }) =>
           url.pathname.includes('/storage/v1/') && /\.(png|jpe?g|webp|gif|avif|svg)$/i.test(url.pathname),
-        handler: 'CacheFirst',
+        handler: 'StaleWhileRevalidate',
         options: {
           cacheName: 'wg-storage-images',
           expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 30 },
@@ -125,15 +128,13 @@ export default defineConfig({
   build: {
     target: 'es2020',
     modulePreload: {
-      // Keep first paint lean: don't eagerly <link rel="modulepreload"> heavy chunks that are
-      // only needed by lazy routes/modals (the game-icon monolith, the tiptap editor, mathjs,
-      // charts, framer-motion). They still load on demand when their route/modal/component is
-      // reached. We only strip them from the initial HTML preload (hostType 'html'); runtime
-      // route-transition preloading (hostType 'js') keeps them so navigations stay fast.
-      resolveDependencies: (_url, deps, { hostType }) =>
-        hostType === 'html'
-          ? deps.filter((dep) => !/(?:game-icons|editor|mathjs|charts|framer)-[A-Za-z0-9_-]+\.js$/.test(dep))
-          : deps,
+      // Don't eagerly <link rel="modulepreload"> the game-icons chunk: it's a 6.9MB on-demand
+      // monolith (loaded only when a game icon actually renders), so preloading it would pull the
+      // bytes onto the first-paint path. Everything else the entry statically imports keeps its
+      // preload so it downloads in parallel with the entry (NOT filtering editor/mathjs/charts/
+      // framer here: they are still statically imported by the app shell, so stripping their
+      // preload would only delay them — de-eagering them needs a separate refactor).
+      resolveDependencies: (_url, deps) => deps.filter((dep) => !dep.includes('game-icons')),
     },
     rollupOptions: {
       output: {
