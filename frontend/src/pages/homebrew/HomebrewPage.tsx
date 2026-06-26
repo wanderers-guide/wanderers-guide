@@ -294,7 +294,9 @@ function SubscriptionsSection(props: { searchQuery: string }) {
   } = useQuery({
     queryKey: [`get-homebrew-content-sources-subscribed`, user?.user_id],
     queryFn: async () => {
-      resetContentStore(false);
+      // Homebrew management surface: clear the persisted cache too so authors always see
+      // fresh homebrew here rather than a (possibly stale) re-hydrated copy.
+      resetContentStore(false, true);
       return (await fetchContentSources('ALL-HOMEBREW-ACCESSIBLE')).filter(
         (c) => c.user_id && user?.subscribed_content_sources?.find((src) => src.source_id === c.id)
       );
@@ -384,7 +386,9 @@ function CreationsSection(props: { searchQuery: string }) {
   } = useQuery({
     queryKey: [`get-homebrew-content-sources-creations`],
     queryFn: async () => {
-      resetContentStore(false);
+      // Homebrew management surface: clear the persisted cache too so authors always see
+      // fresh homebrew here rather than a (possibly stale) re-hydrated copy.
+      resetContentStore(false, true);
       return (await fetchContentSources('ALL-HOMEBREW-ACCESSIBLE')).filter(
         (c) => c.user_id && c.user_id === user?.user_id
       );
