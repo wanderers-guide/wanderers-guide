@@ -71,6 +71,10 @@ function emptyIdStore() {
   newStore.set('language', new Map());
   newStore.set('spell', new Map());
   newStore.set('trait', new Map());
+  newStore.set('archetype', new Map());
+  newStore.set('versatile-heritage', new Map());
+  newStore.set('class-archetype', new Map());
+  newStore.set('creature', new Map());
   newStore.set('content-source', new Map());
   return newStore;
 }
