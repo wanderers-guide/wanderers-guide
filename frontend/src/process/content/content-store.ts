@@ -1,6 +1,7 @@
 import { getPublicUser } from '@auth/user-manager';
 import { COMMON_CORE_ID } from '@constants/data';
 import { makeRequest } from '@requests/request-manager';
+import { idbGet, idbSet, idbDelete } from './content-cache-db';
 import {
   AbilityBlock,
   AbilityBlockSchema,
@@ -124,6 +125,118 @@ function setStoredIds(type: ContentType, data: Record<string, any>, value: any) 
     idStore.get(type)?.set(value.id, value);
   }
   return true;
+}
+
+///////////////////////////////////////////////////////
+//            Persistent cache (IndexedDB)           //
+///////////////////////////////////////////////////////
+
+// The content corpus is large but effectively static, yet the in-memory stores above are
+// wiped on every page reload — so each cold builder/sheet load re-fetches ~12 full content
+// tables. We mirror the stores to IndexedDB so a reload/new tab/next session can hydrate
+// locally instead of re-downloading everything (which is also what made refreshing during
+// the evening slowdowns actively worse). Pure optimization: every op is best-effort and
+// silently no-ops on failure, so content loading never depends on the cache.
+
+const CONTENT_CACHE_KEY = 'content-store';
+// Bump to invalidate every client's persisted cache (e.g. when the content shape changes).
+const CONTENT_CACHE_VERSION = 1;
+// How long a persisted cache is trusted before it's dropped and re-fetched. Content changes
+// rarely; this bounds how stale a cached client can be (and resetContentStore() clears it on demand).
+const CONTENT_CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24h
+
+type PersistedContentCache = {
+  version: number;
+  savedAt: number;
+  idStore: Map<ContentType, Map<number, any>>;
+  contentStore: Map<number, any>;
+};
+
+// De-dupe concurrent identical fetches so the ~12-way package fan-out and rapid repeat
+// lookups share a single in-flight request instead of each hitting the network.
+const inFlightFetches = new Map<string, Promise<any>>();
+
+async function hydrateContentCache(): Promise<void> {
+  try {
+    const rec = await idbGet<PersistedContentCache>(CONTENT_CACHE_KEY);
+    if (!rec) return;
+    if (rec.version !== CONTENT_CACHE_VERSION || Date.now() - rec.savedAt > CONTENT_CACHE_TTL_MS) {
+      await idbDelete(CONTENT_CACHE_KEY);
+      return;
+    }
+    // Fill the in-memory maps WITHOUT overwriting anything already present. Hydration can
+    // resolve after a network fetch has already populated fresher data (it races a 2.5s
+    // timeout, and is re-armed by resetContentStore), so it must never clobber.
+    if (rec.contentStore instanceof Map) {
+      for (const [k, v] of rec.contentStore) if (!contentStore.has(k)) contentStore.set(k, v);
+    }
+    if (rec.idStore instanceof Map) {
+      for (const [type, m] of rec.idStore) {
+        const target = idStore.get(type);
+        if (target && m instanceof Map) {
+          for (const [id, v] of m) if (!target.has(id)) target.set(id, v);
+        }
+      }
+    }
+    console.log('[CONTENT-CACHE] Hydrated content store from IndexedDB');
+  } catch (e) {
+    console.warn('[CONTENT-CACHE] Failed to hydrate from IndexedDB', e);
+  }
+}
+
+// Race a timeout so a stuck/blocked IndexedDB can never hold up content loading — if it
+// loses the race, hydration may still populate later (harmlessly, since it never clobbers).
+function beginHydration(): Promise<void> {
+  return Promise.race([
+    hydrateContentCache(),
+    new Promise<void>((resolve) => setTimeout(resolve, 2500)),
+  ]);
+}
+// Started at module load and re-armed by resetContentStore(), so the in-memory store can
+// refill from the persisted cache after an in-memory clear instead of re-fetching the corpus.
+let hydrationPromise: Promise<void> = beginHydration();
+
+let cacheDirty = false;
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+
+async function persistContentCache(): Promise<void> {
+  if (!cacheDirty) return;
+  cacheDirty = false;
+  try {
+    await idbSet(CONTENT_CACHE_KEY, {
+      version: CONTENT_CACHE_VERSION,
+      savedAt: Date.now(),
+      idStore,
+      contentStore,
+    } satisfies PersistedContentCache);
+  } catch (e) {
+    cacheDirty = true; // retry on the next schedule
+    console.warn('[CONTENT-CACHE] Failed to persist to IndexedDB', e);
+  }
+}
+
+// Trailing debounce: coalesce bursts (e.g. the initial ~12-request package load) AND avoid
+// re-serializing the whole multi-MB corpus repeatedly during steady browsing — we only write
+// once activity settles. The pagehide/visibilitychange flush below covers a close mid-burst.
+const CONTENT_CACHE_PERSIST_DEBOUNCE_MS = 10000;
+function scheduleContentCachePersist(): void {
+  cacheDirty = true;
+  if (persistTimer) clearTimeout(persistTimer);
+  persistTimer = setTimeout(() => {
+    persistTimer = null;
+    void persistContentCache();
+  }, CONTENT_CACHE_PERSIST_DEBOUNCE_MS);
+}
+
+if (typeof window !== 'undefined') {
+  // Best-effort flush of any pending content before the tab goes away.
+  const flush = () => {
+    if (cacheDirty) void persistContentCache();
+  };
+  window.addEventListener('pagehide', flush);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flush();
+  });
 }
 
 ///////////////////////////////////////////////////////
@@ -257,6 +370,10 @@ export async function fetchContent<T = Record<string, any>>(
     trait: 'find-trait',
   };
 
+  // Make sure any cache persisted by a previous session/tab is loaded before we check the
+  // in-memory stores, so a reload can hit the cache instead of re-fetching from the network.
+  await hydrationPromise;
+
   const storedIds = getStoredIds(type, data);
   const storedFetch = getStoredFetch(type, data);
   const storedNames = getStoredNames(type, data);
@@ -280,65 +397,114 @@ export async function fetchContent<T = Record<string, any>>(
       return storedNames ? [storedNames as T] : [];
     }
   } else {
-    // Make sure we're always filtering by content source
-    const newData = { ...data };
+    // Coalesce concurrent identical fetches (keyed including dontStore so a non-storing
+    // fetch can't swallow a storing one). They share a single in-flight network request.
+    const fetchKey = `${hashFetch(type, data)}|${dontStore ? 1 : 0}`;
+    const inFlight = inFlightFetches.get(fetchKey);
+    if (inFlight) return (await inFlight) as T[];
 
-    if (type !== 'content-source') {
-      let sv: SourceValue | undefined = cloneDeep(newData.content_sources);
-      let svN: number[] = [];
+    const fetchPromise = (async () => {
+      // Make sure we're always filtering by content source
+      const newData = { ...data };
 
-      if (!sv) {
-        console.log(
-          '[CONTENT-SOURCES] ⚠️ No content sources specified for fetch of type',
-          type,
-          'with data',
-          data,
-          '. Using BOTH default sources',
-          getDefaultSources('INFO'),
-          'and',
-          getDefaultSources('PAGE')
-        );
-        // Use both default sources to be safe
-        svN = uniq([
-          ...(await fetchContentSources(getDefaultSources('INFO'))).map((source) => source.id),
-          ...(await fetchContentSources(getDefaultSources('PAGE'))).map((source) => source.id),
-        ]);
-      } else if (Array.isArray(sv)) {
-        svN = sv;
-      } else {
-        // Convert SourceValue as string -> number array
-        svN = (await fetchContentSources(sv)).map((source) => source.id);
+      if (type !== 'content-source') {
+        let sv: SourceValue | undefined = cloneDeep(newData.content_sources);
+        let svN: number[] = [];
+
+        if (!sv) {
+          console.log(
+            '[CONTENT-SOURCES] ⚠️ No content sources specified for fetch of type',
+            type,
+            'with data',
+            data,
+            '. Using BOTH default sources',
+            getDefaultSources('INFO'),
+            'and',
+            getDefaultSources('PAGE')
+          );
+          // Use both default sources to be safe
+          svN = uniq([
+            ...(await fetchContentSources(getDefaultSources('INFO'))).map((source) => source.id),
+            ...(await fetchContentSources(getDefaultSources('PAGE'))).map((source) => source.id),
+          ]);
+        } else if (Array.isArray(sv)) {
+          svN = sv;
+        } else {
+          // Convert SourceValue as string -> number array
+          svN = (await fetchContentSources(sv)).map((source) => source.id);
+        }
+
+        newData.content_sources = uniq(svN);
       }
 
-      newData.content_sources = uniq(svN);
-    }
+      const rawResult = await makeRequest<T>(FETCH_REQUEST_MAP[type], newData);
+      const schema = CONTENT_SCHEMA_MAP[type];
+      const result = rawResult
+        ? (Array.isArray(rawResult) ? rawResult : [rawResult]).map((record) => validateAndWarn<T>(type, schema, record))
+        : rawResult;
+      if (result && !dontStore) {
+        setStoredFetch(type, data, result);
+        const added = setStoredIds(type, data, result);
+        if (added !== true) console.error('Failed to add to id store', added, data, result);
+        // Mirror the freshly-stored content to IndexedDB for the next reload.
+        scheduleContentCachePersist();
+      }
 
-    const rawResult = await makeRequest<T>(FETCH_REQUEST_MAP[type], newData);
-    const schema = CONTENT_SCHEMA_MAP[type];
-    const result = rawResult
-      ? (Array.isArray(rawResult) ? rawResult : [rawResult]).map((record) => validateAndWarn<T>(type, schema, record))
-      : rawResult;
-    if (result && !dontStore) {
-      setStoredFetch(type, data, result);
-      const added = setStoredIds(type, data, result);
-      if (added !== true) console.error('Failed to add to id store', added, data, result);
-    }
+      if (result && Array.isArray(result)) {
+        return result as T[];
+      } else {
+        return result ? [result] : [];
+      }
+    })();
 
-    if (result && Array.isArray(result)) {
-      return result as T[];
-    } else {
-      return result ? [result] : [];
+    inFlightFetches.set(fetchKey, fetchPromise);
+    try {
+      return await fetchPromise;
+    } finally {
+      inFlightFetches.delete(fetchKey);
     }
   }
 }
 
-export function resetContentStore(resetSources = true) {
+/**
+ * Clear the in-memory content working set.
+ *
+ * By default the PERSISTED (IndexedDB) cache is kept, and the in-memory store is re-hydrated
+ * from it on the next fetch — so a routine reset (App mount, navigation, source/account
+ * changes) does NOT force the whole corpus to be re-downloaded. This is what makes the cache
+ * survive reloads despite App.tsx calling this on mount.
+ *
+ * Pass clearPersisted=true only when the underlying content actually changed on the server
+ * (e.g. homebrew was created/edited) so the stale persisted copy is dropped and a fresh
+ * network fetch happens instead of re-hydrating stale data.
+ */
+export function resetContentStore(resetSources = true, clearPersisted = false) {
   console.warn('⚠️ Resetting Content Store ⚠️');
   if (resetSources) {
     defineDefaultSources('BOTH', 'ALL-USER-ACCESSIBLE');
   }
   contentStore.clear();
   idStore = emptyIdStore();
+  inFlightFetches.clear();
+
+  // Cancel any pending debounced persist: it was scheduled to save the PRE-reset content,
+  // but the stores are now empty. If it fired after this reset it would overwrite the valid
+  // persisted cache with empty maps (defeating the re-hydration below).
+  if (persistTimer) {
+    clearTimeout(persistTimer);
+    persistTimer = null;
+  }
+  cacheDirty = false;
+
+  if (clearPersisted) {
+    // Underlying content changed: drop the persisted copy and don't re-hydrate stale data.
+    void idbDelete(CONTENT_CACHE_KEY);
+    hydrationPromise = Promise.resolve();
+  } else {
+    // Re-arm hydration so the next fetch refills the in-memory store from the persisted
+    // cache instead of re-downloading the whole corpus.
+    hydrationPromise = beginHydration();
+  }
 }
 
 ///////////////////////////////////////////////////////

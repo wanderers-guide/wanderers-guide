@@ -980,7 +980,9 @@ function ContentList<
   const handleReset = () => {
     const query = searchQuery;
     setSearchQuery('');
-    resetContentStore(false);
+    // Homebrew content may have just been edited here, so drop the persisted cache too
+    // (clearPersisted) to force a fresh fetch rather than re-hydrating stale content.
+    resetContentStore(false, true);
     setTimeout(() => {
       setOpenedId(undefined);
       initJsSearch();
