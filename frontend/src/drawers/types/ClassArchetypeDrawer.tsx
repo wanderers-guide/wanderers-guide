@@ -148,7 +148,7 @@ export function ClassArchetypeDrawerContent(props: {
         <Stack gap={0}>
           <Divider color='dark.6' />
           {adjustments[level]
-            .sort((a, b) => a.type.localeCompare(b.type))
+            .sort((a, b) => (a.type ?? '').localeCompare(b.type ?? ''))
             .map((fa, index) => (
               <Box key={index}>
                 <Group justify='flex-start' wrap='nowrap' gap={5} p='sm'>

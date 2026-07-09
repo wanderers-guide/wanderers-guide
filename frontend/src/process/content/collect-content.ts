@@ -35,7 +35,7 @@ export function collectEntityAbilityBlocks(
           return a.level - b.level;
         }
       }
-      return a.name.localeCompare(b.name);
+      return (a.name ?? '').localeCompare(b.name ?? '');
     });
 
   const generalAndSkillFeats = feats.filter((feat) => {
@@ -98,10 +98,10 @@ export function collectEntityAbilityBlocks(
           return a.level - b.level;
         }
       }
-      return a.name.localeCompare(b.name);
+      return (a.name ?? '').localeCompare(b.name ?? '');
     }),
-    physicalFeatures: physicalFeatures.sort((a, b) => a.name.localeCompare(b.name)),
-    heritages: heritages.sort((a, b) => a.name.localeCompare(b.name)),
+    physicalFeatures: physicalFeatures.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
+    heritages: heritages.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
     // For creature:
     baseAbilities: isCreature(entity) ? (entity.abilities_base ?? []) : [],
     addedAbilities: isCreature(entity)
@@ -233,9 +233,9 @@ export function collectEntitySpellcasting(id: StoreID, entity: LivingEntity) {
       })
       .sort((a, b) => {
         if (a.type !== b.type) {
-          return b.type.localeCompare(a.type);
+          return (b.type ?? '').localeCompare(a.type ?? '');
         }
-        return a.name.localeCompare(b.name);
+        return (a.name ?? '').localeCompare(b.name ?? '');
       }),
   };
 }
