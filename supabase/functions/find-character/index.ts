@@ -2,7 +2,6 @@
 import { serve } from 'std/server';
 import type { Character } from '../_shared/content';
 import { connect, fetchData } from '../_shared/helpers.ts';
-import { createClient } from '@supabase/supabase-js';
 
 serve(async (req: Request) => {
   return await connect<{
@@ -14,26 +13,18 @@ serve(async (req: Request) => {
     async (client, body) => {
       let { id, user_id, campaign_id } = body;
 
-      let results = await fetchData<Character>(client, 'character', [
+      // Campaign visibility is enforced by RLS: the character SELECT policy already lets a
+      // campaign's GM (campaign.user_id = auth.uid()) see every character in it. We deliberately
+      // do NOT escalate to a service-role fetch of the whole campaign here. The previous
+      // `results.length > 0` gate was an IDOR — any authenticated user could set their own
+      // character's campaign_id to a victim campaign (self-update is allowed by the UPDATE
+      // policy) and then read every character in it. Letting non-GM players see each other
+      // needs a real membership model; until then we return only RLS-scoped results.
+      const results = await fetchData<Character>(client, 'character', [
         { column: 'id', value: id },
         { column: 'user_id', value: user_id },
         { column: 'campaign_id', value: campaign_id },
       ]);
-
-      // If we're using only campaign_id and we found at least one character, then return all campaign's characters
-      // This is so a member of the campaign can see all other player characters
-      if (!id && !user_id && campaign_id && results.length > 0) {
-        // Use unrestricted client access because we need to fetch all campaign characters
-        const unrestrictedClient = createClient(
-          // @ts-ignore
-          Deno.env.get('SUPABASE_URL') ?? '',
-          // @ts-ignore
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-        );
-        results = await fetchData<Character>(unrestrictedClient, 'character', [
-          { column: 'campaign_id', value: campaign_id },
-        ]);
-      }
 
       if (id && !Array.isArray(id)) {
         return {
