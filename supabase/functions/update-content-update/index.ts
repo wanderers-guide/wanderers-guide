@@ -11,6 +11,7 @@ import {
 } from '../_shared/helpers.ts';
 import type { ContentUpdate, PublicUser } from '../_shared/content';
 import { populateCollection } from '../_shared/vector-db.ts';
+import { createClient } from '@supabase/supabase-js';
 
 const CONTENT_TIER_ACCESS_THRESHOLD = 100;
 
@@ -32,6 +33,16 @@ serve(async (req: Request) => {
           data: { message: 'Invalid auth token' },
         };
       }
+
+      // This is a validated service-to-service webhook (bypassAuth). Its writes are admin
+      // operations that must bypass RLS: content_update and the content tables have write
+      // policies scoped TO authenticated, but the connect() client here is anon — so
+      // RLS-scoped writes would match 0 rows and (because updateData treats a 0-row write as
+      // SUCCESS) silently no-op while reporting success. That is how "approved but didn't
+      // apply" could recur even after the apply-then-approve reorder. Use a service-role
+      // client for the actual reads/writes.
+      // @ts-ignore
+      client = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
 
       let results: ContentUpdate[] = await fetchData<ContentUpdate>(client, 'content_update', [
         { column: 'discord_msg_id', value: discord_msg_id },
