@@ -754,5 +754,9 @@ function validateAndWarn<T>(type: ContentType, schema: z.ZodTypeAny, record: unk
       `[CONTENT-SCHEMA] ${type} id=${(record as any)?.id ?? '?'} "${(record as any)?.name ?? ''}" — ${summary}`
     );
   }
-  return parsed.success ? (parsed.data as T) : (record as T);
+  // On schema failure we keep the record (so we never silently hide content), but we
+  // guarantee a string `name` so downstream sorts and content-link resolution can never
+  // deref null — this retires the whole class of null-name .localeCompare / .toLowerCase
+  // crashes at the cache boundary instead of guarding each render site.
+  return parsed.success ? (parsed.data as T) : ({ ...(record as any), name: (record as any)?.name ?? '' } as T);
 }
