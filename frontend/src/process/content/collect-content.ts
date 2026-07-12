@@ -244,9 +244,13 @@ export function getFocusPoints(id: StoreID, entity: LivingEntity, focusSpells: R
   const fromSpells = focusSpells.filter((f) => f?.rank !== 0).length ?? 0;
   const extra = getVariable<VariableNum>(id, 'FOCUS_POINT_BONUS')?.value ?? 0;
 
-  const maxFocusPoints = Math.min(fromSpells + extra, 3);
+  // Clamp: FOCUS_POINT_BONUS can be negative, and a retrain can leave a stored current
+  // above a reduced max — both would push a negative/NaN into the focus-point token
+  // control (RangeError, #234) or render a negative "expended" count (#31).
+  const maxFocusPoints = Math.max(0, Math.min(fromSpells + extra, 3));
+  const storedCurrent = entity.spells?.focus_point_current ?? maxFocusPoints;
   return {
-    current: entity.spells?.focus_point_current ?? maxFocusPoints,
+    current: Math.min(Math.max(storedCurrent, 0), maxFocusPoints),
     max: maxFocusPoints,
   };
 }
