@@ -852,8 +852,11 @@ export async function updateData(
     }
   }
 
-  // Guarded update that matched no rows = the row changed since the caller's snapshot.
-  // (Distinguishing this from a non-existent / RLS-hidden row is left to the caller.)
+  // Guarded update that matched no rows. CALLERS MUST DISAMBIGUATE: this is either a
+  // real concurrency conflict (the guard column changed) OR a row the caller cannot
+  // UPDATE under RLS / cannot see at all. Re-read the row with the same client and
+  // compare the guard column — see update-character for the reference implementation.
+  // Treating an RLS-denied write as a conflict makes read-only clients retry forever.
   if (options?.guard && Array.isArray(dataResult) && dataResult.length === 0) {
     return { status: 'CONFLICT', data: null };
   }

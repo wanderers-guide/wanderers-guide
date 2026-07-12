@@ -124,6 +124,20 @@ export default function useCharacter(
   }, [character]);
   const lastSyncedRef = useRef<Character | null>(null);
 
+  // Latched when the server reports this session can read but not write the
+  // character (RLS: e.g. anyone viewing a public sheet, incl. logged-out users).
+  // Disables the auto-save pipeline — such a viewer's "saves" were previously
+  // misreported as concurrency conflicts, and the conflict handler's own state
+  // update re-triggered the save, producing an infinite merge-notification loop.
+  const readOnlyRef = useRef(false);
+  // Consecutive conflicts with no successful save in between. A genuine
+  // concurrent-edit conflict resolves in one round (merge → save with the fresh
+  // token → success), so a streak means the server keeps rejecting us — e.g. an
+  // older deployment that can't distinguish an RLS-denied write from a real
+  // conflict. Stop the merge-and-retry cycle instead of looping forever.
+  const conflictStreakRef = useRef(0);
+  const MAX_CONFLICT_STREAK = 3;
+
   const handleFetchedCharacter = (resultCharacter: Character | null | undefined) => {
     if (resultCharacter) {
       // This is authoritative server state — record it as the concurrency base even
@@ -341,6 +355,8 @@ export default function useCharacter(
   // Update character in db when state changed
   useDidUpdate(() => {
     if (!debouncedCharacter) return;
+    // View-only session — the server told us our writes are RLS-denied.
+    if (readOnlyRef.current) return;
     // Defense-in-depth against the empty-corpus wipe (#235): if content failed to load,
     // operations ran against nothing (HP/boosts/choices degrade to empty) — never persist
     // that. The page-level guard should prevent mounting here at all, but the save site is
@@ -381,22 +397,57 @@ export default function useCharacter(
         ...data,
         ...(expected_updated_at ? { expected_updated_at } : {}),
       });
+      // Forbidden: RLS lets this session read the character but not write it.
+      if (resData && !isArray(resData) && (resData as any).__forbidden) {
+        return { forbidden: true, conflict: false, server: null as Character | null };
+      }
       // Conflict: the server returned the current row instead of overwriting.
       if (resData && !isArray(resData) && (resData as any).__conflict) {
-        return { conflict: true, server: ((resData as any).character ?? null) as Character | null };
+        return {
+          forbidden: false,
+          conflict: true,
+          server: ((resData as any).character ?? null) as Character | null,
+        };
       }
       const row = isArray(resData) && resData.length > 0 ? (resData[0] as Character) : null;
-      return { conflict: false, server: row };
+      return { forbidden: false, conflict: false, server: row };
     },
     onSuccess: (result) => {
       if (!result) return;
+      if (result.forbidden) {
+        // View-only session (e.g. a public sheet). Stop auto-saving entirely —
+        // nothing we send will ever be accepted, and retrying just spams the API.
+        readOnlyRef.current = true;
+        pendingSaveRef.current = null;
+        console.warn('Character is view-only for this session; auto-save disabled.');
+        return;
+      }
       if (result.conflict) {
         const remote = result.server;
         if (!remote) return;
         // Drop any stale queued snapshot — the merge produces the correct next save.
         pendingSaveRef.current = null;
-        const merged = mergeCharacterOnConflict(lastSyncedRef.current, characterRef.current, remote);
+        // The three-way merge needs the PREVIOUS synced state as its base; adopt the
+        // fresh concurrency token only after capturing it (and even when we skip
+        // merging below, so the next save uses the current token).
+        const base = lastSyncedRef.current;
         lastSyncedRef.current = remote;
+        conflictStreakRef.current += 1;
+        if (conflictStreakRef.current >= MAX_CONFLICT_STREAK) {
+          // Merging again would only re-trigger another save → conflict round.
+          console.warn('Repeated save conflicts; pausing merge-and-retry until a save succeeds.');
+          return;
+        }
+        const merged = mergeCharacterOnConflict(base, characterRef.current, remote);
+        // Only apply + notify when the merge actually changes local data. Equal on
+        // every saved field means the server row already matches what we have
+        // (pure token skew) — updating state anyway would fire a pointless save.
+        const changed =
+          !characterRef.current ||
+          SAVED_CHARACTER_FIELDS.some(
+            (field) => !isEqual((merged as any)[field], (characterRef.current as any)[field])
+          );
+        if (!changed) return;
         setCharacter(merged);
         showNotification({
           icon: <IconRefresh />,
@@ -406,6 +457,7 @@ export default function useCharacter(
         });
       } else if (result.server) {
         // Record the authoritative post-write state (incl. the new updated_at token).
+        conflictStreakRef.current = 0;
         lastSyncedRef.current = result.server;
         console.log('> Fetched updated character: #', getUpdateHash(character), 'vs.', getUpdateHash(result.server));
       }
@@ -432,6 +484,7 @@ export default function useCharacter(
   });
 
   const mutateCharacter = (data: Record<string, any>) => {
+    if (readOnlyRef.current) return;
     if (savingRef.current) {
       // A save is already in flight — keep only the newest snapshot to send next.
       pendingSaveRef.current = data;

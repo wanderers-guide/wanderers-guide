@@ -73,12 +73,35 @@ serve(async (req: Request) => {
           data: data,
         };
       } else if (status === 'CONFLICT') {
-        // The character was updated elsewhere since the caller's snapshot. Don't
-        // overwrite — return the current server row so the client can merge and retry.
+        // The guarded UPDATE matched no row. Two very different causes look identical
+        // at that point: (a) the row changed since the caller's snapshot — a genuine
+        // conflict to merge; (b) RLS lets the caller SELECT the row but not UPDATE it
+        // (e.g. anyone viewing a public character). Re-read with the same RLS-scoped
+        // client to tell them apart — misreporting (b) as a conflict makes read-only
+        // clients merge-and-retry forever.
         const current = await fetchData<Character>(client, 'character', [{ column: 'id', value: id }]);
+        const row = current[0] ?? null;
+        if (!row) {
+          // The caller can't even see the row (deleted, or no read access) — there is
+          // nothing to merge and retrying will never succeed.
+          return {
+            status: 'success',
+            data: { __forbidden: true, reason: 'NOT_VISIBLE' },
+          };
+        }
+        if (row.updated_at === expected_updated_at) {
+          // The token still matches the row, so the UPDATE wasn't raced — it was
+          // filtered by RLS. The caller can read but not write this character.
+          return {
+            status: 'success',
+            data: { __forbidden: true, reason: 'WRITE_DENIED' },
+          };
+        }
+        // The row really did change since the caller's snapshot. Don't overwrite —
+        // return the current server row so the client can merge and retry.
         return {
           status: 'success',
-          data: { __conflict: true, character: current[0] ?? null },
+          data: { __conflict: true, character: row },
         };
       } else {
         return {
