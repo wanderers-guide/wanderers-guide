@@ -23,7 +23,6 @@ import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { drawerState } from '@atoms/navAtoms';
 import { useMemo } from 'react';
 import { StoreID } from '@schemas/variables';
-import { isTruthy } from '@utils/type-fixing';
 import { uniq } from 'lodash-es';
 import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
@@ -64,12 +63,15 @@ export default function FocusSpellsList(props: {
   const [_drawer, openDrawer] = useAtom(drawerState);
 
   // Finds all the character's focus spells, regardless of source
+  // Count focus points from the character's ACTUAL focus spells (source-filtered), NOT
+  // resolved through props.allSpells — that array is search/action-filtered, so searching
+  // would shrink the focus-point max (#30). getFocusPoints only reads `rank`, which the
+  // focus entries already carry.
   const allFocusSpells = useMemo(() => {
-    return props.extra.charData.focus
-      .filter((f) => props.extra.charData.sources.map((s) => s.name).includes(f.source))
-      .map((f) => props.allSpells.find((s) => s.id === f.spell_id))
-      .filter(isTruthy);
-  }, [props.extra.charData, props.allSpells]);
+    return props.extra.charData.focus.filter((f) =>
+      props.extra.charData.sources.map((s) => s.name).includes(f.source)
+    );
+  }, [props.extra.charData]);
 
   // If there are no spells to display, and there are filters, return null
   if (props.hasFilters && spells && !Object.keys(spells).find((rank) => spells[rank].length > 0)) {

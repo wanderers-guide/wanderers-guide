@@ -13,7 +13,7 @@ import { isPhoneSized } from '@utils/mobile-responsive';
 import { isCharacter } from '@utils/type-fixing';
 import useRefresh from '@utils/use-refresh';
 import { cloneDeep, truncate } from 'lodash-es';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SetterOrUpdater } from '@utils/type-fixing';
 
 export default function NotesPanel(props: {
@@ -28,16 +28,20 @@ export default function NotesPanel(props: {
   const isInCampaign = isCharacter(props.entity) && !!props.entity?.campaign_id;
   const [displayNotes, refreshNotes] = useRefresh();
 
-  const [debouncedJson, setDebouncedJson] = useDebouncedState<{
-    index: number;
-    json: JSONContent;
-  } | null>(null, 500);
+  // Accumulate pending edits per page index and flush them together. A single debounced
+  // {index, json} slot lost the previous page's pending edit when you switched pages within
+  // the debounce window (#9) — the new page's write overwrote the pending one.
+  const pendingPagesRef = useRef<Map<number, JSONContent>>(new Map());
+  const [flushSignal, setFlushSignal] = useDebouncedState(0, 500);
 
   useDidUpdate(() => {
-    // Saving notes
-    if (!props.entity || !debouncedJson) return;
+    // Saving notes — flush every page with a pending edit, not just the most recent.
+    if (!props.entity || pendingPagesRef.current.size === 0) return;
     const newPages = cloneDeep(pages);
-    newPages[debouncedJson.index].contents = debouncedJson.json;
+    for (const [index, json] of pendingPagesRef.current) {
+      if (newPages[index]) newPages[index].contents = json;
+    }
+    pendingPagesRef.current.clear();
     props.setEntity({
       ...props.entity,
       notes: {
@@ -45,7 +49,7 @@ export default function NotesPanel(props: {
         pages: newPages,
       },
     });
-  }, [debouncedJson]);
+  }, [flushSignal]);
 
   useEffect(() => {
     refreshNotes();
@@ -84,7 +88,8 @@ export default function NotesPanel(props: {
           placeholder='Your notes...'
           value={page.contents}
           onChange={(text, json) => {
-            setDebouncedJson({ index: index, json: json });
+            pendingPagesRef.current.set(index, json);
+            setFlushSignal(Date.now());
           }}
           height={props.panelHeight}
           hasColorOptions={true}

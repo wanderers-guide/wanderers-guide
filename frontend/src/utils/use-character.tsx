@@ -171,12 +171,17 @@ export default function useCharacter(
       const pending = localStorage.getItem(key);
       if (pending) {
         const { token, body } = JSON.parse(pending);
-        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-character`, {
+        const replayRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-character`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify(body),
         });
-        localStorage.removeItem(key);
+        // Only drop the buffered edit once the server has actually accepted it. If the
+        // replay fails (expired token -> 401, offline, 5xx) keep it so it retries on the
+        // next mount instead of silently discarding the user's only unsynced copy.
+        if (replayRes.ok) {
+          localStorage.removeItem(key);
+        }
       }
 
       // Now fetch the character from the database to ensure we have the latest version

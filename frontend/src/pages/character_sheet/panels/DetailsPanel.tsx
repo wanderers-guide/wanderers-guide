@@ -45,7 +45,7 @@ import { useDebouncedState, useDebouncedValue, useDidUpdate } from '@mantine/hoo
 import { makeRequest } from '@requests/request-manager';
 import { useMutation } from '@tanstack/react-query';
 import { JSendResponse } from '@schemas/requests';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import { CreateSocietyAdventureEntryModal } from '@modals/CreateSocietyAdventureEntryModal';
 import { Money, getGpGained } from '@utils/money';
@@ -88,7 +88,25 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
   const armorProfs = getAllArmorVariables('CHARACTER').filter((prof) => compileProficiencyType(prof.value) !== 'U');
 
   const characterInfo = character?.details?.info;
-  const [debouncedInfo, setDebouncedInfo] = useDebouncedState<typeof characterInfo | null>(null, 200);
+  const [debouncedInfo, setDebouncedInfoRaw] = useDebouncedState<typeof characterInfo | null>(null, 200);
+  // Accumulate field edits so rapid edits across different fields don't clobber each other.
+  // Each onChange passes {...character.details?.info, field: value} — a snapshot that is stale
+  // during the debounce window, so a single shared debounced slot dropped the earlier field
+  // (#10). Diff each call against the committed info to extract only the changed field(s) and
+  // merge them into a live accumulator, then debounce that.
+  const infoAccumRef = useRef<Record<string, any>>((characterInfo ?? {}) as Record<string, any>);
+  useDidUpdate(() => {
+    infoAccumRef.current = (characterInfo ?? {}) as Record<string, any>;
+  }, [characterInfo]);
+  const setDebouncedInfo = (next: NonNullable<typeof characterInfo>) => {
+    const base = (characterInfo ?? {}) as Record<string, any>;
+    const merged: Record<string, any> = { ...infoAccumRef.current };
+    for (const k in next as Record<string, any>) {
+      if ((next as Record<string, any>)[k] !== base[k]) merged[k] = (next as Record<string, any>)[k];
+    }
+    infoAccumRef.current = merged;
+    setDebouncedInfoRaw(merged as typeof characterInfo);
+  };
   useDidUpdate(() => {
     // Saving details
     if (!character || !debouncedInfo) return;

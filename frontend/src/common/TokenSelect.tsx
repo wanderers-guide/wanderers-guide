@@ -14,7 +14,11 @@ export default function TokenSelect(props: {
   size?: MantineSize;
   invertedSelect?: boolean;
 }) {
-  const [value, setValue] = useState(props.value ?? props.count);
+  // Sanitize count: focus/slot math can yield a negative or NaN count (e.g. a reduced
+  // focus max), which makes Array.from({length}) and Mantine's <Rating count> throw a
+  // RangeError that blanks the whole Spells tab (#234). Clamp to a safe non-negative int.
+  const count = Number.isFinite(props.count) ? Math.max(0, Math.trunc(props.count)) : 0;
+  const [value, setValue] = useState(props.value ?? count);
   const isMobileTouch = useMediaQuery(tabletQuery()) && isTouchDevice();
 
   return (
@@ -24,12 +28,12 @@ export default function TokenSelect(props: {
           <NativeSelect
             size='xs'
             w={60}
-            data={Array.from({ length: props.count + 1 }, (_, i) => i).map((v) => `${v}`)}
-            value={`${props.invertedSelect ? props.count - value : value}`}
+            data={Array.from({ length: count + 1 }, (_, i) => i).map((v) => `${v}`)}
+            value={`${props.invertedSelect ? count - value : value}`}
             onChange={(e) => {
               let val = parseInt(e.target.value ?? '');
               // Invert the value if needed
-              val = props.invertedSelect ? props.count - val : val;
+              val = props.invertedSelect ? count - val : val;
 
               setValue(val);
               props.onChange?.(val);
@@ -45,7 +49,7 @@ export default function TokenSelect(props: {
         </>
       ) : (
         <Rating
-          count={props.count}
+          count={count}
           size={props.size}
           emptySymbol={props.emptySymbol}
           fullSymbol={props.fullSymbol}
