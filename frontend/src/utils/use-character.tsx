@@ -1,7 +1,7 @@
 import { characterState } from '@atoms/characterAtoms';
 import { getCachedPublicUser } from '@auth/user-manager';
 import { applyConditions } from '@conditions/condition-handler';
-import { defineDefaultSources } from '@content/content-store';
+import { defineDefaultSources, isContentPackageEmpty } from '@content/content-store';
 import { saveCustomization } from '@content/customization-cache';
 import { applyEquipmentPenalties } from '@items/inv-utils';
 import { useDebouncedCallback, useDebouncedValue, useDidUpdate, usePrevious } from '@mantine/hooks';
@@ -336,6 +336,11 @@ export default function useCharacter(
   // Update character in db when state changed
   useDidUpdate(() => {
     if (!debouncedCharacter) return;
+    // Defense-in-depth against the empty-corpus wipe (#235): if content failed to load,
+    // operations ran against nothing (HP/boosts/choices degrade to empty) — never persist
+    // that. The page-level guard should prevent mounting here at all, but the save site is
+    // where the damage happens, so we refuse the write directly too.
+    if (options.type === 'EXECUTE_OPS' && isContentPackageEmpty(options.data.content)) return;
     mutateCharacter({
       name: debouncedCharacter.name,
       level: debouncedCharacter.level,

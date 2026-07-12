@@ -178,7 +178,7 @@ export async function _executeCharacterOperations(data: {
         return a.level - b.level;
       }
     }
-    return a.name.localeCompare(b.name);
+    return (a.name ?? '').localeCompare(b.name ?? '');
   });
 
   const classFeatures_2 = getClassFeatures(content.abilityBlocks, class_2?.trait_id, '2').sort((a, b) => {
@@ -187,14 +187,14 @@ export async function _executeCharacterOperations(data: {
         return a.level - b.level;
       }
     }
-    return a.name.localeCompare(b.name);
+    return (a.name ?? '').localeCompare(b.name ?? '');
   });
 
   // Merge both but only keep one if they both have the same name and level
   let classFeatures = unionWith(
     classFeatures_1,
     classFeatures_2,
-    (a, b) => a.name.trim() === b.name.trim() && a.level === b.level
+    (a, b) => (a.name ?? '').trim() === (b.name ?? '').trim() && a.level === b.level
   );
 
   // Free Archetype feat at every even level
@@ -296,7 +296,7 @@ export async function _executeCharacterOperations(data: {
   if (character.variants?.gradual_attribute_boosts) {
     const newClassFeatures: AbilityBlock[] = [];
     for (const cf of classFeatures) {
-      if (!(cf.name.trim() === 'Attribute Boosts' && cf.operations?.length === 4) || cf.level === 1) {
+      if (!((cf.name ?? '').trim() === 'Attribute Boosts' && cf.operations?.length === 4) || cf.level === 1) {
         newClassFeatures.push(cf);
         continue;
       }

@@ -846,7 +846,7 @@ function SelectionOptions(props: {
       const diff = (prereqRank.get(a.id) ?? 2) - (prereqRank.get(b.id) ?? 2);
       if (diff !== 0) return diff;
     }
-    return a.name.localeCompare(b.name);
+    return (a.name ?? '').localeCompare(b.name ?? '');
   });
 
   return (

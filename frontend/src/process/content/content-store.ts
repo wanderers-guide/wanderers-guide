@@ -576,7 +576,24 @@ export async function fetchContentSources(sources: SourceValue) {
     );
   }
 
-  return results.sort((a, b) => a.name.localeCompare(b.name));
+  return results.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
+}
+
+/**
+ * True when a content package came back effectively empty — i.e. the core content
+ * tables (ancestries/classes/items/traits) all failed to load. The global content
+ * corpus is never legitimately empty for a real source set, so this reliably means
+ * the fetch failed (network/edge/DNS) rather than "the user genuinely has no content."
+ * Used to refuse mounting the sheet/builder — and to refuse auto-saving — against a
+ * corpus that isn't there, which would otherwise wipe the character (see issue #235).
+ */
+export function isContentPackageEmpty(content: ContentPackage): boolean {
+  return (
+    content.ancestries.length === 0 &&
+    content.classes.length === 0 &&
+    content.items.length === 0 &&
+    content.traits.length === 0
+  );
 }
 
 export async function fetchContentPackage(
@@ -603,18 +620,18 @@ export async function fetchContentPackage(
   ]);
 
   const p = {
-    ancestries: ((content[0] ?? []) as Ancestry[]).sort((a, b) => a.name.localeCompare(b.name)),
-    backgrounds: ((content[1] ?? []) as Background[]).sort((a, b) => a.name.localeCompare(b.name)),
-    classes: ((content[2] ?? []) as Class[]).sort((a, b) => a.name.localeCompare(b.name)),
-    abilityBlocks: ((content[3] ?? []) as AbilityBlock[]).sort((a, b) => a.name.localeCompare(b.name)),
-    items: ((content[4] ?? []) as Item[]).sort((a, b) => a.name.localeCompare(b.name)),
-    languages: ((content[5] ?? []) as Language[]).sort((a, b) => a.name.localeCompare(b.name)),
-    spells: ((content[6] ?? []) as Spell[]).sort((a, b) => a.name.localeCompare(b.name)),
-    traits: ((content[7] ?? []) as Trait[]).sort((a, b) => a.name.localeCompare(b.name)),
-    creatures: ((content[8] ?? []) as Creature[]).sort((a, b) => a.name.localeCompare(b.name)),
-    archetypes: ((content[9] ?? []) as Archetype[]).sort((a, b) => a.name.localeCompare(b.name)),
-    versatileHeritages: ((content[10] ?? []) as VersatileHeritage[]).sort((a, b) => a.name.localeCompare(b.name)),
-    classArchetypes: ((content[11] ?? []) as ClassArchetype[]).sort((a, b) => a.name.localeCompare(b.name)),
+    ancestries: ((content[0] ?? []) as Ancestry[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
+    backgrounds: ((content[1] ?? []) as Background[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
+    classes: ((content[2] ?? []) as Class[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
+    abilityBlocks: ((content[3] ?? []) as AbilityBlock[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
+    items: ((content[4] ?? []) as Item[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
+    languages: ((content[5] ?? []) as Language[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
+    spells: ((content[6] ?? []) as Spell[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
+    traits: ((content[7] ?? []) as Trait[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
+    creatures: ((content[8] ?? []) as Creature[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
+    archetypes: ((content[9] ?? []) as Archetype[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
+    versatileHeritages: ((content[10] ?? []) as VersatileHeritage[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
+    classArchetypes: ((content[11] ?? []) as ClassArchetype[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
     sources: content[12] as ContentSource[],
     defaultSources: {
       PAGE: getDefaultSources('PAGE'),

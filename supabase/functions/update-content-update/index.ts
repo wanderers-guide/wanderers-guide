@@ -47,43 +47,18 @@ serve(async (req: Request) => {
 
       let result: 'SUCCESS' | 'ERROR_DUPLICATE' | 'ERROR_UNKNOWN' = 'ERROR_UNKNOWN';
       if (state === 'APPROVE') {
-        const updateRes = await updateData(client, 'content_update', update.id, {
-          status: {
-            state: 'APPROVED',
-            discord_user_id: discord_user_id,
-            discord_user_name: discord_user_name,
-          },
-        });
-        result = updateRes.status;
-
-        // If the update was approved, apply the changes
+        // Apply the content change FIRST, and only mark the request APPROVED if it
+        // actually succeeds. Previously the status was flipped to APPROVED up front and
+        // the content write ran afterward with no rollback — so any failure (or a missing
+        // ref_id) left the request permanently "approved" on the site while the content
+        // never changed, and the error was swallowed by the Discord bot (the reported
+        // "shows approved but didn't apply" bug).
         const tableName = convertContentTypeToTableName(update.type);
         if (!tableName)
           return {
             status: 'error',
             message: 'Invalid content type',
           };
-
-        // If they've reached the threshold, update their tier
-        const contentUpdates: ContentUpdate[] = await fetchData<ContentUpdate>(
-          client,
-          'content_update',
-          [{ column: 'user_id', value: update.user_id }]
-        );
-        const approvedContent = contentUpdates.filter(
-          (update) => update.status.state === 'APPROVED'
-        );
-        if (approvedContent.length >= CONTENT_TIER_ACCESS_THRESHOLD) {
-          // Update the user's tier
-          const results = await fetchData<PublicUser>(client, 'public_user', [
-            { column: 'user_id', value: update.user_id },
-          ]);
-          if (results && results.length > 0 && !results[0].is_community_paragon) {
-            await updateData(client, 'public_user', results[0].id, {
-              is_community_paragon: true,
-            });
-          }
-        }
 
         let content_id = update.ref_id;
         if (update.action === 'UPDATE' && update.ref_id) {
@@ -137,10 +112,46 @@ serve(async (req: Request) => {
           };
         }
 
-        // Generate embeddings for the updated content
         console.log('content_id', content_id, 'result', result);
-        if (result === 'SUCCESS' && content_id) {
-          await populateCollection(client, 'name', update.type, [content_id]);
+
+        // Only now that the content change has actually committed do we mark the request
+        // APPROVED, refresh the contributor's tier, and (re)generate embeddings. If the
+        // apply failed, the request is deliberately left un-approved (so it is not shown
+        // as applied and can be retried) and we fall through to the error response below.
+        if (result === 'SUCCESS') {
+          await updateData(client, 'content_update', update.id, {
+            status: {
+              state: 'APPROVED',
+              discord_user_id: discord_user_id,
+              discord_user_name: discord_user_name,
+            },
+          });
+
+          // If they've reached the threshold, update their tier
+          const contentUpdates: ContentUpdate[] = await fetchData<ContentUpdate>(
+            client,
+            'content_update',
+            [{ column: 'user_id', value: update.user_id }]
+          );
+          const approvedContent = contentUpdates.filter(
+            (update) => update.status.state === 'APPROVED'
+          );
+          if (approvedContent.length >= CONTENT_TIER_ACCESS_THRESHOLD) {
+            // Update the user's tier
+            const results = await fetchData<PublicUser>(client, 'public_user', [
+              { column: 'user_id', value: update.user_id },
+            ]);
+            if (results && results.length > 0 && !results[0].is_community_paragon) {
+              await updateData(client, 'public_user', results[0].id, {
+                is_community_paragon: true,
+              });
+            }
+          }
+
+          // Generate embeddings for the updated content
+          if (content_id) {
+            await populateCollection(client, 'name', update.type, [content_id]);
+          }
         }
       } else if (state === 'REJECT') {
         const updateRes = await updateData(client, 'content_update', update.id, {
