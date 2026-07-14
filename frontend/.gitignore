@@ -36,3 +36,6 @@ bun.lockb
 # Test data
 public_user.csv
 cypress/screenshots
+
+# validate-content build output
+scripts/.dist/
