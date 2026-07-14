@@ -8,7 +8,6 @@ import '@mantine/dates/styles.css';
 import '@mantine/charts/styles.css';
 
 import { AuthRouteWrapper } from '@auth/AuthedRouteWrapper.tsx';
-import { createClient } from '@supabase/supabase-js';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -17,14 +16,14 @@ import App from './App.tsx';
 import './index.css';
 import { ErrorPage } from './pages/ErrorPage.tsx';
 import { MantineProvider } from '@mantine/core';
+import { supabase } from './supabase-client.ts';
 
 const queryClient = new QueryClient();
 
-export const supabase = createClient(
-  /*<Database>*/
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_KEY
-);
+// Re-exported for the many existing `import { supabase } from '../main'` call sites.
+// The client itself lives in supabase-client.ts so modules that main.tsx transitively
+// depends on (e.g. the request manager) can import it without a circular dependency.
+export { supabase };
 
 // Fixes cache issues on refresh
 (async () => {

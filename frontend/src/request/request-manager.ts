@@ -1,12 +1,8 @@
-import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError, createClient } from '@supabase/supabase-js';
+import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError } from '@supabase/supabase-js';
 import { JSendResponse, RequestType } from '@schemas/requests';
 import { logError, throwError } from '@utils/error-handling';
-
-const supabase = createClient(
-  /*<Database>*/
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_KEY
-);
+import { showNotification } from '@mantine/notifications';
+import { supabase } from '../supabase-client';
 
 // A single logical request makes at most MAX_ATTEMPTS network calls, and we retry
 // ONLY genuine transient network failures — never timeouts or HTTP errors. This is
@@ -23,6 +19,35 @@ const MAX_ATTEMPTS = 2;
 const DEFAULT_TIMEOUT_MS = 30000;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Only surface the "session expired" notification once per page load; a dead
+// session makes MANY concurrent requests fail and each would otherwise toast.
+let notifiedSessionExpired = false;
+
+/**
+ * After a request fails with an auth-shaped error, check whether the underlying
+ * session is actually gone (e.g. expired from inactivity while the tab was open).
+ * The auth listener in App.tsx handles the common case; this is the safety net for
+ * requests that raced the sign-out event. Tells the user instead of failing silently.
+ */
+async function checkForExpiredSession() {
+  if (notifiedSessionExpired) return;
+  const hadUser = !!localStorage.getItem('user-data');
+  if (!hadUser) return;
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (session) return;
+  notifiedSessionExpired = true;
+  localStorage.removeItem('user-data');
+  showNotification({
+    id: 'session-expired',
+    title: 'Session expired',
+    message: 'You have been signed out due to inactivity. Please sign in again to save your changes.',
+    color: 'yellow',
+    autoClose: false,
+  });
+}
 
 export async function makeRequest<T = Record<string, any>>(
   type: RequestType,
@@ -69,6 +94,10 @@ export async function makeRequest<T = Record<string, any>>(
   }
 
   if (lastError instanceof FunctionsHttpError) {
+    // 401/403 with a missing session = the user's session silently expired.
+    if (lastError.context?.status === 401 || lastError.context?.status === 403) {
+      await checkForExpiredSession();
+    }
     try {
       const errorMessage = await lastError.context.json();
       console.error('Request Function returned an error', errorMessage);
