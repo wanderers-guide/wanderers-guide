@@ -18,7 +18,8 @@ import {
 } from '@mantine/core';
 import { useMediaQuery, usePrevious } from '@mantine/hooks';
 import { ModalsProvider } from '@mantine/modals';
-import { Notifications } from '@mantine/notifications';
+import { Notifications, showNotification } from '@mantine/notifications';
+import { clearUserData, getCachedPublicUser } from '@auth/user-manager';
 import SearchSpotlight from '@nav/SearchSpotlight';
 import { IconBrush } from '@tabler/icons-react';
 import { getBackgroundImageFromURL } from '@utils/background-images';
@@ -95,12 +96,47 @@ export default function App() {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      // Cold load with a dead session (expired from inactivity while the tab was
+      // closed): supabase-js clears its stored session without a SIGNED_OUT event,
+      // so catch the "cached user but no session" mismatch here too.
+      if (!session && getCachedPublicUser()) {
+        clearUserData();
+        if (!window.location.pathname.startsWith('/login')) {
+          showNotification({
+            id: 'session-expired',
+            title: 'Session expired',
+            message: 'You have been signed out due to inactivity. Please sign in again to save your changes.',
+            color: 'yellow',
+            autoClose: false,
+          });
+        }
+      }
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
+
+      if (event === 'SIGNED_OUT') {
+        // The session ended. If the cached user data is still present, this was NOT an
+        // intentional logout (that path runs localStorage.clear() first) — the session
+        // expired or was revoked while the user was browsing. Guarded routes redirect to
+        // login on their own, but public pages (sheet, builder, home) kept rendering a
+        // logged-in-looking UI whose every write silently failed. Clear the stale cache
+        // and tell the user, so "logged out but the site never says so" can't happen.
+        const hadUser = !!getCachedPublicUser();
+        clearUserData();
+        if (hadUser && !window.location.pathname.startsWith('/login')) {
+          showNotification({
+            id: 'session-expired',
+            title: 'Session expired',
+            message: 'You have been signed out due to inactivity. Please sign in again to save your changes.',
+            color: 'yellow',
+            autoClose: false,
+          });
+        }
+      }
     });
 
     return () => subscription.unsubscribe();
