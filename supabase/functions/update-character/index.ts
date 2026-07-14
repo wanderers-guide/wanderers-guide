@@ -1,6 +1,6 @@
 // @ts-ignore
 import { serve } from 'std/server';
-import { connect, fetchData, updateData } from '../_shared/helpers.ts';
+import { connect, fetchData, logEvent, updateData } from '../_shared/helpers.ts';
 import type { Character } from '../_shared/content';
 
 serve(async (req: Request) => {
@@ -84,6 +84,7 @@ serve(async (req: Request) => {
         if (!row) {
           // The caller can't even see the row (deleted, or no read access) — there is
           // nothing to merge and retrying will never succeed.
+          logEvent('warn', 'update-character', 'save_forbidden', { id, reason: 'NOT_VISIBLE' });
           return {
             status: 'success',
             data: { __forbidden: true, reason: 'NOT_VISIBLE' },
@@ -92,6 +93,7 @@ serve(async (req: Request) => {
         if (row.updated_at === expected_updated_at) {
           // The token still matches the row, so the UPDATE wasn't raced — it was
           // filtered by RLS. The caller can read but not write this character.
+          logEvent('warn', 'update-character', 'save_forbidden', { id, reason: 'WRITE_DENIED' });
           return {
             status: 'success',
             data: { __forbidden: true, reason: 'WRITE_DENIED' },
@@ -99,11 +101,17 @@ serve(async (req: Request) => {
         }
         // The row really did change since the caller's snapshot. Don't overwrite —
         // return the current server row so the client can merge and retry.
+        logEvent('info', 'update-character', 'save_conflict', {
+          id,
+          expected: expected_updated_at,
+          actual: row.updated_at,
+        });
         return {
           status: 'success',
           data: { __conflict: true, character: row },
         };
       } else {
+        logEvent('error', 'update-character', 'save_failed', { id, result: status });
         return {
           status: 'error',
           message: status,

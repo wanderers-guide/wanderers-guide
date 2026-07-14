@@ -130,12 +130,24 @@ export async function callFunction(
   };
   if (opts?.token) headers['Authorization'] = `Bearer ${opts.token}`;
 
-  const res = await fetch(`${FUNCTIONS_URL}/${name}`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body ?? {}),
-  });
-  const text = await res.text();
+  // Each edge function gets its own worker, cold-started on first invocation. On a
+  // loaded CI runner that first call can 5xx with a boot error even though the stack
+  // is healthy, which made e2e flaky (a test would fail on whichever function it hit
+  // first). Retry 5xx a couple times with a pause; real assertions run on the reply.
+  const MAX_TRIES = 3;
+  let res: Response = undefined as unknown as Response;
+  let text = '';
+  for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
+    res = await fetch(`${FUNCTIONS_URL}/${name}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body ?? {}),
+    });
+    text = await res.text();
+    if (res.status < 500 || attempt === MAX_TRIES) break;
+    await new Promise((r) => setTimeout(r, 1500 * attempt));
+  }
+
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);

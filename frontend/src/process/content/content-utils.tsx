@@ -47,7 +47,9 @@ export function toText(html: any) {
 export function convertToContentType(type: ContentType | AbilityBlockType): ContentType {
   // Handle special cases for DrawerTypes
   // @ts-ignore
-  if (type === 'cast-spell') return 'spell';
+  if (type === 'cast-spell' || type === 'add-spell') return 'spell';
+  // @ts-ignore
+  if (type === 'inv-item') return 'item';
   return (isAbilityBlockType(type) ? 'ability-block' : type) satisfies ContentType;
 }
 export function isAbilityBlockType(value: any): value is AbilityBlockType {

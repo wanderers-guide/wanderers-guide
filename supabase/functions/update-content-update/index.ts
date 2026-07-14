@@ -7,6 +7,7 @@ import {
   fetchData,
   handleAssociatedTrait,
   insertData,
+  logEvent,
   updateData,
 } from '../_shared/helpers.ts';
 import type { ContentUpdate, PublicUser } from '../_shared/content';
@@ -35,6 +36,14 @@ serve(async (req: Request) => {
       // @ts-ignore
       const expectedKey = Deno.env.get('CONTENT_UPDATE_KEY');
       if (!expectedKey || (token !== expectedKey && auth_token !== expectedKey)) {
+        // Log which transports were present (never the values) — this exact failure
+        // mode was invisible for two days because rejected calls left no log line.
+        logEvent('warn', 'update-content-update', 'auth_rejected', {
+          keyConfigured: !!expectedKey,
+          hadHeaderToken: !!token,
+          hadBodyToken: !!auth_token,
+          state,
+        });
         return {
           status: 'fail',
           data: { message: 'Invalid auth token' },
@@ -57,6 +66,7 @@ serve(async (req: Request) => {
       const update = results.length > 0 ? results[0] : null;
 
       if (!update) {
+        logEvent('warn', 'update-content-update', 'update_not_found', { discord_msg_id, state });
         return {
           status: 'error',
           message: 'Content update not found',
@@ -214,6 +224,14 @@ serve(async (req: Request) => {
           data: true,
         };
       } else {
+        // The state change did NOT apply (the request stays un-approved / un-voted).
+        logEvent('error', 'update-content-update', 'apply_failed', {
+          updateId: update.id,
+          contentType: update.type,
+          action: update.action,
+          state,
+          result,
+        });
         return {
           status: 'error',
           message: result,

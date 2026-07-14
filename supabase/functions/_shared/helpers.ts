@@ -15,6 +15,24 @@ import type {
   Trait,
 } from './content';
 
+/**
+ * Structured, one-line JSON log for failure/anomaly paths, so incidents are
+ * queryable from `function_logs` (e.g. `event_message like '%"evt":"save_conflict"%'`).
+ * Never pass secrets or full row payloads in `fields` — ids, reasons, and error
+ * codes are enough to diagnose.
+ */
+export function logEvent(
+  level: 'info' | 'warn' | 'error',
+  fn: string,
+  event: string,
+  fields?: Record<string, unknown>
+) {
+  const line = JSON.stringify({ evt: event, fn, ...(fields ?? {}) });
+  if (level === 'error') console.error(line);
+  else if (level === 'warn') console.warn(line);
+  else console.log(line);
+}
+
 export async function connect<T = Record<string, any>>(
   req: Request,
   executeFn: (
@@ -127,6 +145,11 @@ export async function connect<T = Record<string, any>>(
       //
     }
   } catch (error) {
+    // Structured line first (queryable), full error object second (details).
+    logEvent('error', new URL(req.url).pathname.split('/').pop() ?? 'unknown', 'unhandled_error', {
+      message: (error as any)?.message ?? String(error),
+      code: (error as any)?.code,
+    });
     console.error(error);
     return new Response(
       JSON.stringify({
