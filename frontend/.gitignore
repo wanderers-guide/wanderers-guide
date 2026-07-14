@@ -36,3 +36,7 @@ bun.lockb
 # Test data
 public_user.csv
 cypress/screenshots
+
+# content-audit build output + local reports
+scripts/audit-content/.dist/
+scripts/audit-content/reports/
