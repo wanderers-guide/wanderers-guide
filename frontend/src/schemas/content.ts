@@ -157,14 +157,14 @@ export interface Item {
     category?: z.infer<typeof ItemMetaCategorySchema> | '';
     group?: z.infer<typeof ItemMetaGroupSchema> | '';
     damage?: { damageType?: string; dice?: number | string; die?: string | null; extra?: string } | null;
-    attack_bonus?: number;
+    attack_bonus?: number | null;
     ac_bonus?: number;
     check_penalty?: number | string;
     speed_penalty?: number | string;
     dex_cap?: number;
     strength?: number | null;
     bulk: { capacity?: number | string; held_or_stowed?: number | string; ignored?: number | string };
-    charges?: { current?: number; max?: number };
+    charges?: { current?: number | null; max?: number | null };
     container_default_items?: { id: number; name: string; quantity: number }[];
     hardness?: number | string;
     hp?: number | string;
@@ -184,17 +184,17 @@ export interface Item {
     };
     starfinder?: {
       capacity?: string;
-      usage?: number;
+      usage?: number | null;
       grade?: 'COMMERCIAL' | 'TACTICAL' | 'ADVANCED' | 'SUPERIOR' | 'ELITE' | 'ULTIMATE' | 'PARAGON' | null;
       slots?: { name: string; id: number; upgrade?: Item }[];
     };
     foundry?: {
       rules?: Record<string, any> | any[];
       tags?: Record<string, any>;
-      bonus?: number;
-      bonus_damage?: number;
+      bonus?: number | null;
+      bonus_damage?: number | null;
       container_id?: string | null;
-      splash_damage?: number;
+      splash_damage?: number | null;
       stack_group?: string;
       items?: Record<string, any>[];
     };
@@ -248,7 +248,7 @@ export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
           })
           .nullable()
           .optional(),
-        attack_bonus: z.number().optional(),
+        attack_bonus: z.number().nullable().optional(),
         ac_bonus: z.number().optional(),
         check_penalty: z.union([z.number(), z.string()]).optional(),
         speed_penalty: z.union([z.number(), z.string()]).optional(),
@@ -261,8 +261,8 @@ export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
         }),
         charges: z
           .object({
-            current: z.number().optional(),
-            max: z.number().optional(),
+            current: z.number().nullable().optional(),
+            max: z.number().nullable().optional(),
           })
           .optional(),
         container_default_items: z
@@ -299,7 +299,7 @@ export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
         starfinder: z
           .object({
             capacity: z.string().optional(),
-            usage: z.number().optional(),
+            usage: z.number().nullable().optional(),
             grade: z
               .enum(['COMMERCIAL', 'TACTICAL', 'ADVANCED', 'SUPERIOR', 'ELITE', 'ULTIMATE', 'PARAGON'])
               .optional()
@@ -319,10 +319,10 @@ export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
           .object({
             rules: z.union([z.record(z.string(), z.any()), z.array(z.any())]).optional(),
             tags: z.record(z.string(), z.any()).optional(),
-            bonus: z.number().optional(),
-            bonus_damage: z.number().optional(),
+            bonus: z.number().nullable().optional(),
+            bonus_damage: z.number().nullable().optional(),
             container_id: z.string().nullable().optional(),
-            splash_damage: z.number().optional(),
+            splash_damage: z.number().nullable().optional(),
             stack_group: z.string().optional(),
             items: z.array(z.record(z.string(), z.any())).optional(),
           })
