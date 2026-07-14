@@ -80,12 +80,19 @@ export async function makeRequest<T = Record<string, any>>(
 
     lastError = error;
 
-    // Only retry genuine transient network errors. Timeouts and HTTP errors
-    // (4xx/5xx, including 429 rate-limits) are NOT retried — retrying them amplifies
+    // Retry genuine transients only:
+    //  - network-level failures (fetch/relay errors), and
+    //  - gateway errors (502/503/504), which in practice are edge-function cold
+    //    starts or worker restarts — the request FAILED COMPLETELY and a single
+    //    spaced retry is safe and usually succeeds.
+    // Timeouts and other HTTP errors (4xx incl. 429 rate limits, and 500s, which
+    // mean the function itself errored) are NOT retried — retrying those amplifies
     // load exactly when the backend is already struggling.
     const isTransientNetwork =
       error instanceof FunctionsFetchError || error instanceof FunctionsRelayError;
-    if (attempt < MAX_ATTEMPTS && isTransientNetwork) {
+    const isGatewayError =
+      error instanceof FunctionsHttpError && [502, 503, 504].includes(error.context?.status);
+    if (attempt < MAX_ATTEMPTS && (isTransientNetwork || isGatewayError)) {
       // Backoff with jitter so many clients don't retry in lockstep.
       await sleep(250 * attempt + Math.random() * 250);
       continue;
@@ -100,19 +107,28 @@ export async function makeRequest<T = Record<string, any>>(
     }
     try {
       const errorMessage = await lastError.context.json();
-      console.error('Request Function returned an error', errorMessage);
+      console.error(`Request to '${type}' failed (HTTP ${lastError.context?.status})`, errorMessage);
     } catch {
-      console.error('Request Function returned an HTTP error');
+      console.error(`Request to '${type}' failed (HTTP ${lastError.context?.status})`);
     }
   } else if (lastError instanceof FunctionsRelayError) {
-    console.error('Request Relay error:', lastError.message);
+    console.error(`Request to '${type}' relay error:`, lastError.message);
   } else if (lastError instanceof FunctionsFetchError) {
-    console.error('Request Fetch error:', lastError.message);
+    console.error(`Request to '${type}' fetch error:`, lastError.message);
   } else if (lastError) {
-    console.error('Request error:', lastError?.message ?? lastError);
+    console.error(`Request to '${type}' error:`, lastError?.message ?? lastError);
   }
 
   return null;
+}
+
+/**
+ * Whether the one-per-page-load "session expired" notification has been shown.
+ * Callers can use this to skip their own generic failure toasts when the real
+ * cause (a dead session) has already been communicated.
+ */
+export function hasSessionExpiredNotice() {
+  return notifiedSessionExpired;
 }
 
 /**

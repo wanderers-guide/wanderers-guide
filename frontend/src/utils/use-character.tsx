@@ -8,7 +8,7 @@ import { useDebouncedCallback, useDebouncedValue, useDidUpdate, usePrevious } fr
 import { showNotification } from '@mantine/notifications';
 import { executeOperations } from '@operations/operations.main';
 import { confirmHealth } from '@pages/character_sheet/entity-handler';
-import { makeRequest } from '@requests/request-manager';
+import { hasSessionExpiredNotice, makeRequest } from '@requests/request-manager';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Character, ContentPackage, OperationCharacterResultPackage } from '@schemas/content';
 import { saveCalculatedStats } from '@variables/calculated-stats';
@@ -397,6 +397,12 @@ export default function useCharacter(
         ...data,
         ...(expected_updated_at ? { expected_updated_at } : {}),
       });
+      // makeRequest returns null for every failure (HTTP error, timeout, JSend
+      // error envelope). Throw so onError runs — otherwise a failed save was
+      // indistinguishable from a successful one and users lost edits silently.
+      if (resData === null) {
+        throw new Error(`update-character failed for character ${characterId}`);
+      }
       // Forbidden: RLS lets this session read the character but not write it.
       if (resData && !isArray(resData) && (resData as any).__forbidden) {
         return { forbidden: true, conflict: false, server: null as Character | null };
@@ -462,8 +468,13 @@ export default function useCharacter(
         console.log('> Fetched updated character: #', getUpdateHash(character), 'vs.', getUpdateHash(result.server));
       }
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Character save failed:', error);
+      // If the real cause is a dead session, that persistent notification already
+      // explains it; a generic "check your connection" toast would just confuse.
+      if (hasSessionExpiredNotice()) return;
       showNotification({
+        id: 'character-save-failed',
         icon: <IconAlertCircle />,
         title: 'Failed to save character',
         message: 'Your changes could not be saved. Please check your connection and try again.',

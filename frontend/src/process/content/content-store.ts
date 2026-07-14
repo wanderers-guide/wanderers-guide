@@ -374,6 +374,16 @@ export async function fetchContent<T = Record<string, any>>(
     trait: 'find-trait',
   };
 
+  // Runtime guard: TypeScript can't stop a caller passing a drawer type or an
+  // ability-block subtype ('feat', 'action', ...) that isn't a real ContentType.
+  // The map lookup below then yields undefined and the request literally went to
+  // `/functions/v1/undefined` in prod. Fail loudly and locally instead — the fix
+  // at the call site is convertToContentType().
+  if (!FETCH_REQUEST_MAP[type]) {
+    console.error(`[CONTENT-STORE] fetchContent called with unknown content type '${type}'`, data);
+    return [] as T[];
+  }
+
   // Make sure any cache persisted by a previous session/tab is loaded before we check the
   // in-memory stores, so a reload can hit the cache instead of re-fetching from the network.
   await hydrationPromise;
