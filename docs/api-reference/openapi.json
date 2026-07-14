@@ -1921,7 +1921,7 @@
       "post": {
         "tags": ["Characters"],
         "summary": "Update an existing character",
-        "description": "Same body shape as `create-character` but `id` is required. Forbidden keys (`id`, `created_at`, `content_source_id`, `user_id`) are stripped server-side.",
+        "description": "Same body shape as `create-character` but `id` is required. Forbidden keys (`id`, `created_at`, `content_source_id`, `user_id`) are stripped server-side.\n\n**Optimistic concurrency:** pass `expected_updated_at` (the `updated_at` value from your last read of the character) to make the write conditional. If the row changed since, the write is NOT applied and the response data is `{ \"__conflict\": true, \"character\": <current row> }` so you can merge and retry with the fresh `updated_at`. If your session can read but not write the character (e.g. viewing someone else's public character), the response data is `{ \"__forbidden\": true, \"reason\": \"WRITE_DENIED\" | \"NOT_VISIBLE\" }` — stop retrying; the write will never be accepted. Omitting `expected_updated_at` keeps the legacy unconditional write behavior.",
         "operationId": "updateCharacter",
         "requestBody": {
           "required": true,
@@ -1930,7 +1930,17 @@
               "schema": {
                 "allOf": [
                   { "$ref": "#/components/schemas/Character" },
-                  { "type": "object", "required": ["id"] }
+                  {
+                    "type": "object",
+                    "required": ["id"],
+                    "properties": {
+                      "expected_updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Optimistic-concurrency token: the character's `updated_at` from your last read. When provided, the update only applies if the row is unchanged."
+                      }
+                    }
+                  }
                 ]
               }
             }
@@ -1938,7 +1948,7 @@
         },
         "responses": {
           "200": {
-            "description": "JSend success.",
+            "description": "JSend success. With `expected_updated_at`, `data` may instead be a conflict object (`__conflict` + current `character`) or a forbidden object (`__forbidden` + `reason`).",
             "content": {
               "application/json": { "schema": { "$ref": "#/components/schemas/JSendBoolean" } }
             }
