@@ -2723,7 +2723,7 @@
       "post": {
         "tags": ["Integrations"],
         "summary": "(Discord webhook) Approve, reject, or vote on a content update",
-        "description": "Service-to-service webhook for the WG Discord moderation bot. Authenticates via the shared `CONTENT_UPDATE_KEY` secret in the `Authorization: Bearer <secret>` header (NOT a user JWT or API key). When state=APPROVE, applies the underlying content change.",
+        "description": "Service-to-service webhook for the WG Discord moderation bot. Authenticates via the shared `CONTENT_UPDATE_KEY` secret, preferably in the `Authorization: Bearer <secret>` header (NOT a user JWT or API key); the legacy `auth_token` body field is also accepted for older bot deployments. When state=APPROVE, applies the underlying content change.",
         "operationId": "updateContentUpdate",
         "security": [],
         "requestBody": {
@@ -2734,6 +2734,7 @@
                 "type": "object",
                 "required": ["discord_msg_id", "discord_user_id", "discord_user_name", "state"],
                 "properties": {
+                  "auth_token": { "type": "string", "description": "Legacy transport for the shared secret; prefer the Authorization header." },
                   "discord_msg_id": { "type": "string" },
                   "discord_user_id": { "type": "string" },
                   "discord_user_name": { "type": "string" },

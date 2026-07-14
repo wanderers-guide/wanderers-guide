@@ -19,15 +19,22 @@ serve(async (req: Request) => {
   return await connect(
     req,
     async (client, body, token) => {
-      let { discord_msg_id, discord_user_id, discord_user_name, state } = body as {
+      let { auth_token, discord_msg_id, discord_user_id, discord_user_name, state } = body as {
+        auth_token?: string;
         discord_msg_id: string;
         discord_user_id: string;
         discord_user_name: string;
         state: 'APPROVE' | 'REJECT' | 'UPVOTE' | 'DOWNVOTE';
       };
 
+      // Accept the shared key from the Authorization header OR the legacy `auth_token`
+      // body field. The deployed content-updates bot sends it in the body; when the
+      // header-only check shipped (May 2026 change, deployed 2026-07-12) every bot call
+      // was rejected as "Invalid auth token" and all approvals/votes silently or loudly
+      // failed. Keep both until every caller sends the header, then drop the body path.
       // @ts-ignore
-      if (token !== Deno.env.get('CONTENT_UPDATE_KEY')) {
+      const expectedKey = Deno.env.get('CONTENT_UPDATE_KEY');
+      if (!expectedKey || (token !== expectedKey && auth_token !== expectedKey)) {
         return {
           status: 'fail',
           data: { message: 'Invalid auth token' },

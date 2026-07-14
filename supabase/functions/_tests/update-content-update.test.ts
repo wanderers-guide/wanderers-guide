@@ -71,6 +71,69 @@ Deno.test({
 });
 
 Deno.test({
+  name: 'update-content-update: accepts the shared key via legacy body auth_token (deployed bot format)',
+  ignore: skip,
+  async fn() {
+    const { userId } = await seed();
+    await withContentSource(userId, async (sourceId) => {
+      const msgId = `test-cu-${crypto.randomUUID()}`;
+      const cu = await seedContentUpdate({
+        user_id: userId,
+        type: 'trait',
+        ref_id: 1,
+        content_source_id: sourceId,
+        action: 'UPDATE',
+        data: { name: 'Anything' },
+        discord_msg_id: msgId,
+      });
+
+      try {
+        // The content-updates bot sends the key in the body, not the Authorization
+        // header. The header-only check (deployed 2026-07-12) rejected every bot call
+        // as "Invalid auth token", freezing all approvals/votes — this is the guard.
+        const res = await callFunction('update-content-update', {
+          auth_token: CONTENT_UPDATE_KEY,
+          discord_msg_id: msgId,
+          discord_user_id: 'voter-1',
+          discord_user_name: 'Voter One',
+          state: 'UPVOTE',
+        });
+        assertEquals(res.body?.status, 'success', `body-token auth must pass: ${JSON.stringify(res.body)}`);
+
+        const { data: after } = await admin
+          .from('content_update')
+          .select('upvotes')
+          .eq('id', cu.id)
+          .single();
+        assertEquals(after?.upvotes?.length, 1, 'upvote should be recorded');
+      } finally {
+        await admin.from('content_update').delete().eq('id', cu.id);
+      }
+    });
+  },
+});
+
+Deno.test({
+  name: 'update-content-update: rejects a wrong key in both header and body',
+  ignore: skip,
+  async fn() {
+    const res = await callFunction(
+      'update-content-update',
+      {
+        auth_token: 'wrong-key',
+        discord_msg_id: 'irrelevant',
+        discord_user_id: 'x',
+        discord_user_name: 'x',
+        state: 'UPVOTE',
+      },
+      { token: 'also-wrong' }
+    );
+    assertEquals(res.body?.status, 'fail');
+    assertEquals(res.body?.data?.message, 'Invalid auth token');
+  },
+});
+
+Deno.test({
   name: 'update-content-update: a failed apply is NOT marked approved (apply-then-approve regression)',
   ignore: skip,
   async fn() {
