@@ -20,7 +20,8 @@
     "cy:run": "cypress run",
     "cy:e2e": "CYPRESS_BASE_URL=http://localhost:3000 CYPRESS_TEST_EMAIL=test@wanderersguide.app CYPRESS_TEST_PASSWORD=test1234 cypress run",
     "cy:e2e:open": "CYPRESS_BASE_URL=http://localhost:3000 CYPRESS_TEST_EMAIL=test@wanderersguide.app CYPRESS_TEST_PASSWORD=test1234 cypress open",
-    "audit:content": "esbuild scripts/audit-content/audit-content.ts --bundle --platform=node --format=esm --target=node20 --outfile=scripts/audit-content/.dist/audit.mjs && node scripts/audit-content/.dist/audit.mjs"
+    "audit:content": "esbuild scripts/audit-content/audit-content.ts --bundle --platform=node --format=esm --target=node20 --outfile=scripts/audit-content/.dist/audit.mjs && node scripts/audit-content/.dist/audit.mjs",
+    "fix:content": "esbuild scripts/audit-content/fix-content.ts --bundle --platform=node --format=esm --target=node20 --outfile=scripts/audit-content/.dist/fix.mjs && node scripts/audit-content/.dist/fix.mjs"
   },
   "dependencies": {
     "@mantine/carousel": "^9.0.0",

@@ -75,6 +75,37 @@ Add new ones in `computeSafeFix()` — keep each conservative and always re-vali
   every failure with `id`, `name`, failing `paths`, the Zod summary, and any computed
   `fix`. Grep-friendly for triage. (git-ignored.)
 
+## Repairing a single row — `npm run fix:content`
+
+The write half, for **data fixes** (a malformed value in a specific row, as opposed
+to a schema fix which is a code change). It fetches one row, applies the registered
+repair rules for its type, re-validates against the Zod schema, shows the before/after
+diff, and — only with `--apply` — writes the changed columns back, then re-reads and
+re-validates from the DB to confirm.
+
+```bash
+# dry-run: fetch → repair → validate → show diff (writes nothing)
+SUPABASE_PAT=sbp_... npm run fix:content -- --type class --id 160
+
+# write it, then re-validate from the DB
+SUPABASE_PAT=sbp_... npm run fix:content -- --type class --id 160 --apply
+
+# batch several ids of one type
+SUPABASE_PAT=sbp_... npm run fix:content -- --type item --ids 22524,22539 --apply
+```
+
+**Guarantee:** a row is written only if it FULLY validates after the repair, and only
+the columns that actually changed are sent — so a fix can never leave a row worse than
+the auditor found it. Repair rules live in the `REPAIRS` array in `fix-content.ts`;
+each is conservative and the re-validation gate is the real safety net.
+
+Rules shipped so far:
+- `class`: a `setValue MAX_HEALTH_CLASS_PER_LEVEL` with a null value → the PF2e median
+  (8), flagged so the content owner can adjust. (Null HP-per-level is a live bug: that
+  class's characters get no class HP.)
+- `item`: empty string `""` in a numeric `meta_data` leaf (`attack_bonus`,
+  `charges.max`, `starfinder.usage`) → null.
+
 ## Classifying a finding (schema fix vs data fix)
 
 - **Schema fix** — the DB legitimately stores that shape and the schema is too strict.
