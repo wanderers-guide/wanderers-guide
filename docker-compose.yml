@@ -136,6 +136,9 @@ services:
       SUPABASE_ANON_KEY: ${ANON_KEY}
       SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
       SUPABASE_DB_URL: postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
+      # Shared secret for the content-updates Discord bot webhook (update-content-update).
+      # Optional locally; the _tests for that function skip when unset.
+      CONTENT_UPDATE_KEY: ${CONTENT_UPDATE_KEY:-}
       VERIFY_JWT: "false"
     command:
       - start
