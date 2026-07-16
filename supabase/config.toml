@@ -134,6 +134,14 @@ vector_port = 54328
 backend = "postgres"
 
 # Disable verify_jwt on API endpoints
+# update-content-update is the Discord bot's callback webhook: the bot authenticates
+# with the shared CONTENT_UPDATE_KEY in the Authorization header, which is not a JWT.
+# With verify_jwt enabled the gateway 401s every bot call before the function runs
+# (this silently killed all content-update approvals 2026-07-12 -> 2026-07-16).
+# The function validates the shared key itself (see its bypassAuth handler).
+[functions.update-content-update]
+verify_jwt = false
+
 [functions.create-ability-block]
 verify_jwt = false
 
