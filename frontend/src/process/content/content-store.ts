@@ -147,7 +147,7 @@ const CONTENT_CACHE_KEY = 'content-store';
 const CONTENT_CACHE_VERSION = 1;
 // How long a persisted cache is trusted before it's dropped and re-fetched. Content changes
 // rarely; this bounds how stale a cached client can be (and resetContentStore() clears it on demand).
-const CONTENT_CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24h
+const CONTENT_CACHE_TTL_MS = 1000 * 60 * 60 * 9; // 9h
 
 type PersistedContentCache = {
   version: number;
