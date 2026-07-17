@@ -28,6 +28,7 @@ import UnlockHomebrewModal from '@modals/UnlockHomebrewModal';
 import { makeRequest } from '@requests/request-manager';
 import { IconExternalLink } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
+import DrawerLoadState from '@drawers/DrawerLoadState';
 import { AbilityBlockType, ContentSource, ContentType } from '@schemas/content';
 import { useEffect, useRef, useState } from 'react';
 import { useAtom } from 'jotai';
@@ -144,7 +145,7 @@ export function ContentSourceDrawerContent(props: {
   const [_creatureDrawer, openCreatureDrawer] = useAtom(creatureDrawerState);
   const [_feedbackData, setFeedbackData] = useAtom(feedbackState);
 
-  const { data: content } = useQuery({
+  const { data: content, isFetching, refetch } = useQuery({
     queryKey: [`find-content-source-package-${id}`, { id, source: props.data.source }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -169,15 +170,7 @@ export function ContentSourceDrawerContent(props: {
 
   if (!content || !source) {
     return (
-      <Loader
-        type='bars'
-        style={{
-          position: 'absolute',
-          top: '35%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}
-      />
+      <DrawerLoadState loading={isFetching} onRetry={refetch} />
     );
   }
 

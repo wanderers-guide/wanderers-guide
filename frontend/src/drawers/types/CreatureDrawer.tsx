@@ -54,6 +54,7 @@ import {
   IconAlignBoxLeftMiddle,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
+import DrawerLoadState from '@drawers/DrawerLoadState';
 import { Creature, OperationCreatureResultPackage, Trait } from '@schemas/content';
 import { getAnchorStyles } from '@utils/anchor';
 import { determineCompanionType, findCreatureTraits } from '@utils/creature';
@@ -70,7 +71,7 @@ import { exportVariableStore } from '@variables/variable-manager';
 export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Creature } }) {
   const id = props.data.id;
 
-  const { data: _creature } = useQuery({
+  const { data: _creature, isFetching, refetch } = useQuery({
     queryKey: [`find-creature-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -121,7 +122,7 @@ export function CreatureDrawerContent(props: {
   });
   const view = props.data.readOnly ? 'BLOCK' : drawerData.view;
 
-  const { data: content } = useQuery({
+  const { data: content, isFetching, refetch } = useQuery({
     queryKey: [`find-creature-details-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -266,15 +267,7 @@ export function CreatureDrawerContent(props: {
 
   if (loading || !creature || !content) {
     return (
-      <Loader
-        type='bars'
-        style={{
-          position: 'absolute',
-          top: '35%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}
-      />
+      <DrawerLoadState loading={isFetching} onRetry={refetch} />
     );
   }
 

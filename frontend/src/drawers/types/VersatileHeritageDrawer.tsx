@@ -20,6 +20,7 @@ import {
   Title,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
+import DrawerLoadState from '@drawers/DrawerLoadState';
 import { AbilityBlock, VersatileHeritage } from '@schemas/content';
 import { groupBy } from 'lodash-es';
 import { useState } from 'react';
@@ -32,7 +33,7 @@ export function VersatileHeritageDrawerTitle(props: {
 
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const { data: _versatileHeritage } = useQuery({
+  const { data: _versatileHeritage, isFetching, refetch } = useQuery({
     queryKey: [`find-versatile-heritage-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -80,7 +81,7 @@ export function VersatileHeritageDrawerContent(props: {
 }) {
   const id = props.data.id;
 
-  const { data } = useQuery({
+  const { data, isFetching, refetch } = useQuery({
     queryKey: [`find-versatileHeritage-details-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -153,15 +154,7 @@ export function VersatileHeritageDrawerContent(props: {
 
   if (!data || !data.versatileHeritage || !data.abilityBlocks) {
     return (
-      <Loader
-        type='bars'
-        style={{
-          position: 'absolute',
-          top: '35%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}
-      />
+      <DrawerLoadState loading={isFetching} onRetry={refetch} />
     );
   }
 

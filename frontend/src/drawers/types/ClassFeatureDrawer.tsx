@@ -7,6 +7,7 @@ import { fetchContentById } from '@content/content-store';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
+import DrawerLoadState from '@drawers/DrawerLoadState';
 import { AbilityBlock } from '@schemas/content';
 import { DisplayOperationSelectionOptions } from './ActionDrawer';
 import ShowInjectedText from '@drawers/ShowInjectedText';
@@ -15,7 +16,7 @@ import { DisplayIcon } from '@common/IconDisplay';
 export function ClassFeatureDrawerTitle(props: { data: { id?: number; classFeature?: AbilityBlock } }) {
   const id = props.data.id;
 
-  const { data: _classFeature } = useQuery({
+  const { data: _classFeature, isFetching, refetch } = useQuery({
     queryKey: [`find-class-feature-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -51,7 +52,7 @@ export function ClassFeatureDrawerContent(props: {
 }) {
   const id = props.data.id;
 
-  const { data: _classFeature } = useQuery({
+  const { data: _classFeature, isFetching, refetch } = useQuery({
     queryKey: [`find-class-feature-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -65,15 +66,7 @@ export function ClassFeatureDrawerContent(props: {
 
   if (!classFeature) {
     return (
-      <Loader
-        type='bars'
-        style={{
-          position: 'absolute',
-          top: '35%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}
-      />
+      <DrawerLoadState loading={isFetching} onRetry={refetch} />
     );
   }
 

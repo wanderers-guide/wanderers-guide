@@ -9,6 +9,7 @@ import { fetchAllPrereqs, fetchContentById } from '@content/content-store';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { Title, Text, Loader, Group, Divider, Box, Anchor, useMantineTheme, Button } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
+import DrawerLoadState from '@drawers/DrawerLoadState';
 import { AbilityBlock } from '@schemas/content';
 import { toLabel } from '@utils/strings';
 import { meetsPrerequisites } from '@variables/prereq-detection';
@@ -24,7 +25,7 @@ export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBloc
 
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const { data: _feat } = useQuery({
+  const { data: _feat, isFetching, refetch } = useQuery({
     queryKey: [`find-feat-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -86,7 +87,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
   const character = useAtomValue(characterState);
   const DETECT_PREREQUS = character?.options?.auto_detect_prerequisites ?? false;
 
-  const { data: _feat } = useQuery({
+  const { data: _feat, isFetching, refetch } = useQuery({
     queryKey: [`find-feat-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -100,15 +101,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
 
   if (!feat) {
     return (
-      <Loader
-        type='bars'
-        style={{
-          position: 'absolute',
-          top: '35%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}
-      />
+      <DrawerLoadState loading={isFetching} onRetry={refetch} />
     );
   }
 

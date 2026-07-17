@@ -51,6 +51,7 @@ import {
 import { getHotkeyHandler } from '@mantine/hooks';
 import { IconHelpCircle } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
+import DrawerLoadState from '@drawers/DrawerLoadState';
 import { Item, ItemMetaGroupArmor, ItemMetaGroupWeapon } from '@schemas/content';
 import { StoreID } from '@schemas/variables';
 import { sign } from '@utils/numbers';
@@ -71,7 +72,7 @@ import { titleCase } from 'title-case';
 export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
 
-  const { data: _item } = useQuery({
+  const { data: _item, isFetching, refetch } = useQuery({
     queryKey: [`find-item-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -118,7 +119,7 @@ export function ItemDrawerContent(props: {
   const [_drawer, openDrawer] = useAtom(drawerState);
   const theme = useMantineTheme();
 
-  const { data: _item } = useQuery({
+  const { data: _item, isFetching, refetch } = useQuery({
     queryKey: [`find-item-with-base-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -146,15 +147,7 @@ export function ItemDrawerContent(props: {
 
   if (!item) {
     return (
-      <Loader
-        type='bars'
-        style={{
-          position: 'absolute',
-          top: '35%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}
-      />
+      <DrawerLoadState loading={isFetching} onRetry={refetch} />
     );
   }
 
