@@ -42,7 +42,14 @@ export default function SelectImageModal({
             context.closeModal(id);
           }}
         >
-          <Avatar src={option.url} size={115} radius={'md'} />
+          {/* Grid of remote images: defer the off-screen ones and decode off the main
+              thread so opening the picker doesn't fetch/decode every option at once. */}
+          <Avatar
+            src={option.url}
+            size={115}
+            radius={'md'}
+            imageProps={{ loading: 'lazy', decoding: 'async' }}
+          />
         </UnstyledButton>
       </HoverCard.Target>
       <HoverCard.Dropdown py={5} px={10}>
