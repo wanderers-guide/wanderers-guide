@@ -25,7 +25,7 @@ import {
   IconSwords,
   IconUsers,
 } from '@tabler/icons-react';
-import { AbilityBlockType, Character, ContentType, Creature, Item } from '@schemas/content';
+import { AbilityBlockType, Character, ContentSource, ContentType, Creature, Item } from '@schemas/content';
 import { DrawerType } from '@schemas/index';
 import { isPlayable } from '@utils/character';
 import { determineCompanionType } from '@utils/creature';
@@ -40,6 +40,35 @@ import { useAtom, useAtomValue } from 'jotai';
 import stripMd from 'remove-markdown';
 
 const MAX_QUERY_LENGTH = 100;
+
+// ---- Spotlight request memos ----
+// The spotlight re-runs its whole pipeline every time the (debounced) query settles,
+// but only the content search actually depends on the query text. The accessible
+// content sources and the user's character list don't change while someone types, so
+// memoize them briefly — otherwise every keystroke-settled search paid for a get-user
+// + find-content-source resolution and a full find-character fetch on top of the
+// actual search request, all serially (multi-second searches).
+const SPOTLIGHT_MEMO_TTL_MS = 1000 * 60; // 1 min
+
+let sourcesMemo: { key: string; fetchedAt: number; promise: Promise<ContentSource[]> } | null = null;
+function fetchSpotlightSources(): Promise<ContentSource[]> {
+  // Key on the resolved default-sources value: opening a sheet/builder redefines the
+  // default sources, and a stale memo would search the wrong content set.
+  const key = JSON.stringify(getDefaultSources('INFO'));
+  const now = Date.now();
+  if (sourcesMemo && sourcesMemo.key === key && now - sourcesMemo.fetchedAt < SPOTLIGHT_MEMO_TTL_MS) {
+    return sourcesMemo.promise;
+  }
+  const promise = fetchContentSources(getDefaultSources('INFO')).then((sources) => {
+    // Never memoize a failed/empty resolution — that would blank search for a minute.
+    if (sources.length === 0) sourcesMemo = null;
+    return sources;
+  });
+  sourcesMemo = { key, fetchedAt: now, promise };
+  return promise;
+}
+
+let characterMemo: { userId: string; fetchedAt: number; characters: Character[] } | null = null;
 
 export default function SearchSpotlight() {
   const theme = useMantineTheme();
@@ -279,9 +308,16 @@ async function activateQueryPipeline(
   const query = (rawQuery.length > MAX_QUERY_LENGTH ? rawQuery.slice(0, MAX_QUERY_LENGTH) : rawQuery).trim();
   let actions: SpotlightActionData[] = [];
   if (query && query.length >= 3) {
-    actions = [...actions, ...(await queryResults(query, openDrawer, openCreatureDrawer, theme))];
-    actions = [...actions, ...(await fetchBooks(query, openDrawer, theme))];
-    actions = [...actions, ...(await fetchCharacters(query, navigate, theme, session))];
+    // These three lookups are independent — run them concurrently. They used to run
+    // serially, so every search paid content search + books + characters back-to-back,
+    // which (with the per-request source/user resolution) is what made spotlight
+    // results take multiple seconds to appear.
+    const [contentActions, bookActions, characterActions] = await Promise.all([
+      queryResults(query, openDrawer, openCreatureDrawer, theme),
+      fetchBooks(query, openDrawer, theme),
+      fetchCharacters(query, navigate, theme, session),
+    ]);
+    actions = [...actions, ...contentActions, ...bookActions, ...characterActions];
     // Add more here.
 
     // Put exact matches first and preserve order of other results.
@@ -325,8 +361,8 @@ async function queryResults(
 
   // Traditional search
   const queryDbSearch = async () => {
-    // Gets the current default sources
-    const sources = await fetchContentSources(getDefaultSources('INFO'));
+    // Gets the current default sources (memoized — see fetchSpotlightSources)
+    const sources = await fetchSpotlightSources();
 
     // Fetch search results
     const searchData =
@@ -410,7 +446,7 @@ async function fetchBooks(
   openDrawer: DrawerStateSet,
   theme: MantineTheme
 ): Promise<SpotlightActionData[]> {
-  const sources = await fetchContentSources(getDefaultSources('INFO'));
+  const sources = await fetchSpotlightSources();
   return sources.map((source) => {
     return {
       id: `content-source-${source.id}`,
@@ -439,13 +475,33 @@ async function fetchCharacters(
   theme: MantineTheme,
   session: Session | null
 ): Promise<SpotlightActionData[]> {
-  const characters = await makeRequest<Character[]>(
-    'find-character',
-    {
-      user_id: session?.user.id,
-    },
-    false
-  );
+  // Signed-out visitors have no characters — skip the request entirely. This used to
+  // fire find-character with user_id undefined on every search, which drops the filter
+  // and runs an unfiltered RLS-scoped scan (measured at 3+ seconds) to return nothing.
+  if (!session) return [];
+
+  let characters: Character[] | null = null;
+  const now = Date.now();
+  if (
+    characterMemo &&
+    characterMemo.userId === session.user.id &&
+    now - characterMemo.fetchedAt < SPOTLIGHT_MEMO_TTL_MS
+  ) {
+    characters = characterMemo.characters;
+  } else {
+    characters = await makeRequest<Character[]>(
+      'find-character',
+      {
+        user_id: session.user.id,
+      },
+      false
+    );
+    // Only memoize successful fetches; a transient failure shouldn't hide the
+    // user's characters from search results for a whole minute.
+    if (characters) {
+      characterMemo = { userId: session.user.id, fetchedAt: now, characters };
+    }
+  }
   return (characters ?? []).map((character) => {
     const level = getEntityLevel(character);
     const heritage = ''; //character.details?.heritage?.name ?? '';

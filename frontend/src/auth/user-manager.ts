@@ -1,8 +1,20 @@
 import { makeRequest } from '@requests/request-manager';
 import { PublicUser } from '@schemas/content';
+import { supabase } from '../supabase-client';
 
 export async function getPublicUser(id?: string) {
   try {
+    if (!id) {
+      // Fetching "the current user" without a session always resolves to null, but it
+      // still cost a full get-user round-trip — and hot paths (e.g. fetchContentSources
+      // during spotlight search) call this on every invocation, so signed-out visitors
+      // paid it repeatedly. getSession() is a local storage read when signed out, so
+      // this short-circuit is free; signed-in behavior is unchanged.
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) return null;
+    }
     const user = await makeRequest<PublicUser>(
       'get-user',
       {
