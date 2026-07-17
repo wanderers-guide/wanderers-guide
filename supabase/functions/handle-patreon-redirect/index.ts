@@ -1,6 +1,6 @@
 // @ts-ignore
 import { serve } from 'std/server';
-import { connect, getPublicUser } from '../_shared/helpers.ts';
+import { connect, createServiceClient, getPublicUser } from '../_shared/helpers.ts';
 import { handlePatreonRedirect } from '../_shared/patreon.ts';
 
 serve(async (req: Request) => {
@@ -20,8 +20,13 @@ serve(async (req: Request) => {
     }
 
     try {
+      // The Patreon flow reads and writes patreon token data, including cross-user GM
+      // group lookups (public_user.patreon), which anon/authenticated can no longer SELECT
+      // (migration 20260717000000). Run it with a service-role client. This preserves
+      // prior behavior: every write already targets an explicit, validated user id
+      // (the caller above, or a resolved GM relationship) — no new access is introduced.
       const result = await handlePatreonRedirect(
-        client,
+        createServiceClient(),
         user,
         code,
         `${redirectOrigin}/auth/patreon/redirect`

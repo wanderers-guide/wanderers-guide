@@ -1,6 +1,6 @@
 // @ts-ignore
 import { serve } from 'std/server';
-import { connect, fetchData, getPublicUser } from '../_shared/helpers.ts';
+import { connect, createServiceClient, fetchData, getPublicUser } from '../_shared/helpers.ts';
 import type { PublicUser } from '../_shared/content';
 
 serve(async (req: Request) => {
@@ -11,7 +11,12 @@ serve(async (req: Request) => {
     };
 
     if (id || _id) {
-      const results = await fetchData<PublicUser>(client, 'public_user', [
+      // Read another user's public profile with a service-role client: the secret columns
+      // (api, patreon) are no longer SELECT-able by anon/authenticated over PostgREST (see
+      // migration 20260717000000), so the request-scoped client's all-column select would
+      // fail. We fetch the row and then explicitly blank every secret below before it ever
+      // leaves the function — a viewer only receives display/profile fields.
+      const results = await fetchData<PublicUser>(createServiceClient(), 'public_user', [
         { column: 'id', value: _id },
         { column: 'user_id', value: id },
       ]);

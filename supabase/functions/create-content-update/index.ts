@@ -2,6 +2,7 @@
 import { serve } from 'std/server';
 import {
   connect,
+  createServiceClient,
   fetchData,
   insertData,
   updateData,
@@ -47,8 +48,11 @@ serve(async (req: Request) => {
       ]);
       const sourceName = sources.find((s) => s.id === result.content_source_id)?.name ?? 'Unknown';
 
-      // Get user name
-      const users = await fetchData<PublicUser>(client, 'public_user', [
+      // Get user name — read via service role: public_user's all-column select is no
+      // longer permitted for anon/authenticated on the restricted api/patreon columns
+      // (migration 20260717000000). We only use display_name (result.user_id is the
+      // submitting caller).
+      const users = await fetchData<PublicUser>(createServiceClient(), 'public_user', [
         { column: 'user_id', value: result.user_id },
       ]);
       const userName = users.length > 0 ? users[0].display_name : 'Unknown';
