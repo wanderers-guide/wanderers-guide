@@ -3,6 +3,7 @@ import { serve } from 'std/server';
 import type { Campaign } from '../_shared/content';
 import {
   connect,
+  createServiceClient,
   fetchData,
   getPublicUser,
   upsertData,
@@ -34,9 +35,16 @@ serve(async (req: Request) => {
       };
     }
 
-    if (!id || id === -1) {
+    // campaign.join_key is no longer SELECT-able by anon/authenticated (migration
+    // 20260717000001), so any all-column read/insert-returning of campaign must use a
+    // service-role client. Reads here are scoped to the caller's own user_id; the insert
+    // below sets user_id to the caller, so neither widens access.
+    const admin = createServiceClient();
+
+    const isCreating = !id || id === -1;
+    if (isCreating) {
       // Creating new campaign
-      const campaigns = await fetchData<Campaign>(client, 'campaign', [
+      const campaigns = await fetchData<Campaign>(admin, 'campaign', [
         { column: 'user_id', value: user.user_id },
       ]);
       if (campaigns.length >= CAMPAIGN_SLOT_CAP) {
@@ -52,14 +60,20 @@ serve(async (req: Request) => {
 
     // Generate join key for new campaigns
     let join_key: string | undefined = undefined;
-    if (!id || id === -1) {
+    if (isCreating) {
       join_key =
         Math.random().toString(36).substring(2, 8) +
         '-' +
         Math.random().toString(36).substring(2, 8);
     }
 
-    const { procedure, result } = await upsertData<Campaign>(client, 'campaign', {
+    // Insert (new campaign) goes through the service-role client: insertData does a
+    // returning select() that would now fail on the restricted join_key column, and the
+    // row's user_id is the validated caller, so there is no IDOR. Update (existing id)
+    // stays on the request-scoped client so the campaign UPDATE RLS policy (owner-only)
+    // still guards it — that path returns only { status } (no select), so it is unaffected.
+    const writeClient = isCreating ? admin : client;
+    const { procedure, result } = await upsertData<Campaign>(writeClient, 'campaign', {
       id,
       user_id: user.user_id,
       name,

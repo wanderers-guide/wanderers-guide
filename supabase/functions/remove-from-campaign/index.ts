@@ -1,8 +1,13 @@
 // @ts-ignore
 import { serve } from 'std/server';
 import type { Campaign, Character } from '../_shared/content';
-import { connect, fetchData, getPublicUser, updateData } from '../_shared/helpers.ts';
-import { createClient } from '@supabase/supabase-js';
+import {
+  connect,
+  createServiceClient,
+  fetchData,
+  getPublicUser,
+  updateData,
+} from '../_shared/helpers.ts';
 
 interface RemoveFromCampaignBody {
   character_id?: string;
@@ -32,7 +37,13 @@ serve(async (req: Request) => {
       };
     }
 
-    const campaigns = await fetchData<Campaign>(client, 'campaign', [
+    // Service-role client: campaign's all-column select now fails on the restricted
+    // join_key column (migration 20260717000001), and the character update below already
+    // needs elevated access (see note). The read is scoped to the caller's own user_id,
+    // so it does not widen access.
+    const unrestrictedClient = createServiceClient();
+
+    const campaigns = await fetchData<Campaign>(unrestrictedClient, 'campaign', [
       { column: 'id', value: campaign_id },
       { column: 'user_id', value: user.user_id },
     ]);
@@ -54,15 +65,9 @@ serve(async (req: Request) => {
       };
     }
 
-    // Use unrestricted client access because we're only removing the campaign_id under certain conditions
-    // Can't use normal client because row security will prevent the update
-    const unrestrictedClient = createClient(
-      // @ts-ignore
-      Deno.env.get('SUPABASE_URL') ?? '',
-      // @ts-ignore
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
+    // Remove the campaign_id with the service-role client created above (row security would
+    // otherwise prevent a player from detaching their own character from a campaign they
+    // don't own). Ownership of the campaign was verified by the user_id-scoped read above.
     const { status, data } = await updateData(
       unrestrictedClient,
       'character',
