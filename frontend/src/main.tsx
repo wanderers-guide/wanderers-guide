@@ -18,7 +18,20 @@ import { ErrorPage } from './pages/ErrorPage.tsx';
 import { MantineProvider } from '@mantine/core';
 import { supabase } from './supabase-client.ts';
 
-const queryClient = new QueryClient();
+// The default QueryClient uses staleTime: 0, which marks every result stale immediately —
+// so all ~113 useQuery sites refetch on every mount/remount (opening a drawer, switching a
+// sheet tab, etc.), constantly re-pulling near-static content. Give sensible global
+// defaults instead. Mutations still invalidate explicitly, so this only suppresses the
+// redundant automatic refetches, not intentional ones.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60, // 1 min — long enough to kill remount refetch storms, short enough to stay fresh
+      gcTime: 1000 * 60 * 10, // keep unused results 10 min before garbage-collecting
+      refetchOnWindowFocus: false, // don't refetch everything on alt-tab (15 modals already set this by hand)
+    },
+  },
+});
 
 // Re-exported for the many existing `import { supabase } from '../main'` call sites.
 // The client itself lives in supabase-client.ts so modules that main.tsx transitively
