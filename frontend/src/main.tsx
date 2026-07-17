@@ -25,19 +25,36 @@ const queryClient = new QueryClient();
 // depends on (e.g. the request manager) can import it without a circular dependency.
 export { supabase };
 
-// Fixes cache issues on refresh
+// One-time legacy cache cleanup.
+//
+// Earlier builds cleared ALL Cache Storage and unregistered the service worker on EVERY
+// load. That defeated the workbox precache entirely, so the ~10 MB app bundle was
+// re-downloaded from the network on every single visit. We keep a one-shot version of that
+// cleanup so any client still carrying a stale SW / cache from that era gets flushed once,
+// then never again — after that the precache (revisioned, with cleanupOutdatedCaches)
+// serves instantly and handles per-deploy invalidation itself.
 (async () => {
-  // Clear the cache on startup
-  const keys = await caches.keys();
-  for (const key of keys) {
-    caches.delete(key);
+  const LEGACY_FLUSH_KEY = 'wg-legacy-cache-flushed-v1';
+  try {
+    if (localStorage.getItem(LEGACY_FLUSH_KEY)) return;
+  } catch {
+    return; // storage unavailable (private mode) — skip rather than wipe every load
   }
-
-  // Unregister our service worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.ready.then(async (registration) => {
-      const result = await registration.unregister();
-    });
+  try {
+    const keys = await caches.keys();
+    await Promise.all(keys.map((key) => caches.delete(key)));
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((r) => r.unregister()));
+    }
+  } catch {
+    // best-effort; don't block app startup on cleanup
+  } finally {
+    try {
+      localStorage.setItem(LEGACY_FLUSH_KEY, '1');
+    } catch {
+      /* ignore */
+    }
   }
 })();
 
