@@ -65,7 +65,7 @@ import EntityInfoSection from './sections/EntityInfoSection';
 import ConditionSection from './sections/ConditionSection';
 import HealthSection from './sections/HealthSection';
 import SpeedSection from './sections/SpeedSection';
-import { GiRollingDices } from 'react-icons/gi';
+import { GiRollingDices } from '@common/game-icons-inline';
 import { convertToSetEntity } from '@utils/type-fixing';
 import ModesDrawer from '@common/modes/ModesDrawer';
 import CampaignDrawer from '@pages/campaign/CampaignDrawer';

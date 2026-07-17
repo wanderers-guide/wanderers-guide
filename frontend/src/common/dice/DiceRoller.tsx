@@ -32,7 +32,7 @@ import { tabletQuery, wideDesktopQuery } from '@utils/mobile-responsive';
 import { ThreeDDice } from 'dddice-js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { deleteDiceRoom, findDefaultPresets } from './dice-utils';
-import { GiRollingDiceCup, GiRollingDices } from 'react-icons/gi';
+import { GiRollingDiceCup, GiRollingDices } from '@common/game-icons-inline';
 import useRefresh from '@utils/use-refresh';
 import { IconArrowBigRightFilled, IconSquareRoundedArrowDown, IconTrash, IconX } from '@tabler/icons-react';
 import { sign } from '@utils/numbers';

@@ -24,7 +24,7 @@ import {
   GiDirewolf,
   GiDorsalScales,
   GiMetalScales,
-} from 'react-icons/gi';
+} from '@common/game-icons-inline';
 
 type ItemIconType =
   | 'GENERAL'

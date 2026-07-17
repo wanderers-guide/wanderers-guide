@@ -7,7 +7,7 @@ import { isCharacter, isCreature, isTruthy } from '@utils/type-fixing';
 import { getFinalProfValue } from '@variables/variable-helpers';
 import { getAllSkillVariables } from '@variables/variable-manager';
 import { useEffect, useState } from 'react';
-import { GiDiceTwentyFacesTwenty } from 'react-icons/gi';
+import { GiDiceTwentyFacesTwenty } from '@common/game-icons-inline';
 
 export default function InitiativeRollModal({
   context,
