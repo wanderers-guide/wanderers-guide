@@ -88,73 +88,114 @@ serve(async (req: Request) => {
             message: 'Invalid content type',
           };
 
+        // Idempotency claim. The Discord bot can fire the same approval more than once
+        // (duplicate reaction events, or multiple bot instances) — we've observed a single
+        // approval invoking this function 3x in the same second. Without a guard each
+        // invocation applied the change independently: one insert won and the others hit
+        // the unique constraint and failed, so the bot surfaced a false "didn't apply"
+        // even though the record WAS created. Atomically transition the request to
+        // APPROVED, but only if it isn't already. Postgres serializes concurrent updates
+        // on the row, so exactly one invocation matches the `!= APPROVED` filter and wins
+        // the claim; the rest match zero rows and no-op as success below.
+        const { data: claimed } = await client
+          .from('content_update')
+          .update({
+            status: { state: 'APPROVED', discord_user_id, discord_user_name },
+          })
+          .eq('id', update.id)
+          .neq('status->>state', 'APPROVED')
+          .select('id');
+
+        if (!claimed || claimed.length === 0) {
+          // Already approved by a concurrent or earlier invocation — nothing to do.
+          logEvent('info', 'update-content-update', 'approve_deduped', { updateId: update.id });
+          return { status: 'success', data: true };
+        }
+
+        // We own the claim. Apply the content change below; if it fails we revert the
+        // claim so the request is not left falsely APPROVED and can be retried.
+        const revertClaim = async () => {
+          await updateData(client, 'content_update', update.id, { status: { state: 'PENDING' } });
+        };
+
+        // Apply the content change. Wrapped in try/catch because the data helpers THROW on
+        // DB errors (e.g. updateData throws on a constraint violation) rather than returning
+        // a status — without catching, the throw would skip the revert below and leave the
+        // request falsely APPROVED (the very bug the claim/revert exists to prevent).
         let content_id = update.ref_id;
-        if (update.action === 'UPDATE' && update.ref_id) {
-          if (update.data.trait_id) {
-            // Update the associated trait's name & description
-            const trait_id = await handleAssociatedTrait(
-              client,
-              update.ref_id,
-              update.type,
-              update.data.name,
-              update.content_source_id
-            );
-            console.log('updated -> trait_id', trait_id);
-          }
+        try {
+          if (update.action === 'UPDATE' && update.ref_id) {
+            if (update.data.trait_id) {
+              // Update the associated trait's name & description
+              const trait_id = await handleAssociatedTrait(
+                client,
+                update.ref_id,
+                update.type,
+                update.data.name,
+                update.content_source_id
+              );
+              console.log('updated -> trait_id', trait_id);
+            }
 
-          const updateRes = await updateData(client, tableName, update.ref_id, update.data);
-          result = updateRes.status;
-        } else if (update.action === 'CREATE') {
-          let trait_id = null;
-          if (update.data.trait_id) {
-            // Create the associated trait
-            trait_id = await handleAssociatedTrait(
-              client,
-              undefined,
-              update.type,
-              update.data.name,
-              update.content_source_id
-            );
-            console.log('created -> trait_id', trait_id);
-          }
+            const updateRes = await updateData(client, tableName, update.ref_id, update.data);
+            result = updateRes.status;
+          } else if (update.action === 'CREATE') {
+            let trait_id = null;
+            if (update.data.trait_id) {
+              // Create the associated trait
+              trait_id = await handleAssociatedTrait(
+                client,
+                undefined,
+                update.type,
+                update.data.name,
+                update.content_source_id
+              );
+              console.log('created -> trait_id', trait_id);
+            }
 
-          const newData = await insertData(
-            client,
-            tableName,
-            {
-              ...update.data,
-              trait_id: trait_id ? trait_id : undefined,
-              content_source_id: update.content_source_id,
-            },
-            update.data?.type
-          );
-          result = newData ? 'SUCCESS' : 'ERROR_UNKNOWN';
-          console.log('created -> content_id', newData?.id);
-          content_id = newData?.id;
-        } else if (update.action === 'DELETE' && update.ref_id) {
-          result = await deleteData(client, tableName, update.ref_id);
-        } else {
-          return {
-            status: 'error',
-            message: 'Invalid update action',
-          };
+            const newData = await insertData(
+              client,
+              tableName,
+              {
+                ...update.data,
+                trait_id: trait_id ? trait_id : undefined,
+                content_source_id: update.content_source_id,
+              },
+              update.data?.type
+            );
+            result = newData ? 'SUCCESS' : 'ERROR_UNKNOWN';
+            console.log('created -> content_id', newData?.id);
+            content_id = newData?.id;
+          } else if (update.action === 'DELETE' && update.ref_id) {
+            result = await deleteData(client, tableName, update.ref_id);
+          } else {
+            // Invalid action — release the claim so the request returns to PENDING.
+            await revertClaim();
+            return {
+              status: 'error',
+              message: 'Invalid update action',
+            };
+          }
+        } catch (applyError) {
+          // The apply threw (e.g. a constraint violation). Release the claim so the
+          // request returns to PENDING (not falsely APPROVED) and can be retried.
+          await revertClaim();
+          logEvent('error', 'update-content-update', 'apply_threw', {
+            updateId: update.id,
+            contentType: update.type,
+            action: update.action,
+            message: (applyError as { message?: string })?.message ?? `${applyError}`,
+          });
+          return { status: 'error', message: 'ERROR_UNKNOWN' };
         }
 
         console.log('content_id', content_id, 'result', result);
 
-        // Only now that the content change has actually committed do we mark the request
-        // APPROVED, refresh the contributor's tier, and (re)generate embeddings. If the
-        // apply failed, the request is deliberately left un-approved (so it is not shown
-        // as applied and can be retried) and we fall through to the error response below.
+        // The request was already marked APPROVED by the claim above. If the content write
+        // actually succeeded, refresh the contributor's tier and (re)generate embeddings.
+        // If it failed, revert the claim to PENDING (so it is not shown as applied and can
+        // be retried) and fall through to the error response below.
         if (result === 'SUCCESS') {
-          await updateData(client, 'content_update', update.id, {
-            status: {
-              state: 'APPROVED',
-              discord_user_id: discord_user_id,
-              discord_user_name: discord_user_name,
-            },
-          });
-
           // If they've reached the threshold, update their tier
           const contentUpdates: ContentUpdate[] = await fetchData<ContentUpdate>(
             client,
@@ -180,6 +221,11 @@ serve(async (req: Request) => {
           if (content_id) {
             await populateCollection(client, 'name', update.type, [content_id]);
           }
+        } else {
+          // The content write failed after we claimed the request — revert it to PENDING
+          // so it is not left falsely APPROVED and can be retried. Falls through to the
+          // error response below (result !== 'SUCCESS').
+          await revertClaim();
         }
       } else if (state === 'REJECT') {
         const updateRes = await updateData(client, 'content_update', update.id, {
