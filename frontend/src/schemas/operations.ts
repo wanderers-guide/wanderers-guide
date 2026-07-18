@@ -310,32 +310,48 @@ export type OperationSelectFilters = z.infer<typeof OperationSelectFiltersSchema
 
 // ─── Select Option non-recursive variants (inferred) ─────────────────────────
 
-export const OperationSelectOptionAbilityBlockSchema = z.object({
-  id: z.string(),
-  type: z.literal('ABILITY_BLOCK'),
-  operation: OperationGiveAbilityBlockSchema,
-});
+// NOTE ON `.passthrough()`: inside a PREDEFINED select with `optionType: 'CUSTOM'`, each
+// option carries a custom-display overlay — `title`, `description`, and nested `operations`
+// — *in addition to* its base `type`/`operation` (e.g. Witchwarper's key-attribute options
+// are `type: 'ADJ_VALUE'` but still hold a `title` of "Charisma"/"Intelligence"). The render
+// pipeline (`getCustomPredefinedList`) derives the option's visible label from that `title`.
+// Without `.passthrough()`, Zod validation at the content-cache boundary (`validateAndWarn`)
+// strips those unknown keys, leaving the option label `undefined` and the select renders as
+// blank rows. Passthrough preserves the overlay so custom selects display their options.
+export const OperationSelectOptionAbilityBlockSchema = z
+  .object({
+    id: z.string(),
+    type: z.literal('ABILITY_BLOCK'),
+    operation: OperationGiveAbilityBlockSchema,
+  })
+  .passthrough();
 export type OperationSelectOptionAbilityBlock = z.infer<typeof OperationSelectOptionAbilityBlockSchema>;
 
-export const OperationSelectOptionSpellSchema = z.object({
-  id: z.string(),
-  type: z.literal('SPELL'),
-  operation: OperationGiveSpellSchema,
-});
+export const OperationSelectOptionSpellSchema = z
+  .object({
+    id: z.string(),
+    type: z.literal('SPELL'),
+    operation: OperationGiveSpellSchema,
+  })
+  .passthrough();
 export type OperationSelectOptionSpell = z.infer<typeof OperationSelectOptionSpellSchema>;
 
-export const OperationSelectOptionLanguageSchema = z.object({
-  id: z.string(),
-  type: z.literal('LANGUAGE'),
-  operation: OperationGiveLanguageSchema,
-});
+export const OperationSelectOptionLanguageSchema = z
+  .object({
+    id: z.string(),
+    type: z.literal('LANGUAGE'),
+    operation: OperationGiveLanguageSchema,
+  })
+  .passthrough();
 export type OperationSelectOptionLanguage = z.infer<typeof OperationSelectOptionLanguageSchema>;
 
-export const OperationSelectOptionAdjValueSchema = z.object({
-  id: z.string(),
-  type: z.literal('ADJ_VALUE'),
-  operation: OperationAdjValueSchema,
-});
+export const OperationSelectOptionAdjValueSchema = z
+  .object({
+    id: z.string(),
+    type: z.literal('ADJ_VALUE'),
+    operation: OperationAdjValueSchema,
+  })
+  .passthrough();
 export type OperationSelectOptionAdjValue = z.infer<typeof OperationSelectOptionAdjValueSchema>;
 
 // ─── Recursive types — must be declared manually for z.lazy() ────────────────
