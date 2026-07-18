@@ -72,4 +72,18 @@ SQL
 echo "==> Installing auth → public_user trigger"
 run_psql < "$SCRIPT_DIR/auth-trigger.sql"
 
+# 7. Apply migrations. schema.sql is a prod dump that lags whatever landed in
+#    supabase/migrations since the last db_dump.yml refresh, so replaying them
+#    is the only way local/CI matches prod (e.g. the secret-column grants, the
+#    content updated_at triggers). This must run LAST: step 5's blanket GRANT
+#    would undo any column-level grants a migration sets up.
+#    Requirement this imposes: every migration must stay re-runnable over a
+#    schema that already contains it (if not exists / or replace / revoke+grant),
+#    which all current migrations follow.
+echo "==> Applying migrations from supabase/migrations"
+for migration in "$SCRIPT_DIR"/../supabase/migrations/*.sql; do
+  echo "    -> $(basename "$migration")"
+  run_psql_quiet < "$migration"
+done
+
 echo "==> Done. Project schema and content data loaded."
