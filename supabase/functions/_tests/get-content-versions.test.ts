@@ -8,6 +8,12 @@ import { admin, assertSuccess, callFunction, seed, stackUnavailable, testUuid, w
 
 const skip = stackUnavailable();
 
+// The bot-path test drives the real update-content-update flow, which
+// authenticates the shared CONTENT_UPDATE_KEY. Skip (don't fail) when it isn't
+// configured, matching update-content-update.test.ts.
+const CONTENT_UPDATE_KEY = Deno.env.get('CONTENT_UPDATE_KEY') ?? '';
+const skipBot = skip || !CONTENT_UPDATE_KEY;
+
 /** Read a source's change token (updated_at) directly from the DB. */
 async function getSourceToken(sourceId: number): Promise<string> {
   const { data, error } = await admin
@@ -129,6 +135,124 @@ Deno.test({
       const { error: deleteError } = await admin.from('spell').delete().eq('id', spell.id);
       assert(!deleteError, `delete failed: ${deleteError?.message}`);
       assertNotEquals(await getSourceToken(sourceId), tokenAfterEdit, 'child DELETE must bump the source token');
+    });
+  },
+});
+
+Deno.test({
+  name: 'updated_at triggers: moving content between sources bumps BOTH source tokens',
+  ignore: skip,
+  async fn() {
+    const { userId } = await seed();
+
+    await withContentSource(userId, async (sourceA) => {
+      await withContentSource(userId, async (sourceB) => {
+        const spell = await insertTestSpell(sourceA, 'Migrating Spell');
+        const tokenA = await getSourceToken(sourceA);
+        const tokenB = await getSourceToken(sourceB);
+
+        const { error } = await admin.from('spell').update({ content_source_id: sourceB }).eq('id', spell.id);
+        assert(!error, `move failed: ${error?.message}`);
+
+        // The old source lost content and the new one gained it; subscribers of
+        // EITHER must see their cache invalidate.
+        assertNotEquals(await getSourceToken(sourceA), tokenA, 'old source must bump on move-out');
+        assertNotEquals(await getSourceToken(sourceB), tokenB, 'new source must bump on move-in');
+      });
+    });
+  },
+});
+
+Deno.test({
+  name: 'updated_at is server-owned: an echoed stale value via the HTTP create path is ignored',
+  ignore: skip,
+  async fn() {
+    const { userId, apiKey } = await seed();
+
+    await withContentSource(userId, async (sourceId) => {
+      // A client (or replayed payload) sending its own updated_at must never win:
+      // insertData strips it, so the column default stamps the row.
+      const poisoned = '2000-01-01T00:00:00+00:00';
+      const result = await callFunction(
+        'create-spell',
+        {
+          name: 'Echo Test Spell',
+          description: 'Test spell.',
+          rank: 1,
+          traditions: ['arcane'],
+          traits: [],
+          content_source_id: sourceId,
+          version: '1.0.0',
+          updated_at: poisoned,
+        },
+        { token: apiKey }
+      );
+      const created = assertSuccess<{ id: number }>(result, 'create-spell should succeed');
+
+      const { data: row } = await admin.from('spell').select('updated_at').eq('id', created.id).single();
+      assert(row?.updated_at, 'row should carry updated_at');
+      assertNotEquals(row.updated_at, poisoned, 'echoed updated_at must not be written');
+      assert(new Date(row.updated_at).getFullYear() >= 2026, 'updated_at must be a fresh server stamp');
+    });
+  },
+});
+
+Deno.test({
+  name: 'updated_at triggers: a real bot APPROVE apply bumps the source token and ignores an echoed stale updated_at',
+  ignore: skipBot,
+  async fn() {
+    const { userId } = await seed();
+
+    await withContentSource(userId, async (sourceId) => {
+      const { data: trait } = await admin
+        .from('trait')
+        .insert({ name: 'Token Before', description: 'old desc', content_source_id: sourceId, uuid: testUuid() })
+        .select()
+        .single();
+      assert(trait, 'seed trait');
+      const tokenBefore = await getSourceToken(sourceId);
+
+      // The bot replays stored full-row payloads, so a stale updated_at echo in
+      // the approved data is the realistic shape of the token-rewind hazard.
+      const poisoned = '2000-01-01T00:00:00+00:00';
+      const msgId = `test-cv-${crypto.randomUUID()}`;
+      const { data: cu, error: cuError } = await admin
+        .from('content_update')
+        .insert({
+          upvotes: [],
+          downvotes: [],
+          status: { state: 'PENDING' },
+          user_id: userId,
+          type: 'trait',
+          ref_id: trait.id,
+          content_source_id: sourceId,
+          action: 'UPDATE',
+          data: { name: 'Token After', description: 'new desc', updated_at: poisoned },
+          discord_msg_id: msgId,
+        })
+        .select()
+        .single();
+      assert(cu && !cuError, `seed content_update failed: ${cuError?.message}`);
+
+      try {
+        await callFunction(
+          'update-content-update',
+          { discord_msg_id: msgId, discord_user_id: 'mod-1', discord_user_name: 'Mod One', state: 'APPROVE' },
+          { token: CONTENT_UPDATE_KEY }
+        );
+
+        // Assert on DB state (the embeddings step may fail locally but runs after
+        // the writes commit), matching update-content-update.test.ts.
+        const { data: after } = await admin.from('trait').select('name, updated_at').eq('id', trait.id).single();
+        assertEquals(after?.name, 'Token After', 'bot apply should update the trait');
+        assertNotEquals(after?.updated_at, poisoned, 'echoed updated_at must not rewind the row');
+        assertNotEquals(after?.updated_at, trait.updated_at, 'bot apply must stamp the row');
+
+        assertNotEquals(await getSourceToken(sourceId), tokenBefore, 'bot apply must bump the source token');
+      } finally {
+        await admin.from('content_update').delete().eq('id', cu.id);
+        await admin.from('trait').delete().eq('id', trait.id);
+      }
     });
   },
 });
