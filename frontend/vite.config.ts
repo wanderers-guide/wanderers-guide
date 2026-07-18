@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { VitePWA, VitePWAOptions } from 'vite-plugin-pwa';
-import babel from '@rollup/plugin-babel';
 
 const manifestForPlugin: Partial<VitePWAOptions> = {
   registerType: 'prompt',
@@ -84,13 +83,11 @@ export default defineConfig({
       filename: 'stats.html',
     }),
     VitePWA(manifestForPlugin),
-    babel({
-      babelHelpers: 'bundled',
-      presets: [['@babel/preset-env', { targets: { ios: '15' } }]],
-      extensions: ['.ts', '.js', '.tsx'],
-    }),
   ],
   build: {
-    target: 'es2020',
+    // Was: a @babel/preset-env pass (targets ios15) running over the whole bundle on top
+    // of esbuild — a redundant second transpile. esbuild lowers syntax to the same target
+    // in a single pass; 'safari15' preserves the original iOS 15 support intent.
+    target: ['es2020', 'safari15'],
   },
 });
