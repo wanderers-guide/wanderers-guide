@@ -323,10 +323,29 @@ async function generateUserJWT(userId: string) {
   return jwt;
 }
 
+/**
+ * A service-role Supabase client (bypasses RLS and column grants). Use ONLY inside a
+ * function that has already validated the caller, and only to read/write rows the caller
+ * is entitled to. Needed since the public_user secret columns (api, patreon) are no longer
+ * SELECT-able by anon/authenticated over PostgREST — see migration
+ * 20260717000000_public_user_secret_columns — so a request-scoped client's all-column
+ * select of public_user would fail.
+ */
+export function createServiceClient(): SupabaseClient<any, 'public', any> {
+  return createClient(
+    // @ts-ignore
+    Deno.env.get('SUPABASE_URL') ?? '',
+    // @ts-ignore
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
+}
+
 export async function getPublicUser(
   client: SupabaseClient<any, 'public', any>,
   token: string
 ): Promise<PublicUser | null> {
+  // Validate the caller with the request-scoped client first: this establishes WHO is
+  // asking (and only succeeds for a genuine session token).
   const {
     data: { user },
   } = await client.auth.getUser(token);
@@ -335,7 +354,11 @@ export async function getPublicUser(
     return null;
   }
 
-  const results = await fetchData<PublicUser>(client, 'public_user', [
+  // Read the row with a service-role client, not the caller's — otherwise the all-column
+  // select would fail on the now-restricted api/patreon columns. Not an escalation: we
+  // only read the already-validated caller's own row (user.id above), and callers that
+  // don't need the secrets simply ignore them.
+  const results = await fetchData<PublicUser>(createServiceClient(), 'public_user', [
     { column: 'user_id', value: user?.id },
   ]);
 

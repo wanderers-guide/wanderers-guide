@@ -3,6 +3,7 @@ import { serve } from 'std/server';
 import type { Campaign } from '../_shared/content';
 import {
   connect,
+  createServiceClient,
   fetchData,
   getPublicUser,
   upsertData,
@@ -25,7 +26,12 @@ serve(async (req: Request) => {
       };
     }
 
-    const campaigns = await fetchData<Campaign>(client, 'campaign', [{ column: 'id', value: id }]);
+    // Read via service role: campaign's all-column select now fails on the restricted
+    // join_key column (migration 20260717000001). The explicit owner check just below
+    // still gates the operation, so this does not widen access.
+    const campaigns = await fetchData<Campaign>(createServiceClient(), 'campaign', [
+      { column: 'id', value: id },
+    ]);
     if (!campaigns || campaigns.length === 0) {
       return {
         status: 'error',

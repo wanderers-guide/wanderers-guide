@@ -4,6 +4,7 @@ import {
   TableName,
   connect,
   convertContentTypeToTableName,
+  createServiceClient,
   deleteData,
   deleteResponseWrapper,
   fetchData,
@@ -49,7 +50,13 @@ serve(async (req: Request) => {
       };
     }
 
-    const existingContents = await fetchData(client, tableName as TableName, [
+    // For campaign, read via service role: its all-column select now fails on the
+    // restricted join_key column (migration 20260717000001). Only this ownership-check
+    // read is elevated — the explicit permission check below still gates the delete, and
+    // the delete itself stays on the request-scoped client. Other content types are
+    // unaffected and keep reading with the request-scoped client.
+    const readClient = tableName === 'campaign' ? createServiceClient() : client;
+    const existingContents = await fetchData(readClient, tableName as TableName, [
       { column: 'id', value: id },
     ]);
     const existingContent = existingContents.length > 0 ? existingContents[0] : undefined;
