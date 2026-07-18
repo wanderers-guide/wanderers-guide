@@ -44,6 +44,28 @@ serve(async (req: Request) => {
       { column: 'join_key', value: join_key },
     ]);
 
+    // If the caller proved knowledge of a campaign's join key, record a short-lived join
+    // grant. The character_campaign_membership trigger (migration 20260718000000) reads
+    // this to authorize the subsequent character write that sets campaign_id — turning
+    // "knows the join key" into server-verified permission to join. The join flow already
+    // calls this endpoint with the key, so no client change is needed. Best-effort: a
+    // failed grant write must never break the lookup itself.
+    if (callerUserId && join_key) {
+      const grants = results
+        .filter((c) => c.join_key === join_key)
+        .map((c) => ({
+          user_id: callerUserId,
+          campaign_id: c.id,
+          granted_at: new Date().toISOString(),
+        }));
+      if (grants.length > 0) {
+        const { error } = await admin
+          .from('campaign_join_grant')
+          .upsert(grants, { onConflict: 'user_id,campaign_id' });
+        if (error) console.error('[find-campaign] join grant upsert failed:', error.message);
+      }
+    }
+
     // Only the owner, or a caller who already supplied the exact key, receives join_key.
     // Everyone else gets the campaign with the secret stripped.
     const sanitized = results.map((c) => {
