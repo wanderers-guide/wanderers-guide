@@ -1,4 +1,4 @@
-import { Icon, getAllIcons } from '@common/Icon';
+import { Icon, getAllIconsAsync } from '@common/Icon';
 import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 import classes from '@css/ActionsGrid.module.css';
 import {
@@ -37,10 +37,6 @@ export default function SelectIconModal({
   );
 }
 
-const fetchIcons = (offset: number, limit: number) => {
-  return getAllIcons().slice(offset, offset + limit);
-};
-
 export function SelectIconModalContents(props: {
   color?: string;
   onSelect: (option: string) => void;
@@ -50,24 +46,37 @@ export function SelectIconModalContents(props: {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
 
-  // Infinite scroll
-  const { ref, inViewport } = useInViewport();
-  const [icons, setIcons] = useState(fetchIcons(0, 30));
+  // The game-icon set loads lazily (it's ~6.6 MB). Fetch the full name list once the
+  // picker opens; until then, show the loader.
+  const [allIconNames, setAllIconNames] = useState<string[] | null>(null);
   useEffect(() => {
-    if (inViewport) {
-      const newIcons = fetchIcons(icons.length, 30);
-      setIcons((prev) => [...prev, ...newIcons]);
+    let active = true;
+    getAllIconsAsync().then((names) => {
+      if (active) setAllIconNames(names);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Infinite scroll — how many of the (non-search) list to show, grown as the sentinel
+  // scrolls into view.
+  const { ref, inViewport } = useInViewport();
+  const [visibleCount, setVisibleCount] = useState(30);
+  useEffect(() => {
+    if (inViewport && allIconNames) {
+      setVisibleCount((prev) => prev + 30);
     }
-  }, [inViewport]);
+  }, [inViewport, allIconNames]);
 
   // Display icons
   const isSearching = searchQuery.trim().length > 0;
   const displayIcons = (
-    isSearching
-      ? getAllIcons()
-          .filter((name) => name.toLowerCase().includes(searchQuery.toLowerCase()))
-          .slice(0, 30)
-      : icons
+    !allIconNames
+      ? []
+      : isSearching
+        ? allIconNames.filter((name) => name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 30)
+        : allIconNames.slice(0, visibleCount)
   ).map((name, index) => (
     <UnstyledButton
       key={index}

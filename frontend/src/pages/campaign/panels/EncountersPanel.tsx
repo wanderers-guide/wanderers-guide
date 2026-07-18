@@ -57,7 +57,7 @@ import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variab
 import { cloneDeep, debounce, isEqual, mean, truncate } from 'lodash-es';
 import { evaluate } from 'mathjs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { GiDiceTwentyFacesTwenty } from 'react-icons/gi';
+import { GiDiceTwentyFacesTwenty } from '@common/game-icons-inline';
 import { useAtom, useAtomValue } from 'jotai';
 import BlurBox from '@common/BlurBox';
 import ImprintButton from '@common/ImprintButton';

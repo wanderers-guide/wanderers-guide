@@ -42,7 +42,7 @@ import { setPageTitle } from '@utils/document-change';
 import { isPhoneSized, tabletQuery } from '@utils/mobile-responsive';
 import { cloneDeep, truncate } from 'lodash-es';
 import { Suspense, useEffect, useState } from 'react';
-import { GiRollingDices } from 'react-icons/gi';
+import { GiRollingDices } from '@common/game-icons-inline';
 import { useLoaderData } from 'react-router-dom';
 import classes from '@css/UserInfoIcons.module.css';
 import { getDefaultCampaignBackgroundImage } from '@utils/background-images';

@@ -1,4 +1,4 @@
-import React, { RefAttributes } from 'react';
+import React, { RefAttributes, useEffect, useReducer } from 'react';
 import {
   IconSphere,
   IconBrandThreejs,
@@ -129,12 +129,42 @@ import {
   IconUserCircle,
   IconProps as TablerIconsProps,
 } from '@tabler/icons-react';
-import * as GiIcons from 'react-icons/gi';
 import { IconType } from 'react-icons/lib';
-const allGameIcons = Object.entries(GiIcons).map(([name, Component]) => ({
-  name,
-  Component,
-}));
+
+// react-icons/gi is ~6.6 MB (4,040 icons). Previously `import * as GiIcons` pulled the
+// whole set into every module that imports this file (29 of them), landing it in the entry
+// chunk on every page load. Instead, load it lazily (a separate chunk), build the name map
+// once, and cache it. Tabler icons — the app chrome — still resolve synchronously below.
+let gameIconsCache: Record<string, IconType> | null = null;
+let gameIconsPromise: Promise<Record<string, IconType>> | null = null;
+const gameIconSubscribers = new Set<() => void>();
+
+/** Load + cache the game-icon set once. Notifies mounted <GameIcon>s when it resolves. */
+export function loadGameIcons(): Promise<Record<string, IconType>> {
+  if (gameIconsCache) return Promise.resolve(gameIconsCache);
+  gameIconsPromise ??= import('react-icons/gi').then((mod) => {
+    const map: Record<string, IconType> = {};
+    for (const [rawName, Component] of Object.entries(mod)) {
+      // Strip the leading 'Gi' and lowercase, matching the previous naming.
+      map[rawName.slice(2).toLowerCase()] = Component as IconType;
+    }
+    gameIconsCache = map;
+    gameIconSubscribers.forEach((cb) => cb());
+    return map;
+  });
+  return gameIconsPromise;
+}
+
+// Preload during idle time so game icons in content are usually ready before they render,
+// without blocking the initial critical path (the reason for splitting them out).
+if (typeof window !== 'undefined') {
+  const w = window as unknown as {
+    requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void;
+  };
+  const preload = () => void loadGameIcons();
+  if (typeof w.requestIdleCallback === 'function') w.requestIdleCallback(preload, { timeout: 3000 });
+  else setTimeout(preload, 2000);
+}
 
 // Tabler Icons
 const tablerIcons: Record<string, React.FC<TablerIconsProps>> = {
@@ -267,31 +297,58 @@ const tablerIcons: Record<string, React.FC<TablerIconsProps>> = {
   treemap: IconChartTreemap,
 };
 
-// Game Icons
-const gameIcons: Record<string, IconType> = {};
-allGameIcons.forEach(({ name, Component }) => {
-  // remove first two letters 'Gi' from name
-  name = name.slice(2);
-  name = name.toLowerCase();
-  gameIcons[name] = Component;
-});
-
 interface IconProps extends Partial<IconType>, Partial<TablerIconsProps> {
   name: string;
 }
 export const Icon = ({ name, ...restProps }: IconProps) => {
-  const IconComponent = tablerIcons[name] || gameIcons[name] || null;
-
-  if (!IconComponent) {
-    console.warn(`Icon "${name}" not found`);
-    return null;
+  // Tabler icons (the app chrome) resolve synchronously — the common case.
+  const TablerComponent = tablerIcons[name];
+  if (TablerComponent) {
+    return <TablerComponent {...restProps} />;
   }
-
-  restProps.style;
-
-  return <IconComponent {...restProps} />;
+  // Otherwise it's a game icon, resolved from the lazily-loaded gi set.
+  return <GameIcon name={name} {...restProps} />;
 };
 
+/** Renders a game icon once the (lazy) gi set has loaded; nothing until then. */
+function GameIcon({ name, ...restProps }: IconProps) {
+  const [, rerender] = useReducer((n: number) => n + 1, 0);
+
+  useEffect(() => {
+    if (gameIconsCache) return; // already available — no need to subscribe
+    const onLoaded = () => rerender();
+    gameIconSubscribers.add(onLoaded);
+    void loadGameIcons();
+    return () => {
+      gameIconSubscribers.delete(onLoaded);
+    };
+  }, []);
+
+  // Cast to a permissive component type: IconProps mixes Tabler + react-icons prop types
+  // (e.g. Tabler's numeric `stroke` vs react-icons' string), which the original single
+  // union component tolerated. Runtime behavior is unchanged.
+  const IconComponent = gameIconsCache?.[name] as React.FC<Record<string, unknown>> | undefined;
+  if (!IconComponent) {
+    // Only warn once the set has actually loaded — before that, a miss just means
+    // "not ready yet", not "unknown icon".
+    if (gameIconsCache) console.warn(`Icon "${name}" not found`);
+    return null;
+  }
+  return <IconComponent {...restProps} />;
+}
+
+/**
+ * All icon names known RIGHT NOW — Tabler names plus game names if the gi set has already
+ * loaded. Used where a sync answer is needed (e.g. picking a random default). Prefer
+ * getAllIconsAsync when the complete set matters.
+ */
 export function getAllIcons() {
-  return Object.keys(tablerIcons).concat(Object.keys(gameIcons)).sort();
+  const gameNames = gameIconsCache ? Object.keys(gameIconsCache) : [];
+  return Object.keys(tablerIcons).concat(gameNames).sort();
+}
+
+/** Ensures the game-icon set is loaded, then returns the complete name list (for the picker). */
+export async function getAllIconsAsync() {
+  await loadGameIcons();
+  return getAllIcons();
 }
