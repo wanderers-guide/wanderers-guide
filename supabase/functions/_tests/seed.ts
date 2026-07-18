@@ -134,16 +134,25 @@ export async function callFunction(
   // loaded CI runner that first call can 5xx with a boot error even though the stack
   // is healthy, which made e2e flaky (a test would fail on whichever function it hit
   // first). Retry 5xx a couple times with a pause; real assertions run on the reply.
+  // A dying cold worker can also cut the connection mid-response, which surfaces as a
+  // THROWN TypeError from fetch()/res.text() rather than a 5xx status ("error reading
+  // a body from connection") — treat that exactly like a boot 5xx and retry it too.
   const MAX_TRIES = 3;
   let res: Response = undefined as unknown as Response;
   let text = '';
   for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
-    res = await fetch(`${FUNCTIONS_URL}/${name}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body ?? {}),
-    });
-    text = await res.text();
+    try {
+      res = await fetch(`${FUNCTIONS_URL}/${name}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body ?? {}),
+      });
+      text = await res.text();
+    } catch (err) {
+      if (attempt === MAX_TRIES) throw err;
+      await new Promise((r) => setTimeout(r, 1500 * attempt));
+      continue;
+    }
     if (res.status < 500 || attempt === MAX_TRIES) break;
     await new Promise((r) => setTimeout(r, 1500 * attempt));
   }
