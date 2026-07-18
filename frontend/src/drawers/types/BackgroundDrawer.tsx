@@ -8,6 +8,7 @@ import { Anchor, Box, Button, Group, Image, Loader, Stack, Text, Title, useManti
 import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 import { OperationResult } from '@schemas/operations';
 import { useQuery } from '@tanstack/react-query';
+import DrawerLoadState from '@drawers/DrawerLoadState';
 import { Background, Character } from '@schemas/content';
 import { DrawerType } from '@schemas/index';
 import { getStatBlockDisplay } from '@variables/initial-stats-display';
@@ -24,7 +25,7 @@ export function BackgroundDrawerTitle(props: {
 
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const { data: _background } = useQuery({
+  const { data: _background, isFetching, refetch } = useQuery({
     queryKey: [`find-background-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -72,7 +73,7 @@ export function BackgroundDrawerContent(props: {
 }) {
   const id = props.data.id;
 
-  const { data } = useQuery({
+  const { data, isFetching, refetch } = useQuery({
     queryKey: [`find-background-details-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -89,15 +90,7 @@ export function BackgroundDrawerContent(props: {
 
   if (!data || !data.background) {
     return (
-      <Loader
-        type='bars'
-        style={{
-          position: 'absolute',
-          top: '35%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}
-      />
+      <DrawerLoadState loading={isFetching} onRetry={refetch} />
     );
   }
 

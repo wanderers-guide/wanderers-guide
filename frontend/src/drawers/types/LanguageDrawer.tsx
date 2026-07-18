@@ -6,12 +6,13 @@ import { fetchContentById } from '@content/content-store';
 import ShowInjectedText from '@drawers/ShowInjectedText';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
+import DrawerLoadState from '@drawers/DrawerLoadState';
 import { AbilityBlock, Language } from '@schemas/content';
 
 export function LanguageDrawerTitle(props: { data: { id?: number; language?: Language } }) {
   const id = props.data.id;
 
-  const { data: _language } = useQuery({
+  const { data: _language, isFetching, refetch } = useQuery({
     queryKey: [`find-language-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -44,7 +45,7 @@ export function LanguageDrawerTitle(props: { data: { id?: number; language?: Lan
 export function LanguageDrawerContent(props: { data: { id?: number; language?: Language } }) {
   const id = props.data.id;
 
-  const { data: _language } = useQuery({
+  const { data: _language, isFetching, refetch } = useQuery({
     queryKey: [`find-language-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -58,15 +59,7 @@ export function LanguageDrawerContent(props: { data: { id?: number; language?: L
 
   if (!language) {
     return (
-      <Loader
-        type='bars'
-        style={{
-          position: 'absolute',
-          top: '35%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}
-      />
+      <DrawerLoadState loading={isFetching} onRetry={refetch} />
     );
   }
 

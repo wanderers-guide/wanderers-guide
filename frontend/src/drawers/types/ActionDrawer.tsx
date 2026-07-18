@@ -18,6 +18,7 @@ import {
   sortObjectByName,
 } from '@operations/operation-utils';
 import { useQuery } from '@tanstack/react-query';
+import DrawerLoadState from '@drawers/DrawerLoadState';
 import { AbilityBlock } from '@schemas/content';
 import { Operation, OperationSelect, OperationSelectFilters, OperationSelectOptionCustom } from '@schemas/operations';
 import { toLabel } from '@utils/strings';
@@ -32,7 +33,7 @@ export function ActionDrawerTitle(props: { data: { id?: number; action?: Ability
 
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const { data: _action } = useQuery({
+  const { data: _action, isFetching, refetch } = useQuery({
     queryKey: [`find-action-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -81,7 +82,7 @@ export function ActionDrawerTitle(props: { data: { id?: number; action?: Ability
 export function ActionDrawerContent(props: { data: { id?: number; action?: AbilityBlock; showOperations?: boolean } }) {
   const id = props.data.id;
 
-  const { data: _action } = useQuery({
+  const { data: _action, isFetching, refetch } = useQuery({
     queryKey: [`find-action-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -95,15 +96,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
 
   if (!action) {
     return (
-      <Loader
-        type='bars'
-        style={{
-          position: 'absolute',
-          top: '35%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}
-      />
+      <DrawerLoadState loading={isFetching} onRetry={refetch} />
     );
   }
 

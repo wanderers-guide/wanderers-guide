@@ -12,6 +12,7 @@ import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@m
 import { getEntityLevel } from '@utils/entity-utils';
 import { isCantrip, isFocusSpell, isRitual } from '@spells/spell-utils';
 import { useQuery } from '@tanstack/react-query';
+import DrawerLoadState from '@drawers/DrawerLoadState';
 import { AbilityBlock, LivingEntity, Spell } from '@schemas/content';
 import { convertCastToActionCost } from '@utils/actions';
 import { toLabel } from '@utils/strings';
@@ -23,7 +24,7 @@ export function SpellDrawerTitle(props: { data: { id?: number; spell?: Spell; en
   const _character = useAtomValue(characterState);
   const entity = props.data.entity ?? _character;
 
-  const { data: _spell } = useQuery({
+  const { data: _spell, isFetching, refetch } = useQuery({
     queryKey: [`find-spell-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -82,7 +83,7 @@ export function SpellDrawerTitle(props: { data: { id?: number; spell?: Spell; en
 export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell } }) {
   const id = props.data.id;
 
-  const { data: _spell } = useQuery({
+  const { data: _spell, isFetching, refetch } = useQuery({
     queryKey: [`find-spell-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -96,15 +97,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
 
   if (!spell) {
     return (
-      <Loader
-        type='bars'
-        style={{
-          position: 'absolute',
-          top: '35%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}
-      />
+      <DrawerLoadState loading={isFetching} onRetry={refetch} />
     );
   }
 

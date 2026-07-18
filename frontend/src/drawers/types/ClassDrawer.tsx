@@ -44,6 +44,7 @@ import {
   IconVocabulary,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
+import DrawerLoadState from '@drawers/DrawerLoadState';
 import { AbilityBlock, Character, Class } from '@schemas/content';
 import { OperationSelect } from '@schemas/operations';
 import { getDisplay, getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
@@ -58,7 +59,7 @@ export function ClassDrawerTitle(props: { data: { id?: number; class_?: Class; o
 
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const { data: _class_ } = useQuery({
+  const { data: _class_, isFetching, refetch } = useQuery({
     queryKey: [`find-class-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -106,7 +107,7 @@ export function ClassDrawerContent(props: {
 }) {
   const id = props.data.id;
 
-  const { data } = useQuery({
+  const { data, isFetching, refetch } = useQuery({
     queryKey: [`find-class-details-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -184,15 +185,7 @@ export function ClassDrawerContent(props: {
 
   if (!data || !data.class_ || !data.abilityBlocks) {
     return (
-      <Loader
-        type='bars'
-        style={{
-          position: 'absolute',
-          top: '35%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}
-      />
+      <DrawerLoadState loading={isFetching} onRetry={refetch} />
     );
   }
 
