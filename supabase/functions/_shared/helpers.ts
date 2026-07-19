@@ -751,10 +751,13 @@ export async function insertData<T = Record<string, any>>(
     data.name = data.name.replace(/’/g, "'");
   }
 
-  // Delete forbidden keys
+  // Delete forbidden keys. updated_at is server-owned (trigger-maintained, see
+  // migration 20260718000000): an echoed stale value must never override the
+  // column default or the trigger's stamp.
   delete data.id;
   delete data.created_at;
   delete data.version;
+  delete data.updated_at;
 
   const { data: insertedData, error } = await client.from(tableName).insert(data).select();
   if (error) {
@@ -862,11 +865,14 @@ export async function updateData(
     delete data.uuid;
   }
 
-  // Delete forbidden keys
+  // Delete forbidden keys. updated_at is server-owned (trigger-maintained, see
+  // migration 20260718000000): the bot replays stored full-row payloads, and an
+  // echoed stale timestamp must never rewind a source's change token.
   delete data.id;
   delete data.created_at;
   delete data.content_source_id;
   delete data.user_id;
+  delete data.updated_at;
 
   let error: any = null;
   let dataResult: any = null;

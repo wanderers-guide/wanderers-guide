@@ -238,6 +238,9 @@ verify_jwt = false
 [functions.get-content-source-stats]
 verify_jwt = false
 
+[functions.get-content-versions]
+verify_jwt = false
+
 [functions.get-user]
 verify_jwt = false
 

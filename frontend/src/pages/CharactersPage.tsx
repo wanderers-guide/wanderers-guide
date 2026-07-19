@@ -69,6 +69,7 @@ import { useAtom, useAtomValue } from 'jotai';
 export function Component() {
   setPageTitle(`Characters`);
   const session = useAtomValue(sessionState);
+  const queryClient = useQueryClient();
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: [`find-character`],
@@ -124,6 +125,12 @@ export function Component() {
   const handleCreateCharacter = async () => {
     const character = await createCharacter();
     if (character) {
+      // We navigate away immediately, so the list query stays cached. With the
+      // global staleTime (main.tsx), coming back within that window would render
+      // the pre-creation list — the new character invisible for up to a minute
+      // (and the e2e cleanup, which returns here to delete it, never finds it).
+      // Mark the list stale so the next mount refetches.
+      queryClient.invalidateQueries({ queryKey: ['find-character'] });
       navigate(`/builder/${character.id}`);
     }
     setLoadingCreateCharacter(false);

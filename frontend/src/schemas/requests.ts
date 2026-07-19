@@ -47,6 +47,7 @@ export const RequestTypeSchema = z.enum([
   'create-content-update',
   'find-content-update',
   'get-content-source-stats',
+  'get-content-versions',
   'find-encounter',
   'create-encounter',
   'find-campaign',

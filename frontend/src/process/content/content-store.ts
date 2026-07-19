@@ -144,10 +144,13 @@ function setStoredIds(type: ContentType, data: Record<string, any>, value: any) 
 
 const CONTENT_CACHE_KEY = 'content-store';
 // Bump to invalidate every client's persisted cache (e.g. when the content shape changes).
-const CONTENT_CACHE_VERSION = 1;
-// How long a persisted cache is trusted before it's dropped and re-fetched. Content changes
-// rarely; this bounds how stale a cached client can be (and resetContentStore() clears it on demand).
-const CONTENT_CACHE_TTL_MS = 1000 * 60 * 60 * 9; // 9h
+// v2: source rows carry the updated_at change token; v1 blobs predate it and would fail
+// every freshness check, so retire them once via the version gate instead.
+const CONTENT_CACHE_VERSION = 2;
+// Backstop only: staleness is normally caught by the per-source change-token check against
+// get-content-versions on load (see verifyPersistedContentVersions). The TTL exists for the
+// cases where that check cannot run (offline, endpoint unreachable, >500 sources).
+const CONTENT_CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24h
 
 type PersistedContentCache = {
   version: number;
@@ -160,6 +163,52 @@ type PersistedContentCache = {
 // lookups share a single in-flight request instead of each hitting the network.
 const inFlightFetches = new Map<string, Promise<any>>();
 
+// One freshness verdict per page load. resetContentStore() re-arms hydration (App mount
+// plus several pages call it), so without memoization every re-hydration would fire its
+// own network check — and a re-hydration racing an in-flight 'stale' verdict could fill
+// the stores from a blob the check is about to condemn. Blobs persisted during THIS page
+// lifetime (savedAt >= PAGE_LOAD_AT) are fresh-from-network by construction and skip the
+// check entirely.
+const PAGE_LOAD_AT = Date.now();
+let versionCheckPromise: Promise<'ok' | 'stale'> | null = null;
+
+/**
+ * Compare a persisted blob's per-source change tokens against the server.
+ *
+ * Each cached content-source row carries `updated_at` — a token the DB bumps whenever
+ * that source OR any content inside it changes (migration 20260718000000). One tiny
+ * request (~5 KB) answers "did anything I cached change?" without downloading content.
+ *
+ * Fail-open by design: if the check cannot run or errors (offline, endpoint not yet
+ * deployed, migration not yet applied), the cache is trusted and the TTL remains the
+ * backstop — this is what makes every rollout order safe. A cached source with NO token
+ * (pre-migration blob) compares as `undefined` vs a server string and reads as stale.
+ */
+async function verifyPersistedContentVersions(rec: PersistedContentCache): Promise<'ok' | 'stale'> {
+  const sourceMap = rec.idStore instanceof Map ? rec.idStore.get('content-source') : undefined;
+  const sources = sourceMap instanceof Map ? ([...sourceMap.values()].filter(isTruthy) as ContentSource[]) : [];
+  // Nothing to compare against (or too many for one call): fall back to the TTL.
+  if (sources.length === 0 || sources.length > 500) return 'ok';
+
+  const result = await makeRequest<{ id: number; updated_at: string }[]>(
+    'get-content-versions',
+    { ids: sources.map((s) => s.id) },
+    false
+  );
+  if (!Array.isArray(result)) return 'ok';
+
+  const serverTokens = new Map(result.map((r) => [r.id, r.updated_at]));
+  for (const source of sources) {
+    // Missing on the server = the source was deleted; token mismatch = something in it
+    // changed. Raw string comparison on purpose — tokens are opaque, never date-parsed.
+    if (serverTokens.get(source.id) !== source.updated_at) {
+      console.log('[CONTENT-CACHE] Source', source.id, 'changed on the server; dropping persisted cache');
+      return 'stale';
+    }
+  }
+  return 'ok';
+}
+
 async function hydrateContentCache(): Promise<void> {
   try {
     const rec = await idbGet<PersistedContentCache>(CONTENT_CACHE_KEY);
@@ -167,6 +216,21 @@ async function hydrateContentCache(): Promise<void> {
     if (rec.version !== CONTENT_CACHE_VERSION || Date.now() - rec.savedAt > CONTENT_CACHE_TTL_MS) {
       await idbDelete(CONTENT_CACHE_KEY);
       return;
+    }
+    // Freshness gate: only hydrate a blob from a previous page load after its change
+    // tokens check out against the server (see verifyPersistedContentVersions).
+    if (rec.savedAt < PAGE_LOAD_AT) {
+      versionCheckPromise ??= verifyPersistedContentVersions(rec);
+      if ((await versionCheckPromise) === 'stale') {
+        // Re-read before deleting: a slow check can lose the race against a fresh
+        // persist (network fetch + the 10s debounce), and deleting THAT blob would
+        // force a pointless cold load on the next visit.
+        const current = await idbGet<PersistedContentCache>(CONTENT_CACHE_KEY);
+        if (current && current.savedAt === rec.savedAt) {
+          await idbDelete(CONTENT_CACHE_KEY);
+        }
+        return;
+      }
     }
     // Fill the in-memory maps WITHOUT overwriting anything already present. Hydration can
     // resolve after a network fetch has already populated fresher data (it races a 2.5s

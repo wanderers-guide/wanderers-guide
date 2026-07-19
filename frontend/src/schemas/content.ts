@@ -60,6 +60,7 @@ export type {
 export const TraitSchema = z.object({
   id: z.number(),
   created_at: z.string(),
+  updated_at: z.string().optional(),
   name: z.string(),
   description: z.string(),
   meta_data: z
@@ -136,6 +137,7 @@ export type CastingSource = z.infer<typeof CastingSourceSchema>;
 export interface Item {
   id: number;
   created_at: string;
+  updated_at?: string;
   name: string;
   price: { cp?: number | string; sp?: number | string; gp?: number | string; pp?: number | string } | null;
   bulk: string | null;
@@ -211,6 +213,7 @@ export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
   z.object({
     id: z.number(),
     created_at: z.string(),
+    updated_at: z.string().optional(),
     name: z.string(),
     price: z
       .object({
@@ -380,6 +383,7 @@ export type Inventory = z.infer<typeof InventorySchema>;
 export const SpellSchema = z.object({
   id: z.number(),
   created_at: z.string(),
+  updated_at: z.string().optional(),
   name: z.string(),
   rank: z.number(),
   traditions: z.array(z.string()),
@@ -423,6 +427,7 @@ export type Spell = z.infer<typeof SpellSchema>;
 export const AbilityBlockSchema = z.object({
   id: z.number(),
   created_at: z.string(),
+  updated_at: z.string().optional(),
   operations: z.array(OperationSchema).nullable(),
   name: z.string(),
   actions: ActionCostSchema,
@@ -459,6 +464,7 @@ export type AbilityBlock = z.infer<typeof AbilityBlockSchema>;
 export const ClassSchema = z.object({
   id: z.number(),
   created_at: z.string(),
+  updated_at: z.string().optional(),
   name: z.string(),
   rarity: RaritySchema,
   description: z.string(),
@@ -477,6 +483,7 @@ export type Class = z.infer<typeof ClassSchema>;
 export const ClassArchetypeSchema = z.object({
   id: z.number(),
   created_at: z.string(),
+  updated_at: z.string().optional(),
   class_id: z.number(),
   archetype_id: z.number().nullable(),
   name: z.string(),
@@ -507,6 +514,7 @@ export type ClassArchetype = z.infer<typeof ClassArchetypeSchema>;
 export const ArchetypeSchema = z.object({
   id: z.number(),
   created_at: z.string(),
+  updated_at: z.string().optional(),
   name: z.string(),
   rarity: RaritySchema,
   description: z.string(),
@@ -524,6 +532,7 @@ export type Archetype = z.infer<typeof ArchetypeSchema>;
 export const VersatileHeritageSchema = z.object({
   id: z.number(),
   created_at: z.string(),
+  updated_at: z.string().optional(),
   name: z.string(),
   rarity: RaritySchema,
   description: z.string(),
@@ -541,6 +550,7 @@ export type VersatileHeritage = z.infer<typeof VersatileHeritageSchema>;
 export const AncestrySchema = z.object({
   id: z.number(),
   created_at: z.string(),
+  updated_at: z.string().optional(),
   name: z.string(),
   rarity: RaritySchema,
   description: z.string(),
@@ -558,6 +568,7 @@ export type Ancestry = z.infer<typeof AncestrySchema>;
 export const BackgroundSchema = z.object({
   id: z.number(),
   created_at: z.string(),
+  updated_at: z.string().optional(),
   name: z.string(),
   rarity: RaritySchema,
   description: z.string(),
@@ -574,6 +585,7 @@ export type Background = z.infer<typeof BackgroundSchema>;
 export const LanguageSchema = z.object({
   id: z.number(),
   created_at: z.string(),
+  updated_at: z.string().optional(),
   name: z.string(),
   speakers: z.string().nullable(),
   script: z.string().nullable(),
@@ -750,6 +762,7 @@ export type LivingEntity = z.infer<typeof LivingEntitySchema>;
 export const CreatureSchema = LivingEntitySchema.extend({
   id: z.number(),
   created_at: z.string(),
+  updated_at: z.string().optional(),
   rarity: RaritySchema,
   details: z.object({
     image_url: z.string().optional(),
@@ -996,6 +1009,11 @@ export type PublicUser = z.infer<typeof PublicUserSchema>;
 export const ContentSourceSchema = z.object({
   id: z.number(),
   created_at: z.string(),
+  // Server-maintained change token (trigger-bumped on any edit to the source or its
+  // contents; migration 20260718000000). The persisted content cache compares these
+  // against get-content-versions on load, so this field MUST survive validation --
+  // zod strips unknown keys. Optional: embedded legacy snapshots predate the column.
+  updated_at: z.string().optional(),
   name: z.string(),
   foundry_id: z.string().nullable(),
   url: z.string().nullable(),

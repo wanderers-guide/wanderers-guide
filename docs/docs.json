@@ -38,6 +38,7 @@
 					"api-reference/content/find-trait",
 					"api-reference/content/find-versatile-heritage",
 					"api-reference/content/find-content-source",
+					"api-reference/content/get-content-versions",
 					"api-reference/content/find-content-update",
 					"api-reference/content/create-spell",
 					"api-reference/content/create-item",
