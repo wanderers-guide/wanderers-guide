@@ -8,13 +8,36 @@ import { FUNCTIONS_URL, seed, stackUnavailable } from './seed.ts';
 
 const skip = stackUnavailable();
 
+/**
+ * Raw fetch with the same cold-worker retry as callFunction in seed.ts. These
+ * tests can't use callFunction (it consumes the body and discards the Response,
+ * and the headers are the whole point here), so they need their own guard: a
+ * booting edge worker can 5xx or cut the connection before the limiter runs.
+ * Retries boot 5xxs and thrown network errors; returns the first real reply.
+ */
+async function rawFetchWithRetry(init: RequestInit): Promise<Response> {
+  const MAX_TRIES = 3;
+  let res: Response | null = null;
+  for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
+    try {
+      res = await fetch(`${FUNCTIONS_URL}/find-spell`, init);
+      if (res.status < 500 || attempt === MAX_TRIES) return res;
+      await res.body?.cancel();
+    } catch (err) {
+      if (attempt === MAX_TRIES) throw err;
+    }
+    await new Promise((r) => setTimeout(r, 1500 * attempt));
+  }
+  return res!;
+}
+
 Deno.test({
   name: 'rate-limit: every response carries X-RateLimit-* headers',
   ignore: skip,
   async fn() {
     const { apiKey } = await seed();
     // The plain fetch (not callFunction) lets us read the headers.
-    const res = await fetch(`${FUNCTIONS_URL}/find-spell`, {
+    const res = await rawFetchWithRetry({
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -37,7 +60,7 @@ Deno.test({
   ignore: skip,
   async fn() {
     const fakeKey = '00000000-0000-0000-0000-000000000001';
-    const res = await fetch(`${FUNCTIONS_URL}/find-spell`, {
+    const res = await rawFetchWithRetry({
       method: 'POST',
       headers: {
         Authorization: `Bearer ${fakeKey}`,
