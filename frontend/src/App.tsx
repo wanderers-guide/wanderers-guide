@@ -98,18 +98,13 @@ export default function App() {
       setSession(session);
       // Cold load with a dead session (expired from inactivity while the tab was
       // closed): supabase-js clears its stored session without a SIGNED_OUT event,
-      // so catch the "cached user but no session" mismatch here too.
+      // so catch the "cached user but no session" mismatch here too. Clear silently,
+      // with no toast: the page renders signed-out from the very first paint, so
+      // announcing "you've been signed out" on arrival is just noise. (The mid-visit
+      // expiry paths below still notify, because there the user may be mid-edit with
+      // unsaved work at stake.)
       if (!session && getCachedPublicUser()) {
         clearUserData();
-        if (!window.location.pathname.startsWith('/login')) {
-          showNotification({
-            id: 'session-expired',
-            title: 'Session expired',
-            message: 'You have been signed out due to inactivity. Please sign in again to save your changes.',
-            color: 'yellow',
-            autoClose: false,
-          });
-        }
       }
     });
 

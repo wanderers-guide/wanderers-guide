@@ -156,6 +156,11 @@
         "properties": {
           "id": { "type": "integer" },
           "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-maintained change timestamp, bumped by a database trigger on every real edit. Lets clients detect content changes."
+          },
           "name": { "type": "string" },
           "description": { "type": "string" },
           "content_source_id": { "type": "integer" },
@@ -179,6 +184,11 @@
         "properties": {
           "id": { "type": "integer" },
           "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-maintained change timestamp, bumped by a database trigger on every real edit. Lets clients detect content changes."
+          },
           "name": { "type": "string" },
           "rank": { "type": "integer", "minimum": 0, "maximum": 10 },
           "traditions": { "type": "array", "items": { "type": "string" } },
@@ -207,6 +217,11 @@
         "properties": {
           "id": { "type": "integer" },
           "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-maintained change timestamp, bumped by a database trigger on every real edit. Lets clients detect content changes."
+          },
           "name": { "type": "string" },
           "price": {
             "type": "object",
@@ -240,6 +255,11 @@
         "properties": {
           "id": { "type": "integer" },
           "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-maintained change timestamp, bumped by a database trigger on every real edit. Lets clients detect content changes."
+          },
           "operations": { "type": "array", "items": { "$ref": "#/components/schemas/Operation" } },
           "name": { "type": "string" },
           "actions": { "$ref": "#/components/schemas/ActionCost" },
@@ -267,6 +287,11 @@
         "properties": {
           "id": { "type": "integer" },
           "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-maintained change timestamp, bumped by a database trigger on every real edit. Lets clients detect content changes."
+          },
           "name": { "type": "string" },
           "rarity": { "$ref": "#/components/schemas/Rarity" },
           "description": { "type": "string" },
@@ -283,6 +308,11 @@
         "properties": {
           "id": { "type": "integer" },
           "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-maintained change timestamp, bumped by a database trigger on every real edit. Lets clients detect content changes."
+          },
           "name": { "type": "string" },
           "rarity": { "$ref": "#/components/schemas/Rarity" },
           "description": { "type": "string" },
@@ -297,6 +327,11 @@
         "properties": {
           "id": { "type": "integer" },
           "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-maintained change timestamp, bumped by a database trigger on every real edit. Lets clients detect content changes."
+          },
           "name": { "type": "string" },
           "rarity": { "$ref": "#/components/schemas/Rarity" },
           "description": { "type": "string" },
@@ -314,6 +349,11 @@
         "properties": {
           "id": { "type": "integer" },
           "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-maintained change timestamp, bumped by a database trigger on every real edit. Lets clients detect content changes."
+          },
           "class_id": { "type": "integer" },
           "archetype_id": { "type": "integer" },
           "name": { "type": "string" },
@@ -346,6 +386,11 @@
         "properties": {
           "id": { "type": "integer" },
           "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-maintained change timestamp, bumped by a database trigger on every real edit. Lets clients detect content changes."
+          },
           "name": { "type": "string" },
           "rarity": { "$ref": "#/components/schemas/Rarity" },
           "description": { "type": "string" },
@@ -362,6 +407,11 @@
         "properties": {
           "id": { "type": "integer" },
           "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-maintained change timestamp, bumped by a database trigger on every real edit. Lets clients detect content changes."
+          },
           "name": { "type": "string" },
           "rarity": { "$ref": "#/components/schemas/Rarity" },
           "description": { "type": "string" },
@@ -378,6 +428,11 @@
         "properties": {
           "id": { "type": "integer" },
           "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-maintained change timestamp, bumped by a database trigger on every real edit. Lets clients detect content changes."
+          },
           "name": { "type": "string" },
           "speakers": { "type": "string" },
           "script": { "type": "string" },
@@ -393,6 +448,11 @@
         "properties": {
           "id": { "type": "integer" },
           "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-maintained change timestamp, bumped by a database trigger on every real edit. Lets clients detect content changes."
+          },
           "name": { "type": "string" },
           "level": { "type": "integer" },
           "rarity": { "$ref": "#/components/schemas/Rarity" },
@@ -511,6 +571,11 @@
         "properties": {
           "id": { "type": "integer" },
           "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-maintained change timestamp, bumped by a database trigger on every real edit. Lets clients detect content changes."
+          },
           "name": { "type": "string" },
           "foundry_id": { "type": "string" },
           "url": { "type": "string" },
@@ -2503,6 +2568,59 @@
                       "properties": {
                         "source": { "$ref": "#/components/schemas/ContentSource" },
                         "count": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/get-content-versions": {
+      "post": {
+        "tags": ["Content"],
+        "summary": "Get content source change tokens",
+        "description": "Returns the server-maintained `updated_at` change token for each requested content source. Clients that persist the content corpus locally compare these tokens against their cached copies on page load and refetch when any differ. The response is intentionally minimal (id and updated_at only) so warm-cache page loads stay cheap.",
+        "operationId": "getContentVersions",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["ids"],
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": { "type": "integer" },
+                    "minItems": 1,
+                    "maxItems": 500,
+                    "description": "Content source ids to check (at most 500)."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["success"] },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "updated_at": { "type": "string", "format": "date-time" }
+                        }
                       }
                     }
                   }

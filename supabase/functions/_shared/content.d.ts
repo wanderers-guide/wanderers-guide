@@ -105,6 +105,7 @@ interface PublicUser {
 interface Trait {
   id: number;
   created_at: string;
+  updated_at?: string;
   name: string;
   description: string;
   meta_data?: {
@@ -145,6 +146,7 @@ interface ContentUpdate {
 interface Item {
   id: number;
   created_at: string;
+  updated_at?: string;
   name: string;
   price?: {
     cp?: number;
@@ -172,6 +174,7 @@ interface Item {
 interface Spell {
   id: number;
   created_at: string;
+  updated_at?: string;
   name: string;
   rank: number;
   traditions: string[];
@@ -197,6 +200,7 @@ interface Spell {
 interface Class {
   id: number;
   created_at: string;
+  updated_at?: string;
   name: string;
   rarity: Rarity;
   description: string;
@@ -211,6 +215,7 @@ interface Class {
 interface ClassArchetype {
   id: number;
   created_at: string;
+  updated_at?: string;
   class_id: number;
   archetype_id?: number;
   name: string;
@@ -234,6 +239,7 @@ interface ClassArchetype {
 interface Archetype {
   id: number;
   created_at: string;
+  updated_at?: string;
   name: string;
   rarity: Rarity;
   description: string;
@@ -247,6 +253,7 @@ interface Archetype {
 interface VersatileHeritage {
   id: number;
   created_at: string;
+  updated_at?: string;
   name: string;
   rarity: Rarity;
   description: string;
@@ -260,6 +267,7 @@ interface VersatileHeritage {
 interface AbilityBlock {
   id: number;
   created_at: string;
+  updated_at?: string;
   operations?: Operation[];
   name: string;
   actions: ActionCost;
@@ -342,6 +350,7 @@ interface LivingEntity {
 interface Creature extends LivingEntity {
   id: number;
   created_at: string;
+  updated_at?: string;
   rarity: Rarity;
   details: {
     image_url?: string;
@@ -516,6 +525,7 @@ interface Encounter {
 interface ContentSource {
   id: number;
   created_at: string;
+  updated_at?: string;
   name: string;
   foundry_id?: string;
   url: string;
@@ -539,6 +549,7 @@ interface ContentSource {
 interface Ancestry {
   id: number;
   created_at: string;
+  updated_at?: string;
   name: string;
   rarity: Rarity;
   description: string;
@@ -552,6 +563,7 @@ interface Ancestry {
 type Background = {
   id: number;
   created_at: string;
+  updated_at?: string;
   name: string;
   rarity: Rarity;
   description: string;
@@ -563,6 +575,7 @@ type Background = {
 type Language = {
   id: number;
   created_at: string;
+  updated_at?: string;
   name: string;
   speakers: string;
   script: string;
