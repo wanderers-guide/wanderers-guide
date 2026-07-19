@@ -1,4 +1,4 @@
-// Guards the campaign-membership fix (migration 20260718000000 + the find-campaign join
+// Guards the campaign-membership fix (migration 20260718120000 + the find-campaign join
 // grant). A character's campaign_id may only be set to a campaign the caller owns or has a
 // recent join grant for; otherwise the change is silently dropped (the existing value is
 // kept) — it must NEVER reject the save. Properties:

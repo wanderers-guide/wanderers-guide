@@ -45,7 +45,7 @@ serve(async (req: Request) => {
     ]);
 
     // If the caller proved knowledge of a campaign's join key, record a short-lived join
-    // grant. The character_campaign_membership trigger (migration 20260718000000) reads
+    // grant. The character_campaign_membership trigger (migration 20260718120000) reads
     // this to authorize the subsequent character write that sets campaign_id — turning
     // "knows the join key" into server-verified permission to join. The join flow already
     // calls this endpoint with the key, so no client change is needed. Best-effort: a
