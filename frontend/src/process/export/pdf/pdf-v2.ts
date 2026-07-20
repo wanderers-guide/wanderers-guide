@@ -422,29 +422,52 @@ async function fillPDF(form: PDFForm, character: Character) {
 
   profFillIn('PERCEPTION', 'PERCEPTION');
 
-  // Find first two lores
-  let lore1 = '';
-  let lore2 = '';
+  // Fill the two generic skill rows: real lores first, then content-added skills (e.g.
+  // Starfinder's Computers/Piloting) which the fixed 16-skill list above doesn't cover.
+  const CORE_SHEET_SKILLS = [
+    'SKILL_ACROBATICS',
+    'SKILL_ARCANA',
+    'SKILL_ATHLETICS',
+    'SKILL_CRAFTING',
+    'SKILL_DECEPTION',
+    'SKILL_DIPLOMACY',
+    'SKILL_INTIMIDATION',
+    'SKILL_MEDICINE',
+    'SKILL_NATURE',
+    'SKILL_OCCULTISM',
+    'SKILL_PERFORMANCE',
+    'SKILL_RELIGION',
+    'SKILL_SOCIETY',
+    'SKILL_STEALTH',
+    'SKILL_SURVIVAL',
+    'SKILL_THIEVERY',
+  ];
+  const loreSkills: string[] = [];
+  const extraSkills: string[] = [];
   getAllSkillVariables(STORE_ID).forEach((skill) => {
-    if (skill.name.startsWith('SKILL_LORE_') && skill.name !== 'SKILL_LORE____') {
-      if (lore1 === '') {
-        lore1 = skill.name;
-      } else if (lore2 === '') {
-        lore2 = skill.name;
-      }
+    if (skill.name === 'SKILL_LORE____') return;
+    if (skill.name.startsWith('SKILL_LORE_')) {
+      loreSkills.push(skill.name);
+    } else if (!CORE_SHEET_SKILLS.includes(skill.name)) {
+      extraSkills.push(skill.name);
     }
   });
-  if (lore1 !== '') {
+  const genericRowSkills = [...loreSkills, ...extraSkills];
+  // The row label is just the skill/lore name (lores drop the redundant " Lore" suffix)
+  const genericRowLabel = (variableName: string) => toLabel(variableName).replace(' Lore', '');
+  if (genericRowSkills[0]) {
     // 'LORE1' covers the total and checkboxes; 'LORE 1' covers the column fields
-    profFillIn(lore1, 'LORE1');
-    profFillIn(lore1, 'LORE 1');
-    setText('LORE CATAGORY 1', toLabel(lore1).replace(' Lore', ''));
+    profFillIn(genericRowSkills[0], 'LORE1');
+    profFillIn(genericRowSkills[0], 'LORE 1');
+    setText('LORE CATAGORY 1', genericRowLabel(genericRowSkills[0]));
   }
-  if (lore2 !== '') {
-    profFillIn(lore2, 'LORE2');
-    profFillIn(lore2, 'LORE 2');
-    setText('LORE CATEGORY 2', toLabel(lore2).replace(' Lore', ''));
+  if (genericRowSkills[1]) {
+    profFillIn(genericRowSkills[1], 'LORE2');
+    profFillIn(genericRowSkills[1], 'LORE 2');
+    setText('LORE CATEGORY 2', genericRowLabel(genericRowSkills[1]));
   }
+  // Skills that didn't fit the two rows get listed in the Skill Notes column instead
+  const genericRowOverflow = genericRowSkills.slice(2);
 
   // ── Save breakdowns (the shared Con / Prof / Item boxes under the shields) ────
 
@@ -483,6 +506,11 @@ async function fillPDF(form: PDFForm, character: Character) {
 
   // Same for skills and perception, in the Skill Notes column
   const skillNotes: string[] = [];
+  // Skills that overflowed the two generic rows are written out with their totals
+  for (const variableName of genericRowOverflow) {
+    const overflowProfType = compileProficiencyType(getVariable<VariableProf>(STORE_ID, variableName)?.value);
+    skillNotes.push(`${genericRowLabel(variableName)} ${getFinalProfValue(STORE_ID, variableName)} (${overflowProfType})`);
+  }
   const skillNoteVariables = [...getAllSkillVariables(STORE_ID), getVariable<VariableProf>(STORE_ID, 'PERCEPTION')];
   for (const skillVariable of skillNoteVariables.filter(isTruthy)) {
     for (const cond of getVariableBreakdown(STORE_ID, skillVariable.name).conditionals) {

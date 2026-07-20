@@ -293,22 +293,44 @@ async function fillPDF(form: PDFForm, character: Character) {
 
   profFillIn('PERCEPTION', 'PERCEPTION');
 
-  // Find first two lores
-  let lore1 = '';
-  let lore2 = '';
+  // Fill the two generic skill rows: real lores first, then content-added skills (e.g.
+  // Starfinder's Computers/Piloting) which the fixed skill list above doesn't cover.
+  const CORE_SHEET_SKILLS = [
+    'SKILL_ACROBATICS',
+    'SKILL_ARCANA',
+    'SKILL_ATHLETICS',
+    'SKILL_CRAFTING',
+    'SKILL_DECEPTION',
+    'SKILL_DIPLOMACY',
+    'SKILL_INTIMIDATION',
+    'SKILL_MEDICINE',
+    'SKILL_NATURE',
+    'SKILL_OCCULTISM',
+    'SKILL_PERFORMANCE',
+    'SKILL_RELIGION',
+    'SKILL_SOCIETY',
+    'SKILL_STEALTH',
+    'SKILL_SURVIVAL',
+    'SKILL_THIEVERY',
+  ];
+  const loreSkills: string[] = [];
+  const extraSkills: string[] = [];
   getAllSkillVariables(STORE_ID).forEach((skill) => {
-    if (skill.name.startsWith('SKILL_LORE_') && skill.name !== 'SKILL_LORE____') {
-      if (lore1 === '') {
-        lore1 = skill.name;
-      } else if (lore2 === '') {
-        lore2 = skill.name;
-      }
+    if (skill.name === 'SKILL_LORE____') return;
+    if (skill.name.startsWith('SKILL_LORE_')) {
+      loreSkills.push(skill.name);
+    } else if (!CORE_SHEET_SKILLS.includes(skill.name)) {
+      extraSkills.push(skill.name);
     }
   });
+  const genericRowSkills = [...loreSkills, ...extraSkills];
+  const genericRowLabel = (variableName: string) => toLabel(variableName).replace(' Lore', '');
+  const lore1 = genericRowSkills[0] ?? '';
+  const lore2 = genericRowSkills[1] ?? '';
   if (lore1 !== '') {
     profFillIn(lore1, 'LORE1');
     profFillIn(lore1, 'LORE 1');
-    form.getTextField('LORE CATAGORY 1').setText(toLabel(lore1).replace(' Lore', ''));
+    form.getTextField('LORE CATAGORY 1').setText(genericRowLabel(lore1));
 
     const lore1Parts = getProfValueParts(STORE_ID, lore1);
     if (lore1Parts) {
@@ -319,7 +341,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   if (lore2 !== '') {
     profFillIn(lore2, 'LORE2');
     profFillIn(lore2, 'LORE 2');
-    form.getTextField('LORE CATEGORY 2').setText(toLabel(lore2).replace(' Lore', ''));
+    form.getTextField('LORE CATEGORY 2').setText(genericRowLabel(lore2));
 
     const lore2Parts = getProfValueParts(STORE_ID, lore2);
     if (lore2Parts) {
