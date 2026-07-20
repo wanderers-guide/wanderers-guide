@@ -411,7 +411,17 @@ async function updateVariables(
   }
 }
 
-function isTrainedInAdjValue(varId: StoreID, operation: OperationAdjValue): boolean {
+/**
+ * Determines whether a skill training grant (adjValue to 'T') should be redirected to a
+ * "Select a Skill to be Trained" selection because the character is already trained in it,
+ * per the PF2e rule "if you were already trained in this skill, you instead become trained
+ * in a skill of your choice."
+ * @param varId - Variable store ID
+ * @param operation - The adjValue operation being executed
+ * @param options - Operation options for the current execution round
+ * @returns - Whether the grant should be redirected to a skill selection
+ */
+function isTrainedInAdjValue(varId: StoreID, operation: OperationAdjValue, options?: OperationOptions): boolean {
   if (!operation.data.variable.includes('SKILL_')) {
     // Not a skill adjustment
     return false;
@@ -427,7 +437,12 @@ function isTrainedInAdjValue(varId: StoreID, operation: OperationAdjValue): bool
 
   // If character is at least trained in skill, give another skill selection
   let variable = getVariables(varId)[operation.data.variable] as VariableProf;
-  const currentProf = compileProficiencyType(variable.value);
+  // Conditional branches only execute in the conditional round, after every numeric skill
+  // increase from every level has already been applied. Compiling increases here would count
+  // increases that are meant to stack on top of this very grant (e.g. a swashbuckler style's
+  // level-1 training + a level-3 skill increase), wrongly treating the character as "already
+  // trained". So inside conditionals, only base rank grants (background, class, etc.) count.
+  const currentProf = options?.doConditionals ? variable.value.value : compileProficiencyType(variable.value);
   return maxProficiencyType(currentProf, 'T') === currentProf;
 }
 
@@ -438,7 +453,7 @@ async function runAdjValue(
   options?: OperationOptions,
   sourceLabel?: string
 ): Promise<OperationResult> {
-  const isTrained = isTrainedInAdjValue(varId, operation);
+  const isTrained = isTrainedInAdjValue(varId, operation, options);
   // If character is at least trained in skill, give another skill selection
   if (isTrained) {
     const subNode = selectionTrack.node?.children[operation.id];
