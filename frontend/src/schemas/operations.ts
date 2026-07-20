@@ -255,8 +255,18 @@ export type OperationInjectSelectOption = z.infer<typeof OperationInjectSelectOp
 export const OperationSelectFiltersAbilityBlockSchema = z.object({
   id: z.string(),
   type: z.literal('ABILITY_BLOCK'),
-  level: z.object({ min: z.number().nullable().optional(), max: z.number().nullable().optional() }),
+  level: z.object({
+    min: z.number().nullable().optional(),
+    // Max may be a fixed number or a variable expression string (e.g. `{{LEVEL}}` or `{{LEVEL/2}}`)
+    // that's resolved against the character at selection time. Needed for retrain-style feats
+    // (SF2e Adaptive Talent / In Another Life) and class archetype "max half your level" selections.
+    max: z.union([z.number(), z.string()]).nullable().optional(),
+  }),
   traits: z.array(z.union([z.string(), z.number()])).optional(),
+  // Only include options associated with this skill — matched against the ability block's
+  // `meta_data.skill` tags or its prerequisites (e.g. "trained in Computers").
+  // Needed for SF2e Operative specializations ("gain a skill feat tied to your specialization's skill").
+  skill: z.string().optional(),
   abilityBlockType: AbilityBlockTypeSchema.optional(),
   isFromClass: z.boolean().optional(),
   isFromAncestry: z.boolean().optional(),
@@ -296,6 +306,12 @@ export const OperationSelectFiltersAdjValueSchema = z.object({
   type: z.literal('ADJ_VALUE'),
   group: z.enum(['ATTRIBUTE', 'SKILL', 'ADD-LORE', 'WEAPON-GROUP', 'WEAPON', 'ARMOR-GROUP', 'ARMOR']),
   value: z.union([VariableValueSchema, ExtendedProficiencyValueSchema]),
+  // For item-backed groups (WEAPON / ARMOR) only: restrict the list to items that have at least
+  // ONE of these traits (any-match, unlike ability block filters which require all).
+  traits: z.array(z.string()).optional(),
+  // For the WEAPON group: restrict the list to weapons that carry an ancestry (or versatile
+  // heritage) trait. Backs feats like Unconventional Weaponry / Kasatha weapon selections.
+  hasAncestryTrait: z.boolean().optional(),
 });
 export type OperationSelectFiltersAdjValue = z.infer<typeof OperationSelectFiltersAdjValueSchema>;
 

@@ -251,6 +251,11 @@ function SelectionFiltered(props: {
   return null;
 }
 
+// Expression strings stored in `level.max` for the dynamic max-level presets.
+// They're compiled against the character at selection time (see resolveLevelFilterBound).
+const CHAR_LEVEL_EXPRESSION = '{{LEVEL}}';
+const HALF_CHAR_LEVEL_EXPRESSION = '{{LEVEL/2}}';
+
 function SelectionFilteredAbilityBlock(props: {
   optionType: OperationSelectOptionType;
   filters?: OperationSelectFiltersAbilityBlock;
@@ -258,11 +263,24 @@ function SelectionFilteredAbilityBlock(props: {
 }) {
   const [type, setType] = useState<AbilityBlockType | undefined>(props.filters?.abilityBlockType);
   const [minLevel, setMinLevel] = useState<number | undefined>(props.filters?.level.min ?? undefined);
-  const [maxLevel, setMaxLevel] = useState<number | undefined>(props.filters?.level.max ?? undefined);
+  // Max level is either a fixed number or a dynamic expression string (see presets above)
+  const [maxLevel, setMaxLevel] = useState<number | string | undefined>(props.filters?.level.max ?? undefined);
+  const [skill, setSkill] = useState<string | undefined>(props.filters?.skill ?? undefined);
   const [traits, setTraits] = useState<string[]>((props.filters?.traits as string[]) ?? []);
   const [isFromClass, setIsFromClass] = useState<boolean | undefined>(props.filters?.isFromClass);
   const [isFromAncestry, setIsFromAncestry] = useState<boolean | undefined>(props.filters?.isFromAncestry);
   const [isFromArchetype, setIsFromArchetype] = useState<boolean | undefined>(props.filters?.isFromArchetype);
+
+  // Which max-level mode the stored value represents. A hand-authored expression that isn't one
+  // of the presets leaves the select blank but is preserved until the user actively changes it.
+  const maxLevelMode =
+    typeof maxLevel === 'string'
+      ? maxLevel === CHAR_LEVEL_EXPRESSION
+        ? 'CHAR_LEVEL'
+        : maxLevel === HALF_CHAR_LEVEL_EXPRESSION
+          ? 'HALF_CHAR_LEVEL'
+          : null
+      : 'FIXED';
 
   useDidUpdate(() => {
     props.onChange({
@@ -272,13 +290,15 @@ function SelectionFilteredAbilityBlock(props: {
         min: minLevel,
         max: maxLevel,
       },
+      // Only persist a skill filter when one is actually entered
+      skill: skill?.trim() ? skill.trim() : undefined,
       traits: traits,
       abilityBlockType: type,
       isFromClass: isFromClass,
       isFromAncestry: isFromAncestry,
       isFromArchetype: isFromArchetype,
     });
-  }, [minLevel, maxLevel, traits, type, isFromClass, isFromAncestry, isFromArchetype]);
+  }, [minLevel, maxLevel, skill, traits, type, isFromClass, isFromAncestry, isFromArchetype]);
 
   return (
     <Stack gap={10}>
@@ -311,14 +331,37 @@ function SelectionFilteredAbilityBlock(props: {
             max={20}
           />
           -
-          <NumberInput
-            placeholder='Max'
-            value={maxLevel}
-            onChange={(value) => setMaxLevel(parseInt(`${value}`))}
+          <Select
             size='xs'
-            min={-1}
-            max={20}
+            w={150}
+            placeholder='Max type'
+            data={[
+              { label: 'Fixed Max', value: 'FIXED' },
+              { label: 'Character Level', value: 'CHAR_LEVEL' },
+              { label: 'Half Char. Level', value: 'HALF_CHAR_LEVEL' },
+            ]}
+            value={maxLevelMode}
+            onChange={(value) => {
+              // Fixed clears back to an empty number input; presets store their expression string
+              if (value === 'CHAR_LEVEL') {
+                setMaxLevel(CHAR_LEVEL_EXPRESSION);
+              } else if (value === 'HALF_CHAR_LEVEL') {
+                setMaxLevel(HALF_CHAR_LEVEL_EXPRESSION);
+              } else if (value === 'FIXED') {
+                setMaxLevel(undefined);
+              }
+            }}
           />
+          {maxLevelMode === 'FIXED' && (
+            <NumberInput
+              placeholder='Max'
+              value={typeof maxLevel === 'number' ? maxLevel : undefined}
+              onChange={(value) => setMaxLevel(parseInt(`${value}`))}
+              size='xs'
+              min={-1}
+              max={20}
+            />
+          )}
         </Group>
       </Box>
 
@@ -330,6 +373,15 @@ function SelectionFilteredAbilityBlock(props: {
         data={[]}
         value={traits}
         onChange={setTraits}
+      />
+
+      <TextInput
+        label='Associated Skill'
+        description='Only include options tied to this skill (matches tagged skills or prerequisites, e.g. "trained in Computers")'
+        placeholder='e.g. Computers'
+        size='xs'
+        value={skill ?? ''}
+        onChange={(e) => setSkill(e.target.value)}
       />
 
       <Switch
@@ -655,6 +707,12 @@ function SelectionFilteredAdjValue(props: {
 }) {
   const [group, setGroup] = useState<string>(props.filters?.group ?? 'SKILL');
   const [value, setValue] = useState<VariableValue | ExtendedProficiencyValue>(props.filters?.value ?? { value: 'U' });
+  // Item-trait filters, only meaningful for the item-backed groups (WEAPON / ARMOR)
+  const [itemTraits, setItemTraits] = useState<string[]>(props.filters?.traits ?? []);
+  const [hasAncestryTrait, setHasAncestryTrait] = useState<boolean | undefined>(props.filters?.hasAncestryTrait);
+
+  // Whether the current group is backed by an item list (and so supports trait filtering)
+  const isItemGroup = group === 'WEAPON' || group === 'ARMOR';
 
   useDidUpdate(() => {
     props.onChange({
@@ -662,8 +720,12 @@ function SelectionFilteredAdjValue(props: {
       type: 'ADJ_VALUE',
       group: (group ?? 'SKILL') as OperationSelectFiltersAdjValue['group'],
       value: value ?? '',
+      // Only persist item-trait filters for item-backed groups so stale filters don't
+      // linger invisibly after switching to e.g. SKILL
+      traits: isItemGroup && itemTraits.length > 0 ? itemTraits : undefined,
+      hasAncestryTrait: group === 'WEAPON' && hasAncestryTrait ? true : undefined,
     });
-  }, [group, value]);
+  }, [group, value, itemTraits, hasAncestryTrait]);
 
   return (
     <Stack gap={10}>
@@ -685,6 +747,28 @@ function SelectionFilteredAdjValue(props: {
           ]}
         />
       </Box>
+
+      {isItemGroup && (
+        <TagsInput
+          label='Has Any of These Traits'
+          description='Only include items that have at least one of these traits'
+          placeholder='Enter trait'
+          size='xs'
+          splitChars={[',', ';', '|']}
+          data={[]}
+          value={itemTraits}
+          onChange={setItemTraits}
+        />
+      )}
+
+      {group === 'WEAPON' && (
+        <Switch
+          size='xs'
+          checked={hasAncestryTrait ?? false}
+          onChange={(e) => setHasAncestryTrait(e.target.checked)}
+          label='Only weapons with an ancestry trait'
+        />
+      )}
 
       <Box>
         {group && (
