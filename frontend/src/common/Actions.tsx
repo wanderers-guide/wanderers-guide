@@ -49,6 +49,14 @@ export function ActionSymbol(props: ActionSymbolProps) {
       return <ActionStructure symbol={4} {...rest} />;
     case 'REACTION':
       return <ActionStructure symbol={5} {...rest} />;
+    case 'REACTION-OR-ONE-ACTION':
+      return (
+        <Group wrap='nowrap' gap={gap ?? 10}>
+          <ActionStructure symbol={5} {...rest} />
+          <Text {...props.textProps}> or </Text>
+          <ActionStructure symbol={1} {...rest} />
+        </Group>
+      );
     case 'ONE-TO-TWO-ACTIONS':
       return (
         <Group wrap='nowrap' gap={gap ?? 10}>

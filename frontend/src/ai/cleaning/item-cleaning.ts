@@ -416,7 +416,7 @@ Also frequently use fetchContent to search for similar or related content in the
 Rewrite the description using rich inline markdown links following the rules above. Additional formatting rules:
 - Action costs use this HTML: <abbr cost="{ACTION_COST}" class="action-symbol">{N}</abbr>
   Valid ACTION_COST values: ONE-ACTION, TWO-ACTIONS, THREE-ACTIONS, REACTION, FREE-ACTION,
-  ONE-TO-TWO-ACTIONS, ONE-TO-THREE-ACTIONS, TWO-TO-THREE-ACTIONS
+  REACTION-OR-ONE-ACTION, ONE-TO-TWO-ACTIONS, ONE-TO-THREE-ACTIONS, TWO-TO-THREE-ACTIONS
   Only add action symbols when AoN explicitly shows an action cost. Do not add them to inline references to action names (e.g. "Interact" in a sentence is just text, not an action symbol).
 - Activation lines should be formatted as:
   **Activate—Title** <abbr cost="TWO-ACTIONS" class="action-symbol">2</abbr> ([trait](link_trait_ID), ...); **Effect** ...

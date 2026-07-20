@@ -1,7 +1,8 @@
-import { Item } from '@schemas/content';
+import { getCachedContent } from '@content/content-store';
+import { Item, Trait } from '@schemas/content';
 import { StoreID, VariableBool, VariableListStr, VariableNum, VariableProf } from '@schemas/variables';
 import { hasTraitType } from '@utils/traits';
-import { getFinalProfValue, getFinalVariableValue } from '@variables/variable-helpers';
+import { getFinalProfValue, getFinalVariableValue, getProfValueParts } from '@variables/variable-helpers';
 import { getVariable } from '@variables/variable-manager';
 import { compileProficiencyType, labelToVariable } from '@variables/variable-utils';
 import { compileTraits, getGradeImprovements, isItemRangedWeapon } from './inv-utils';
@@ -485,6 +486,28 @@ function getMeleeAttackDamage(id: StoreID, item: Item) {
   };
 }
 
+/**
+ * Finds the skill proficiency variables tied to an item's Professional traits.
+ * SF2e "Professional (<Skill>)" traits are separate trait records per skill, so we match the
+ * item's trait IDs against cached traits by name pattern instead of hardcoding IDs.
+ * @param item - Item to inspect
+ * @returns - Skill variable names (e.g. SKILL_COMPUTERS) listed by the item's Professional traits
+ */
+function getProfessionalTraitSkills(item: Item): string[] {
+  const traitIds = new Set(compileTraits(item));
+  if (traitIds.size === 0) return [];
+
+  const skills: string[] = [];
+  for (const trait of getCachedContent<Trait>('trait')) {
+    if (!trait?.id || !traitIds.has(trait.id)) continue;
+    const match = /^professional \((.+?)\)/i.exec(trait.name.trim());
+    if (match) {
+      skills.push(`SKILL_${labelToVariable(match[1])}`);
+    }
+  }
+  return skills;
+}
+
 function getProfTotal(id: StoreID, item: Item) {
   let category = item.meta_data?.category ?? 'simple';
 
@@ -556,6 +579,33 @@ function getProfTotal(id: StoreID, item: Item) {
   if (individualProfTotal > maxProfTotal) {
     maxProfTotal = individualProfTotal;
     maxVariable = individualVariable;
+  }
+
+  // Professional trait (SF2e): "For purposes of proficiency, you treat this martial weapon as a
+  // simple weapon or this advanced weapon as a martial weapon, up to your proficiency with the
+  // listed skill (if higher than your normal proficiency for this weapon)."
+  const professionalSkills = getProfessionalTraitSkills(item);
+  if (professionalSkills.length > 0) {
+    const rawCategory = item.meta_data?.category ?? 'simple';
+    const downgradedVariable =
+      rawCategory === 'martial' ? 'SIMPLE_WEAPONS' : rawCategory === 'advanced' ? 'MARTIAL_WEAPONS' : null;
+    if (downgradedVariable) {
+      const downgradedTotal = parseInt(getFinalProfValue(id, downgradedVariable));
+      for (const skillVariable of professionalSkills) {
+        const skillParts = getProfValueParts(id, skillVariable);
+        if (!skillParts) continue;
+        // The cap is the skill's proficiency (rank + level) — its attribute mod and skill-check
+        // bonuses don't carry over to attack proficiency
+        const skillCapTotal = skillParts.level + skillParts.profValue;
+        const candidateTotal = Math.min(downgradedTotal, skillCapTotal);
+        // "(if higher than your normal proficiency)" — only ever an upgrade
+        if (candidateTotal > maxProfTotal) {
+          maxProfTotal = candidateTotal;
+          // Attribute the winning rank to whichever side was the limiting factor, for the breakdown drawer
+          maxVariable = downgradedTotal <= skillCapTotal ? downgradedVariable : skillVariable;
+        }
+      }
+    }
   }
 
   // Martial Experience = "When wielding a weapon you aren't proficient with, treat your level as your proficiency bonus."

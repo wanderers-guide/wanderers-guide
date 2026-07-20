@@ -11,6 +11,8 @@ export function convertCastToActionCost(cast: string): ActionCost | string {
     return 'REACTION';
   } else if (cast === 'free') {
     return 'FREE-ACTION';
+  } else if (cast === 'reaction or 1' || cast === '1 or reaction') {
+    return 'REACTION-OR-ONE-ACTION';
   } else if (cast === '1 or 2' || cast === '1 to 2') {
     return 'ONE-TO-TWO-ACTIONS';
   } else if (cast === '2 or 3' || cast === '2 to 3') {
@@ -47,6 +49,9 @@ export function actionCostToLabel(cost: ActionCost | string, alt?: boolean): str
       break;
     case 'FREE-ACTION':
       result = '◇';
+      break;
+    case 'REACTION-OR-ONE-ACTION':
+      result = '⤾ or ◆';
       break;
     case 'ONE-TO-TWO-ACTIONS':
       result = '◆ - ◆◆';
@@ -103,6 +108,9 @@ export function actionCostToRichTextInsert(cost: ActionCost | string): string {
       break;
     case 'FREE-ACTION':
       result = '`action_symbol_4`';
+      break;
+    case 'REACTION-OR-ONE-ACTION':
+      result = '`action_symbol_5` or `action_symbol_1`';
       break;
     case 'ONE-TO-TWO-ACTIONS':
       result = '`action_symbol_1` - `action_symbol_2`';

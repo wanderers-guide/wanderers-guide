@@ -39,6 +39,8 @@ export const ActionCostSchema = z
     'THREE-ACTIONS',
     'REACTION',
     'FREE-ACTION',
+    // A reaction with a trigger, also usable as a 1-action activity without the trigger (SF2e, ex. Nimbus Ward)
+    'REACTION-OR-ONE-ACTION',
     'ONE-TO-TWO-ACTIONS',
     'ONE-TO-THREE-ACTIONS',
     'TWO-TO-THREE-ACTIONS',

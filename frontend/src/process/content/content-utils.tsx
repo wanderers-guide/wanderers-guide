@@ -63,6 +63,7 @@ export function isActionCost(value: string | null): value is ActionCost {
     'THREE-ACTIONS',
     'REACTION',
     'FREE-ACTION',
+    'REACTION-OR-ONE-ACTION',
     'ONE-TO-TWO-ACTIONS',
     'ONE-TO-THREE-ACTIONS',
     'TWO-TO-THREE-ACTIONS',
