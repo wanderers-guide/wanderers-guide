@@ -12,6 +12,7 @@ export default function ActionsInput(props: ActionsInputProps) {
         { value: "THREE-ACTIONS", label: "3" },
         { value: "FREE-ACTION", label: "4" },
         { value: "REACTION", label: "5" },
+        { value: "REACTION-OR-ONE-ACTION", label: "5 or 1" },
         { value: "ONE-TO-TWO-ACTIONS", label: "1 - 2" },
         { value: "ONE-TO-THREE-ACTIONS", label: "1 - 3" },
         { value: "TWO-TO-THREE-ACTIONS", label: "2 - 3" },
