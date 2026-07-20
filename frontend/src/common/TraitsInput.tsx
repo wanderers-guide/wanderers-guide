@@ -1,5 +1,5 @@
 import { isTraitVisible } from '@content/content-hidden';
-import { fetchContentAll, getDefaultSources } from '@content/content-store';
+import { fetchContentAll } from '@content/content-store';
 import { TagsInput, TagsInputProps } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Trait } from '@schemas/content';
@@ -16,9 +16,12 @@ interface TraitsInputProps extends TagsInputProps {
 
 export default function TraitsInput(props: TraitsInputProps) {
   const { data, isFetching } = useQuery({
-    queryKey: [`get-traits`],
+    queryKey: [`get-traits-all-accessible`],
     queryFn: async () => {
-      return await fetchContentAll<Trait>('trait', getDefaultSources('INFO'));
+      // Fetch from every source the user can access, not just Common Core + currently enabled
+      // sources — otherwise traits from other books (e.g. adding the Pahtra trait to a Galactic
+      // Ancestries submission) are missing from the dropdown and silently dropped when typed.
+      return await fetchContentAll<Trait>('trait', 'ALL-USER-ACCESSIBLE');
     },
   });
 

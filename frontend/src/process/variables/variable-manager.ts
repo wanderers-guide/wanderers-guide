@@ -284,6 +284,12 @@ export const DEFAULT_VARIABLES: Record<string, Variable> = {
   // When you attack with a finesse melee weapon, you can use Dex mod for damage instead of Str mod.
   USE_DEX_FOR_MELEE_FINESSE: newVariable('bool', 'USE_DEX_FOR_MELEE_FINESSE'),
 
+  // Add your Con mod to your Bulk limit (on top of the usual 5 + Str). Ex. SF2e Soldier's Walking Armory.
+  ADD_CON_TO_BULK_LIMIT: newVariable('bool', 'ADD_CON_TO_BULK_LIMIT'),
+
+  // Use your Con mod instead of your Str mod to meet armor Strength requirements. Ex. SF2e Soldier's Walking Armory.
+  USE_CON_FOR_ARMOR_STR_REQ: newVariable('bool', 'USE_CON_FOR_ARMOR_STR_REQ'),
+
   // The minimum number of damage dice you can have for a weapon.
   MINIMUM_WEAPON_DAMAGE_DICE: newVariable('num', 'MINIMUM_WEAPON_DAMAGE_DICE', 1),
 
@@ -332,12 +338,20 @@ export const DEFAULT_VARIABLES: Record<string, Variable> = {
   WEAPON_DIVISION_GUN_SIMPLE: newVariable('prof', 'WEAPON_DIVISION_GUN_SIMPLE'),
   WEAPON_DIVISION_GUN_MARTIAL: newVariable('prof', 'WEAPON_DIVISION_GUN_MARTIAL'),
   WEAPON_DIVISION_GUN_ADVANCED: newVariable('prof', 'WEAPON_DIVISION_GUN_ADVANCED'),
+  // One-handed weapons with the agile or finesse trait. Ex. SF2e Striker Operative specialization.
+  WEAPON_DIVISION_ONE_HANDED_AGILE_FINESSE: newVariable('prof', 'WEAPON_DIVISION_ONE_HANDED_AGILE_FINESSE'),
 
   ARMOR_GROUP_CLOTH: newVariable('prof', 'ARMOR_GROUP_CLOTH'),
   ARMOR_GROUP_CHAIN: newVariable('prof', 'ARMOR_GROUP_CHAIN'),
   ARMOR_GROUP_COMPOSITE: newVariable('prof', 'ARMOR_GROUP_COMPOSITE'),
   ARMOR_GROUP_LEATHER: newVariable('prof', 'ARMOR_GROUP_LEATHER'),
   ARMOR_GROUP_PLATE: newVariable('prof', 'ARMOR_GROUP_PLATE'),
+  // Starfinder armor groups (ceramic/polymer) and later-PF2e groups (skeletal/wood) —
+  // these already exist in the item schema but previously had no proficiency variables.
+  ARMOR_GROUP_CERAMIC: newVariable('prof', 'ARMOR_GROUP_CERAMIC'),
+  ARMOR_GROUP_POLYMER: newVariable('prof', 'ARMOR_GROUP_POLYMER'),
+  ARMOR_GROUP_SKELETAL: newVariable('prof', 'ARMOR_GROUP_SKELETAL'),
+  ARMOR_GROUP_WOOD: newVariable('prof', 'ARMOR_GROUP_WOOD'),
   // ARMOR_GROUP____: newVariable('prof', 'ARMOR_GROUP____'),
   // ARMOR____: newVariable('prof', 'ARMOR____'),
 

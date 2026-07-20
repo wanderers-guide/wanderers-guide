@@ -1,7 +1,8 @@
 import { Item } from '@schemas/content';
-import { StoreID } from '@schemas/variables';
+import { StoreID, VariableBool } from '@schemas/variables';
 import { hasTraitType } from '@utils/traits';
 import { getFinalProfValue, getFinalVariableValue, getVariableBreakdown } from '@variables/variable-helpers';
+import { getVariable } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
 
 function getProfTotal(id: StoreID, item: Item) {
@@ -37,6 +38,14 @@ function getProfTotal(id: StoreID, item: Item) {
     groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_CLOTH`));
   } else if (group === 'plate') {
     groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_PLATE`));
+  } else if (group === 'ceramic') {
+    groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_CERAMIC`));
+  } else if (group === 'polymer') {
+    groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_POLYMER`));
+  } else if (group === 'skeletal') {
+    groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_SKELETAL`));
+  } else if (group === 'wood') {
+    groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_WOOD`));
   }
 
   const individualProfTotal = parseInt(getFinalProfValue(id, `ARMOR_${labelToVariable(item.name)}`));
@@ -78,7 +87,12 @@ export function getAcParts(id: StoreID, item?: Item) {
   let checkPenalty = -1 * Math.abs(Number(item.meta_data?.check_penalty ?? 0));
   let speedPenalty = -1 * Math.abs(Number(item.meta_data?.speed_penalty ?? 0));
 
-  if (strMod >= strengthReq) {
+  // Some abilities meet armor Strength requirements with Con instead (ex. SF2e Walking Armory)
+  const strReqMod = getVariable<VariableBool>(id, 'USE_CON_FOR_ARMOR_STR_REQ')?.value
+    ? getFinalVariableValue(id, 'ATTRIBUTE_CON').total
+    : strMod;
+
+  if (strReqMod >= strengthReq) {
     checkPenalty = 0;
     speedPenalty += 5;
     if (speedPenalty > 0) {
