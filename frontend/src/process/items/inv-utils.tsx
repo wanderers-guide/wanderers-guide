@@ -2,10 +2,10 @@ import { fetchContentAll, getContentFast, getDefaultSources } from '@content/con
 import { isPlayingStarfinder } from '@content/system-handler';
 import { ContentPackage, ContentSource, Inventory, InventoryItem, Item, LivingEntity } from '@schemas/content';
 import { Operation } from '@schemas/operations';
-import { StoreID } from '@schemas/variables';
+import { StoreID, VariableBool } from '@schemas/variables';
 import { getTraitIdByType, hasTraitType, TraitType } from '@utils/traits';
 import { getFinalAcValue, getFinalVariableValue } from '@variables/variable-helpers';
-import { addVariableBonus, getAllSkillVariables, getAllSpeedVariables } from '@variables/variable-manager';
+import { addVariableBonus, getAllSkillVariables, getAllSpeedVariables, getVariable } from '@variables/variable-manager';
 import { cloneDeep, uniq } from 'lodash-es';
 
 /**
@@ -114,11 +114,15 @@ export function applyEquipmentPenalties(storeId: StoreID, entity: LivingEntity) 
   const applyPenalties = (item: InventoryItem) => {
     if (item.item.meta_data) {
       const strMod = getFinalVariableValue(STORE_ID, 'ATTRIBUTE_STR').total;
+      // Some abilities meet armor Strength requirements with Con instead (ex. SF2e Walking Armory)
+      const strReqMod = getVariable<VariableBool>(STORE_ID, 'USE_CON_FOR_ARMOR_STR_REQ')?.value
+        ? getFinalVariableValue(STORE_ID, 'ATTRIBUTE_CON').total
+        : strMod;
       // If strength requirement exists and the character's str mod is >= to it, reduce/not include it
       if (
         item.item.meta_data.strength !== null &&
         item.item.meta_data.strength !== undefined &&
-        strMod >= item.item.meta_data.strength
+        strReqMod >= item.item.meta_data.strength
       ) {
         // Take speed penalty, reduced by 5, to all Speeds
         const speedPenalty = Math.abs(Number(item.item.meta_data.speed_penalty ?? 0)) - 5;
@@ -755,7 +759,11 @@ export function labelizeBulk(bulk?: number | string, displayZero = false) {
 export function getBulkLimit(id: StoreID) {
   const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
   const bonus = getFinalVariableValue(id, 'BULK_LIMIT_BONUS').total;
-  return 5 + strMod + bonus;
+  // Some abilities add Con mod on top of the usual 5 + Str (ex. SF2e Walking Armory)
+  const conMod = getVariable<VariableBool>(id, 'ADD_CON_TO_BULK_LIMIT')?.value
+    ? getFinalVariableValue(id, 'ATTRIBUTE_CON').total
+    : 0;
+  return 5 + strMod + conMod + bonus;
 }
 
 export function getBulkLimitImmobile(id: StoreID) {
@@ -786,7 +794,8 @@ export function reachedImplantLimit(id: StoreID, inv?: Inventory) {
 
 export function getImplantLimit(id: StoreID) {
   const conMod = getFinalVariableValue(id, 'ATTRIBUTE_CON').total;
-  return 1 + conMod + getFinalVariableValue(id, 'IMPLANT_LIMIT_BONUS').total;
+  // 1 + Con mod, but always at least 1 (a negative Con mod can't take the limit to 0)
+  return Math.max(1, 1 + conMod + getFinalVariableValue(id, 'IMPLANT_LIMIT_BONUS').total);
 }
 
 /**
