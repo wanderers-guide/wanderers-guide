@@ -620,21 +620,29 @@ function convertDamageType(rawDamageType: string) {
  */
 export function determineWeaponDivisions(item: Item): string[] {
   const traitsIds = compileTraits(item);
+  const divisions: string[] = [];
 
+  // Gun: any ranged weapon with the analog or tech trait, split by category
   if (isItemRangedWeapon(item)) {
     if (hasTraitType('ANALOG', traitsIds) || hasTraitType('TECH', traitsIds)) {
       const category = item.meta_data?.category ?? 'simple';
+      divisions.push('WEAPON_DIVISION_GUN');
       if (category === 'simple') {
-        return ['WEAPON_DIVISION_GUN', 'WEAPON_DIVISION_GUN_SIMPLE'];
+        divisions.push('WEAPON_DIVISION_GUN_SIMPLE');
       } else if (category === 'martial') {
-        return ['WEAPON_DIVISION_GUN', 'WEAPON_DIVISION_GUN_MARTIAL'];
+        divisions.push('WEAPON_DIVISION_GUN_MARTIAL');
       } else if (category === 'advanced') {
-        return ['WEAPON_DIVISION_GUN', 'WEAPON_DIVISION_GUN_ADVANCED'];
-      } else {
-        return ['WEAPON_DIVISION_GUN'];
+        divisions.push('WEAPON_DIVISION_GUN_ADVANCED');
       }
     }
   }
 
-  return [];
+  // One-handed agile/finesse weapons (ex. SF2e Striker Operative specialization).
+  // "One-handed" counts anything wieldable in a single hand: 1, 1+, or 1 or 2.
+  const isOneHanded = ['1', '1+', '1 or 2'].includes(`${item.hands ?? ''}`.trim());
+  if (isOneHanded && (hasTraitType('AGILE', traitsIds) || hasTraitType('FINESSE', traitsIds))) {
+    divisions.push('WEAPON_DIVISION_ONE_HANDED_AGILE_FINESSE');
+  }
+
+  return divisions;
 }

@@ -439,6 +439,8 @@ export function CreateItemModal(props: {
                 label='Hands'
                 clearable
                 data={[
+                  // 0 hands is for weapons that are wielded without a free hand (ex. SF2e tailblade)
+                  { value: '0', label: '0' },
                   { value: '1', label: '1' },
                   { value: '1+', label: '1+' },
                   { value: '2', label: '2' },
