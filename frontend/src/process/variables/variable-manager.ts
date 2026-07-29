@@ -26,6 +26,7 @@ import {
   isProficiencyValue,
   isExtendedProficiencyValue,
   compileExpressions,
+  compileProficiencyType,
   isProficiencyTypeGreaterOrEqual,
   nextProficiencyType,
 } from './variable-utils';
@@ -598,6 +599,37 @@ export function setVariable(id: StoreID, name: string, value: VariableValue, sou
  * @param name - name of the variable to adjust
  * @param amount - new value to adjust by
  */
+/** The highest rank a skill increase itself may target at the given level. */
+export function getSkillIncreaseCap(level: number): ProficiencyType {
+  return level >= 15 ? 'L' : level >= 7 ? 'M' : 'E';
+}
+
+/**
+ * Compiles a proficiency the way the post-execution normalization will present it:
+ * for SKILL_* variables, positive increases can't push the compiled rank past the
+ * level's skill-increase cap, while rank grants (the base letter) always pass
+ * through. Non-skill variables and penalties compile normally.
+ *
+ * Use this wherever a rank is read DURING operation execution (conditional checks) —
+ * normalizeProficiencies only runs after execution, so a plain compile mid-round can
+ * see ranks the normalization will clamp away (e.g. a level-8 character with a
+ * master-rank grant plus spent increases would read as legendary to an in-execution
+ * condition while their sheet correctly shows master). Capping at read time keeps
+ * in-execution checks consistent with the final displayed rank, regardless of
+ * whether the check runs before or after the rank grant in operation order.
+ * @param id - Variable store ID (for LEVEL)
+ * @param variable - The proficiency variable to compile
+ * @returns - The level-capped compiled proficiency type
+ */
+export function getLevelCappedProficiencyType(id: StoreID, variable: VariableProf): ProficiencyType {
+  const compiled = compileProficiencyType(variable.value);
+  if (!variable.name.startsWith('SKILL_')) return compiled;
+  if ((variable.value.increases ?? 0) <= 0) return compiled;
+  const cap = getSkillIncreaseCap(getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0);
+  const cappedStack = isProficiencyTypeGreaterOrEqual(compiled, cap) ? cap : compiled;
+  return maxProficiencyType(variable.value.value, cappedStack);
+}
+
 /**
  * Clamps every SKILL_* proficiency's spent increases to what's legal for the entity's
  * level, so rank grants and skill increases compose per RAW instead of stacking past
@@ -617,9 +649,7 @@ export function setVariable(id: StoreID, name: string, value: VariableValue, sou
  * @param id - Variable store ID to normalize
  */
 export function normalizeProficiencies(id: StoreID) {
-  const level = getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0;
-  // The highest rank a skill increase itself may target at this level
-  const increaseCap: ProficiencyType = level >= 15 ? 'L' : level >= 7 ? 'M' : 'E';
+  const increaseCap = getSkillIncreaseCap(getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0);
 
   for (const variable of Object.values(getVariables(id))) {
     if (!isVariableProf(variable) || !variable.name.startsWith('SKILL_')) continue;
