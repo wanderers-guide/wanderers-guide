@@ -4,7 +4,7 @@ import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import { BuyItemButton } from '@common/BuyItemButton';
 import TraitsDisplay from '@common/TraitsDisplay';
-import { fetchContentAll, fetchContentById, getDefaultSources } from '@content/content-store';
+import { fetchContentAll, fetchContentById, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import { isItemArchaic } from '@items/inv-utils';
 import {
@@ -488,7 +488,10 @@ export default function SelectContentModal({
   }, [innerProps.options?.overrideOptions, innerProps.options?.abilityBlockType]);
 
   const { data: versHeritageData } = useQuery({
-    queryKey: [`select-content-vers-heritage-data`, { selectedId: innerProps.options?.selectedId }],
+    queryKey: [
+      `select-content-vers-heritage-data`,
+      { selectedId: innerProps.options?.selectedId, sources: getDefaultSourcesKey('PAGE') },
+    ],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
 
@@ -745,7 +748,14 @@ function SelectionOptions(props: {
   const sortByPrereqs = props.abilityBlockType === 'feat' && (character?.options?.auto_detect_prerequisites ?? false);
 
   const { data, isFetching } = useQuery({
-    queryKey: [`select-content-options-${props.type}`, { sourceId: props.sourceId }],
+    queryKey: [
+      `select-content-options-${props.type}`,
+      {
+        sourceId: props.sourceId,
+        // Default sources only matter when no specific source is pinned (mirrors the queryFn's fallback)
+        sources: props.sourceId === 'all' || !props.sourceId ? getDefaultSourcesKey('PAGE') : null,
+      },
+    ],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       const [_key, { sourceId }] = queryKey;

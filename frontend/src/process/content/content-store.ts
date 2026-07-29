@@ -341,6 +341,25 @@ export function getDefaultSources(view: SourceKey) {
 }
 
 /**
+ * A stable, serializable fingerprint of the current default sources for a view, for use in
+ * react-query queryKeys.
+ *
+ * The default sources are module-level mutable state (see defineDefaultSources), so any
+ * queryFn that fetches content scoped by getDefaultSources(view) MUST include this value in
+ * its queryKey. A key without it pins the first-fetched corpus for the cache lifetime: after
+ * some page narrows the scope (e.g. ContentFeedbackModal scoping INFO to a single book),
+ * every other consumer of that key silently gets the narrowed corpus — pickers showing the
+ * wrong set of books depending on page-visit order.
+ *
+ * Array scopes are sorted before serializing so the same set of source ids produces the same
+ * fingerprint regardless of the order the sources were enabled in.
+ */
+export function getDefaultSourcesKey(view: SourceKey): string {
+  const sources = getDefaultSources(view);
+  return Array.isArray(sources) ? [...sources].sort((a, b) => a - b).join(',') : sources;
+}
+
+/**
  * Import content from a content package into the content store
  * @param packageData - Content package data to import
  */

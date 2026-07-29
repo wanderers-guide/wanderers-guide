@@ -7,7 +7,7 @@ import { DisplayIcon } from '@common/IconDisplay';
 import { selectContent } from '@common/select/SelectContent';
 import { applyConditions } from '@conditions/condition-handler';
 import { GUIDE_BLUE, IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
-import { defineDefaultSources, fetchContentPackage, getDefaultSources } from '@content/content-store';
+import { defineDefaultSources, fetchContentPackage, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
 import { getBestArmor } from '@items/inv-utils';
 import {
   Tabs,
@@ -582,6 +582,8 @@ function EncounterView(props: {
       `computed-combatants`,
       {
         combatants: combatants,
+        // computeCombatants fetches content scoped by the default PAGE sources
+        sources: getDefaultSourcesKey('PAGE'),
       },
     ],
     queryFn: async () => {

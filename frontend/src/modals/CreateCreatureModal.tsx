@@ -1,7 +1,7 @@
 import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { DISCORD_URL } from '@constants/urls';
-import { fetchContentAll, fetchContentById, getDefaultSources } from '@content/content-store';
+import { fetchContentAll, fetchContentById, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
 import { toHTML } from '@content/content-utils';
 import {
   ActionIcon,
@@ -121,7 +121,7 @@ export function CreateCreatureModal(props: {
 
   // Get all ability blocks
   const { data: abilityBlocks } = useQuery({
-    queryKey: [`get-all-ability-blocks`],
+    queryKey: [`get-all-ability-blocks`, { sources: getDefaultSourcesKey('INFO') }],
     queryFn: async () => {
       return await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('INFO'));
     },

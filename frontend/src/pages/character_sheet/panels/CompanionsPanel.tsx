@@ -1,6 +1,6 @@
 import { characterState } from '@atoms/characterAtoms';
 import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
-import { fetchContentAll, fetchContentPackage, getDefaultSources } from '@content/content-store';
+import { fetchContentAll, fetchContentPackage, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
 import {
   Stack,
   Title,
@@ -500,7 +500,7 @@ function AddCompanionSection() {
   const isPhone = useMediaQuery(phoneQuery());
 
   const { data, isFetching } = useQuery({
-    queryKey: [`get-companions-data`],
+    queryKey: [`get-companions-data`, { sources: getDefaultSourcesKey('PAGE') }],
     queryFn: async () => {
       const traits = await fetchContentAll<Trait>('trait', getDefaultSources('PAGE'));
       const creatures = await fetchContentAll<Creature>('creature', getDefaultSources('PAGE'));
