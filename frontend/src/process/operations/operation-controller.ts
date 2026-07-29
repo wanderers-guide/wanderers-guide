@@ -14,7 +14,7 @@ import {
 } from '@schemas/content';
 import { getRootSelection, resetSelections, setSelections } from './selection-tree';
 import { Operation, OperationOptions, OperationResult, OperationSelect } from '@schemas/operations';
-import { runOperations } from './operation-runner';
+import { clearPendingBinds, resolvePendingBinds, runOperations } from './operation-runner';
 import {
   addVariable,
   adjVariable,
@@ -117,6 +117,7 @@ export async function _executeCharacterOperations(data: {
   const { character, content, context } = data;
 
   resetVariables('CHARACTER');
+  clearPendingBinds();
   defineSelectionTree(character);
   defineDefaultSources('INFO', content.defaultSources.INFO);
   defineDefaultSources('PAGE', content.defaultSources.PAGE);
@@ -993,6 +994,9 @@ export async function _executeCharacterOperations(data: {
     ],
   });
 
+  // Apply queued variable bindings now that every round has run
+  resolvePendingBinds();
+
   // Set calculated stats
   setCalculatedStatsInStore('CHARACTER', character);
 
@@ -1014,6 +1018,7 @@ export async function _executeCreatureOperations(data: {
   const { id, creature, content } = data;
 
   resetVariables(id);
+  clearPendingBinds();
   defineSelectionTree(creature);
   defineDefaultSources('INFO', content.defaultSources.INFO);
   defineDefaultSources('PAGE', content.defaultSources.PAGE);
@@ -1112,6 +1117,9 @@ export async function _executeCreatureOperations(data: {
   const conditionalResults = await operationsPassthrough({
     doOnlyConditionals: true,
   });
+
+  // Apply queued variable bindings now that every round has run
+  resolvePendingBinds();
 
   // Set calculated stats
   setCalculatedStatsInStore(id, creature);
