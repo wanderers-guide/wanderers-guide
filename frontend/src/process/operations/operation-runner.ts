@@ -32,6 +32,7 @@ import {
   addVariable,
   addVariableBonus,
   adjVariable,
+  getLevelCappedProficiencyType,
   getVariable,
   getVariables,
   setVariable,
@@ -1006,7 +1007,11 @@ async function runConditional(
       // if (!variable) {
       //   return false;
       // }
-      return false;
+
+      // An absent variable can't equal or include anything, so negated checks pass
+      // (e.g. a muse feature's MAIN_BARD_MUSE ≠ 'enigma' should hold when the store
+      // never created MAIN_BARD_MUSE at all). Every other operator stays false.
+      return check.operator === 'NOT_EQUALS' || check.operator === 'NOT_INCLUDES';
     }
 
     if (variable.type === 'attr') {
@@ -1081,7 +1086,12 @@ async function runConditional(
         return !varValue.map((v) => labelToVariable(v)).includes(labelToVariable(`${check.value}`));
       }
     } else if (variable.type === 'prof') {
-      const profType = compileProficiencyType(variable.value);
+      // Level-capped compile: conditionals execute before normalizeProficiencies
+      // runs, so a plain compile here could read a rank the normalization will clamp
+      // away (rank grant + spent increases) and misfire high-rank checks like Ward
+      // Medic's "legendary in Medicine". The cap keeps in-execution checks
+      // consistent with the final displayed rank.
+      const profType = getLevelCappedProficiencyType(varId, variable);
       // Compare by rank order. The strict operators must actually be strict: the
       // condition editor offers < and ≤ as distinct options, and content depends on
       // the difference (e.g. Virtuosic Performer's "+2 if master" else-branch only
