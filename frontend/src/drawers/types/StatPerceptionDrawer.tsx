@@ -1,7 +1,7 @@
 import { drawerState } from '@atoms/navAtoms';
 import RichText from '@common/RichText';
 import { collectEntitySenses } from '@content/collect-content';
-import { fetchContentAll, getDefaultSources } from '@content/content-store';
+import { fetchContentAll, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
 import {
   Title,
@@ -73,7 +73,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
 
   // Collect senses info
   const { data: abilityBlocks } = useQuery({
-    queryKey: [`find-ability-blocks`],
+    queryKey: [`find-ability-blocks`, { sources: getDefaultSourcesKey('PAGE') }],
     queryFn: async () => {
       return await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('PAGE'));
     },

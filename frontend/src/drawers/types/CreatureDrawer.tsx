@@ -4,7 +4,13 @@ import { glassStyle } from '@utils/colors';
 import { DisplayIcon } from '@common/IconDisplay';
 import StatBlockSection from '@common/StatBlockSection';
 import { applyConditions } from '@conditions/condition-handler';
-import { fetchContentById, fetchContentPackage, fetchTraits, getDefaultSources } from '@content/content-store';
+import {
+  fetchContentById,
+  fetchContentPackage,
+  fetchTraits,
+  getDefaultSources,
+  getDefaultSourcesKey,
+} from '@content/content-store';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
 import { addExtraItems, checkBulkLimit } from '@items/inv-handlers';
 import { applyEquipmentPenalties } from '@items/inv-utils';
@@ -123,7 +129,7 @@ export function CreatureDrawerContent(props: {
   const view = props.data.readOnly ? 'BLOCK' : drawerData.view;
 
   const { data: content, isFetching, refetch } = useQuery({
-    queryKey: [`find-creature-details-${id}`, { id }],
+    queryKey: [`find-creature-details-${id}`, { id, sources: getDefaultSourcesKey('INFO') }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
        
