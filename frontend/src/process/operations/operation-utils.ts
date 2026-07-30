@@ -58,6 +58,7 @@ import {
   getVariable,
 } from '@variables/variable-manager';
 import {
+  compileExpressions,
   compileProficiencyType,
   isProficiencyTypeGreaterOrEqual,
   labelToVariable,
@@ -65,7 +66,7 @@ import {
 } from '@variables/variable-utils';
 import { isAbilityBlockVisible, isSpellVisible, isTraitVisible } from '@content/content-hidden';
 import { isTruthy } from '@utils/type-fixing';
-import { isNumber, intersection } from 'lodash-es';
+import { escapeRegExp, isNumber, intersection } from 'lodash-es';
 import { throwError } from '@utils/error-handling';
 import { GenericData } from '@schemas/index';
 
@@ -385,6 +386,30 @@ export async function determineFilteredSelectionList(
   return [];
 }
 
+/**
+ * Resolves a level filter bound that may be a fixed number or a variable expression string.
+ * Expression strings (e.g. `{{LEVEL}}` or `{{LEVEL/2}}`) are compiled against the given store
+ * at selection time, so the bound tracks the character's current level — needed for retrain-style
+ * selections (SF2e Adaptive Talent / In Another Life) and "max half your level" class archetype feats.
+ * @param id - Variable store ID to resolve expressions against
+ * @param bound - The stored filter bound (number, expression string, null, or undefined)
+ * @returns The numeric bound, or undefined if no usable bound could be resolved
+ */
+function resolveLevelFilterBound(id: StoreID, bound: number | string | null | undefined): number | null | undefined {
+  if (typeof bound !== 'string') {
+    // Numbers pass through; null is preserved to keep legacy comparison behavior unchanged
+    return bound;
+  }
+  const compiled = compileExpressions(id, bound.trim(), true);
+  const value = parseInt(compiled ?? '');
+  if (isNaN(value)) {
+    // A broken expression shouldn't lock the selection — fail open with no cap
+    console.warn(`Could not resolve level filter expression: ${bound}`);
+    return undefined;
+  }
+  return value;
+}
+
 async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: OperationSelectFiltersAbilityBlock) {
   let abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('PAGE'));
 
@@ -397,8 +422,27 @@ async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: 
   if (filters.level.min !== undefined) {
     abilityBlocks = abilityBlocks.filter((ab) => ab.level !== null && ab.level >= filters.level.min!);
   }
-  if (filters.level.max !== undefined) {
-    abilityBlocks = abilityBlocks.filter((ab) => ab.level !== null && ab.level <= filters.level.max!);
+  const maxLevel = resolveLevelFilterBound(id, filters.level.max);
+  if (maxLevel !== undefined) {
+    abilityBlocks = abilityBlocks.filter((ab) => ab.level !== null && ab.level <= maxLevel!);
+  }
+
+  if (filters.skill) {
+    // Match by the ability block's tagged skills (meta_data.skill) or, since most feats aren't
+    // tagged, by its prerequisites mentioning the skill (e.g. "trained in Computers").
+    const skillVariable = labelToVariable(filters.skill);
+    const skillRegex = new RegExp(`\\b${escapeRegExp(filters.skill.trim())}\\b`, 'i');
+    abilityBlocks = abilityBlocks.filter((ab) => {
+      const taggedSkills = ab.meta_data?.skill
+        ? Array.isArray(ab.meta_data.skill)
+          ? ab.meta_data.skill
+          : [ab.meta_data.skill]
+        : [];
+      if (taggedSkills.some((s) => labelToVariable(s) === skillVariable)) {
+        return true;
+      }
+      return (ab.prerequisites ?? []).some((prereq) => skillRegex.test(prereq));
+    });
   }
 
   if (filters.isFromAncestry) {
@@ -560,6 +604,39 @@ async function getTraitList(id: StoreID, operationUUID: string, filters: Operati
   });
 }
 
+/**
+ * Applies the optional item-trait filters of an ADJ_VALUE selection to a list of items.
+ * - `filters.traits`: keeps items that have at least ONE of the listed traits (any-match —
+ *   unlike ability block trait filters, since e.g. "a weapon with the dwarf or goblin trait"
+ *   can never match ALL of a long trait list).
+ * - `filters.hasAncestryTrait`: keeps items that carry any ancestry / versatile heritage trait
+ *   (backs Unconventional Weaponry-style selections).
+ * @param items - Items backing the selection list (weapons or armor)
+ * @param filters - The ADJ_VALUE selection filters
+ * @returns The filtered item list
+ */
+async function filterItemsByTraitFilters(items: Item[], filters: OperationSelectFiltersAdjValue): Promise<Item[]> {
+  let filtered = items;
+
+  if (filters.traits && filters.traits.length > 0) {
+    const tDatas = await Promise.all(filters.traits.map((t) => fetchTraitByName(t)));
+    const traitIds = tDatas.filter(isTruthy).map((t) => t!.id);
+    filtered = filtered.filter((item) => intersection(item.traits ?? [], traitIds).length > 0);
+  }
+
+  if (filters.hasAncestryTrait) {
+    const allTraits = await fetchContentAll<Trait>('trait', getDefaultSources('PAGE'));
+    const ancestryTraitIds = new Set(
+      allTraits
+        .filter((t) => t.meta_data?.ancestry_trait || t.meta_data?.versatile_heritage_trait)
+        .map((t) => t.id)
+    );
+    filtered = filtered.filter((item) => (item.traits ?? []).some((traitId) => ancestryTraitIds.has(traitId)));
+  }
+
+  return filtered;
+}
+
 async function getAdjValueList(id: StoreID, operationUUID: string, filters: OperationSelectFiltersAdjValue) {
   let variables: Variable[] = [];
 
@@ -580,7 +657,10 @@ async function getAdjValueList(id: StoreID, operationUUID: string, filters: Oper
   }
   if (filters.group === 'WEAPON') {
     const items = await fetchContentAll<Item>('item', getDefaultSources('PAGE'));
-    const weapons = items.filter((item) => item.group === 'WEAPON');
+    const weapons = await filterItemsByTraitFilters(
+      items.filter((item) => item.group === 'WEAPON'),
+      filters
+    );
     variables = weapons.map((w) => {
       return {
         name: `WEAPON_${labelToVariable(w.name)}`,
@@ -591,7 +671,10 @@ async function getAdjValueList(id: StoreID, operationUUID: string, filters: Oper
   }
   if (filters.group === 'ARMOR') {
     const items = await fetchContentAll<Item>('item', getDefaultSources('PAGE'));
-    const armor = items.filter((item) => item.group === 'ARMOR');
+    const armor = await filterItemsByTraitFilters(
+      items.filter((item) => item.group === 'ARMOR'),
+      filters
+    );
     variables = armor.map((a) => {
       return {
         name: `ARMOR_${labelToVariable(a.name)}`,
