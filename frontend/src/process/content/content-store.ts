@@ -146,7 +146,10 @@ const CONTENT_CACHE_KEY = 'content-store';
 // Bump to invalidate every client's persisted cache (e.g. when the content shape changes).
 // v2: source rows carry the updated_at change token; v1 blobs predate it and would fail
 // every freshness check, so retire them once via the version gate instead.
-const CONTENT_CACHE_VERSION = 2;
+// v3: fetchData previously paginated without an ORDER BY, so any multi-chunk fetch (items,
+// ability blocks) could persist a silently partial corpus that the change-token check then
+// verified as fresh forever. Retire every possibly-partial blob now that pagination is stable.
+const CONTENT_CACHE_VERSION = 3;
 // Backstop only: staleness is normally caught by the per-source change-token check against
 // get-content-versions on load (see verifyPersistedContentVersions). The TTL exists for the
 // cases where that check cannot run (offline, endpoint unreachable, >500 sources).
@@ -271,11 +274,15 @@ async function persistContentCache(): Promise<void> {
   if (!cacheDirty) return;
   cacheDirty = false;
   try {
+    // Never persist an empty list result: a full-corpus fetch that returned [] is a failure
+    // artifact (network error, interrupted load), and once persisted it would be served as
+    // the real corpus until the version/TTL gates retire it.
+    const filteredContentStore = new Map([...contentStore].filter(([, v]) => !(Array.isArray(v) && v.length === 0)));
     await idbSet(CONTENT_CACHE_KEY, {
       version: CONTENT_CACHE_VERSION,
       savedAt: Date.now(),
       idStore,
-      contentStore,
+      contentStore: filteredContentStore,
     } satisfies PersistedContentCache);
   } catch (e) {
     cacheDirty = true; // retry on the next schedule
