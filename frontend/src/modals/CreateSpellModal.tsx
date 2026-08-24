@@ -230,6 +230,7 @@ export function CreateSpellModal(props: {
                     { value: 'THREE-ACTIONS', label: actionCostToLabel('THREE-ACTIONS') },
                     { value: 'FREE-ACTION', label: actionCostToLabel('FREE-ACTION') },
                     { value: 'REACTION', label: actionCostToLabel('REACTION') },
+                    { value: 'REACTION-OR-ONE-ACTION', label: actionCostToLabel('REACTION-OR-ONE-ACTION') },
                     { value: 'ONE-TO-TWO-ACTIONS', label: actionCostToLabel('ONE-TO-TWO-ACTIONS') },
                     { value: 'ONE-TO-THREE-ACTIONS', label: actionCostToLabel('ONE-TO-THREE-ACTIONS') },
                     { value: 'TWO-TO-THREE-ACTIONS', label: actionCostToLabel('TWO-TO-THREE-ACTIONS') },

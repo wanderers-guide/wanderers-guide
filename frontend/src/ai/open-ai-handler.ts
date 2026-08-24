@@ -799,6 +799,7 @@ interface GranularCreature {
       | 'THREE-ACTIONS'
       | 'REACTION'
       | 'FREE-ACTION'
+      | 'REACTION-OR-ONE-ACTION'
       | 'ONE-TO-TWO-ACTIONS'
       | 'ONE-TO-THREE-ACTIONS'
       | 'TWO-TO-THREE-ACTIONS'
