@@ -40,6 +40,7 @@ import {
 import {
   compileProficiencyType,
   getProficiencyTypeValue,
+  isProficiencyType,
   labelToVariable,
   maxProficiencyType,
 } from '@variables/variable-utils';
@@ -993,6 +994,23 @@ async function runConditional(
   options?: OperationOptions,
   sourceLabel?: string
 ): Promise<OperationResult> {
+  // Proficiency variables this conditional would GRANT a rank letter to, in either branch.
+  // A condition checking one of these is a self-guard ("if not yet expert, become expert"):
+  // it must evaluate against the rank the character has from grants alone. Numeric skill
+  // increases run before the conditional round, so an increase-inclusive read lets an
+  // increase meant to stack ABOVE the grant satisfy the guard instead — the grant never
+  // fires and the increase is consumed reaching the rank the grant should have provided
+  // (Medic Dedication at trained + a level-7 increase compiled to expert, not master).
+  // Threshold conditions that gate anything else keep the increase-inclusive read below.
+  const selfGrantProfVars = new Set(
+    [...(operation.data.trueOperations ?? []), ...(operation.data.falseOperations ?? [])]
+      .filter(
+        (op): op is OperationAdjValue =>
+          op.type === 'adjValue' && isProficiencyType((op.data.value as { value?: unknown })?.value)
+      )
+      .map((op) => op.data.variable)
+  );
+
   const makeCheck = (check: ConditionCheckData) => {
     let variable = getVariable(varId, check.name);
 
@@ -1091,7 +1109,11 @@ async function runConditional(
       // away (rank grant + spent increases) and misfire high-rank checks like Ward
       // Medic's "legendary in Medicine". The cap keeps in-execution checks
       // consistent with the final displayed rank.
-      const profType = getLevelCappedProficiencyType(varId, variable);
+      // Self-guards (this conditional grants a rank to the very variable it checks)
+      // instead read the grant-only rank — see selfGrantProfVars above.
+      const profType = selfGrantProfVars.has(variable.name)
+        ? variable.value.value
+        : getLevelCappedProficiencyType(varId, variable);
       // Compare by rank order. The strict operators must actually be strict: the
       // condition editor offers < and ≤ as distinct options, and content depends on
       // the difference (e.g. Virtuosic Performer's "+2 if master" else-branch only
