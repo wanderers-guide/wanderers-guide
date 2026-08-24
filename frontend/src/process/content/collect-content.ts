@@ -196,7 +196,12 @@ export function collectEntitySpellcasting(id: StoreID, entity: LivingEntity) {
       focus.push({
         spell_id: spellData.spellId,
         source: spellData.castingSource ?? '',
-        rank: spellData.rank ?? 0,
+        // Keep an unset rank unset. Content marks focus CANTRIPS with an explicit `rank: 0`
+        // (e.g. bard compositions); most focus spells are granted without a rank because they
+        // auto-heighten. Collapsing unset to 0 made every rank-less grant read as a cantrip,
+        // and getFocusPoints excludes cantrips — so those spells stopped counting toward the
+        // focus pool (sheet, rest reset, and PDF export all undercounted).
+        rank: spellData.rank ?? undefined,
       });
     } else if (spellData.type === 'INNATE') {
       innate.push({
