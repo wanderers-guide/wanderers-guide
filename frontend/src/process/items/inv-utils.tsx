@@ -91,6 +91,9 @@ export async function getDefaultContainerContents(item: Item, allItems?: Item[],
     if (!containerItem) continue;
     if (containerItem.meta_data) {
       containerItem.meta_data.quantity = record.quantity;
+      // Fresh copies enter play at full HP (same as handleAddItem) — pack/kit contents
+      // whose records ship hp: 0 with a broken threshold otherwise arrive as "Broken".
+      containerItem.meta_data.hp = containerItem.meta_data.hp_max;
     }
     invItems.push({
       id: crypto.randomUUID(),
