@@ -1,3 +1,4 @@
+import TraitsInput from '@common/TraitsInput';
 import VariableSelect from '@common/VariableSelect';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { SelectContentButton } from '@common/select/SelectContent';
@@ -259,7 +260,9 @@ function SelectionFilteredAbilityBlock(props: {
   const [type, setType] = useState<AbilityBlockType | undefined>(props.filters?.abilityBlockType);
   const [minLevel, setMinLevel] = useState<number | undefined>(props.filters?.level.min ?? undefined);
   const [maxLevel, setMaxLevel] = useState<number | undefined>(props.filters?.level.max ?? undefined);
-  const [traits, setTraits] = useState<string[]>((props.filters?.traits as string[]) ?? []);
+  // Trait IDs. Legacy filters stored trait *names*, which are ambiguous when two books define
+  // the same name, so those are kept verbatim until the filter is re-saved through the picker.
+  const [traits, setTraits] = useState<(string | number)[]>(props.filters?.traits ?? []);
   const [isFromClass, setIsFromClass] = useState<boolean | undefined>(props.filters?.isFromClass);
   const [isFromAncestry, setIsFromAncestry] = useState<boolean | undefined>(props.filters?.isFromAncestry);
   const [isFromArchetype, setIsFromArchetype] = useState<boolean | undefined>(props.filters?.isFromArchetype);
@@ -322,14 +325,13 @@ function SelectionFilteredAbilityBlock(props: {
         </Group>
       </Box>
 
-      <TagsInput
+      <TraitsInput
         label='Has Traits'
         placeholder='Enter trait'
         size='xs'
         splitChars={[',', ';', '|']}
-        data={[]}
-        value={traits}
-        onChange={setTraits}
+        traits={traits}
+        onValuesChange={setTraits}
       />
 
       <Switch
@@ -363,7 +365,8 @@ function SelectionFilteredSpell(props: {
 }) {
   const [minLevel, setMinLevel] = useState<number | undefined>(props.filters?.level.min ?? undefined);
   const [maxLevel, setMaxLevel] = useState<number | undefined>(props.filters?.level.max ?? undefined);
-  const [traits, setTraits] = useState<string[]>(props.filters?.traits ?? []);
+  // Trait IDs — see the note on the ability-block filter above for the legacy-name handling.
+  const [traits, setTraits] = useState<(string | number)[]>(props.filters?.traits ?? []);
   const [traditions, setTraditions] = useState<string[]>(props.filters?.traditions ?? []);
 
   // Spell Data
@@ -515,14 +518,13 @@ function SelectionFilteredSpell(props: {
       </Box>
 
       <Group>
-        <TagsInput
+        <TraitsInput
           label='Has Traits'
           placeholder='Enter trait'
           size='xs'
           splitChars={[',', ';', '|']}
-          data={[]}
-          value={traits}
-          onChange={setTraits}
+          traits={traits}
+          onValuesChange={setTraits}
         />
 
         <TagsInput

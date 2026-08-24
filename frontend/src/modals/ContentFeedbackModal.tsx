@@ -8,6 +8,7 @@ import {
   defineDefaultSources,
   fetchAbilityBlockByName,
   fetchContentById,
+  fetchContentSources,
   fetchCreatureByName,
   fetchItemByName,
   fetchSpellByName,
@@ -50,8 +51,17 @@ export default function ContentFeedbackModal(props: {
       props.onStartFeedback();
       setSubmitUpdate({ id: undefined, content: props.type });
 
-      // Add the content source to make sure we can reference it's content
-      defineDefaultSources('INFO', props.data.contentSourceId ? [props.data.contentSourceId] : 'ALL-USER-ACCESSIBLE');
+      // Make sure we can reference this source's content (it may be unpublished) WITHOUT
+      // narrowing the scope to just it — the editor's item pickers (base item, property
+      // runes, upgrades) list from these sources, and runes live in other books.
+      defineDefaultSources('INFO', 'ALL-USER-ACCESSIBLE');
+      const sourceId = props.data.contentSourceId;
+      if (sourceId) {
+        void (async () => {
+          const accessible = await fetchContentSources('ALL-USER-ACCESSIBLE');
+          defineDefaultSources('INFO', [...accessible.map((s) => s.id), sourceId]);
+        })();
+      }
     }
   }, []);
 

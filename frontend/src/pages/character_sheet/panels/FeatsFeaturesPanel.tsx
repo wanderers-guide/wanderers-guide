@@ -6,7 +6,7 @@ import {
   HeritageSelectionOption,
   PhysicalFeatureSelectionOption,
 } from '@common/select/SelectContent';
-import { fetchContentAll, getContentFast, getDefaultSources } from '@content/content-store';
+import { fetchContentAll, getContentFast, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
 import {
   useMantineTheme,
   useMantineColorScheme,
@@ -42,7 +42,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
   const [section, setSection] = useState('FEATS');
 
   const { data: rawData } = useQuery({
-    queryKey: [`find-feats-and-features`],
+    queryKey: [`find-feats-and-features`, { characterId: character?.id, sources: getDefaultSourcesKey('PAGE') }],
     queryFn: async () => {
       if (!character) return null;
 

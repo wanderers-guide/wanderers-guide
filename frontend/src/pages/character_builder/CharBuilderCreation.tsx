@@ -11,6 +11,7 @@ import {
   fetchContentPackage,
   fetchContentSources,
   getDefaultSources,
+  getDefaultSourcesKey,
   isContentPackageEmpty,
 } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
@@ -75,7 +76,10 @@ export default function CharBuilderCreation(props: { characterId: number; pageHe
   const [doneLoading, setDoneLoading] = useState(false);
 
   const { data: content, isFetching, refetch } = useQuery({
-    queryKey: [`find-content-${props.characterId}-for-char-builder-creation`, { characterId: props.characterId }],
+    queryKey: [
+      `find-content-${props.characterId}-for-char-builder-creation`,
+      { characterId: props.characterId, sources: getDefaultSourcesKey('PAGE') },
+    ],
     queryFn: async () => {
       // Prefetch content sources (to avoid multiple requests)
       await fetchContentSources(getDefaultSources('PAGE'));

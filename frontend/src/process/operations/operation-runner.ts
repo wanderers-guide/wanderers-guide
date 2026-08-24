@@ -32,11 +32,17 @@ import {
   addVariable,
   addVariableBonus,
   adjVariable,
+  getLevelCappedProficiencyType,
   getVariable,
   getVariables,
   setVariable,
 } from '@variables/variable-manager';
-import { compileProficiencyType, labelToVariable, maxProficiencyType } from '@variables/variable-utils';
+import {
+  compileProficiencyType,
+  getProficiencyTypeValue,
+  labelToVariable,
+  maxProficiencyType,
+} from '@variables/variable-utils';
 import {
   ObjectWithUUID,
   determineFilteredSelectionList,
@@ -495,18 +501,47 @@ async function runSetValue(
   return null;
 }
 
+/**
+ * Variable bindings queued during execution, resolved once every round has run.
+ * Bindings copy another variable's FINAL value (e.g. Quick Climb's "climb Speed equal
+ * to your land Speed"), so they can't resolve mid-execution — and the old setTimeout
+ * deferral was lost entirely under worker execution, because the store is exported
+ * back to the main thread before the timer ever fires.
+ */
+let pendingBinds: {
+  varId: StoreID;
+  variable: string;
+  value: OperationBindValue['data']['value'];
+  sourceLabel?: string;
+}[] = [];
+
+/** Drops queued bindings from a previous (possibly aborted) execution. */
+export function clearPendingBinds() {
+  pendingBinds = [];
+}
+
+/** Applies all queued bindings against the now-final variable stores. */
+export function resolvePendingBinds() {
+  for (const bind of pendingBinds) {
+    const bindValue = getVariable(bind.value.storeId, bind.value.variable);
+    if (bindValue) {
+      setVariable(bind.varId, bind.variable, bindValue.value, bind.sourceLabel);
+    }
+  }
+  pendingBinds = [];
+}
+
 async function runBindValue(
   varId: StoreID,
   operation: OperationBindValue,
   sourceLabel?: string
 ): Promise<OperationResult> {
-  // On outside process
-  setTimeout(() => {
-    const bindValue = getVariable(operation.data.value.storeId, operation.data.value.variable);
-    if (bindValue) {
-      setVariable(varId, operation.data.variable, bindValue.value, sourceLabel);
-    }
-  }, 1);
+  pendingBinds.push({
+    varId,
+    variable: operation.data.variable,
+    value: operation.data.value,
+    sourceLabel,
+  });
   return null;
 }
 
@@ -972,7 +1007,11 @@ async function runConditional(
       // if (!variable) {
       //   return false;
       // }
-      return false;
+
+      // An absent variable can't equal or include anything, so negated checks pass
+      // (e.g. a muse feature's MAIN_BARD_MUSE ≠ 'enigma' should hold when the store
+      // never created MAIN_BARD_MUSE at all). Every other operator stays false.
+      return check.operator === 'NOT_EQUALS' || check.operator === 'NOT_INCLUDES';
     }
 
     if (variable.type === 'attr') {
@@ -1047,23 +1086,30 @@ async function runConditional(
         return !varValue.map((v) => labelToVariable(v)).includes(labelToVariable(`${check.value}`));
       }
     } else if (variable.type === 'prof') {
-      const profType = compileProficiencyType(variable.value);
+      // Level-capped compile: conditionals execute before normalizeProficiencies
+      // runs, so a plain compile here could read a rank the normalization will clamp
+      // away (rank grant + spent increases) and misfire high-rank checks like Ward
+      // Medic's "legendary in Medicine". The cap keeps in-execution checks
+      // consistent with the final displayed rank.
+      const profType = getLevelCappedProficiencyType(varId, variable);
+      // Compare by rank order. The strict operators must actually be strict: the
+      // condition editor offers < and ≤ as distinct options, and content depends on
+      // the difference (e.g. Virtuosic Performer's "+2 if master" else-branch only
+      // fires when the rank is NOT below master). The old maxProficiencyType-based
+      // checks returned true on equality for both < and >.
+      const rankOf = (prof: ProficiencyType) => getProficiencyTypeValue(prof);
       if (check.operator === 'EQUALS') {
         return profType === check.value;
       } else if (check.operator === 'GREATER_THAN') {
-        const bestProf = maxProficiencyType(profType, check.value as ProficiencyType);
-        return bestProf === profType;
+        return rankOf(profType) > rankOf(check.value as ProficiencyType);
       } else if (check.operator === 'LESS_THAN') {
-        const bestProf = maxProficiencyType(profType, check.value as ProficiencyType);
-        return bestProf === check.value;
+        return rankOf(profType) < rankOf(check.value as ProficiencyType);
       } else if (check.operator === 'NOT_EQUALS') {
         return profType !== check.value;
       } else if (check.operator === 'GREATER_THAN_OR_EQUALS') {
-        const bestProf = maxProficiencyType(profType, check.value as ProficiencyType);
-        return bestProf === profType || profType === check.value;
+        return rankOf(profType) >= rankOf(check.value as ProficiencyType);
       } else if (check.operator === 'LESS_THAN_OR_EQUALS') {
-        const bestProf = maxProficiencyType(profType, check.value as ProficiencyType);
-        return bestProf === check.value || profType === check.value;
+        return rankOf(profType) <= rankOf(check.value as ProficiencyType);
       }
     }
     return false;

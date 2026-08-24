@@ -472,8 +472,13 @@ async function getSpellList(operationUUID: string, filters: OperationSelectFilte
     spells = spells.filter((spell) => spell.rank <= filters.level.max!);
   }
   if (filters.traits !== undefined) {
-    const traits = await Promise.all(filters.traits.map((trait) => fetchTraitByName(trait)));
-    const traitIds = traits.filter(isTruthy).map((trait) => trait!.id);
+    const tDatas = await Promise.all(
+      filters.traits.map((t) =>
+        // If it's a number, it's a trait id, otherwise it's a legacy trait name
+        isNumber(t) ? t : fetchTraitByName(t)
+      )
+    );
+    const traitIds = tDatas.map((t) => (isNumber(t) ? t : t?.id)).filter(isTruthy);
 
     // Filter out spells that don't have all the traits
     spells = spells.filter((spell) => {

@@ -255,7 +255,7 @@ export function CreateAbilityBlockModal(props: {
               />
               <TraitsInput
                 label='Other Traits'
-                value={traits.map((trait) => trait.name)}
+                traits={traits.map((trait) => trait.id)}
                 onTraitChange={(traits) => setTraits(traits)}
                 style={{ flex: 1 }}
               />
