@@ -624,9 +624,13 @@ export async function fetchData<T = Record<string, any>>(
     return false;
   })(filters);
 
-  // Paginate through fetching rows, as there's a limit of rows per query
+  // Paginate through fetching rows, as there's a limit of rows per query.
+  // Keyset pagination (ORDER BY id + id > cursor) instead of OFFSET: without an ORDER BY,
+  // Postgres guarantees no row order across the separate chunk queries, so a plan flip
+  // mid-pagination silently drops or duplicates rows — an HTTP 200 with a partial corpus
+  // that clients then persist as complete. Every fetchData table has an `id` bigint PK.
   const CHUNK_SIZE = 5000;
-  let offset = 0;
+  let lastId: number | null = null;
   let allRows: T[] = [];
   let hasMore = true;
 
@@ -683,12 +687,15 @@ export async function fetchData<T = Record<string, any>>(
       query = query.gte('created_at', from).lte('created_at', to);
     }
 
-    const { data, error } = await query.range(offset, offset + CHUNK_SIZE - 1);
+    if (lastId !== null) {
+      query = query.gt('id', lastId);
+    }
+    const { data, error } = await query.order('id', { ascending: true }).limit(CHUNK_SIZE);
     if (error) throw error;
 
     if (data && data.length > 0) {
       allRows = allRows.concat(data);
-      offset += CHUNK_SIZE;
+      lastId = data[data.length - 1].id;
     }
 
     // Check if we've fetched all rows
