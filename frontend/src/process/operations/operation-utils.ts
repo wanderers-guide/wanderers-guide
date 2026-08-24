@@ -624,8 +624,13 @@ async function filterItemsByTraitFilters(items: Item[], filters: OperationSelect
   let filtered = items;
 
   if (filters.traits && filters.traits.length > 0) {
-    const tDatas = await Promise.all(filters.traits.map((t) => fetchTraitByName(t)));
-    const traitIds = tDatas.filter(isTruthy).map((t) => t!.id);
+    const tDatas = await Promise.all(
+      filters.traits.map((t) =>
+        // If it's a number, it's a trait id, otherwise it's a legacy trait name
+        isNumber(t) ? t : fetchTraitByName(t)
+      )
+    );
+    const traitIds = tDatas.map((t) => (isNumber(t) ? t : t?.id)).filter(isTruthy);
     filtered = filtered.filter((item) => intersection(item.traits ?? [], traitIds).length > 0);
   }
 
