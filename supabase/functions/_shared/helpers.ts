@@ -765,6 +765,9 @@ export async function insertData<T = Record<string, any>>(
   delete data.created_at;
   delete data.version;
   delete data.updated_at;
+  // GENERATED column — see the matching strip in updateData. INSERTs that echo a fetched
+  // row's search_tsv would be rejected the same way UPDATEs are.
+  delete data.search_tsv;
 
   const { data: insertedData, error } = await client.from(tableName).insert(data).select();
   if (error) {
@@ -880,6 +883,13 @@ export async function updateData(
   delete data.content_source_id;
   delete data.user_id;
   delete data.updated_at;
+  // GENERATED columns can only be written as DEFAULT; Postgres rejects any UPDATE that
+  // sets them. Full-row payloads (the content-update bot replays the editor's snapshot,
+  // which includes search_tsv since the search work added it to every content table)
+  // were failing whole creature approvals with "column can only be updated to DEFAULT".
+  // If another generated column is ever added to a content table, strip it here too
+  // (mirrors the exclusion list in migration 20260729000000).
+  delete data.search_tsv;
 
   let error: any = null;
   let dataResult: any = null;
