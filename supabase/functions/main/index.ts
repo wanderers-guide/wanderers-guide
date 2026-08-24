@@ -25,6 +25,15 @@ serve(async (req: Request) => {
       servicePath,
       memoryLimitMb: 256,
       workerTimeoutMs: 5 * 60 * 1000,
+      // Without explicit CPU limits the edge-runtime defaults apply, and they are
+      // low enough that a full-corpus request (find-spell with no filters walks
+      // every spell) exceeds the hard limit on slow hardware — the supervisor then
+      // cancels the request mid-response, surfacing as a 500 or a cut-off body.
+      // Fast machines finish inside the default budget, which made this a
+      // CI-only failure. Only self-hosted/local stacks run this file; supabase
+      // cloud manages its own worker limits.
+      cpuTimeSoftLimitMs: 30 * 1000,
+      cpuTimeHardLimitMs: 60 * 1000,
       noModuleCache: false,
       importMapPath: '/home/deno/functions/import_map.json',
       envVars,

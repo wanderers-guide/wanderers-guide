@@ -1,4 +1,4 @@
-import { fetchContentAll, getDefaultSources } from '@content/content-store';
+import { fetchContentAll, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
 import { Autocomplete, TagsInput } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Item } from '@schemas/content';
@@ -18,7 +18,7 @@ export function ItemSelect(props: {
   onChange: (item?: Item, name?: string) => void;
 }) {
   const { data, isFetching } = useQuery({
-    queryKey: [`get-items`],
+    queryKey: [`get-items`, { sources: getDefaultSourcesKey('INFO') }],
     queryFn: async () => {
       return await fetchContentAll<Item>('item', getDefaultSources('INFO'));
     },
@@ -54,7 +54,7 @@ export function ItemMultiSelect(props: {
   onChange: (items?: Item[], names?: string[]) => void;
 }) {
   const { data, isFetching } = useQuery({
-    queryKey: [`get-items`],
+    queryKey: [`get-items`, { sources: getDefaultSourcesKey('INFO') }],
     queryFn: async () => {
       return await fetchContentAll<Item>('item', getDefaultSources('INFO'));
     },

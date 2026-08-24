@@ -3,7 +3,7 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { FeatSelectionOption } from '@common/select/SelectContent';
 import { isAbilityBlockVisible } from '@content/content-hidden';
-import { fetchContentAll, fetchContentById, getDefaultSources } from '@content/content-store';
+import { fetchContentAll, fetchContentById, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
 import {
   Accordion,
@@ -82,7 +82,7 @@ export function VersatileHeritageDrawerContent(props: {
   const id = props.data.id;
 
   const { data, isFetching, refetch } = useQuery({
-    queryKey: [`find-versatileHeritage-details-${id}`, { id }],
+    queryKey: [`find-versatileHeritage-details-${id}`, { id, sources: getDefaultSourcesKey('INFO') }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
        

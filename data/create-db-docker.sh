@@ -45,17 +45,39 @@ GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO public;
 SQL
 
-# 3. Load schema. The dump was made with pg_dump 16/17 and uses \restrict /
+# 3. The dump's trigram search indexes reference public.gin_trgm_ops, but a
+#    schema-only dump of public.* doesn't carry CREATE EXTENSION, and step 2
+#    just dropped anything that lived in public. Bootstrap pg_trgm into public
+#    (relocating it if this database pre-enabled it in another schema) before
+#    the schema load, or every *_trgm_idx CREATE INDEX fails.
+echo "==> Ensuring pg_trgm extension in schema public"
+run_psql <<'SQL'
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
+DO $$
+BEGIN
+  IF (SELECT n.nspname FROM pg_extension e JOIN pg_namespace n ON n.oid = e.extnamespace
+      WHERE e.extname = 'pg_trgm') <> 'public' THEN
+    ALTER EXTENSION pg_trgm SET SCHEMA public;
+  END IF;
+END $$;
+SQL
+
+# 4. Load schema. The dump was made with pg_dump 16/17 and uses \restrict /
 #    \unrestrict meta-commands that older psql clients don't recognise. Strip
 #    those before piping in.
+#    CREATE TRIGGER statements are stripped too: pg_dump --table dumps triggers
+#    but never their functions, so loading them here fails. The migrations
+#    replayed in step 8 own every trigger (drop if exists + recreate alongside
+#    the function) — which imposes the invariant that any trigger added to prod
+#    must come from a migration, or local/CI databases will silently lack it.
 echo "==> Loading schema.sql"
-sed -e '/^\\restrict /d' -e '/^\\unrestrict /d' "$SCRIPT_DIR/schema.sql" | run_psql_quiet
+sed -e '/^\\restrict /d' -e '/^\\unrestrict /d' -e '/^CREATE TRIGGER /d' "$SCRIPT_DIR/schema.sql" | run_psql_quiet
 
-# 4. Load data.
+# 5. Load data.
 echo "==> Loading data.sql (~45 MB, this may take a minute)"
 sed -e '/^\\restrict /d' -e '/^\\unrestrict /d' "$SCRIPT_DIR/data.sql" | run_psql_quiet
 
-# 5. Supabase services connect as anon/authenticated/service_role; they need
+# 6. Supabase services connect as anon/authenticated/service_role; they need
 #    USAGE on the schema and CRUD on its objects. RLS policies (defined in
 #    schema.sql) gate actual access.
 echo "==> Granting access to Supabase roles"
@@ -67,12 +89,12 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE O
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO anon, authenticated, service_role;
 SQL
 
-# 6. Trigger that auto-creates a public_user row on auth signup, so users can
+# 7. Trigger that auto-creates a public_user row on auth signup, so users can
 #    register normally instead of needing a manual Studio insert.
 echo "==> Installing auth → public_user trigger"
 run_psql < "$SCRIPT_DIR/auth-trigger.sql"
 
-# 7. Apply migrations. schema.sql is a prod dump that lags whatever landed in
+# 8. Apply migrations. schema.sql is a prod dump that lags whatever landed in
 #    supabase/migrations since the last db_dump.yml refresh, so replaying them
 #    is the only way local/CI matches prod (e.g. the secret-column grants, the
 #    content updated_at triggers). This must run LAST: step 5's blanket GRANT

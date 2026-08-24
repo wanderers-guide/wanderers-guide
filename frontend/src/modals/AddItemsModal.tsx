@@ -1,6 +1,6 @@
 import { drawerState } from '@atoms/navAtoms';
 import { ItemSelectionOption } from '@common/select/SelectContent';
-import { fetchContentAll, getDefaultSources } from '@content/content-store';
+import { fetchContentAll, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
 import {
   ActionIcon,
   Center,
@@ -42,7 +42,7 @@ export default function AddItemsModal({
   const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
 
   const { data: rawItems, isFetching } = useQuery({
-    queryKey: [`find-items-add-items`],
+    queryKey: [`find-items-add-items`, { sources: getDefaultSourcesKey('PAGE') }],
     queryFn: async () => {
       return (await fetchContentAll<Item>('item', getDefaultSources('PAGE'))).filter((item) =>
         isItemVisible('CHARACTER', item)

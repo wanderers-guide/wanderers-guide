@@ -1,4 +1,4 @@
-import { fetchContentAll, getDefaultSources } from '@content/content-store';
+import { fetchContentAll, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
 import { OperationWrapper } from '../Operations';
 import { Select, Stack } from '@mantine/core';
 import { useDidUpdate } from '@mantine/hooks';
@@ -21,7 +21,7 @@ export function InjectSelectOptionOperation(props: {
   const [option, setOption] = useState<InjectedSelectOption | null>(props.value ? JSON.parse(props.value) : null);
 
   const { data, isFetching } = useQuery({
-    queryKey: [`get-all-selection-options`],
+    queryKey: [`get-all-selection-options`, { sources: getDefaultSourcesKey('PAGE') }],
     queryFn: async () => {
       const operations: Operation[] = [];
 

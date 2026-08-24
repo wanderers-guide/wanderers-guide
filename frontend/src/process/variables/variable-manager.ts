@@ -8,6 +8,7 @@ import {
   VariableValue,
   VariableNum,
   ExtendedVariableValue,
+  ProficiencyType,
 } from '@schemas/variables';
 import {
   isAttributeValue,
@@ -25,6 +26,9 @@ import {
   isProficiencyValue,
   isExtendedProficiencyValue,
   compileExpressions,
+  compileProficiencyType,
+  isProficiencyTypeGreaterOrEqual,
+  nextProficiencyType,
 } from './variable-utils';
 import { cloneDeep, isBoolean, isEqual, isNumber, isString, uniq } from 'lodash-es';
 import { throwError } from '@utils/error-handling';
@@ -556,7 +560,7 @@ export function setVariable(id: StoreID, name: string, value: VariableValue, sou
     // Some variables have a special rule where we take the higher value instead of overwriting
     // This is a hack for sure and hopefully won't be too confusing for homebrewers
     // It's to make things like HP for dual-class PCs work
-    const SPECIAL_TAKE_HIGHER_VARS = ['MAX_HEALTH_CLASS_PER_LEVEL', getAllSpeedVariables(id).map((v) => v.name)];
+    const SPECIAL_TAKE_HIGHER_VARS = ['MAX_HEALTH_CLASS_PER_LEVEL', ...getAllSpeedVariables(id).map((v) => v.name)];
     //
     if (SPECIAL_TAKE_HIGHER_VARS.includes(name)) {
       variable.value = Math.max(variable.value, parseInt(`${value}`));
@@ -595,6 +599,76 @@ export function setVariable(id: StoreID, name: string, value: VariableValue, sou
  * @param name - name of the variable to adjust
  * @param amount - new value to adjust by
  */
+/** The highest rank a skill increase itself may target at the given level. */
+export function getSkillIncreaseCap(level: number): ProficiencyType {
+  return level >= 15 ? 'L' : level >= 7 ? 'M' : 'E';
+}
+
+/**
+ * Compiles a proficiency the way the post-execution normalization will present it:
+ * for SKILL_* variables, positive increases can't push the compiled rank past the
+ * level's skill-increase cap, while rank grants (the base letter) always pass
+ * through. Non-skill variables and penalties compile normally.
+ *
+ * Use this wherever a rank is read DURING operation execution (conditional checks) —
+ * normalizeProficiencies only runs after execution, so a plain compile mid-round can
+ * see ranks the normalization will clamp away (e.g. a level-8 character with a
+ * master-rank grant plus spent increases would read as legendary to an in-execution
+ * condition while their sheet correctly shows master). Capping at read time keeps
+ * in-execution checks consistent with the final displayed rank, regardless of
+ * whether the check runs before or after the rank grant in operation order.
+ * @param id - Variable store ID (for LEVEL)
+ * @param variable - The proficiency variable to compile
+ * @returns - The level-capped compiled proficiency type
+ */
+export function getLevelCappedProficiencyType(id: StoreID, variable: VariableProf): ProficiencyType {
+  const compiled = compileProficiencyType(variable.value);
+  if (!variable.name.startsWith('SKILL_')) return compiled;
+  if ((variable.value.increases ?? 0) <= 0) return compiled;
+  const cap = getSkillIncreaseCap(getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0);
+  const cappedStack = isProficiencyTypeGreaterOrEqual(compiled, cap) ? cap : compiled;
+  return maxProficiencyType(variable.value.value, cappedStack);
+}
+
+/**
+ * Clamps every SKILL_* proficiency's spent increases to what's legal for the entity's
+ * level, so rank grants and skill increases compose per RAW instead of stacking past
+ * the level gates.
+ *
+ * Skill increases may only raise a skill to expert (any level), master (7th+), or
+ * legendary (15th+). Auto-scaling rank grants (e.g. Acrobat Dedication's master-at-7th)
+ * execute in the conditional round, after every numeric increase, so an increase spent
+ * before such a grant activates would otherwise re-apply on top of the granted rank and
+ * over-compile (trained + 1 increase + master grant = legendary). Clamping increases to
+ * the level cap absorbs exactly the redundant ones while:
+ *  - increases stacked on grants below the cap keep working (e.g. a swashbuckler
+ *    style's training + a later skill increase still compiles to expert),
+ *  - rank grants above the cap are untouched (mythic/apostle feats may exceed gates),
+ *  - negative increases (penalties) are never modified.
+ * Runs after operation execution for each store (see operations.main.ts).
+ * @param id - Variable store ID to normalize
+ */
+export function normalizeProficiencies(id: StoreID) {
+  const increaseCap = getSkillIncreaseCap(getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0);
+
+  for (const variable of Object.values(getVariables(id))) {
+    if (!isVariableProf(variable) || !variable.name.startsWith('SKILL_')) continue;
+    const increases = variable.value.increases ?? 0;
+    if (increases <= 0) continue;
+
+    // Steps from the granted rank up to the cap (0 if the grants already reach it)
+    let maxUsableIncreases = 0;
+    if (!isProficiencyTypeGreaterOrEqual(variable.value.value, increaseCap)) {
+      for (let prof = variable.value.value; prof !== increaseCap; maxUsableIncreases++) {
+        const next = nextProficiencyType(prof);
+        if (!next) break;
+        prof = next;
+      }
+    }
+    variable.value.increases = Math.min(increases, maxUsableIncreases);
+  }
+}
+
 export function adjVariable(id: StoreID, name: string, amount: VariableValue | ExtendedVariableValue, source?: string) {
   let variable = getVariables(id)[name];
   if (!variable) {

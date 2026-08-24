@@ -205,9 +205,10 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
         resetContentStore();
         defineDefaultSources('PAGE', newEnabled ?? []);
         refetch();
-        queryClient.invalidateQueries({
-          queryKey: [`find-content-${character?.id}`, `get-character-init-builder-${character?.id}`],
-        });
+        // One call per query: a queryKey filter is an element-wise prefix, so combining these
+        // two root strings into a single filter array matches neither query.
+        queryClient.invalidateQueries({ queryKey: [`find-content-${character?.id}`] }); // character sheet content package
+        queryClient.invalidateQueries({ queryKey: [`get-character-init-builder-${character?.id}`] }); // builder character record
 
         // Save new enabled books to character
         return {

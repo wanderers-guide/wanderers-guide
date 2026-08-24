@@ -13,6 +13,7 @@ import { Box, JsonInput, NumberInput, SegmentedControl, TextInput, Text } from '
 import { getVariable } from '@variables/variable-manager';
 import { useDidUpdate } from '@mantine/hooks';
 import { isNumber, isString, isBoolean } from 'lodash-es';
+import { getDefaultSetValue } from './operation-value-defaults';
 
 export function SetValOperation(props: {
   variable: string;
@@ -42,7 +43,14 @@ export function SetValOperation(props: {
           setVariableName(value);
           setVariableData(variable);
           props.onSelect(value);
-          setValue('');
+
+          // Reset the *saved* value too, not just local state. Previously only setValue('')
+          // ran here, so re-pointing an operation at a different variable left the old value
+          // in the operation — e.g. a `false` left over from a bool variable landing on a
+          // list-str one. Those type-mismatched ops throw in the operations engine at runtime.
+          const resetValue = getDefaultSetValue(variable?.type ?? 'str');
+          setValue(resetValue);
+          props.onValueChange(resetValue);
         }}
       />
       {variableData && (

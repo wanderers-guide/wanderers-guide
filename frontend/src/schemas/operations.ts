@@ -278,7 +278,8 @@ export const OperationSelectFiltersSpellSchema = z.object({
   id: z.string(),
   type: z.literal('SPELL'),
   level: z.object({ min: z.number().nullable().optional(), max: z.number().nullable().optional() }),
-  traits: z.array(z.string()).optional(),
+  // Trait IDs, or legacy trait names — matches the ability-block filter above.
+  traits: z.array(z.union([z.string(), z.number()])).optional(),
   traditions: z.array(z.string()).optional(),
   spellData: SpellMetadataSchema.optional(),
 });
