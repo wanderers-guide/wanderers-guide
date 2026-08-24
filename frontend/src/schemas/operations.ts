@@ -309,7 +309,8 @@ export const OperationSelectFiltersAdjValueSchema = z.object({
   value: z.union([VariableValueSchema, ExtendedProficiencyValueSchema]),
   // For item-backed groups (WEAPON / ARMOR) only: restrict the list to items that have at least
   // ONE of these traits (any-match, unlike ability block filters which require all).
-  traits: z.array(z.string()).optional(),
+  // Trait IDs, or legacy trait names — matches the ability-block filter above.
+  traits: z.array(z.union([z.string(), z.number()])).optional(),
   // For the WEAPON group: restrict the list to weapons that carry an ancestry (or versatile
   // heritage) trait. Backs feats like Unconventional Weaponry / Kasatha weapon selections.
   hasAncestryTrait: z.boolean().optional(),

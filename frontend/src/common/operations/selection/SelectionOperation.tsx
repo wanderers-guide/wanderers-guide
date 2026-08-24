@@ -709,8 +709,9 @@ function SelectionFilteredAdjValue(props: {
 }) {
   const [group, setGroup] = useState<string>(props.filters?.group ?? 'SKILL');
   const [value, setValue] = useState<VariableValue | ExtendedProficiencyValue>(props.filters?.value ?? { value: 'U' });
-  // Item-trait filters, only meaningful for the item-backed groups (WEAPON / ARMOR)
-  const [itemTraits, setItemTraits] = useState<string[]>(props.filters?.traits ?? []);
+  // Item-trait filters, only meaningful for the item-backed groups (WEAPON / ARMOR).
+  // Trait IDs — see the note on the ability-block filter above for the legacy-name handling.
+  const [itemTraits, setItemTraits] = useState<(string | number)[]>(props.filters?.traits ?? []);
   const [hasAncestryTrait, setHasAncestryTrait] = useState<boolean | undefined>(props.filters?.hasAncestryTrait);
 
   // Whether the current group is backed by an item list (and so supports trait filtering)
@@ -751,15 +752,14 @@ function SelectionFilteredAdjValue(props: {
       </Box>
 
       {isItemGroup && (
-        <TagsInput
+        <TraitsInput
           label='Has Any of These Traits'
           description='Only include items that have at least one of these traits'
           placeholder='Enter trait'
           size='xs'
           splitChars={[',', ';', '|']}
-          data={[]}
-          value={itemTraits}
-          onChange={setItemTraits}
+          traits={itemTraits}
+          onValuesChange={setItemTraits}
         />
       )}
 
