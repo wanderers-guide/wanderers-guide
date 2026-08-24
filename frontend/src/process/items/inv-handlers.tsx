@@ -331,6 +331,10 @@ export function addExtraItems(
             meta_data: item.meta_data
               ? {
                   ...item.meta_data,
+                  // Fresh copies enter play at full HP, same as handleAddItem. Many records
+                  // ship hp: 0 alongside a broken threshold, and isItemBroken reads
+                  // hp <= bt — without this, operation-granted gear arrives already "Broken".
+                  hp: item.meta_data.hp_max,
                   base_item_content: baseItem,
                 }
               : null,
