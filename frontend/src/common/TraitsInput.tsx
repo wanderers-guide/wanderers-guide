@@ -1,5 +1,5 @@
 import { isTraitVisible } from '@content/content-hidden';
-import { fetchContentAll, fetchContentSources, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
+import { fetchContentAll, fetchContentSources } from '@content/content-store';
 import { TagsInput, TagsInputProps } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Trait } from '@schemas/content';
@@ -27,13 +27,18 @@ interface TraitsInputProps extends TagsInputProps {
 
 export default function TraitsInput(props: TraitsInputProps) {
   const { data, isFetching } = useQuery({
-    queryKey: [`get-traits`, { sources: getDefaultSourcesKey('INFO') }],
+    // The scope is a constant, so the queryKey needs no source fingerprint (and the distinct
+    // literal avoids colliding with cached scope-keyed `get-traits` entries).
+    queryKey: [`get-traits-all-accessible`],
     queryFn: async () => {
+      // Fetch from every source the user can access, not just the page's default scope —
+      // otherwise traits from other books (e.g. adding the Pahtra trait to a Galactic
+      // Ancestries submission) are missing from the dropdown and silently dropped when typed.
       // Sources are fetched alongside the traits so two books defining the same trait name can
       // be told apart in the dropdown (see `label` below).
       const [traits, sources] = await Promise.all([
-        fetchContentAll<Trait>('trait', getDefaultSources('INFO')),
-        fetchContentSources(getDefaultSources('INFO')),
+        fetchContentAll<Trait>('trait', 'ALL-USER-ACCESSIBLE'),
+        fetchContentSources('ALL-USER-ACCESSIBLE'),
       ]);
       return { traits, sources };
     },

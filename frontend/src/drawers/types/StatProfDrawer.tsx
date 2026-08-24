@@ -347,6 +347,9 @@ function getProfDescription(variableName: string) {
   if (variableName === 'WEAPON_DIVISION_GUN') {
     return `Any ranged weapon with the analog or tech trait.`;
   }
+  if (variableName === 'WEAPON_DIVISION_ONE_HANDED_AGILE_FINESSE') {
+    return `Any one-handed weapon with the agile or finesse trait.`;
+  }
 
   if (variableName === 'SAVE_FORT') {
     return `A Fortitude saving throw is used when your character’s health or vitality is under attack, such as from ${convertToHardcodedLink('trait', 'poison')} or ${convertToHardcodedLink('trait', 'disease')}.`;
