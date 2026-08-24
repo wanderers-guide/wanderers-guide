@@ -249,7 +249,17 @@ export default function RichText(props: RichTextProps) {
         },
         hr(innerProps) {
           const { className } = innerProps;
-          return <Divider className={className} />;
+          // Inline border color: the glass theme overrides --divider-color globally to the
+          // faint imprint border, which the Divider `color` prop cannot beat — so content
+          // dividers were rendering as a near-invisible hairline. The dedicated token keeps
+          // them legible without touching the app's structural dividers.
+          return (
+            <Divider
+              className={className}
+              my={8}
+              style={{ borderTopColor: 'var(--content-divider-color, rgba(209, 213, 219, 0.4))' }}
+            />
+          );
         },
         blockquote(innerProps) {
           const { children, className } = innerProps;
