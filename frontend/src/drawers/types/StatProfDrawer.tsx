@@ -1,7 +1,7 @@
 import { drawerState } from '@atoms/navAtoms';
 import RichText from '@common/RichText';
 import { ActionSelectionOption } from '@common/select/SelectContent';
-import { fetchContentAll, getDefaultSources } from '@content/content-store';
+import { fetchContentAll, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
 import {
   Title,
@@ -429,7 +429,10 @@ function SkillActionsSection(props: { variableName: string }) {
   const [_drawer, openDrawer] = useAtom(drawerState);
 
   const { data: actions } = useQuery({
-    queryKey: [`find-skill-actions-${props.variableName}`, { variableName: props.variableName }],
+    queryKey: [
+      `find-skill-actions-${props.variableName}`,
+      { variableName: props.variableName, sources: getDefaultSourcesKey('PAGE') },
+    ],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
        

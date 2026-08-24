@@ -290,7 +290,7 @@ export function CreateSpellModal(props: {
               />
               <TraitsInput
                 label='Traits'
-                value={traits.map((trait) => trait.name)}
+                traits={traits.map((trait) => trait.id)}
                 onTraitChange={(traits) => setTraits(traits)}
                 style={{ flex: 1 }}
               />
