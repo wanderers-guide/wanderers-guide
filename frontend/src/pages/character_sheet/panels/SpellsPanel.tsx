@@ -1,7 +1,7 @@
 import { ActionSymbol } from '@common/Actions';
 import TokenSelect from '@common/TokenSelect';
 import { collectEntitySpellcasting } from '@content/collect-content';
-import { fetchContentAll, getContentFast, getDefaultSources } from '@content/content-store';
+import { fetchContentAll, getContentFast, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
 import {
   Accordion,
   ActionIcon,
@@ -76,7 +76,7 @@ export default function SpellsPanel(props: {
   >();
 
   const { data: spells } = useQuery({
-    queryKey: [`find-spells-and-data`],
+    queryKey: [`find-spells-and-data`, { sources: getDefaultSourcesKey('PAGE') }],
     queryFn: async () => {
       if (!props.entity) return null;
 

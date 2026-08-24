@@ -1,6 +1,6 @@
 import { characterState } from '@atoms/characterAtoms';
 import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
-import { fetchContentAll, fetchContentPackage, getDefaultSources } from '@content/content-store';
+import { fetchContentAll, fetchContentPackage, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
 import {
   Stack,
   Title,
@@ -26,7 +26,7 @@ import { confirmHealth } from '../entity-handler';
 import { DisplayIcon } from '@common/IconDisplay';
 import { sign } from '@utils/numbers';
 import { ConditionPills, selectCondition } from '../sections/ConditionSection';
-import { setterOrUpdaterToValue } from '@utils/type-fixing';
+import { isTruthy, setterOrUpdaterToValue } from '@utils/type-fixing';
 import { IconPlus, IconX } from '@tabler/icons-react';
 import { cloneDeep } from 'lodash-es';
 import { executeOperations } from '@operations/operations.main';
@@ -491,7 +491,22 @@ async function computeCompanions(companions: Creature[]) {
     };
   }
 
-  return await Promise.all(companions.map(computeCompanion));
+  // Compute each companion independently. A companion whose operations throw (bad content
+  // data, e.g. a setValue whose value doesn't match its variable's type) used to reject the
+  // whole Promise.all, which blanked the computed stats of *every* companion on the sheet.
+  // Now only that companion is dropped — consumers already treat a missing entry as "no
+  // computed stats yet" — and the reason is logged.
+  const results = await Promise.all(
+    companions.map(async (companion, index) => {
+      try {
+        return await computeCompanion(companion, index);
+      } catch (error) {
+        console.error(`Error: Failed to compute companion "${companion.name}" (${companion.id})`, error);
+        return null;
+      }
+    })
+  );
+  return results.filter(isTruthy);
 }
 
 function AddCompanionSection() {
@@ -500,7 +515,7 @@ function AddCompanionSection() {
   const isPhone = useMediaQuery(phoneQuery());
 
   const { data, isFetching } = useQuery({
-    queryKey: [`get-companions-data`],
+    queryKey: [`get-companions-data`, { sources: getDefaultSourcesKey('PAGE') }],
     queryFn: async () => {
       const traits = await fetchContentAll<Trait>('trait', getDefaultSources('PAGE'));
       const creatures = await fetchContentAll<Creature>('creature', getDefaultSources('PAGE'));

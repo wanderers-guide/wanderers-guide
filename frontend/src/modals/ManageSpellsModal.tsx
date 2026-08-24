@@ -3,7 +3,7 @@ import { SelectContentButton, SpellSelectionOption, selectContent } from '@commo
 import { EDIT_MODAL_HEIGHT, IMPRINT_BG_COLOR } from '@constants/data';
 import { collectEntitySpellcasting } from '@content/collect-content';
 import { isSpellVisible } from '@content/content-hidden';
-import { fetchContentAll, getDefaultSources } from '@content/content-store';
+import { fetchContentAll, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
 import {
   Box,
   Button,
@@ -57,7 +57,10 @@ export default function ManageSpellsModal(props: {
   const [_drawer, openDrawer] = useAtom(drawerState);
 
   const { data: allRawSpells, isFetching } = useQuery({
-    queryKey: [`find-spells-in-manage-spells-modal`, { entityId: props.entity?.id, source: props.source }],
+    queryKey: [
+      `find-spells-in-manage-spells-modal`,
+      { entityId: props.entity?.id, source: props.source, sources: getDefaultSourcesKey('PAGE') },
+    ],
     queryFn: async () => {
       return (await fetchContentAll<Spell>('spell', getDefaultSources('PAGE'))).filter((spell) =>
         isSpellVisible(props.id, spell)

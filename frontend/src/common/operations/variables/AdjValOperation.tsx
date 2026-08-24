@@ -14,6 +14,7 @@ import {
 import { Box, NumberInput, SegmentedControl, TextInput, Text } from '@mantine/core';
 import { getVariable } from '@variables/variable-manager';
 import { useDidUpdate } from '@mantine/hooks';
+import { getDefaultAdjValue } from './operation-value-defaults';
 
 export function AdjValOperation(props: {
   variable: string;
@@ -42,7 +43,13 @@ export function AdjValOperation(props: {
           setVariableName(value);
           setVariableData(variable);
           props.onSelect(value);
-          setValue('');
+
+          // Reset the *saved* value too, not just local state — otherwise re-pointing an
+          // operation at a different variable leaves a value of the wrong shape in the
+          // operation, which then throws in the operations engine at runtime.
+          const resetValue = getDefaultAdjValue(variable?.type ?? 'str');
+          setValue(resetValue);
+          props.onValueChange(resetValue);
         }}
       />
       {variableData && (
@@ -71,19 +78,9 @@ export function AdjustValueInput(props: {
   };
 }) {
   useEffect(() => {
-    // Empty value
+    // Empty value — give it the shape this variable type's input expects
     if (props.value === '') {
-      if (props.variableType === 'attr') {
-        props.onChange({ value: 0 });
-      } else if (props.variableType === 'num') {
-        props.onChange(0);
-      } else if (props.variableType === 'bool') {
-        props.onChange(false);
-      } else if (props.variableType === 'str' || props.variableType === 'list-str') {
-        props.onChange('');
-      } else if (props.variableType === 'prof') {
-        props.onChange({ value: 'U', increases: 0 });
-      }
+      props.onChange(getDefaultAdjValue(props.variableType) as VariableValue);
     }
   }, []);
 

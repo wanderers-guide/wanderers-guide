@@ -255,7 +255,7 @@ export function CreateAbilityBlockModal(props: {
               />
               <TraitsInput
                 label='Other Traits'
-                value={traits.map((trait) => trait.name)}
+                traits={traits.map((trait) => trait.id)}
                 onTraitChange={(traits) => setTraits(traits)}
                 style={{ flex: 1 }}
               />
@@ -317,7 +317,9 @@ export function CreateAbilityBlockModal(props: {
                   }}
                 />
 
-                {props.type === 'action' && (
+                {/* Feats can also be tagged with skills so selections can filter
+                    "skill feats for X" (e.g. SF2e Operative specializations) */}
+                {(props.type === 'action' || props.type === 'feat') && (
                   <TagsInput
                     label='Skills'
                     splitChars={[',', ';', '|']}
