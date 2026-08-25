@@ -222,11 +222,14 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
     };
 
     if (enabled) {
-      // Handle dependency logic
-      const requiredBooks = await findRequiredContentSources(
-        uniq([...(character?.content_sources?.enabled ?? []), ...inputIds])
-      );
-      if (requiredBooks.newSources.length > 0) {
+      // Handle dependency logic. Walk requirements from ONLY the newly toggled books and
+      // treat anything already enabled as satisfied — computing over the whole enabled set
+      // meant one stale dependency anywhere re-prompted on every toggle of every book,
+      // homebrew included (the Revenge of the Runelords incident).
+      const alreadyEnabled = character?.content_sources?.enabled ?? [];
+      const requiredBooks = await findRequiredContentSources(inputIds);
+      const missingSources = requiredBooks.newSources.filter((source) => !alreadyEnabled.includes(source.id));
+      if (missingSources.length > 0) {
         modals.openConfirmModal({
           title: <Title order={3}>Enable Dependencies</Title>,
           children: (
@@ -236,7 +239,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
                 them.
               </Text>
               <List>
-                {requiredBooks.newSources.map((source, index) => (
+                {missingSources.map((source, index) => (
                   <List.Item key={index}>
                     <Anchor
                       onClick={() => {
