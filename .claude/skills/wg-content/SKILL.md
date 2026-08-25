@@ -81,8 +81,8 @@ Do **not** manually wrap "frightened", "concealed", "stupefied", "persistent fir
 
 | Type | Examples |
 |---|---|
-| **trait** | damage types (*fire*, *cold*, *electricity*, *slashing*), categories (*physical*, *spell*), materials (*cold iron*), descriptors (*death*, *poison*, *disease*) |
-| **action** | basic actions (*Strike*, *Escape*, *Seek*), named activities (*Treat Wounds*, *Recall Knowledge*, *Subsist*) |
+| **trait** | ENERGY damage types (*fire*, *cold*, *electricity*, *acid*, *sonic*, *vitality*, *void*), categories (*physical*, *spell*), materials (*cold iron*), descriptors (*death*, *poison*, *disease*), effect kinds in "X effect" phrases, and the trait lists in ability parentheticals (e.g. `**High Winds** ([air](link_trait_1524), [aura](link_trait_1492)) 30 feet`) |
+| **action** | basic actions (*Strike*, *Escape*, *Seek*, *Dismiss*), named activities (*Treat Wounds*, *Recall Knowledge*, *Subsist*), and *Cast a Spell* — including inflected prose like "as part of Casting this Spell", which links to the Cast a Spell action with the natural wording as display text |
 | **feat** | named feats referenced in prose (*Continual Recovery*, *Ward Medic*) |
 | **spell** | specific spells mentioned by name (*Fireball*, *Charm*, *Confusion*) |
 | **item** | named items |
@@ -94,6 +94,8 @@ Do **not** manually wrap "frightened", "concealed", "stupefied", "persistent fir
 - **Skill names used abstractly** — *Acrobatics*, *Athletics*, etc. when referenced as concepts (not drawer-linkable as content).
 - **Attribute names** — *Strength*, *Dexterity*, etc. (not drawer-linkable).
 - **Generic terms** — *spell*, *attack*, *creature* used as common nouns.
+- **PHYSICAL damage types** — *bludgeoning*, *piercing*, *slashing* have **no trait records** in the database, so there is nothing to link them to. Only energy/alignment-style damage types are traits. (Likewise there is currently no *Affliction* trait — "affliction" stays plain text unless one is added.)
+- **Foundry import artifacts** — legacy rows sometimes contain `\[\[Spell Effect: ...\]\]{Label}` or `@UUID[...]` tokens leaked from Foundry VTT imports. These are NOT WG syntax and render as literal junk. When porting or cleaning content, delete them (keep only the human label, e.g. `**Air Elemental**`).
 
 ## Disambiguation
 
