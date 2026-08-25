@@ -334,6 +334,33 @@ Activation lines have a standard format:
 **Activate—Title** <abbr cost="TWO-ACTIONS" class="action-symbol">2</abbr> ([trait](link_trait_X), ...); **Effect** ...
 ```
 
+## Direct SQL inserts (admin path)
+
+Content normally enters through the submission flow (`create-content-update` -> mod approval), which
+computes housekeeping fields for you. When inserting official rows directly via SQL (the admin
+Management-API path — e.g. porting reprints on the owner's request), replicate them yourself:
+
+- **`uuid`** — compute exactly what `insertData` would: `uniqueId(name, type, level, source)` from
+  [upload-utils.ts](supabase/functions/_shared/upload-utils.ts), i.e.
+  `cyrb53(`${name.trim()}_${type.trim()}_${level}_${content_source_id}`.toLowerCase())` where `type` is the row's
+  `type` column value when the table has one (ability-block subtypes like `feat`), otherwise the table
+  name (`spell`, `item`, ...), and `level` is `level ?? rank ?? 0`. cyrb53 is easy to port (32-bit
+  `Math.imul` semantics — mask to 32 bits in other languages). A wrong or missing uuid breaks
+  duplicate detection on future imports.
+- **Reserved column names** — `"cast"`, `"trigger"`, and `"range"` must be double-quoted in the
+  INSERT column list or Postgres rejects the statement.
+- **Dollar-quote descriptions** (`$wgdesc$...$wgdesc$`) — prose is full of apostrophes and quotes.
+- **Cache tokens are automatic** — the `content_source.updated_at` triggers bump on INSERT, UPDATE,
+  and DELETE of child content, so clients re-fetch without any manual token bump.
+- **Ids are per-table** — a spell id and an ability-block id can collide numerically. Existence
+  checks must query the table matching the content's type (a "#5426 doesn't exist" check against the
+  wrong table once hid a spell that was very much alive).
+- **Start from the nearest existing row** — for reprints, clone the legacy or sibling row (its
+  description already carries WG links and conventions) and apply only the verified diffs from the
+  source book / AoN, rather than re-typing from scratch. Strip Foundry import junk while you're there.
+- **Verify render, not just the row** — open `https://wanderersguide.app/?open=link_TYPE_ID` and
+  check the drawer: links resolve, conditions auto-link, traits/stat lines display.
+
 ## When you're cleaning/generating content programmatically
 
 The AI-cleaning system at [frontend/src/ai/cleaning/](frontend/src/ai/cleaning/) is the canonical reference. Read [item-cleaning.ts](frontend/src/ai/cleaning/item-cleaning.ts)'s `SYSTEM_PROMPT` for the full set of rules — it covers item-specific things this skill doesn't repeat (usage vs hands disambiguation, base-item inheritance, rune handling, legacy vs remaster traits, unarmed-attack exceptions, the no-damage-trait-from-damage-type rule, etc.).
