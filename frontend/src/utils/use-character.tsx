@@ -280,6 +280,11 @@ export default function useCharacter(
     if (debouncedCharacter.variants?.proficiency_without_level) {
       setVariable('CHARACTER', 'PROF_WITHOUT_LEVEL', true);
     }
+    if (debouncedCharacter.variants?.stamina) {
+      // Stamina variant (GM Core): must be set before any getFinalHealthValue /
+      // getFinalStaminaValue calls below so max HP is computed with halved class HP.
+      setVariable('CHARACTER', 'STAMINA_VARIANT', true);
+    }
 
     // Add the extra items to the inventory from variables
     addExtraItems(

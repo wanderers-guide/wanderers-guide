@@ -4,6 +4,7 @@ import { CastingSource, Item, LivingEntity } from '@schemas/content';
 import {
   ProficiencyType,
   StoreID,
+  VariableAttr,
   VariableBool,
   VariableListStr,
   VariableNum,
@@ -209,9 +210,51 @@ export function getHealthValueParts(id: StoreID) {
   };
 }
 
+/**
+ * Whether the Stamina variant rule (GM Core) is enabled for this store. Only ever set on
+ * character stores (via `character.variants.stamina`) — creatures & companions are unaffected.
+ */
+export function isStaminaVariant(id: StoreID) {
+  return getVariable<VariableBool>(id, 'STAMINA_VARIANT')?.value ?? false;
+}
+
 export function getFinalHealthValue(id: StoreID) {
   const { level, ancestryHp, classHp, bonusHp, conMod } = getHealthValueParts(id);
+  if (isStaminaVariant(id)) {
+    // Stamina variant: only half the class HP goes to max HP and Con no longer contributes
+    // (the other half of class HP + Con mod per level become stamina points instead).
+    return ancestryHp + bonusHp + Math.floor(classHp / 2) * level;
+  }
   return ancestryHp + bonusHp + (classHp + conMod) * level;
+}
+
+/**
+ * Max stamina points under the Stamina variant: (half class HP + Con mod) per level.
+ * Returns 0 when the variant isn't enabled for this store.
+ */
+export function getFinalStaminaValue(id: StoreID) {
+  if (!isStaminaVariant(id)) return 0;
+  const { level, classHp, conMod } = getHealthValueParts(id);
+  return Math.max((Math.floor(classHp / 2) + conMod) * level, 0);
+}
+
+/**
+ * The attribute variable the resolve pool is keyed off of — the class's key attribute
+ * (whatever the class DC uses). Returns null if no class has been selected yet.
+ */
+export function getResolveAttribute(id: StoreID) {
+  return getVariable<VariableProf>(id, 'CLASS_DC')?.value.attribute ?? null;
+}
+
+/**
+ * Max resolve points under the Stamina variant: equal to the class's key attribute modifier.
+ * Returns 0 when the variant isn't enabled for this store.
+ */
+export function getFinalResolveValue(id: StoreID) {
+  if (!isStaminaVariant(id)) return 0;
+  const attribute = getResolveAttribute(id);
+  const keyMod = attribute ? (getVariable<VariableAttr>(id, attribute)?.value.value ?? 0) : 0;
+  return Math.max(keyMod, 0);
 }
 
 export function getFinalAcValue(id: StoreID, item?: Item) {

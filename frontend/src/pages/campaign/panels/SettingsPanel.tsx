@@ -497,24 +497,21 @@ export default function SettingsPanel(props: {
                     });
                   }}
                 />
-                {/* <LinkSwitch
+                <LinkSwitch
                   label='Stamina'
                   info={`In some fantasy stories, the heroes are able to avoid any serious injury until the situation gets dire, getting by with a graze or a flesh wound and needing nothing more than a quick rest to get back on their feet. If your group wants to tell tales like those, you can use the stamina variant to help make that happen.`}
                   url='https://2e.aonprd.com/Rules.aspx?ID=1378'
                   enabled={props.campaign?.recommended_variants?.stamina}
                   onLinkChange={(enabled) => {
-                    setCharacter((prev) => {
-                      if (!prev) return prev;
-                      return {
-                        ...prev,
-                        variants: {
-                          ...prev.variants,
-                          stamina: enabled,
-                        },
-                      };
+                    props.setCampaign({
+                      ...props.campaign,
+                      recommended_variants: {
+                        ...props.campaign.recommended_variants,
+                        stamina: enabled,
+                      },
                     });
                   }}
-                /> */}
+                />
               </Stack>
             </Tabs.Panel>
 
