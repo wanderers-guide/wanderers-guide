@@ -1,6 +1,6 @@
 import { getCachedContent } from '@content/content-store';
 import { Item, Trait } from '@schemas/content';
-import { StoreID, VariableBool, VariableListStr, VariableNum, VariableProf } from '@schemas/variables';
+import { StoreID, VariableBool, VariableListStr, VariableNum, VariableProf, VariableStr } from '@schemas/variables';
 import { hasTraitType } from '@utils/traits';
 import { getFinalProfValue, getFinalVariableValue, getProfValueParts } from '@variables/variable-helpers';
 import { getVariable } from '@variables/variable-manager';
@@ -508,6 +508,19 @@ function getProfessionalTraitSkills(item: Item): string[] {
   return skills;
 }
 
+/**
+ * The weapon's effective group. A str variable named WEAPON_GROUP_OVERRIDE_<ITEM NAME>
+ * overrides the item's stored group — for weapons whose group is player-selected
+ * (e.g. the solarian's Solar Weapon, whose form is chosen and can be re-forged).
+ */
+export function getWeaponGroup(id: StoreID, item: Item): string | undefined {
+  const override = getVariable<VariableStr>(id, `WEAPON_GROUP_OVERRIDE_${labelToVariable(item.name)}`)?.value;
+  if (override && override.trim().length > 0) {
+    return override.trim().toLowerCase();
+  }
+  return item.meta_data?.group;
+}
+
 function getProfTotal(id: StoreID, item: Item) {
   let category = item.meta_data?.category ?? 'simple';
 
@@ -517,7 +530,8 @@ function getProfTotal(id: StoreID, item: Item) {
   const matchFamiliarity = () => {
     for (const f of familiarity) {
       if (item.name.trim().toUpperCase() === f) return true;
-      if (item.meta_data?.group && item.meta_data.group.trim().toUpperCase() === f) return true;
+      const effectiveGroup = getWeaponGroup(id, item);
+      if (effectiveGroup && effectiveGroup.trim().toUpperCase() === f) return true;
       // Don't use labelToVariable here, as it will remove the numbers for IDs
       if (!isNaN(parseInt(f)) && compileTraits(item).includes(parseInt(f))) return true;
     }
@@ -544,7 +558,7 @@ function getProfTotal(id: StoreID, item: Item) {
   }
   categoryProfTotal = parseInt(getFinalProfValue(id, categoryVariable));
 
-  const group = item.meta_data?.group ?? 'brawling';
+  const group = getWeaponGroup(id, item) ?? 'brawling';
 
   const groupVariable = `WEAPON_GROUP_${group.trim().toUpperCase()}`;
   const groupProfTotal = parseInt(getFinalProfValue(id, groupVariable));
