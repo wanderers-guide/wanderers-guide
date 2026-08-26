@@ -413,6 +413,15 @@ async function updateVariables(
     }
   } else if (operation.data.optionType === 'ADJ_VALUE') {
     adjVariable(varId, selectedOption.variable, selectedOption.value, sourceLabel);
+    // addToFamiliarity selections (Unconventional Weaponry): the chosen weapon also joins
+    // WEAPON_FAMILIARITY, so its proficiency tracks one category lower (see weapon-handler).
+    if (
+      operation.data.optionsFilters?.type === 'ADJ_VALUE' &&
+      operation.data.optionsFilters.addToFamiliarity &&
+      selectedOption.name
+    ) {
+      adjVariable(varId, 'WEAPON_FAMILIARITY', selectedOption.name, sourceLabel);
+    }
   } else if (operation.data.optionType === 'CUSTOM') {
     // Doesn't inherently do anything, just runs its operations
   }

@@ -644,11 +644,19 @@ async function filterItemsByTraitFilters(items: Item[], filters: OperationSelect
     filtered = filtered.filter((item) => (item.traits ?? []).some((traitId) => ancestryTraitIds.has(traitId)));
   }
 
+  if (filters.rarities && filters.rarities.length > 0) {
+    filtered = filtered.filter((item) => filters.rarities!.includes(item.rarity));
+  }
+
   return filtered;
 }
 
 async function getAdjValueList(id: StoreID, operationUUID: string, filters: OperationSelectFiltersAdjValue) {
   let variables: Variable[] = [];
+  // Real item names for item-backed groups. The variable-name round trip strips punctuation
+  // ("Filcher's Fork" -> "Filchers Fork"), which both mislabels the option and breaks the
+  // exact-name match WEAPON_FAMILIARITY does for addToFamiliarity selections.
+  const itemNames = new Map<string, string>();
 
   if (filters.group === 'SKILL') {
     variables = getAllSkillVariables(id);
@@ -672,8 +680,10 @@ async function getAdjValueList(id: StoreID, operationUUID: string, filters: Oper
       filters
     );
     variables = weapons.map((w) => {
+      const name = `WEAPON_${labelToVariable(w.name)}`;
+      itemNames.set(name, w.name);
       return {
-        name: `WEAPON_${labelToVariable(w.name)}`,
+        name,
         type: 'prof',
         value: { value: 'U', increases: 0 },
       } satisfies VariableProf;
@@ -686,8 +696,10 @@ async function getAdjValueList(id: StoreID, operationUUID: string, filters: Oper
       filters
     );
     variables = armor.map((a) => {
+      const name = `ARMOR_${labelToVariable(a.name)}`;
+      itemNames.set(name, a.name);
       return {
-        name: `ARMOR_${labelToVariable(a.name)}`,
+        name,
         type: 'prof',
         value: { value: 'U', increases: 0 },
       } satisfies VariableProf;
@@ -699,7 +711,7 @@ async function getAdjValueList(id: StoreID, operationUUID: string, filters: Oper
       _select_uuid: `${variable.name}`,
       _content_type: 'ability-block' as ContentType,
       id: `${variable.name}`,
-      name: variable ? variableToLabel(variable) : 'Unknown Value',
+      name: itemNames.get(variable.name) ?? (variable ? variableToLabel(variable) : 'Unknown Value'),
       value: filters.value,
       variable: variable.name,
     };
