@@ -420,9 +420,12 @@ Rewrite the description using rich inline markdown links following the rules abo
   Only add action symbols when AoN explicitly shows an action cost. Do not add them to inline references to action names (e.g. "Interact" in a sentence is just text, not an action symbol).
 - Activation lines should be formatted as:
   **Activate—Title** <abbr cost="TWO-ACTIONS" class="action-symbol">2</abbr> ([trait](link_trait_ID), ...); **Effect** ...
-- Remove * * * horizontal dividers — use a semicolon or line break instead. (This is a
-  deliberate WG style choice: cleaned descriptions read more compactly without the book's
-  divider lines. Do not "fix" this rule to preserve them.)
+- Keep the * * * divider that separates an item's stat lines (Price, Usage, Activate,
+  Ammunition, ...) from the description prose — the source books print a dividing line
+  exactly there and WG mirrors the book layout. Do not add dividers the book doesn't
+  have, and remove a trailing divider with nothing after it. (Settled 2026-08-25 after a
+  restoration pass re-added ~1,050 stripped dividers; do not flip this rule again without
+  checking that history.)
 - Do NOT add markdown headers (#) or bullet lists unless the original had them
 
 ### 3. Fix the usage field
