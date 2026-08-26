@@ -298,6 +298,18 @@ export function compileExpressions(id: StoreID, text?: string, round = false) {
   for (const expression of expressions) {
     let compiledExpression = expression.slice(2, -2);
     compiledExpression = compiledExpression.replace(/\\/g, '');
+    // Resolve list-membership checks to 1/0 first: INCLUDES(LIST_VARIABLE, 'value').
+    // Must run before variable substitution, which would otherwise mangle the list argument.
+    // Entries and needle compare case-insensitively; a non-list or missing variable yields 0.
+    compiledExpression = compiledExpression.replace(
+      /INCLUDES\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*(?:'([^']*)'|"([^"]*)")\s*\)/gi,
+      (_match, variableName, single, double) => {
+        const needle = (single ?? double ?? '').trim().toUpperCase();
+        const listVar = getVariables(id)[variableName.toUpperCase()];
+        const list = listVar && isVariableListStr(listVar) ? listVar.value : [];
+        return list.some((entry) => entry.trim().toUpperCase() === needle) ? '1' : '0';
+      }
+    );
     for (const variable of variables) {
       if (variable.trim() === '') continue;
       if (compiledExpression.toUpperCase().includes(variable.toUpperCase())) {
