@@ -314,6 +314,13 @@ export const OperationSelectFiltersAdjValueSchema = z.object({
   // For the WEAPON group: restrict the list to weapons that carry an ancestry (or versatile
   // heritage) trait. Backs feats like Unconventional Weaponry / Kasatha weapon selections.
   hasAncestryTrait: z.boolean().optional(),
+  // For item-backed groups (WEAPON / ARMOR) only: restrict the list to items of these rarities.
+  rarities: z.array(RaritySchema).optional(),
+  // For the WEAPON group: the chosen weapon's name is also appended to WEAPON_FAMILIARITY,
+  // treating it as one proficiency category lower (martial->simple, advanced->martial) so it
+  // tracks the character's category scaling. Backs "treat the chosen weapon as a simple weapon
+  // for proficiency" feats (Unconventional Weaponry).
+  addToFamiliarity: z.boolean().optional(),
 });
 export type OperationSelectFiltersAdjValue = z.infer<typeof OperationSelectFiltersAdjValueSchema>;
 

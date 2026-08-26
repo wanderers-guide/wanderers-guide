@@ -727,6 +727,9 @@ function SelectionFilteredAdjValue(props: {
       // linger invisibly after switching to e.g. SKILL
       traits: isItemGroup && itemTraits.length > 0 ? itemTraits : undefined,
       hasAncestryTrait: group === 'WEAPON' && hasAncestryTrait ? true : undefined,
+      // No editor UI for these yet — pass stored values through so a resave doesn't wipe them
+      rarities: isItemGroup ? props.filters?.rarities : undefined,
+      addToFamiliarity: group === 'WEAPON' ? props.filters?.addToFamiliarity : undefined,
     });
   }, [group, value, itemTraits, hasAncestryTrait]);
 
