@@ -27,7 +27,7 @@ import {
   labelizeBulk,
   isItemWithHealth,
 } from '@items/inv-utils';
-import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
+import { getWeaponGroup, getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import {
   Accordion,
   ActionIcon,
@@ -925,10 +925,12 @@ function InvItemSections(props: {
   }
 
   let categoryAndGroupSection = null;
-  if (props.invItem.item.meta_data?.category || props.invItem.item.meta_data?.group) {
+  // Effective group can come from a player-selected override (e.g. Solar Weapon)
+  const effectiveGroup = getWeaponGroup(props.storeId, props.invItem.item);
+  if (props.invItem.item.meta_data?.category || effectiveGroup) {
     let groupDesc =
-      getWeaponSpecialization(props.invItem.item.meta_data?.group as ItemMetaGroupWeapon) ??
-      getArmorSpecialization(props.invItem.item.meta_data?.group as ItemMetaGroupArmor);
+      getWeaponSpecialization(effectiveGroup as ItemMetaGroupWeapon) ??
+      getArmorSpecialization(effectiveGroup as ItemMetaGroupArmor);
     if (groupDesc && hasAttackAndDamage) {
       if (hasAttackAndDamage) {
         groupDesc = {
@@ -957,7 +959,7 @@ function InvItemSections(props: {
               </Text>
             </Group>
           )}
-          {props.invItem.item.meta_data?.group && (
+          {effectiveGroup && (
             <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
               <Text fw={600} c='gray.2' span>
                 Group
@@ -973,7 +975,7 @@ function InvItemSections(props: {
               >
                 <HoverCard.Target>
                   <Text c='gray.2' style={{ cursor: groupDesc ? 'pointer' : undefined }} span>
-                    {toLabel(props.invItem.item.meta_data?.group)}
+                    {toLabel(effectiveGroup)}
                   </Text>
                 </HoverCard.Target>
                 <HoverCard.Dropdown>

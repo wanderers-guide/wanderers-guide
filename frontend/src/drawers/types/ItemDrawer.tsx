@@ -27,7 +27,7 @@ import {
   labelizeBulk,
   isItemWithHealth,
 } from '@items/inv-utils';
-import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
+import { getWeaponGroup, getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import {
   Title,
   Text,
@@ -669,10 +669,12 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
   }
 
   let categoryAndGroupSection = null;
-  if (props.item.meta_data?.category || props.item.meta_data?.group) {
+  // Effective group can come from a player-selected override (e.g. Solar Weapon)
+  const effectiveGroup = getWeaponGroup(props.store, props.item);
+  if (props.item.meta_data?.category || effectiveGroup) {
     let groupDesc =
-      getWeaponSpecialization(props.item.meta_data?.group as ItemMetaGroupWeapon) ??
-      getArmorSpecialization(props.item.meta_data?.group as ItemMetaGroupArmor);
+      getWeaponSpecialization(effectiveGroup as ItemMetaGroupWeapon) ??
+      getArmorSpecialization(effectiveGroup as ItemMetaGroupArmor);
     if (groupDesc) {
       if (hasAttackAndDamage) {
         groupDesc = {
@@ -701,7 +703,7 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
               </Text>
             </Group>
           )}
-          {props.item.meta_data?.group && (
+          {effectiveGroup && (
             <Group wrap='nowrap' gap={10}>
               <Text fw={600} c='gray.2' span>
                 Group
@@ -717,7 +719,7 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
               >
                 <HoverCard.Target>
                   <Text c='gray.2' style={{ cursor: groupDesc ? 'pointer' : undefined }} span>
-                    {toLabel(props.item.meta_data?.group)}
+                    {toLabel(effectiveGroup)}
                   </Text>
                 </HoverCard.Target>
                 <HoverCard.Dropdown>
