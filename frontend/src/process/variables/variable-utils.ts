@@ -18,7 +18,7 @@ import {
 } from '@schemas/variables';
 import { getVariables } from './variable-manager';
 import { evaluate } from 'mathjs/number';
-import { getFinalVariableValue } from './variable-helpers';
+import { getFinalProfValue, getFinalVariableValue } from './variable-helpers';
 import { toLabel } from '@utils/strings';
 import { throwError } from '@utils/error-handling';
 
@@ -301,7 +301,14 @@ export function compileExpressions(id: StoreID, text?: string, round = false) {
     for (const variable of variables) {
       if (variable.trim() === '') continue;
       if (compiledExpression.toUpperCase().includes(variable.toUpperCase())) {
-        const finalValue = getFinalVariableValue(id, variable).total;
+        // Proficiency variables need the full prof computation (rank + level + attribute +
+        // bonuses; *_DC names add the base 10) — getFinalVariableValue only totals flat
+        // bonuses for profs, which made every inline {{SPELL_DC}}-style reference compile
+        // to 0 (on companions AND characters alike).
+        const varObj = getVariables(id)[variable];
+        const finalValue = isVariableProf(varObj)
+          ? parseInt(getFinalProfValue(id, variable, variable.toUpperCase().endsWith('_DC')))
+          : getFinalVariableValue(id, variable).total;
         compiledExpression = compiledExpression.replace(new RegExp(`\\b${variable}\\b`, 'gi'), finalValue.toString());
       }
     }
