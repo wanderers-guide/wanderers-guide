@@ -426,6 +426,13 @@ Rewrite the description using rich inline markdown links following the rules abo
   have, and remove a trailing divider with nothing after it. (Settled 2026-08-25 after a
   restoration pass re-added ~1,050 stripped dividers; do not flip this rule again without
   checking that history.)
+- NEVER strip trailing double-spaces at the end of a line — they are markdown hard line
+  breaks, and WG's renderer treats a bare newline as a paragraph join (no remark-breaks),
+  so removing them merges consecutive stat lines (Ammunition, Activate, Damage, Range,
+  Reload, Group, ...) into one run-on rendered line. Preserve them exactly where the
+  original text has them, and end each stat line that is followed by another stat line
+  with two trailing spaces. (A 2026-08-26 repair pass restored 167 stripped hard breaks
+  across 74 items — do not reintroduce this.)
 - Do NOT add markdown headers (#) or bullet lists unless the original had them
 
 ### 3. Fix the usage field
