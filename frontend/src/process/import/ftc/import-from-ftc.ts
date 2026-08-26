@@ -103,8 +103,9 @@ export async function importFromFTC(d: FTC) {
     hp_current: data.hp ?? 0,
     hp_temp: data.temp_hp ?? 0,
     hero_points: data.hero_points ?? 1,
-    stamina_current: data.stamina ?? 0,
-    resolve_current: data.resolve ?? 0,
+    // -1 = "uninitialized / full" sentinel — the sheet renders negative pool values as their max
+    stamina_current: data.stamina ?? -1,
+    resolve_current: data.resolve ?? -1,
     details: {
       class: undefined,
       background: undefined,

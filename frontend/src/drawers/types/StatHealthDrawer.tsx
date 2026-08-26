@@ -3,7 +3,15 @@ import { IconMathSymbols } from '@tabler/icons-react';
 import { StoreID } from '@schemas/variables';
 import { sign } from '@utils/numbers';
 import { displayFinalHealthValue } from '@variables/variable-display';
-import { getHealthValueParts } from '@variables/variable-helpers';
+import {
+  getFinalResolveValue,
+  getFinalStaminaValue,
+  getHealthValueParts,
+  getResolveAttribute,
+  isStaminaVariant,
+} from '@variables/variable-helpers';
+import { variableToLabel } from '@variables/variable-utils';
+import { getVariable } from '@variables/variable-manager';
 
 export function StatHealthDrawerTitle(props: { data: { id: StoreID } }) {
   return (
@@ -23,6 +31,10 @@ export function StatHealthDrawerTitle(props: { data: { id: StoreID } }) {
 export function StatHealthDrawerContent(props: { data: { id: StoreID } }) {
   const parts = getHealthValueParts(props.data.id);
 
+  // Stamina variant: half class HP (and no Con) goes to HP; the rest becomes stamina.
+  const staminaVariant = isStaminaVariant(props.data.id);
+  const halfClassHp = Math.floor(parts.classHp / 2);
+
   return (
     <Box>
       <Accordion variant='separated' defaultValue='breakdown'>
@@ -33,25 +45,31 @@ export function StatHealthDrawerContent(props: { data: { id: StoreID } }) {
               {displayFinalHealthValue(props.data.id)} ={' ('}
               <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
                 <HoverCard.Target>
-                  <Kbd style={{ cursor: 'pointer' }}>{parts.classHp}</Kbd>
+                  <Kbd style={{ cursor: 'pointer' }}>{staminaVariant ? halfClassHp : parts.classHp}</Kbd>
                 </HoverCard.Target>
                 <HoverCard.Dropdown py={5} px={10}>
                   <Text c='gray.0' size='xs'>
-                    This is the base hit points from your class. You gain this amount every level.
+                    {staminaVariant
+                      ? `This is the base hit points from your class, halved for the stamina variant. You gain this amount every level (the other half becomes stamina points).`
+                      : `This is the base hit points from your class. You gain this amount every level.`}
                   </Text>
                 </HoverCard.Dropdown>
               </HoverCard>
-              +
-              <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
-                <HoverCard.Target>
-                  <Kbd style={{ cursor: 'pointer' }}>{parts.conMod}</Kbd>
-                </HoverCard.Target>
-                <HoverCard.Dropdown py={5} px={10}>
-                  <Text c='gray.0' size='xs'>
-                    You add your Constitution modifier to the hit points you gain every level.
-                  </Text>
-                </HoverCard.Dropdown>
-              </HoverCard>
+              {!staminaVariant && (
+                <>
+                  +
+                  <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
+                    <HoverCard.Target>
+                      <Kbd style={{ cursor: 'pointer' }}>{parts.conMod}</Kbd>
+                    </HoverCard.Target>
+                    <HoverCard.Dropdown py={5} px={10}>
+                      <Text c='gray.0' size='xs'>
+                        You add your Constitution modifier to the hit points you gain every level.
+                      </Text>
+                    </HoverCard.Dropdown>
+                  </HoverCard>
+                </>
+              )}
               {') × '}
               <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
                 <HoverCard.Target>
@@ -151,6 +169,78 @@ export function StatHealthDrawerContent(props: { data: { id: StoreID } }) {
             </Group>
           </Accordion.Panel>
         </Accordion.Item>
+        {/* Stamina variant pools — shown only when the variant is enabled */}
+        {staminaVariant && (
+          <Accordion.Item value='stamina'>
+            <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Stamina Breakdown</Accordion.Control>
+            <Accordion.Panel>
+              <Group gap={8} wrap='nowrap' align='center'>
+                <Text span>{getFinalStaminaValue(props.data.id)}</Text> ={' ('}
+                <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
+                  <HoverCard.Target>
+                    <Kbd style={{ cursor: 'pointer' }}>{halfClassHp}</Kbd>
+                  </HoverCard.Target>
+                  <HoverCard.Dropdown py={5} px={10}>
+                    <Text c='gray.0' size='xs'>
+                      This is half the base hit points from your class. You gain this amount of stamina points every
+                      level.
+                    </Text>
+                  </HoverCard.Dropdown>
+                </HoverCard>
+                +
+                <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
+                  <HoverCard.Target>
+                    <Kbd style={{ cursor: 'pointer' }}>{parts.conMod}</Kbd>
+                  </HoverCard.Target>
+                  <HoverCard.Dropdown py={5} px={10}>
+                    <Text c='gray.0' size='xs'>
+                      You add your Constitution modifier to the stamina points you gain every level.
+                    </Text>
+                  </HoverCard.Dropdown>
+                </HoverCard>
+                {') × '}
+                <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
+                  <HoverCard.Target>
+                    <Kbd style={{ cursor: 'pointer' }}>{parts.level}</Kbd>
+                  </HoverCard.Target>
+                  <HoverCard.Dropdown py={5} px={10}>
+                    <Text c='gray.0' size='xs'>
+                      This is your current level.
+                    </Text>
+                  </HoverCard.Dropdown>
+                </HoverCard>
+              </Group>
+            </Accordion.Panel>
+          </Accordion.Item>
+        )}
+        {staminaVariant && (
+          <Accordion.Item value='resolve'>
+            <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Resolve Breakdown</Accordion.Control>
+            <Accordion.Panel>
+              <Group gap={8} wrap='nowrap' align='center'>
+                <Text span>{getFinalResolveValue(props.data.id)}</Text> =
+                <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
+                  <HoverCard.Target>
+                    <Kbd style={{ cursor: 'pointer' }}>
+                      {(() => {
+                        // Label the key attribute the resolve pool is based on (e.g. "Strength")
+                        const attributeName = getResolveAttribute(props.data.id);
+                        const attribute = attributeName ? getVariable(props.data.id, attributeName) : null;
+                        return attribute ? variableToLabel(attribute) : 'Key Attribute';
+                      })()}
+                    </Kbd>
+                  </HoverCard.Target>
+                  <HoverCard.Dropdown py={5} px={10}>
+                    <Text c='gray.0' size='xs'>
+                      Your maximum resolve points equal your class's key attribute modifier. Spend 1 resolve point to
+                      Take a Breather (10 minutes) and restore all your stamina points.
+                    </Text>
+                  </HoverCard.Dropdown>
+                </HoverCard>
+              </Group>
+            </Accordion.Panel>
+          </Accordion.Item>
+        )}
       </Accordion>
     </Box>
   );

@@ -3,7 +3,13 @@ import { LivingEntity } from '@schemas/content';
 import { ProficiencyType, StoreID } from '@schemas/variables';
 import { SetterOrUpdater } from '@utils/type-fixing';
 import { addVariable, getVariable, getVariables } from './variable-manager';
-import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from './variable-helpers';
+import {
+  getFinalAcValue,
+  getFinalHealthValue,
+  getFinalProfValue,
+  getFinalResolveValue,
+  getFinalStaminaValue,
+} from './variable-helpers';
 import { labelToVariable } from './variable-utils';
 import { getDeepDiff } from '@utils/objects';
 
@@ -14,8 +20,9 @@ export function saveCalculatedStats(
 ) {
   setTimeout(() => {
     const maxHealth = getFinalHealthValue(id);
-    const maxStamina = 0;
-    const maxResolve = 0;
+    // Stamina variant pools — both helpers return 0 when the variant isn't enabled.
+    const maxStamina = getFinalStaminaValue(id);
+    const maxResolve = getFinalResolveValue(id);
     const ac = getFinalAcValue(id, getBestArmor(id, entity.inventory)?.item);
     const finalProfs: Record<string, { total: number; type: ProficiencyType }> = {};
 

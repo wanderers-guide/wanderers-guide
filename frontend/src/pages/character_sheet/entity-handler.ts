@@ -2,8 +2,13 @@ import { getConditionByName } from '@conditions/condition-handler';
 import { collectEntitySpellcasting, getFocusPoints } from '@content/collect-content';
 import { filterByTraitType } from '@items/inv-utils';
 import { LivingEntity } from '@schemas/content';
-import { StoreID, VariableAttr, VariableNum, VariableProf } from '@schemas/variables';
-import { getFinalHealthValue } from '@variables/variable-helpers';
+import { StoreID, VariableAttr, VariableNum } from '@schemas/variables';
+import {
+  getFinalHealthValue,
+  getFinalResolveValue,
+  getFinalStaminaValue,
+  isStaminaVariant,
+} from '@variables/variable-helpers';
 import { getVariable } from '@variables/variable-manager';
 import { cloneDeep } from 'lodash-es';
 import { evaluate } from 'mathjs';
@@ -75,6 +80,58 @@ export function confirmHealth(
   };
 }
 
+/**
+ * Parse + clamp an edited pool value (stamina or resolve points) to [0, max] and save it.
+ * Accepts math expressions the same way HP edits do (e.g. "12-4").
+ */
+export function confirmPool(
+  key: 'stamina_current' | 'resolve_current',
+  value: string,
+  max: number,
+  setEntity?: SetterOrUpdater<LivingEntity | null>
+) {
+  let result = -1;
+  try {
+    result = evaluate(value);
+  } catch (e) {
+    result = parseInt(value);
+  }
+  if (isNaN(result)) result = 0;
+  result = Math.floor(result);
+  if (result < 0) result = 0;
+  if (result > max) result = max;
+
+  setEntity?.((c) => {
+    if (!c) return c;
+    return {
+      ...c,
+      [key]: result,
+    };
+  });
+  return result;
+}
+
+/**
+ * Take a Breather (stamina variant, 10-min activity): spend 1 resolve point to restore
+ * all stamina points. No-op if the entity has no resolve left.
+ */
+export function handleTakeBreather(id: StoreID, entity: LivingEntity, setEntity?: SetterOrUpdater<LivingEntity | null>) {
+  const maxResolve = getFinalResolveValue(id);
+  // Negative pool values are the "uninitialized / full" sentinel
+  const currentResolve = entity.resolve_current < 0 ? maxResolve : entity.resolve_current;
+  if (currentResolve <= 0) return false;
+
+  setEntity?.((c) => {
+    if (!c) return c;
+    return {
+      ...c,
+      stamina_current: getFinalStaminaValue(id),
+      resolve_current: currentResolve - 1,
+    };
+  });
+  return true;
+}
+
 export function confirmExperience(exp: string, entity: LivingEntity, setEntity?: SetterOrUpdater<LivingEntity | null>) {
   let result = -1;
   try {
@@ -122,20 +179,10 @@ export function handleRest(id: StoreID, entity: LivingEntity, setEntity?: Setter
   }
   newEntity.hp_current = currentHealth + regenAmount;
 
-  // Regen Stamina and Resolve
-  if (true) {
-    const classHP = getVariable<VariableNum>(id, 'MAX_HEALTH_CLASS_PER_LEVEL')!.value;
-    const newStamina = (Math.floor(classHP / 2) + conMod) * level;
-
-    let keyMod = 0;
-    const classDC = getVariable<VariableProf>(id, 'CLASS_DC')!;
-    if (classDC.value.attribute) {
-      keyMod = getVariable<VariableAttr>(id, classDC.value.attribute)?.value.value ?? 0;
-    }
-    const newResolve = keyMod;
-
-    newEntity.stamina_current = newStamina;
-    newEntity.resolve_current = newResolve;
+  // Regen Stamina and Resolve — a full rest restores both pools to max (stamina variant only)
+  if (isStaminaVariant(id)) {
+    newEntity.stamina_current = getFinalStaminaValue(id);
+    newEntity.resolve_current = getFinalResolveValue(id);
   }
 
   // Set spells to default

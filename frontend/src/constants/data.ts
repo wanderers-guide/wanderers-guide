@@ -28,6 +28,9 @@ export const IMPRINT_BORDER_COLOR = 'var(--imprint-border-color)';
 export const COMMON_CORE_ID = 3;
 export const PATHFINDER_CORE_ID = 1;
 export const STARFINDER_CORE_ID = 579;
+// The Gamemastery Guide source — holds the stamina variant's supporting content
+// (Take a Breather, Steel Your Resolve, Encouraging Words), auto-enabled with the variant.
+export const GAMEMASTERY_GUIDE_ID = 203;
 
 export const CHARACTER_SLOT_CAP = 6;
 export const CAMPAIGN_SLOT_CAP = 1;

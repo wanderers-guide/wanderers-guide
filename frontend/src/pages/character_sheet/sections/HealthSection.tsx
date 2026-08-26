@@ -4,12 +4,17 @@ import BlurBox from '@common/BlurBox';
 import ClickEditText from '@common/ClickEditText';
 import { useMantineTheme, Group, Anchor, Button, Box, Text } from '@mantine/core';
 import { interpolateHealth } from '@utils/colors';
-import { getFinalHealthValue } from '@variables/variable-helpers';
+import {
+  getFinalHealthValue,
+  getFinalResolveValue,
+  getFinalStaminaValue,
+  isStaminaVariant,
+} from '@variables/variable-helpers';
 import { evaluate } from 'mathjs';
 import { useNavigate } from 'react-router-dom';
 import { useAtom } from 'jotai';
 import { SetterOrUpdater } from '@utils/type-fixing';
-import { confirmHealth } from '../entity-handler';
+import { confirmHealth, confirmPool, handleTakeBreather } from '../entity-handler';
 import { StoreID } from '@schemas/variables';
 import { LivingEntity } from '@schemas/content';
 
@@ -31,6 +36,20 @@ export default function HealthSection(props: {
   let tempHealth = props.entity?.hp_temp;
   if (tempHealth === undefined || tempHealth < 0) {
     tempHealth = 0;
+  }
+
+  // Stamina variant (GM Core): the sheet gains stamina & resolve pools.
+  // Negative pool values are the "uninitialized / full" sentinel (same convention as HP).
+  const staminaVariant = isStaminaVariant(props.id);
+  const maxStamina = getFinalStaminaValue(props.id);
+  const maxResolve = getFinalResolveValue(props.id);
+  let currentStamina = props.entity?.stamina_current;
+  if (currentStamina === undefined || currentStamina < 0 || currentStamina > maxStamina) {
+    currentStamina = maxStamina;
+  }
+  let currentResolve = props.entity?.resolve_current;
+  if (currentResolve === undefined || currentResolve < 0 || currentResolve > maxResolve) {
+    currentResolve = maxResolve;
   }
 
   return (
@@ -123,21 +142,127 @@ export default function HealthSection(props: {
               />
             </Box>
           </Group>
-          <Button
-            variant='subtle'
-            color='gray.5'
-            size='compact-xs'
-            fw={400}
-            onClick={() => {
-              openDrawer({
-                type: 'stat-resist-weak',
-                data: { id: props.id },
-                extra: { addToHistory: true },
-              });
-            }}
-          >
-            Resistances & Weaknesses
-          </Button>
+          {/* Stamina variant row — only rendered when the variant is enabled */}
+          {staminaVariant && (
+            <Group wrap='nowrap' justify='space-between' align='flex-start' w='100%' gap={0} grow>
+              <Box>
+                <Text ta='center' fz='sm' fw={500} c='gray.0'>
+                  Stamina
+                </Text>
+                <Group wrap='nowrap' justify='center' align='center' gap={10}>
+                  <ClickEditText
+                    color={interpolateHealth(maxStamina > 0 ? currentStamina / maxStamina : 0)}
+                    size='lg'
+                    value={`${currentStamina}`}
+                    height={40}
+                    miw={20}
+                    placeholder='SP'
+                    onChange={(value) => {
+                      if (!props.entity) return;
+                      confirmPool('stamina_current', value, getFinalStaminaValue(props.id), props.setEntity);
+                    }}
+                  />
+                  <Box>
+                    <Text size='md' c='gray.4' style={{ cursor: 'default' }}>
+                      /
+                    </Text>
+                  </Box>
+                  <Box>
+                    <Anchor
+                      size='md'
+                      c='gray.2'
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => {
+                        openDrawer({
+                          type: 'stat-hp',
+                          data: { id: props.id },
+                          extra: { addToHistory: true },
+                        });
+                      }}
+                      underline='hover'
+                    >
+                      {maxStamina}
+                    </Anchor>
+                  </Box>
+                </Group>
+              </Box>
+
+              <Box>
+                <Text ta='center' fz='sm' fw={500} c='gray.0'>
+                  Resolve
+                </Text>
+                <Group wrap='nowrap' justify='center' align='center' gap={10}>
+                  <ClickEditText
+                    color={currentResolve > 0 ? theme.colors.guide[4] : theme.colors.gray[5]}
+                    size='lg'
+                    value={`${currentResolve}`}
+                    height={40}
+                    miw={20}
+                    placeholder='RP'
+                    onChange={(value) => {
+                      if (!props.entity) return;
+                      confirmPool('resolve_current', value, getFinalResolveValue(props.id), props.setEntity);
+                    }}
+                  />
+                  <Box>
+                    <Text size='md' c='gray.4' style={{ cursor: 'default' }}>
+                      /
+                    </Text>
+                  </Box>
+                  <Box>
+                    <Anchor
+                      size='md'
+                      c='gray.2'
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => {
+                        openDrawer({
+                          type: 'stat-hp',
+                          data: { id: props.id },
+                          extra: { addToHistory: true },
+                        });
+                      }}
+                      underline='hover'
+                    >
+                      {maxResolve}
+                    </Anchor>
+                  </Box>
+                </Group>
+              </Box>
+            </Group>
+          )}
+          <Group wrap='nowrap' justify='center' gap={0}>
+            <Button
+              variant='subtle'
+              color='gray.5'
+              size='compact-xs'
+              fw={400}
+              onClick={() => {
+                openDrawer({
+                  type: 'stat-resist-weak',
+                  data: { id: props.id },
+                  extra: { addToHistory: true },
+                });
+              }}
+            >
+              Resistances & Weaknesses
+            </Button>
+            {/* Take a Breather (stamina variant): spend 1 resolve to refill stamina */}
+            {staminaVariant && (
+              <Button
+                variant='subtle'
+                color='gray.5'
+                size='compact-xs'
+                fw={400}
+                disabled={currentResolve <= 0}
+                onClick={() => {
+                  if (!props.entity) return;
+                  handleTakeBreather(props.id, props.entity, props.setEntity);
+                }}
+              >
+                Breather
+              </Button>
+            )}
+          </Group>
         </Group>
       </Box>
     </BlurBox>

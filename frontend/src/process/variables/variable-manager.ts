@@ -39,6 +39,7 @@ export const HIDDEN_VARIABLES = [
   'SPELL_SLOTS',
   'SPELL_DATA',
   'PROF_WITHOUT_LEVEL',
+  'STAMINA_VARIANT',
   'INJECT_SELECT_OPTIONS',
   'INJECT_TEXT',
 ];
@@ -184,6 +185,7 @@ export const DEFAULT_VARIABLES: Record<string, Variable> = {
   CORE_LANGUAGES: newVariable('list-str', 'CORE_LANGUAGES'),
 
   PROF_WITHOUT_LEVEL: newVariable('bool', 'PROF_WITHOUT_LEVEL', false), // Hidden
+  STAMINA_VARIANT: newVariable('bool', 'STAMINA_VARIANT', false), // Hidden
 
   MAX_HEALTH_ANCESTRY: newVariable('num', 'MAX_HEALTH_ANCESTRY'),
   MAX_HEALTH_CLASS_PER_LEVEL: newVariable('num', 'MAX_HEALTH_CLASS_PER_LEVEL'),
