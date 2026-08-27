@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict PHcsHkKfy06wwhLzdxVkd3298TPc9f4Ng6ydDCSvKWb7dZDxNe6kWV2LfLUlsbp
+\restrict oMBOSvhXA7Rg57jTrUCSg9l0WxCi49O11QA0cdQRkevZ0CzXHBiHcCBopwQ3OKC
 
 -- Dumped from database version 15.1 (Ubuntu 15.1-1.pgdg20.04+1)
 -- Dumped by pg_dump version 16.15 (Ubuntu 16.15-1.pgdg24.04+2)
@@ -43,7 +43,7 @@ CREATE TABLE public.ability_block (
     description character varying,
     special character varying,
     type character varying NOT NULL,
-    meta_data json,
+    meta_data jsonb,
     traits bigint[],
     content_source_id bigint NOT NULL,
     version character varying,
@@ -88,7 +88,8 @@ CREATE TABLE public.ancestry (
     uuid bigint NOT NULL,
     deprecated boolean,
     search_tsv tsvector GENERATED ALWAYS AS ((setweight(to_tsvector('english'::regconfig, (COALESCE(name, ''::character varying))::text), 'A'::"char") || setweight(to_tsvector('english'::regconfig, COALESCE(description, ''::text)), 'B'::"char"))) STORED,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    meta_data jsonb
 );
 
 
@@ -126,7 +127,8 @@ CREATE TABLE public.archetype (
     uuid bigint,
     deprecated boolean,
     search_tsv tsvector GENERATED ALWAYS AS ((setweight(to_tsvector('english'::regconfig, (COALESCE(name, ''::character varying))::text), 'A'::"char") || setweight(to_tsvector('english'::regconfig, COALESCE(description, ''::text)), 'B'::"char"))) STORED,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    meta_data jsonb
 );
 
 
@@ -163,7 +165,8 @@ CREATE TABLE public.background (
     artwork_url character varying,
     deprecated boolean,
     search_tsv tsvector GENERATED ALWAYS AS ((setweight(to_tsvector('english'::regconfig, (COALESCE(name, ''::character varying))::text), 'A'::"char") || setweight(to_tsvector('english'::regconfig, COALESCE(description, ''::text)), 'B'::"char"))) STORED,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    meta_data jsonb
 );
 
 
@@ -300,7 +303,8 @@ CREATE TABLE public.class (
     skill_training_base integer DEFAULT 3 NOT NULL,
     deprecated boolean,
     search_tsv tsvector GENERATED ALWAYS AS ((setweight(to_tsvector('english'::regconfig, (COALESCE(name, ''::character varying))::text), 'A'::"char") || setweight(to_tsvector('english'::regconfig, COALESCE(description, ''::text)), 'B'::"char"))) STORED,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    meta_data jsonb
 );
 
 
@@ -328,7 +332,8 @@ CREATE TABLE public.class_archetype (
     override_skill_training_base integer,
     override_class_operations boolean,
     search_tsv tsvector GENERATED ALWAYS AS ((setweight(to_tsvector('english'::regconfig, (COALESCE(name, ''::character varying))::text), 'A'::"char") || setweight(to_tsvector('english'::regconfig, COALESCE(description, ''::text)), 'B'::"char"))) STORED,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    meta_data jsonb
 );
 
 
@@ -450,7 +455,7 @@ CREATE TABLE public.creature (
     name character varying NOT NULL,
     level integer DEFAULT 0 NOT NULL,
     rarity character varying DEFAULT 'COMMON'::character varying NOT NULL,
-    meta_data json,
+    meta_data jsonb,
     content_source_id bigint NOT NULL,
     version character varying DEFAULT '1.0'::character varying NOT NULL,
     uuid bigint NOT NULL,
@@ -540,7 +545,7 @@ CREATE TABLE public.item (
     size character varying DEFAULT 'MEDIUM'::character varying NOT NULL,
     craft_requirements character varying,
     usage character varying,
-    meta_data json,
+    meta_data jsonb,
     operations json[],
     content_source_id bigint NOT NULL,
     version character varying DEFAULT '1.0'::character varying NOT NULL,
@@ -586,7 +591,8 @@ CREATE TABLE public.language (
     availability character varying,
     deprecated boolean,
     search_tsv tsvector GENERATED ALWAYS AS ((setweight(to_tsvector('english'::regconfig, (COALESCE(name, ''::character varying))::text), 'A'::"char") || setweight(to_tsvector('english'::regconfig, COALESCE(description, ''::text)), 'B'::"char"))) STORED,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    meta_data jsonb
 );
 
 
@@ -747,7 +753,8 @@ CREATE TABLE public.versatile_heritage (
     uuid bigint,
     deprecated boolean,
     search_tsv tsvector GENERATED ALWAYS AS ((setweight(to_tsvector('english'::regconfig, (COALESCE(name, ''::character varying))::text), 'A'::"char") || setweight(to_tsvector('english'::regconfig, COALESCE(description, ''::text)), 'B'::"char"))) STORED,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    meta_data jsonb
 );
 
 
@@ -1062,6 +1069,13 @@ CREATE INDEX ability_block_description_trgm_idx ON public.ability_block USING gi
 
 
 --
+-- Name: ability_block_meta_data_gin; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ability_block_meta_data_gin ON public.ability_block USING gin (meta_data);
+
+
+--
 -- Name: ability_block_name_trgm_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1087,6 +1101,13 @@ CREATE INDEX ancestry_content_source_id_idx ON public.ancestry USING btree (cont
 --
 
 CREATE INDEX ancestry_description_trgm_idx ON public.ancestry USING gin (description public.gin_trgm_ops);
+
+
+--
+-- Name: ancestry_meta_data_gin; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ancestry_meta_data_gin ON public.ancestry USING gin (meta_data);
 
 
 --
@@ -1125,6 +1146,13 @@ CREATE INDEX archetype_description_trgm_idx ON public.archetype USING gin (descr
 
 
 --
+-- Name: archetype_meta_data_gin; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX archetype_meta_data_gin ON public.archetype USING gin (meta_data);
+
+
+--
 -- Name: archetype_name_trgm_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1157,6 +1185,13 @@ CREATE INDEX background_content_source_id_idx ON public.background USING btree (
 --
 
 CREATE INDEX background_description_trgm_idx ON public.background USING gin (description public.gin_trgm_ops);
+
+
+--
+-- Name: background_meta_data_gin; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX background_meta_data_gin ON public.background USING gin (meta_data);
 
 
 --
@@ -1209,6 +1244,13 @@ CREATE INDEX class_archetype_description_trgm_idx ON public.class_archetype USIN
 
 
 --
+-- Name: class_archetype_meta_data_gin; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX class_archetype_meta_data_gin ON public.class_archetype USING gin (meta_data);
+
+
+--
 -- Name: class_archetype_name_trgm_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1234,6 +1276,13 @@ CREATE INDEX class_content_source_id_idx ON public.class USING btree (content_so
 --
 
 CREATE INDEX class_description_trgm_idx ON public.class USING gin (description public.gin_trgm_ops);
+
+
+--
+-- Name: class_meta_data_gin; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX class_meta_data_gin ON public.class USING gin (meta_data);
 
 
 --
@@ -1286,6 +1335,13 @@ CREATE INDEX creature_content_source_id_idx ON public.creature USING btree (cont
 
 
 --
+-- Name: creature_meta_data_gin; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX creature_meta_data_gin ON public.creature USING gin (meta_data);
+
+
+--
 -- Name: creature_search_tsv_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1321,6 +1377,13 @@ CREATE INDEX item_description_trgm_idx ON public.item USING gin (description pub
 
 
 --
+-- Name: item_meta_data_gin; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX item_meta_data_gin ON public.item USING gin (meta_data);
+
+
+--
 -- Name: item_name_trgm_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1346,6 +1409,13 @@ CREATE INDEX language_content_source_id_idx ON public.language USING btree (cont
 --
 
 CREATE INDEX language_description_trgm_idx ON public.language USING gin (description public.gin_trgm_ops);
+
+
+--
+-- Name: language_meta_data_gin; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX language_meta_data_gin ON public.language USING gin (meta_data);
 
 
 --
@@ -1384,6 +1454,13 @@ CREATE INDEX spell_description_trgm_idx ON public.spell USING gin (description p
 
 
 --
+-- Name: spell_meta_data_gin; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX spell_meta_data_gin ON public.spell USING gin (meta_data);
+
+
+--
 -- Name: spell_name_trgm_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1412,6 +1489,13 @@ CREATE INDEX trait_description_trgm_idx ON public.trait USING gin (description p
 
 
 --
+-- Name: trait_meta_data_gin; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX trait_meta_data_gin ON public.trait USING gin (meta_data);
+
+
+--
 -- Name: trait_name_trgm_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1437,6 +1521,13 @@ CREATE INDEX versatile_heritage_content_source_id_idx ON public.versatile_herita
 --
 
 CREATE INDEX versatile_heritage_description_trgm_idx ON public.versatile_heritage USING gin (description public.gin_trgm_ops);
+
+
+--
+-- Name: versatile_heritage_meta_data_gin; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX versatile_heritage_meta_data_gin ON public.versatile_heritage USING gin (meta_data);
 
 
 --
@@ -2966,5 +3057,5 @@ GRANT ALL ON SEQUENCE public.versatile_heritage_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict PHcsHkKfy06wwhLzdxVkd3298TPc9f4Ng6ydDCSvKWb7dZDxNe6kWV2LfLUlsbp
+\unrestrict oMBOSvhXA7Rg57jTrUCSg9l0WxCi49O11QA0cdQRkevZ0CzXHBiHcCBopwQ3OKC
 
