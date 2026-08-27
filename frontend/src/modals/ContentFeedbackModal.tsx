@@ -2,7 +2,7 @@ import { Text, Stack, Button, Group, Loader, Avatar, Modal, Title, Box, useManti
 import { AbilityBlockType, ContentSource, ContentType, Item } from '@schemas/content';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { IconBook2, IconHash } from '@tabler/icons-react';
+import { IconBook2, IconExternalLink, IconHash } from '@tabler/icons-react';
 import { convertToContentType, getIconFromContentType } from '@content/content-utils';
 import {
   defineDefaultSources,
@@ -401,6 +401,21 @@ function ContentFeedbackSection(props: {
 
   if (!data.content || !data.source) return <Text>Content not found</Text>;
 
+  // Optional per-row provenance written into meta_data.source (book / page / url).
+  // Absent on content that hasn't been cited, so every use below is guarded.
+  const rawCite = (data.content as { meta_data?: { source?: { book?: string; page?: string; url?: string } } })
+    ?.meta_data?.source;
+  // Only worth rendering if it actually says something - a bare empty object is not a citation.
+  const sourceCite = rawCite && (rawCite.page || rawCite.url) ? rawCite : null;
+  // Repeat the book only when the cite points at a different printing than the row is
+  // filed under; otherwise the book is already on the line above.
+  const sourceCiteLabel = sourceCite
+    ? [sourceCite.book && sourceCite.book !== data.source.name ? sourceCite.book : null,
+       sourceCite.page ? `pg. ${sourceCite.page}` : null]
+        .filter(Boolean)
+        .join(' ') || 'View source'
+    : '';
+
   return (
     <Stack style={{ position: 'relative' }}>
       <div>
@@ -417,19 +432,40 @@ function ContentFeedbackSection(props: {
               {data.content.name}
             </Text>
 
+            {/* Book this content is filed under, with its WG content id alongside. */}
             <Group wrap='nowrap' gap={10} mt={3}>
               <IconBook2 stroke={1.5} size='1rem' />
               <Text fz='xs' c='dimmed'>
                 {data.source.name}
+                <Text span fz='xs' c='dimmed' opacity={0.6} ml={6}>
+                  <IconHash
+                    stroke={1.5}
+                    size='0.7rem'
+                    style={{ verticalAlign: '-0.05rem', marginRight: 1 }}
+                  />
+                  {data.content.id}
+                </Text>
               </Text>
             </Group>
 
-            <Group wrap='nowrap' gap={10} mt={5}>
-              <IconHash stroke={1.5} size='1rem' />
-              <Text fz='xs' c='dimmed'>
-                {data.content.id}
-              </Text>
-            </Group>
+            {/* Source citation, when the content has been cited: page number plus a link
+                out to the printing (Archives of Nethys, or wherever it was recorded). The
+                cited book is only repeated when it differs from the book above, which
+                happens with reprints. */}
+            {sourceCite && (
+              <Group wrap='nowrap' gap={10} mt={5}>
+                <IconExternalLink stroke={1.5} size='1rem' />
+                <Text fz='xs' c='dimmed'>
+                  {sourceCite.url ? (
+                    <Anchor href={sourceCite.url} target='_blank' rel='noopener noreferrer' fz='xs' underline='hover'>
+                      {sourceCiteLabel}
+                    </Anchor>
+                  ) : (
+                    sourceCiteLabel
+                  )}
+                </Text>
+              </Group>
+            )}
           </div>
         </Group>
       </div>
