@@ -55,6 +55,34 @@ export type {
   ItemMetaGroupArmor,
 } from './shared';
 
+// ─── Content source provenance ────────────────────────────────────────────────
+
+// An optional citation for where a piece of content came from: which book, what page,
+// and a link to an external reference (Archives of Nethys, Paizo, or anywhere else).
+// Lives at `meta_data.source` on every content type.
+//
+// `book` is stored as text even though `content_source_id` already names the source,
+// because a page cite can belong to a *different* book than the row is filed under.
+// Reprints are exactly this: Musical Accompaniment is filed under Impossible Magic and
+// cites page 154 of it, while the legacy row is filed under Firebrands with its own page.
+//
+// `page` is text rather than a number so it can express spans ("154-155") and splits
+// ("154, 160"), which are common for classes and longer items.
+export const ContentSourceCiteSchema = z.object({
+  book: z.string().optional(),
+  page: z.string().optional(),
+  url: z.string().optional(),
+});
+export type ContentSourceCite = z.infer<typeof ContentSourceCiteSchema>;
+
+// For content types whose `meta_data` exists only to hold the cite — they carry no
+// type-specific fields of their own.
+const CiteOnlyMetaDataSchema = z
+  .object({ source: ContentSourceCiteSchema.optional() })
+  .passthrough()
+  .nullable()
+  .optional();
+
 // ─── Trait ────────────────────────────────────────────────────────────────────
 
 export const TraitSchema = z.object({
@@ -74,7 +102,9 @@ export const TraitSchema = z.object({
       archetype_trait: z.boolean().optional(),
       versatile_heritage_trait: z.boolean().optional(),
       companion_type_trait: z.boolean().optional(),
+      source: ContentSourceCiteSchema.optional(),
     })
+    .passthrough()
     .nullable(),
   content_source_id: z.number(),
 });
@@ -203,6 +233,7 @@ export interface Item {
     cleaning?: {
       updatedAt: string;
     };
+    source?: ContentSourceCite;
   } | null;
   operations: Operation[] | null;
   content_source_id: number;
@@ -335,7 +366,9 @@ export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
             updatedAt: z.string(),
           })
           .optional(),
+        source: ContentSourceCiteSchema.optional(),
       })
+      .passthrough()
       .nullable(),
     operations: z.array(OperationSchema).nullable(),
     content_source_id: z.number(),
@@ -407,16 +440,19 @@ export const SpellSchema = z.object({
       data: z.record(z.string(), z.any()).optional(),
     })
     .nullable(),
-  meta_data: z.object({
-    focus: z.boolean().optional(),
-    damage: z.array(z.object({})).optional(),
-    type: z.string().optional(),
-    ritual: z.record(z.string(), z.any()).or(z.boolean()).optional(),
-    foundry: z.record(z.string(), z.any()).optional(),
-    unselectable: z.boolean().optional(),
-    deprecated: z.boolean().optional(),
-    image_url: z.string().optional(),
-  }),
+  meta_data: z
+    .object({
+      focus: z.boolean().optional(),
+      damage: z.array(z.object({})).optional(),
+      type: z.string().optional(),
+      ritual: z.record(z.string(), z.any()).or(z.boolean()).optional(),
+      foundry: z.record(z.string(), z.any()).optional(),
+      unselectable: z.boolean().optional(),
+      deprecated: z.boolean().optional(),
+      image_url: z.string().optional(),
+      source: ContentSourceCiteSchema.optional(),
+    })
+    .passthrough(),
   content_source_id: z.number(),
   version: z.string(),
 });
@@ -451,7 +487,9 @@ export const AbilityBlockSchema = z.object({
       skill: z.union([z.string(), z.array(z.string())]).optional(),
       image_url: z.string().optional(),
       foundry: z.record(z.string(), z.any()).optional(),
+      source: ContentSourceCiteSchema.optional(),
     })
+    .passthrough()
     .nullable(),
   traits: z.array(z.number()).nullable(),
   content_source_id: z.number(),
@@ -475,6 +513,7 @@ export const ClassSchema = z.object({
   deprecated: z.boolean().nullable(),
   content_source_id: z.number(),
   version: z.string(),
+  meta_data: CiteOnlyMetaDataSchema,
 });
 export type Class = z.infer<typeof ClassSchema>;
 
@@ -506,6 +545,7 @@ export const ClassArchetypeSchema = z.object({
   content_source_id: z.number(),
   deprecated: z.boolean().nullable(),
   version: z.string(),
+  meta_data: CiteOnlyMetaDataSchema,
 });
 export type ClassArchetype = z.infer<typeof ClassArchetypeSchema>;
 
@@ -524,6 +564,7 @@ export const ArchetypeSchema = z.object({
   deprecated: z.boolean().nullable(),
   version: z.string(),
   dedication_feat_id: z.number().nullable(),
+  meta_data: CiteOnlyMetaDataSchema,
 });
 export type Archetype = z.infer<typeof ArchetypeSchema>;
 
@@ -542,6 +583,7 @@ export const VersatileHeritageSchema = z.object({
   deprecated: z.boolean().nullable(),
   version: z.string(),
   heritage_id: z.number(),
+  meta_data: CiteOnlyMetaDataSchema,
 });
 export type VersatileHeritage = z.infer<typeof VersatileHeritageSchema>;
 
@@ -560,6 +602,7 @@ export const AncestrySchema = z.object({
   deprecated: z.boolean().nullable(),
   version: z.string(),
   operations: z.array(OperationSchema).nullable(),
+  meta_data: CiteOnlyMetaDataSchema,
 });
 export type Ancestry = z.infer<typeof AncestrySchema>;
 
@@ -577,6 +620,7 @@ export const BackgroundSchema = z.object({
   deprecated: z.boolean().nullable(),
   content_source_id: z.number(),
   version: z.string(),
+  meta_data: CiteOnlyMetaDataSchema,
 });
 export type Background = z.infer<typeof BackgroundSchema>;
 
@@ -594,6 +638,7 @@ export const LanguageSchema = z.object({
   deprecated: z.boolean().nullable(),
   rarity: RaritySchema,
   availability: AvailabilitySchema.nullable(),
+  meta_data: CiteOnlyMetaDataSchema,
 });
 export type Language = z.infer<typeof LanguageSchema>;
 
@@ -705,6 +750,23 @@ const CharacterVariantsSchema = z.object({
 
 // ─── LivingEntity ─────────────────────────────────────────────────────────────
 
+// Extracted so Creature can extend it with a source cite. Character shares the same
+// shape but is not content and carries no cite.
+const LivingEntityMetaDataSchema = z.object({
+  active_modes: z.array(z.string()).optional(),
+  given_item_ids: z.array(z.number()).optional(),
+  reset_hp: z.boolean().optional(),
+  calculated_stats: z
+    .object({
+      hp_max: z.number().optional(),
+      stamina_max: z.number().optional(),
+      resolve_max: z.number().optional(),
+      ac: z.number().optional(),
+      profs: z.record(z.string(), z.object({ total: z.number(), type: ProficiencyTypeSchema })),
+    })
+    .optional(),
+});
+
 export const LivingEntitySchema = z.object({
   id: z.number().optional(),
   name: z.string(),
@@ -738,22 +800,7 @@ export const LivingEntitySchema = z.object({
       notes: z.record(z.string(), z.string()).optional(),
     })
     .nullable(),
-  meta_data: z
-    .object({
-      active_modes: z.array(z.string()).optional(),
-      given_item_ids: z.array(z.number()).optional(),
-      reset_hp: z.boolean().optional(),
-      calculated_stats: z
-        .object({
-          hp_max: z.number().optional(),
-          stamina_max: z.number().optional(),
-          resolve_max: z.number().optional(),
-          ac: z.number().optional(),
-          profs: z.record(z.string(), z.object({ total: z.number(), type: ProficiencyTypeSchema })),
-        })
-        .optional(),
-    })
-    .nullable(),
+  meta_data: LivingEntityMetaDataSchema.passthrough().nullable(),
 });
 export type LivingEntity = z.infer<typeof LivingEntitySchema>;
 
@@ -777,6 +824,11 @@ export const CreatureSchema = LivingEntitySchema.extend({
   content_source_id: z.number(),
   deprecated: z.boolean().nullable(),
   version: z.string(),
+  meta_data: LivingEntityMetaDataSchema.extend({
+    source: ContentSourceCiteSchema.optional(),
+  })
+    .passthrough()
+    .nullable(),
 });
 export type Creature = z.infer<typeof CreatureSchema>;
 

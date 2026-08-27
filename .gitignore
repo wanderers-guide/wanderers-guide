@@ -3,3 +3,6 @@
 .env.local
 .env.docker
 .env.*.local
+
+# Wayfinder maps / local planning docs
+.scratch/

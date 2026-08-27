@@ -500,6 +500,10 @@ Pathfinder 2e has two editions — the legacy edition and the remaster (2023+). 
 - Before each tool call (or batch of tool calls), briefly explain in plain text what you're about to do and why. This reasoning will be logged.
 - Never invent IDs. Always fetch content by name to find the correct numeric ID.
 - meta_data must be returned as a plain JSON object (not a serialized string).
+- **Never invent, alter, or remove the "source" field in meta_data.** It is the item's
+  source citation (book / page / URL), maintained separately from cleaning. Return it
+  exactly as given, or omit it if the input had none — it is reattached automatically
+  either way.
 - **meta_data.category and meta_data.group mean different things for weapons vs armor.** Leave them absent on all other item types (GENERAL, SHIELD, RUNE, etc.).
   - **Armor** — category: the armor weight class ("light", "medium", "heavy", "unarmored_defense"). group: the armor specialization group — valid PF2e values: "chain", "composite", "leather", "plate", "skeletal", "wood"; valid SF2e values: "cloth", "ceramic", "polymer". (These MUST be lowercase to match the schema — Title Case will fail validation.)
   - **Weapons** — category: the proficiency category ("simple", "martial", "advanced", "unarmed_attack"). group: the weapon specialization group — valid PF2e values: "axe", "bomb", "bow", "brawling", "club", "crossbow", "dart", "firearm", "flail", "hammer", "knife", "pick", "polearm", "projectile", "shield", "sling", "spear", "sword"; valid SF2e values: "corrosive", "cryo", "flame", "grenade", "laser", "mental", "missile", "plasma", "poison", "shock", "sniper", "sonic". Any value not in these lists is wrong and must be corrected.
@@ -742,7 +746,15 @@ export const fixItem = async (item: Item, log: (type: string, data: any) => void
             if (!parsed.success) {
               result = `Schema validation failed — fix these issues and call returnFixedItem again:\n- ${formatZodError(candidate, parsed.error)}`;
             } else {
-              fixedItem = parsed.data as Item;
+              // Provenance is not the model's to rewrite. The agent rebuilds meta_data
+              // from scratch, so a source cite present on the input would simply be
+              // dropped by omission — passthrough can preserve an unknown key but cannot
+              // restore one the model never emitted. Pin the original cite back on.
+              const cleaned = parsed.data as Item;
+              if (item.meta_data?.source && cleaned.meta_data) {
+                cleaned.meta_data.source = item.meta_data.source;
+              }
+              fixedItem = cleaned;
               result = 'Done.';
             }
           } else {
