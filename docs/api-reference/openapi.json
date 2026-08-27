@@ -150,6 +150,15 @@
         "type": "object",
         "additionalProperties": true
       },
+      "ContentSourceCite": {
+        "type": "object",
+        "description": "Optional citation recording where a piece of content came from. Stored at `meta_data.source` on every content type. `book` is recorded as text even though `content_source_id` already identifies the source, because a page reference can belong to a different book than the row is filed under, which is what happens with reprints. `page` is text rather than a number so it can express spans such as `154-155`. All three fields are optional; an absent `source` means the content has not been cited yet.",
+        "properties": {
+          "book": { "type": "string", "description": "Book or product name, e.g. `Impossible Magic`." },
+          "page": { "type": "string", "description": "Page reference, e.g. `154` or `154-155`." },
+          "url": { "type": "string", "description": "Link to an external reference for this content (Archives of Nethys, Paizo, or elsewhere)." }
+        }
+      },
       "Trait": {
         "type": "object",
         "required": ["name", "content_source_id"],
@@ -173,7 +182,8 @@
               "class_trait": { "type": "boolean" },
               "ancestry_trait": { "type": "boolean" },
               "archetype_trait": { "type": "boolean" },
-              "versatile_heritage_trait": { "type": "boolean" }
+              "versatile_heritage_trait": { "type": "boolean" },
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
             }
           }
         }
@@ -206,7 +216,13 @@
           "duration": { "type": "string" },
           "description": { "type": "string" },
           "heightened": { "type": "object", "additionalProperties": true },
-          "meta_data": { "type": "object", "additionalProperties": true },
+          "meta_data": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+            }
+          },
           "content_source_id": { "type": "integer" },
           "version": { "type": "string" }
         }
@@ -243,7 +259,13 @@
           "size": { "$ref": "#/components/schemas/Size" },
           "craft_requirements": { "type": "string" },
           "usage": { "type": "string" },
-          "meta_data": { "type": "object", "additionalProperties": true },
+          "meta_data": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+            }
+          },
           "operations": { "type": "array", "items": { "$ref": "#/components/schemas/Operation" } },
           "content_source_id": { "type": "integer" },
           "version": { "type": "string" }
@@ -275,7 +297,13 @@
           "description": { "type": "string" },
           "special": { "type": "string" },
           "type": { "$ref": "#/components/schemas/AbilityBlockType" },
-          "meta_data": { "type": "object", "additionalProperties": true },
+          "meta_data": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+            }
+          },
           "traits": { "type": "array", "items": { "type": "integer" } },
           "content_source_id": { "type": "integer" },
           "version": { "type": "string" }
@@ -298,6 +326,14 @@
           "trait_id": { "type": "integer" },
           "artwork_url": { "type": "string" },
           "content_source_id": { "type": "integer" },
+          "meta_data": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true,
+            "properties": {
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+            }
+          },
           "version": { "type": "string" },
           "operations": { "type": "array", "items": { "$ref": "#/components/schemas/Operation" } }
         }
@@ -318,6 +354,14 @@
           "description": { "type": "string" },
           "operations": { "type": "array", "items": { "$ref": "#/components/schemas/Operation" } },
           "content_source_id": { "type": "integer" },
+          "meta_data": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true,
+            "properties": {
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+            }
+          },
           "version": { "type": "string" }
         }
       },
@@ -340,6 +384,14 @@
           "trait_id": { "type": "integer" },
           "artwork_url": { "type": "string" },
           "content_source_id": { "type": "integer" },
+          "meta_data": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true,
+            "properties": {
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+            }
+          },
           "version": { "type": "string" }
         }
       },
@@ -376,6 +428,14 @@
           "override_skill_training_base": { "type": ["integer", "null"] },
           "override_class_operations": { "type": "boolean" },
           "content_source_id": { "type": "integer" },
+          "meta_data": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true,
+            "properties": {
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+            }
+          },
           "deprecated": { "type": "boolean" },
           "version": { "type": "string" }
         }
@@ -397,6 +457,14 @@
           "trait_id": { "type": "integer" },
           "artwork_url": { "type": "string" },
           "content_source_id": { "type": "integer" },
+          "meta_data": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true,
+            "properties": {
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+            }
+          },
           "version": { "type": "string" },
           "dedication_feat_id": { "type": "integer" }
         }
@@ -418,6 +486,14 @@
           "trait_id": { "type": "integer" },
           "artwork_url": { "type": "string" },
           "content_source_id": { "type": "integer" },
+          "meta_data": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true,
+            "properties": {
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+            }
+          },
           "version": { "type": "string" },
           "heritage_id": { "type": "integer" }
         }
@@ -438,6 +514,14 @@
           "script": { "type": "string" },
           "description": { "type": "string" },
           "content_source_id": { "type": "integer" },
+          "meta_data": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true,
+            "properties": {
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+            }
+          },
           "rarity": { "$ref": "#/components/schemas/Rarity" },
           "availability": { "$ref": "#/components/schemas/Availability" }
         }
@@ -471,7 +555,13 @@
           "abilities_added": { "type": "array", "items": { "type": "integer" } },
           "inventory": { "type": "object", "additionalProperties": true },
           "spells": { "type": "object", "additionalProperties": true },
-          "meta_data": { "type": "object", "additionalProperties": true },
+          "meta_data": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+            }
+          },
           "content_source_id": { "type": "integer" },
           "deprecated": { "type": "boolean" },
           "version": { "type": "string" }
