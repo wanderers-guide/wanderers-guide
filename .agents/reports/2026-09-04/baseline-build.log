@@ -1,0 +1,75 @@
+
+> wanderers-guide@2.1.0 build
+> tsc && vite build
+
+vite v6.4.1 building for production...
+transforming...
+✓ 11121 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/registerSW.js                                     0.14 kB
+dist/manifest.webmanifest                              0.58 kB
+dist/index.html                                        1.70 kB │ gzip:     0.77 kB
+dist/assets/apple-icon-180-CtoarfCd.png                9.96 kB
+dist/assets/logo-CcnlNEi9.png                         30.16 kB
+dist/assets/fantasygen_dev-ShQ1zhtq.png               35.10 kB
+dist/assets/operations.worker-DMy8ljU6.js            750.63 kB
+dist/stats.html                                    4,715.64 kB │ gzip:   380.95 kB
+dist/assets/CharacterSheetPage-Bny9FMP-.css            0.22 kB │ gzip:     0.15 kB
+dist/assets/LinksGroup-DcYWgHfa.css                    2.03 kB │ gzip:     0.55 kB
+dist/assets/index-CLQ2Ggrq.css                       273.73 kB │ gzip:    41.82 kB
+dist/assets/IconChevronRight-D4gaXlD9.js               0.33 kB │ gzip:     0.26 kB
+dist/assets/LegacyRedirectPage-CZpKGAub.js             0.35 kB │ gzip:     0.27 kB
+dist/assets/IconArrowRight-BQXAJlxv.js                 0.40 kB │ gzip:     0.29 kB
+dist/assets/BlurButton-B6Hxrweg.js                     0.44 kB │ gzip:     0.31 kB
+dist/assets/GmSharePage-BQr-OK5j.js                    0.52 kB │ gzip:     0.39 kB
+dist/assets/PatreonRedirectPage-B1ylrDlr.js            0.52 kB │ gzip:     0.38 kB
+dist/assets/Kbd-tzbcdhGu.js                            0.54 kB │ gzip:     0.34 kB
+dist/assets/ContentCleaningPage-B3XCbfA9.js            0.63 kB │ gzip:     0.42 kB
+dist/assets/EncountersPage-CJJvLt_a.js                 0.68 kB │ gzip:     0.42 kB
+dist/assets/MissingPage-Jrt-u3jy.js                    0.94 kB │ gzip:     0.56 kB
+dist/assets/UpdatePasswordPage-BnSjMPG6.js             1.03 kB │ gzip:     0.54 kB
+dist/assets/UnauthorizedSheetPage-VM05qJvH.js          1.22 kB │ gzip:     0.62 kB
+dist/assets/DrawerTitle-DOoshRGF.js                    1.90 kB │ gzip:     0.61 kB
+dist/assets/DrawerContent-bafNEARw.js                  1.94 kB │ gzip:     0.68 kB
+dist/assets/StatBlockPage-C5Wj5OXi.js                  2.19 kB │ gzip:     1.18 kB
+dist/assets/HomePage-B5ArvcsB.js                       2.48 kB │ gzip:     1.21 kB
+dist/assets/OAuthAccessPage-C5lsjZF1.js                2.81 kB │ gzip:     1.30 kB
+dist/assets/PasswordInput-BdPkAwTo.js                  4.12 kB │ gzip:     1.74 kB
+dist/assets/LinksGroup-DPxiUCGi.js                     4.67 kB │ gzip:     1.92 kB
+dist/assets/import-from-ftc-K5nqDLKM.js                5.31 kB │ gzip:     2.18 kB
+dist/assets/CampaignsPage-C2iLSNVB.js                  5.44 kB │ gzip:     2.24 kB
+dist/assets/ContentUpdatePage-ChIxBN54.js              6.81 kB │ gzip:     2.42 kB
+dist/assets/ContentCleaningSourcePage-BgKypnBg.js      7.36 kB │ gzip:     2.77 kB
+dist/assets/CleaningLogPanel-HYUUtZun.js               9.99 kB │ gzip:     3.54 kB
+dist/assets/LoginPage-GlqX2LXu.js                     11.57 kB │ gzip:     6.60 kB
+dist/assets/AccountPage-B9pNO8L4.js                   18.20 kB │ gzip:     6.70 kB
+dist/assets/HomebrewPage-C-PjXxaW.js                  19.11 kB │ gzip:     6.05 kB
+dist/assets/CharactersPage-BePEY20m.js                19.21 kB │ gzip:     6.27 kB
+dist/assets/CharacterBuilderPage-D0qz-WbA.js          32.25 kB │ gzip:    10.73 kB
+dist/assets/name-controller-CAKwF5DN.js               36.62 kB │ gzip:    14.19 kB
+dist/assets/CampaignOverviewPage-Dv_fifuB.js          50.91 kB │ gzip:    15.30 kB
+dist/assets/AdminPage-DDEyQRGh.js                     93.57 kB │ gzip:    27.15 kB
+dist/assets/CharacterSheetPage-DwFTgmOb.js           114.45 kB │ gzip:    30.24 kB
+dist/assets/ClassArchetypeDrawer-D2TtH1Rg.js         153.64 kB │ gzip:    31.11 kB
+dist/assets/ContentUpdateOverviewPage-U689_9fm.js    332.95 kB │ gzip:   102.22 kB
+dist/assets/pdf-v2---EavNEZ.js                       540.73 kB │ gzip:   214.98 kB
+dist/assets/DiceRoller-DTk5w8z0.js                 1,311.42 kB │ gzip:   369.89 kB
+dist/assets/index-frpaSqki.js                      3,922.16 kB │ gzip: 1,163.98 kB
+dist/assets/index.esm-BTJZjiap.js                  6,719.73 kB │ gzip: 2,743.63 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 18.04s
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+PWA v1.2.0
+mode      generateSW
+precache  50 entries (18733.60 KiB)
+files generated
+  dist/sw.js
+  dist/workbox-a7126592.js

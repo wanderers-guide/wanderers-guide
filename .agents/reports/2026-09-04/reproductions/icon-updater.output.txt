@@ -1,0 +1,4 @@
+PASS: branch updater reproduces invalid-element crash.
+Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: object.
+PASS: wrapping the component value renders SVG.
+Scope: accepting the perf branches' Icon implementation remains a blocker; preserving current main avoids it.

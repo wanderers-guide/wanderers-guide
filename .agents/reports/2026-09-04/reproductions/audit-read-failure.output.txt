@@ -1,0 +1,3 @@
+  ! read item failed (HTTP 503): mock unavailable
+PASS: exact branch generator completes normally after mocked HTTP 503, yielding zero rows.
+Consequence: main records this table as OK 0/0 and exits 0 if no other invalid rows are counted.

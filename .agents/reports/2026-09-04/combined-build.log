@@ -1,0 +1,108 @@
+
+> wanderers-guide@2.1.0 build
+> tsc && vite build
+
+vite v6.4.1 building for production...
+transforming...
+✓ 11121 modules transformed.
+rendering chunks...
+[plugin vite:reporter]
+(!) /private/tmp/wg-audit-20260904/integration/frontend/src/modals/SelectIconModal.tsx is dynamically imported by /private/tmp/wg-audit-20260904/integration/frontend/src/App.tsx but also statically imported by /private/tmp/wg-audit-20260904/integration/frontend/src/common/IconDisplay.tsx, dynamic import will not move module into another chunk.
+
+[plugin vite:reporter]
+(!) /private/tmp/wg-audit-20260904/integration/frontend/src/common/select/SelectContent.tsx is dynamically imported by /private/tmp/wg-audit-20260904/integration/frontend/src/App.tsx but also statically imported by /private/tmp/wg-audit-20260904/integration/frontend/src/common/modes/ModesDrawer.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/common/operations/ability_block/GiveActionOperation.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/common/operations/ability_block/GiveClassFeatureOperation.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/common/operations/ability_block/GiveFeatOperation.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/common/operations/ability_block/GiveHeritageOperation.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/common/operations/ability_block/GiveModeOperation.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/common/operations/ability_block/GivePhysicalFeatureOperation.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/common/operations/ability_block/GiveSenseOperation.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/common/operations/item/GiveItemOperation.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/common/operations/language/GiveLanguageOperation.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/common/operations/selection/SelectionOperation.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/common/operations/spell/GiveSpellOperation.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/common/operations/trait/GiveTraitOperation.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/common/operations/variables/InjectTextOperation.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/common/rich_text_input/ContentLinkControl.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/drawers/types/AncestryDrawer.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/drawers/types/ArchetypeDrawer.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/drawers/types/ClassDrawer.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/drawers/types/ContentSourceDrawer.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/drawers/types/StatProfDrawer.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/drawers/types/VersatileHeritageDrawer.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/modals/AddItemsModal.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/modals/AdvancedSearchModal.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/modals/CreateArchetypeModal.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/modals/CreateClassArchetypeModal.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/modals/CreateContentSourceModal.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/modals/CreateCreatureModal.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/modals/CreateItemModal.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/modals/CreateSocietyAdventureEntryModal.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/modals/CreateVersatileHeritageModal.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/modals/ManageSpellsModal.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/pages/campaign/panels/EncountersPanel.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/pages/character_builder/CharBuilderCreation.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/pages/character_sheet/panels/CompanionsPanel.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/pages/character_sheet/panels/CreatureAbilitiesPanel.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/pages/character_sheet/panels/FeatsFeaturesPanel.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/pages/character_sheet/panels/spells_list/SpellListEntrySection.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/pages/character_sheet/sections/ConditionSection.tsx, /private/tmp/wg-audit-20260904/integration/frontend/src/process/variables/initial-stats-display.tsx, dynamic import will not move module into another chunk.
+
+computing gzip size...
+dist/registerSW.js                                        0.14 kB
+dist/manifest.webmanifest                                 0.58 kB
+dist/index.html                                           2.80 kB │ gzip:     1.10 kB
+dist/assets/apple-icon-180-CtoarfCd.png                   9.96 kB
+dist/assets/logo-CcnlNEi9.png                            30.16 kB
+dist/assets/fantasygen_dev-ShQ1zhtq.png                  35.10 kB
+dist/assets/operations.worker-VcfWRMGt.js               749.94 kB
+dist/stats.html                                       4,956.87 kB │ gzip:   393.93 kB
+dist/assets/CharacterSheetPage-Bny9FMP-.css               0.22 kB │ gzip:     0.15 kB
+dist/assets/LinksGroup-DcYWgHfa.css                       2.03 kB │ gzip:     0.55 kB
+dist/assets/index-G2kAvMio.css                           10.90 kB │ gzip:     3.66 kB
+dist/assets/mantine-B5Di4833.css                        262.83 kB │ gzip:    38.23 kB
+dist/assets/map-Dmd8bu9o.js                               0.24 kB │ gzip:     0.20 kB
+dist/assets/image-upload-Dkgd7rdK.js                      0.32 kB │ gzip:     0.26 kB
+dist/assets/IconChevronRight-CwZSTK9s.js                  0.33 kB │ gzip:     0.27 kB
+dist/assets/IconArrowRight--lkZs8z8.js                    0.40 kB │ gzip:     0.29 kB
+dist/assets/IconUpload-RpOSXgZC.js                        0.43 kB │ gzip:     0.30 kB
+dist/assets/BlurButton-Caa6zf5Z.js                        0.50 kB │ gzip:     0.36 kB
+dist/assets/patreon-cMEz0riE.js                           0.52 kB │ gzip:     0.23 kB
+dist/assets/LegacyRedirectPage-CNV6SXhY.js                0.60 kB │ gzip:     0.41 kB
+dist/assets/CreateDicePresetModal-C0_XZw_6.js             0.76 kB │ gzip:     0.49 kB
+dist/assets/GmSharePage-Sfr0Ngh6.js                       0.77 kB │ gzip:     0.52 kB
+dist/assets/PatreonRedirectPage-C3Xaj16m.js               0.77 kB │ gzip:     0.51 kB
+dist/assets/import-from-json-AoVLeu-1.js                  0.86 kB │ gzip:     0.49 kB
+dist/assets/ContentCleaningPage-BWcoUoMd.js               0.91 kB │ gzip:     0.56 kB
+dist/assets/EncountersPage-ce6qHCRA.js                    0.93 kB │ gzip:     0.55 kB
+dist/assets/AddNewLoreModal-CzIqEK3c.js                   0.99 kB │ gzip:     0.61 kB
+dist/assets/UpdateCharacterPortraitModal-BWF6tUW8.js      0.99 kB │ gzip:     0.59 kB
+dist/assets/MissingPage-CU4p14S2.js                       1.19 kB │ gzip:     0.69 kB
+dist/assets/UpdatePasswordPage-NTqRWeAS.js                1.24 kB │ gzip:     0.65 kB
+dist/assets/BuyItemModal-BAwgBe5l.js                      1.43 kB │ gzip:     0.70 kB
+dist/assets/SelectSpellSlotModal-D9OGLsHR.js              1.45 kB │ gzip:     0.81 kB
+dist/assets/UnauthorizedSheetPage-Bu50p42o.js             1.47 kB │ gzip:     0.75 kB
+dist/assets/ConditionModal-WyzVgYa7.js                    1.50 kB │ gzip:     0.79 kB
+dist/assets/SelectStaffCastingModal-C9EMoXEh.js           1.64 kB │ gzip:     0.89 kB
+dist/assets/UpdateNotePageModal-CR8sxTCJ.js               1.67 kB │ gzip:     0.89 kB
+dist/assets/icons-vendor-DLA3JQmz.js                      1.81 kB │ gzip:     0.97 kB
+dist/assets/UpdateApiClientModal-B_PUg_w8.js              1.83 kB │ gzip:     0.91 kB
+dist/assets/SelectImageModal-B-g3smiW.js                  2.09 kB │ gzip:     1.05 kB
+dist/assets/DrawerTitle-BqvlmTZa.js                       2.12 kB │ gzip:     0.72 kB
+dist/assets/InitiativeRollModal-C3hPAdeq.js               2.15 kB │ gzip:     1.13 kB
+dist/assets/DrawerContent-AnvvJuE0.js                     2.16 kB │ gzip:     0.79 kB
+dist/assets/StatBlockPage-CvSceh_-.js                     2.44 kB │ gzip:     1.31 kB
+dist/assets/HomePage-BAW4Zb6P.js                          2.76 kB │ gzip:     1.36 kB
+dist/assets/AddItemsModal-BGQb0hkC.js                     3.04 kB │ gzip:     1.59 kB
+dist/assets/OAuthAccessPage-D0FxCZXJ.js                   3.06 kB │ gzip:     1.43 kB
+dist/assets/GenerateEncounterModal-BGyFGGrc.js            3.11 kB │ gzip:     1.55 kB
+dist/assets/UpdateEncounterModal-CZBfcmrO.js              3.42 kB │ gzip:     1.49 kB
+dist/assets/ContentUpdateOverviewPage--CBeuX7H.js         4.65 kB │ gzip:     2.18 kB
+dist/assets/LinksGroup-D7ls07Hr.js                        4.73 kB │ gzip:     1.95 kB
+dist/assets/import-from-ftc-aR07mV5E.js                   5.31 kB │ gzip:     2.18 kB
+dist/assets/CampaignsPage-CBWhUSrl.js                     5.71 kB │ gzip:     2.37 kB
+dist/assets/ContentUpdatePage-DDeSIMzc.js                 7.06 kB │ gzip:     2.54 kB
+dist/assets/ContentCleaningSourcePage-Cc_UlwgH.js         7.63 kB │ gzip:     2.90 kB
+dist/assets/CleaningLogPanel-C98qlbRA.js                 10.09 kB │ gzip:     3.57 kB
+dist/assets/LoginPage-DIqugd1P.js                        11.78 kB │ gzip:     6.70 kB
+dist/assets/AccountPage-BVr_AQpy.js                      13.95 kB │ gzip:     5.08 kB
+dist/assets/pdf-v2-Bnxjv74i.js                           18.92 kB │ gzip:     7.14 kB
+dist/assets/HomebrewPage-FYFydNjx.js                     19.47 kB │ gzip:     6.21 kB
+dist/assets/CharactersPage-DORsvFCO.js                   19.80 kB │ gzip:     6.48 kB
+dist/assets/AdminPage-pK5zDCPC.js                        25.82 kB │ gzip:     7.41 kB
+dist/assets/CharacterBuilderPage-Bd7uNXSH.js             27.59 kB │ gzip:     9.05 kB
+dist/assets/name-controller-DFhe2dDj.js                  36.62 kB │ gzip:    14.19 kB
+dist/assets/CampaignOverviewPage-DPS9MuLg.js             41.98 kB │ gzip:    12.34 kB
+dist/assets/CharacterSheetPage-CVDU24vk.js               65.53 kB │ gzip:    15.86 kB
+dist/assets/framer-HrcEmcCT.js                          101.97 kB │ gzip:    34.43 kB
+dist/assets/ClassArchetypeDrawer-D9DbzZZ9.js            151.58 kB │ gzip:    30.26 kB
+dist/assets/supabase-pzFC_GVl.js                        168.13 kB │ gzip:    43.76 kB
+dist/assets/charts-D3vxW3mO.js                          314.42 kB │ gzip:    94.47 kB
+dist/assets/editor-BmIjJyUS.js                          376.42 kB │ gzip:   118.92 kB
+dist/assets/react-C_P2LsMG.js                           449.27 kB │ gzip:   141.27 kB
+dist/assets/pdf-D9rjMopy.js                             521.76 kB │ gzip:   208.08 kB
+dist/assets/mantine-CZ5WqxBd.js                         664.19 kB │ gzip:   204.49 kB
+dist/assets/mathjs-CIUqrpw_.js                          685.20 kB │ gzip:   200.64 kB
+dist/assets/DiceRoller-nTUWEOum.js                    1,285.12 kB │ gzip:   359.37 kB
+dist/assets/index-DLKT7trw.js                         1,610.85 kB │ gzip:   461.66 kB
+dist/assets/game-icons-C0Ffoa4l.js                    6,719.90 kB │ gzip: 2,743.73 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 11.70s
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+PWA v1.2.0
+mode      generateSW
+precache  75 entries (7554.94 KiB)
+files generated
+  dist/sw.js
+  dist/workbox-86ac7791.js

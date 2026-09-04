@@ -97,6 +97,12 @@ To be able to log in, you need to have a user in the local database.
 </Step>
 </Steps>
 
+## Agent workspace
+
+Project instructions and skills are consolidated under `.agents/`, with the entry point in the repository’s `AGENTS.md`. The frontend and documentation preview commands are recorded in `.agents/launch.json`; run them from the repository root. Codex’s Mantine MCP configuration remains in `.codex/config.toml`.
+
+Local Git worktrees live under `.agents/worktrees/`. Historical Claude configuration and local permissions are archived in `.agents/legacy/`. Both directories are ignored by Git.
+
 ## Creating a user
 
 <Steps>
