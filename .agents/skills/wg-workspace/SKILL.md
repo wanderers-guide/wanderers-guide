@@ -14,7 +14,7 @@ The repo ships its own Mintlify documentation site at `docs/`. **Read these when
 - **[docs/index.mdx](docs/index.mdx)** — homepage and entry point.
 - **[docs/development.mdx](docs/development.mdx)** — local-dev setup (Supabase CLI + Docker), running the API and Cypress tests. Mirrors what you'd give a new contributor.
 - **[docs/docker.md](docs/docker.md)** — full self-hosting wiring notes.
-- **[docs/guides/content-model.mdx](docs/guides/content-model.mdx)** — the WG data model, operations engine, and content-link syntax (the `wg-content` skill is the deeper version).
+- **[docs/guides/content-data.mdx](docs/guides/content-data.mdx)** — the WG data model, operations engine, and content-link syntax (the `wg-content` skill is the deeper version).
 - **[docs/api-reference/introduction.mdx](docs/api-reference/introduction.mdx)** — public API overview, JSend response format, base URL.
 - **[docs/api-reference/quickstart.mdx](docs/api-reference/quickstart.mdx)** — first-request example in curl / JS / Python.
 - **[docs/api-reference/authentication.mdx](docs/api-reference/authentication.mdx)** — JWT vs API key, character access grants, rate limits.
@@ -34,7 +34,7 @@ The docs site is wired up via [docs/docs.json](docs/docs.json) (Maple theme, sid
 | Removed an Edge Function | Drop the path from [openapi.json](docs/api-reference/openapi.json), delete its MDX shell, remove from [docs/docs.json](docs/docs.json) nav. |
 | `_shared/helpers.ts` (auth flow, `connect()`, rate limits, JWT generation) | [docs/api-reference/authentication.mdx](docs/api-reference/authentication.mdx). |
 | `_shared/rate-limit.ts` (limits, buckets, headers) | The "Rate limits" section of [authentication.mdx](docs/api-reference/authentication.mdx). |
-| Content schema (`schema.sql` columns), entity types in `_shared/content.d.ts`, or `operations.d.ts` | Component schemas in [openapi.json](docs/api-reference/openapi.json). For data-model concepts, [docs/guides/content-model.mdx](docs/guides/content-model.mdx). |
+| Content schema (`schema.sql` columns), entity types in `_shared/content.d.ts`, or `operations.d.ts` | Component schemas in [openapi.json](docs/api-reference/openapi.json). For data-model concepts, [docs/guides/content-data.mdx](docs/guides/content-data.mdx). |
 | docker-compose, Dockerfile, env vars | [docs/docker.md](docs/docker.md) and the Docker section in [docs/development.mdx](docs/development.mdx). |
 | Local setup steps, `npm` script names, `data/*.sh` scripts | [docs/development.mdx](docs/development.mdx) (and the README if it duplicates anything). |
 

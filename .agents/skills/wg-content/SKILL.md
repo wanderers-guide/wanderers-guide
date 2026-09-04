@@ -16,7 +16,7 @@ If you're only writing prose, the linking section is enough. If you're touching 
 
 The `docs/` folder is the canonical user-facing documentation site (Mintlify). When you need a high-level explanation rather than spelunking through the code, start there:
 
-- **[docs/guides/content-model.mdx](docs/guides/content-model.mdx)** — narrative overview of the data model, operations engine, and content-link syntax. Read this first if you're new to the WG content layer.
+- **[docs/guides/content-data.mdx](docs/guides/content-data.mdx)** — narrative overview of the data model, operations engine, and content-link syntax. Read this first if you're new to the WG content layer.
 - **[docs/api-reference/openapi.json](docs/api-reference/openapi.json)** — full request / response schemas for every public Edge Function, including the `find-*`, `create-*`, `update-*`, `delete-content`, and `search-data` endpoints that touch content.
 - **[docs/api-reference/content/](docs/api-reference/content/)** — per-endpoint MDX shells (one file per content endpoint).
 - **[docs/api-reference/authentication.mdx](docs/api-reference/authentication.mdx)** — auth flow + character access grants + rate limits (relevant when scripts you write talk to the content API).

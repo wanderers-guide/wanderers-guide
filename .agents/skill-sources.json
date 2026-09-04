@@ -1,0 +1,14 @@
+{
+  "Quzzar/skills": {
+    "repository": "https://github.com/Quzzar/skills",
+    "revision": "b6e5cb5b0a9ebd9096805ce8228202d7385c432c",
+    "skills": [
+      "setup",
+      "quzzar-workplace",
+      "quzzar-frontend",
+      "quzzar-backend",
+      "quzzar-design"
+    ],
+    "installation": "Project-local copies under .agents/skills; upstream paths are adapted by AGENTS.md."
+  }
+}

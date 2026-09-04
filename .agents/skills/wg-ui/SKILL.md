@@ -10,7 +10,7 @@ description: Use whenever creating, editing, or reviewing any UI or frontend cod
 Before changing UI that's tied to a documented user-facing flow (auth, API key management, character API access, rate limits, content editing), check the Mintlify docs site at `docs/`. Keep them in sync with the code.
 
 - **[docs/development.mdx](docs/development.mdx)** — setup, Docker self-hosting, running tests. Mention here if you change a script or env var name.
-- **[docs/guides/content-model.mdx](docs/guides/content-model.mdx)** — narrative explanation of the content / operations model that powers most of the UI.
+- **[docs/guides/content-data.mdx](docs/guides/content-data.mdx)** — narrative explanation of the content / operations model that powers most of the UI.
 - **[docs/api-reference/](docs/api-reference/)** — public API surface. Endpoints exposed to UI changes (e.g. character access grants in `details.api_clients.client_access`) are documented here.
 - **[docs/docker.md](docs/docker.md)** — self-hosting wiring notes.
 
