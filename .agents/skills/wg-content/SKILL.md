@@ -366,3 +366,34 @@ Management-API path — e.g. porting reprints on the owner's request), replicate
 The AI-cleaning system at [frontend/src/ai/cleaning/](frontend/src/ai/cleaning/) is the canonical reference. Read [item-cleaning.ts](frontend/src/ai/cleaning/item-cleaning.ts)'s `SYSTEM_PROMPT` for the full set of rules — it covers item-specific things this skill doesn't repeat (usage vs hands disambiguation, base-item inheritance, rune handling, legacy vs remaster traits, unarmed-attack exceptions, the no-damage-trait-from-damage-type rule, etc.).
 
 If you're building a new agent or validator that reads WG content, mirror its tool layout: `fetchContent` (scoped to official sources by default), `fetch{X}ByName` for resolving names to IDs, `searchAoN`/`searchDp` for cross-referencing official PF2e sources, and Zod-schema validation on any output before persisting.
+
+
+## Auditing and repairing stored content
+
+Use `audit:content` for a read-only database sweep and `validate:content` for proposed
+JSON rows. Both commands use the same schema registry. Setup, scope, report location,
+and exit codes are documented in [development.mdx](docs/development.mdx#validating-content).
+An incomplete audit is a failed run, even if all rows read so far are valid.
+
+For each failure, first distinguish a legitimate stored shape rejected by an overly
+strict schema from malformed data. Compare working rows and consuming code. Schema
+corrections belong in code review, with matching content-model/API docs; structural
+validity alone does not establish correct game mechanics.
+
+Before a direct data repair:
+
+1. Check `content_update` for a pending submission matching the content type and
+   `ref_id`; preserve the curator approval workflow when a fix is already queued.
+2. Establish the intended value from canonical source material and working examples.
+   Defer unknown HP, feat references, and operation semantics to the content author;
+   do not invent fallback mechanics to make validation pass.
+3. Modify a local clone and validate the entire proposed row. Produce an exact
+   before/after diff before any write, within the user's authorized scope.
+4. Protect concurrent edits with an atomic leaf update or a comparison against the
+   originally read value. An ID-only replacement of an entire JSON column can erase
+   another curator's changes.
+5. Re-fetch the saved row, validate it, confirm the intended differences, and inspect
+   the rendered drawer. Failed or missing readback is an unverified repair, not success.
+
+Report confirmed repairs, schema changes, unresolved author decisions, and pending
+submissions separately. Keep audit reports and unpublished content out of Git.

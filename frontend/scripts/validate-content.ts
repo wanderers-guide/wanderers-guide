@@ -11,48 +11,17 @@
  *   npm run validate:content -- spell ./some-spell.json
  */
 
-import { z } from 'zod';
-import {
-  AbilityBlockSchema,
-  AncestrySchema,
-  ArchetypeSchema,
-  BackgroundSchema,
-  ClassArchetypeSchema,
-  ClassSchema,
-  ContentSourceSchema,
-  CreatureSchema,
-  ItemSchema,
-  LanguageSchema,
-  SpellSchema,
-  TraitSchema,
-  VersatileHeritageSchema,
-} from '../src/schemas/content';
+import { CONTENT_SCHEMAS } from './content-schemas';
 import { formatZodError } from '../src/schemas/shared';
 import { readFileSync } from 'node:fs';
 
-const SCHEMAS: Record<string, z.ZodTypeAny> = {
-  trait: TraitSchema,
-  item: ItemSchema,
-  spell: SpellSchema,
-  class: ClassSchema,
-  archetype: ArchetypeSchema,
-  'versatile-heritage': VersatileHeritageSchema,
-  'class-archetype': ClassArchetypeSchema,
-  'ability-block': AbilityBlockSchema,
-  creature: CreatureSchema,
-  ancestry: AncestrySchema,
-  background: BackgroundSchema,
-  language: LanguageSchema,
-  'content-source': ContentSourceSchema,
-};
-
 const type = process.argv[2];
 const file = process.argv[3];
-const schema = SCHEMAS[type];
+const schema = Object.hasOwn(CONTENT_SCHEMAS, type) ? CONTENT_SCHEMAS[type] : undefined;
 
 if (!schema) {
   console.error('Usage: validate:content <type> [file.json]   (JSON is read from stdin if no file)');
-  console.error(`Types: ${Object.keys(SCHEMAS).join(', ')}`);
+  console.error(`Types: ${Object.keys(CONTENT_SCHEMAS).join(', ')}`);
   process.exit(2);
 }
 

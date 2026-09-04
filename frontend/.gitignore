@@ -12,8 +12,8 @@ dist
 dist-ssr
 *.local
 
-# Claude
-.claude/worktrees/
+# Agent workspace
+.agents/worktrees/
 
 # Editor directories and files
 .vscode/*
@@ -39,3 +39,6 @@ cypress/screenshots
 
 # validate-content build output
 scripts/.dist/
+
+# Local content audit reports
+scripts/reports/

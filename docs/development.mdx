@@ -103,6 +103,46 @@ Project instructions and skills are consolidated under `.agents/`, with the entr
 
 Local Git worktrees live under `.agents/worktrees/`. Historical Claude configuration and local permissions are archived in `.agents/legacy/`. Both directories are ignored by Git.
 
+## Validating content
+
+Use the app's Zod schemas to check a proposed row or JSON array before submitting it:
+
+```bash
+npm --prefix frontend run validate:content -- item /absolute/path/items.json
+```
+
+The file validator also accepts JSON on stdin. Exit codes are `0` for valid content,
+`1` for invalid content, and `2` for bad arguments or unreadable JSON.
+
+For a read-only scan of stored content, supply `SUPABASE_URL` (the project's origin,
+such as `http://127.0.0.1:54321`) and `SUPABASE_SERVICE_ROLE_KEY` in your shell's
+environment, then run:
+
+```bash
+npm --prefix frontend run audit:content -- --tables item,spell
+```
+
+Keep the service-role key in your secret manager or ignored environment file; never
+put it in a `VITE_` variable, source file, or report. The CLI does not load environment
+files automatically, discover production credentials, or write to the database.
+Omit `--tables` to audit all 13 supported content types. Use `--help` to list them.
+
+The audit reads raw rows, including homebrew rows visible to the supplied credential.
+It checks their structure, not rules accuracy or whether curators have approved them.
+Results are written to the ignored `frontend/scripts/reports/content-audit.json`;
+`--out` selects a different path. Treat reports as private because they may identify
+unpublished content. A complete scan exits `0` when valid or `1` when invalid rows
+exist. Failed reads, malformed pages, invalid configuration, or report-write failures
+exit `2`; never use an earlier report as evidence that a failed run passed.
+
+Pagination uses increasing IDs and continues after short pages, accommodating server
+page-size caps. Each table is bounded by its starting maximum ID. Concurrent edits
+and deletions can still affect results: this is a live scan, not a database snapshot.
+Use a snapshot or quiet database when a reproducible full audit is required.
+
+Run the audit CLI regression tests with `npm --prefix frontend run test:audit:content`.
+They use a local HTTP fixture and require no database credentials.
+
 ## Creating a user
 
 <Steps>
