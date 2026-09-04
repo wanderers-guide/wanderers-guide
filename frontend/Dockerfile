@@ -4,12 +4,8 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-# `npm install` (not `ci`) because the committed lockfile is out of sync
-# with package.json (Mantine 8 vs 9, React 18 vs 19, missing entries).
-# Once the lockfile is regenerated and committed, swap this back to
-# `npm ci --legacy-peer-deps` for reproducible builds.
-RUN npm install --no-audit --no-fund --legacy-peer-deps
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund --legacy-peer-deps
 
 COPY . .
 

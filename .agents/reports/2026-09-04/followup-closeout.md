@@ -16,9 +16,23 @@ were made.
 - Removed three retired worktrees and 54 retired local feature branches. Current
   files already contain every environment setting from the retired worktrees;
   no new credentials archive was created.
-- Remote main and 33 retired remote feature branches await explicit publishing
-  approval. The automatic approval reviewer rejected a push because it could run
-  production-related workflows. `main` and `gh-pages` are excluded from deletion.
+- After explicit publishing approval, pushed the six reviewed commits through
+  `9ab3e825` and deleted the 33 retired remote feature branches with exact SHA guards.
+  Only `main` and `gh-pages` remain remotely. The production schema refresh and docs
+  deployment passed; the generated schema commit was fast-forwarded into local main.
+
+## Publishing follow-up
+
+The first clean GitHub runner exposed a missing direct `esbuild` dependency in the
+new regression harness. Local verification had found an existing installation.
+Declared the tested version `0.25.12` directly and regenerated the lockfile. This
+removed entries for previously removed packages without changing application
+package versions. CI, E2E, and Docker now use `npm ci --legacy-peer-deps` to install
+the committed dependency graph.
+
+An isolated clean install succeeded and passed all 47 rules/UI tests, seven
+audit CLI tests, and the production build. The initial published application commit passed the complete
+[API and Cypress E2E workflow](https://github.com/wanderers-guide/wanderers-guide/actions/runs/33926851182).
 
 ## Follow-ups
 
@@ -80,8 +94,9 @@ Saved evidence: [rules](followup-rules.log), [audit CLI](followup-audit.log),
 [mobile inventory](screenshots/inventory-mobile-final.png), and
 [injected item description](screenshots/injection-mobile-final.png).
 
-The existing full Cypress and Deno API suites were not run. This change adds no edge
-endpoint or SQL migration; inventory persists its optional source ID in the existing
-JSON payload. Existing-account sign-in and the affected inventory paths were exercised
-against the local stack. Source-specific content reports remain unreproduced for the
-original users, as described above.
+The initial local verification did not run the full Cypress and Deno API suites;
+both subsequently passed in GitHub's E2E workflow after publishing. This change adds
+no edge endpoint or SQL migration; inventory persists its optional source ID in the
+existing JSON payload. Existing-account sign-in and the affected inventory paths were
+also exercised against the local stack. Source-specific content reports remain
+unreproduced for the original users, as described above.

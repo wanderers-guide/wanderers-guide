@@ -67,8 +67,12 @@ In the `frontend/` directory, copy `.env.local.template` to `.env.local` and rep
 Still in the `frontend/` directory, run the following:
 
 ```bash
-npm i
+npm ci --legacy-peer-deps
 ```
+
+CI and Docker use the same lockfile and install command. Keep development
+dependencies installed when running the content tools or regression tests; their
+bundler, `esbuild`, is declared directly in `devDependencies`.
 
 </Step>
 <Step title="Serve the frontend">

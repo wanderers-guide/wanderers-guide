@@ -100,6 +100,7 @@
     "@typescript-eslint/parser": "^6.20.0",
     "@vitejs/plugin-react": "^4.6.0",
     "cypress": "^13.8.1",
+    "esbuild": "0.25.12",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",

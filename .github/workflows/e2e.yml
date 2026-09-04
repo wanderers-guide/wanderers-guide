@@ -97,7 +97,7 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: ./frontend
-        run: npm install --legacy-peer-deps --no-audit --no-fund
+        run: npm ci --legacy-peer-deps --no-audit --no-fund
 
       # The auth-trigger.sql installed by create-db-docker.sh auto-creates the
       # matching public_user row, so no manual psql INSERT is needed.

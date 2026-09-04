@@ -45,6 +45,8 @@ docker compose --profile studio up -d
 
 ## Wiring notes
 
+- The frontend image installs the committed lockfile with `npm ci --legacy-peer-deps`,
+  matching CI. Commit `frontend/package-lock.json` whenever dependencies change.
 - `PUBLIC_SUPABASE_URL` is what the **browser** uses to reach kong. On
   localhost that's `http://localhost:8000`. In a real deployment, proxy
   this behind a TLS terminator and set it to your public URL.
