@@ -13,7 +13,7 @@ import { Box, JsonInput, NumberInput, SegmentedControl, TextInput, Text } from '
 import { getVariable } from '@variables/variable-manager';
 import { useDidUpdate } from '@mantine/hooks';
 import { isNumber, isString, isBoolean } from 'lodash-es';
-import { getDefaultSetValue } from './operation-value-defaults';
+import { getDefaultSetValue, getListStringInputValue } from './operation-value-defaults';
 
 export function SetValOperation(props: {
   variable: string;
@@ -172,7 +172,7 @@ export function SetValueInput(props: {
       </>
     );
   } else if (props.variableType === 'list-str') {
-    const value = isString(props.value) ? props.value : '';
+    const value = getListStringInputValue(props.value);
     return (
       <JsonInput
         size='xs'

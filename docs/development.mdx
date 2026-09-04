@@ -143,6 +143,11 @@ Use a snapshot or quiet database when a reproducible full audit is required.
 Run the audit CLI regression tests with `npm --prefix frontend run test:audit:content`.
 They use a local HTTP fixture and require no database credentials.
 
+Run the character rules and item drawer regressions with `npm --prefix frontend run test:rules`.
+These bundle the actual operation engine and drawer components against explicit local fixtures;
+selected rules content comes from the checked-in sanitized data dump. They need no running
+database or authentication account. CI runs both regression suites before the production build.
+
 ## Creating a user
 
 <Steps>
@@ -203,7 +208,8 @@ npm run docker:start
 ./data/create-db-docker.sh
 ```
 
-This wipes and reloads the public schema, so it's safe to re-run.
+This wipes and reloads the public schema. Run it only for a disposable local database;
+back up any local characters or homebrew you want to keep first.
 
 </Step>
 <Step title="(Optional) Open Supabase Studio">

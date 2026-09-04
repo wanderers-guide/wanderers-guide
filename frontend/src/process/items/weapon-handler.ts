@@ -7,6 +7,7 @@ import { getVariable } from '@variables/variable-manager';
 import { compileProficiencyType, labelToVariable } from '@variables/variable-utils';
 import { compileTraits, getGradeImprovements, isItemRangedWeapon } from './inv-utils';
 import stripMd from 'remove-markdown';
+import { getSharedEidolonRunes } from './eidolon-runes';
 
 export function parseOtherDamage(
   damage: { dice: number; die: string; damageType: string; bonus: number }[],
@@ -22,11 +23,12 @@ export function parseOtherDamage(
 export function getWeaponStats(id: StoreID, item: Item) {
   // Get adjustments from Starfinder item grade
   const gradeImprovements = getGradeImprovements(item);
+  const sharedRunes = getSharedEidolonRunes(id, item);
 
   // Get the number of dice for the weapon
   let dice =
-    (Number(item.meta_data?.damage?.dice ?? 1)) +
-    Math.min(Number(item.meta_data?.runes?.striking ?? 0), 4) +
+    Number(item.meta_data?.damage?.dice ?? 1) +
+    Math.max(Math.min(Number(item.meta_data?.runes?.striking ?? 0), 4), sharedRunes.striking) +
     (gradeImprovements.damage_dice - 1);
   const minDice = getVariable<VariableNum>(id, 'MINIMUM_WEAPON_DAMAGE_DICE')?.value ?? 1;
   if (dice < minDice) dice = minDice;
@@ -136,10 +138,15 @@ function getRangedAttackBonus(id: StoreID, item: Item) {
     );
   }
 
-  if (item.meta_data?.runes?.potency) {
+  const sharedPotency = getSharedEidolonRunes(id, item).potency;
+  const ownPotency = Math.min(item.meta_data?.runes?.potency ?? 0, 4);
+  const potency = Math.max(ownPotency, sharedPotency);
+  if (potency) {
     parts.set(
-      "This is the bonus you receive from the weapon's potency rune.",
-      Math.min(item.meta_data.runes.potency, 4)
+      sharedPotency > ownPotency
+        ? "This is the potency rune bonus shared by your summoner's invested item."
+        : "This is the bonus you receive from the weapon's potency rune.",
+      potency
     );
   }
 
@@ -224,10 +231,15 @@ function getMeleeAttackBonus(id: StoreID, item: Item) {
     );
   }
 
-  if (item.meta_data?.runes?.potency) {
+  const sharedPotency = getSharedEidolonRunes(id, item).potency;
+  const ownPotency = Math.min(item.meta_data?.runes?.potency ?? 0, 4);
+  const potency = Math.max(ownPotency, sharedPotency);
+  if (potency) {
     parts.set(
-      "This is the bonus you receive from the weapon's potency rune.",
-      Math.min(item.meta_data.runes.potency, 4)
+      sharedPotency > ownPotency
+        ? "This is the potency rune bonus shared by your summoner's invested item."
+        : "This is the bonus you receive from the weapon's potency rune.",
+      potency
     );
   }
 

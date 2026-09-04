@@ -171,6 +171,24 @@ interface Item {
   version: string;
 }
 
+/** An owned item, including its equipment state and container contents. */
+interface InventoryItem {
+  id: string;
+  item: Item;
+  is_formula: boolean;
+  is_equipped: boolean;
+  is_invested: boolean;
+  is_implanted: boolean;
+  container_contents: InventoryItem[];
+}
+
+/** Saved inventory; the optional weapon reference selects one eidolon rune source. */
+interface Inventory {
+  coins: { cp: number; sp: number; gp: number; pp: number };
+  items: InventoryItem[];
+  eidolon_weapon_id?: string;
+}
+
 interface Spell {
   id: number;
   created_at: string;

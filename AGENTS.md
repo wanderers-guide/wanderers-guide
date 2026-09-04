@@ -21,7 +21,8 @@ in Codex; do not run the upstream Claude-specific plugin commands here.
 - Backend/runtime: Deno Supabase edge functions; Node for repository CLIs.
 - Database: Supabase Postgres with RLS, Auth, and Storage.
 - Tests: Cypress (`npm --prefix frontend run cy:e2e`) against the local Docker stack;
-  Deno API tests (`npm run test:api`); audit CLI (`npm --prefix frontend run test:audit:content`).
+  rules/drawers (`npm --prefix frontend run test:rules`); Deno API tests (`npm run test:api`);
+  audit CLI (`npm --prefix frontend run test:audit:content`).
 - Typecheck/build: `npm --prefix frontend run build` runs TypeScript then Vite.
 - Lint/format: `npm --prefix frontend run lint`; frontend Prettier configuration.
 - Preview: `npm --prefix frontend run dev` on 5173; `npm run docs:dev` on 3210.

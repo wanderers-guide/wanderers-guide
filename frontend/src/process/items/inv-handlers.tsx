@@ -11,6 +11,7 @@ import { SetterOrUpdater } from '@utils/type-fixing';
 import {
   getBulkLimit,
   getDefaultContainerContents,
+  getFlatInvItems,
   getInvBulk,
   isItemContainer,
   isItemEquippable,
@@ -78,8 +79,13 @@ export const handleAddItem = async (
  * Utility function to handle deleting an item from the inventory
  * @param setEntity - LivingEntity state setter
  * @param invItem - Inventory item to delete
+ * @param preserveEidolonSelection - Moving an item preserves the selection while it is stowed.
  */
-export const handleDeleteItem = (setEntity: SetterOrUpdater<LivingEntity | null>, invItem: InventoryItem) => {
+export const handleDeleteItem = (
+  setEntity: SetterOrUpdater<LivingEntity | null>,
+  invItem: InventoryItem,
+  preserveEidolonSelection = false
+) => {
   setEntity((prev) => {
     if (!prev) return prev;
 
@@ -104,6 +110,14 @@ export const handleDeleteItem = (setEntity: SetterOrUpdater<LivingEntity | null>
           items: [],
         }),
         items: newItems,
+        eidolon_weapon_id:
+          preserveEidolonSelection ||
+          (prev.inventory &&
+            getFlatInvItems({ ...prev.inventory, items: newItems }).some(
+              (item) => item.id === prev.inventory?.eidolon_weapon_id
+            ))
+            ? prev.inventory?.eidolon_weapon_id
+            : undefined,
       },
     };
   });
@@ -149,6 +163,10 @@ export const handleUpdateItem = (setEntity: SetterOrUpdater<LivingEntity | null>
           items: [],
         }),
         items: newItems,
+        eidolon_weapon_id:
+          invItem.id === prev.inventory?.eidolon_weapon_id && (!invItem.is_invested || invItem.is_formula)
+            ? undefined
+            : prev.inventory?.eidolon_weapon_id,
       },
     };
   });
@@ -166,7 +184,7 @@ export const handleMoveItem = (
   containerItem: InventoryItem | null
 ) => {
   const movingItem = cloneDeep(invItem);
-  handleDeleteItem(setEntity, invItem);
+  handleDeleteItem(setEntity, invItem, true);
   setTimeout(() => {
     setEntity((prev) => {
       if (!prev) return prev;

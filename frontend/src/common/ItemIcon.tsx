@@ -92,7 +92,7 @@ export function ItemIcon(props: { item: Item; size: string; color: string; useDe
     type = 'CONTAINER';
   }
 
-  if (type === 'GENERAL' && props.item.meta_data?.bulk.capacity) {
+  if (type === 'GENERAL' && props.item.meta_data?.bulk?.capacity) {
     type = 'CONTAINER';
   }
 

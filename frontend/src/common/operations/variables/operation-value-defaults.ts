@@ -47,3 +47,9 @@ export function getDefaultAdjValue(variableType: VariableType): ExtendedVariable
   if (variableType === 'prof') return { value: 'U', increases: 0 } as ExtendedProficiencyValue;
   return '';
 }
+
+/** Preserve native list values when an operation is opened in the JSON editor. */
+export function getListStringInputValue(value: VariableValue): string {
+  if (typeof value === 'string') return value;
+  return Array.isArray(value) ? JSON.stringify(value) : '';
+}

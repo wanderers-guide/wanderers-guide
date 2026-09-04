@@ -15,6 +15,7 @@ import { getMetadataOpenedDict } from '@drawers/drawer-utils';
 import { displayError } from '@utils/notifications';
 import { addExtraItems, checkBulkLimit } from '@items/inv-handlers';
 import { applyEquipmentPenalties } from '@items/inv-utils';
+import { isEidolon } from '@items/eidolon-runes';
 import {
   Title,
   Loader,
@@ -293,6 +294,23 @@ export function CreatureDrawerContent(props: {
 
   return (
     <Stack>
+      {!props.data.readOnly && isEidolon(creature) && (view === 'BLOCK' || activeTab !== 'inventory') && (
+        <Group justify='space-between' gap='xs'>
+          <Text size='sm' c='dimmed'>
+            Set natural attacks in Inventory.
+          </Text>
+          <Button
+            variant='light'
+            size='compact-sm'
+            onClick={() => {
+              setDrawerData({ view: 'SHEET' });
+              setActiveTab('inventory');
+            }}
+          >
+            Configure attacks
+          </Button>
+        </Group>
+      )}
       {displayStatBlock && (
         <>
           {view === 'BLOCK' ? (

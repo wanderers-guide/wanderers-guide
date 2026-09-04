@@ -41,6 +41,11 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit -p tsconfig.json
 
+      - name: Rules and content audit regression tests
+        run: |
+          npm run test:rules
+          npm run test:audit:content
+
       # Vite envs are baked in at build time; createClient() throws on empty
       # values, so use placeholders for a build-only check.
       - name: Build

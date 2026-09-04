@@ -2,6 +2,7 @@ import { characterState } from '@atoms/characterAtoms';
 import { glassStyle } from '@utils/colors';
 import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
+import ShowInjectedText from '@drawers/ShowInjectedText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { priceToString } from '@items/currency-handler';
 import {
@@ -230,6 +231,7 @@ export function InvItemDrawerContent(props: {
         <RichText ta='justify' store={props.data.storeId} py={5}>
           {invItem.item.description}
         </RichText>
+        <ShowInjectedText varId={props.data.storeId} type='item' id={invItem.item.id} />
 
         {isItemWithRunes(invItem.item) && (
           <Accordion variant='separated' my={5}>

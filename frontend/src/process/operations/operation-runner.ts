@@ -53,6 +53,13 @@ import {
 import { SelectionTrack } from './selection-tree';
 import { isEqual } from 'lodash-es';
 import { throwError } from '@utils/error-handling';
+import {
+  grantLanguage,
+  parseLanguageOverride,
+  removeGrantedLanguage,
+  replaceLanguages,
+  resolveLanguageOverride,
+} from './language-operations';
 
 // import { hideNotification, showNotification } from '@mantine/notifications';
 // import { displayError } from '@utils/notifications';
@@ -378,8 +385,7 @@ async function updateVariables(
       throwError(`Invalid ability block type: ${selectedOption.type}`);
     }
   } else if (operation.data.optionType === 'LANGUAGE') {
-    adjVariable(varId, 'LANGUAGE_IDS', `${selectedOption.id}`, sourceLabel);
-    adjVariable(varId, 'LANGUAGE_NAMES', selectedOption.name.toUpperCase(), sourceLabel);
+    grantLanguage(varId, { id: selectedOption.id, name: selectedOption.name }, sourceLabel);
   } else if (operation.data.optionType === 'SPELL') {
     adjVariable(varId, 'SPELL_IDS', `${selectedOption.id}`, sourceLabel);
     adjVariable(varId, 'SPELL_NAMES', selectedOption.name.toUpperCase(), sourceLabel);
@@ -507,38 +513,77 @@ async function runSetValue(
   operation: OperationSetValue,
   sourceLabel?: string
 ): Promise<OperationResult> {
+  if (operation.data.variable === 'LANGUAGE_IDS' || operation.data.variable === 'LANGUAGE_NAMES') {
+    deferredOperations.push({ type: 'languages', varId, data: operation.data, sourceLabel });
+    return null;
+  }
   setVariable(varId, operation.data.variable, operation.data.value, sourceLabel);
   return null;
 }
 
 /**
- * Variable bindings queued during execution, resolved once every round has run.
+ * Explicit final writes share one execution lifecycle. Language overrides replace
+ * ancestry and other grants; variable bindings then read those final values.
  * Bindings copy another variable's FINAL value (e.g. Quick Climb's "climb Speed equal
  * to your land Speed"), so they can't resolve mid-execution — and the old setTimeout
  * deferral was lost entirely under worker execution, because the store is exported
  * back to the main thread before the timer ever fires.
  */
-let pendingBinds: {
-  varId: StoreID;
-  variable: string;
-  value: OperationBindValue['data']['value'];
-  sourceLabel?: string;
-}[] = [];
+type DeferredOperation =
+  | {
+      type: 'bind';
+      varId: StoreID;
+      variable: string;
+      value: OperationBindValue['data']['value'];
+      sourceLabel?: string;
+    }
+  | {
+      type: 'languages';
+      varId: StoreID;
+      data: OperationSetValue['data'];
+      sourceLabel?: string;
+    };
+let deferredOperations: DeferredOperation[] = [];
 
-/** Drops queued bindings from a previous (possibly aborted) execution. */
-export function clearPendingBinds() {
-  pendingBinds = [];
+/** Drops deferred writes from a previous (possibly aborted) execution. */
+export function clearDeferredOperations(): void {
+  deferredOperations = [];
 }
 
-/** Applies all queued bindings against the now-final variable stores. */
-export function resolvePendingBinds() {
-  for (const bind of pendingBinds) {
+/** Apply explicit language replacements after grants, then bindings in their original order against final values. */
+export async function resolveDeferredOperations(): Promise<string[]> {
+  const pending: DeferredOperation[] = deferredOperations;
+  deferredOperations = [];
+  const replacements: { varId: StoreID; languages: Language[]; sourceLabel?: string }[] = [];
+  const errors: string[] = [];
+  for (const operation of pending) {
+    if (operation.type !== 'languages') continue;
+    try {
+      const override = parseLanguageOverride(operation.data.variable, operation.data.value);
+      if (!override) continue;
+      replacements.push({
+        varId: operation.varId,
+        languages: await resolveLanguageOverride(operation.varId, override),
+        sourceLabel: operation.sourceLabel,
+      });
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      errors.push(
+        `Language override${operation.sourceLabel ? ` from ${operation.sourceLabel}` : ''} was not applied: ${detail}`
+      );
+    }
+  }
+  for (const replacement of replacements) {
+    replaceLanguages(replacement.varId, replacement.languages, replacement.sourceLabel);
+  }
+  for (const bind of pending) {
+    if (bind.type !== 'bind') continue;
     const bindValue = getVariable(bind.value.storeId, bind.value.variable);
     if (bindValue) {
       setVariable(bind.varId, bind.variable, bindValue.value, bind.sourceLabel);
     }
   }
-  pendingBinds = [];
+  return errors;
 }
 
 async function runBindValue(
@@ -546,7 +591,8 @@ async function runBindValue(
   operation: OperationBindValue,
   sourceLabel?: string
 ): Promise<OperationResult> {
-  pendingBinds.push({
+  deferredOperations.push({
+    type: 'bind',
     varId,
     variable: operation.data.variable,
     value: operation.data.value,
@@ -661,8 +707,7 @@ async function runGiveLanguage(
     return null;
   }
 
-  adjVariable(varId, 'LANGUAGE_IDS', `${language.id}`, sourceLabel);
-  adjVariable(varId, 'LANGUAGE_NAMES', language.name.toUpperCase(), sourceLabel);
+  grantLanguage(varId, language, sourceLabel);
   return null;
 }
 
@@ -946,22 +991,7 @@ async function runRemoveLanguage(
     return null;
   }
 
-  const getVariableList = (variableName: string) => {
-    return (getVariable(varId, variableName)?.value ?? []) as string[];
-  };
-
-  setVariable(
-    varId,
-    'LANGUAGE_IDS',
-    getVariableList('LANGUAGE_IDS').filter((id) => id !== `${language.id}`),
-    sourceLabel
-  );
-  setVariable(
-    varId,
-    'LANGUAGE_NAMES',
-    getVariableList('LANGUAGE_NAMES').filter((name) => name !== language.name.toUpperCase()),
-    sourceLabel
-  );
+  removeGrantedLanguage(varId, language, sourceLabel);
   return null;
 }
 

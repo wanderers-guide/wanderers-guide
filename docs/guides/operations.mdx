@@ -74,6 +74,18 @@ Hard-set a variable. Wins over any prior value, including `setValue`s from other
 
 Use sparingly: it stomps any other contribution. Prefer `adjValue` or `addBonusToValue` when stacking matters.
 
+`LANGUAGE_NAMES` and `LANGUAGE_IDS` are explicit final overrides. Set either to a JSON array of strings; the engine resolves the matching records and replaces both lists after normal grants and removals. An empty array removes all languages, including ancestry grants. Without an override, normal language operations retain their existing behavior.
+
+```jsonc
+// A creature that speaks no languages, even if its ancestry grants some
+{ "id": "...", "type": "setValue", "data": { "variable": "LANGUAGE_NAMES", "value": "[]" } }
+
+// Replace the entire list with specified language IDs
+{ "id": "...", "type": "setValue", "data": { "variable": "LANGUAGE_IDS", "value": "[\"81\"]" } }
+```
+
+Native array values are also supported. Unknown or ambiguous names, unknown IDs, and malformed lists produce an error without partially replacing either list. Use IDs when several sources define the same name. Deferred bindings and the final sheet see the replacement; conditionals still evaluate during their normal operation passes.
+
 ### `adjValue`
 
 Adjust a value. The exact behaviour depends on the variable type:
@@ -350,6 +362,8 @@ Player-facing choice. Two modes:
 
 The chosen option id is recorded on `character.operation_data.selections`, keyed by the select operation’s id.
 
+Ancestry feat filters also admit the existing **All Ancestries** trait, while preserving level, required-trait, and feat-type constraints. Archetype skill feats belong in skill feat choices: ordinary class feat and Free Archetype choices exclude them. A filter that explicitly requests the Skill trait can still select them.
+
 ---
 
 ## Display and meta
@@ -359,6 +373,8 @@ These don’t change stats; they affect what the player sees.
 ### `injectText`
 
 Append prose to another piece of content’s description, conditionally. Used for archetype rewrites that say "instead of X, you can also Y" without forking the source row.
+
+Item injections appear in both catalog and inventory descriptions. They use the store of the character or companion whose drawer is open, so one entity’s modifications do not appear on another.
 
 ```jsonc
 {

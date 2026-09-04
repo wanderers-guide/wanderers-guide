@@ -408,6 +408,8 @@ export const InventorySchema = z.object({
     pp: z.number(),
   }),
   items: z.array(InventoryItemSchema),
+  /** The single magic weapon invested specifically to share runes with an eidolon. */
+  eidolon_weapon_id: z.string().optional(),
 });
 export type Inventory = z.infer<typeof InventorySchema>;
 
@@ -1160,6 +1162,7 @@ export type OperationCreatureResultPackage = z.infer<typeof OperationCreatureRes
 export const OperationResultDataSchema = z.object({
   store: VariableStoreSchema,
   ors: z.union([OperationCharacterResultPackageSchema, OperationCreatureResultPackageSchema]),
+  errors: z.array(z.string()).optional(),
 });
 export type OperationResultData = z.infer<typeof OperationResultDataSchema>;
 

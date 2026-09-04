@@ -1,0 +1,296 @@
+
+> wanderers-guide@2.1.0 test:rules
+> node --test scripts/feat-selection.test.mjs scripts/language-operations.test.mjs scripts/eidolon-runes.test.mjs scripts/item-drawers.test.mjs scripts/inventory-panel.test.mjs
+
+TAP version 13
+# Subtest: equipped weapon shares fundamental runes only when invested
+ok 1 - equipped weapon shares fundamental runes only when invested
+  ---
+  duration_ms: 2472.425875
+  type: 'test'
+  ...
+# Subtest: stowed weapons and formulas never share runes
+ok 2 - stowed weapons and formulas never share runes
+  ---
+  duration_ms: 79.445333
+  type: 'test'
+  ...
+# Subtest: stowed handwraps with a stale investment flag do not share runes
+ok 3 - stowed handwraps with a stale investment flag do not share runes
+  ---
+  duration_ms: 98.756333
+  type: 'test'
+  ...
+# Subtest: invested handwraps share runes without a weapon equip flag
+ok 4 - invested handwraps share runes without a weapon equip flag
+  ---
+  duration_ms: 68.114708
+  type: 'test'
+  ...
+# Subtest: active weapon replaces handwrap benefits without mixing or stacking sources
+ok 5 - active weapon replaces handwrap benefits without mixing or stacking sources
+  ---
+  duration_ms: 31.878084
+  type: 'test'
+  ...
+# Subtest: ordinary companions and independent creatures receive no shared runes
+ok 6 - ordinary companions and independent creatures receive no shared runes
+  ---
+  duration_ms: 7.811166
+  type: 'test'
+  ...
+# Subtest: own runes and shared runes use the greater value and never mutate saved attacks
+ok 7 - own runes and shared runes use the greater value and never mutate saved attacks
+  ---
+  duration_ms: 4.036625
+  type: 'test'
+  ...
+# Subtest: new character computation clears the previous owner equipment values
+ok 8 - new character computation clears the previous owner equipment values
+  ---
+  duration_ms: 15.339084
+  type: 'test'
+  ...
+# Subtest: special investment is limited to owners and held-capable magic weapons
+ok 9 - special investment is limited to owners and held-capable magic weapons
+  ---
+  duration_ms: 13.564541
+  type: 'test'
+  ...
+# Subtest: choosing one weapon preserves invested armor and handwraps and can be undone
+ok 10 - choosing one weapon preserves invested armor and handwraps and can be undone
+  ---
+  duration_ms: 2.749375
+  type: 'test'
+  ...
+# Subtest: invalid investment targets do not clear the currently invested weapon
+ok 11 - invalid investment targets do not clear the currently invested weapon
+  ---
+  duration_ms: 0.330333
+  type: 'test'
+  ...
+# Subtest: ranged eidolon attacks share runes; carried weapons do not
+ok 12 - ranged eidolon attacks share runes; carried weapons do not
+  ---
+  duration_ms: 26.043958
+  type: 'test'
+  ...
+# Subtest: ordinary invested staff stays invested when the selected eidolon weapon changes
+ok 13 - ordinary invested staff stays invested when the selected eidolon weapon changes
+  ---
+  duration_ms: 632.030042
+  type: 'test'
+  ...
+# Subtest: an unselected ordinary investment never overrides handwraps; stale source falls back
+ok 14 - an unselected ordinary investment never overrides handwraps; stale source falls back
+  ---
+  duration_ms: 0.4705
+  type: 'test'
+  ...
+# Subtest: actual Dragon Handwraps share their fundamental runes
+ok 15 - actual Dragon Handwraps share their fundamental runes
+  ---
+  duration_ms: 464.160542
+  type: 'test'
+  ...
+# Subtest: ordinary divest and item deletion clear the saved source reference
+ok 16 - ordinary divest and item deletion clear the saved source reference
+  ---
+  duration_ms: 0.745
+  type: 'test'
+  ...
+# Subtest: moving a selected weapon preserves selection but stowing it suspends shared runes
+ok 17 - moving a selected weapon preserves selection but stowing it suspends shared runes
+  ---
+  duration_ms: 101.126
+  type: 'test'
+  ...
+# Subtest: the class-feat tab predicate excludes archetype skill feats
+ok 18 - the class-feat tab predicate excludes archetype skill feats
+  ---
+  duration_ms: 2646.799958
+  type: 'test'
+  ...
+# Subtest: Free Archetype offers class feats from acquired archetypes within its level cap
+ok 19 - Free Archetype offers class feats from acquired archetypes within its level cap
+  ---
+  duration_ms: 102.898833
+  type: 'test'
+  ...
+# Subtest: ordinary and explicitly archetype-scoped skill selections retain Inspired Memory
+ok 20 - ordinary and explicitly archetype-scoped skill selections retain Inspired Memory
+  ---
+  duration_ms: 5.213792
+  type: 'test'
+  ...
+# Subtest: non-feat archetype origin filters do not inherit the class-feat restriction
+ok 21 - non-feat archetype origin filters do not inherit the class-feat restriction
+  ---
+  duration_ms: 15.338792
+  type: 'test'
+  ...
+# Subtest: ancestry selections include All Ancestries feats alongside the selected ancestry
+ok 22 - ancestry selections include All Ancestries feats alongside the selected ancestry
+  ---
+  duration_ms: 7.8435
+  type: 'test'
+  ...
+# Subtest: All Ancestries does not grant access to unrelated heritages or hidden feats
+ok 23 - All Ancestries does not grant access to unrelated heritages or hidden feats
+  ---
+  duration_ms: 2.310458
+  type: 'test'
+  ...
+# Subtest: inventory at 390px keeps view, invest, equip and container controls as sibling buttons
+ok 24 - inventory at 390px keeps view, invest, equip and container controls as sibling buttons
+  ---
+  duration_ms: 151.22425
+  type: 'test'
+  ...
+# Subtest: inventory at 1200px keeps view, invest, equip and container controls as sibling buttons
+ok 25 - inventory at 1200px keeps view, invest, equip and container controls as sibling buttons
+  ---
+  duration_ms: 144.620666
+  type: 'test'
+  ...
+# Subtest: catalog CHARACTER renders injected text from its own store
+ok 26 - catalog CHARACTER renders injected text from its own store
+  ---
+  duration_ms: 515.68425
+  type: 'test'
+  ...
+# Subtest: inventory CHARACTER renders injected text from its own store
+ok 27 - inventory CHARACTER renders injected text from its own store
+  ---
+  duration_ms: 19.253084
+  type: 'test'
+  ...
+# Subtest: catalog COMPANION_0 renders injected text from its own store
+ok 28 - catalog COMPANION_0 renders injected text from its own store
+  ---
+  duration_ms: 4.503208
+  type: 'test'
+  ...
+# Subtest: inventory COMPANION_0 renders injected text from its own store
+ok 29 - inventory COMPANION_0 renders injected text from its own store
+  ---
+  duration_ms: 5.676
+  type: 'test'
+  ...
+# Subtest: item icons render when optional bulk metadata is absent
+ok 30 - item icons render when optional bulk metadata is absent
+  ---
+  duration_ms: 3.7655
+  type: 'test'
+  ...
+# Subtest: explicit empty names override clears exact Elf ancestry grants after all rounds
+ok 31 - explicit empty names override clears exact Elf ancestry grants after all rounds
+  ---
+  duration_ms: 3159.777917
+  type: 'test'
+  ...
+# Subtest: native name lists replace ancestry languages and synchronize membership IDs
+ok 32 - native name lists replace ancestry languages and synchronize membership IDs
+  ---
+  duration_ms: 19.761917
+  type: 'test'
+  ...
+# Subtest: ID lists replace ancestry languages and synchronize names
+ok 33 - ID lists replace ancestry languages and synchronize names
+  ---
+  duration_ms: 21.224333
+  type: 'test'
+  ...
+# Subtest: absent overrides retain ordinary ancestry grants
+ok 34 - absent overrides retain ordinary ancestry grants
+  ---
+  duration_ms: 13.508125
+  type: 'test'
+  ...
+# Subtest: ordinary give/remove operations keep both lists synchronized
+ok 35 - ordinary give/remove operations keep both lists synchronized
+  ---
+  duration_ms: 2.823333
+  type: 'test'
+  ...
+# Subtest: bad lists and unresolved names report errors while completing the editable character result
+ok 36 - bad lists and unresolved names report errors while completing the editable character result
+  ---
+  duration_ms: 40.274917
+  type: 'test'
+  ...
+# Subtest: content-source overrides also apply after ancestry grants
+ok 37 - content-source overrides also apply after ancestry grants
+  ---
+  duration_ms: 7.790625
+  type: 'test'
+  ...
+# Subtest: a previous execution's override does not suppress later ordinary grants
+ok 38 - a previous execution's override does not suppress later ordinary grants
+  ---
+  duration_ms: 12.509833
+  type: 'test'
+  ...
+# Subtest: the last explicit override replaces the complete language pair
+ok 39 - the last explicit override replaces the complete language pair
+  ---
+  duration_ms: 5.926708
+  type: 'test'
+  ...
+# Subtest: creature overrides apply after ability grants without replacing character languages
+ok 40 - creature overrides apply after ability grants without replacing character languages
+  ---
+  duration_ms: 11.862834
+  type: 'test'
+  ...
+# Subtest: bindings read final overridden language names and retain their original order
+ok 41 - bindings read final overridden language names and retain their original order
+  ---
+  duration_ms: 1.269833
+  type: 'test'
+  ...
+# Subtest: invalid replacements preserve grants, complete bindings, and recover after the user edits them
+ok 42 - invalid replacements preserve grants, complete bindings, and recover after the user edits them
+  ---
+  duration_ms: 18.334
+  type: 'test'
+  ...
+# Subtest: a bad replacement does not prevent a later valid override
+ok 43 - a bad replacement does not prevent a later valid override
+  ---
+  duration_ms: 5.244042
+  type: 'test'
+  ...
+# Subtest: the execution boundary surfaces invalid overrides and resolves results for the loading lifecycle
+ok 44 - the execution boundary surfaces invalid overrides and resolves results for the loading lifecycle
+  ---
+  duration_ms: 7.773542
+  type: 'test'
+  ...
+# Subtest: name overrides resolve against the current execution source scope
+ok 45 - name overrides resolve against the current execution source scope
+  ---
+  duration_ms: 9.905834
+  type: 'test'
+  ...
+# Subtest: the operation editor preserves native lists as editable JSON
+ok 46 - the operation editor preserves native lists as editable JSON
+  ---
+  duration_ms: 0.408167
+  type: 'test'
+  ...
+# Subtest: exact Rascal and Stylish Tricks data progresses through the complete class controller
+ok 47 - exact Rascal and Stylish Tricks data progresses through the complete class controller
+  ---
+  duration_ms: 149.071208
+  type: 'test'
+  ...
+1..47
+# tests 47
+# suites 0
+# pass 47
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4334.209333

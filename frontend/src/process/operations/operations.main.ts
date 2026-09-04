@@ -7,6 +7,7 @@ import {
 import { VariableStore } from '@schemas/variables';
 import { exportVariableStore, importVariableStore, normalizeProficiencies } from '@variables/variable-manager';
 import { _executeCharacterOperations, _executeCreatureOperations } from './operation-controller';
+import { displayError } from '@utils/notifications';
 
 // // Create a worker pool
 // const pool =
@@ -176,6 +177,7 @@ export async function executeOperations<T = OperationCharacterResultPackage | Op
     importVariableStore('CHARACTER', results!.store);
     // Reconcile rank grants with spent skill increases (see normalizeProficiencies)
     normalizeProficiencies('CHARACTER');
+    results?.errors?.forEach((error) => displayError(error));
     return results!.ors as T;
   }
 
@@ -194,6 +196,7 @@ export async function executeOperations<T = OperationCharacterResultPackage | Op
     importVariableStore(execution.data.id, results!.store);
     // Reconcile rank grants with spent skill increases (see normalizeProficiencies)
     normalizeProficiencies(execution.data.id);
+    results?.errors?.forEach((error) => displayError(error));
     return results!.ors as T;
   }
 

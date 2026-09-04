@@ -553,7 +553,7 @@
           "operations": { "type": "array", "items": { "$ref": "#/components/schemas/Operation" } },
           "abilities_base": { "type": "array", "items": { "$ref": "#/components/schemas/AbilityBlock" } },
           "abilities_added": { "type": "array", "items": { "type": "integer" } },
-          "inventory": { "type": "object", "additionalProperties": true },
+          "inventory": { "$ref": "#/components/schemas/Inventory" },
           "spells": { "type": "object", "additionalProperties": true },
           "meta_data": {
             "type": "object",
@@ -565,6 +565,18 @@
           "content_source_id": { "type": "integer" },
           "deprecated": { "type": "boolean" },
           "version": { "type": "string" }
+        }
+      },
+      "Inventory": {
+        "type": ["object", "null"],
+        "additionalProperties": true,
+        "properties": {
+          "items": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+          "coins": { "type": "object", "additionalProperties": true },
+          "eidolon_weapon_id": {
+            "type": "string",
+            "description": "Optional inventory-entry ID of the weapon invested to share fundamental runes with an eidolon. This is the entry's string ID, not the item's numeric content ID. The weapon must remain invested, equipped, and outside a container to confer runes. Ordinary item investment is independent."
+          }
         }
       },
       "Character": {
@@ -583,7 +595,7 @@
           "hp_temp": { "type": "integer" },
           "stamina_current": { "type": "integer" },
           "resolve_current": { "type": "integer" },
-          "inventory": { "type": "object", "additionalProperties": true },
+          "inventory": { "$ref": "#/components/schemas/Inventory" },
           "details": { "type": "object", "additionalProperties": true },
           "notes": { "type": "object", "additionalProperties": true },
           "roll_history": { "type": "object", "additionalProperties": true },

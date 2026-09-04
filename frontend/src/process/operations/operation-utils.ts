@@ -46,7 +46,7 @@ import {
   InjectedSelectOption,
 } from '@schemas/operations';
 import { ProficiencyValue, StoreID, Variable, VariableListStr, VariableProf, VariableValue } from '@schemas/variables';
-import { hasTraitType } from '@utils/traits';
+import { hasArchetypeClassFeatTraits, hasTraitType } from '@utils/traits';
 import {
   getAllAncestryTraitVariables,
   getAllArchetypeTraitVariables,
@@ -445,34 +445,7 @@ async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: 
     });
   }
 
-  if (filters.isFromAncestry) {
-    const traitIds = getAllAncestryTraitVariables(id).map((v) => v.value) ?? [];
-    abilityBlocks = abilityBlocks.filter((ab) => {
-      if (!ab.traits) {
-        return false;
-      }
-      return intersection(ab.traits, traitIds).length > 0;
-    });
-  }
-  if (filters.isFromClass) {
-    const traitIds = getAllClassTraitVariables(id).map((v) => v.value) ?? [];
-    abilityBlocks = abilityBlocks.filter((ab) => {
-      if (!ab.traits) {
-        return false;
-      }
-      return intersection(ab.traits, traitIds).length > 0;
-    });
-  }
-  if (filters.isFromArchetype) {
-    const traitIds = getAllArchetypeTraitVariables(id).map((v) => v.value) ?? [];
-    abilityBlocks = abilityBlocks.filter((ab) => {
-      if (!ab.traits) {
-        return false;
-      }
-      return intersection(ab.traits, traitIds).length > 0;
-    });
-  }
-
+  let requiredTraitIds: number[] = [];
   if (filters.traits !== undefined) {
     const tDatas = await Promise.all(
       filters.traits.map((t) =>
@@ -480,18 +453,47 @@ async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: 
         isNumber(t) ? t : fetchTraitByName(t)
       )
     );
-    const traitIds = tDatas.map((t) => (isNumber(t) ? t : t?.id)).filter(isTruthy);
+    requiredTraitIds = tDatas.map((t) => (isNumber(t) ? t : t?.id)).filter(isTruthy);
 
     // Filter out ability blocks that don't have all the traits
     abilityBlocks = abilityBlocks.filter((ab) => {
-      if (!ab.traits && traitIds.length > 0) {
+      if (!ab.traits && requiredTraitIds.length > 0) {
         return false;
       }
-      if ((!ab.traits && traitIds.length === 0) || (ab.traits && ab.traits.length === 0 && traitIds.length === 0)) {
+      if (
+        (!ab.traits && requiredTraitIds.length === 0) ||
+        (ab.traits && ab.traits.length === 0 && requiredTraitIds.length === 0)
+      ) {
         return true;
       }
-      const inter = intersection(ab.traits ?? [], traitIds);
-      return inter.length === traitIds.length;
+      const inter = intersection(ab.traits ?? [], requiredTraitIds);
+      return inter.length === requiredTraitIds.length;
+    });
+  }
+
+  if (filters.isFromAncestry) {
+    const traitIds = getAllAncestryTraitVariables(id).map((v) => v.value);
+    abilityBlocks = abilityBlocks.filter((ab) => {
+      // Universal ancestry feats use WG's existing All Ancestries trait. This must
+      // not broaden heritage, action, or other selections that share this origin filter.
+      return (
+        (ab.type === 'feat' && hasTraitType('ALL-ANCESTRIES', ab.traits ?? undefined)) ||
+        intersection(ab.traits ?? [], traitIds).length > 0
+      );
+    });
+  }
+  if (filters.isFromClass) {
+    const traitIds = getAllClassTraitVariables(id).map((v) => v.value);
+    abilityBlocks = abilityBlocks.filter((ab) => intersection(ab.traits ?? [], traitIds).length > 0);
+  }
+  if (filters.isFromArchetype) {
+    const traitIds = getAllArchetypeTraitVariables(id).map((v) => v.value);
+    const selectsSkillFeats = hasTraitType('SKILL', requiredTraitIds);
+    abilityBlocks = abilityBlocks.filter((ab) => {
+      // Free Archetype grants class-feat choices. Explicit Skill filters still select
+      // archetype skill feats, and non-feat origin filters retain their existing meaning.
+      if (ab.type === 'feat' && !selectsSkillFeats) return hasArchetypeClassFeatTraits(ab.traits, traitIds);
+      return intersection(ab.traits ?? [], traitIds).length > 0;
     });
   }
 
@@ -637,9 +639,7 @@ async function filterItemsByTraitFilters(items: Item[], filters: OperationSelect
   if (filters.hasAncestryTrait) {
     const allTraits = await fetchContentAll<Trait>('trait', getDefaultSources('PAGE'));
     const ancestryTraitIds = new Set(
-      allTraits
-        .filter((t) => t.meta_data?.ancestry_trait || t.meta_data?.versatile_heritage_trait)
-        .map((t) => t.id)
+      allTraits.filter((t) => t.meta_data?.ancestry_trait || t.meta_data?.versatile_heritage_trait).map((t) => t.id)
     );
     filtered = filtered.filter((item) => (item.traits ?? []).some((traitId) => ancestryTraitIds.has(traitId)));
   }

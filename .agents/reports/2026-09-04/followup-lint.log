@@ -1,0 +1,158 @@
+
+> wanderers-guide@2.1.0 lint
+> eslint src --ext ts,tsx --report-unused-disable-directives
+
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/App.tsx
+  148:6  warning  React Hook useEffect has a missing dependency: 'setSession'. Either include it or remove the dependency array                                                           react-hooks/exhaustive-deps
+  169:6  warning  React Hook useEffect has missing dependencies: 'background?.url' and 'prevCharacer?.details?.background_image_url'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  303:6  warning  React Hook useEffect has missing dependencies: 'generateTheme' and 'prevCharacer?.details?.sheet_theme'. Either include them or remove the dependency array             react-hooks/exhaustive-deps
+  334:6  warning  React Hook useEffect has missing dependencies: 'openCreatureDrawer', 'openDrawer', and 'searchParams'. Either include them or remove the dependency array               react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/ai/cleaning/CleaningLogPanel.tsx
+  235:6  warning  React Hook useEffect has missing dependencies: 'start' and 'stop'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/common/ContentSourceInfo.tsx
+  59:6  warning  React Hook useEffect has missing dependencies: 'icon', 'props.source.contact_info', 'props.source.id', and 'props.source.name'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/common/Icon.tsx
+  143:17  warning  Fast refresh only works when a file only export components. Use a new file to share constant or functions between components  react-refresh/only-export-components
+  345:17  warning  Fast refresh only works when a file only export components. Use a new file to share constant or functions between components  react-refresh/only-export-components
+  351:23  warning  Fast refresh only works when a file only export components. Use a new file to share constant or functions between components  react-refresh/only-export-components
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/common/IconDisplay.tsx
+   52:6   warning  React Hook useEffect has missing dependencies: 'prevStrValue' and 'refreshSegmented'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  220:17  warning  Fast refresh only works when a file only export components. Use a new file to share constant or functions between components              react-refresh/only-export-components
+  240:17  warning  Fast refresh only works when a file only export components. Use a new file to share constant or functions between components              react-refresh/only-export-components
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/common/ItemIcon.tsx
+  50:14  warning  Fast refresh only works when a file only export components. Use a new file to share constant or functions between components  react-refresh/only-export-components
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/common/dice/DiceRoller.tsx
+  307:6  warning  React Hook useMemo has a missing dependency: 'character'. Either include it or remove the dependency array                                                                                                                                                                                                  react-hooks/exhaustive-deps
+  484:6  warning  React Hook useEffect has a missing dependency: 'props'. Either include it or remove the dependency array. However, 'props' will change when *any* prop changes, so the preferred fix is to destructure the 'props' object outside of the useEffect call and refer to those specific props inside useEffect  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/common/operations/conditional/ConditionalOperation.tsx
+  207:6  warning  React Hook useEffect has a missing dependency: 'props'. Either include it or remove the dependency array. However, 'props' will change when *any* prop changes, so the preferred fix is to destructure the 'props' object outside of the useEffect call and refer to those specific props inside useEffect  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/common/operations/selection/SelectionOperation.tsx
+  611:6  warning  React Hook useEffect has a missing dependency: 'props'. Either include it or remove the dependency array. However, 'props' will change when *any* prop changes, so the preferred fix is to destructure the 'props' object outside of the useEffect call and refer to those specific props inside useEffect  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/common/operations/variables/AdjValOperation.tsx
+  85:6  warning  React Hook useEffect has a missing dependency: 'props'. Either include it or remove the dependency array. However, 'props' will change when *any* prop changes, so the preferred fix is to destructure the 'props' object outside of the useEffect call and refer to those specific props inside useEffect  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/common/select/SelectContent.tsx
+  162:6  warning  React Hook useEffect has a missing dependency: 'selected'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/drawers/DrawerBase.tsx
+  41:14  warning  Fast refresh only works when a file only export components. Use a new file to share constant or functions between components  react-refresh/only-export-components
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/drawers/types/AncestryDrawer.tsx
+  556:17  warning  Fast refresh only works when a file only export components. Use a new file to share constant or functions between components  react-refresh/only-export-components
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/drawers/types/BackgroundDrawer.tsx
+  215:17  warning  Fast refresh only works when a file only export components. Use a new file to share constant or functions between components  react-refresh/only-export-components
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/drawers/types/ClassDrawer.tsx
+  573:17  warning  Fast refresh only works when a file only export components. Use a new file to share constant or functions between components  react-refresh/only-export-components
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/drawers/types/CreatureDrawer.tsx
+  180:6  warning  React Hook useEffect has a missing dependency: 'props'. Either include it or remove the dependency array. However, 'props' will change when *any* prop changes, so the preferred fix is to destructure the 'props' object outside of the useEffect call and refer to those specific props inside useEffect  react-hooks/exhaustive-deps
+  256:6  warning  React Hook useEffect has missing dependencies: 'STORE_ID' and 'refreshStatBlock'. Either include them or remove the dependency array                                                                                                                                                                        react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/drawers/types/InvItemDrawer.tsx
+  489:6  warning  React Hook useEffect has a missing dependency: 'health'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/drawers/types/ManageCoinsDrawer.tsx
+  96:6  warning  React Hook useEffect has a missing dependency: 'props.data'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/drawers/types/StatPerceptionDrawer.tsx
+  81:89  warning  React Hook useMemo has a missing dependency: 'props.data.id'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/modals/ContentFeedbackModal.tsx
+  66:6  warning  React Hook useEffect has missing dependencies: 'props' and 'submitUpdate'. Either include them or remove the dependency array. However, 'props' will change when *any* prop changes, so the preferred fix is to destructure the 'props' object outside of the useEffect call and refer to those specific props inside useEffect  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/modals/CreateContentSourceModal.tsx
+  950:6  warning  React Hook useEffect has a missing dependency: 'initJsSearch'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/modals/InitiativeRollModal.tsx
+  43:6  warning  React Hook useEffect has missing dependencies: 'innerProps.combatants' and 'onChangeOption'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/modals/ManageSpellsModal.tsx
+   91:6  warning  React Hook useMemo has a missing dependency: 'props.id'. Either include it or remove the dependency array                        react-hooks/exhaustive-deps
+  123:6  warning  React Hook useMemo has missing dependencies: 'isRituals' and 'props.source'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/nav/SearchSpotlight.tsx
+  100:6  warning  React Hook useEffect has missing dependencies: 'defaultActions', 'navigate', 'openCreatureDrawer', 'openDrawer', 'session', 'setQuery', and 'theme'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/pages/CharactersPage.tsx
+  123:6  warning  React Hook useEffect has missing dependencies: 'forceUpdate' and 'setCharacter'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/pages/ContentCleaningPage.tsx
+  26:6  warning  React Hook useEffect has a missing dependency: 'recordId'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/pages/GmSharePage.tsx
+  33:6  warning  React Hook useEffect has missing dependencies: 'gmUserId' and 'searchParams'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/pages/LoginPage.tsx
+  45:6  warning  React Hook useEffect has missing dependencies: 'navigate' and 'searchParams'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/pages/PatreonRedirectPage.tsx
+  30:6  warning  React Hook useEffect has a missing dependency: 'searchParams'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/pages/campaign/CampaignOverviewPage.tsx
+  77:6  warning  React Hook useEffect has a missing dependency: 'interval'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/pages/campaign/panels/EncountersPanel.tsx
+   107:34  warning  React Hook useCallback received a function whose dependencies are unknown. Pass an inline function instead                    react-hooks/exhaustive-deps
+   156:6   warning  React Hook useEffect has a missing dependency: 'refreshEncounters'. Either include it or remove the dependency array          react-hooks/exhaustive-deps
+   919:6   warning  React Hook useEffect has a missing dependency: 'initiative'. Either include it or remove the dependency array                 react-hooks/exhaustive-deps
+  1275:17  warning  Fast refresh only works when a file only export components. Use a new file to share constant or functions between components  react-refresh/only-export-components
+  1362:17  warning  Fast refresh only works when a file only export components. Use a new file to share constant or functions between components  react-refresh/only-export-components
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/pages/campaign/panels/NotesPanel.tsx
+  48:6  warning  React Hook useEffect has a missing dependency: 'refreshNotes'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/pages/character_builder/CharBuilderCreation.tsx
+   102:6  warning  React Hook useEffect has a missing dependency: 'interval'. Either include it or remove the dependency array             react-hooks/exhaustive-deps
+  1169:6  warning  React Hook useEffect has a missing dependency: 'choiceCounts'. Either include it or remove the dependency array         react-hooks/exhaustive-deps
+  1385:6  warning  React Hook useEffect has a missing dependency: 'featureChoiceCounts'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  1450:6  warning  React Hook useEffect has a missing dependency: 'featureChoiceCounts'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  1637:6  warning  React Hook useEffect has a missing dependency: 'choiceCounts'. Either include it or remove the dependency array         react-hooks/exhaustive-deps
+  1757:6  warning  React Hook useEffect has a missing dependency: 'choiceCounts'. Either include it or remove the dependency array         react-hooks/exhaustive-deps
+  1865:6  warning  React Hook useEffect has a missing dependency: 'choiceCounts'. Either include it or remove the dependency array         react-hooks/exhaustive-deps
+  1978:6  warning  React Hook useEffect has a missing dependency: 'choiceCounts'. Either include it or remove the dependency array         react-hooks/exhaustive-deps
+  2042:6  warning  React Hook useEffect has a missing dependency: 'choiceCounts'. Either include it or remove the dependency array         react-hooks/exhaustive-deps
+  2108:6  warning  React Hook useEffect has a missing dependency: 'choiceCounts'. Either include it or remove the dependency array         react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/pages/character_builder/CharacterBuilderPage.tsx
+  53:6  warning  React Hook useEffect has missing dependencies: 'characterId' and 'navigate'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  73:6  warning  React Hook useMemo has a missing dependency: 'characterId'. Either include it or remove the dependency array                     react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/pages/character_sheet/CharacterSheetPage.tsx
+  127:6  warning  React Hook useEffect has a missing dependency: 'interval'. Either include it or remove the dependency array                                                                                                                                                                                                 react-hooks/exhaustive-deps
+  451:6  warning  React Hook useEffect has a missing dependency: 'props'. Either include it or remove the dependency array. However, 'props' will change when *any* prop changes, so the preferred fix is to destructure the 'props' object outside of the useEffect call and refer to those specific props inside useEffect  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/pages/character_sheet/panels/NotesPanel.tsx
+  56:6  warning  React Hook useEffect has a missing dependency: 'refreshNotes'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/pages/character_sheet/panels/SkillsActionsPanel.tsx
+  217:6  warning  React Hook useMemo has an unnecessary dependency: 'updateWeaponAttacks'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/pages/character_sheet/panels/SpellsPanel.tsx
+   90:6  warning  React Hook useMemo has a missing dependency: 'props.id'. Either include it or remove the dependency array                                                                                                                                    react-hooks/exhaustive-deps
+  660:6  warning  React Hook useMemo has missing dependencies: 'props.extra.charData.list' and 'props.type'. Either include them or remove the dependency array                                                                                                react-hooks/exhaustive-deps
+  792:6  warning  React Hook useEffect has a missing dependency: 'refreshDisplaySlots'. Either include it or remove the dependency array. Mutable values like 'props.current' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/pages/character_sheet/panels/spells_list/StaffSpellsList.tsx
+  69:6  warning  React Hook useEffect has missing dependencies: 'greatestSlotRank', 'maxCharges', 'props.setEntity', and 'props.staff'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/pages/character_sheet/sections/ConditionSection.tsx
+  20:17  warning  Fast refresh only works when a file only export components. Use a new file to share constant or functions between components  react-refresh/only-export-components
+
+/Users/quzzar/Projects/wanderers-guide/frontend/src/utils/use-character.tsx
+  205:6  warning  React Hook useEffect has missing dependencies: 'characterId' and 'handleFetchedCharacter'. Either include them or remove the dependency array                                                                              react-hooks/exhaustive-deps
+  266:6  warning  React Hook useEffect has missing dependencies: 'handleOperationResults', 'options.data.content', 'options.data.context', 'options.type', and 'prevDebouncedCharacter'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  634:6  warning  React Hook useEffect has a missing dependency: 'characterId'. Either include it or remove the dependency array                                                                                                             react-hooks/exhaustive-deps
+
+✖ 70 problems (0 errors, 70 warnings)

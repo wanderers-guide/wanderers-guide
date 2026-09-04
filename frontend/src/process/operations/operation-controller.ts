@@ -14,7 +14,7 @@ import {
 } from '@schemas/content';
 import { getRootSelection, resetSelections, setSelections } from './selection-tree';
 import { Operation, OperationOptions, OperationResult, OperationSelect } from '@schemas/operations';
-import { clearPendingBinds, resolvePendingBinds, runOperations } from './operation-runner';
+import { clearDeferredOperations, resolveDeferredOperations, runOperations } from './operation-runner';
 import {
   addVariable,
   adjVariable,
@@ -44,6 +44,7 @@ import { cloneDeep, isEqual, mergeWith, unionWith, uniqWith } from 'lodash-es';
 import { setCalculatedStatsInStore } from '@variables/calculated-stats';
 import { getEntityLevel } from '@utils/entity-utils';
 import { defineDefaultSources, importFromContentPackage } from '@content/content-store';
+import { setEidolonRunesInStore } from '@items/eidolon-runes';
 
 /**
  * Inits the op selection tree based on an entity's op data
@@ -113,11 +114,12 @@ export async function _executeCharacterOperations(data: {
 }): Promise<{
   store: VariableStore;
   ors: OperationCharacterResultPackage;
+  errors: string[];
 }> {
   const { character, content, context } = data;
 
   resetVariables('CHARACTER');
-  clearPendingBinds();
+  clearDeferredOperations();
   defineSelectionTree(character);
   defineDefaultSources('INFO', content.defaultSources.INFO);
   defineDefaultSources('PAGE', content.defaultSources.PAGE);
@@ -994,15 +996,17 @@ export async function _executeCharacterOperations(data: {
     ],
   });
 
-  // Apply queued variable bindings now that every round has run
-  resolvePendingBinds();
+  // Apply explicit language overrides and variable bindings after every grant has run.
+  const errors = await resolveDeferredOperations();
 
   // Set calculated stats
+  setEidolonRunesInStore(character);
   setCalculatedStatsInStore('CHARACTER', character);
 
   return {
     store: exportVariableStore('CHARACTER'),
     ors: mergeOperationResults(results, conditionalResults) as typeof results,
+    errors,
   };
 }
 
@@ -1014,11 +1018,12 @@ export async function _executeCreatureOperations(data: {
 }): Promise<{
   store: VariableStore;
   ors: OperationCreatureResultPackage;
+  errors: string[];
 }> {
   const { id, creature, content } = data;
 
   resetVariables(id);
-  clearPendingBinds();
+  clearDeferredOperations();
   defineSelectionTree(creature);
   defineDefaultSources('INFO', content.defaultSources.INFO);
   defineDefaultSources('PAGE', content.defaultSources.PAGE);
@@ -1118,8 +1123,8 @@ export async function _executeCreatureOperations(data: {
     doOnlyConditionals: true,
   });
 
-  // Apply queued variable bindings now that every round has run
-  resolvePendingBinds();
+  // Apply explicit language overrides and variable bindings after every grant has run.
+  const errors = await resolveDeferredOperations();
 
   // Set calculated stats
   setCalculatedStatsInStore(id, creature);
@@ -1127,6 +1132,7 @@ export async function _executeCreatureOperations(data: {
   return {
     store: exportVariableStore(id),
     ors: mergeOperationResults(results, conditionalResults) as typeof results,
+    errors,
   };
 }
 

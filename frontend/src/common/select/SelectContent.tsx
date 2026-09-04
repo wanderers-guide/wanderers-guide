@@ -54,7 +54,7 @@ import { OperationSelectOptionCustom } from '@schemas/operations';
 import { ExtendedProficiencyType, ProficiencyType, VariableListStr, VariableProf } from '@schemas/variables';
 import { isPhoneSized } from '@utils/mobile-responsive';
 import { pluralize, toLabel } from '@utils/strings';
-import { hasTraitType } from '@utils/traits';
+import { hasArchetypeClassFeatTraits, hasTraitType } from '@utils/traits';
 import { getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
 import { meetsPrerequisites } from '@variables/prereq-detection';
 import { getFinalProfValue } from '@variables/variable-helpers';
@@ -578,10 +578,10 @@ export default function SelectContentModal({
                         : undefined
                     }
                     filterFn={(option) =>
-                      intersection(
-                        getAllArchetypeTraitVariables('CHARACTER').map((v) => v.value) ?? [],
-                        option.traits ?? []
-                      ).length > 0 && option.level <= classFeatSourceLevel
+                      hasArchetypeClassFeatTraits(
+                        option.traits,
+                        getAllArchetypeTraitVariables('CHARACTER').map((v) => v.value)
+                      ) && option.level <= classFeatSourceLevel
                     }
                     includeOptions={innerProps.options?.includeOptions}
                     showButton={innerProps.options?.showButton}

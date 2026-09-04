@@ -12,6 +12,7 @@ import classes from '@css/FaqSimple.module.css';
 import { priceToString } from '@items/currency-handler';
 import {
   getBulkLimit,
+  getFlatInvItems,
   getInvBulk,
   getItemBulk,
   getItemQuantity,
@@ -27,6 +28,7 @@ import {
 } from '@items/inv-utils';
 import { handleAddItem, handleDeleteItem, handleMoveItem, handleUpdateItem } from '@items/inv-handlers';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
+import { canInvestEidolonWeapon, setEidolonWeaponInvestment } from '@items/eidolon-runes';
 import {
   Accordion,
   ActionIcon,
@@ -44,12 +46,12 @@ import {
   Text,
   TextInput,
   Title,
+  UnstyledButton,
   useMantineTheme,
   useMantineColorScheme,
 } from '@mantine/core';
 import { modals, openContextModal } from '@mantine/modals';
 import { CreateItemModal } from '@modals/CreateItemModal';
-import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { IconCoins, IconMenu2, IconPlus, IconSearch, IconX } from '@tabler/icons-react';
 import { Character, ContentPackage, Inventory, InventoryItem, Item, LivingEntity, Trait } from '@schemas/content';
 import { StoreID } from '@schemas/variables';
@@ -78,6 +80,75 @@ export default function InventoryPanel(props: {
   const [_drawer, openDrawer] = useAtom(drawerState);
 
   const [creatingCustomItem, setCreatingCustomItem] = useState(false);
+
+  /** Uses one investment update for both ordinary equipment and the eidolon weapon. */
+  const onInvestItem = (invItem: InventoryItem): void => {
+    if (!invItem.is_formula && !isItemInvestable(invItem.item) && canInvestEidolonWeapon(props.id, invItem.item)) {
+      props.setEntity((entity) => {
+        if (!entity?.inventory) return entity;
+        return {
+          ...entity,
+          inventory: setEidolonWeaponInvestment(entity.inventory, invItem.id, !invItem.is_invested),
+        };
+      });
+      return;
+    }
+    const newInvItem = cloneDeep(invItem);
+    if (isItemInvestable(newInvItem.item) || newInvItem.is_invested) newInvItem.is_invested = !newInvItem.is_invested;
+    if (isItemImplantable(newInvItem.item)) newInvItem.is_implanted = !newInvItem.is_implanted;
+    handleUpdateItem(props.setEntity, newInvItem);
+  };
+
+  /** Chooses the shared rune source independently of an item's ordinary investment. */
+  const onShareRunes = (invItem: InventoryItem): void => {
+    props.setEntity((entity) => {
+      if (!entity?.inventory || !canInvestEidolonWeapon(props.id, invItem.item)) return entity;
+      return {
+        ...entity,
+        inventory: setEidolonWeaponInvestment(
+          entity.inventory,
+          invItem.id,
+          entity.inventory.eidolon_weapon_id !== invItem.id
+        ),
+      };
+    });
+  };
+
+  /** Opens the same editable item drawer for top-level and contained inventory entries. */
+  const onViewItem = (invItem: InventoryItem): void => {
+    openDrawer({
+      type: 'inv-item',
+      data: {
+        storeId: props.id,
+        zIndex: 100,
+        invItem: cloneDeep(invItem),
+        onItemUpdate: (item: InventoryItem) => handleUpdateItem(props.setEntity, item),
+        onItemDelete: (item: InventoryItem) => {
+          handleDeleteItem(props.setEntity, item);
+          openDrawer(null);
+        },
+        onItemMove: (item: InventoryItem, container: InventoryItem | null) =>
+          handleMoveItem(props.setEntity, item, container),
+      },
+      extra: { addToHistory: true },
+    });
+  };
+
+  /** Keeps item actions beside the name button, including in container headers. */
+  const renderItem = (invItem: InventoryItem, containerHeader = false, contained = false) => (
+    <InvItemOption
+      id={props.id}
+      entity={props.entity}
+      isPhone={isPhone}
+      invItem={invItem}
+      hideSections={containerHeader}
+      preventEquip={contained}
+      onViewItem={onViewItem}
+      onInvest={onInvestItem}
+      onShareRunes={onShareRunes}
+      onEquip={(item) => handleUpdateItem(props.setEntity, { ...item, is_equipped: !item.is_equipped })}
+    />
+  );
 
   const visibleInvItems =
     props.entity?.inventory?.items.filter(
@@ -220,6 +291,11 @@ export default function InventoryPanel(props: {
   return (
     <Box h='100%'>
       <Stack gap={5}>
+        {props.entity?.inventory?.items.some((entry) => canInvestEidolonWeapon(props.id, entry.item)) && (
+          <Text size='xs' c='dimmed'>
+            Invest one equipped weapon to share fundamental runes.
+          </Text>
+        )}
         <Group>
           <TextInput
             style={{ flex: 1 }}
@@ -366,113 +442,27 @@ export default function InventoryPanel(props: {
           >
             {cloneDeep(invItems)
               .sort((a, b) => a.item.name.localeCompare(b.item.name))
-              .map((invItem, index) => (
-                <Box key={index}>
+              .map((invItem) => (
+                <Box key={invItem.id} mb={5}>
                   {isItemContainer(invItem.item) ? (
-                    <Accordion.Item className={classes.item} value={`${index}`} w='100%'>
-                      <Accordion.Control>
-                        <Box pr={5}>
-                          <InvItemOption
-                            id={props.id}
-                            entity={props.entity}
-                            isPhone={isPhone}
-                            hideSections
-                            invItem={invItem}
-                            onEquip={(invItem) => {
-                              const newInvItem = cloneDeep(invItem);
-                              newInvItem.is_equipped = !newInvItem.is_equipped;
-                              handleUpdateItem(props.setEntity, newInvItem);
-                            }}
-                            onInvest={(invItem) => {
-                              const newInvItem = cloneDeep(invItem);
-
-                              if (isItemInvestable(newInvItem.item)) {
-                                newInvItem.is_invested = !newInvItem.is_invested;
-                              }
-                              if (isItemImplantable(newInvItem.item)) {
-                                newInvItem.is_implanted = !newInvItem.is_implanted;
-                              }
-
-                              handleUpdateItem(props.setEntity, newInvItem);
-                            }}
-                            onViewItem={() => {
-                              openDrawer({
-                                type: 'inv-item',
-                                data: {
-                                  storeId: props.id,
-                                  zIndex: 100,
-                                  invItem: cloneDeep(invItem),
-                                  onItemUpdate: (newInvItem: InventoryItem) => {
-                                    handleUpdateItem(props.setEntity, newInvItem);
-                                  },
-                                  onItemDelete: (newInvItem: InventoryItem) => {
-                                    handleDeleteItem(props.setEntity, newInvItem);
-                                    openDrawer(null);
-                                  },
-                                  onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
-                                    handleMoveItem(props.setEntity, invItem, containerItem);
-                                  },
-                                },
-                                extra: { addToHistory: true },
-                              });
-                            }}
-                          />
-                        </Box>
-                      </Accordion.Control>
+                    <Accordion.Item className={classes.item} value={invItem.id} w='100%'>
+                      <Box px='sm' py='xs'>
+                        {renderItem(invItem, true)}
+                      </Box>
                       <Accordion.Panel>
                         <Stack gap={5}>
-                          {invItem?.container_contents.map((containedItem, index) => (
-                            <StatButton
-                              key={index}
-                              onClick={() => {
-                                openDrawer({
-                                  type: 'inv-item',
-                                  data: {
-                                    storeId: props.id,
-                                    zIndex: 100,
-                                    invItem: cloneDeep(containedItem),
-                                    onItemUpdate: (newInvItem: InventoryItem) => {
-                                      handleUpdateItem(props.setEntity, newInvItem);
-                                    },
-                                    onItemDelete: (newInvItem: InventoryItem) => {
-                                      handleDeleteItem(props.setEntity, newInvItem);
-                                      openDrawer(null);
-                                    },
-                                    onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
-                                      handleMoveItem(props.setEntity, invItem, containerItem);
-                                    },
-                                  },
-                                  extra: { addToHistory: true },
-                                });
-                              }}
+                          {invItem.container_contents.map((containedItem) => (
+                            <Box
+                              key={containedItem.id}
+                              bg={IMPRINT_BG_COLOR}
+                              px='sm'
+                              py='xs'
+                              style={{ border: `1px solid ${IMPRINT_BORDER_COLOR}`, borderRadius: theme.radius.md }}
                             >
-                              <InvItemOption
-                                id={props.id}
-                                entity={props.entity}
-                                isPhone={isPhone}
-                                invItem={containedItem}
-                                preventEquip
-                                onEquip={(invItem) => {
-                                  const newInvItem = cloneDeep(invItem);
-                                  newInvItem.is_equipped = !newInvItem.is_equipped;
-                                  handleUpdateItem(props.setEntity, newInvItem);
-                                }}
-                                onInvest={(invItem) => {
-                                  const newInvItem = cloneDeep(invItem);
-
-                                  if (isItemInvestable(newInvItem.item)) {
-                                    newInvItem.is_invested = !newInvItem.is_invested;
-                                  }
-                                  if (isItemImplantable(newInvItem.item)) {
-                                    newInvItem.is_implanted = !newInvItem.is_implanted;
-                                  }
-
-                                  handleUpdateItem(props.setEntity, newInvItem);
-                                }}
-                              />
-                            </StatButton>
+                              {renderItem(containedItem, false, true)}
+                            </Box>
                           ))}
-                          {invItem?.container_contents.length === 0 && (
+                          {invItem.container_contents.length === 0 && (
                             <Text fz='sm' ta='center' fs='italic'>
                               Container is empty
                             </Text>
@@ -481,55 +471,13 @@ export default function InventoryPanel(props: {
                       </Accordion.Panel>
                     </Accordion.Item>
                   ) : (
-                    <Box mb={5}>
-                      <StatButton
-                        key={index}
-                        onClick={() => {
-                          openDrawer({
-                            type: 'inv-item',
-                            data: {
-                              storeId: props.id,
-                              zIndex: 100,
-                              invItem: cloneDeep(invItem),
-                              onItemUpdate: (newInvItem: InventoryItem) => {
-                                handleUpdateItem(props.setEntity, newInvItem);
-                              },
-                              onItemDelete: (newInvItem: InventoryItem) => {
-                                handleDeleteItem(props.setEntity, newInvItem);
-                                openDrawer(null);
-                              },
-                              onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
-                                handleMoveItem(props.setEntity, invItem, containerItem);
-                              },
-                            },
-                            extra: { addToHistory: true },
-                          });
-                        }}
-                      >
-                        <InvItemOption
-                          id={props.id}
-                          entity={props.entity}
-                          isPhone={isPhone}
-                          invItem={invItem}
-                          onEquip={(invItem) => {
-                            const newInvItem = cloneDeep(invItem);
-                            newInvItem.is_equipped = !newInvItem.is_equipped;
-                            handleUpdateItem(props.setEntity, newInvItem);
-                          }}
-                          onInvest={(invItem) => {
-                            const newInvItem = cloneDeep(invItem);
-
-                            if (isItemInvestable(newInvItem.item)) {
-                              newInvItem.is_invested = !newInvItem.is_invested;
-                            }
-                            if (isItemImplantable(newInvItem.item)) {
-                              newInvItem.is_implanted = !newInvItem.is_implanted;
-                            }
-
-                            handleUpdateItem(props.setEntity, newInvItem);
-                          }}
-                        />
-                      </StatButton>
+                    <Box
+                      bg={IMPRINT_BG_COLOR}
+                      px='sm'
+                      py='xs'
+                      style={{ border: `1px solid ${IMPRINT_BORDER_COLOR}`, borderRadius: theme.radius.md }}
+                    >
+                      {renderItem(invItem)}
                     </Box>
                   )}
                 </Box>
@@ -643,6 +591,7 @@ function InvItemOption(props: {
   entity: LivingEntity | null;
   onEquip?: (invItem: InventoryItem) => void;
   onInvest?: (invItem: InventoryItem) => void;
+  onShareRunes?: (invItem: InventoryItem) => void;
   onViewItem?: (invItem: InventoryItem) => void;
   hideSections?: boolean;
   preventEquip?: boolean;
@@ -651,6 +600,37 @@ function InvItemOption(props: {
   const theme = useMantineTheme();
 
   const weaponStats = isItemWeapon(props.invItem.item) ? getWeaponStats(props.id, props.invItem.item) : null;
+  const sharesEidolonRunes = canInvestEidolonWeapon(props.id, props.invItem.item);
+  const isSharedWeapon = props.entity?.inventory?.eidolon_weapon_id === props.invItem.id;
+  const replacesInvestedWeapon =
+    sharesEidolonRunes &&
+    !!props.entity?.inventory &&
+    getFlatInvItems(props.entity.inventory).some(
+      (entry) =>
+        entry.id === props.entity?.inventory?.eidolon_weapon_id && entry.is_invested && !isItemInvestable(entry.item)
+    );
+
+  const itemLabel = (
+    <Group wrap='nowrap' gap={props.isPhone ? 5 : 10}>
+      <ItemIcon item={props.invItem.item} size='1.0rem' color={theme.colors.gray[6]} />
+      <Text c='gray.0' fz='sm' truncate>
+        {props.invItem.item.name}
+      </Text>
+      {isItemWeapon(props.invItem.item) && weaponStats && (
+        <Group wrap='nowrap' gap={10} maw={300}>
+          <Text c='gray.5' fz='xs' fs='italic' span>
+            {sign(weaponStats.attack_bonus.total[0])}
+          </Text>
+          <EllipsisText c='gray.5' fz='xs' fs='italic' span>
+            {truncate(
+              `${weaponStats.damage.dice}${weaponStats.damage.die}${weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``} ${weaponStats.damage.damageType}${parseOtherDamage(weaponStats.damage.other)}${weaponStats.damage.extra ? ` + ${weaponStats.damage.extra}` : ''}`,
+              { length: props.isPhone ? 15 : 45 }
+            )}
+          </EllipsisText>
+        </Group>
+      )}
+    </Group>
+  );
 
   return (
     <Grid
@@ -658,45 +638,24 @@ function InvItemOption(props: {
       overflow='hidden'
       styles={{
         inner: {
-          maxWidth: '70dvw',
           flexWrap: 'nowrap',
         },
       }}
     >
-      <Grid.Col span='auto'>
-        <Group wrap='nowrap' gap={props.isPhone ? 5 : 10}>
-          <ItemIcon item={props.invItem.item} size='1.0rem' color={theme.colors.gray[6]} />
-          <Text c='gray.0' fz='sm' truncate>
-            {props.invItem.item.name}
-          </Text>
-          {isItemContainer(props.invItem.item) && props.hideSections && (
-            <ImprintButton
-              size='compact-xs'
-              radius='xl'
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                props.onViewItem?.(props.invItem);
-              }}
-            >
-              View Item
-            </ImprintButton>
-          )}
-
-          {isItemWeapon(props.invItem.item) && weaponStats && (
-            <Group wrap='nowrap' gap={10} maw={300}>
-              <Text c='gray.5' fz='xs' fs='italic' span>
-                {sign(weaponStats.attack_bonus.total[0])}
-              </Text>
-              <EllipsisText c='gray.5' fz='xs' fs='italic' span>
-                {truncate(
-                  `${weaponStats.damage.dice}${weaponStats.damage.die}${weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``} ${weaponStats.damage.damageType}${parseOtherDamage(weaponStats.damage.other)}${weaponStats.damage.extra ? ` + ${weaponStats.damage.extra}` : ''}`,
-                  { length: props.isPhone ? 15 : 45 }
-                )}
-              </EllipsisText>
-            </Group>
-          )}
-        </Group>
+      <Grid.Col span='auto' miw={0}>
+        {props.hideSections ? (
+          <Accordion.Control w='100%' px={0} aria-label={props.invItem.item.name}>
+            {itemLabel}
+          </Accordion.Control>
+        ) : (
+          <UnstyledButton
+            w='100%'
+            onClick={() => props.onViewItem?.(props.invItem)}
+            aria-label={`View ${props.invItem.item.name}`}
+          >
+            {itemLabel}
+          </UnstyledButton>
+        )}
       </Grid.Col>
       {!props.isPhone && (
         <Grid.Col span={3}>
@@ -745,31 +704,58 @@ function InvItemOption(props: {
           </Grid>
         </Grid.Col>
       )}
-      <Grid.Col span={props.isPhone ? 3 : 2} offset={props.isPhone ? 0 : 1}>
-        <Group justify='flex-end' wrap='nowrap' align='center' h={'100%'} gap={10}>
-          {isItemInvestable(props.invItem.item) && (
+      <Grid.Col span='content'>
+        <Group justify='flex-end' wrap='wrap' align='center' h='100%' gap='xs' w={props.isPhone ? '6rem' : undefined}>
+          {props.hideSections && (
+            <Button size='compact-xs' variant='light' w='6rem' onClick={() => props.onViewItem?.(props.invItem)}>
+              View Item
+            </Button>
+          )}
+          {(props.invItem.is_invested ||
+            (!props.invItem.is_formula && (isItemInvestable(props.invItem.item) || sharesEidolonRunes))) && (
             <Button
               size='compact-xs'
               variant={props.invItem.is_invested ? 'subtle' : 'outline'}
-              color={props.invItem.is_invested ? 'gray.7' : undefined}
+              title={
+                sharesEidolonRunes && !isItemInvestable(props.invItem.item)
+                  ? 'Share fundamental runes with your eidolon while equipped.'
+                  : undefined
+              }
+              color={props.invItem.is_invested ? 'gray.4' : undefined}
               disabled={
-                !props.invItem.is_invested && reachedInvestedLimit(props.id, props.entity?.inventory ?? undefined)
+                !props.invItem.is_invested &&
+                (!replacesInvestedWeapon || isItemInvestable(props.invItem.item)) &&
+                reachedInvestedLimit(props.id, props.entity?.inventory ?? undefined)
               }
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
                 props.onInvest?.(props.invItem);
               }}
-              w={80}
+              w='6rem'
             >
               {props.invItem.is_invested ? 'Divest' : 'Invest'}
             </Button>
           )}
+          {sharesEidolonRunes &&
+            isItemInvestable(props.invItem.item) &&
+            props.invItem.is_invested &&
+            !props.invItem.is_formula && (
+              <Button
+                size='compact-xs'
+                variant={isSharedWeapon ? 'light' : 'outline'}
+                title='Choose this invested weapon as your eidolon rune source while equipped.'
+                onClick={() => props.onShareRunes?.(props.invItem)}
+                w='6rem'
+              >
+                {isSharedWeapon ? 'Stop sharing' : 'Share runes'}
+              </Button>
+            )}
           {isItemImplantable(props.invItem.item) && (
             <Button
               size='compact-xs'
               variant={props.invItem.is_implanted ? 'subtle' : 'outline'}
-              color={props.invItem.is_implanted ? 'gray.7' : undefined}
+              color={props.invItem.is_implanted ? 'gray.4' : undefined}
               disabled={
                 !props.invItem.is_implanted && reachedImplantLimit(props.id, props.entity?.inventory ?? undefined)
               }
@@ -778,7 +764,7 @@ function InvItemOption(props: {
                 e.preventDefault();
                 props.onInvest?.(props.invItem);
               }}
-              w={80}
+              w='6rem'
             >
               {props.invItem.is_implanted ? 'Extract' : 'Implant'}
             </Button>
@@ -787,13 +773,13 @@ function InvItemOption(props: {
             <Button
               size='compact-xs'
               variant={props.invItem.is_equipped ? 'subtle' : 'outline'}
-              color={props.invItem.is_equipped ? 'gray.7' : undefined}
+              color={props.invItem.is_equipped ? 'gray.4' : undefined}
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
                 props.onEquip?.(props.invItem);
               }}
-              w={80}
+              w='6rem'
               disabled={props.preventEquip}
             >
               {props.invItem.is_equipped ? 'Unequip' : 'Equip'}

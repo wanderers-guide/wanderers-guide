@@ -1,6 +1,7 @@
 export type TraitType =
   | 'GENERAL'
   | 'SKILL'
+  | 'ALL-ANCESTRIES'
   | 'INVESTED'
   | 'EXPLORATION'
   | 'DOWNTIME'
@@ -53,6 +54,7 @@ const traitMap: Record<number, TraitType> = {
   // Hardcoded trait ids:
   1437: 'GENERAL',
   1438: 'SKILL',
+  2969: 'ALL-ANCESTRIES',
   1527: 'INVESTED',
   1531: 'CONSUMABLE',
   1457: 'EXPLORATION',
@@ -114,4 +116,17 @@ export function getTraitIdByType(traitType: TraitType): number {
 export function hasTraitType(traitType: TraitType, traitIds?: number[]): boolean {
   if (!traitIds) return false;
   return traitIds.some((traitId) => getTraitTypeById(traitId) === traitType);
+}
+
+/**
+ * Match feats from an acquired archetype that can replace a class feat.
+ * Skill-trait archetype feats use skill selections instead, including with Free Archetype.
+ */
+export function hasArchetypeClassFeatTraits(
+  traitIds: number[] | null | undefined,
+  archetypeTraitIds: number[]
+): boolean {
+  return (
+    !hasTraitType('SKILL', traitIds ?? undefined) && !!traitIds?.some((traitId) => archetypeTraitIds.includes(traitId))
+  );
 }

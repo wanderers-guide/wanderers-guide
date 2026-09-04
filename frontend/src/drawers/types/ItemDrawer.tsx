@@ -277,7 +277,7 @@ export function ItemDrawerContent(props: {
           </>
         )}
       </Box>
-      <ShowInjectedText varId='CHARACTER' type='item' id={item.id} />
+      <ShowInjectedText varId={storeID} type='item' id={item.id} />
       {props.data.showOperations && <ShowOperationsButton name={item.name} operations={item.operations ?? undefined} />}
     </Box>
   );

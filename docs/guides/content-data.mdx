@@ -35,6 +35,27 @@ The `operations` column on each content row is what makes WG content actually *d
 
 When you `POST` a content row to a `create-*` endpoint, you’re sending operations in raw JSON. The API treats them as opaque (the OpenAPI schema uses `additionalProperties: true`); validation happens at character-build time on the frontend.
 
+## Eidolon attacks and equipment
+
+Open a companion’s drawer and choose **Configure attacks** to reach its Inventory, where
+you can add and configure its natural attacks. Give those attacks the **Unarmed Attack**
+category so the sheet treats them as unarmed strikes.
+
+For a summoner or a character with an eidolon, Inventory offers **Invest** on magic weapons.
+Invest and equip one weapon to share its potency and striking runes with the eidolon’s
+unarmed attacks. A weapon with its own Invested trait keeps its ordinary investment;
+use **Share runes** to choose it as the eidolon’s source. Changing the shared weapon
+preserves those ordinary investments.
+
+A weapon inside a container is stowed and does not confer its runes. Invested Handwraps
+of Mighty Blows (including Dragon Handwraps) provide the fallback when no selected
+invested weapon is held. The optional `inventory.eidolon_weapon_id` records the shared
+weapon’s inventory-entry ID. Divesting or deleting that entry clears the selection.
+
+These bonuses are calculated from the current inventory without rewriting the companion’s
+saved attack. This automation covers fundamental weapon potency and striking runes.
+Property rune compatibility and other equipment benefits still require manual configuration.
+
 ## Linking content from prose
 
 Descriptions, special clauses, and notes can reference other content. The convention is a flat marker the frontend rewrites into a real link:
@@ -62,7 +83,9 @@ If the name isn’t in the cache, it falls back to plain text, so prose still re
 
 ### What to link in prose
 
-Link **proper nouns** that have a row in the database: feat names, action names, spell names, traits, conditions, damage types. Don’t link generic phrases (“a basic strike”, “any spell”), and don’t link the same thing twice in a paragraph. Once is enough.
+Link named feats, actions, spells, items, and traits that have a row in the database. Energy damage types such as fire are traits; physical damage types such as piercing have no trait record and stay plain text. Conditions already auto-link in `RichText`, so do not wrap them manually. Link each relevant occurrence, using the helper to resolve its actual record.
+
+Don’t link generic phrases (“any spell”), abstract skill or attribute names, or verbs that happen to share an action’s name.
 
 When in doubt: if a reader would benefit from clicking through to the rules, link it. If not, leave it plain.
 
