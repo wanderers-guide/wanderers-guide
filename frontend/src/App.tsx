@@ -85,6 +85,16 @@ const modals = {
 //   }
 // }
 
+/** Load the optional font once, when the active customization requests it. */
+function ensureDyslexicFontLoaded() {
+  if (document.getElementById('open-dyslexic-font')) return;
+  const link = document.createElement('link');
+  link.id = 'open-dyslexic-font';
+  link.rel = 'stylesheet';
+  link.href = 'https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-regular.min.css';
+  document.head.appendChild(link);
+}
+
 export default function App() {
   const [_drawer, openDrawer] = useAtom(drawerState);
   const [_creatureDrawer, openCreatureDrawer] = useAtom(creatureDrawerState);
@@ -158,6 +168,11 @@ export default function App() {
     })();
   }, [activeCharacer]);
 
+  const dyslexiaFontEnabled = !!getCachedCustomization()?.sheet_theme?.dyslexia_font;
+  useEffect(() => {
+    if (dyslexiaFontEnabled) ensureDyslexicFontLoaded();
+  }, [dyslexiaFontEnabled]);
+
   const generateTheme = (theme?: { color?: string }) => {
     return createTheme({
       colors: {
@@ -194,9 +209,7 @@ export default function App() {
       cursorType: 'pointer',
       primaryColor: 'guide',
       defaultRadius: 'md',
-      fontFamily: getCachedCustomization()?.sheet_theme?.dyslexia_font
-        ? 'OpenDyslexicRegular'
-        : 'Montserrat, sans-serif',
+      fontFamily: dyslexiaFontEnabled ? 'OpenDyslexicRegular, sans-serif' : 'Montserrat, sans-serif',
       fontFamilyMonospace: 'Ubuntu Mono, monospace',
       components: {
         Popover: {

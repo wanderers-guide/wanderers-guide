@@ -742,7 +742,7 @@ export async function fetchContentPackage(
   // Preload high-need images from package
   p.ancestries.forEach((a) => preloadImage(a.artwork_url));
   p.classes.forEach((c) => preloadImage(c.artwork_url));
-  p.backgrounds.forEach((b) => preloadImage(b.artwork_url));
+  // Background artwork loads when displayed; preloading the entire catalog competes with sheet data.
 
   return p;
 }
