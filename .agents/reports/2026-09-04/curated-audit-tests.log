@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: continues past server-capped short pages and bounds new inserts
+ok 1 - continues past server-capped short pages and bounds new inserts
+  ---
+  duration_ms: 155.692
+  type: 'test'
+  ...
+# Subtest: later HTTP failures preserve counts but fail the audit
+ok 2 - later HTTP failures preserve counts but fail the audit
+  ---
+  duration_ms: 154.748834
+  type: 'test'
+  ...
+# Subtest: invalid content is reported without changing it
+ok 3 - invalid content is reported without changing it
+  ---
+  duration_ms: 165.458125
+  type: 'test'
+  ...
+# Subtest: non-advancing pages fail rather than looping or claiming completeness
+ok 4 - non-advancing pages fail rather than looping or claiming completeness
+  ---
+  duration_ms: 162.59875
+  type: 'test'
+  ...
+# Subtest: malformed responses fail rather than looking like an empty table
+ok 5 - malformed responses fail rather than looking like an empty table
+  ---
+  duration_ms: 117.699458
+  type: 'test'
+  ...
+# Subtest: write flags are rejected before any network request
+ok 6 - write flags are rejected before any network request
+  ---
+  duration_ms: 93.683125
+  type: 'test'
+  ...
+# Subtest: unknown table names are rejected before any network request
+ok 7 - unknown table names are rejected before any network request
+  ---
+  duration_ms: 95.034625
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1018.587959
