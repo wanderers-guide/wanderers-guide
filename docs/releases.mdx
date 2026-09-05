@@ -39,13 +39,17 @@ gateway settings, changed schema effects or an uncommitted checkout. It verifies
 source/configuration compatibility, not provider secrets or remote package/CDN
 integrity. Preserve the manifest and verification report with each release.
 
-CI runs the local checks without production credentials. The remote gate must
-pass before the frontend release is promoted. Render's current build command,
-autodeploy ordering, cache and rollback settings still require dashboard review;
-this repository cannot establish that its external frontend deployment already
-waits for the gate. Do not declare the rollout complete until that wiring is
-verified. Configure its release step to use the same command above, rather than
-maintaining a second inventory or schema checker.
+CI runs the local checks without production credentials. The owner confirms that
+Render automatically deploys `main`. Run the remote gate against the reviewed
+commit before merging, then verify that the live frontend publishes the new
+artifact and passes its smoke checks. A Render dashboard login is not needed to
+trigger that deployment.
+
+Render's exact build command, cache behavior, rollback configuration and automatic
+enforcement of this gate remain infrastructure audit follow-ups. Until automatic
+enforcement is verified, the release operator must require a passing remote report
+before merging to `main`. Any provider release step should use the same command
+above, rather than maintaining a second inventory or schema checker.
 
 ## Reconciled database baseline
 
@@ -118,10 +122,12 @@ rejects unknown versions. Absence of a ledger never substitutes for effect check
    exist. A retained compatibility route must be brought
    back into reviewed source with current authorization and tests; do not simply
    allowlist an opaque old bundle.
-7. Publish the verified frontend artifact, repeat public/authenticated/save smoke
-   checks, and inspect logs for permission, auth, worker and paid-work failures.
-   Archive the final manifest and successful report. Provider telemetry and
-   semantic checks remain necessary even when hashes agree.
+7. Merge the verified commit to `main` to trigger Render's auto-deploy. Confirm the
+   live entry point references the new frontend artifact, inspect the rendered
+   app, repeat public/authenticated/save smoke checks, and inspect available logs
+   for permission, auth, worker and paid-work failures. Archive the final manifest
+   and successful report. Provider telemetry and semantic checks remain necessary
+   even when hashes agree.
 
 ## Rollback
 
@@ -139,7 +145,9 @@ makes the old release incompatible.
 
 After rollback, run the remote gate against the rollback checkout and repeat
 semantic profile/save checks. If no compatible rollback artifact has been tested,
-record that as a release blocker rather than claiming rollback readiness.
+record that limitation and agree on the recovery plan before promotion; do not
+claim rollback readiness. Dashboard configuration review and a restore drill
+remain necessary to establish that capability.
 
 ## Sanitized content snapshots
 
