@@ -10,6 +10,7 @@
     "deploy": "gh-pages -d dist",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives",
     "test:rules": "node --test scripts/feat-selection.test.mjs scripts/language-operations.test.mjs scripts/eidolon-runes.test.mjs scripts/item-drawers.test.mjs scripts/inventory-panel.test.mjs",
+    "test:infra": "node --test scripts/operation-lifecycle.test.mjs scripts/session-recovery.test.mjs scripts/character-save-lifecycle.test.mjs",
     "preview": "vite preview",
     "start:local": "vite",
     "build:local": "tsc && vite build",

@@ -2640,9 +2640,11 @@
     },
     "/get-content-source-stats": {
       "post": {
-        "tags": ["Search"],
+        "tags": [
+          "Search"
+        ],
         "summary": "Get usage stats for a content source",
-        "description": "Returns the source itself plus the count of subscribers (users with this source enabled).",
+        "description": "Returns the source and an exact count of users whose subscribed_content_sources JSONB array contains that numeric source ID. Uses a HEAD count; query failures return 503 instead of a successful null count.",
         "operationId": "getContentSourceStats",
         "requestBody": {
           "required": true,
@@ -2650,8 +2652,16 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["content_source_id"],
-                "properties": { "content_source_id": { "type": "integer" } }
+                "required": [
+                  "content_source_id"
+                ],
+                "properties": {
+                  "content_source_id": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "additionalProperties": false
               }
             }
           }
@@ -2664,15 +2674,74 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "status": { "type": "string", "enum": ["success"] },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "success"
+                      ]
+                    },
                     "data": {
                       "type": "object",
                       "properties": {
-                        "source": { "$ref": "#/components/schemas/ContentSource" },
-                        "count": { "type": "integer" }
+                        "source": {
+                          "$ref": "#/components/schemas/ContentSource"
+                        },
+                        "count": {
+                          "type": "integer"
+                        }
                       }
                     }
                   }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials. Invalid sessions return data.code AUTH_REQUIRED; refresh or sign in before resuming.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "JSON request exceeds the wire-body limit (8 MiB unless this endpoint specifies a smaller limit).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Admission or work budget exceeded; Retry-After gives the delay in seconds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A positive integer content_source_id is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Subscriber statistics could not be queried.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendError"
                 }
               }
             }
@@ -2850,11 +2919,155 @@
         }
       }
     },
+    "/open-ai-request": {
+      "post": {
+        "tags": [
+          "Integrations"
+        ],
+        "summary": "Generate AI text",
+        "description": "Requires a verified, non-anonymous signed-in WG account; no subscription gate. Only gpt-4o-mini and gpt-4o are supported. 256 KiB wire limit and 25-second upstream deadline. Each started 4,000-character input block costs one daily work unit for gpt-4o-mini or ten for gpt-4o. Limits are 100 units per account and 5,000 globally. Failed or timed-out upstream calls retain their quota reservation because work may already be billed.",
+        "operationId": "openAiRequest",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "content"
+                ],
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64000
+                  },
+                  "model": {
+                    "type": "string",
+                    "enum": [
+                      "gpt-4o-mini",
+                      "gpt-4o"
+                    ],
+                    "default": "gpt-4o"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success containing generated text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "success"
+                      ]
+                    },
+                    "data": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or unsupported model.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign in with a real user session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A WG profile is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body exceeds 256 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily work or admission budget exhausted; Retry-After is in seconds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream request failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service configuration or shared quota is unavailable; no upstream call is made.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendError"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream request timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/vector-db-query-collection": {
       "post": {
-        "tags": ["Integrations"],
+        "tags": [
+          "Integrations"
+        ],
         "summary": "Query the vector database for semantic search",
-        "description": "Proxies to the WG vector DB (Chroma). Use for semantic / nearest-neighbor lookups across spell or feat names and descriptions.",
+        "description": "Requires a verified, non-anonymous signed-in WG user (or API key for that user). Queries name/content collections with a 64 KiB wire limit and 20-second upstream deadline. One daily work unit per 4,000 query characters or per 10 requested results, whichever is greater; 1,000 units per account and 20,000 globally.",
         "operationId": "vectorDbQueryCollection",
         "requestBody": {
           "required": true,
@@ -2862,15 +3075,361 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["collection"],
+                "required": [
+                  "collection",
+                  "query"
+                ],
                 "properties": {
-                  "collection": { "type": "string", "description": "Collection name, e.g. `name` or `content`." },
-                  "nResults": { "type": "integer", "default": 1 },
-                  "maxDistance": { "type": "number", "description": "0.0 = identical; higher = more dissimilar." },
-                  "query": { "type": "string" },
+                  "collection": {
+                    "type": "string",
+                    "enum": [
+                      "name",
+                      "content"
+                    ]
+                  },
+                  "nResults": {
+                    "type": "integer",
+                    "default": 1,
+                    "minimum": 1,
+                    "maximum": 50
+                  },
+                  "maxDistance": {
+                    "type": "number",
+                    "description": "0.0 = identical; higher = more dissimilar.",
+                    "minimum": 0,
+                    "maximum": 10,
+                    "default": 1
+                  },
+                  "query": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 16000
+                  },
                   "where": {
                     "type": "object",
-                    "additionalProperties": { "oneOf": [{ "type": "string" }, { "type": "number" }, { "type": "boolean" }] }
+                    "additionalProperties": false,
+                    "required": [
+                      "_type"
+                    ],
+                    "properties": {
+                      "_type": {
+                        "$ref": "#/components/schemas/ContentType"
+                      }
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success with nearest matches.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "success"
+                      ]
+                    },
+                    "data": {
+                      "type": "array",
+                      "maxItems": 50,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "distance": {
+                            "type": "number"
+                          },
+                          "data": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials. Invalid sessions return data.code AUTH_REQUIRED; refresh or sign in before resuming.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "JSON request exceeds the wire-body limit (8 MiB unless this endpoint specifies a smaller limit).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Admission or work budget exceeded; Retry-After gives the delay in seconds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request fields or bounds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A WG profile is required; population additionally requires an administrator.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The external service failed or returned an invalid response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The shared work budget is unavailable; no external request is made.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendError"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "The external service exceeded its deadline.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vector-db-populate-collection": {
+      "post": {
+        "tags": [
+          "Integrations"
+        ],
+        "summary": "Populate vector embeddings for a collection",
+        "description": "Administrator-only indexer. Requires a verified, non-anonymous Auth user and WG profile with is_admin=true. A batch must contain 1–500 positive IDs; empty IDs never mean all content. 32 KiB wire limit, 25-second upstream deadline. Shared daily limits: 100,000 indexed rows per account, 200,000 globally, counting each collection separately. The authenticated moderation webhook uses the same global quota.",
+        "operationId": "vectorDbPopulateCollection",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "collection",
+                  "type",
+                  "ids"
+                ],
+                "properties": {
+                  "collection": {
+                    "type": "string",
+                    "enum": [
+                      "name",
+                      "content"
+                    ]
+                  },
+                  "type": {
+                    "$ref": "#/components/schemas/ContentType"
+                  },
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "minItems": 1,
+                    "maxItems": 500
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/JSendBoolean"
+                    },
+                    {
+                      "$ref": "#/components/schemas/JSendError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials. Invalid sessions return data.code AUTH_REQUIRED; refresh or sign in before resuming.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "JSON request exceeds the wire-body limit (8 MiB unless this endpoint specifies a smaller limit).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Admission or work budget exceeded; Retry-After gives the delay in seconds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request fields or bounds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A WG profile is required; population additionally requires an administrator.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The external service failed or returned an invalid response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The shared work budget is unavailable; no external request is made.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendError"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "The external service exceeded its deadline.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/update-content-update": {
+      "post": {
+        "tags": [
+          "Integrations"
+        ],
+        "summary": "(Discord webhook) Approve, reject, or vote on a content update",
+        "description": "Service-to-service webhook for the WG Discord moderation bot. Authenticates via the shared `CONTENT_UPDATE_KEY` secret, preferably in the `Authorization: Bearer <secret>` header (NOT a user JWT or API key); the legacy `auth_token` body field is also accepted for older bot deployments. When state=APPROVE, applies the underlying content change. Embedding failures after an approved content write are logged for reindexing and do not turn that committed approval into a failed write.",
+        "operationId": "updateContentUpdate",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "discord_msg_id",
+                  "discord_user_id",
+                  "discord_user_name",
+                  "state"
+                ],
+                "properties": {
+                  "auth_token": {
+                    "type": "string",
+                    "description": "Legacy transport for the shared secret; prefer the Authorization header."
+                  },
+                  "discord_msg_id": {
+                    "type": "string"
+                  },
+                  "discord_user_id": {
+                    "type": "string"
+                  },
+                  "discord_user_name": {
+                    "type": "string"
+                  },
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "APPROVE",
+                      "REJECT",
+                      "UPVOTE",
+                      "DOWNVOTE"
+                    ]
                   }
                 }
               }
@@ -2885,96 +3444,45 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "type": "object",
-                      "properties": {
-                        "status": { "type": "string", "enum": ["success"] },
-                        "data": { "type": "object", "additionalProperties": true }
-                      }
+                      "$ref": "#/components/schemas/JSendBoolean"
                     },
-                    { "$ref": "#/components/schemas/JSendError" }
+                    {
+                      "$ref": "#/components/schemas/JSendFail"
+                    },
+                    {
+                      "$ref": "#/components/schemas/JSendError"
+                    }
                   ]
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/vector-db-populate-collection": {
-      "post": {
-        "tags": ["Integrations"],
-        "summary": "Populate vector embeddings for a collection",
-        "description": "Indexer endpoint: takes a collection name (`name` or `content`), a content type, and a list of row ids; generates embeddings and stores them. Used by content-update flows; not generally called by external clients.",
-        "operationId": "vectorDbPopulateCollection",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["collection", "type", "ids"],
-                "properties": {
-                  "collection": { "type": "string", "enum": ["name", "content"] },
-                  "type": { "$ref": "#/components/schemas/ContentType" },
-                  "ids": { "type": "array", "items": { "type": "integer" } }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "JSend envelope.",
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials. Invalid sessions return data.code AUTH_REQUIRED; refresh or sign in before resuming.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    { "$ref": "#/components/schemas/JSendBoolean" },
-                    { "$ref": "#/components/schemas/JSendError" }
-                  ]
+                  "$ref": "#/components/schemas/JSendFail"
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/update-content-update": {
-      "post": {
-        "tags": ["Integrations"],
-        "summary": "(Discord webhook) Approve, reject, or vote on a content update",
-        "description": "Service-to-service webhook for the WG Discord moderation bot. Authenticates via the shared `CONTENT_UPDATE_KEY` secret, preferably in the `Authorization: Bearer <secret>` header (NOT a user JWT or API key); the legacy `auth_token` body field is also accepted for older bot deployments. When state=APPROVE, applies the underlying content change.",
-        "operationId": "updateContentUpdate",
-        "security": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["discord_msg_id", "discord_user_id", "discord_user_name", "state"],
-                "properties": {
-                  "auth_token": { "type": "string", "description": "Legacy transport for the shared secret; prefer the Authorization header." },
-                  "discord_msg_id": { "type": "string" },
-                  "discord_user_id": { "type": "string" },
-                  "discord_user_name": { "type": "string" },
-                  "state": { "type": "string", "enum": ["APPROVE", "REJECT", "UPVOTE", "DOWNVOTE"] }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "JSend envelope.",
+          },
+          "413": {
+            "description": "JSON request exceeds the wire-body limit (8 MiB unless this endpoint specifies a smaller limit).",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    { "$ref": "#/components/schemas/JSendBoolean" },
-                    { "$ref": "#/components/schemas/JSendFail" },
-                    { "$ref": "#/components/schemas/JSendError" }
-                  ]
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Admission or work budget exceeded; Retry-After gives the delay in seconds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
                 }
               }
             }

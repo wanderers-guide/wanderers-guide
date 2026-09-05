@@ -2,6 +2,7 @@ import { corsHeaders } from './cors.ts';
 import { SupabaseClient, createClient } from '@supabase/supabase-js';
 import { uniqueId } from './upload-utils.ts';
 import { bucketFor, checkRateLimit, rateLimitHeaders } from './rate-limit.ts';
+import { HttpError, isAuthenticationError, readJsonBody } from './http-errors.ts';
 import _ from 'lodash';
 // @ts-ignore
 import { SignJWT } from 'npm:jose@5.9.6';
@@ -49,6 +50,8 @@ export async function connect<T = Record<string, any>>(
      * its third argument, and the supplied client is anon-keyed (no Auth context).
      */
     bypassAuth?: boolean;
+    /** Maximum wire body size, including chunked requests. Uploads need base64 overhead. */
+    maxBodyBytes?: number;
   }
 ) {
   if (req.method === 'OPTIONS') {
@@ -56,8 +59,6 @@ export async function connect<T = Record<string, any>>(
   }
 
   try {
-    const body = (await req.json()) as T;
-
     // Create a Supabase client with the Auth context of the logged in user.
     const rawAuthHeader = req.headers.get('Authorization')?.trim() ?? '';
     const token = rawAuthHeader.replace('Bearer ', '').trim();
@@ -83,8 +84,8 @@ export async function connect<T = Record<string, any>>(
       );
     }
 
-    // Rate limit per token / IP. See rate-limit.ts for tunables.
-    const ip = (req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? '')
+    // Bound admission before allocating/parsing bodies. Tokens are untrusted here.
+    const ip = (req.headers.get('cf-connecting-ip') ?? req.headers.get('x-forwarded-for') ?? '')
       .split(',')[0]
       .trim();
     const { bucket, limit } = bucketFor({ token, is36, bypassAuth: options?.bypassAuth, ip });
@@ -102,6 +103,8 @@ export async function connect<T = Record<string, any>>(
         }
       );
     }
+
+    const body = (await readJsonBody(req, options?.maxBodyBytes ?? 8 * 1024 * 1024)) as T;
 
     if (is36) {
       // Assume it's an API key - so this request is coming from someone trying to access the API directly.
@@ -145,6 +148,26 @@ export async function connect<T = Record<string, any>>(
       //
     }
   } catch (error) {
+    if (error instanceof HttpError || isAuthenticationError(error)) {
+      const failure = error instanceof HttpError
+        ? error
+        : new HttpError(401, 'Your session has expired or is invalid. Please sign in again.', 'AUTH_REQUIRED');
+      if (failure.status >= 500) {
+        logEvent('error', new URL(req.url).pathname.split('/').pop() ?? 'unknown', 'request_failed', {
+          code: failure.code,
+          status: failure.status,
+        });
+      }
+      return new Response(JSON.stringify({
+        status: failure.status >= 500 ? 'error' : 'fail',
+        ...(failure.status >= 500
+          ? { message: failure.message, code: failure.code }
+          : { data: { message: failure.message, code: failure.code } }),
+      }), {
+        status: failure.status,
+        headers: { ...corsHeaders, ...failure.headers, 'Content-Type': 'application/json' },
+      });
+    }
     // Structured line first (queryable), full error object second (details).
     logEvent('error', new URL(req.url).pathname.split('/').pop() ?? 'unknown', 'unhandled_error', {
       message: (error as any)?.message ?? String(error),
@@ -342,13 +365,24 @@ export function createServiceClient(): SupabaseClient<any, 'public', any> {
 
 export async function getPublicUser(
   client: SupabaseClient<any, 'public', any>,
-  token: string
+  token: string,
+  options?: { rejectAnonymous?: boolean }
 ): Promise<PublicUser | null> {
   // Validate the caller with the request-scoped client first: this establishes WHO is
   // asking (and only succeeds for a genuine session token).
   const {
     data: { user },
+    error,
   } = await client.auth.getUser(token);
+
+  if (error && isAuthenticationError(error)) throw error;
+  if (error && options?.rejectAnonymous) {
+    throw new HttpError(503, 'Authentication is temporarily unavailable.', 'AUTH_UNAVAILABLE');
+  }
+
+  if (options?.rejectAnonymous && (!user || ('is_anonymous' in user && user.is_anonymous === true))) {
+    throw new HttpError(401, 'Sign in to use this service.', 'AUTH_REQUIRED');
+  }
 
   if (!user) {
     return null;

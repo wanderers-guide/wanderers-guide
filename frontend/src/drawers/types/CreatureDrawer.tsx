@@ -32,7 +32,7 @@ import {
 } from '@mantine/core';
 import { useDebouncedValue, useDidUpdate, useLocalStorage } from '@mantine/hooks';
 import { CreateCreatureModal } from '@modals/CreateCreatureModal';
-import { executeOperations } from '@operations/operations.main';
+import { executeOperations, isOperationCancelled } from '@operations/operations.main';
 import { convertKeyToBasePrefix } from '@operations/operation-utils';
 import { DisplayOperationResult } from '@pages/character_builder/CharBuilderCreation';
 import { confirmHealth, handleRest } from '@pages/character_sheet/entity-handler';
@@ -72,18 +72,22 @@ import { toLabel } from '@utils/strings';
 import { convertToSetEntity, isTruthy, setStateActionToValue } from '@utils/type-fixing';
 import useRefresh from '@utils/use-refresh';
 import { getFinalHealthValue } from '@variables/variable-helpers';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAtom } from 'jotai';
 import { exportVariableStore } from '@variables/variable-manager';
 
 export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Creature } }) {
   const id = props.data.id;
 
-  const { data: _creature, isFetching, refetch } = useQuery({
+  const {
+    data: _creature,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-creature-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       return await fetchContentById<Creature>('creature', id);
     },
@@ -130,11 +134,15 @@ export function CreatureDrawerContent(props: {
   });
   const view = props.data.readOnly ? 'BLOCK' : drawerData.view;
 
-  const { data: content, isFetching, refetch } = useQuery({
+  const {
+    data: content,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-creature-details-${id}`, { id, sources: getDefaultSourcesKey('INFO') }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
 
       if (id) {
@@ -187,73 +195,84 @@ export function CreatureDrawerContent(props: {
   const STORE_ID = props.data.STORE_ID ?? `CREATURE_${creature?.id ?? 'UNKNOWN'}`;
 
   const [operationResults, setOperationResults] = useState<OperationCreatureResultPackage>();
-  const executingOperations = useRef(false);
   useEffect(() => {
-    if (!creature || !content || executingOperations.current) return;
-    executingOperations.current = true;
-    executeOperations<OperationCreatureResultPackage>({
-      type: 'CREATURE',
-      data: {
-        id: STORE_ID,
-        creature,
-        content,
+    if (!creature || !content) return;
+    const controller = new AbortController();
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    executeOperations<OperationCreatureResultPackage>(
+      {
+        type: 'CREATURE',
+        data: {
+          id: STORE_ID,
+          creature,
+          content,
+        },
       },
-    }).then((results) => {
-      // Final execution pipeline:
+      { signal: controller.signal }
+    )
+      .then((results) => {
+        if (controller.signal.aborted) return;
+        // Final execution pipeline:
 
-      // Add the extra items to the inventory from variables
-      addExtraItems(STORE_ID, content.items, creature, convertToSetEntity(setCreature));
+        // Add the extra items to the inventory from variables
+        addExtraItems(STORE_ID, content.items, creature, convertToSetEntity(setCreature));
 
-      // Check bulk limits
-      checkBulkLimit(STORE_ID, creature, convertToSetEntity(setCreature), true);
+        // Check bulk limits
+        checkBulkLimit(STORE_ID, creature, convertToSetEntity(setCreature), true);
 
-      // Apply armor/shield penalties
-      applyEquipmentPenalties(STORE_ID, creature);
+        // Apply armor/shield penalties
+        applyEquipmentPenalties(STORE_ID, creature);
 
-      // Apply conditions after everything else
-      applyConditions(STORE_ID, creature.details?.conditions ?? []);
+        // Apply conditions after everything else
+        applyConditions(STORE_ID, creature.details?.conditions ?? []);
 
-      if (creature.meta_data?.reset_hp !== false) {
-        // To reset hp, we need to confirm health
+        if (creature.meta_data?.reset_hp !== false) {
+          // To reset hp, we need to confirm health
 
-        const handleRestHP = () => {
-          const maxHealth = getFinalHealthValue(STORE_ID);
-          confirmHealth(`${maxHealth}`, maxHealth, creature, convertToSetEntity(setCreature));
-        };
+          const handleRestHP = () => {
+            if (controller.signal.aborted) return;
+            const maxHealth = getFinalHealthValue(STORE_ID);
+            confirmHealth(`${maxHealth}`, maxHealth, creature, convertToSetEntity(setCreature));
+          };
 
-        // We run it twice for it to break out of the debouncing lock (not a perfect solution, but works)
-        handleRestHP();
-        setTimeout(() => {
+          // We run it twice for it to break out of the debouncing lock (not a perfect solution, but works)
           handleRestHP();
-        }, 1000);
-      } else {
-        // Because of the drained condition, let's confirm health
-        const maxHealth = getFinalHealthValue(STORE_ID);
-        confirmHealth(`${creature.hp_current}`, maxHealth, creature, convertToSetEntity(setCreature));
-      }
+          timers.push(setTimeout(handleRestHP, 1000));
+        } else {
+          // Because of the drained condition, let's confirm health
+          const maxHealth = getFinalHealthValue(STORE_ID);
+          confirmHealth(`${creature.hp_current}`, maxHealth, creature, convertToSetEntity(setCreature));
+        }
 
-      setOperationResults(results);
-      executingOperations.current = false;
+        setOperationResults(results);
 
-      setTimeout(() => {
+        timers.push(
+          setTimeout(() => {
+            if (controller.signal.aborted) return;
+            setLoading(false);
+            refreshStatBlock();
+          }, 100)
+        );
+      })
+      .catch((error) => {
+        if (controller.signal.aborted || isOperationCancelled(error)) return;
+        // A single malformed operation (e.g. a setValue whose value doesn't match its
+        // variable's type) rejects the whole execution in the operations worker. Without this
+        // catch `loading` stayed true forever while `isFetching` was false, so the drawer
+        // rendered "Couldn't load this content" — a connection error for what is really bad
+        // content data, with no way out short of editing the record in the database.
+        // Settle instead: render what the record does have and surface the real reason.
+        console.error(`Error: Failed to execute operations for creature ${creature.id}`, error);
+        displayError(`Couldn't compute "${creature.name}": ${error?.message ?? error}`);
+
         setLoading(false);
         refreshStatBlock();
-      }, 100);
-    }).catch((error) => {
-      // A single malformed operation (e.g. a setValue whose value doesn't match its
-      // variable's type) rejects the whole execution in the operations worker. Without this
-      // catch `loading` stayed true forever while `isFetching` was false, so the drawer
-      // rendered "Couldn't load this content" — a connection error for what is really bad
-      // content data, with no way out short of editing the record in the database.
-      // Settle instead: render what the record does have and surface the real reason.
-      console.error(`Error: Failed to execute operations for creature ${creature.id}`, error);
-      displayError(`Couldn't compute "${creature.name}": ${error?.message ?? error}`);
-
-      executingOperations.current = false;
-      setLoading(false);
-      refreshStatBlock();
-    });
-  }, [creature, content]);
+      });
+    return () => {
+      controller.abort();
+      timers.forEach(clearTimeout);
+    };
+  }, [creature, content, STORE_ID]);
 
   const setCreatureInstant = (call: React.SetStateAction<Creature | null>) => {
     // Update source immediately
@@ -287,9 +306,7 @@ export function CreatureDrawerContent(props: {
   };
 
   if (loading || !creature || !content) {
-    return (
-      <DrawerLoadState loading={isFetching} onRetry={refetch} />
-    );
+    return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
   }
 
   return (

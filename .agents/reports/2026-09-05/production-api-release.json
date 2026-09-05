@@ -1,0 +1,379 @@
+{
+  "project_ref": "fdrjqcyjklatdrmjdnys",
+  "runtime_commit": "de061ad20fe527679fee9892c5669f845b73cbce",
+  "deployment": {
+    "project_ref": "fdrjqcyjklatdrmjdnys",
+    "source_commit": "de061ad20fe527679fee9892c5669f845b73cbce",
+    "started_at": "2026-09-05T21:46:49.472601+00:00",
+    "functions": [
+      {
+        "name": "create-ability-block",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:46:51.812144+00:00"
+      },
+      {
+        "name": "create-ancestry",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:46:53.405672+00:00"
+      },
+      {
+        "name": "create-archetype",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:46:55.126475+00:00"
+      },
+      {
+        "name": "create-background",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:46:56.872291+00:00"
+      },
+      {
+        "name": "create-campaign",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:46:58.755334+00:00"
+      },
+      {
+        "name": "create-character",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:00.608316+00:00"
+      },
+      {
+        "name": "create-class",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:02.972794+00:00"
+      },
+      {
+        "name": "create-class-archetype",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:06.329368+00:00"
+      },
+      {
+        "name": "create-content-source",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:09.086159+00:00"
+      },
+      {
+        "name": "create-content-update",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:11.755954+00:00"
+      },
+      {
+        "name": "create-creature",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:13.740833+00:00"
+      },
+      {
+        "name": "create-encounter",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:16.205504+00:00"
+      },
+      {
+        "name": "create-item",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:18.565273+00:00"
+      },
+      {
+        "name": "create-language",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:21.325927+00:00"
+      },
+      {
+        "name": "create-spell",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:23.562549+00:00"
+      },
+      {
+        "name": "create-trait",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:26.729565+00:00"
+      },
+      {
+        "name": "create-versatile-heritage",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:29.533376+00:00"
+      },
+      {
+        "name": "delete-content",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:33.461807+00:00"
+      },
+      {
+        "name": "delete-user",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:35.860228+00:00"
+      },
+      {
+        "name": "find-ability-block",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:38.199268+00:00"
+      },
+      {
+        "name": "find-ancestry",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:42.142660+00:00"
+      },
+      {
+        "name": "find-archetype",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:44.561959+00:00"
+      },
+      {
+        "name": "find-background",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:47.054778+00:00"
+      },
+      {
+        "name": "find-campaign",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:49.294071+00:00"
+      },
+      {
+        "name": "find-character",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:52.072126+00:00"
+      },
+      {
+        "name": "find-class",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:55.229379+00:00"
+      },
+      {
+        "name": "find-class-archetype",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:47:57.843775+00:00"
+      },
+      {
+        "name": "find-content-source",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:01.609629+00:00"
+      },
+      {
+        "name": "find-content-update",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:04.804432+00:00"
+      },
+      {
+        "name": "find-creature",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:06.966650+00:00"
+      },
+      {
+        "name": "find-encounter",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:09.047301+00:00"
+      },
+      {
+        "name": "find-item",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:10.886610+00:00"
+      },
+      {
+        "name": "find-language",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:12.733595+00:00"
+      },
+      {
+        "name": "find-spell",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:15.364537+00:00"
+      },
+      {
+        "name": "find-trait",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:18.471174+00:00"
+      },
+      {
+        "name": "find-versatile-heritage",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:20.714347+00:00"
+      },
+      {
+        "name": "get-content-source-stats",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:23.005013+00:00"
+      },
+      {
+        "name": "get-content-versions",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:24.468554+00:00"
+      },
+      {
+        "name": "get-user",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:30.994193+00:00"
+      },
+      {
+        "name": "gm-add-to-group",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:32.776190+00:00"
+      },
+      {
+        "name": "gm-regenerate-code",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:34.653898+00:00"
+      },
+      {
+        "name": "gm-remove-from-group",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:36.274471+00:00"
+      },
+      {
+        "name": "gm-users-in-group",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:38.545720+00:00"
+      },
+      {
+        "name": "handle-patreon-redirect",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:40.384171+00:00"
+      },
+      {
+        "name": "open-ai-request",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:42.276345+00:00"
+      },
+      {
+        "name": "remove-from-campaign",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:43.917410+00:00"
+      },
+      {
+        "name": "reset-campaign-key",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:45.496958+00:00"
+      },
+      {
+        "name": "search-data",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:47.573420+00:00"
+      },
+      {
+        "name": "update-character",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:49.450891+00:00"
+      },
+      {
+        "name": "update-content-update",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:51.087274+00:00"
+      },
+      {
+        "name": "update-user",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:52.999671+00:00"
+      },
+      {
+        "name": "upload-public-file",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:55.233385+00:00"
+      },
+      {
+        "name": "vector-db-populate-collection",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:56.943182+00:00"
+      },
+      {
+        "name": "vector-db-query-collection",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:48:59.074770+00:00"
+      }
+    ],
+    "finished_at": "2026-09-05T21:48:59.078817+00:00"
+  },
+  "semantic_smoke": {
+    "project_ref": "fdrjqcyjklatdrmjdnys",
+    "started_at": "2026-09-05T21:51:24.376110+00:00",
+    "finished_at": "2026-09-05T21:51:48.431007+00:00",
+    "passed": true,
+    "checks": [
+      "All 54 reviewed functions have successful completed deployment receipts",
+      "Receipt backend sources exactly match the current checkout",
+      "Committed quota migration receipt contains all three passing effect checks",
+      "Fresh production quota effects pass",
+      "Production quota RPC body matches the reviewed migration",
+      "Public content version read",
+      "Public source statistics have a numeric count",
+      "Public spell function read",
+      "open-ai-request returns 401/AUTH_REQUIRED",
+      "vector-db-query-collection returns 401/AUTH_REQUIRED",
+      "vector-db-populate-collection returns 401/AUTH_REQUIRED",
+      "Temporary account ownership marker is verified",
+      "Own profile read succeeds as a non-administrator",
+      "Anonymous public-profile lookup for the temporary account",
+      "get-user returns 401/AUTH_REQUIRED",
+      "vector-db-populate-collection returns 403/FORBIDDEN",
+      "open-ai-request returns 400/INVALID_REQUEST",
+      "vector-db-query-collection returns 400/INVALID_REQUEST",
+      "Own private character creation and versioned read",
+      "Versioned character save updates exactly the temporary row",
+      "Stale save returns a conflict without overwriting",
+      "Post-conflict read preserves the accepted save",
+      "Own character deletion succeeds semantically",
+      "Temporary character deletion is independently verified",
+      "Temporary Auth user, profile, characters and quota rows are absent"
+    ],
+    "request_count": 34,
+    "cleanup_verified": true,
+    "failure": null,
+    "cleanup_failure": null
+  },
+  "retirement": {
+    "project_ref": "fdrjqcyjklatdrmjdnys",
+    "started_at": "2026-09-05T21:52:15.898186+00:00",
+    "functions": [
+      {
+        "name": "find-campaigns",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:52:17.203342+00:00"
+      },
+      {
+        "name": "find-characters",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:52:18.086612+00:00"
+      },
+      {
+        "name": "find-encounters",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:52:19.045087+00:00"
+      },
+      {
+        "name": "get-sheet-content",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:52:19.903023+00:00"
+      },
+      {
+        "name": "main",
+        "exit_code": 0,
+        "completed_at": "2026-09-05T21:52:20.806538+00:00"
+      }
+    ],
+    "finished_at": "2026-09-05T21:52:20.807013+00:00"
+  },
+  "release_gate": {
+    "checked_at": "2026-09-05T21:53:38.122Z",
+    "project_ref": "fdrjqcyjklatdrmjdnys",
+    "commit": "de061ad20fe527679fee9892c5669f845b73cbce",
+    "manifest_sha256": "8322f4d38493ed0f832052219d8f8d99564812f5798c45bfe2be5599650be2cd",
+    "passed": true,
+    "issues": [],
+    "schema_objects_checked": 134,
+    "migration_ledger": "absent; verified effects only",
+    "migration_checks": {
+      "20260905000000_edge_work_budget.sql": [
+        {
+          "id": "budget-table",
+          "passed": true
+        },
+        {
+          "id": "budget-authorization",
+          "passed": true
+        },
+        {
+          "id": "budget-rpc",
+          "passed": true
+        }
+      ]
+    }
+  },
+  "cloud_function_count": 54,
+  "frontend_promotion": "Merge to main triggers owner-confirmed Render auto-deploy; live verification is recorded in the PR release record."
+}

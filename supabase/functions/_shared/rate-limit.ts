@@ -1,14 +1,12 @@
-// Per-token sliding-window rate limiter for the public API.
-//
-// State lives in-process. Edge Function workers stay warm for the bulk of a
-// burst, so this catches obvious abuse from a single client; cold-starts will
-// reset the window. We can promote to a shared store (Postgres or Redis) later
-// if abuse patterns warrant it. For v1 this is enough to refuse a runaway
-// loop without standing up new infra.
+// Bounded per-isolate IP admission protects parsing and auth lookups. It is a
+// burst guard, not a distributed entitlement or spend quota. Costly routes also
+// consume the shared Postgres budget after authenticating the caller.
 
 const WINDOW_MS = 60_000;
 
 const HISTORY = new Map<string, number[]>();
+export const MAX_RATE_LIMIT_BUCKETS = 2048;
+let nextSweep = 0;
 
 // Tunable per-bucket limits. Numbers chosen to be generous for legitimate
 // integrations (cache aggressively + batch where you can) while still cutting
@@ -37,6 +35,17 @@ export interface RateLimitResult {
 export function checkRateLimit(bucket: string, limit: number): RateLimitResult {
   const now = Date.now();
   const cutoff = now - WINDOW_MS;
+
+  if (now >= nextSweep) {
+    for (const [key, timestamps] of HISTORY) {
+      if (timestamps[timestamps.length - 1] <= cutoff) HISTORY.delete(key);
+    }
+    nextSweep = now + 1000;
+  }
+  // Refuse new keys under pressure; evicting active keys would reopen their budgets.
+  if (!HISTORY.has(bucket) && HISTORY.size >= MAX_RATE_LIMIT_BUCKETS) {
+    return { allowed: false, limit, remaining: 0, resetSeconds: 60, bucket };
+  }
 
   let history = HISTORY.get(bucket);
   if (!history) {
@@ -85,22 +94,22 @@ export function rateLimitHeaders(r: RateLimitResult): Record<string, string> {
 }
 
 /**
- * Pick the bucket key + limit for a request. The bucket is namespaced so a key
- * leaked across multiple flows can't quietly compound limits across them.
+ * Pick the pre-auth admission bucket. Changing an unverified token never gives
+ * an IP a fresh budget, and the public anon JWT no longer groups all visitors.
  */
-export function bucketFor(opts: {
-  token: string;
-  is36: boolean;
-  bypassAuth?: boolean;
-  ip?: string;
-}): { bucket: string; limit: number } {
-  if (opts.bypassAuth) return { bucket: `service:${opts.token}`, limit: LIMITS.bypassAuth };
-  if (opts.is36) return { bucket: `apiKey:${opts.token}`, limit: LIMITS.apiKey };
-  if (opts.token) return { bucket: `jwt:${opts.token}`, limit: LIMITS.jwt };
-  return { bucket: `anon:${opts.ip ?? 'unknown'}`, limit: LIMITS.anon };
+export function bucketFor(opts: { token: string; is36: boolean; bypassAuth?: boolean; ip?: string }): {
+  bucket: string;
+  limit: number;
+} {
+  const ip = opts.ip?.slice(0, 128) || 'unknown';
+  if (opts.bypassAuth) return { bucket: `service:${ip}`, limit: LIMITS.bypassAuth };
+  if (opts.is36) return { bucket: `apiKey:${ip}`, limit: LIMITS.apiKey };
+  if (opts.token) return { bucket: `jwt:${ip}`, limit: LIMITS.jwt };
+  return { bucket: `anon:${ip}`, limit: LIMITS.anon };
 }
 
 /** Test-only: clear the in-memory state. */
 export function _resetRateLimits() {
   HISTORY.clear();
+  nextSweep = 0;
 }

@@ -1,6 +1,7 @@
 import D20Loader from '@assets/images/D20Loader';
 import { glassStyle } from '@utils/colors';
 import BlurBox from '@common/BlurBox';
+import { OperationError } from '@common/OperationError';
 import {
   defineDefaultSources,
   fetchContentPackage,
@@ -183,6 +184,7 @@ export function Component(props: {}) {
         <div style={{ display: doneLoading ? 'none' : undefined }}>{loader}</div>
         <div style={{ display: doneLoading ? undefined : 'none' }}>
           <CharacterSheetInner
+            key={characterId}
             content={content}
             characterId={parseInt(characterId)}
             onFinishLoading={() => {
@@ -213,14 +215,17 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
 
   // EXECUTE_OPS triggers the character's operation pipeline and calls
   // onFinishLoading when it completes, which dismisses the loading screen.
-  const { character, setCharacter, isLoading } = useCharacter(props.characterId, {
-    type: 'EXECUTE_OPS',
-    data: {
-      content: props.content,
-      context: 'CHARACTER-SHEET',
-      onFinishLoading: props.onFinishLoading,
-    },
-  });
+  const { character, setCharacter, isLoading, operationError, isCalculating, retryOperations } = useCharacter(
+    props.characterId,
+    {
+      type: 'EXECUTE_OPS',
+      data: {
+        content: props.content,
+        context: 'CHARACTER-SHEET',
+        onFinishLoading: props.onFinishLoading,
+      },
+    }
+  );
 
   setPageTitle(character && character.name.trim() ? character.name : 'Sheet');
 
@@ -241,6 +246,8 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
     return props.content.abilityBlocks.filter((block) => block.type === 'mode' && givenModeIds.includes(block.id + ''));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [character, isLoading, props.content]);
+
+  if (operationError) return <OperationError loading={isCalculating} onRetry={retryOperations} />;
 
   return (
     <Center>

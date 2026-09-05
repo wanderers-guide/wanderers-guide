@@ -1,0 +1,1108 @@
+{
+  "audited_commit": "d782bd79",
+  "collected_at": "2026-09-05T00:43:57.453292+00:00",
+  "recent_log_window_utc": [
+    "2026-09-04T00:30:00Z",
+    "2026-09-05T00:30:00Z"
+  ],
+  "deployed_functions": [
+    {
+      "function": "get-user",
+      "version": 223,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "get-sheet-content",
+      "version": 193,
+      "download_ok": true,
+      "entry_matches_local": false,
+      "helper_sha256": "d7f80156ba79fc25f1dc219608597d27026cc21fdbcd2240cd485185b31fe1cf",
+      "helper_matches_local": false,
+      "rate_limit": false
+    },
+    {
+      "function": "create-trait",
+      "version": 197,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-trait",
+      "version": 193,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-content-source",
+      "version": 192,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "create-ability-block",
+      "version": 209,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-ability-block",
+      "version": 193,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-ancestry",
+      "version": 194,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-background",
+      "version": 192,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-class",
+      "version": 191,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-item",
+      "version": 190,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-language",
+      "version": 190,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-spell",
+      "version": 190,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "create-spell",
+      "version": 187,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "create-item",
+      "version": 187,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "create-creature",
+      "version": 187,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-characters",
+      "version": 67,
+      "download_ok": true,
+      "entry_matches_local": false,
+      "helper_sha256": "7f47827b63e1ef114f548b5856e746f69f8ea60f359f695b246f3a7bcecc2b60",
+      "helper_matches_local": false,
+      "rate_limit": false
+    },
+    {
+      "function": "update-character",
+      "version": 187,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "upload-public-file",
+      "version": 184,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "create-background",
+      "version": 170,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "open-ai-request",
+      "version": 150,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "vector-db-populate-collection",
+      "version": 170,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "vector-db-query-collection",
+      "version": 173,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "create-character",
+      "version": 153,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-creature",
+      "version": 142,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "create-language",
+      "version": 137,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "create-content-source",
+      "version": 140,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "create-class",
+      "version": 143,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "delete-content",
+      "version": 138,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-character",
+      "version": 130,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "create-ancestry",
+      "version": 133,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "create-content-update",
+      "version": 120,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-content-update",
+      "version": 120,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "update-user",
+      "version": 118,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "update-content-update",
+      "version": 135,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "handle-patreon-redirect",
+      "version": 134,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "gm-add-to-group",
+      "version": 99,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "gm-regenerate-code",
+      "version": 99,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "gm-remove-from-group",
+      "version": 99,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "gm-users-in-group",
+      "version": 101,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "create-archetype",
+      "version": 91,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-archetype",
+      "version": 90,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "create-versatile-heritage",
+      "version": 87,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-versatile-heritage",
+      "version": 86,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "create-campaign",
+      "version": 88,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-campaigns",
+      "version": 35,
+      "download_ok": true,
+      "entry_matches_local": false,
+      "helper_sha256": "bdbbcf42c28191f9f67540cec395331279d8695d3f7d9f1259bbffd218e65d72",
+      "helper_matches_local": false,
+      "rate_limit": false
+    },
+    {
+      "function": "reset-campaign-key",
+      "version": 88,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "create-encounter",
+      "version": 68,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-encounters",
+      "version": 26,
+      "download_ok": true,
+      "entry_matches_local": false,
+      "helper_sha256": "ba8a8362788bf50f232d3afc13a02ca2312dc9440856d38ff30258cf34392d2d",
+      "helper_matches_local": false,
+      "rate_limit": false
+    },
+    {
+      "function": "get-content-source-stats",
+      "version": 72,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "search-data",
+      "version": 67,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-campaign",
+      "version": 54,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "remove-from-campaign",
+      "version": 53,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-encounter",
+      "version": 44,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "delete-user",
+      "version": 26,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "find-class-archetype",
+      "version": 14,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "create-class-archetype",
+      "version": 14,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    },
+    {
+      "function": "main",
+      "version": 5,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": null,
+      "helper_matches_local": false,
+      "rate_limit": false
+    },
+    {
+      "function": "get-content-versions",
+      "version": 5,
+      "download_ok": true,
+      "entry_matches_local": true,
+      "helper_sha256": "a2808954e7478f91d205c9c52c5c1fe4d5e938db5bbd394e2162397a5619ca8a",
+      "helper_matches_local": true,
+      "rate_limit": true
+    }
+  ],
+  "log_queries": {
+    "incident-permissions": {
+      "result": [
+        {
+          "first": "2026-07-18T13:01:18.455000",
+          "function_id": "ab228a10-594b-4052-a2b3-6cebdfb6500d",
+          "last": "2026-07-18T19:07:39.770000",
+          "n": 12262,
+          "version": "218"
+        },
+        {
+          "first": "2026-07-18T13:03:25.130000",
+          "function_id": "dc606fff-33c3-4c82-8e40-c9ed06cdde26",
+          "last": "2026-07-18T19:10:24.141000",
+          "n": 419,
+          "version": "148"
+        },
+        {
+          "first": "2026-07-18T13:03:50.961000",
+          "function_id": "26f08fd9-a3ed-4027-8e18-3146e194df46",
+          "last": "2026-07-18T18:53:25.511000",
+          "n": 79,
+          "version": "133"
+        },
+        {
+          "first": "2026-07-18T13:46:58.915000",
+          "function_id": "1b67e8d6-4a4e-4b92-874c-117044ba9342",
+          "last": "2026-07-18T19:09:46.888000",
+          "n": 50,
+          "version": "83"
+        },
+        {
+          "first": "2026-07-18T18:01:25.271000",
+          "function_id": "f4cb4342-85bb-4b9d-adc1-b7b75dbbc209",
+          "last": "2026-07-18T19:09:42.990000",
+          "n": 10,
+          "version": "48"
+        },
+        {
+          "first": "2026-07-18T15:04:51.311000",
+          "function_id": "41e8f528-2bde-4892-b62d-234102adcf3a",
+          "last": "2026-07-18T15:04:51.810000",
+          "n": 2,
+          "version": "63"
+        },
+        {
+          "first": "2026-07-18T19:10:06.629000",
+          "function_id": "16b923aa-a1b0-48f2-bca8-0800d59f751e",
+          "last": "2026-07-18T19:10:06.629000",
+          "n": 1,
+          "version": "129"
+        }
+      ]
+    },
+    "incident-getuser-releases": {
+      "result": [
+        {
+          "first": "2026-07-18T14:47:42.345000",
+          "last": "2026-07-18T17:13:31.447000",
+          "n": 4,
+          "status": "502",
+          "version": ""
+        },
+        {
+          "first": "2026-07-18T17:43:33.982000",
+          "last": "2026-07-18T17:43:34.506000",
+          "n": 2,
+          "status": "503",
+          "version": ""
+        },
+        {
+          "first": "2026-07-18T12:00:04.467000",
+          "last": "2026-07-18T13:01:17.717000",
+          "n": 1909,
+          "status": "200",
+          "version": "217"
+        },
+        {
+          "first": "2026-07-18T13:16:00.321000",
+          "last": "2026-07-18T19:05:09.424000",
+          "n": 176,
+          "status": "200",
+          "version": "218"
+        },
+        {
+          "first": "2026-07-18T13:01:18.471000",
+          "last": "2026-07-18T19:07:39.802000",
+          "n": 12207,
+          "status": "400",
+          "version": "218"
+        },
+        {
+          "first": "2026-07-18T19:07:49.874000",
+          "last": "2026-07-18T20:59:59.245000",
+          "n": 4539,
+          "status": "200",
+          "version": "219"
+        }
+      ]
+    },
+    "incident-postgres": {
+      "result": [
+        {
+          "code": "42501",
+          "n": 12843,
+          "severity": "ERROR"
+        },
+        {
+          "code": "42883",
+          "n": 221,
+          "severity": "ERROR"
+        },
+        {
+          "code": "2201B",
+          "n": 1,
+          "severity": "ERROR"
+        },
+        {
+          "code": "P0001",
+          "n": 1,
+          "severity": "ERROR"
+        },
+        {
+          "code": "42704",
+          "n": 1,
+          "severity": "ERROR"
+        }
+      ]
+    },
+    "recent-api": {
+      "result": [
+        {
+          "n": 52973,
+          "p95_ms": 552,
+          "path": "/functions/v1/find-character",
+          "status": "200"
+        },
+        {
+          "n": 32216,
+          "p95_ms": 779,
+          "path": "/functions/v1/get-user",
+          "status": "200"
+        },
+        {
+          "n": 27197,
+          "p95_ms": 586,
+          "path": "/functions/v1/update-character",
+          "status": "200"
+        },
+        {
+          "n": 11691,
+          "p95_ms": 3069,
+          "path": "/functions/v1/find-ability-block",
+          "status": "200"
+        },
+        {
+          "n": 4700,
+          "p95_ms": 507,
+          "path": "/functions/v1/get-content-versions",
+          "status": "200"
+        },
+        {
+          "n": 2660,
+          "p95_ms": 712,
+          "path": "/functions/v1/find-language",
+          "status": "200"
+        },
+        {
+          "n": 2633,
+          "p95_ms": 1126,
+          "path": "/functions/v1/find-archetype",
+          "status": "200"
+        },
+        {
+          "n": 2458,
+          "p95_ms": 693,
+          "path": "/functions/v1/create-campaign",
+          "status": "200"
+        },
+        {
+          "n": 2232,
+          "p95_ms": 1035,
+          "path": "/functions/v1/find-content-source",
+          "status": "200"
+        },
+        {
+          "n": 2125,
+          "p95_ms": 1231,
+          "path": "/functions/v1/find-trait",
+          "status": "200"
+        },
+        {
+          "n": 1716,
+          "p95_ms": 928,
+          "path": "/functions/v1/find-class-archetype",
+          "status": "200"
+        },
+        {
+          "n": 1686,
+          "p95_ms": 2036,
+          "path": "/functions/v1/find-spell",
+          "status": "200"
+        },
+        {
+          "n": 1614,
+          "p95_ms": 3172,
+          "path": "/functions/v1/find-item",
+          "status": "200"
+        },
+        {
+          "n": 1399,
+          "p95_ms": 1125,
+          "path": "/functions/v1/find-ancestry",
+          "status": "200"
+        },
+        {
+          "n": 1399,
+          "p95_ms": 961,
+          "path": "/functions/v1/find-versatile-heritage",
+          "status": "200"
+        },
+        {
+          "n": 1398,
+          "p95_ms": 1114,
+          "path": "/functions/v1/find-class",
+          "status": "200"
+        },
+        {
+          "n": 1396,
+          "p95_ms": 1536,
+          "path": "/functions/v1/find-background",
+          "status": "200"
+        },
+        {
+          "n": 1098,
+          "p95_ms": 702,
+          "path": "/functions/v1/get-content-source-stats",
+          "status": "200"
+        },
+        {
+          "n": 937,
+          "p95_ms": 490,
+          "path": "/functions/v1/update-character",
+          "status": "400"
+        },
+        {
+          "n": 586,
+          "p95_ms": 1671,
+          "path": "/functions/v1/search-data",
+          "status": "200"
+        },
+        {
+          "n": 408,
+          "p95_ms": 736,
+          "path": "/functions/v1/find-campaign",
+          "status": "200"
+        },
+        {
+          "n": 345,
+          "p95_ms": 2390,
+          "path": "/functions/v1/find-creature",
+          "status": "200"
+        },
+        {
+          "n": 201,
+          "p95_ms": 1439,
+          "path": "/functions/v1/create-character",
+          "status": "200"
+        },
+        {
+          "n": 193,
+          "p95_ms": 863,
+          "path": "/functions/v1/create-encounter",
+          "status": "200"
+        },
+        {
+          "n": 118,
+          "p95_ms": 1350,
+          "path": "/functions/v1/delete-content",
+          "status": "200"
+        },
+        {
+          "n": 98,
+          "p95_ms": 777,
+          "path": "/functions/v1/update-user",
+          "status": "200"
+        },
+        {
+          "n": 56,
+          "p95_ms": 6622,
+          "path": "/functions/v1/open-ai-request",
+          "status": "200"
+        },
+        {
+          "n": 35,
+          "p95_ms": 723,
+          "path": "/functions/v1/find-encounter",
+          "status": "200"
+        },
+        {
+          "n": 22,
+          "p95_ms": 554,
+          "path": "/functions/v1/create-creature",
+          "status": "200"
+        },
+        {
+          "n": 20,
+          "p95_ms": 538,
+          "path": "/functions/v1/find-content-update",
+          "status": "200"
+        },
+        {
+          "n": 14,
+          "p95_ms": 770,
+          "path": "/functions/v1/create-content-source",
+          "status": "200"
+        },
+        {
+          "n": 8,
+          "p95_ms": 492,
+          "path": "/functions/v1/create-ancestry",
+          "status": "200"
+        },
+        {
+          "n": 7,
+          "p95_ms": 452,
+          "path": "/functions/v1/find-character",
+          "status": "400"
+        },
+        {
+          "n": 6,
+          "p95_ms": 123,
+          "path": "/functions/v1/get-user",
+          "status": "502"
+        },
+        {
+          "n": 5,
+          "p95_ms": 366,
+          "path": "/functions/v1/create-language",
+          "status": "200"
+        },
+        {
+          "n": 5,
+          "p95_ms": 73,
+          "path": "/functions/v1/find-ability-block",
+          "status": "502"
+        },
+        {
+          "n": 4,
+          "p95_ms": 59,
+          "path": "/functions/v1/find-character",
+          "status": "502"
+        },
+        {
+          "n": 3,
+          "p95_ms": 68,
+          "path": "/functions/v1/update-character",
+          "status": "502"
+        },
+        {
+          "n": 3,
+          "p95_ms": 19,
+          "path": "/functions/v1/find-character",
+          "status": "503"
+        },
+        {
+          "n": 3,
+          "p95_ms": 18,
+          "path": "/functions/v1/update-character",
+          "status": "503"
+        }
+      ]
+    },
+    "recent-errors": {
+      "result": [
+        {
+          "function_id": "1eb2059f-f922-41ab-a390-4f932a5edf81",
+          "message": "Error fetching data: {\n  code: \"42883\",\n  details: null,\n  hint: \"No operator matches the given name and argument types. You might need to add explicit type casts.\",\n  message: \"operator does not exist: jsonb ~~ unknown\"\n}\n",
+          "n": 1107
+        },
+        {
+          "function_id": "a89169b7-aa99-4e88-818a-7f737bbb2c3c",
+          "message": "{ code: \"PGRST301\", details: null, hint: null, message: \"JWT expired\" }\n",
+          "n": 959
+        },
+        {
+          "function_id": "a89169b7-aa99-4e88-818a-7f737bbb2c3c",
+          "message": "{\"evt\":\"unhandled_error\",\"fn\":\"update-character\",\"message\":\"JWT expired\",\"code\":\"PGRST301\"}\n",
+          "n": 959
+        },
+        {
+          "function_id": "ee81ea90-4d2a-43fc-b15b-6bdecf0374c5",
+          "message": "{\"evt\":\"unhandled_error\",\"fn\":\"find-character\",\"message\":\"JWT expired\",\"code\":\"PGRST301\"}\n",
+          "n": 7
+        },
+        {
+          "function_id": "ee81ea90-4d2a-43fc-b15b-6bdecf0374c5",
+          "message": "{ code: \"PGRST301\", details: null, hint: null, message: \"JWT expired\" }\n",
+          "n": 7
+        },
+        {
+          "function_id": "26f08fd9-a3ed-4027-8e18-3146e194df46",
+          "message": "{\n  code: \"23503\",\n  details: 'Key is still referenced from table \"ancestry\".',\n  hint: null,\n  message: 'update or delete on table \"trait\" violates foreign key constraint \"ancestry_trait_id_fkey\" on table \"ancestry\"'\n}\n",
+          "n": 2
+        },
+        {
+          "function_id": "ab228a10-594b-4052-a2b3-6cebdfb6500d",
+          "message": "{ message: \"Internal server error.\" }\n",
+          "n": 1
+        },
+        {
+          "function_id": "1f927f52-c542-4fcf-9332-22a904cc3cfa",
+          "message": "SyntaxError: Unexpected end of JSON input\n    at parse (<anonymous>)\n    at packageData (ext:deno_fetch/22_body.js:408:14)\n    at consumeBody (ext:deno_fetch/22_body.js:261:12)\n    at Request.json (ext:deno_fetch/22_body.js:346:16)\n    at c",
+          "n": 1
+        },
+        {
+          "function_id": "4a07b1f8-053c-4f6a-ae91-9eb19c09fdbd",
+          "message": "SyntaxError: Unexpected end of JSON input\n    at parse (<anonymous>)\n    at packageData (ext:deno_fetch/22_body.js:408:14)\n    at consumeBody (ext:deno_fetch/22_body.js:261:12)\n    at Request.json (ext:deno_fetch/22_body.js:346:16)\n    at c",
+          "n": 1
+        },
+        {
+          "function_id": "ab228a10-594b-4052-a2b3-6cebdfb6500d",
+          "message": "{\"evt\":\"unhandled_error\",\"fn\":\"get-user\",\"message\":\"Unexpected end of JSON input\"}\n",
+          "n": 1
+        },
+        {
+          "function_id": "b9a01b33-80f3-43ae-a7da-5d108162c7de",
+          "message": "SyntaxError: Unexpected end of JSON input\n    at parse (<anonymous>)\n    at packageData (ext:deno_fetch/22_body.js:408:14)\n    at consumeBody (ext:deno_fetch/22_body.js:261:12)\n    at Request.json (ext:deno_fetch/22_body.js:346:16)\n    at c",
+          "n": 1
+        },
+        {
+          "function_id": "4a07b1f8-053c-4f6a-ae91-9eb19c09fdbd",
+          "message": "{\"evt\":\"unhandled_error\",\"fn\":\"get-content-versions\",\"message\":\"error reading a body from connection: end of file before message length reached: error reading a body from connection: end of file before message length reached: end of file be",
+          "n": 1
+        }
+      ]
+    },
+    "sensitive-route-use": {
+      "result": [
+        {
+          "n": 56,
+          "path": "/functions/v1/open-ai-request",
+          "role": "authenticated",
+          "status": "200"
+        }
+      ]
+    },
+    "recent-health-summary": {
+      "result": [
+        {
+          "events": 155718,
+          "limited": 0,
+          "server_errors": 25,
+          "source": "function_edge_logs"
+        }
+      ]
+    }
+  },
+  "provider_configuration": [
+    {
+      "path": "/database/backups",
+      "data": {
+        "walg_enabled": true,
+        "pitr_enabled": false,
+        "backups": [
+          {
+            "id": 1570574638,
+            "is_physical_backup": true,
+            "status": "COMPLETED",
+            "inserted_at": "2026-09-04T04:50:10.665Z"
+          },
+          {
+            "id": 1561713760,
+            "is_physical_backup": true,
+            "status": "COMPLETED",
+            "inserted_at": "2026-09-03T04:49:51.988Z"
+          },
+          {
+            "id": 1551728601,
+            "is_physical_backup": true,
+            "status": "COMPLETED",
+            "inserted_at": "2026-09-02T04:50:00.935Z"
+          },
+          {
+            "id": 1541685820,
+            "is_physical_backup": true,
+            "status": "COMPLETED",
+            "inserted_at": "2026-09-01T04:46:11.859Z"
+          },
+          {
+            "id": 1531783253,
+            "is_physical_backup": true,
+            "status": "COMPLETED",
+            "inserted_at": "2026-08-31T04:48:46.357Z"
+          },
+          {
+            "id": 1521938206,
+            "is_physical_backup": true,
+            "status": "COMPLETED",
+            "inserted_at": "2026-08-30T04:45:08.588Z"
+          },
+          {
+            "id": 1512253644,
+            "is_physical_backup": true,
+            "status": "COMPLETED",
+            "inserted_at": "2026-08-29T04:48:55.125Z"
+          }
+        ],
+        "physical_backup_data": {}
+      }
+    },
+    {
+      "path": "/ssl-enforcement",
+      "data": {
+        "currentConfig": {
+          "database": true
+        },
+        "appliedSuccessfully": true
+      }
+    },
+    {
+      "path": "/network-restrictions",
+      "data": {
+        "entitlement": "allowed",
+        "config": {
+          "dbAllowedCidrs": [
+            "0.0.0.0/0"
+          ],
+          "dbAllowedCidrsV6": [
+            "::/0"
+          ]
+        },
+        "status": "applied"
+      }
+    },
+    {
+      "path": "/config/database/postgres",
+      "data": {}
+    }
+  ],
+  "postgrest": {
+    "max_rows": 10000,
+    "db_schema": "public, storage, graphql_public",
+    "db_pool": null,
+    "db_pool_acquisition_timeout": 10
+  },
+  "bounded_public_probes": [
+    {
+      "function": "get-content-source-stats",
+      "input": {
+        "content_source_id": 1
+      },
+      "http_status": 200,
+      "status": "success",
+      "subscriber_count": null
+    },
+    {
+      "function": "get-sheet-content",
+      "input": {
+        "character_id": -1
+      },
+      "http_status": 200,
+      "status": "success",
+      "has_record": false,
+      "has_rate_limit_header": false
+    }
+  ]
+}

@@ -12,7 +12,7 @@
 		"groups": [
 			{
 				"group": "Getting started",
-				"pages": ["index", "development", "docker"]
+				"pages": ["index", "development", "docker", "releases"]
 			},
 			{
 				"group": "Guides",
@@ -58,7 +58,11 @@
 			},
 			{
 				"group": "Characters",
-				"pages": ["api-reference/characters/find-character", "api-reference/characters/create-character", "api-reference/characters/update-character"]
+				"pages": [
+					"api-reference/characters/find-character",
+					"api-reference/characters/create-character",
+					"api-reference/characters/update-character"
+				]
 			},
 			{
 				"group": "Campaigns & encounters",
@@ -73,7 +77,12 @@
 			},
 			{
 				"group": "Game master",
-				"pages": ["api-reference/gm/gm-add-to-group", "api-reference/gm/gm-remove-from-group", "api-reference/gm/gm-users-in-group", "api-reference/gm/gm-regenerate-code"]
+				"pages": [
+					"api-reference/gm/gm-add-to-group",
+					"api-reference/gm/gm-remove-from-group",
+					"api-reference/gm/gm-users-in-group",
+					"api-reference/gm/gm-regenerate-code"
+				]
 			},
 			{
 				"group": "Users",
@@ -82,6 +91,14 @@
 			{
 				"group": "Search & utility",
 				"pages": ["api-reference/search/search-data", "api-reference/search/get-content-source-stats"]
+			},
+			{
+				"group": "AI & indexing",
+				"pages": [
+					"api-reference/integrations/open-ai-request",
+					"api-reference/integrations/vector-db-query-collection",
+					"api-reference/integrations/vector-db-populate-collection"
+				]
 			}
 		],
 		"global": {

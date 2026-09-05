@@ -25,8 +25,8 @@
 // -- This is a parent command --
 Cypress.Commands.add('login', (email: string, password: string) => {
   cy.visit('/login?redirect=characters');
-  cy.get('input[name="email"]').type(email);
-  cy.get('input[name="password"]').type(password);
+  cy.get('input[name="email"]:visible').type(email);
+  cy.get('input[name="password"]:visible').type(password, { log: false });
   cy.contains('button', 'Sign in with Email').click();
   cy.location('pathname', { timeout: 10000 }).should('eq', '/characters');
 });

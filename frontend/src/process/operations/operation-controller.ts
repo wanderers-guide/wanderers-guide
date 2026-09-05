@@ -46,6 +46,18 @@ import { getEntityLevel } from '@utils/entity-utils';
 import { defineDefaultSources, importFromContentPackage } from '@content/content-store';
 import { setEidolonRunesInStore } from '@items/eidolon-runes';
 
+let executionQueue: Promise<void> = Promise.resolve();
+
+/** Keep the module's variable, selection and deferred-operation context exclusive. */
+function withOperationStore<T>(execute: () => Promise<T>): Promise<T> {
+  const result = executionQueue.then(execute);
+  executionQueue = result.then(
+    () => undefined,
+    () => undefined
+  );
+  return result;
+}
+
 /**
  * Inits the op selection tree based on an entity's op data
  * @param entity - Living entity (character or creature)
@@ -116,6 +128,13 @@ export async function _executeCharacterOperations(data: {
   ors: OperationCharacterResultPackage;
   errors: string[];
 }> {
+  return withOperationStore(() => executeCharacterOperations(data));
+}
+
+/** Character execution body; access is serialized by the public controller entry. */
+async function executeCharacterOperations(
+  data: Parameters<typeof _executeCharacterOperations>[0]
+): ReturnType<typeof _executeCharacterOperations> {
   const { character, content, context } = data;
 
   resetVariables('CHARACTER');
@@ -1020,6 +1039,13 @@ export async function _executeCreatureOperations(data: {
   ors: OperationCreatureResultPackage;
   errors: string[];
 }> {
+  return withOperationStore(() => executeCreatureOperations(data));
+}
+
+/** Creature execution shares the same exclusive context as character execution. */
+async function executeCreatureOperations(
+  data: Parameters<typeof _executeCreatureOperations>[0]
+): ReturnType<typeof _executeCreatureOperations> {
   const { id, creature, content } = data;
 
   resetVariables(id);
