@@ -1,13 +1,18 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ContentType, JSendResponse } from './content';
 import { convertContentTypeToTableName, fetchData } from './helpers.ts';
+import { consumeWorkBudget, fetchWorkText, parseRequest, populateRequest } from './costly-requests.ts';
 
 export async function populateCollection(
   client: SupabaseClient<any, 'public', any>,
   collection: 'name' | 'content',
   type: ContentType,
-  ids: number[]
+  ids: number[],
+  actor = 'service:content-update'
 ): Promise<JSendResponse> {
+  // Shared with the authenticated moderation webhook, which indexes one approved row.
+  ({ collection, type, ids } = parseRequest(populateRequest, { collection, type, ids }));
+  ids = [...new Set(ids)];
   const tableName = convertContentTypeToTableName(type);
   if (!tableName)
     return {
@@ -28,7 +33,8 @@ export async function populateCollection(
       message: 'Data needs a UUID field',
     };
 
-  const res = await fetch('https://vector-db-client.onrender.com/api/v1/add', {
+  await consumeWorkBudget('vector-populate', actor, results.length);
+  await fetchWorkText('https://vector-db-client.onrender.com/api/v1/add', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -45,13 +51,6 @@ export async function populateCollection(
           : results.map((result) => convertToString(filterObject(result))),
     }),
   });
-  if (!res.ok) {
-    return {
-      status: 'error',
-      message: `Failed to add to collection: ${res.statusText}`,
-    };
-  }
-
   return {
     status: 'success',
     data: true,

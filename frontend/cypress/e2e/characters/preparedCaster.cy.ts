@@ -42,17 +42,29 @@ describe('Character builder', () => {
     cy.contains('Add Spell').click();
     cy.get('div.mantine-Modal-body').get('input[placeholder="Search spells"]').last().type('Charm');
     cy.wait(300); // Wait to filter
-    cy.contains('Select').click();
+    cy.get('input[placeholder="Search spells"]')
+      .last()
+      .closest('.mantine-Modal-body')
+      .contains('button', /^Select$/)
+      .click();
 
     // Prepare charm twice
     cy.get('[data-wg-name="rank-1"]').contains('Select Spell').first().click();
     cy.get('input[placeholder="Search spells"]').last().type('Charm');
     cy.wait(300); // Wait to filter
-    cy.get('div.mantine-Group-root').contains('Select').click();
+    cy.get('input[placeholder="Search spells"]')
+      .last()
+      .closest('.mantine-Modal-body')
+      .contains('button', /^Select$/)
+      .click();
     cy.get('[data-wg-name="rank-1"]').contains('Select Spell').first().click();
     cy.get('input[placeholder="Search spells"]').last().type('Charm');
     cy.wait(300); // Wait to filter
-    cy.get('div.mantine-Group-root').contains('Select').click();
+    cy.get('input[placeholder="Search spells"]')
+      .last()
+      .closest('.mantine-Modal-body')
+      .contains('button', /^Select$/)
+      .click();
     cy.get('button.mantine-Modal-close').last().click();
 
     // Cast charm

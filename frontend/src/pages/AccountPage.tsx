@@ -1,3 +1,4 @@
+import { clearSessionDataPreservingDrafts } from '@utils/character-save-buffer';
 import {
   Title,
   Text,
@@ -845,7 +846,7 @@ function ProfileSection() {
                             const result = await makeRequest('delete-user', {});
                             if (result) {
                               supabase.auth.signOut();
-                              localStorage.clear();
+                              clearSessionDataPreservingDrafts();
                               queryClient.clear();
                             } else {
                               showNotification({

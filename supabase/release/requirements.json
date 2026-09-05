@@ -1,0 +1,7 @@
+{
+  "20260905000000_edge_work_budget.sql": {
+    "check": "edge-work-budget.sql",
+    "order": "before-functions",
+    "function_signature": "public.consume_edge_work_budget(text,text,integer)"
+  }
+}

@@ -150,7 +150,13 @@ They use a local HTTP fixture and require no database credentials.
 Run the character rules and item drawer regressions with `npm --prefix frontend run test:rules`.
 These bundle the actual operation engine and drawer components against explicit local fixtures;
 selected rules content comes from the checked-in sanitized data dump. They need no running
-database or authentication account. CI runs both regression suites before the production build.
+database or authentication account.
+
+Run request recovery, buffered character saves, and worker lifecycle regressions with
+`npm --prefix frontend run test:infra`. These exercise the real request manager, save hook,
+and operation lifecycle with controlled authentication, network, storage, and worker
+boundaries. They require no running database or production credentials. CI runs these
+regression suites before the production build.
 
 ## Creating a user
 
@@ -265,6 +271,10 @@ npm --prefix frontend run cy:e2e:open     # interactive Cypress UI
 npm --prefix frontend run cy:e2e -- --spec "cypress/e2e/login/*.cy.ts"
 ```
 
+The `characters/calculationRecovery.cy.ts` and `characters/saveRecovery.cy.ts` specs
+verify worker failure/retry and retained-copy download in the rendered app, including
+desktop and mobile screenshots. Both create and clean up their own local test character.
+
 The same suite runs in CI on every PR via the `e2e` workflow. See [`.github/workflows/e2e.yml`](https://github.com/wanderers-guide/wanderers-guide/blob/main/.github/workflows/e2e.yml).
 
 ## Running the API tests
@@ -277,6 +287,14 @@ npm run test:api                          # cd supabase && deno test --allow-net
 ```
 
 The harness covers the auth-routing flow plus one representative test per pattern (find / create / update / delete / search), so a regression in the shared `connect()` wrapper or one of those patterns shows up immediately.
+
+## Release verification
+
+Run `npm run test:release` and `npm run release:check` from the repository root
+after installing frontend dependencies. CI runs these checks and archives the
+function/schema manifest. The production content snapshot refreshes weekly or by
+manual dispatch, independently of code pushes. See [Release and recovery](/releases)
+for the read-only production gate, migration baseline and rollout order.
 
 ## Troubleshooting
 

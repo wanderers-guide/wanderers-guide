@@ -141,6 +141,7 @@ jobs:
           CYPRESS_BASE_URL: http://localhost:3000
           CYPRESS_TEST_EMAIL: test@wanderersguide.app
           CYPRESS_TEST_PASSWORD: test1234
+          CYPRESS_functions_url: http://localhost:8000/functions/v1
 
       - name: Upload Cypress screenshots
         if: failure()

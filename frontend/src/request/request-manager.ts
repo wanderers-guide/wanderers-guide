@@ -1,148 +1,209 @@
-import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError } from '@supabase/supabase-js';
+import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError, type Session } from '@supabase/supabase-js';
 import { JSendResponse, RequestType } from '@schemas/requests';
 import { logError, throwError } from '@utils/error-handling';
-import { showNotification } from '@mantine/notifications';
+import { hideNotification, showNotification } from '@mantine/notifications';
 import { supabase } from '../supabase-client';
 
-// A single logical request makes at most MAX_ATTEMPTS network calls, and we retry
-// ONLY genuine transient network failures — never timeouts or HTTP errors. This is
-// deliberate: the previous implementation re-fired every timed-out request 3x plus an
-// un-timed fallback, AND makeRequest recursed again on fetch errors, fanning one
-// logical call out to as many as ~16 concurrent in-flight requests. Under peak load
-// (when responses are already slow) that turned a transient slowdown into a
-// self-sustaining retry storm that saturated the edge functions and DB pool — the
-// builder/sheet (which fire ~12 heavy content requests each) never recovered.
-const MAX_ATTEMPTS = 2;
-// Heavy content fetches legitimately take several seconds under load. A short timeout
-// just produces false failures (and previously, a retry storm). Wait generously; the
-// important property is that we never DUPLICATE a slow-but-still-running request.
+const MAX_TRANSIENT_RETRIES = 1;
+// A lost response can follow a committed write. Only explicitly read-only handlers
+// may be retried after an ambiguous network or gateway failure.
+const RETRYABLE_READS = new Set<RequestType>([
+  'search-data',
+  'gm-users-in-group',
+  'get-user',
+  'get-content-source-stats',
+  'get-content-versions',
+  'find-content-source',
+  'find-trait',
+  'find-ability-block',
+  'find-ancestry',
+  'find-background',
+  'find-class',
+  'find-archetype',
+  'find-versatile-heritage',
+  'find-class-archetype',
+  'find-item',
+  'find-language',
+  'find-creature',
+  'find-spell',
+  'find-character',
+  'find-content-update',
+  'find-encounter',
+  'find-campaign',
+]);
 const DEFAULT_TIMEOUT_MS = 30000;
-
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-// Only surface the "session expired" notification once per page load; a dead
-// session makes MANY concurrent requests fail and each would otherwise toast.
 let notifiedSessionExpired = false;
+let refreshingSession: Promise<Session | null> | null = null;
 
-/**
- * After a request fails with an auth-shaped error, check whether the underlying
- * session is actually gone (e.g. expired from inactivity while the tab was open).
- * The auth listener in App.tsx handles the common case; this is the safety net for
- * requests that raced the sign-out event. Tells the user instead of failing silently.
- */
-async function checkForExpiredSession() {
+/** Share the persistent notice between auth events and failed requests without dropping drafts. */
+export function notifySessionExpired(): void {
   if (notifiedSessionExpired) return;
-  const hadUser = !!localStorage.getItem('user-data');
-  if (!hadUser) return;
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (session) return;
   notifiedSessionExpired = true;
   localStorage.removeItem('user-data');
   showNotification({
     id: 'session-expired',
     title: 'Session expired',
-    message: 'You have been signed out due to inactivity. Please sign in again to save your changes.',
+    message: 'Please sign in again to save your changes.',
     color: 'yellow',
     autoClose: false,
   });
 }
 
+/** A recovered or newly authenticated session can save again. */
+export function resetSessionExpiredNotice(): void {
+  notifiedSessionExpired = false;
+  hideNotification('session-expired');
+}
+
+/** Read authentication without allowing a storage/refresh failure to discard the pending request. */
+async function getSession(): Promise<Session | null> {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    return error ? null : data.session;
+  } catch (error) {
+    console.error('Could not read the current session:', error);
+    return null;
+  }
+}
+
+/** Only these responses prove JWT validation failed before the handler could write. */
+function isRejectedJwt(status: number, body: unknown): boolean {
+  if (status !== 400 && status !== 401) return false;
+  if (!body || typeof body !== 'object') return false;
+  const error = body as Record<string, unknown>;
+  if (error.code === 'PGRST301' || (status === 401 && error.code === 'AUTH_REQUIRED')) return true;
+  if (
+    status === 401 &&
+    typeof error.message === 'string' &&
+    /^(invalid jwt|jwt (?:expired|is expired))\.?$/i.test(error.message)
+  ) {
+    return true;
+  }
+  return isRejectedJwt(status, error.data) || isRejectedJwt(status, error.error);
+}
+
+/** Refresh once for concurrent failures, and never replay a request as a different account. */
+async function recoverSession(failedSession: Session | null): Promise<Session | null> {
+  const current = await getSession();
+  if (!failedSession || !current || current.user.id !== failedSession.user.id) return null;
+  if (current.access_token !== failedSession.access_token) return current;
+  if (!refreshingSession) {
+    refreshingSession = (async () => {
+      try {
+        const { data, error } = await supabase.auth.refreshSession();
+        return error ? null : data.session;
+      } catch (error) {
+        console.error('Could not refresh the session:', error);
+        return null;
+      } finally {
+        refreshingSession = null;
+      }
+    })();
+  }
+  const refreshed = await refreshingSession;
+  const latest = await getSession();
+  return refreshed && latest?.user.id === failedSession.user.id && latest.access_token === refreshed.access_token
+    ? refreshed
+    : null;
+}
+
+/** Invoke a JSend endpoint with bounded retries and one recovery for proven JWT rejection. */
 export async function makeRequest<T = Record<string, any>>(
   type: RequestType,
   body: Record<string, any>,
-  notifyFailure = true
+  notifyFailure = true,
+  options?: { expectedActorId: string }
 ): Promise<T | null> {
   let lastError: any = null;
+  let lastErrorBody: unknown = null;
+  let transientRetries = 0;
+  let retriedAuthentication = false;
+  let requestSession = await getSession();
+  if (options && requestSession?.user.id !== options.expectedActorId) return null;
 
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    const { data, error } = await invokeWithTimeout(type, body, DEFAULT_TIMEOUT_MS);
-
+  while (true) {
+    const { data, error } = await invokeWithTimeout(type, body, DEFAULT_TIMEOUT_MS, requestSession?.access_token);
     if (!error) {
-      if (!data) {
-        return null;
-      }
+      if (!data) return null;
       const response = data as JSendResponse;
       if (response.status === 'error') {
-        if (notifyFailure) {
-          throwError(response.message);
-        }
+        if (notifyFailure) throwError(response.message);
         return null;
-      } else if (response.status === 'fail') {
-        if (notifyFailure) {
-          logError('Failed to make request');
-        }
+      }
+      if (response.status !== 'success') {
+        if (notifyFailure) logError('Failed to make request');
         return null;
       }
       return response.data as T;
     }
 
     lastError = error;
+    lastErrorBody = null;
+    if (error instanceof FunctionsHttpError) {
+      try {
+        lastErrorBody = await error.context.clone().json();
+      } catch {
+        // Some gateway failures have no JSON body. They are not authentication failures.
+      }
+      if (isRejectedJwt(error.context.status, lastErrorBody)) {
+        if (!retriedAuthentication) {
+          retriedAuthentication = true;
+          const recovered = await recoverSession(requestSession);
+          if (recovered) {
+            requestSession = recovered;
+            resetSessionExpiredNotice();
+            continue;
+          }
+        }
+        const current = await getSession();
+        // A request from a previous account must not sign out or warn the new account.
+        if (
+          (!current || current.user.id === requestSession?.user.id) &&
+          (requestSession || localStorage.getItem('user-data'))
+        )
+          notifySessionExpired();
+        break;
+      }
+    }
 
-    // Retry genuine transients only:
-    //  - network-level failures (fetch/relay errors), and
-    //  - gateway errors (502/503/504), which in practice are edge-function cold
-    //    starts or worker restarts — the request FAILED COMPLETELY and a single
-    //    spaced retry is safe and usually succeeds.
-    // Timeouts and other HTTP errors (4xx incl. 429 rate limits, and 500s, which
-    // mean the function itself errored) are NOT retried — retrying those amplifies
-    // load exactly when the backend is already struggling.
-    const isTransientNetwork =
-      error instanceof FunctionsFetchError || error instanceof FunctionsRelayError;
-    const isGatewayError =
-      error instanceof FunctionsHttpError && [502, 503, 504].includes(error.context?.status);
-    if (attempt < MAX_ATTEMPTS && (isTransientNetwork || isGatewayError)) {
-      // Backoff with jitter so many clients don't retry in lockstep.
-      await sleep(250 * attempt + Math.random() * 250);
+    const isTransientNetwork = error instanceof FunctionsFetchError || error instanceof FunctionsRelayError;
+    const isGatewayError = error instanceof FunctionsHttpError && [502, 503, 504].includes(error.context?.status);
+    if (
+      RETRYABLE_READS.has(type) &&
+      transientRetries < MAX_TRANSIENT_RETRIES &&
+      (isTransientNetwork || isGatewayError)
+    ) {
+      transientRetries++;
+      await sleep(250 + Math.random() * 250);
+      // Keep the original identity on retries. An account switch cannot replay its write.
+      const current = await getSession();
+      if (current?.user.id !== requestSession?.user.id) break;
+      requestSession = current;
       continue;
     }
     break;
   }
 
   if (lastError instanceof FunctionsHttpError) {
-    // 401/403 with a missing session = the user's session silently expired.
-    if (lastError.context?.status === 401 || lastError.context?.status === 403) {
-      await checkForExpiredSession();
-    }
-    try {
-      const errorMessage = await lastError.context.json();
-      console.error(`Request to '${type}' failed (HTTP ${lastError.context?.status})`, errorMessage);
-    } catch {
-      console.error(`Request to '${type}' failed (HTTP ${lastError.context?.status})`);
-    }
-  } else if (lastError instanceof FunctionsRelayError) {
-    console.error(`Request to '${type}' relay error:`, lastError.message);
-  } else if (lastError instanceof FunctionsFetchError) {
-    console.error(`Request to '${type}' fetch error:`, lastError.message);
+    console.error(`Request to '${type}' failed (HTTP ${lastError.context?.status})`, lastErrorBody);
   } else if (lastError) {
-    console.error(`Request to '${type}' error:`, lastError?.message ?? lastError);
+    console.error(`Request to '${type}' failed:`, lastError?.message ?? lastError);
   }
-
   return null;
 }
 
-/**
- * Whether the one-per-page-load "session expired" notification has been shown.
- * Callers can use this to skip their own generic failure toasts when the real
- * cause (a dead session) has already been communicated.
- */
-export function hasSessionExpiredNotice() {
+/** Suppress redundant save-error notices while authentication recovery requires user action. */
+export function hasSessionExpiredNotice(): boolean {
   return notifiedSessionExpired;
 }
 
-/**
- * Invoke an edge function, giving up (with a 'Timeout' error) if it takes too long.
- *
- * IMPORTANT: supabase-js's functions.invoke() cannot be aborted, so on timeout we
- * stop waiting and surface an error — we deliberately do NOT fire a replacement
- * request. Duplicating a slow-but-still-running request is what caused the retry
- * storm. Always resolves to a normalized { data, error } shape (never rejects).
- */
+/** Stop waiting on a slow request without duplicating its possibly committed write. */
 async function invokeWithTimeout(
   type: RequestType,
   body: Record<string, any>,
-  timeout = DEFAULT_TIMEOUT_MS
+  timeout = DEFAULT_TIMEOUT_MS,
+  accessToken?: string
 ): Promise<{ data: any; error: any }> {
   return new Promise((resolve) => {
     let settled = false;
@@ -153,7 +214,7 @@ async function invokeWithTimeout(
     }, timeout);
 
     supabase.functions
-      .invoke(type, { body })
+      .invoke(type, { body, headers: { Authorization: `Bearer ${accessToken ?? import.meta.env.VITE_SUPABASE_KEY}` } })
       .then((res) => {
         if (settled) return;
         settled = true;

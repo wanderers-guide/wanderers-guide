@@ -18,7 +18,8 @@ import {
 } from '@mantine/core';
 import { useMediaQuery, usePrevious } from '@mantine/hooks';
 import { ModalsProvider } from '@mantine/modals';
-import { Notifications, showNotification } from '@mantine/notifications';
+import { Notifications } from '@mantine/notifications';
+import { notifySessionExpired, resetSessionExpiredNotice } from '@requests/request-manager';
 import { clearUserData, getCachedPublicUser } from '@auth/user-manager';
 import SearchSpotlight from '@nav/SearchSpotlight';
 import { IconBrush } from '@tabler/icons-react';
@@ -122,6 +123,7 @@ export default function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
+      if (session) resetSessionExpiredNotice();
 
       if (event === 'SIGNED_OUT') {
         // The session ended. If the cached user data is still present, this was NOT an
@@ -133,13 +135,7 @@ export default function App() {
         const hadUser = !!getCachedPublicUser();
         clearUserData();
         if (hadUser && !window.location.pathname.startsWith('/login')) {
-          showNotification({
-            id: 'session-expired',
-            title: 'Session expired',
-            message: 'You have been signed out due to inactivity. Please sign in again to save your changes.',
-            color: 'yellow',
-            autoClose: false,
-          });
+          notifySessionExpired();
         }
       }
     });
