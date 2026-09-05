@@ -6,6 +6,7 @@ import {
   SAVED_CHARACTER_FIELDS,
   acknowledgeBufferedCharacterSave,
   bufferCharacterSave,
+  getBufferedCharacterSave,
   replayBufferedCharacterSave,
 } from './character-save-buffer';
 import { getCachedPublicUser } from '@auth/user-manager';
@@ -66,15 +67,38 @@ type QueuedCharacterSave = { character: Character; actorId: string; scope: numbe
  * touched `details`) the local edit wins for that whole field. That's still strictly
  * better than the previous unconditional last-write-wins, and the user is notified.
  */
-function mergeCharacterOnConflict(base: Character | null, local: Character | null, remote: Character): Character {
+function mergeCharacterOnConflict(
+  base: Record<string, unknown> | null,
+  local: Record<string, unknown> | null,
+  remote: Character
+): Character {
   const merged = cloneDeep(remote);
   if (!base || !local) return merged;
   for (const field of SAVED_CHARACTER_FIELDS) {
     if (!isEqual((local as any)[field], (base as any)[field])) {
-      (merged as any)[field] = cloneDeep((local as any)[field]);
+      Object.assign(merged, { [field]: cloneDeep(local[field]) });
     }
   }
   return merged;
+}
+
+/** Offer the preserved input copy without automatically overwriting remote changes. */
+function showCharacterRecovery(characterId: number, recovery: Record<string, unknown>): void {
+  showNotification({
+    id: `character-recovery-${characterId}`,
+    title: 'Unsynced character copy kept',
+    message: (
+      <Button
+        size='xs'
+        variant='light'
+        onClick={() => downloadObjectAsJson(recovery, `character-${characterId}-saved-copy`)}
+      >
+        Download saved copy
+      </Button>
+    ),
+    color: 'yellow',
+    autoClose: false,
+  });
 }
 
 /**
@@ -101,6 +125,7 @@ export default function useCharacter(
   const sessionActorId = session?.user.id ?? null;
   const loadedActorRef = useRef<string | null>(null);
   const saveScopeRef = useRef(0);
+  const needsCalculationRef = useRef(false);
 
   // Always-current view of the atom (the `character` closure goes stale inside async
   // mutation callbacks), and the last character state we know the server holds — the
@@ -126,20 +151,21 @@ export default function useCharacter(
   const MAX_CONFLICT_STREAK = 3;
 
   const handleFetchedCharacter = useCallback(
-    (resultCharacter: Character | null | undefined) => {
+    (resultCharacter: Character | null | undefined, restoredCharacter?: Character) => {
       const currentCharacter = characterRef.current;
       if (resultCharacter) {
+        const displayedCharacter = restoredCharacter ?? resultCharacter;
         // This is authoritative server state — record it as the concurrency base even
         // when the local atom already matches (so update-character keeps a fresh token).
         lastSyncedRef.current = resultCharacter;
 
         // Don't update if they're the same
-        if (isEqual(currentCharacter, resultCharacter)) {
+        if (isEqual(currentCharacter, displayedCharacter)) {
           return;
         }
 
         if (currentCharacter && resultCharacter) {
-          const diff = getDeepDiff(currentCharacter, resultCharacter);
+          const diff = getDeepDiff(currentCharacter, displayedCharacter);
           // If we can't detect a diff, don't update
           if (Object.keys(diff).length === 0) {
             return;
@@ -149,16 +175,17 @@ export default function useCharacter(
         }
 
         // Update character
-        setCharacter(resultCharacter);
+        setCharacter(displayedCharacter);
 
         // Make sure we sync the enabled content sources
-        defineDefaultSources('PAGE', resultCharacter.content_sources?.enabled ?? []);
+        defineDefaultSources('PAGE', displayedCharacter.content_sources?.enabled ?? []);
 
         // Cache character customization for fast loading
         saveCustomization({
           background_image_url:
-            (resultCharacter.details?.background_image_url || getCachedPublicUser()?.background_image_url) ?? undefined,
-          sheet_theme: (resultCharacter.details?.sheet_theme || getCachedPublicUser()?.site_theme) ?? undefined,
+            (displayedCharacter.details?.background_image_url || getCachedPublicUser()?.background_image_url) ??
+            undefined,
+          sheet_theme: (displayedCharacter.details?.sheet_theme || getCachedPublicUser()?.site_theme) ?? undefined,
         });
       } else {
         // Character not found, probably due to unauthorized access
@@ -173,6 +200,7 @@ export default function useCharacter(
     let active = true;
     const scope = ++saveScopeRef.current;
     loadedActorRef.current = null;
+    needsCalculationRef.current = false;
     lastSyncedRef.current = null;
     readOnlyRef.current = false;
     conflictStreakRef.current = 0;
@@ -184,26 +212,17 @@ export default function useCharacter(
       if (!active) return;
       const recovery = replay.recovery ?? (replay.status === 'retained' ? replay.body : undefined);
       if (recovery) {
-        showNotification({
-          id: recoveryNoticeId,
-          title: 'Unsynced character copy kept',
-          message: (
-            <Button
-              size='xs'
-              variant='light'
-              onClick={() => downloadObjectAsJson(recovery, `character-${characterId}-saved-copy`)}
-            >
-              Download saved copy
-            </Button>
-          ),
-          color: 'yellow',
-          autoClose: false,
-        });
+        showCharacterRecovery(characterId, recovery);
       }
       const dbCharacter = await makeRequest<Character>('find-character', { id: characterId });
       if (!active) return;
       loadedActorRef.current = sessionActorId;
-      handleFetchedCharacter(dbCharacter);
+      if (dbCharacter && replay.status === 'needs-calculation') {
+        needsCalculationRef.current = true;
+        handleFetchedCharacter(dbCharacter, mergeCharacterOnConflict(replay.base, replay.body, dbCharacter));
+      } else {
+        handleFetchedCharacter(dbCharacter);
+      }
     })().catch((error: unknown) => {
       if (!active) return;
       console.error('Could not load character:', error);
@@ -404,13 +423,14 @@ export default function useCharacter(
     lastSyncedRef.current?.id === characterId &&
     !!loadedActorRef.current &&
     loadedActorRef.current === sessionActorId &&
-    (options.type !== 'EXECUTE_OPS' ||
-      (!isCalculating &&
+    (options.type !== 'EXECUTE_OPS'
+      ? !needsCalculationRef.current
+      : !isCalculating &&
         executingOperations.current === null &&
         !operationError &&
         !!operationResults &&
         currentOperationsHash === debouncedOperationsHash &&
-        !isContentPackageEmpty(options.data.content)));
+        !isContentPackageEmpty(options.data.content));
 
   const canPersistRef = useRef(canPersist);
   canPersistRef.current = canPersist;
@@ -419,8 +439,17 @@ export default function useCharacter(
     character: characterRef.current,
     base: lastSyncedRef.current,
     actorId: loadedActorRef.current,
-    canSave: canPersist(),
+    // Retain raw inputs locally through navigation even while their derived state
+    // is waiting or failed. The flag prevents automatic server replay.
+    canBuffer: !readOnlyRef.current && loadedActorRef.current === sessionActorId,
+    requiresCalculation: !canPersist() && (needsCalculationRef.current || options.type === 'EXECUTE_OPS'),
   }));
+
+  useEffect(() => {
+    if (!operationError || !loadedActorRef.current) return;
+    const stored = getBufferedCharacterSave(characterId, loadedActorRef.current);
+    if ('draft' in stored && stored.draft.requiresCalculation) showCharacterRecovery(characterId, stored.draft.body);
+  }, [operationError, characterId]);
 
   const isCurrentSave = (save: QueuedCharacterSave) =>
     save.scope === saveScopeRef.current &&
@@ -637,7 +666,8 @@ type AutoSaveSnapshot = {
   character: Character | null;
   base: Character | null;
   actorId: string | null;
-  canSave: boolean;
+  canBuffer: boolean;
+  requiresCalculation: boolean;
 };
 
 /** Buffer eligible changes during editing and synchronously on pagehide or navigation. */
@@ -646,15 +676,27 @@ function useAutoSave(characterId: number, getSnapshot: () => AutoSaveSnapshot): 
   snapshotRef.current = getSnapshot;
 
   const saveImmediately = useCallback(() => {
-    const { character: current, base, actorId, canSave } = snapshotRef.current();
-    if (!canSave || !actorId || !current || current.id !== characterId || base?.id !== characterId) return;
+    const { character: current, base, actorId, canBuffer, requiresCalculation } = snapshotRef.current();
+    if (!canBuffer || !actorId || !current || current.id !== characterId || base?.id !== characterId) return;
     // Loading the remote row must not replace a retained local recovery copy.
-    if (SAVED_CHARACTER_FIELDS.every((field) => isEqual(current[field], base[field]))) return;
-    bufferCharacterSave(current, actorId, base.updated_at);
+    if (SAVED_CHARACTER_FIELDS.every((field) => isEqual(current[field], base[field]))) {
+      if (!requiresCalculation) {
+        acknowledgeBufferedCharacterSave(
+          current.id,
+          actorId,
+          Object.fromEntries(SAVED_CHARACTER_FIELDS.map((field) => [field, current[field]])),
+          base.updated_at,
+          base.updated_at,
+          true
+        );
+      }
+      return;
+    }
+    bufferCharacterSave(current, actorId, base.updated_at, { requiresCalculation, base });
   }, [characterId]);
 
-  // Preserve safe edits before auth events can unmount the editor. The snapshot
-  // reads current operation/save refs, so a pending or failed calculation is excluded.
+  // Preserve inputs before auth events or navigation can unmount the editor.
+  // Pending derived values stay local until the next successful calculation.
   useEffect(() => {
     saveImmediately();
   });

@@ -376,3 +376,36 @@ test('a signed-out request is explicitly anonymous even if sign-in races invocat
   await api.makeRequest('find-character', { id: 1 });
   assert.equal(calls[0].headers.Authorization, 'Bearer anonymous-project-key');
 });
+
+test('pending calculation input is never replayed without a matching valid base and server version', async () => {
+  for (const options of [
+    { base: { id: 2, name: 'Other character', level: 1 }, expected_updated_at: 'version-1' },
+    { base: { id: 1 }, expected_updated_at: 'version-1' },
+    { base: undefined, expected_updated_at: 'version-1' },
+    { base: { id: 1, name: 'Character', level: 1 }, expected_updated_at: undefined },
+  ]) {
+    localStorage.setItem(
+      'autosave-character-1-owner',
+      JSON.stringify({
+        version: 1,
+        actorId: 'owner',
+        requiresCalculation: true,
+        base: options.base,
+        body: { id: 1, name: 'Retained input', expected_updated_at: options.expected_updated_at },
+      })
+    );
+    const result = await api.replayBufferedCharacterSave(1);
+    assert.equal(result.status, 'retained');
+    assert.equal(result.body.name, 'Retained input');
+    assert.equal(calls.length, 0);
+  }
+});
+
+test('an older acknowledgement cannot discard newly calculation-required input with identical fields', () => {
+  api.bufferCharacterSave(character(), 'owner', 'version-1', { requiresCalculation: true, base: character() });
+  api.acknowledgeBufferedCharacterSave(1, 'owner', character(), 'version-1', 'version-2');
+  assert.equal(savedDraft().draft.requiresCalculation, true);
+  assert.equal(savedDraft().draft.body.expected_updated_at, 'version-2');
+  api.acknowledgeBufferedCharacterSave(1, 'owner', character(), 'version-2', 'version-2', true);
+  assert.deepEqual(savedDraft(), { status: 'none' });
+});

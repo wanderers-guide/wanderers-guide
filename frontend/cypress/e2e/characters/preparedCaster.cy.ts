@@ -21,12 +21,14 @@ describe('Character builder', () => {
   after(() => {
     cy.visit('/characters');
     cy.location('pathname', { timeout: 10000 }).should('eq', '/characters');
+    cy.intercept('POST', '**/functions/v1/delete-content').as('deleteCharacter');
 
     const removeCharacter = ($el: HTMLElement) => {
       cy.wrap($el).as('btn');
       cy.get('@btn').click();
       cy.contains('Delete Character').click();
       cy.get('button').contains('Delete').click();
+      cy.wait('@deleteCharacter').its('response.body.status').should('eq', 'success');
     };
 
     cy.get('button[aria-label="Options"]').each(removeCharacter);

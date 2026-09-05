@@ -339,7 +339,7 @@ test('an empty success payload remains a failed save with a retained draft', asy
   harness.unmount();
 });
 
-test('pending and failed calculations never buffer or save derived state', async () => {
+test('pending and failed calculations retain inputs locally without writing derived state', async () => {
   const calculation = deferred();
   harness.options = {
     type: 'EXECUTE_OPS',
@@ -351,11 +351,13 @@ test('pending and failed calculations never buffer or save derived state', async
   harness.edit({ name: 'Edit during calculation' });
   await harness.flush();
   events.get('pagehide')();
-  assert.deepEqual(getBufferedCharacterSave(1, 'owner'), { status: 'none' });
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.requiresCalculation, true);
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Edit during calculation');
   calculation.reject(new Error('worker crashed'));
   await harness.flush();
   events.get('pagehide')();
-  assert.deepEqual(getBufferedCharacterSave(1, 'owner'), { status: 'none' });
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.requiresCalculation, true);
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Edit during calculation');
   assert.equal(harness.requests.filter((value) => value.type === 'update-character').length, 0);
   assert.ok(harness.value.operationError);
   harness.unmount();
@@ -390,5 +392,60 @@ test('a conflict retries the unchanged local merge with the new version instead 
     'remote-version'
   );
   assert.deepEqual(getBufferedCharacterSave(1, 'owner'), { status: 'none' });
+  harness.unmount();
+});
+
+test('immediate builder navigation retains the class and merges newer remote data before recalculating', async () => {
+  const pending = deferred();
+  const options = {
+    type: 'EXECUTE_OPS',
+    data: { content: {}, context: 'CHARACTER-BUILDER', onFinishLoading: () => {} },
+  };
+  harness.options = options;
+  harness.calculate = () => pending.promise;
+  harness.render();
+  await harness.flush();
+  harness.edit({ details: { class: { id: 1, name: 'Wizard' } } });
+  await harness.flush();
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.requiresCalculation, true);
+  harness.unmount();
+
+  // The previous page may still have a save in flight, or another device may
+  // update an unrelated field. Rebase the retained input onto the fresh row.
+  harness = new HookHost();
+  const calculated = deferred();
+  harness.options = options;
+  harness.calculate = () => calculated.promise;
+  harness.request = async (type, body) =>
+    type === 'find-character'
+      ? { ...row(), notes: { text: 'Other device note' }, updated_at: 'remote-version' }
+      : [{ ...row(), ...body, updated_at: 'accepted-version' }];
+  harness.render();
+  await harness.flush();
+  assert.equal(harness.character.details.class.name, 'Wizard');
+  assert.equal(harness.character.notes.text, 'Other device note');
+  assert.equal(harness.requests.filter((value) => value.type === 'update-character').length, 0);
+  calculated.resolve({});
+  await harness.flush();
+  const save = harness.requests.find((value) => value.type === 'update-character');
+  assert.equal(save.body.details.class.name, 'Wizard');
+  assert.equal(save.body.notes.text, 'Other device note');
+  assert.equal(save.body.expected_updated_at, 'remote-version');
+  assert.deepEqual(getBufferedCharacterSave(1, 'owner'), { status: 'none' });
+  harness.unmount();
+});
+
+test('an intermediate editor without calculations cannot persist a pending calculation snapshot', async () => {
+  bufferCharacterSave({ ...row(), details: { class: { id: 1, name: 'Wizard' } } }, 'owner', 'version-1', {
+    requiresCalculation: true,
+    base: row(),
+  });
+  harness.render();
+  await harness.flush();
+  harness.edit({ name: 'New name before recalculation' });
+  await harness.flush();
+  assert.equal(harness.character.details.class.name, 'Wizard');
+  assert.equal(harness.requests.filter((value) => value.type === 'update-character').length, 0);
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.requiresCalculation, true);
   harness.unmount();
 });

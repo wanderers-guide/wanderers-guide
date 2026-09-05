@@ -110,9 +110,12 @@ rejects unknown versions. Absence of a ledger never substitutes for effect check
 6. Retire obsolete functions after consumer review, then run `release:verify`
    again and require a passing report before publishing the frontend. On
    September 5 the unexpected live routes were `find-campaigns`, `find-characters`,
-   `find-encounters`, `get-sheet-content` and self-host `main`. The initial 24-hour
-   log window showed no use; review a representative longer interval and external
-   integrations before deletion. A retained compatibility route must be brought
+   `find-encounters`, `get-sheet-content` and self-host `main`. Seven complete UTC
+   days (August 29–September 4) contained 1,764,530 function-edge events and zero
+   events for all five routes, including OPTIONS. Their source bundles and gateway
+   inventory are backed up under `.agents/legacy/infra-release-2026-09-05/`.
+   This supports retirement but does not establish that dormant clients do not
+   exist. A retained compatibility route must be brought
    back into reviewed source with current authorization and tests; do not simply
    allowlist an opaque old bundle.
 7. Publish the verified frontend artifact, repeat public/authenticated/save smoke

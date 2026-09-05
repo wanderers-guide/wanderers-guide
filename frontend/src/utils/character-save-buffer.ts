@@ -39,12 +39,15 @@ const draftSchema = z.object({
   version: z.literal(1),
   actorId: z.string().min(1),
   body: bodySchema,
+  requiresCalculation: z.boolean().optional(),
+  base: bodySchema.extend({ name: z.string(), level: z.number() }).optional(),
 });
 const legacySchema = z.object({ token: z.string(), body: bodySchema });
 const savedRowsSchema = z.array(z.object({ id: z.number() }).passthrough()).min(1);
 type CharacterSaveDraft = z.infer<typeof draftSchema>;
 export type BufferedSaveResult = (
   | { status: 'none' | 'saved' }
+  | { status: 'needs-calculation'; body: Record<string, unknown>; base: Record<string, unknown> }
   | {
       status: 'retained';
       reason: 'signed-out' | 'different-account' | 'unversioned' | 'rejected' | 'invalid';
@@ -81,14 +84,33 @@ export function getBufferedCharacterRecovery(characterId: number, actorId: strin
 }
 
 /** Store a draft synchronously for pagehide; authentication tokens never belong in it. */
-export function bufferCharacterSave(character: Character, actorId: string, expectedUpdatedAt?: string): void {
+export function bufferCharacterSave(
+  character: Character,
+  actorId: string,
+  expectedUpdatedAt?: string,
+  options?: { requiresCalculation: boolean; base: Character }
+): void {
   const body: Record<string, unknown> = { id: character.id };
   for (const field of SAVED_CHARACTER_FIELDS) body[field] = character[field];
   if (expectedUpdatedAt) body.expected_updated_at = expectedUpdatedAt;
   try {
     const previous = getBufferedCharacterSave(character.id, actorId);
     if ('draft' in previous && !previous.draft.body.expected_updated_at) preserveRecovery(previous.draft);
-    localStorage.setItem(bufferKey(character.id, actorId), JSON.stringify({ version: 1, actorId, body }));
+    const base = options
+      ? {
+          id: options.base.id,
+          ...Object.fromEntries(SAVED_CHARACTER_FIELDS.map((field) => [field, options.base[field]])),
+        }
+      : undefined;
+    localStorage.setItem(
+      bufferKey(character.id, actorId),
+      JSON.stringify({
+        version: 1,
+        actorId,
+        body,
+        ...(options ? { requiresCalculation: options.requiresCalculation, base } : {}),
+      })
+    );
   } catch (error) {
     console.error('Could not buffer character changes:', error);
   }
@@ -100,14 +122,25 @@ export function acknowledgeBufferedCharacterSave(
   actorId: string,
   submitted: Record<string, unknown>,
   expectedUpdatedAt: string | undefined,
-  updatedAt: string | undefined
+  updatedAt: string | undefined,
+  calculationComplete = false
 ): void {
   const stored = getBufferedCharacterSave(characterId, actorId);
   if (!('draft' in stored)) return;
-  if (SAVED_CHARACTER_FIELDS.every((field) => isEqual(stored.draft.body[field], submitted[field]))) {
+  if (
+    (!stored.draft.requiresCalculation || calculationComplete) &&
+    SAVED_CHARACTER_FIELDS.every((field) => isEqual(stored.draft.body[field], submitted[field]))
+  ) {
     if (localStorage.getItem(stored.key) === stored.raw) localStorage.removeItem(stored.key);
   } else if (updatedAt && stored.draft.body.expected_updated_at === expectedUpdatedAt) {
     stored.draft.body.expected_updated_at = updatedAt;
+    if (stored.draft.base) {
+      // This accepted snapshot is the new common ancestor for any later merge.
+      const base = bodySchema
+        .extend({ name: z.string(), level: z.number() })
+        .safeParse({ id: characterId, ...submitted });
+      if (base.success) stored.draft.base = base.data;
+    }
     if (localStorage.getItem(stored.key) === stored.raw) localStorage.setItem(stored.key, JSON.stringify(stored.draft));
   }
 }
@@ -138,8 +171,16 @@ export function getBufferedCharacterSave(
   if (!raw && !legacyRaw) return { status: 'none' };
   try {
     if (raw) {
-      const parsed = draftSchema.safeParse(JSON.parse(raw));
-      if (!parsed.success || parsed.data.body.id !== characterId) return { status: 'retained', reason: 'invalid', key };
+      const value: unknown = JSON.parse(raw);
+      const parsed = draftSchema.safeParse(value);
+      if (!parsed.success || parsed.data.body.id !== characterId) {
+        const recoverable = z.object({ actorId: z.literal(actorId), body: bodySchema }).safeParse(value);
+        if (recoverable.success && recoverable.data.body.id === characterId) {
+          preserveRecovery({ version: 1, actorId, body: recoverable.data.body });
+          return { status: 'retained', reason: 'invalid', key, body: recoverable.data.body };
+        }
+        return { status: 'retained', reason: 'invalid', key };
+      }
       if (parsed.data.actorId !== actorId) return { status: 'retained', reason: 'different-account' };
       return { key, raw, draft: parsed.data };
     }
@@ -172,6 +213,18 @@ export async function replayBufferedCharacterSave(characterId: number): Promise<
       const stored = getBufferedCharacterSave(characterId, session.user.id);
       if ('status' in stored) return stored;
       const retained = { status: 'retained' as const, body: stored.draft.body, key: stored.key };
+      // Inputs captured during debouncing/calculation must be recalculated in the
+      // next editor. They are never replayed directly as a full server update.
+      if (stored.draft.requiresCalculation) {
+        if (!stored.draft.body.expected_updated_at) {
+          preserveRecovery(stored.draft);
+          return { ...retained, reason: 'unversioned' };
+        }
+        if (stored.draft.base?.id === characterId)
+          return { status: 'needs-calculation', body: stored.draft.body, base: stored.draft.base };
+        preserveRecovery(stored.draft);
+        return { ...retained, reason: 'invalid' };
+      }
       // Older buffers omitted the server version. Applying them automatically would
       // overwrite any changes made on another device while this tab was closed.
       if (!stored.draft.body.expected_updated_at) {

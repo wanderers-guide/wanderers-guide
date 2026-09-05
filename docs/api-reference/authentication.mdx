@@ -169,7 +169,7 @@ Writes, AI requests, and vector population are not repeated after a lost respons
 because the server may already have performed the work. A timeout never starts a
 replacement request.
 
-Eligible unsynced character edits are buffered locally without bearer tokens and scoped
+Unsynced character edits are buffered locally without bearer tokens and scoped
 to the account editing the character, including authorized GM edits. Replay uses the
 current authenticated session and the saved server version. A failed response, conflict,
 permission rejection, or missing saved row leaves the copy intact. A successful save
@@ -179,8 +179,15 @@ to the acknowledged server version. Signing out preserves these account-scoped c
 An older copy without a server version is kept for explicit recovery instead of
 silently overwriting newer server data. When a retained copy needs attention, the
 character page offers **Download saved copy**. Its recovery copy remains available
-across reloads, even after subsequent edits save successfully. Signed-out viewers, sessions identified as read-only, and
-pending or failed character calculations do not create buffered writes.
+across reloads, even after subsequent edits save successfully. Signed-out viewers and
+sessions identified as read-only do not create buffered writes.
+
+Inputs changed during a pending or failed calculation remain local with a requirement
+to recalculate. Navigating between builder and sheet restores those inputs using their
+last-synced base and the latest server row, preserving unrelated remote changes. The
+app writes them only after a fresh successful calculation, with the current server
+version. Missing or malformed bases stay available for download instead of being
+restored automatically.
 
 ## Want to look at the source?
 
