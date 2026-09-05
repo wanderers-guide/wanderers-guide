@@ -1,0 +1,23 @@
+{
+  "start": "2026-08-29T00:00:00Z",
+  "end_exclusive": "2026-09-05T00:00:00Z",
+  "earliest_event": "2026-08-29T00:00:00.078000",
+  "latest_event": "2026-09-04T23:59:59.675000",
+  "total_requests": 1764530,
+  "non_options": 1144482,
+  "options": 620048,
+  "parsed_paths": 1764530,
+  "legacy_counts": {
+    "find-campaigns": 0,
+    "find-characters": 0,
+    "find-encounters": 0,
+    "get-sheet-content": 0,
+    "main": 0
+  },
+  "sql_template": "SELECT\n  if(extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)') IN ('find-campaigns', 'find-characters', 'find-encounters', 'get-sheet-content', 'main'), extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)'), '__other_functions__') AS route,\n  count() AS requests,\n  countIf(log_attributes['request.method'] != 'OPTIONS') AS non_options,\n  countIf(log_attributes['request.method'] = 'OPTIONS') AS options,\n  countIf(extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)') != '') AS parsed_paths,\n  min(timestamp) AS first_seen,\n  max(timestamp) AS last_seen\nFROM logs\nWHERE source = 'function_edge_logs'\n  AND timestamp >= toDateTime64('2026-08-29 00:00:00', 3, 'UTC')\n  AND timestamp < toDateTime64('2026-08-30 00:00:00', 3, 'UTC')\nGROUP BY route\nORDER BY route",
+  "docs": [
+    "https://supabase.com/docs/reference/api/v1-get-project-logs",
+    "https://supabase.com/docs/guides/observability/advanced-log-filtering"
+  ],
+  "limitations": "Seven completed UTC days of observed function-edge traffic; this does not establish that dormant or external clients do not exist. The API requires at most 24 hours per query, so seven daily windows were queried with half-open SQL timestamp bounds."
+}

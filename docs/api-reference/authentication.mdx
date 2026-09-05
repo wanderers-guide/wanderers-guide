@@ -106,16 +106,20 @@ Revocation is per-character. Revoking on one character doesn’t affect others. 
 
 ## Rate limits
 
-Every request runs through a per-token sliding window limiter. The bucket is the auth token itself, so multiple keys on the same account each get their own budget.
+Every request passes a bounded in-memory admission limiter **before** the JSON body is read. These budgets are per source IP and auth flow in each function isolate. Rotating unverified tokens does not provide a new budget; visitors sharing the public anonymous JWT have independent IP budgets. The limiter retains at most 2,048 active IP buckets, expires idle buckets, and refuses new buckets under pressure. This is a burst guard; cold starts still reset it.
 
-| Bucket                                          | Window | Limit        |
-| ----------------------------------------------- | ------ | ------------ |
-| API key (`Authorization: Bearer <36-char-key>`) | 60s    | 120 requests |
-| Signed-in user (Supabase JWT)                   | 60s    | 240 requests |
-| Service webhook (`bypassAuth`)                  | 60s    | 600 requests |
-| No / unrecognized auth (per IP)                 | 60s    | 30 requests  |
+| Auth flow | Window | Requests per IP and function isolate |
+| --- | --- | --- |
+| API key | 60s | 120 |
+| JWT, including the public anon key | 60s | 240 |
+| Service webhook | 60s | 600 |
+| No auth header | 60s | 30 |
 
-Every response includes:
+IP attribution relies on the trusted ingress supplying `cf-connecting-ip` or `x-forwarded-for`. Self-hosted ingress must replace client-supplied forwarding headers. This guard is not a distributed abuse ceiling.
+
+JSON bodies are streamed with an 8 MiB maximum and a 10-second read deadline. AI uses 256 KiB, vector queries 64 KiB, and vector population 32 KiB. Oversized bodies return 413 before handler work; malformed JSON returns 400. Known invalid or expired JWT errors return 401 with `data.code: AUTH_REQUIRED`, so clients can obtain a fresh session while preserving unsynced edits.
+
+Admission responses include:
 
 ```http
 X-RateLimit-Limit: 120
@@ -125,7 +129,21 @@ X-RateLimit-Reset: 60
 
 When you blow through the budget you get `HTTP 429` with JSend `fail` and a `Retry-After` header (in seconds). Failed requests count too, so repeatedly hitting an endpoint with a bad key won’t let you bypass the limit.
 
-Other limits not enforced by the rate limiter:
+### Shared AI and vector work budgets
+
+AI and vector querying require a verified, non-anonymous Auth user and a WG profile. Vector population additionally requires `is_admin`. The public anonymous JWT does not grant these privileges. Existing free-account AI features remain available.
+
+A service-role-only Postgres function atomically reserves both the account and global daily budget, with UTC midnight resets. All isolates share these counters. Missing/unavailable quota storage returns 503 before contacting a paid service; exhausted quotas return 429 with `Retry-After`. Provider failures retain their reservation because work may already have been charged.
+
+| Work | Account/day | Global/day | Units |
+| --- | --- | --- | --- |
+| AI | 100 | 5,000 | Each started 4,000 input characters: 1 for `gpt-4o-mini`, 10 for `gpt-4o` |
+| Vector query | 1,000 | 20,000 | Greater of started 4,000 query characters or started 10 requested results |
+| Vector population | 100,000 | 200,000 | One indexed row, per collection |
+
+These are work ceilings rather than dollar-denominated billing guarantees. The external AI service controls output generation. Changes to these limits belong in a reviewed database migration. Apply `20260905000000_edge_work_budget.sql` before deploying the dependent handlers; the function and table must remain inaccessible to `anon` and `authenticated`.
+
+Other limits not enforced by the admission limiter:
 
 - **Supabase Edge Function quotas** on the hosting tier (request count and execution time per month). The hosted instance at `wanderersguide.app` runs on Supabase’s production limits; if you self-host, your limits are whatever your own Supabase project enforces.
 - **Patreon-tier slot caps** on resource creation, not request rate: free accounts get 6 character slots and zero campaign / encounter creates, tier 1+ unlocks campaigns and encounters, tier 2+ removes the character cap. These are checked inside the relevant `create-*` endpoints.
@@ -137,6 +155,39 @@ Tips for staying under the cap: cache content responses (spells, items, feats ra
 A handful of internal endpoints use a shared service secret instead. Most consumers never call them. They exist for the Discord moderation bot:
 
 - [`/update-content-update`](/api-reference/integrations/update-content-update): `Authorization: Bearer $CONTENT_UPDATE_KEY`. Not a user token; it’s a process-to-process secret. The route uses `connect()`’s `bypassAuth` option so the value isn’t mistaken for a JWT or API key.
+
+## Web app session and save recovery
+
+The web app refreshes its session once after a proven JWT rejection (`401` with
+`AUTH_REQUIRED` or an invalid/expired JWT message, including older `400`/`PGRST301`
+responses). Concurrent rejected requests share that refresh. A request retries as
+the same account; permission failures do not trigger refresh. Signing in or recovering
+the session clears the persistent session-expired notice.
+
+Ambiguous network and gateway failures retry only explicitly read-only requests, once.
+Writes, AI requests, and vector population are not repeated after a lost response,
+because the server may already have performed the work. A timeout never starts a
+replacement request.
+
+Unsynced character edits are buffered locally without bearer tokens and scoped
+to the account editing the character, including authorized GM edits. Replay uses the
+current authenticated session and the saved server version. A failed response, conflict,
+permission rejection, or missing saved row leaves the copy intact. A successful save
+removes only its matching snapshot; newer queued edits retain their data and advance
+to the acknowledged server version. Signing out preserves these account-scoped copies.
+
+An older copy without a server version is kept for explicit recovery instead of
+silently overwriting newer server data. When a retained copy needs attention, the
+character page offers **Download saved copy**. Its recovery copy remains available
+across reloads, even after subsequent edits save successfully. Signed-out viewers and
+sessions identified as read-only do not create buffered writes.
+
+Inputs changed during a pending or failed calculation remain local with a requirement
+to recalculate. Navigating between builder and sheet restores those inputs using their
+last-synced base and the latest server row, preserving unrelated remote changes. The
+app writes them only after a fresh successful calculation, with the current server
+version. Missing or malformed bases stay available for download instead of being
+restored automatically.
 
 ## Want to look at the source?
 

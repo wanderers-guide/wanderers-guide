@@ -1,0 +1,133 @@
+{
+  "project_ref": "fdrjqcyjklatdrmjdnys",
+  "requested_start": "2026-08-29T00:00:00Z",
+  "requested_end_exclusive": "2026-09-05T00:00:00Z",
+  "days": [
+    {
+      "sql": "SELECT\n  if(extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)') IN ('find-campaigns', 'find-characters', 'find-encounters', 'get-sheet-content', 'main'), extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)'), '__other_functions__') AS route,\n  count() AS requests,\n  countIf(log_attributes['request.method'] != 'OPTIONS') AS non_options,\n  countIf(log_attributes['request.method'] = 'OPTIONS') AS options,\n  countIf(extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)') != '') AS parsed_paths,\n  min(timestamp) AS first_seen,\n  max(timestamp) AS last_seen\nFROM logs\nWHERE source = 'function_edge_logs'\n  AND timestamp >= toDateTime64('2026-08-29 00:00:00', 3, 'UTC')\n  AND timestamp < toDateTime64('2026-08-30 00:00:00', 3, 'UTC')\nGROUP BY route\nORDER BY route",
+      "iso_timestamp_start": "2026-08-29T00:00:00Z",
+      "iso_timestamp_end": "2026-08-30T00:00:00Z",
+      "response": {
+        "result": [
+          {
+            "first_seen": "2026-08-29T00:00:00.078000",
+            "last_seen": "2026-08-29T23:59:59.768000",
+            "non_options": 179909,
+            "options": 94634,
+            "parsed_paths": 274543,
+            "requests": 274543,
+            "route": "__other_functions__"
+          }
+        ]
+      }
+    },
+    {
+      "sql": "SELECT\n  if(extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)') IN ('find-campaigns', 'find-characters', 'find-encounters', 'get-sheet-content', 'main'), extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)'), '__other_functions__') AS route,\n  count() AS requests,\n  countIf(log_attributes['request.method'] != 'OPTIONS') AS non_options,\n  countIf(log_attributes['request.method'] = 'OPTIONS') AS options,\n  countIf(extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)') != '') AS parsed_paths,\n  min(timestamp) AS first_seen,\n  max(timestamp) AS last_seen\nFROM logs\nWHERE source = 'function_edge_logs'\n  AND timestamp >= toDateTime64('2026-08-30 00:00:00', 3, 'UTC')\n  AND timestamp < toDateTime64('2026-08-31 00:00:00', 3, 'UTC')\nGROUP BY route\nORDER BY route",
+      "iso_timestamp_start": "2026-08-30T00:00:00Z",
+      "iso_timestamp_end": "2026-08-31T00:00:00Z",
+      "response": {
+        "result": [
+          {
+            "first_seen": "2026-08-30T00:00:00.944000",
+            "last_seen": "2026-08-30T23:59:59.911000",
+            "non_options": 243782,
+            "options": 118933,
+            "parsed_paths": 362715,
+            "requests": 362715,
+            "route": "__other_functions__"
+          }
+        ]
+      }
+    },
+    {
+      "sql": "SELECT\n  if(extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)') IN ('find-campaigns', 'find-characters', 'find-encounters', 'get-sheet-content', 'main'), extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)'), '__other_functions__') AS route,\n  count() AS requests,\n  countIf(log_attributes['request.method'] != 'OPTIONS') AS non_options,\n  countIf(log_attributes['request.method'] = 'OPTIONS') AS options,\n  countIf(extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)') != '') AS parsed_paths,\n  min(timestamp) AS first_seen,\n  max(timestamp) AS last_seen\nFROM logs\nWHERE source = 'function_edge_logs'\n  AND timestamp >= toDateTime64('2026-08-31 00:00:00', 3, 'UTC')\n  AND timestamp < toDateTime64('2026-09-01 00:00:00', 3, 'UTC')\nGROUP BY route\nORDER BY route",
+      "iso_timestamp_start": "2026-08-31T00:00:00Z",
+      "iso_timestamp_end": "2026-09-01T00:00:00Z",
+      "response": {
+        "result": [
+          {
+            "first_seen": "2026-08-31T00:00:00.076000",
+            "last_seen": "2026-08-31T23:59:59.956000",
+            "non_options": 169512,
+            "options": 85688,
+            "parsed_paths": 255200,
+            "requests": 255200,
+            "route": "__other_functions__"
+          }
+        ]
+      }
+    },
+    {
+      "sql": "SELECT\n  if(extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)') IN ('find-campaigns', 'find-characters', 'find-encounters', 'get-sheet-content', 'main'), extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)'), '__other_functions__') AS route,\n  count() AS requests,\n  countIf(log_attributes['request.method'] != 'OPTIONS') AS non_options,\n  countIf(log_attributes['request.method'] = 'OPTIONS') AS options,\n  countIf(extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)') != '') AS parsed_paths,\n  min(timestamp) AS first_seen,\n  max(timestamp) AS last_seen\nFROM logs\nWHERE source = 'function_edge_logs'\n  AND timestamp >= toDateTime64('2026-09-01 00:00:00', 3, 'UTC')\n  AND timestamp < toDateTime64('2026-09-02 00:00:00', 3, 'UTC')\nGROUP BY route\nORDER BY route",
+      "iso_timestamp_start": "2026-09-01T00:00:00Z",
+      "iso_timestamp_end": "2026-09-02T00:00:00Z",
+      "response": {
+        "result": [
+          {
+            "first_seen": "2026-09-01T00:00:00.211000",
+            "last_seen": "2026-09-01T23:59:59.233000",
+            "non_options": 131321,
+            "options": 84290,
+            "parsed_paths": 215611,
+            "requests": 215611,
+            "route": "__other_functions__"
+          }
+        ]
+      }
+    },
+    {
+      "sql": "SELECT\n  if(extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)') IN ('find-campaigns', 'find-characters', 'find-encounters', 'get-sheet-content', 'main'), extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)'), '__other_functions__') AS route,\n  count() AS requests,\n  countIf(log_attributes['request.method'] != 'OPTIONS') AS non_options,\n  countIf(log_attributes['request.method'] = 'OPTIONS') AS options,\n  countIf(extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)') != '') AS parsed_paths,\n  min(timestamp) AS first_seen,\n  max(timestamp) AS last_seen\nFROM logs\nWHERE source = 'function_edge_logs'\n  AND timestamp >= toDateTime64('2026-09-02 00:00:00', 3, 'UTC')\n  AND timestamp < toDateTime64('2026-09-03 00:00:00', 3, 'UTC')\nGROUP BY route\nORDER BY route",
+      "iso_timestamp_start": "2026-09-02T00:00:00Z",
+      "iso_timestamp_end": "2026-09-03T00:00:00Z",
+      "response": {
+        "result": [
+          {
+            "first_seen": "2026-09-02T00:00:01.983000",
+            "last_seen": "2026-09-02T23:59:59.846000",
+            "non_options": 121441,
+            "options": 72395,
+            "parsed_paths": 193836,
+            "requests": 193836,
+            "route": "__other_functions__"
+          }
+        ]
+      }
+    },
+    {
+      "sql": "SELECT\n  if(extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)') IN ('find-campaigns', 'find-characters', 'find-encounters', 'get-sheet-content', 'main'), extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)'), '__other_functions__') AS route,\n  count() AS requests,\n  countIf(log_attributes['request.method'] != 'OPTIONS') AS non_options,\n  countIf(log_attributes['request.method'] = 'OPTIONS') AS options,\n  countIf(extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)') != '') AS parsed_paths,\n  min(timestamp) AS first_seen,\n  max(timestamp) AS last_seen\nFROM logs\nWHERE source = 'function_edge_logs'\n  AND timestamp >= toDateTime64('2026-09-03 00:00:00', 3, 'UTC')\n  AND timestamp < toDateTime64('2026-09-04 00:00:00', 3, 'UTC')\nGROUP BY route\nORDER BY route",
+      "iso_timestamp_start": "2026-09-03T00:00:00Z",
+      "iso_timestamp_end": "2026-09-04T00:00:00Z",
+      "response": {
+        "result": [
+          {
+            "first_seen": "2026-09-03T00:00:00.218000",
+            "last_seen": "2026-09-03T23:59:59.804000",
+            "non_options": 145660,
+            "options": 80857,
+            "parsed_paths": 226517,
+            "requests": 226517,
+            "route": "__other_functions__"
+          }
+        ]
+      }
+    },
+    {
+      "sql": "SELECT\n  if(extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)') IN ('find-campaigns', 'find-characters', 'find-encounters', 'get-sheet-content', 'main'), extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)'), '__other_functions__') AS route,\n  count() AS requests,\n  countIf(log_attributes['request.method'] != 'OPTIONS') AS non_options,\n  countIf(log_attributes['request.method'] = 'OPTIONS') AS options,\n  countIf(extract(log_attributes['request.pathname'], '^/functions/v1/([^/]+)') != '') AS parsed_paths,\n  min(timestamp) AS first_seen,\n  max(timestamp) AS last_seen\nFROM logs\nWHERE source = 'function_edge_logs'\n  AND timestamp >= toDateTime64('2026-09-04 00:00:00', 3, 'UTC')\n  AND timestamp < toDateTime64('2026-09-05 00:00:00', 3, 'UTC')\nGROUP BY route\nORDER BY route",
+      "iso_timestamp_start": "2026-09-04T00:00:00Z",
+      "iso_timestamp_end": "2026-09-05T00:00:00Z",
+      "response": {
+        "result": [
+          {
+            "first_seen": "2026-09-04T00:00:00.263000",
+            "last_seen": "2026-09-04T23:59:59.675000",
+            "non_options": 152857,
+            "options": 83251,
+            "parsed_paths": 236108,
+            "requests": 236108,
+            "route": "__other_functions__"
+          }
+        ]
+      }
+    }
+  ]
+}

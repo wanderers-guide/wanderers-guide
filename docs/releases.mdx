@@ -1,0 +1,154 @@
+---
+title: 'Release and recovery'
+description: 'Verify cloud functions and schema compatibility before publishing the frontend'
+---
+
+Wanderer's Guide releases reviewed feature branches to `main`. GitHub Actions
+verifies the code and archives a release manifest. The production frontend is
+served through Render and the API through Supabase project
+`fdrjqcyjklatdrmjdnys`. The Docker `main` function is a self-host router and must
+never be included in the cloud function inventory.
+
+## Release checks
+
+Install frontend dependencies first; the release CLI reuses the repository's
+TypeScript and Zod dependencies. It performs read-only checks and does not deploy,
+apply migrations, repair migration history, or delete remote functions.
+
+```bash
+npm run test:release
+npm run release:check
+npm run release:manifest -- --output /tmp/wg-release-manifest.json
+npm run release:verify -- --project-ref fdrjqcyjklatdrmjdnys --output /tmp/wg-release-verification.json
+```
+
+Remote verification requires Supabase CLI and a management access token in
+`SUPABASE_ACCESS_TOKEN`. On macOS it can use the existing Supabase CLI native
+credential. Never paste the token into a command argument or report. The check
+downloads each cloud function into its own temporary directory, compares all
+runtime source files, reads schema metadata through Supabase's read-only SQL API,
+and removes the temporary downloads. It checks function inventory again afterward
+to reject a snapshot collected during another deployment.
+
+The manifest records the commit, dirty-worktree state, every cloud entry point,
+explicit gateway policy, shared runtime dependencies, declarations, import map,
+Deno lockfile, migration hashes and schema requirements. A shared helper change
+therefore invalidates every function that imports it. Remote verification fails
+on missing or extra functions, unexpected modules, old source bytes, changed
+gateway settings, changed schema effects or an uncommitted checkout. It verifies
+source/configuration compatibility, not provider secrets or remote package/CDN
+integrity. Preserve the manifest and verification report with each release.
+
+CI runs the local checks without production credentials. The remote gate must
+pass before the frontend release is promoted. Render's current build command,
+autodeploy ordering, cache and rollback settings still require dashboard review;
+this repository cannot establish that its external frontend deployment already
+waits for the gate. Do not declare the rollout complete until that wiring is
+verified. Configure its release step to use the same command above, rather than
+maintaining a second inventory or schema checker.
+
+## Reconciled database baseline
+
+Production had no `supabase_migrations.schema_migrations` ledger when inspected
+on September 5, 2026. `supabase/release/baseline.json` records the hashes of the
+seven historical migration files and 134 observed schema objects/grants. This
+confirms their resulting effects, not the order or mechanism by which they ran:
+
+- Character `updated_at` is non-null with its update trigger and function.
+- Anonymous and authenticated roles can read public profile/campaign columns,
+  and cannot read `public_user.api`, `public_user.patreon` or `campaign.join_key`.
+- The campaign join-grant table has the expected keys, RLS with no public
+  policies, and membership trigger/function.
+- All 13 content tables have timestamp columns/triggers, 12 child tables bump
+  source timestamps, and both functions exclude generated `search_tsv` columns
+  when checking whether content changed.
+- All 12 content metadata columns are JSONB with GIN indexes.
+
+The read-only query is `supabase/release/schema-state.sql`. Baseline format 2 names
+each fingerprint with a `sha256` field, making its algorithm explicit even when
+the schema identifier names a protected column. These fingerprints describe schema
+definitions and migration files; they contain no account credentials. Definition hashes pin
+the inspected database functions, enabled triggers, columns, indexes, constraints
+and grants. A difference requires investigation and a reviewed compatibility
+update. Do not overwrite the baseline from an unreviewed production snapshot just
+to make a failing gate green.
+
+**Do not run `supabase db push` against this project to replay historical files.**
+Do not run `migration repair` merely to create a ledger. Historical SQL is immutable;
+use new migrations. Every new migration needs an entry and read-only effect check
+in `supabase/release/requirements.json`. If a ledger is introduced in a separately
+reviewed reconciliation, the gate also checks recorded post-baseline versions and
+rejects unknown versions. Absence of a ledger never substitutes for effect checks.
+
+## Rollout order
+
+1. Freeze the reviewed commit and preserve the previous compatible release
+   manifest, function source, frontend artifact and provider configuration.
+   Check CI/E2E and the current remote report. Investigate differences instead of
+   treating them as permission to overwrite production.
+2. Apply additive prerequisites before dependent functions. For this release,
+   apply only `20260905000000_edge_work_budget.sql` using the approved database
+   connection, `ON_ERROR_STOP` and a transaction. Its quota table/RPC is compatible
+   with old handlers; new paid-work handlers return 503 if it is missing. The
+   read-only requirement verifies the reviewed RPC body and service-role-only
+   access. No historical migration replay is needed.
+3. Deploy the complete cloud inventory from the reviewed checkout. Use
+   `node scripts/release.mjs function-names` as the name source. Deploy those names
+   explicitly with Supabase CLI and the repository `supabase/config.toml`; do not
+   use an unscoped deploy-all command or a global `--no-verify-jwt` override. A
+   shared-module change must deploy all its dependents, and deploying the full
+   54-function inventory is the simple safe default.
+4. For a future restrictive grant/schema change, first deploy handlers compatible
+   with both schemas, smoke-test them, then apply the restriction. July 18's
+   `public_user` permission failure is the reason this order matters.
+5. Run semantic smoke checks: public content and a public profile; authenticated
+   own-profile and character reads; an authorized test-character save followed
+   by a read; conflict handling; admin authorization and rejected anonymous
+   paid-work requests. Use dedicated test identities/data. HTTP 200 alone is not
+   success: inspect the JSend status and saved value. Expensive service success
+   tests should use a controlled quota and approved test input.
+6. Retire obsolete functions after consumer review, then run `release:verify`
+   again and require a passing report before publishing the frontend. On
+   September 5 the unexpected live routes were `find-campaigns`, `find-characters`,
+   `find-encounters`, `get-sheet-content` and self-host `main`. Seven complete UTC
+   days (August 29–September 4) contained 1,764,530 function-edge events and zero
+   events for all five routes, including OPTIONS. Their source bundles and gateway
+   inventory are backed up under `.agents/legacy/infra-release-2026-09-05/`.
+   This supports retirement but does not establish that dormant clients do not
+   exist. A retained compatibility route must be brought
+   back into reviewed source with current authorization and tests; do not simply
+   allowlist an opaque old bundle.
+7. Publish the verified frontend artifact, repeat public/authenticated/save smoke
+   checks, and inspect logs for permission, auth, worker and paid-work failures.
+   Archive the final manifest and successful report. Provider telemetry and
+   semantic checks remain necessary even when hashes agree.
+
+## Rollback
+
+Stop promotion on any failed gate or smoke check. Restore the previous verified
+frontend artifact and compatible function set using their saved manifest. Restore
+all affected shared-module dependents together; restoring one entry point does not
+restore the helper bundled into its neighbors.
+
+Keep additive quota schema in place when rolling back callers. Never roll back
+to a handler that reopens anonymous paid work; disable the affected costly route
+or retain its authorization patch while resolving an upstream problem. Never
+restore public SELECT access to protected account columns or campaign join keys
+to make an old handler work. Prefer a forward handler fix when a schema restriction
+makes the old release incompatible.
+
+After rollback, run the remote gate against the rollback checkout and repeat
+semantic profile/save checks. If no compatible rollback artifact has been tested,
+record that as a release blocker rather than claiming rollback readiness.
+
+## Sanitized content snapshots
+
+The GitHub content-snapshot workflow runs weekly on Tuesday at 09:00 UTC or by
+manual dispatch. Code pushes no longer trigger production exports. Exports are
+serialized, have a 15-minute job deadline, a 60-second statement deadline and a
+5-second lock deadline. An export failure does not deploy or change production.
+
+Account, character, campaign, encounter, moderation, join-grant and quota state
+are excluded from the production data export. Sanitized content supports local
+development; it is not a backup of user data. Production backups, restore drills
+and provider resource monitoring are separate operational responsibilities.

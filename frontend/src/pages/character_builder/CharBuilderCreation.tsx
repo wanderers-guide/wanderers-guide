@@ -2,6 +2,7 @@ import D20Loader from '@assets/images/D20Loader';
 import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import { CharacterInfo } from '@common/CharacterInfo';
+import { OperationError } from '@common/OperationError';
 import RichText from '@common/RichText';
 import ResultWrapper from '@common/operations/results/ResultWrapper';
 import { SelectContentButton, selectContent } from '@common/select/SelectContent';
@@ -148,6 +149,7 @@ export default function CharBuilderCreation(props: { characterId: number; pageHe
         <div style={{ display: doneLoading ? 'none' : undefined }}>{loader}</div>
         <div style={{ display: doneLoading ? undefined : 'none' }}>
           <CharBuilderCreationInner
+            key={props.characterId}
             characterId={props.characterId}
             content={content}
             pageHeight={props.pageHeight}
@@ -174,14 +176,19 @@ export function CharBuilderCreationInner(props: {
 
   const [levelItemValue, setLevelItemValue] = useState<string | null>(null);
 
-  const { character, setCharacter, results } = useCharacter(props.characterId, {
-    type: 'EXECUTE_OPS',
-    data: {
-      content: props.content,
-      context: 'CHARACTER-BUILDER',
-      onFinishLoading: props.onFinishLoading,
-    },
-  });
+  const { character, setCharacter, results, operationError, isCalculating, retryOperations } = useCharacter(
+    props.characterId,
+    {
+      type: 'EXECUTE_OPS',
+      data: {
+        content: props.content,
+        context: 'CHARACTER-BUILDER',
+        onFinishLoading: props.onFinishLoading,
+      },
+    }
+  );
+
+  if (operationError) return <OperationError loading={isCalculating} onRetry={retryOperations} />;
 
   const levelItems = Array.from({ length: (character?.level ?? 0) + 1 }, (_, i) => i).map((level) => {
     return (

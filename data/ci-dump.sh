@@ -13,4 +13,6 @@ pg_dump --data-only --table="public.*" \
   -T "public.character" \
   -T "public.encounter" \
   -T "public.content_update" \
+  -T "public.campaign_join_grant" \
+  -T "public.edge_work_budget" \
   "$1" > data.sql

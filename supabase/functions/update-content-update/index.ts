@@ -219,7 +219,14 @@ serve(async (req: Request) => {
 
           // Generate embeddings for the updated content
           if (content_id) {
-            await populateCollection(client, 'name', update.type, [content_id]);
+            try {
+              const indexed = await populateCollection(client, 'name', update.type, [content_id]);
+              if (indexed.status !== 'success') throw new Error('Indexing did not succeed');
+            } catch {
+              // Approval already committed. Indexing outages/quotas must not report a
+              // failed content write and invite the moderation bot to repeat it.
+              logEvent('warn', 'update-content-update', 'indexing_deferred', { content_id, type: update.type });
+            }
           }
         } else {
           // The content write failed after we claimed the request — revert it to PENDING

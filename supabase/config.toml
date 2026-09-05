@@ -133,122 +133,227 @@ vector_port = 54328
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"
 
-# Disable verify_jwt on API endpoints
-# update-content-update is the Discord bot's callback webhook: the bot authenticates
-# with the shared CONTENT_UPDATE_KEY in the Authorization header, which is not a JWT.
-# With verify_jwt enabled the gateway 401s every bot call before the function runs
-# (this silently killed all content-update approvals 2026-07-12 -> 2026-07-16).
-# The function validates the shared key itself (see its bypassAuth handler).
-[functions.update-content-update]
-verify_jwt = false
+# Every cloud function declares its gateway policy; do not rely on CLI defaults.
+# update-content-update validates CONTENT_UPDATE_KEY itself. Character API-key
+# routes also validate their non-JWT credentials inside the handler.
+# scripts/release.mjs validates this inventory and never deploys the self-host router.
 
 [functions.create-ability-block]
 verify_jwt = false
 
+
 [functions.create-ancestry]
 verify_jwt = false
+
 
 [functions.create-archetype]
 verify_jwt = false
 
+
 [functions.create-background]
 verify_jwt = false
+
 
 [functions.create-campaign]
 verify_jwt = false
 
+
 [functions.create-character]
 verify_jwt = false
+
 
 [functions.create-class]
 verify_jwt = false
 
+
+[functions.create-class-archetype]
+verify_jwt = true
+
+
 [functions.create-content-source]
 verify_jwt = false
+
+
+[functions.create-content-update]
+verify_jwt = true
+
 
 [functions.create-creature]
 verify_jwt = false
 
+
 [functions.create-encounter]
 verify_jwt = false
+
 
 [functions.create-item]
 verify_jwt = false
 
+
 [functions.create-language]
 verify_jwt = false
+
 
 [functions.create-spell]
 verify_jwt = false
 
+
 [functions.create-trait]
 verify_jwt = false
+
 
 [functions.create-versatile-heritage]
 verify_jwt = false
 
+
 [functions.delete-content]
 verify_jwt = false
+
+
+[functions.delete-user]
+verify_jwt = true
+
 
 [functions.find-ability-block]
 verify_jwt = false
 
+
 [functions.find-ancestry]
 verify_jwt = false
+
 
 [functions.find-archetype]
 verify_jwt = false
 
+
 [functions.find-background]
 verify_jwt = false
+
 
 [functions.find-campaign]
 verify_jwt = false
 
+
 [functions.find-character]
 verify_jwt = false
+
 
 [functions.find-class]
 verify_jwt = false
 
+
+[functions.find-class-archetype]
+verify_jwt = true
+
+
 [functions.find-content-source]
 verify_jwt = false
+
+
+[functions.find-content-update]
+verify_jwt = true
+
 
 [functions.find-creature]
 verify_jwt = false
 
+
 [functions.find-encounter]
 verify_jwt = false
+
 
 [functions.find-item]
 verify_jwt = false
 
+
 [functions.find-language]
 verify_jwt = false
+
 
 [functions.find-spell]
 verify_jwt = false
 
+
 [functions.find-trait]
 verify_jwt = false
+
 
 [functions.find-versatile-heritage]
 verify_jwt = false
 
+
 [functions.get-content-source-stats]
 verify_jwt = false
+
 
 [functions.get-content-versions]
 verify_jwt = false
 
+
 [functions.get-user]
 verify_jwt = false
+
+
+[functions.gm-add-to-group]
+verify_jwt = true
+
+
+[functions.gm-regenerate-code]
+verify_jwt = true
+
+
+[functions.gm-remove-from-group]
+verify_jwt = true
+
+
+[functions.gm-users-in-group]
+verify_jwt = true
+
+
+[functions.handle-patreon-redirect]
+verify_jwt = true
+
+
+[functions.open-ai-request]
+verify_jwt = true
+
 
 [functions.remove-from-campaign]
 verify_jwt = false
 
+
+[functions.reset-campaign-key]
+verify_jwt = true
+
+
 [functions.search-data]
 verify_jwt = false
 
+
 [functions.update-character]
 verify_jwt = false
+
+
+[functions.update-content-update]
+verify_jwt = false
+
+
+[functions.update-user]
+verify_jwt = true
+
+
+[functions.upload-public-file]
+verify_jwt = true
+
+
+[functions.vector-db-populate-collection]
+verify_jwt = true
+
+
+[functions.vector-db-query-collection]
+verify_jwt = true
+
+# Used only by docker-compose, not a cloud endpoint.
+[functions.main]
+enabled = false
+verify_jwt = true
