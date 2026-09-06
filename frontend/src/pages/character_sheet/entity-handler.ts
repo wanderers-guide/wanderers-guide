@@ -32,7 +32,9 @@ export function confirmHealth(
   if (result < 0) result = 0;
   if (result > maxHealth) result = maxHealth;
 
-  if (result === entity.hp_current) return;
+  // Completing initialization must clear reset_hp even when HP already equals
+  // the maximum. Otherwise a later condition calculation can erase new damage.
+  if (result === entity.hp_current && (keepResetHp || entity.meta_data?.reset_hp === false)) return;
 
   if (maxHealth === 0) return;
 
@@ -115,7 +117,11 @@ export function confirmPool(
  * Take a Breather (stamina variant, 10-min activity): spend 1 resolve point to restore
  * all stamina points. No-op if the entity has no resolve left.
  */
-export function handleTakeBreather(id: StoreID, entity: LivingEntity, setEntity?: SetterOrUpdater<LivingEntity | null>) {
+export function handleTakeBreather(
+  id: StoreID,
+  entity: LivingEntity,
+  setEntity?: SetterOrUpdater<LivingEntity | null>
+) {
   const maxResolve = getFinalResolveValue(id);
   // Negative pool values are the "uninitialized / full" sentinel
   const currentResolve = entity.resolve_current < 0 ? maxResolve : entity.resolve_current;

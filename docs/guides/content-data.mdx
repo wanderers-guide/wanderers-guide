@@ -39,6 +39,18 @@ server confirmation from a locally retained edit; reconnect and retry use one se
 save queue. Each browser page keeps its own recovery copy, so concurrent tabs cannot
 silently overwrite another tab's local draft.
 
+Open character pages check for remote edits every five seconds while visible and on
+reconnect or focus. Incoming edits advance the saved baseline before changing the
+editor, so polling cannot echo the same character back through autosave. A read started
+before a newer save, account change or route change cannot replace the current state.
+Failed reads leave the loaded sheet available. Remote edits use the same merge and
+conflict handling as save recovery.
+
+Incoming conditions and selections invalidate older calculations. If the reconciled
+character needs a different source set, the page loads that exact package before
+calculating or saving. This includes unsynced source choices restored from a draft;
+repeatedly loading the server's older sources would otherwise create a reload loop.
+
 Concurrent character edits merge at nested fields and stable entry IDs. Independent
 changes survive. When both writers change the same value, saving pauses and offers
 **Keep my edits**, **Use saved version**, and **Download my copy**. The local input and
@@ -49,6 +61,8 @@ Calculation completion applies every guarded state update; it does not debounce 
 updates into only the last one. Health normalization reads the latest HP when applying
 the result, so a slow calculation cannot replace newer damage or healing with an older
 clamped value. Input debouncing remains in place before running operations.
+HP initialization clears its reset flag even if the numeric HP already equals the
+maximum, so a later condition recalculation cannot heal newly received damage.
 
 ### Public vs. homebrew
 

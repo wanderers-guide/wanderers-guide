@@ -156,7 +156,9 @@ Run request recovery, buffered character saves, and worker lifecycle regressions
 `npm --prefix frontend run test:infra`. These exercise the real request manager, save hook,
 and operation lifecycle with controlled authentication, network, storage, and worker
 boundaries. They require no running database or production credentials. CI runs these
-regression suites before the production build.
+regression suites before the production build. The content selector tests also exercise an
+already typed search while its catalog is still loading, and verify that removed sources
+or filtered choices disappear from search results without another keystroke.
 
 ## Creating a user
 
@@ -282,6 +284,21 @@ through the API as well as the UI. It uses only its own test characters. These s
 simulate flaky transport, constrained CPU and page lifecycle boundaries, not iOS/Android
 process eviction or a measured physical-device performance profile. The save-hook regressions also cover uncertain writes,
 intentional reversions, separate-tab drafts, storage exhaustion, and account changes.
+
+The encounter writer regressions run in `test:infra`. They exercise GM/player races,
+serialized HP edits, lost acknowledgements, narrow guarded writes, retained drafts,
+and failure/conflict responses. The encounter keeps unsynced edits visible and retries
+transport failures. Conflicting edits offer **Review changes**, which opens the sheet's
+existing recovery flow. Navigating away preserves its versioned local draft; the campaign
+does not automatically restore old drafts into encounter controls on a new visit.
+
+`campaigns/encounterSync.cy.ts` creates two confirmed synthetic accounts, joins a real
+campaign through its join-key API, and tests the actual GM HP control while the player
+updates the same character independently. It covers typing during polls, Enter/blur
+deduplication, nested player edits, failed reads/writes, retry, and mobile layout changes.
+Fixture tasks require `SERVICE_ROLE_KEY` in the Cypress Node process and refuse non-local
+HTTP origins. The key is never put in Cypress browser configuration; generated accounts
+send no email, and cleanup verifies their ownership and removal even after a failed run.
 
 The `characters/skillProgression.cy.ts` spec creates an official Fighter/Skill Mastery
 fixture through the local API, runs the real operations worker, and checks master Medicine

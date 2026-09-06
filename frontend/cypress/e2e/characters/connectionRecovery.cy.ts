@@ -122,7 +122,7 @@ describe('Interrupted character saves', () => {
   it('recovers prepared spells after interruption and reopening at phone width', () => {
     cy.get('input[placeholder="Unknown Wanderer"]').type('Mobile wizard recovery');
     cy.get('button[aria-label="Next Page"]').click();
-    cy.contains('Select an ancestry, background, and class to get started.').should('exist');
+    cy.contains('Select an ancestry, background, and class to get started.', { timeout: 30000 }).should('be.visible');
     cy.buildABC('Elf', 'Acolyte', 'Wizard');
     cy.get('button[aria-label="Next Page"]').click();
     cy.location('pathname').should('include', '/sheet');
@@ -145,7 +145,8 @@ describe('Interrupted character saves', () => {
       }
     });
     cy.get('[data-wg-name="prepared-wizard"]').contains('Manage').click();
-    cy.contains('Add Spell').click();
+    // The real catalog may take several seconds under 4x CPU throttling.
+    cy.contains('Add Spell').click({ timeout: 30000 });
     const chooseCharm = () => {
       cy.get('input[placeholder="Search spells"]').last().type('Charm');
       cy.get('input[placeholder="Search spells"]')

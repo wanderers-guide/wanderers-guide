@@ -20,6 +20,8 @@ import type { CharacterSaveState } from '@common/CharacterSaveStatus';
 import { getCachedPublicUser } from '@auth/user-manager';
 import { applyConditions } from '@conditions/condition-handler';
 import { defineDefaultSources } from '@content/content-store';
+import { COMMON_CORE_ID } from '@constants/data';
+import { compareCharacterVersions } from './character-version';
 import { saveCustomization } from '@content/customization-cache';
 import { applyEquipmentPenalties } from '@items/inv-utils';
 import { useDebouncedValue, useDidUpdate } from '@mantine/hooks';
@@ -27,8 +29,8 @@ import { hideNotification, showNotification } from '@mantine/notifications';
 import { executeOperations, isOperationCancelled } from '@operations/operations.main';
 import { confirmHealth } from '@pages/character_sheet/entity-handler';
 import { hasSessionExpiredNotice, makeRequest } from '@requests/request-manager';
-import { useMutation } from '@tanstack/react-query';
-import { Character, ContentPackage, OperationCharacterResultPackage } from '@schemas/content';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { Character, CharacterSchema, ContentPackage, OperationCharacterResultPackage } from '@schemas/content';
 import { saveCalculatedStats } from '@variables/calculated-stats';
 import { setVariable } from '@variables/variable-manager';
 import { isEqual, isArray, cloneDeep } from 'lodash-es';
@@ -53,6 +55,7 @@ interface CharStateOptionsExecuteOps extends CharStateOptionsGeneric {
     content: ContentPackage;
     context: 'CHARACTER-SHEET' | 'CHARACTER-BUILDER';
     onFinishLoading: () => void;
+    onSourcesChange: (sources: number[]) => void;
   };
 }
 
@@ -64,6 +67,10 @@ interface CharStateOptionsSimple extends CharStateOptionsGeneric {
 type CharStateOptions = CharStateOptionsExecuteOps | CharStateOptionsSimple;
 
 type QueuedCharacterSave = { character: Character; actorId: string; scope: number };
+
+// Validate the concurrency envelope while retaining the complete authoritative row.
+const remoteCharacterVersionSchema = CharacterSchema.pick({ id: true, updated_at: true });
+const REMOTE_CHARACTER_INTERVAL = 5000;
 
 /** Offer the preserved input copy without automatically overwriting remote changes. */
 function showCharacterRecovery(characterId: number, recovery: Record<string, unknown>): void {
@@ -145,6 +152,7 @@ export default function useCharacter(
     characterRef.current = character;
   }, [character]);
   const lastSyncedRef = useRef<Character | null>(null);
+  const writeRevisionRef = useRef(0);
 
   // Latched when the server reports this session can read but not write the
   // character (RLS: e.g. anyone viewing a public sheet, incl. logged-out users).
@@ -420,10 +428,24 @@ export default function useCharacter(
   const debouncedOperationsHash = useMemo(() => getUpdateHash(debouncedCharacter), [debouncedCharacter]);
   const operationContent = options.type === 'EXECUTE_OPS' ? options.data.content : undefined;
   const operationContext = options.type === 'EXECUTE_OPS' ? options.data.context : undefined;
+  const onSourcesChangeRef = useRef<((sources: number[]) => void) | undefined>(undefined);
+  onSourcesChangeRef.current = options.type === 'EXECUTE_OPS' ? options.data.onSourcesChange : undefined;
+  const sourceKey = (ids: number[]) => [...new Set([COMMON_CORE_ID, ...ids])].sort((a, b) => a - b).join(',');
+  const characterSourcesKey = sourceKey(character?.content_sources?.enabled ?? []);
+  const loadedSources = operationContent?.defaultSources?.PAGE;
+  const contentSourcesMatch = !Array.isArray(loadedSources) || sourceKey(loadedSources) === characterSourcesKey;
+
+  useEffect(() => {
+    if (!hasLoadedCharacter || !operationContext || contentSourcesMatch) return;
+    // Reload the page's package for the reconciled inputs, including unsynced local
+    // source choices. Re-reading server sources here could create a reload loop.
+    onSourcesChangeRef.current?.(characterRef.current?.content_sources?.enabled ?? []);
+  }, [hasLoadedCharacter, contentSourcesMatch, characterSourcesKey, characterId, operationContext]);
 
   useEffect(() => {
     if (
       !hasLoadedCharacter ||
+      !contentSourcesMatch ||
       options.type !== 'EXECUTE_OPS' ||
       !debouncedCharacter ||
       debouncedCharacter.id !== characterId
@@ -466,6 +488,7 @@ export default function useCharacter(
     operationContext,
     operationAttempt,
     hasLoadedCharacter,
+    contentSourcesMatch,
   ]);
 
   const handleOperationResults = (results: OperationCharacterResultPackage, signal: AbortSignal) => {
@@ -556,6 +579,7 @@ export default function useCharacter(
     (options.type !== 'EXECUTE_OPS'
       ? !needsCalculationRef.current
       : !isCalculating &&
+        contentSourcesMatch &&
         executingOperations.current === null &&
         !operationError &&
         !!operationResults &&
@@ -594,6 +618,54 @@ export default function useCharacter(
     loadedActorRef.current === save.actorId &&
     sessionActorId === save.actorId;
 
+  /** Incoming reads and rejected saves share one merge, draft and conflict-resolution path. */
+  const receiveRemoteCharacter = (remote: Character, submitted?: Record<string, unknown>, repeatedConflict = false) => {
+    const base = lastSyncedRef.current;
+    const merge =
+      readOnlyRef.current || !loadedActorRef.current
+        ? { character: cloneDeep(remote), conflicts: [] }
+        : mergeCharacterSave(base, characterRef.current, remote, submitted);
+    const merged = merge.character;
+    pendingSaveRef.current = null;
+    if (merge.conflicts.length || repeatedConflict) {
+      characterRef.current = merged;
+      setCharacter(merged);
+      offerConflictResolution(
+        merged,
+        remote,
+        merge.conflicts.length ? merge.conflicts : ['Repeated changes from another session']
+      );
+      return null;
+    }
+    const changed = SAVED_CHARACTER_FIELDS.some(
+      (field) => !characterSaveValuesEqual(merged[field], characterRef.current?.[field])
+    );
+    const needsSave = SAVED_CHARACTER_FIELDS.some((field) => !characterSaveValuesEqual(merged[field], remote[field]));
+    // Advance the authoritative baseline BEFORE publishing incoming state. A clean
+    // remote edit is already saved; autosave must not echo it back to the server.
+    lastSyncedRef.current = remote;
+    const actor = loadedActorRef.current;
+    if (actor && !readOnlyRef.current) {
+      const reconciled = reconcileBufferedCharacterSave(merged, actor, remote, {
+        requiresCalculation:
+          needsCalculationRef.current ||
+          (options.type === 'EXECUTE_OPS' &&
+            (!canPersistRef.current() || getUpdateHash(merged) !== debouncedOperationsHash)),
+      });
+      setDraftStored(reconciled.status !== 'unavailable');
+    }
+    characterRef.current = merged;
+    if (!needsSave) {
+      retryCountRef.current = 0;
+      hideNotification('character-save-failed');
+      acknowledgeRecoveredDrafts();
+    }
+    if (changed) setCharacter(merged);
+    return { changed, needsSave };
+  };
+  const receiveRemoteRef = useRef(receiveRemoteCharacter);
+  receiveRemoteRef.current = receiveRemoteCharacter;
+
   // A successful calculation can release an edit that was waiting for derived values.
   useDidUpdate(() => {
     if (!debouncedCharacter || !canPersist()) return;
@@ -629,6 +701,7 @@ export default function useCharacter(
       const expected_updated_at = lastSyncedRef.current?.updated_at;
       if (!expected_updated_at) throw new Error('Reload the character to recover its save version');
       const data = Object.fromEntries(SAVED_CHARACTER_FIELDS.map((field) => [field, save.character[field]]));
+      writeRevisionRef.current += 1;
       uncertainSaveRef.current = { submitted: data, expectedUpdatedAt: expected_updated_at };
       journalCharacterSaveSubmission(save.character.id, save.actorId, data, expected_updated_at);
       const resData = await makeRequest(
@@ -682,53 +755,17 @@ export default function useCharacter(
       if (result.conflict) {
         const remote = result.server;
         if (!remote) return;
-        // Drop any stale queued snapshot — the merge produces the correct next save.
-        pendingSaveRef.current = null;
-        // The three-way merge needs the PREVIOUS synced state as its base; adopt the
-        // fresh concurrency token only after capturing it (and even when we skip
-        // merging below, so the next save uses the current token).
-        const base = lastSyncedRef.current;
-        lastSyncedRef.current = remote;
         if (remote.updated_at !== result.expected_updated_at) conflictStreakRef.current += 1;
-        const merge = mergeCharacterSave(base, characterRef.current, remote, result.submitted);
-        const merged = merge.character;
-        if (merge.conflicts.length > 0 || conflictStreakRef.current >= MAX_CONFLICT_STREAK) {
-          lastSyncedRef.current = base;
-          setCharacter(merged);
-          offerConflictResolution(
-            merged,
-            remote,
-            merge.conflicts.length ? merge.conflicts : ['Repeated changes from another session']
-          );
-          return;
-        }
-        // Only apply + notify when the merge actually changes local data. Equal on
-        // every saved field means the server row already matches what we have
-        // (pure token skew) — updating state anyway would fire a pointless save.
-        const changed =
-          !characterRef.current ||
-          SAVED_CHARACTER_FIELDS.some(
-            (field) => !characterSaveValuesEqual((merged as any)[field], (characterRef.current as any)[field])
-          );
-        const needsSave = SAVED_CHARACTER_FIELDS.some(
-          (field) => !characterSaveValuesEqual(merged[field], remote[field])
+        const received = receiveRemoteRef.current(
+          remote,
+          result.submitted,
+          conflictStreakRef.current >= MAX_CONFLICT_STREAK
         );
-        const reconciled = reconcileBufferedCharacterSave(merged, save.actorId, remote, {
-          requiresCalculation:
-            options.type === 'EXECUTE_OPS' &&
-            (!canPersistRef.current() || getUpdateHash(merged) !== debouncedOperationsHash),
-        });
-        setDraftStored(reconciled.status !== 'unavailable');
-        characterRef.current = merged;
-        if (needsSave) {
-          pendingSaveRef.current = { ...save, character: merged };
-        } else {
-          retryCountRef.current = 0;
-          hideNotification('character-save-failed');
-          acknowledgeRecoveredDrafts();
+        if (!received) return;
+        if (received.needsSave && characterRef.current) {
+          pendingSaveRef.current = { ...save, character: characterRef.current };
         }
-        if (!changed) return;
-        setCharacter(merged);
+        if (!received.changed) return;
         showNotification({
           icon: <IconRefresh />,
           title: 'Merged a remote update',
@@ -812,6 +849,59 @@ export default function useCharacter(
     setSavePhase('saving');
     mutateCharacterRaw(save);
   };
+
+  // React Query owns polling, visibility/reconnect behavior and request deduplication.
+  // Read snapshots carry their starting version so delayed reads cannot undo newer saves.
+  const { data: remoteSnapshot } = useQuery({
+    queryKey: ['character-remote-updates', characterId, sessionActorId],
+    queryFn: async () => {
+      const context = {
+        scope: saveScopeRef.current,
+        actor: loadedActorRef.current,
+        baseVersion: lastSyncedRef.current?.updated_at,
+        writeRevision: writeRevisionRef.current,
+      };
+      const remote = await makeRequest<Character>('find-character', { id: characterId }, false, {
+        ...(context.actor ? { expectedActorId: context.actor } : {}),
+        throwOnFailure: true,
+      });
+      if (!remote) return { ...context, character: null };
+      const version = remoteCharacterVersionSchema.safeParse(remote);
+      if (!version.success || version.data.id !== characterId || !version.data.updated_at) {
+        console.warn('Ignoring an invalid remote character version');
+        throw new Error('Remote character version is unavailable');
+      }
+      return { ...context, character: remote };
+    },
+    enabled: hasLoadedCharacter && isOnline && !loadError && !saveConflictRef.current,
+    refetchInterval: REMOTE_CHARACTER_INTERVAL,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (
+      !hasLoadedCharacter ||
+      !remoteSnapshot?.character ||
+      remoteSnapshot.scope !== saveScopeRef.current ||
+      remoteSnapshot.actor !== loadedActorRef.current ||
+      remoteSnapshot.actor !== sessionActorId ||
+      remoteSnapshot.baseVersion !== lastSyncedRef.current?.updated_at ||
+      remoteSnapshot.writeRevision !== writeRevisionRef.current ||
+      savingRef.current ||
+      uncertainSaveRef.current ||
+      saveConflictRef.current
+    )
+      return;
+    const remote = remoteSnapshot.character;
+    const base = lastSyncedRef.current;
+    if (remote.id !== characterId || !base?.updated_at || !remote.updated_at || remote.updated_at === base.updated_at)
+      return;
+    if (compareCharacterVersions(remote.updated_at, base.updated_at) === -1) return;
+    receiveRemoteRef.current(remote);
+  }, [remoteSnapshot, hasLoadedCharacter, characterId, sessionActorId]);
 
   retrySaveRef.current = () => {
     const current = characterRef.current;

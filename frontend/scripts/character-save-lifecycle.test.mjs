@@ -116,6 +116,23 @@ class HookHost {
       },
     };
   }
+  useQuery(options) {
+    const cell = this.useRef({});
+    this.remoteQuery = { options, cell };
+    return cell.current;
+  }
+  async poll() {
+    assert.ok(this.remoteQuery?.options.enabled, 'the loaded character accepts incoming remote reads');
+    const { options, cell } = this.remoteQuery;
+    try {
+      const data = await options.queryFn();
+      cell.current = { data };
+    } catch (error) {
+      cell.current = { ...cell.current, error };
+    }
+    this.dirty = true;
+    await this.flush();
+  }
   render() {
     harness = this;
     this.cursor = 0;
@@ -167,6 +184,7 @@ globalThis.__saveHooks = {
   useEffect: (fn, deps) => harness.useEffect(fn, deps),
   useDidUpdate: (fn, deps) => harness.useDidUpdate(fn, deps),
   useMutation: (options) => harness.useMutation(options),
+  useQuery: (options) => harness.useQuery(options),
   useAtom: () => [harness.character, harness.setCharacter],
   useAtomValue: () => harness.session,
   makeRequest: async (type, body, _notify, options) => {
@@ -195,7 +213,8 @@ const boundaries = {
   jotai: 'export const {useAtom,useAtomValue} = globalThis.__saveHooks;',
   '@mantine/hooks':
     'export const {useDidUpdate} = globalThis.__saveHooks; export const useDebouncedValue = value => [globalThis.__saveHooks.debounce(value)]; export const useDebouncedCallback = globalThis.__saveHooks.debounceCallback;',
-  '@tanstack/react-query': 'export const {useMutation} = globalThis.__saveHooks; export const useQuery = () => {};',
+  '@tanstack/react-query': 'export const {useMutation,useQuery} = globalThis.__saveHooks;',
+  '@constants/data': 'export const COMMON_CORE_ID = 3;',
   '@requests/request-manager':
     'export const {makeRequest} = globalThis.__saveHooks; export const hasSessionExpiredNotice = () => false;',
   '@mantine/notifications':
@@ -883,5 +902,246 @@ test('JSON-normalized save acknowledgements clear the draft and show Saved', asy
   await harness.flush();
   assert.equal(harness.value.saveState, 'saved');
   assert.equal(getBufferedCharacterSave(1, 'owner').status, 'none');
+  harness.unmount();
+});
+
+test('incoming campaign HP updates advance the server base without echoing a write', async () => {
+  let remote = { ...row(), hp_current: 20 };
+  harness.request = async (type) => {
+    assert.equal(type, 'find-character', 'receiving remote data must not send it back');
+    return structuredClone(remote);
+  };
+  harness.render();
+  await harness.flush();
+  remote = { ...remote, hp_current: 12, updated_at: 'version-2' };
+  await harness.poll();
+  assert.equal(harness.character.hp_current, 12);
+  for (let i = 0; i < 4; i++) await harness.poll();
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
+  assert.equal(harness.value.saveState, 'saved');
+  harness.unmount();
+});
+
+test('a remote HP change merges with unsaved local notes and the single save uses the new version', async () => {
+  let remote = { ...row(), hp_current: 20, notes: { pages: [] } };
+  harness.request = async (type, body) => {
+    if (type === 'find-character') return structuredClone(remote);
+    assert.equal(body.expected_updated_at, 'version-2');
+    remote = { ...remote, ...body, updated_at: 'version-3' };
+    return [structuredClone(remote)];
+  };
+  harness.render();
+  await harness.flush();
+  harness.debouncedCharacter = harness.character;
+  harness.edit({ notes: { pages: [{ id: 'note', title: 'My local note' }] } });
+  await harness.flush();
+  remote = { ...remote, hp_current: 12, updated_at: 'version-2' };
+  await harness.poll();
+  assert.equal(harness.character.hp_current, 12);
+  assert.equal(harness.character.notes.pages[0].title, 'My local note');
+  harness.debouncedCharacter = harness.character;
+  harness.render();
+  await harness.flush();
+  for (let i = 0; i < 4; i++) await harness.poll();
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 1);
+  assert.equal(remote.hp_current, 12);
+  assert.equal(remote.notes.pages[0].title, 'My local note');
+  harness.unmount();
+});
+
+test('a delayed remote read cannot roll back a save accepted while that read was in flight', async () => {
+  harness.render();
+  await harness.flush();
+  const stale = deferred();
+  harness.request = async (type, body) =>
+    type === 'find-character' ? stale.promise : [{ ...row(), ...body, updated_at: 'version-3' }];
+  const polling = harness.poll();
+  await harness.flush();
+  harness.edit({ name: 'Newer saved name' });
+  await harness.flush();
+  stale.resolve({ ...row(), name: 'Older remote name', updated_at: 'version-2' });
+  await polling;
+  assert.equal(harness.character.name, 'Newer saved name');
+  assert.equal(harness.value.saveState, 'saved');
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 1);
+  harness.unmount();
+});
+
+test('incoming same-field conflicts preserve the draft and pause writes until a choice', async () => {
+  harness.render();
+  await harness.flush();
+  harness.debouncedCharacter = harness.character;
+  harness.edit({ name: 'My unsaved name' });
+  await harness.flush();
+  harness.request = async () => ({ ...row(), name: 'GM changed name', updated_at: 'version-2' });
+  await harness.poll();
+  assert.equal(harness.character.name, 'My unsaved name');
+  assert.equal(harness.value.saveState, 'conflict');
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'My unsaved name');
+  assert.ok(harness.notices.some(({ id }) => id === 'character-conflict-1'));
+  harness.unmount();
+});
+
+test('failed incoming reads retain the current sheet and never redirect or write', async () => {
+  harness.render();
+  await harness.flush();
+  harness.request = async () => {
+    throw new Error('Connection unavailable');
+  };
+  await harness.poll();
+  assert.equal(harness.character.name, 'Character 1');
+  assert.equal(harness.value.loadError, false);
+  assert.equal(window.location.href, '');
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
+  harness.unmount();
+});
+
+test('late remote reads cannot update a different account or character after navigation', async () => {
+  harness.render();
+  await harness.flush();
+  const stale = deferred();
+  harness.request = async (type, body) => (body.id === 1 ? stale.promise : row(body.id));
+  const polling = harness.poll();
+  await harness.flush();
+  harness.characterId = 2;
+  harness.session = { user: { id: 'next-owner' } };
+  harness.render();
+  await harness.flush();
+  stale.resolve({ ...row(), name: 'Wrong scope', updated_at: 'version-2' });
+  await polling;
+  assert.equal(harness.character.id, 2);
+  assert.equal(harness.character.name, 'Character 2');
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
+  harness.unmount();
+});
+
+test('incoming conditions invalidate a slow calculation and settle without echoing the remote row', async () => {
+  let remote = row();
+  const calculations = [];
+  harness.options = {
+    type: 'EXECUTE_OPS',
+    data: { content: { items: [] }, context: 'CHARACTER-SHEET', onFinishLoading() {} },
+  };
+  harness.calculate = () => {
+    const pending = deferred();
+    calculations.push(pending);
+    return pending.promise;
+  };
+  harness.request = async (type) => {
+    assert.equal(type, 'find-character');
+    return structuredClone(remote);
+  };
+  harness.render();
+  await harness.flush();
+  assert.equal(calculations.length, 1);
+  remote = { ...remote, details: { conditions: [{ name: 'Frightened', value: 1 }] }, updated_at: 'version-2' };
+  await harness.poll();
+  assert.equal(calculations.length, 2);
+  calculations[0].resolve({ old: true });
+  await harness.flush();
+  assert.equal(harness.value.results, null);
+  calculations[1].resolve({ current: true });
+  await harness.flush();
+  for (let i = 0; i < 3; i++) await harness.poll();
+  assert.deepEqual(harness.value.results, { current: true });
+  assert.equal(harness.value.saveState, 'saved');
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
+  harness.unmount();
+});
+
+test('initial HP already at maximum clears the reset flag so remote damage survives later conditions', async () => {
+  let remote = { ...row(), hp_current: 10, meta_data: {} };
+  let revision = 1;
+  harness.options = {
+    type: 'EXECUTE_OPS',
+    data: {
+      content: { items: [] },
+      context: 'CHARACTER-SHEET',
+      onFinishLoading() {},
+    },
+  };
+  harness.calculate = async () => ({});
+  harness.confirmHealth = actualConfirmHealth;
+  harness.request = async (type, body) => {
+    if (type === 'find-character') return structuredClone(remote);
+    remote = { ...remote, ...body, updated_at: `version-${++revision}` };
+    return [structuredClone(remote)];
+  };
+  harness.render();
+  await harness.flush();
+  assert.equal(remote.meta_data.reset_hp, false, 'initialization must finish even when HP needs no numeric change');
+  remote = { ...remote, hp_current: 7, updated_at: `version-${++revision}` };
+  await harness.poll();
+  remote = {
+    ...remote,
+    details: { ...remote.details, conditions: [{ name: 'Frightened', value: 1 }] },
+    updated_at: `version-${++revision}`,
+  };
+  await harness.poll();
+  assert.equal(harness.character.hp_current, 7, 'a later calculation must not heal remotely applied damage');
+  assert.equal(remote.hp_current, 7);
+  harness.unmount();
+});
+
+test('remote source changes pause calculations until the page reloads matching content', async () => {
+  let remote = { ...row(), content_sources: { enabled: [1] } };
+  let calculations = 0;
+  const sourceRequests = [];
+  harness.options = {
+    type: 'EXECUTE_OPS',
+    data: {
+      content: { items: [], defaultSources: { PAGE: [1, 3] } },
+      context: 'CHARACTER-SHEET',
+      onFinishLoading() {},
+      onSourcesChange(sources) {
+        sourceRequests.push(sources);
+      },
+    },
+  };
+  harness.calculate = async () => {
+    calculations++;
+    return {};
+  };
+  harness.request = async (type) => {
+    assert.equal(type, 'find-character');
+    return structuredClone(remote);
+  };
+  harness.render();
+  await harness.flush();
+  assert.equal(calculations, 1);
+  remote = { ...remote, content_sources: { enabled: [1, 256] }, updated_at: 'version-2' };
+  await harness.poll();
+  assert.equal(calculations, 1, 'the old content package must not recalculate the changed character');
+  assert.deepEqual(sourceRequests, [[1, 256]]);
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.requiresCalculation, true);
+  harness.options = {
+    ...harness.options,
+    data: { ...harness.options.data, content: { items: [], defaultSources: { PAGE: [1, 3, 256] } } },
+  };
+  harness.render();
+  await harness.flush();
+  assert.equal(calculations, 2);
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
+  harness.unmount();
+});
+
+test('a public viewer receives remote changes without turning calculated local values into a conflict', async () => {
+  harness.session = null;
+  let remote = { ...row(), hp_current: 20 };
+  harness.request = async (type) => {
+    assert.equal(type, 'find-character');
+    return structuredClone(remote);
+  };
+  harness.render();
+  await harness.flush();
+  harness.edit({ hp_current: 19 });
+  await harness.flush();
+  remote = { ...remote, hp_current: 12, updated_at: 'version-2' };
+  await harness.poll();
+  assert.equal(harness.character.hp_current, 12);
+  assert.equal(harness.value.saveState, 'saved');
+  assert.equal(harness.notices.length, 0);
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
   harness.unmount();
 });

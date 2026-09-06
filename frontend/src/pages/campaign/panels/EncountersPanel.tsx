@@ -66,10 +66,13 @@ import { GiDiceTwentyFacesTwenty } from '@common/game-icons-inline';
 import { useAtom, useAtomValue } from 'jotai';
 import BlurBox from '@common/BlurBox';
 import ImprintButton from '@common/ImprintButton';
+import { CharacterSaveStatus } from '@common/CharacterSaveStatus';
+import { createEncounterCharacterWriter, type EncounterCharacterSave } from '@utils/encounter-character-writer';
 
 export default function EncountersPanel(props: {
   panelHeight: number;
   panelWidth: number;
+  characterWriter?: ReturnType<typeof createEncounterCharacterWriter>;
   campaign?: {
     data: Campaign;
     players: Character[];
@@ -90,12 +93,7 @@ export default function EncountersPanel(props: {
         user_id: session?.user.id,
       });
 
-      // Prefetch content package for creature calculations
-
-      const sv = defineDefaultSources('PAGE', 'ALL-USER-ACCESSIBLE');
-      // We could await fetch content for a more seemless experience but it takes a bit too long imo - Quzzar
-      // Opportunistic prefetch; actual creature calculation awaits its own package.
-      void fetchContentPackage(sv, { fetchSources: false, fetchCreatures: false }).catch(() => undefined);
+      defineDefaultSources('PAGE', 'ALL-USER-ACCESSIBLE');
 
       return result ?? [];
     },
@@ -196,6 +194,7 @@ export default function EncountersPanel(props: {
     return (
       <ScrollArea h={props.panelHeight} scrollbars='y'>
         <EncounterView
+          characterWriter={props.characterWriter}
           encounter={encounter}
           setEncounter={(e) => {
             const newEncounters = cloneDeep(encounters);
@@ -464,6 +463,7 @@ export default function EncountersPanel(props: {
 export type PopulatedCombatant = Omit<Combatant, 'data'> & Required<Pick<Combatant, 'data'>>;
 
 function EncounterView(props: {
+  characterWriter?: ReturnType<typeof createEncounterCharacterWriter>;
   encounter: Encounter;
   setEncounter: (encounter: Encounter) => void;
   players?: Character[];
@@ -549,7 +549,8 @@ function EncounterView(props: {
   const populateCombatants = (combatants: Combatant[]): PopulatedCombatant[] => {
     const getCombatantData = (combatant: Combatant): LivingEntity | undefined => {
       if (combatant.type === 'CHARACTER') {
-        return props.players?.find((p) => p.id === combatant.character);
+        const player = props.players?.find((p) => p.id === combatant.character);
+        return player ? (props.characterWriter?.display(player) ?? player) : undefined;
       } else {
         return combatant.creature;
       }
@@ -787,6 +788,8 @@ function EncounterView(props: {
                   key={combatant._id}
                   combatant={combatant}
                   computed={getComputedData(combatant)}
+                  save={combatant.character ? props.characterWriter?.status(combatant.character) : undefined}
+                  retrySave={() => props.characterWriter?.retry(combatant.character)}
                   // Returning updated populated entity data, will trigger update of the combatant
                   updateEntity={(input) => {
                     let entity = cloneDeep(input);
@@ -812,24 +815,9 @@ function EncounterView(props: {
                     }
 
                     if (combatant.type === 'CHARACTER') {
-                      // Send remote update to change character.
-                      //
-                      // Only send the combat fields the encounter panel actually edits.
-                      // combatant.data is a clone of an up-to-400ms-stale poll snapshot of
-                      // the FULL player character, so spreading it would full-replace the
-                      // player's live inventory/spells/etc. with the GM's stale copy and
-                      // silently destroy anything the player changed since the last poll.
-                      const c = entity as Character;
-                      makeRequest('update-character', {
-                        id: combatant.character!,
-                        hp_current: c.hp_current,
-                        hp_temp: c.hp_temp,
-                        stamina_current: c.stamina_current,
-                        resolve_current: c.resolve_current,
-                        hero_points: c.hero_points,
-                        details: c.details,
-                        meta_data: c.meta_data,
-                      });
+                      // Preserve player edits and pending GM changes through the same
+                      // versioned merge/recovery format used by character sheets.
+                      props.characterWriter?.update(combatant.data as Character, entity as Character);
                     } else if (combatant.type === 'CREATURE') {
                       updateCombatant({
                         ...combatant,
@@ -886,6 +874,8 @@ function EncounterView(props: {
 }
 
 function CombatantCard(props: {
+  save?: EncounterCharacterSave;
+  retrySave: () => void;
   combatant: PopulatedCombatant;
   computed?: {
     id: number;
@@ -928,17 +918,24 @@ function CombatantCard(props: {
 
   const [health, setHealth] = useState<string | undefined>();
   const healthRef = useRef<HTMLInputElement>(null);
+  const healthEditingRef = useRef(false);
+  const submittedHealthRef = useRef<string | null>(null);
+  const currentHp = props.combatant.data.hp_current;
+  const maximumHp = props.computed?.maxHp;
 
   useEffect(() => {
-    if (props.combatant.data) {
-      const currentHealth =
-        props.combatant.data.hp_current === undefined ? (props.computed?.maxHp ?? 0) : props.combatant.data.hp_current;
-      setHealth(`${currentHealth}` === 'null' ? `${props.computed?.maxHp ?? ''}` : `${currentHealth}`);
+    if (!healthEditingRef.current) {
+      const currentHealth = currentHp === undefined ? (maximumHp ?? 0) : currentHp;
+      setHealth(`${currentHealth}` === 'null' ? `${maximumHp ?? ''}` : `${currentHealth}`);
     }
-  }, [props.combatant, props.computed]);
+  }, [currentHp, maximumHp]);
 
   const handleHealthSubmit = () => {
     const inputHealth = health ?? '0';
+    healthEditingRef.current = false;
+    // Enter causes blur too. Commit that user action once, including under latency.
+    if (submittedHealthRef.current === inputHealth) return;
+    submittedHealthRef.current = inputHealth;
     let result = -1;
     try {
       result = evaluate(inputHealth);
@@ -977,13 +974,6 @@ function CombatantCard(props: {
         value={initiative ?? undefined}
         onChange={(val) => {
           setInitiative(parseInt(`${val}`));
-        }}
-        onFocus={(e) => {
-          const length = e.target.value.length;
-          // Move cursor to end
-          requestAnimationFrame(() => {
-            e.target.setSelectionRange(length, length);
-          });
         }}
         onBlur={handleInitiativeSubmit}
         onKeyDown={getHotkeyHandler([
@@ -1067,6 +1057,21 @@ function CombatantCard(props: {
             )}
           </Group>
 
+          {props.save && props.save.phase !== 'saved' && (
+            <Box onClick={(event) => event.stopPropagation()}>
+              <CharacterSaveStatus
+                state={props.save.phase === 'forbidden' ? 'read-only' : props.save.phase}
+                draftStored={props.save.stored}
+                onRetry={props.retrySave}
+              />
+              {(props.save.phase === 'conflict' || props.save.phase === 'forbidden') && (
+                <Button component='a' href={`/sheet/${props.combatant.character}`} variant='subtle' size='compact-xs'>
+                  Review changes
+                </Button>
+              )}
+            </Box>
+          )}
+
           {props.computed && (
             <Group gap={5} wrap='nowrap'>
               <Text fz='xs' c='gray.6'>
@@ -1098,14 +1103,9 @@ function CombatantCard(props: {
           autoComplete='nope'
           value={health}
           onChange={(e) => {
+            healthEditingRef.current = true;
+            submittedHealthRef.current = null;
             setHealth(e.target.value);
-          }}
-          onFocus={(e) => {
-            const length = e.target.value.length;
-            // Move cursor to end
-            requestAnimationFrame(() => {
-              e.target.setSelectionRange(length, length);
-            });
           }}
           onBlur={handleHealthSubmit}
           onKeyDown={getHotkeyHandler([
@@ -1119,6 +1119,7 @@ function CombatantCard(props: {
             </Group>
           }
           rightSectionWidth={60}
+          rightSectionPointerEvents='none'
           styles={{
             input: {
               backgroundColor: IMPRINT_BG_COLOR,
@@ -1205,7 +1206,11 @@ function CombatantCard(props: {
 }
 
 async function computeCombatants(combatants: PopulatedCombatant[]) {
-  const content = await fetchContentPackage(getDefaultSources('PAGE'), { fetchSources: false, fetchCreatures: false });
+  // Player rows already contain their calculated stats. Only creatures need the
+  // content package; share that lazy request when several creatures are present.
+  let contentPromise: ReturnType<typeof fetchContentPackage> | undefined;
+  const getCreatureContent = () =>
+    (contentPromise ??= fetchContentPackage(getDefaultSources('PAGE'), { fetchSources: false, fetchCreatures: false }));
 
   async function computeCombatant(combatant: PopulatedCombatant): Promise<{
     _id: string;
@@ -1239,7 +1244,7 @@ async function computeCombatants(combatants: PopulatedCombatant[]) {
         data: {
           id: STORE_ID,
           creature,
-          content,
+          content: await getCreatureContent(),
         },
       });
       // Apply conditions after everything else

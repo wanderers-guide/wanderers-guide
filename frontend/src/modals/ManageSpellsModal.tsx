@@ -31,7 +31,7 @@ import { isTruthy } from '@utils/type-fixing';
 import useRefresh from '@utils/use-refresh';
 import * as JsSearch from 'js-search';
 import { groupBy } from 'lodash-es';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useAtom } from 'jotai';
 import { SetterOrUpdater } from '@utils/type-fixing';
 
@@ -68,21 +68,26 @@ export default function ManageSpellsModal(props: {
     },
   });
 
-  // Filter options based on search query
-  const search = useRef(new JsSearch.Search('id'));
-  useEffect(() => {
-    if (!allRawSpells) return;
-    search.current.addIndex('name');
-    search.current.addIndex('description');
-    search.current.addIndex('duration');
-    search.current.addIndex('targets');
-    search.current.addIndex('area');
-    search.current.addIndex('range');
-    search.current.addIndex('requirements');
-    search.current.addIndex('trigger');
-    search.current.addIndex('cost');
-    search.current.addIndex('defense');
-    search.current.addDocuments(allRawSpells);
+  // Rebuild before rendering results so late content and removed sources are
+  // reflected immediately, including when the user has already typed a search.
+  const search = useMemo(() => {
+    const index = new JsSearch.Search('id');
+    for (const field of [
+      'name',
+      'description',
+      'duration',
+      'targets',
+      'area',
+      'range',
+      'requirements',
+      'trigger',
+      'cost',
+      'defense',
+    ]) {
+      index.addIndex(field);
+    }
+    index.addDocuments(allRawSpells ?? []);
+    return index;
   }, [allRawSpells]);
 
   const charData = useMemo(() => {
@@ -91,8 +96,7 @@ export default function ManageSpellsModal(props: {
   }, [props.entity]);
 
   const allFilteredSpells =
-    (searchQuery.trim() ? (search.current?.search(searchQuery.trim()) as Spell[] | undefined) : (allRawSpells ?? [])) ??
-    [];
+    (searchQuery.trim() ? (search.search(searchQuery.trim()) as Spell[] | undefined) : (allRawSpells ?? [])) ?? [];
 
   const spells = useMemo(() => {
     const filteredSpells = charData?.list
