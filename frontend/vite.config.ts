@@ -5,6 +5,17 @@ import { execFileSync } from 'node:child_process';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { VitePWA, VitePWAOptions } from 'vite-plugin-pwa';
 
+// Docker build contexts and exported source archives may have neither Git nor .git.
+function releaseRevision(): string {
+  const supplied = process.env.RENDER_GIT_COMMIT ?? process.env.GITHUB_SHA;
+  if (supplied && /^[a-f0-9]{7,40}$/.test(supplied)) return supplied;
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch {
+    return 'local';
+  }
+}
+
 const manifestForPlugin: Partial<VitePWAOptions> = {
   registerType: 'prompt',
   // Native registration lets each tab choose when to reload and preserve its edits.
@@ -50,9 +61,7 @@ const manifestForPlugin: Partial<VitePWAOptions> = {
 export default defineConfig({
   base: './',
   define: {
-    __WG_RELEASE__: JSON.stringify(
-      process.env.RENDER_GIT_COMMIT ?? execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
-    ),
+    __WG_RELEASE__: JSON.stringify(releaseRevision()),
   },
   resolve: {
     alias: {
