@@ -275,6 +275,20 @@ The `characters/calculationRecovery.cy.ts` and `characters/saveRecovery.cy.ts` s
 verify worker failure/retry and retained-copy download in the rendered app, including
 desktop and mobile screenshots. Both create and clean up their own local test character.
 
+The `characters/connectionRecovery.cy.ts` spec interrupts real character writes, lets a
+real committed response exceed the client timeout, and prepares spells at phone width
+with 4× CPU throttling before interrupting saving and reopening the page. Assertions read the local database
+through the API as well as the UI. It uses only its own test characters. These scenarios
+simulate flaky transport, constrained CPU and page lifecycle boundaries, not iOS/Android
+process eviction or a measured physical-device performance profile. The save-hook regressions also cover uncertain writes,
+intentional reversions, separate-tab drafts, storage exhaustion, and account changes.
+
+The `characters/skillProgression.cy.ts` spec creates an official Fighter/Skill Mastery
+fixture through the local API, runs the real operations worker, and checks master Medicine
+and its earlier expert-increase selector on desktop and mobile. The engine regression
+suite also covers Medic, repeated mastery, source-level caps, removal/regrant and creature
+store isolation.
+
 The same suite runs in CI on every PR via the `e2e` workflow. See [`.github/workflows/e2e.yml`](https://github.com/wanderers-guide/wanderers-guide/blob/main/.github/workflows/e2e.yml).
 
 ## Running the API tests

@@ -1,3 +1,5 @@
+import { CharacterSaveStatus } from '@common/CharacterSaveStatus';
+import { CharacterLoadError } from '@common/CharacterLoadError';
 import D20Loader from '@assets/images/D20Loader';
 import { glassStyle } from '@utils/colors';
 import BlurBox from '@common/BlurBox';
@@ -217,17 +219,26 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
 
   // EXECUTE_OPS triggers the character's operation pipeline and calls
   // onFinishLoading when it completes, which dismisses the loading screen.
-  const { character, setCharacter, isLoading, operationError, isCalculating, retryOperations } = useCharacter(
-    props.characterId,
-    {
-      type: 'EXECUTE_OPS',
-      data: {
-        content: props.content,
-        context: 'CHARACTER-SHEET',
-        onFinishLoading: props.onFinishLoading,
-      },
-    }
-  );
+  const {
+    character,
+    setCharacter,
+    isLoading,
+    operationError,
+    isCalculating,
+    retryOperations,
+    saveState,
+    draftStored,
+    retrySave,
+    loadError,
+    retryLoad,
+  } = useCharacter(props.characterId, {
+    type: 'EXECUTE_OPS',
+    data: {
+      content: props.content,
+      context: 'CHARACTER-SHEET',
+      onFinishLoading: props.onFinishLoading,
+    },
+  });
 
   setPageTitle(character && character.name.trim() ? character.name : 'Sheet');
 
@@ -249,11 +260,14 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [character, isLoading, props.content]);
 
+  if (loadError) return <CharacterLoadError onRetry={retryLoad} />;
+
   if (operationError) return <OperationError loading={isCalculating} onRetry={retryOperations} />;
 
   return (
     <Center>
       <Box maw={1000} w='100%' pb={isPhone ? 100 : 'sm'}>
+        <CharacterSaveStatus state={saveState} draftStored={draftStored} onRetry={retrySave} />
         <Box ref={ref}>
           <Stack gap='xs' style={{ position: 'relative' }}>
             {/* Top stat sections: layout collapses from 3 → 2 → 1 columns on smaller screens */}

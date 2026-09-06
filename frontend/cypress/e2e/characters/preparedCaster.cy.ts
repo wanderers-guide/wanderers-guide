@@ -1,8 +1,18 @@
 describe('Character builder', () => {
+  let characterId: number | undefined;
+  let token: string;
   before(() => {
+    cy.intercept('POST', '**/auth/v1/token*').as('signIn');
     cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.wait('@signIn').then(({ response }) => {
+      token = response?.body.access_token;
+    });
     cy.visit('/characters');
+    cy.intercept('POST', '**/functions/v1/create-character').as('created');
     cy.get('button[aria-label="Create Character"]').click();
+    cy.wait('@created').then(({ response }) => {
+      characterId = response?.body.data.id;
+    });
     cy.location('pathname', { timeout: 10000 }).should('include', '/builder');
 
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).type('Wizard 1');
@@ -19,19 +29,16 @@ describe('Character builder', () => {
   });
 
   after(() => {
-    cy.visit('/characters');
-    cy.location('pathname', { timeout: 10000 }).should('eq', '/characters');
-    cy.intercept('POST', '**/functions/v1/delete-content').as('deleteCharacter');
-
-    const removeCharacter = ($el: HTMLElement) => {
-      cy.wrap($el).as('btn');
-      cy.get('@btn').click();
-      cy.contains('Delete Character').click();
-      cy.get('button').contains('Delete').click();
-      cy.wait('@deleteCharacter').its('response.body.status').should('eq', 'success');
-    };
-
-    cy.get('button[aria-label="Options"]').each(removeCharacter);
+    if (!characterId || !token) return;
+    cy.request({
+      method: 'POST',
+      url: `${Cypress.env('functions_url')}/delete-content`,
+      headers: { Authorization: `Bearer ${token}` },
+      body: { id: characterId, type: 'character' },
+      log: false,
+    })
+      .its('body.status')
+      .should('eq', 'success');
   });
 
   it('should cast only one prepared spell', () => {

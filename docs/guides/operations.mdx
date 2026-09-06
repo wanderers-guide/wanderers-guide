@@ -104,6 +104,18 @@ Adjust a value. The exact behaviour depends on the variable type:
 - **`bool`**: set to true.
 - **`str`**: replace.
 
+Skill adjustments resolve in earned-level order. Training and fixed-rank grants precede
+increases earned at the same level. An earlier increase consumed reaching expert cannot
+be counted again when a later feat grants master. Increasing the character's level alone
+does not spend that old increase again. Numeric increases use their source's level cap
+(master from 7, legendary from 15); explicit rank grants retain their authored rank.
+Active level-threshold conditions pass their activation level to descendant adjustments.
+Selector previews use this same progression at the selected occurrence, so a later feat
+cannot make an earlier valid choice appear disabled. Removing a grant rebuilds progression
+from the remaining occurrences. Self-guarded proficiency grants resolve before sibling
+conditional text that reads the resulting proficiency (including Medic's Battle Medicine
+frequency). These mechanics do not invent missing content prerequisites.
+
 ```jsonc
 // Numeric
 { "id": "...", "type": "adjValue", "data": { "variable": "MAX_HEALTH", "value": 5 } }

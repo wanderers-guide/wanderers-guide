@@ -1,34 +1,44 @@
 describe('Characters', () => {
+  let characterId: number | undefined;
+  let token: string;
   beforeEach(() => {
+    characterId = undefined;
+    cy.intercept('POST', '**/auth/v1/token*').as('signIn');
     cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.wait('@signIn').then(({ response }) => {
+      token = response?.body.access_token;
+    });
     cy.visit('/characters');
   });
 
   it('should show empty characters', () => {
+    cy.intercept('POST', '**/functions/v1/find-character', { statusCode: 200, body: { status: 'success', data: [] } });
+    cy.visit('/characters');
     cy.contains('No characters found').should('exist');
   });
 
   describe('Character builder', () => {
     beforeEach(() => {
+      cy.intercept('POST', '**/functions/v1/create-character').as('created');
       cy.get('button[aria-label="Create Character"]').click();
+      cy.wait('@created').then(({ response }) => {
+        characterId = response?.body.data.id;
+      });
       cy.location('pathname', { timeout: 10000 }).should('include', '/builder');
     });
 
     afterEach(() => {
-      cy.get('button').contains('User Name').click();
-      cy.get('div.mantine-Menu-dropdown').contains('Characters').click();
-      cy.wait(500);
-      cy.location('pathname').should('eq', '/characters');
-
-      const removeCharacter = ($el: HTMLElement) => {
-        cy.wrap($el).as('btn');
-        cy.get('@btn').click();
-        cy.contains('Delete Character').click();
-        cy.get('button').contains('Delete').click();
-      };
-
-      cy.get('button[aria-label="Options"]').each(removeCharacter);
-      cy.contains('No characters found').should('exist');
+      // Clean up only this test's fixture; other local characters may already exist.
+      if (!characterId || !token) return;
+      cy.request({
+        method: 'POST',
+        url: `${Cypress.env('functions_url')}/delete-content`,
+        headers: { Authorization: `Bearer ${token}` },
+        body: { id: characterId, type: 'character' },
+        log: false,
+      })
+        .its('body.status')
+        .should('eq', 'success');
     });
 
     it('should create a lvl 1 human fighter', () => {

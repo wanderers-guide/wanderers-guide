@@ -235,91 +235,6 @@ test('a timeout never sends a replacement write', async () => {
   }
 });
 
-test('buffered saves contain no bearer token and replay with the current authenticated token', async () => {
-  api.bufferCharacterSave(character(), 'owner', 'version-1');
-  assert.equal(savedDraft().draft.actorId, 'owner');
-  assert.equal(savedDraft().draft.body.expected_updated_at, 'version-1');
-  assert.ok(!savedDraft().raw.includes('token'));
-  session = signedIn('new-current-token');
-  assert.deepEqual(await api.replayBufferedCharacterSave(1), { status: 'saved' });
-  assert.equal(calls[0].headers.Authorization, 'Bearer new-current-token');
-  assert.deepEqual(savedDraft(), { status: 'none' });
-});
-
-test('drafts survive every semantic rejection, empty response, and forbidden/conflict envelope', async () => {
-  for (const response of [
-    ok({ __conflict: true, character: { id: 1 } }),
-    ok({ __forbidden: true }),
-    ok([]),
-    ok([{ id: 2 }]),
-    { data: { status: 'fail', data: {} }, error: null },
-    { data: { status: 'error', message: 'failed' }, error: null },
-    { data: { data: [{ id: 1 }] }, error: null },
-  ]) {
-    api.bufferCharacterSave(character(), 'owner', 'version-1');
-    invoke = async () => response;
-    assert.equal((await api.replayBufferedCharacterSave(1)).status, 'retained');
-    assert.equal(savedDraft().draft.body.name, 'Local draft');
-  }
-});
-
-test('network failures retain the draft and remain bounded', async () => {
-  api.bufferCharacterSave(character(), 'owner', 'version-1');
-  invoke = async () => ({ data: null, error: new FunctionsFetchError('offline') });
-  assert.equal((await api.replayBufferedCharacterSave(1)).status, 'retained');
-  assert.equal(calls.length, 1);
-  assert.equal(savedDraft().draft.body.name, 'Local draft');
-});
-
-test('simultaneous replay attempts send one write', async () => {
-  api.bufferCharacterSave(character(), 'owner', 'version-1');
-  const results = await Promise.all([api.replayBufferedCharacterSave(1), api.replayBufferedCharacterSave(1)]);
-  assert.deepEqual(results, [{ status: 'saved' }, { status: 'saved' }]);
-  assert.equal(calls.length, 1);
-});
-
-test('acknowledging an older replay never removes a newer draft', async () => {
-  api.bufferCharacterSave(character(), 'owner', 'version-1');
-  invoke = async () => {
-    api.bufferCharacterSave(character('Newer edit'), 'owner', 'version-1');
-    return ok();
-  };
-  await api.replayBufferedCharacterSave(1);
-  assert.equal(savedDraft().draft.body.name, 'Newer edit');
-});
-
-test('account switching cannot replay another actor draft, and GM drafts use their own actor', async () => {
-  api.bufferCharacterSave(character(), 'owner', 'version-1');
-  session = signedIn('gm-token', 'gm');
-  assert.deepEqual(await api.replayBufferedCharacterSave(1), { status: 'none' });
-  assert.equal(calls.length, 0);
-  api.bufferCharacterSave(character('GM edit'), 'gm', 'version-1');
-  await api.replayBufferedCharacterSave(1);
-  assert.equal(calls[0].headers.Authorization, 'Bearer gm-token');
-  assert.equal(savedDraft('owner').draft.body.name, 'Local draft');
-});
-
-test('legacy unversioned buffers expose a recoverable body and drop their expired bearer token', async () => {
-  const token = `header.${Buffer.from(JSON.stringify({ sub: 'owner' })).toString('base64url')}.expired-signature`;
-  localStorage.setItem('autosave-character-1', JSON.stringify({ token, body: { id: 1, name: 'Legacy draft' } }));
-  const result = await api.replayBufferedCharacterSave(1);
-  assert.equal(result.status, 'retained');
-  assert.equal(result.reason, 'unversioned');
-  assert.equal(result.body.name, 'Legacy draft');
-  assert.equal(calls.length, 0);
-  assert.equal(localStorage.getItem('autosave-character-1'), null);
-  assert.ok(!savedDraft().raw.includes(token));
-});
-
-test('malformed drafts and signed-out sessions remain locally recoverable', async () => {
-  localStorage.setItem('autosave-character-1-owner', 'invalid json');
-  assert.equal((await api.replayBufferedCharacterSave(1)).reason, 'invalid');
-  assert.equal(localStorage.getItem('autosave-character-1-owner'), 'invalid json');
-  session = null;
-  assert.equal((await api.replayBufferedCharacterSave(1)).reason, 'signed-out');
-  assert.equal(calls.length, 0);
-});
-
 test('logout clears account caches but preserves every account draft', () => {
   api.bufferCharacterSave(character(), 'owner', 'version-1');
   api.bufferCharacterSave(character(), 'gm', 'version-1');
@@ -354,22 +269,6 @@ test('ambiguous lost responses retry reads once and never duplicate mutations', 
   assert.equal(calls.length, 2);
 });
 
-test('a rejected copy survives subsequent editing, successful replay, and remount discovery', async () => {
-  api.bufferCharacterSave(character('Rejected original'), 'owner', 'version-1');
-  invoke = async () => ok({ __conflict: true });
-  assert.equal((await api.replayBufferedCharacterSave(1)).recovery.name, 'Rejected original');
-  api.bufferCharacterSave(character('Latest draft'), 'owner', 'version-2');
-  invoke = async () => ok();
-  const replayed = await api.replayBufferedCharacterSave(1);
-  assert.equal(replayed.status, 'saved');
-  assert.equal(replayed.recovery.name, 'Rejected original');
-  const remounted = await api.replayBufferedCharacterSave(1);
-  assert.equal(remounted.status, 'none');
-  assert.equal(remounted.recovery.name, 'Rejected original');
-  session = signedIn('other-token', 'other');
-  assert.deepEqual(await api.replayBufferedCharacterSave(1), { status: 'none' });
-});
-
 test('a signed-out request is explicitly anonymous even if sign-in races invocation', async () => {
   session = null;
   invoke = async () => {
@@ -378,30 +277,6 @@ test('a signed-out request is explicitly anonymous even if sign-in races invocat
   };
   await api.makeRequest('find-character', { id: 1 });
   assert.equal(calls[0].headers.Authorization, 'Bearer anonymous-project-key');
-});
-
-test('pending calculation input is never replayed without a matching valid base and server version', async () => {
-  for (const options of [
-    { base: { id: 2, name: 'Other character', level: 1 }, expected_updated_at: 'version-1' },
-    { base: { id: 1 }, expected_updated_at: 'version-1' },
-    { base: undefined, expected_updated_at: 'version-1' },
-    { base: { id: 1, name: 'Character', level: 1 }, expected_updated_at: undefined },
-  ]) {
-    localStorage.setItem(
-      'autosave-character-1-owner',
-      JSON.stringify({
-        version: 1,
-        actorId: 'owner',
-        requiresCalculation: true,
-        base: options.base,
-        body: { id: 1, name: 'Retained input', expected_updated_at: options.expected_updated_at },
-      })
-    );
-    const result = await api.replayBufferedCharacterSave(1);
-    assert.equal(result.status, 'retained');
-    assert.equal(result.body.name, 'Retained input');
-    assert.equal(calls.length, 0);
-  }
 });
 
 test('an older acknowledgement cannot discard newly calculation-required input with identical fields', () => {
@@ -420,4 +295,293 @@ test('strict reads distinguish a successful missing record from transport and JS
   await assert.rejects(api.makeRequest('find-language', {}, false, { throwOnFailure: true }), /Request failed/);
   invoke = async () => http(500, { message: 'Unavailable' });
   await assert.rejects(api.makeRequest('find-language', {}, false, { throwOnFailure: true }), /Request failed/);
+});
+
+test('acknowledging one tab cannot advance another tab draft past independent saved HP', () => {
+  const base = { ...character('Original'), hp_current: 20 };
+  const tabA = { ...base, hp_current: 10 };
+  const tabB = { ...base, name: 'Offline rename' };
+  api.bufferCharacterSave(tabB, 'owner', 'version-1', {
+    requiresCalculation: false,
+    base,
+    writerId: 'tab-b',
+  });
+  api.acknowledgeBufferedCharacterSave(1, 'owner', tabA, 'version-1', 'version-2', false, 'tab-a');
+  const retained = api.getBufferedCharacterSave(1, 'owner', 'tab-b');
+  assert.equal(retained.draft.body.expected_updated_at, 'version-1');
+  assert.equal(retained.draft.base.hp_current, 20);
+  assert.equal(retained.draft.body.name, 'Offline rename');
+});
+
+test('two offline tabs retain independent durable copies', () => {
+  for (const writerId of ['tab-a', 'tab-b']) {
+    api.bufferCharacterSave(character(writerId), 'owner', 'version-1', {
+      requiresCalculation: false,
+      base: character('Original'),
+      writerId,
+    });
+  }
+  assert.equal(api.getBufferedCharacterSave(1, 'owner', 'tab-a').draft.body.name, 'tab-a');
+  assert.equal(api.getBufferedCharacterSave(1, 'owner', 'tab-b').draft.body.name, 'tab-b');
+});
+
+test('a same-tab newer intentional revert is rebased onto its acknowledged in-flight save', () => {
+  const base = { ...character('Original'), hp_current: 20 };
+  const submitted = { ...base, hp_current: 10 };
+  api.bufferCharacterSave(base, 'owner', 'version-1', {
+    requiresCalculation: false,
+    base,
+    writerId: 'tab-a',
+  });
+  api.acknowledgeBufferedCharacterSave(1, 'owner', submitted, 'version-1', 'version-2', false, 'tab-a');
+  const retained = api.getBufferedCharacterSave(1, 'owner', 'tab-a');
+  assert.equal(retained.draft.body.hp_current, 20);
+  assert.equal(retained.draft.base.hp_current, 10);
+  assert.equal(retained.draft.body.expected_updated_at, 'version-2');
+});
+
+test('restoration discovers every versioned copy without a network write or destructive claim', () => {
+  for (const writerId of ['tab-a', 'tab-b']) {
+    api.bufferCharacterSave(character(writerId), 'owner', 'version-1', {
+      requiresCalculation: writerId === 'tab-b',
+      base: character('Original'),
+      writerId,
+    });
+  }
+  const before = [...localStorage.data.entries()];
+  const loaded = api.loadBufferedCharacterSaves(1, 'owner');
+  assert.equal(loaded.status, 'loaded');
+  assert.equal(loaded.records.length, 2);
+  assert.deepEqual(loaded.retained, []);
+  assert.deepEqual(
+    loaded.records.map((record) => record.draft.body.name),
+    ['tab-a', 'tab-b']
+  );
+  assert.deepEqual(api.loadBufferedCharacterSaves(1, 'owner'), loaded);
+  assert.deepEqual([...localStorage.data.entries()], before);
+  assert.equal(calls.length, 0);
+});
+
+test('acknowledging a recovered copy preserves a newer edit written by its original tab', () => {
+  const options = { requiresCalculation: false, base: character('Original'), writerId: 'other-tab' };
+  api.bufferCharacterSave(character('Recovered edit'), 'owner', 'version-1', options);
+  const record = api.loadBufferedCharacterSaves(1, 'owner').records[0];
+  api.bufferCharacterSave(character('Newer edit'), 'owner', 'version-1', options);
+  assert.equal(api.acknowledgeBufferedCharacterRecovery(record).status, 'unchanged');
+  assert.equal(api.getBufferedCharacterSave(1, 'owner', 'other-tab').draft.body.name, 'Newer edit');
+  const newer = api.loadBufferedCharacterSaves(1, 'owner').records[0];
+  assert.equal(api.acknowledgeBufferedCharacterRecovery(newer).status, 'removed');
+  assert.deepEqual(api.getBufferedCharacterSave(1, 'owner', 'other-tab'), { status: 'none' });
+});
+
+test('restoration only exposes the requested actor drafts, including campaign editor copies', () => {
+  for (const actor of ['owner', 'gm']) {
+    api.bufferCharacterSave(character(actor), actor, 'version-1', {
+      requiresCalculation: false,
+      base: character('Original'),
+    });
+  }
+  assert.deepEqual(api.loadBufferedCharacterSaves(1, 'other'), { status: 'loaded', records: [], retained: [] });
+  assert.equal(api.loadBufferedCharacterSaves(1, 'gm').records[0].draft.body.name, 'gm');
+  assert.equal(api.loadBufferedCharacterSaves(1, 'owner').records[0].draft.body.name, 'owner');
+  assert.equal(calls.length, 0);
+});
+
+test('legacy bearer-token copies migrate without network access and remain explicit recovery', () => {
+  const token = `header.${Buffer.from(JSON.stringify({ sub: 'owner' })).toString('base64url')}.expired-signature`;
+  localStorage.setItem('autosave-character-1', JSON.stringify({ token, body: { id: 1, name: 'Legacy draft' } }));
+  const foreign = api.loadBufferedCharacterSaves(1, 'gm');
+  assert.deepEqual(foreign, { status: 'loaded', records: [], retained: [] });
+  assert.ok(localStorage.getItem('autosave-character-1').includes(token));
+  const result = api.loadBufferedCharacterSaves(1, 'owner');
+  assert.deepEqual(result.records, []);
+  assert.equal(result.retained[0].reason, 'unversioned');
+  assert.equal(result.retained[0].body.name, 'Legacy draft');
+  assert.equal(localStorage.getItem('autosave-character-1'), null);
+  assert.ok([...localStorage.data.values()].every((raw) => !raw.includes(token)));
+  assert.equal(calls.length, 0);
+});
+
+test('legacy account drafts migrate independently from new page drafts and preserve existing recovery', () => {
+  const legacy = {
+    version: 1,
+    actorId: 'owner',
+    body: { ...character('Old tab draft'), expected_updated_at: 'version-1' },
+    base: character('Original'),
+  };
+  localStorage.setItem('autosave-character-1-owner', JSON.stringify(legacy));
+  localStorage.setItem(
+    'autosave-character-recovery-1-owner',
+    JSON.stringify({
+      ...legacy,
+      body: { ...legacy.body, name: 'Previously rejected copy' },
+    })
+  );
+  api.bufferCharacterSave(character('Current tab draft'), 'owner', 'version-1', {
+    requiresCalculation: false,
+    base: character('Original'),
+  });
+  const result = api.loadBufferedCharacterSaves(1, 'owner');
+  assert.equal(result.records.length, 2);
+  assert.deepEqual(result.records.map((record) => record.draft.body.name).sort(), [
+    'Current tab draft',
+    'Old tab draft',
+  ]);
+  assert.equal(result.retained[0].body.name, 'Previously rejected copy');
+  assert.equal(result.retained[0].reason, 'recovery');
+  assert.equal(localStorage.getItem('autosave-character-1-owner'), null);
+});
+
+test('invalid and incomplete drafts stay available without automatic restoration', () => {
+  const inputs = [
+    { body: { id: 1, name: 'Unversioned' }, base: character('Original') },
+    { body: { id: 1, name: 'Missing base', expected_updated_at: 'version-1' } },
+    { body: { id: 1, name: 'Wrong base', expected_updated_at: 'version-1' }, base: { ...character(), id: 2 } },
+    { body: { id: 1, name: 'Invalid base', expected_updated_at: 'version-1' }, base: { id: 1 } },
+  ];
+  for (const [index, input] of inputs.entries()) {
+    localStorage.setItem(
+      `autosave-character-1-owner:writer:test-${index}`,
+      JSON.stringify({
+        version: 2,
+        actorId: 'owner',
+        writerId: `test-${index}`,
+        requiresCalculation: true,
+        ...input,
+      })
+    );
+  }
+  localStorage.setItem('autosave-character-1-owner:writer:broken', 'invalid json');
+  const result = api.loadBufferedCharacterSaves(1, 'owner');
+  assert.deepEqual(result.records, []);
+  assert.equal(result.retained.length, 5);
+  assert.equal(result.retained.filter((record) => record.body).length, 4);
+  assert.equal(localStorage.length, 5);
+  assert.equal(calls.length, 0);
+});
+
+test('lost-acknowledgement submissions survive newer edits and an intentional return to the original value', () => {
+  const base = { ...character('Original'), hp_current: 20 };
+  const submitted = { ...base, hp_current: 10 };
+  const options = { requiresCalculation: false, base };
+  api.bufferCharacterSave(submitted, 'owner', 'version-1', options);
+  assert.equal(api.journalCharacterSaveSubmission(1, 'owner', submitted, 'version-1').status, 'stored');
+  api.bufferCharacterSave(base, 'owner', 'version-1', options);
+  const record = api.loadBufferedCharacterSaves(1, 'owner').records[0];
+  assert.equal(record.draft.body.hp_current, 20);
+  assert.equal(record.draft.submission.body.hp_current, 10);
+  assert.equal(record.draft.submission.expectedUpdatedAt, 'version-1');
+  assert.ok(!record.raw.includes('current-token'));
+  api.acknowledgeBufferedCharacterSave(1, 'owner', submitted, 'version-1', 'version-2');
+  assert.equal(savedDraft().draft.body.hp_current, 20);
+  assert.equal(savedDraft().draft.base.hp_current, 10);
+  assert.equal(savedDraft().draft.submission, undefined);
+  api.acknowledgeBufferedCharacterSave(1, 'owner', base, 'version-2', 'version-3');
+  assert.deepEqual(savedDraft(), { status: 'none' });
+});
+
+test('a stale acknowledgement never erases a different newer in-flight submission', () => {
+  const base = { ...character('Original'), hp_current: 20 };
+  const submitted = { ...base, hp_current: 10 };
+  api.bufferCharacterSave(base, 'owner', 'version-2', { requiresCalculation: false, base: submitted });
+  api.journalCharacterSaveSubmission(1, 'owner', base, 'version-2');
+  assert.equal(api.acknowledgeBufferedCharacterSave(1, 'owner', base, 'version-1', 'version-2').status, 'unchanged');
+  assert.equal(savedDraft().draft.submission.expectedUpdatedAt, 'version-2');
+});
+
+test('storage quota failures are explicit and preserve the previous durable copy', () => {
+  api.bufferCharacterSave(character('Durable copy'), 'owner', 'version-1');
+  const prior = savedDraft().raw;
+  localStorage.setItem = () => {
+    throw new Error('Quota exceeded');
+  };
+  assert.equal(api.bufferCharacterSave(character('Unsaved copy'), 'owner', 'version-1').status, 'unavailable');
+  assert.equal(savedDraft().raw, prior);
+  assert.equal(api.journalCharacterSaveSubmission(1, 'owner', character(), 'version-1').status, 'unavailable');
+});
+
+test('denied storage reads are explicit instead of pretending there are no unsynced edits', () => {
+  localStorage.getItem = () => {
+    throw new Error('Storage denied');
+  };
+  assert.equal(api.getBufferedCharacterSave(1, 'owner').status, 'unavailable');
+  assert.equal(api.loadBufferedCharacterSaves(1, 'owner').status, 'unavailable');
+  assert.equal(api.bufferCharacterSave(character(), 'owner', 'version-1').status, 'unavailable');
+  assert.equal(
+    api.acknowledgeBufferedCharacterSave(1, 'owner', character(), 'version-1', 'version-2').status,
+    'unavailable'
+  );
+});
+
+test('legacy migration never deletes the only copy when storage is full', () => {
+  const legacy = JSON.stringify({
+    version: 1,
+    actorId: 'owner',
+    body: { ...character(), expected_updated_at: 'version-1' },
+    base: character('Original'),
+  });
+  localStorage.setItem('autosave-character-1-owner', legacy);
+  localStorage.setItem = () => {
+    throw new Error('Quota exceeded');
+  };
+  assert.equal(api.loadBufferedCharacterSaves(1, 'owner').status, 'unavailable');
+  assert.equal(localStorage.getItem('autosave-character-1-owner'), legacy);
+});
+
+test('repeated unversioned edits retain the first and latest copies without filling storage', () => {
+  for (let index = 0; index < 20; index++) api.bufferCharacterSave(character(`Edit ${index}`), 'owner');
+  const result = api.loadBufferedCharacterSaves(1, 'owner');
+  assert.equal(localStorage.length, 2);
+  assert.deepEqual(result.records, []);
+  assert.deepEqual(result.retained.map((record) => record.body.name).sort(), ['Edit 0', 'Edit 19']);
+});
+
+test('atomic reconciliation persists final intent and clears an obsolete journal without altering foreign copies', () => {
+  const base = { ...character('Original'), hp_current: 20 };
+  const submitted = { ...base, hp_current: 10 };
+  const remote = { ...base, name: 'Remote rename', updated_at: 'version-2' };
+  const merged = { ...remote, hp_current: 10 };
+  api.bufferCharacterSave(submitted, 'owner', 'version-1', { requiresCalculation: false, base });
+  api.journalCharacterSaveSubmission(1, 'owner', submitted, 'version-1');
+  api.bufferCharacterSave(character('Other tab'), 'owner', 'version-1', {
+    requiresCalculation: false,
+    base,
+    writerId: 'other-tab',
+  });
+  const foreign = api.getBufferedCharacterSave(1, 'owner', 'other-tab').raw;
+  assert.equal(
+    api.reconcileBufferedCharacterSave(merged, 'owner', remote, { requiresCalculation: false }).status,
+    'stored'
+  );
+  const own = savedDraft().draft;
+  assert.equal(own.body.name, 'Remote rename');
+  assert.equal(own.body.hp_current, 10);
+  assert.equal(own.base.hp_current, 20);
+  assert.equal(own.body.expected_updated_at, 'version-2');
+  assert.equal(own.submission, undefined);
+  assert.equal(api.getBufferedCharacterSave(1, 'owner', 'other-tab').raw, foreign);
+  assert.equal(
+    api
+      .loadBufferedCharacterSaves(1, 'owner')
+      .records.find((record) => record.draft.writerId === api.CHARACTER_SAVE_WRITER_ID).draft.submission,
+    undefined
+  );
+});
+
+test('reconciliation retires an already accepted copy only after required calculation completes', () => {
+  const base = { ...character('Original'), hp_current: 20 };
+  const accepted = { ...base, hp_current: 10, updated_at: 'version-2' };
+  api.bufferCharacterSave(accepted, 'owner', 'version-1', { requiresCalculation: false, base });
+  api.journalCharacterSaveSubmission(1, 'owner', accepted, 'version-1');
+  assert.equal(
+    api.reconcileBufferedCharacterSave(accepted, 'owner', accepted, { requiresCalculation: true }).status,
+    'stored'
+  );
+  assert.equal(savedDraft().draft.requiresCalculation, true);
+  assert.equal(savedDraft().draft.submission, undefined);
+  assert.equal(
+    api.reconcileBufferedCharacterSave(accepted, 'owner', accepted, { requiresCalculation: false }).status,
+    'removed'
+  );
+  assert.deepEqual(savedDraft(), { status: 'none' });
 });

@@ -5,23 +5,29 @@ import { Button, Group, Text } from '@mantine/core';
 import { downloadObjectAsJson } from '@export/export-to-json';
 import {
   SAVED_CHARACTER_FIELDS,
+  characterSaveValuesEqual,
   acknowledgeBufferedCharacterSave,
   bufferCharacterSave,
   getBufferedCharacterSave,
-  replayBufferedCharacterSave,
+  loadBufferedCharacterSaves,
+  reconcileBufferedCharacterSave,
+  acknowledgeBufferedCharacterRecovery,
+  journalCharacterSaveSubmission,
+  type BufferedCharacterSaveRecord,
 } from './character-save-buffer';
-import { mergeCharacterOnConflict } from './character-merge';
+import { mergeCharacterSave } from './character-merge';
+import type { CharacterSaveState } from '@common/CharacterSaveStatus';
 import { getCachedPublicUser } from '@auth/user-manager';
 import { applyConditions } from '@conditions/condition-handler';
 import { defineDefaultSources } from '@content/content-store';
 import { saveCustomization } from '@content/customization-cache';
 import { applyEquipmentPenalties } from '@items/inv-utils';
-import { useDebouncedCallback, useDebouncedValue, useDidUpdate } from '@mantine/hooks';
+import { useDebouncedValue, useDidUpdate } from '@mantine/hooks';
 import { hideNotification, showNotification } from '@mantine/notifications';
 import { executeOperations, isOperationCancelled } from '@operations/operations.main';
 import { confirmHealth } from '@pages/character_sheet/entity-handler';
 import { hasSessionExpiredNotice, makeRequest } from '@requests/request-manager';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { Character, ContentPackage, OperationCharacterResultPackage } from '@schemas/content';
 import { saveCalculatedStats } from '@variables/calculated-stats';
 import { setVariable } from '@variables/variable-manager';
@@ -30,7 +36,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
 import { SetterOrUpdater } from '@utils/type-fixing';
 import { convertToSetEntity } from './type-fixing';
-import { IconRefresh, IconAlertCircle } from '@tabler/icons-react';
+import { IconRefresh } from '@tabler/icons-react';
 import { hashData } from './numbers';
 import { getDeepDiff } from './objects';
 import { addExtraItems, checkBulkLimit } from '@items/inv-handlers';
@@ -96,6 +102,11 @@ export default function useCharacter(
   operationError: string | null;
   isCalculating: boolean;
   retryOperations: () => void;
+  saveState: CharacterSaveState;
+  draftStored: boolean;
+  retrySave: () => void;
+  loadError: boolean;
+  retryLoad: () => void;
 } {
   const [character, setCharacter] = useAtom(characterState);
   const session = useAtomValue(sessionState);
@@ -105,6 +116,26 @@ export default function useCharacter(
   const loadedActorRef = useRef<string | null>(null);
   const saveScopeRef = useRef(0);
   const needsCalculationRef = useRef(false);
+  const recoveredDraftsRef = useRef<BufferedCharacterSaveRecord[]>([]);
+  const uncertainSaveRef = useRef<{ submitted: Record<string, unknown>; expectedUpdatedAt: string } | null>(null);
+  const [savePhase, setSavePhase] = useState<'idle' | 'saving' | 'failed'>('idle');
+  const [draftStored, setDraftStored] = useState(true);
+  const [isOnline, setIsOnline] = useState(typeof navigator === 'undefined' || navigator.onLine !== false);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const retryCountRef = useRef(0);
+  const retrySaveRef = useRef<() => void>(() => {});
+
+  /** Only retire recovered snapshots after their merged values are accepted. */
+  const acknowledgeRecoveredDrafts = () => {
+    for (const record of recoveredDraftsRef.current) acknowledgeBufferedCharacterRecovery(record);
+    recoveredDraftsRef.current = [];
+  };
+  const clearSaveRetry = () => {
+    if (retryTimerRef.current !== null) clearTimeout(retryTimerRef.current);
+    retryTimerRef.current = null;
+  };
 
   // Always-current view of the atom (the `character` closure goes stale inside async
   // mutation callbacks), and the last character state we know the server holds — the
@@ -180,6 +211,9 @@ export default function useCharacter(
   const offerConflictResolution = useCallback(
     (local: Character, remote: Character, fields: string[]) => {
       saveConflictRef.current = true;
+      hideNotification('character-save-failed');
+      clearSaveRetry();
+      setSavePhase('idle');
       const scope = saveScopeRef.current;
       const actor = loadedActorRef.current;
       const noticeId = `character-conflict-${characterId}`;
@@ -187,26 +221,25 @@ export default function useCharacter(
         if (scope !== saveScopeRef.current || !actor || actor !== loadedActorRef.current) return;
         const chosen = useLocal ? characterRef.current : remote;
         if (!chosen) return;
-        // An explicit remote choice also discards this matching local draft;
-        // otherwise navigation would restore the very edit the user rejected.
-        // The snapshot comparison preserves any newer draft from another tab.
-        if (!useLocal && characterRef.current) {
-          acknowledgeBufferedCharacterSave(
-            characterId,
-            actor,
-            Object.fromEntries(SAVED_CHARACTER_FIELDS.map((field) => [field, characterRef.current?.[field]])),
-            lastSyncedRef.current?.updated_at,
-            remote.updated_at,
-            true
-          );
+        if (!useLocal) {
+          const owned = getBufferedCharacterSave(characterId, actor);
+          if ('draft' in owned) acknowledgeBufferedCharacterRecovery(owned);
+          acknowledgeRecoveredDrafts();
+        } else {
+          const reconciled = reconcileBufferedCharacterSave(chosen, actor, remote, {
+            requiresCalculation: needsCalculationRef.current || options.type === 'EXECUTE_OPS',
+          });
+          setDraftStored(reconciled.status !== 'unavailable');
         }
+        uncertainSaveRef.current = null;
         lastSyncedRef.current = remote;
         conflictStreakRef.current = 0;
         saveConflictRef.current = false;
-        if (options.type === 'SIMPLE') needsCalculationRef.current = false;
+        if (!useLocal) needsCalculationRef.current = false;
         hideNotification(noticeId);
         characterRef.current = cloneDeep(chosen);
         setCharacter(characterRef.current);
+        setSavePhase('idle');
       };
       showNotification({
         id: noticeId,
@@ -229,7 +262,15 @@ export default function useCharacter(
                 variant='subtle'
                 onClick={() => {
                   if (scope === saveScopeRef.current && actor === loadedActorRef.current)
-                    downloadObjectAsJson(characterRef.current ?? local, `character-${characterId}-conflict-copy`);
+                    downloadObjectAsJson(
+                      recoveredDraftsRef.current.length > 1
+                        ? {
+                            character: characterRef.current ?? local,
+                            copies: recoveredDraftsRef.current.map((record) => record.draft.body),
+                          }
+                        : (characterRef.current ?? local),
+                      `character-${characterId}-conflict-copy`
+                    );
                 }}
               >
                 Download my copy
@@ -245,12 +286,18 @@ export default function useCharacter(
     [characterId, options.type, setCharacter]
   );
 
-  // Replay this account's guarded draft before fetching the authoritative row.
+  // Restore drafts into the editor. This path never writes around its save queue.
   useEffect(() => {
     let active = true;
     const scope = ++saveScopeRef.current;
+    clearSaveRetry();
     loadedActorRef.current = null;
     setLoadedIdentity(null);
+    setLoadError(false);
+    setSavePhase('idle');
+    retryCountRef.current = 0;
+    uncertainSaveRef.current = null;
+    recoveredDraftsRef.current = [];
     needsCalculationRef.current = false;
     lastSyncedRef.current = null;
     readOnlyRef.current = false;
@@ -261,44 +308,71 @@ export default function useCharacter(
     pendingSaveRef.current = null;
     const recoveryNoticeId = `character-recovery-${characterId}`;
     void (async () => {
-      const replay = await replayBufferedCharacterSave(characterId);
+      // A failed request is not an authorization decision. Keep the route and offer retry.
+      const dbCharacter = await makeRequest<Character>('find-character', { id: characterId }, false, {
+        throwOnFailure: true,
+      });
       if (!active) return;
-      const recovery = replay.recovery ?? (replay.status === 'retained' ? replay.body : undefined);
-      if (recovery) {
-        showCharacterRecovery(characterId, recovery);
-      }
-      const dbCharacter = await makeRequest<Character>('find-character', { id: characterId });
-      if (!active) return;
-      loadedActorRef.current = sessionActorId;
-      if (dbCharacter && replay.status === 'needs-calculation') {
-        needsCalculationRef.current = true;
-        const merged = mergeCharacterOnConflict(replay.base, replay.body, dbCharacter);
-        handleFetchedCharacter(dbCharacter, merged.character);
-        if (merged.conflicts.length > 0) {
-          // Retain the common ancestor so navigation cannot silently approve the conflict.
-          lastSyncedRef.current = { ...dbCharacter, ...replay.base };
-          offerConflictResolution(merged.character, dbCharacter, merged.conflicts);
-        }
-      } else {
+      if (!dbCharacter) {
         handleFetchedCharacter(dbCharacter);
+        return;
       }
-      if (dbCharacter) setLoadedIdentity({ id: characterId, actor: sessionActorId });
+      loadedActorRef.current = sessionActorId;
+      const restored = sessionActorId ? loadBufferedCharacterSaves(characterId, sessionActorId) : null;
+      let displayed = dbCharacter;
+      const conflicts: string[] = [];
+      if (restored?.status === 'loaded') {
+        const copies = restored.retained.flatMap((record) => (record.body ? [record.body] : []));
+        if (copies.length) showCharacterRecovery(characterId, copies.length === 1 ? copies[0] : { copies });
+        for (const record of restored.records) {
+          const draft = record.draft;
+          if (!draft.base || !draft.body.expected_updated_at) {
+            showCharacterRecovery(characterId, draft.body);
+            continue;
+          }
+          const merged = mergeCharacterSave(draft.base, draft.body, displayed, draft.submission?.body);
+          displayed = merged.character;
+          conflicts.push(...merged.conflicts);
+          needsCalculationRef.current ||= !!draft.requiresCalculation;
+          recoveredDraftsRef.current.push(record);
+        }
+      } else if (restored?.status === 'unavailable') setDraftStored(false);
+      handleFetchedCharacter(dbCharacter, displayed);
+      if (conflicts.length) {
+        // Original records remain available until the user resolves the conflict.
+        const firstBase = recoveredDraftsRef.current[0]?.draft.base;
+        if (firstBase) lastSyncedRef.current = { ...dbCharacter, ...firstBase };
+        offerConflictResolution(displayed, dbCharacter, [...new Set(conflicts)]);
+      } else if (sessionActorId) {
+        if (recoveredDraftsRef.current.length) {
+          const reconciled = reconcileBufferedCharacterSave(displayed, sessionActorId, dbCharacter, {
+            requiresCalculation: needsCalculationRef.current,
+          });
+          setDraftStored(reconciled.status !== 'unavailable');
+        }
+        if (SAVED_CHARACTER_FIELDS.every((field) => characterSaveValuesEqual(displayed[field], dbCharacter[field])))
+          acknowledgeRecoveredDrafts();
+      }
+      setLoadedIdentity({ id: characterId, actor: sessionActorId });
     })().catch((error: unknown) => {
       if (!active) return;
       console.error('Could not load character:', error);
-      showNotification({
-        id: 'character-load-failed',
-        title: 'Could not load character',
-        message: 'Please reload to try again.',
-        color: 'red',
-      });
+      setLoadError(true);
+      if (options.type === 'EXECUTE_OPS') options.data.onFinishLoading();
     });
+    const retryLoadOnReconnect = () => {
+      if (active && !loadedActorRef.current) setLoadAttempt((attempt) => attempt + 1);
+    };
+    window.addEventListener('online', retryLoadOnReconnect);
     return () => {
       active = false;
       saveScopeRef.current = scope + 1;
+      clearSaveRetry();
+      window.removeEventListener('online', retryLoadOnReconnect);
       hideNotification(recoveryNoticeId);
+      hideNotification('character-save-failed');
     };
-  }, [characterId, sessionActorId, handleFetchedCharacter, offerConflictResolution]);
+  }, [characterId, sessionActorId, loadAttempt, handleFetchedCharacter, offerConflictResolution]);
 
   // Execute operations
   const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
@@ -308,7 +382,6 @@ export default function useCharacter(
   const [operationAttempt, setOperationAttempt] = useState(0);
 
   const [debouncedCharacter] = useDebouncedValue(character, 800);
-  const setCharacterDebounced = useDebouncedCallback(setCharacter, 800);
 
   const getUpdateHash = (c: Character | null | undefined) => {
     return hashData(
@@ -399,9 +472,9 @@ export default function useCharacter(
     if (options.type !== 'EXECUTE_OPS') return;
     if (!debouncedCharacter) return;
     if (signal.aborted) return;
-    // Debounced callbacks must check freshness again when the setter actually runs.
+    // React batches functional updates without discarding earlier completion steps.
     const commitCharacter: SetterOrUpdater<Character | null> = (update) => {
-      setCharacterDebounced((previous) => {
+      setCharacter((previous) => {
         if (signal.aborted || previous?.id !== debouncedCharacter.id) return previous;
         return typeof update === 'function' ? update(previous) : update;
       });
@@ -436,38 +509,26 @@ export default function useCharacter(
     // Apply conditions after everything else
     applyConditions('CHARACTER', debouncedCharacter.details?.conditions ?? []);
 
-    if (debouncedCharacter.meta_data?.reset_hp !== false) {
-      // To reset hp, we need to confirm health
-
-      const handleRestHP = () => {
-        if (signal.aborted) return;
-        const { classHp } = getHealthValueParts('CHARACTER');
-        const maxHealth = getFinalHealthValue('CHARACTER');
-        // Don't clear reset_hp until the character has class HP - otherwise ancestry-only HP
-        // gets locked in before the class is selected, resulting in a too-low starting HP.
-        confirmHealth(
-          `${maxHealth}`,
-          maxHealth,
-          debouncedCharacter,
-          convertToSetEntity(commitCharacter),
-          classHp === 0
-        );
-      };
-
-      // We run it twice for it to break out of the debouncing lock (not a perfect solution, but works)
-      handleRestHP();
-      const hpTimer = setTimeout(handleRestHP, 1000);
-      signal.addEventListener('abort', () => clearTimeout(hpTimer), { once: true });
-    } else {
-      // Because of the drained condition, let's confirm health
+    // Normalize the latest HP inside the functional update. A slow calculation
+    // must not overwrite damage/healing entered after its original snapshot.
+    commitCharacter((previous) => {
+      if (!previous) return previous;
+      const { classHp } = getHealthValueParts('CHARACTER');
       const maxHealth = getFinalHealthValue('CHARACTER');
+      const resetHealth = previous.meta_data?.reset_hp !== false;
+      let normalized: Character | null = previous;
+      const retainHealth: SetterOrUpdater<Character | null> = (update) => {
+        normalized = typeof update === 'function' ? update(previous) : update;
+      };
       confirmHealth(
-        `${debouncedCharacter.hp_current}`,
+        `${resetHealth ? maxHealth : previous.hp_current}`,
         maxHealth,
-        debouncedCharacter,
-        convertToSetEntity(commitCharacter)
+        previous,
+        convertToSetEntity(retainHealth),
+        resetHealth && classHp === 0
       );
-    }
+      return normalized;
+    });
 
     // Save calculated stats
     saveCalculatedStats('CHARACTER', debouncedCharacter, convertToSetEntity(commitCharacter));
@@ -498,22 +559,27 @@ export default function useCharacter(
         executingOperations.current === null &&
         !operationError &&
         !!operationResults &&
-        currentOperationsHash === debouncedOperationsHash &&
+        getUpdateHash(characterRef.current) === debouncedOperationsHash &&
         !!options.data.content);
 
   const canPersistRef = useRef(canPersist);
   canPersistRef.current = canPersist;
 
-  useAutoSave(characterId, () => ({
-    character: characterRef.current,
-    base: lastSyncedRef.current,
-    actorId: loadedActorRef.current,
-    // Retain raw inputs locally through navigation even while their derived state
-    // is waiting or failed. The flag prevents automatic server replay.
-    canBuffer: !readOnlyRef.current && loadedActorRef.current === sessionActorId,
-    requiresCalculation:
-      saveConflictRef.current || (!canPersist() && (needsCalculationRef.current || options.type === 'EXECUTE_OPS')),
-  }));
+  useAutoSave(
+    characterId,
+    () => ({
+      character: characterRef.current,
+      base: lastSyncedRef.current,
+      actorId: loadedActorRef.current,
+      // Retain raw inputs locally through navigation even while their derived state
+      // is waiting or failed. The flag prevents automatic server replay.
+      canBuffer: !readOnlyRef.current && loadedActorRef.current === sessionActorId,
+      forceBuffer: savingRef.current || !!uncertainSaveRef.current,
+      requiresCalculation:
+        saveConflictRef.current || (!canPersist() && (needsCalculationRef.current || options.type === 'EXECUTE_OPS')),
+    }),
+    setDraftStored
+  );
 
   useEffect(() => {
     if (!operationError || !loadedActorRef.current) return;
@@ -531,16 +597,40 @@ export default function useCharacter(
   // A successful calculation can release an edit that was waiting for derived values.
   useDidUpdate(() => {
     if (!debouncedCharacter || !canPersist()) return;
-    if (SAVED_CHARACTER_FIELDS.every((field) => isEqual(debouncedCharacter[field], lastSyncedRef.current?.[field])))
+    if (
+      !savingRef.current &&
+      !uncertainSaveRef.current &&
+      SAVED_CHARACTER_FIELDS.every((field) =>
+        characterSaveValuesEqual(characterRef.current?.[field], lastSyncedRef.current?.[field])
+      )
+    )
       return;
-    mutateCharacter(debouncedCharacter);
+    if (characterRef.current) mutateCharacter(characterRef.current);
   }, [debouncedCharacter, isCalculating, operationError, operationResults, sessionActorId]);
   const { mutate: mutateCharacterRaw } = useMutation({
     mutationFn: async (save: QueuedCharacterSave) => {
       if (!isCurrentSave(save)) throw new Error('Character save scope changed');
+      const uncertain = uncertainSaveRef.current;
+      if (uncertain) {
+        // A timeout can follow a committed write. Read and reconcile before another POST.
+        const remote = await makeRequest<Character>('find-character', { id: save.character.id }, false, {
+          expectedActorId: save.actorId,
+          throwOnFailure: true,
+        });
+        if (!remote) throw new Error('Could not recover character save');
+        return {
+          expected_updated_at: uncertain.expectedUpdatedAt,
+          submitted: uncertain.submitted,
+          forbidden: false,
+          conflict: true,
+          server: remote,
+        };
+      }
       const expected_updated_at = lastSyncedRef.current?.updated_at;
       if (!expected_updated_at) throw new Error('Reload the character to recover its save version');
       const data = Object.fromEntries(SAVED_CHARACTER_FIELDS.map((field) => [field, save.character[field]]));
+      uncertainSaveRef.current = { submitted: data, expectedUpdatedAt: expected_updated_at };
+      journalCharacterSaveSubmission(save.character.id, save.actorId, data, expected_updated_at);
       const resData = await makeRequest(
         'update-character',
         {
@@ -548,7 +638,7 @@ export default function useCharacter(
           ...data,
           ...(expected_updated_at ? { expected_updated_at } : {}),
         },
-        true,
+        false,
         { expectedActorId: save.actorId }
       );
       const request = { expected_updated_at, submitted: data };
@@ -577,10 +667,14 @@ export default function useCharacter(
     },
     onSuccess: (result, save) => {
       if (!result || !isCurrentSave(save)) return;
+      uncertainSaveRef.current = null;
+      clearSaveRetry();
+      setSavePhase('idle');
       if (result.forbidden) {
         // View-only session (e.g. a public sheet). Stop auto-saving entirely —
         // nothing we send will ever be accepted, and retrying just spams the API.
         readOnlyRef.current = true;
+        hideNotification('character-save-failed');
         pendingSaveRef.current = null;
         console.warn('Character is view-only for this session; auto-save disabled.');
         return;
@@ -595,8 +689,8 @@ export default function useCharacter(
         // merging below, so the next save uses the current token).
         const base = lastSyncedRef.current;
         lastSyncedRef.current = remote;
-        conflictStreakRef.current += 1;
-        const merge = mergeCharacterOnConflict(base, characterRef.current, remote);
+        if (remote.updated_at !== result.expected_updated_at) conflictStreakRef.current += 1;
+        const merge = mergeCharacterSave(base, characterRef.current, remote, result.submitted);
         const merged = merge.character;
         if (merge.conflicts.length > 0 || conflictStreakRef.current >= MAX_CONFLICT_STREAK) {
           lastSyncedRef.current = base;
@@ -614,19 +708,24 @@ export default function useCharacter(
         const changed =
           !characterRef.current ||
           SAVED_CHARACTER_FIELDS.some(
-            (field) => !isEqual((merged as any)[field], (characterRef.current as any)[field])
+            (field) => !characterSaveValuesEqual((merged as any)[field], (characterRef.current as any)[field])
           );
-        const needsSave = SAVED_CHARACTER_FIELDS.some((field) => !isEqual(merged[field], remote[field]));
+        const needsSave = SAVED_CHARACTER_FIELDS.some(
+          (field) => !characterSaveValuesEqual(merged[field], remote[field])
+        );
+        const reconciled = reconcileBufferedCharacterSave(merged, save.actorId, remote, {
+          requiresCalculation:
+            options.type === 'EXECUTE_OPS' &&
+            (!canPersistRef.current() || getUpdateHash(merged) !== debouncedOperationsHash),
+        });
+        setDraftStored(reconciled.status !== 'unavailable');
+        characterRef.current = merged;
         if (needsSave) {
           pendingSaveRef.current = { ...save, character: merged };
         } else {
-          acknowledgeBufferedCharacterSave(
-            save.character.id,
-            save.actorId,
-            Object.fromEntries(SAVED_CHARACTER_FIELDS.map((field) => [field, remote[field]])),
-            result.expected_updated_at,
-            remote.updated_at
-          );
+          retryCountRef.current = 0;
+          hideNotification('character-save-failed');
+          acknowledgeRecoveredDrafts();
         }
         if (!changed) return;
         setCharacter(merged);
@@ -639,6 +738,8 @@ export default function useCharacter(
       } else if (result.server) {
         // Record the authoritative post-write state (incl. the new updated_at token).
         conflictStreakRef.current = 0;
+        retryCountRef.current = 0;
+        hideNotification('character-save-failed');
         lastSyncedRef.current = result.server;
         acknowledgeBufferedCharacterSave(
           save.character.id,
@@ -647,6 +748,7 @@ export default function useCharacter(
           result.expected_updated_at,
           result.server.updated_at
         );
+        acknowledgeRecoveredDrafts();
         console.log('> Fetched updated character: #', getUpdateHash(character), 'vs.', getUpdateHash(result.server));
       }
     },
@@ -654,25 +756,43 @@ export default function useCharacter(
       if (!isCurrentSave(save)) return;
       console.error('Character save failed:', error);
       reportClientFailure('save_failed');
-      // If the real cause is a dead session, that persistent notification already
-      // explains it; a generic "check your connection" toast would just confuse.
-      if (hasSessionExpiredNotice()) return;
-      showNotification({
-        id: 'character-save-failed',
-        icon: <IconAlertCircle />,
-        title: 'Failed to save character',
-        message: 'Your changes could not be saved. Please check your connection and try again.',
-        color: 'red',
-        autoClose: 5000,
-      });
+      setSavePhase('failed');
+      if (!hasSessionExpiredNotice() && retryCountRef.current === 0)
+        showNotification({
+          id: 'character-save-failed',
+          title: 'Changes not synced',
+          message: (
+            <Group gap='xs'>
+              <Text size='sm'>Retrying automatically.</Text>
+              <Button size='compact-xs' variant='light' onClick={() => retrySaveRef.current()}>
+                Retry now
+              </Button>
+            </Group>
+          ),
+          color: 'yellow',
+          autoClose: false,
+          withCloseButton: true,
+          closeButtonProps: { 'aria-label': 'Dismiss save notice' },
+        });
+      // The persistent inline state stays visible until an actual acknowledgement.
+      // A bounded backoff also recovers when a flaky network never fires `online`.
+      clearSaveRetry();
+      if (!hasSessionExpiredNotice()) {
+        const delay = Math.min(30000, 2000 * 2 ** Math.min(retryCountRef.current++, 4));
+        retryTimerRef.current = setTimeout(() => {
+          retryTimerRef.current = null;
+          retrySaveRef.current();
+        }, delay);
+      }
     },
     onSettled: (_result, _error, save) => {
       if (!isCurrentSave(save)) return;
       // Once the in-flight save resolves, flush the latest pending snapshot (if any).
       const next = pendingSaveRef.current;
       pendingSaveRef.current = null;
-      if (next && canPersistRef.current()) {
-        mutateCharacterRaw(next);
+      if (!_error && next && canPersistRef.current()) {
+        setSavePhase('saving');
+        mutateCharacterRaw({ ...next, character: characterRef.current ?? next.character });
       } else {
         savingRef.current = false;
       }
@@ -687,39 +807,61 @@ export default function useCharacter(
       pendingSaveRef.current = save;
       return;
     }
+    clearSaveRetry();
     savingRef.current = true;
+    setSavePhase('saving');
     mutateCharacterRaw(save);
   };
 
-  // Poll remote character updates - only if the character hasn't been updated recently
-  const [lDebouncedCharacter] = useDebouncedValue(character, 5000);
-  const notRecentlyUpdated = !!(
-    executingOperations.current === null &&
-    lDebouncedCharacter &&
-    isEqual(lDebouncedCharacter, character) &&
-    isEqual(debouncedCharacter, character)
-  );
-  useQuery({
-    queryKey: [`find-character-polling-updates-${characterId}`],
-    queryFn: async () => {
-      const polledCharacter = await makeRequest<Character>('find-character', {
-        id: characterId,
-      });
+  retrySaveRef.current = () => {
+    const current = characterRef.current;
+    if (!current || savingRef.current || !canPersistRef.current() || hasSessionExpiredNotice()) return;
+    if (
+      !uncertainSaveRef.current &&
+      SAVED_CHARACTER_FIELDS.every((field) => characterSaveValuesEqual(current[field], lastSyncedRef.current?.[field]))
+    )
+      return;
+    mutateCharacter(current);
+  };
+  useEffect(() => {
+    const wake = () => {
+      setIsOnline(typeof navigator === 'undefined' || navigator.onLine !== false);
+      retrySaveRef.current();
+    };
+    const offline = () => setIsOnline(false);
+    const visible = () => {
+      if (document.visibilityState === 'visible') wake();
+    };
+    window.addEventListener('online', wake);
+    window.addEventListener('focus', wake);
+    window.addEventListener('offline', offline);
+    document.addEventListener('visibilitychange', visible);
+    return () => {
+      clearSaveRetry();
+      window.removeEventListener('online', wake);
+      window.removeEventListener('focus', wake);
+      window.removeEventListener('offline', offline);
+      document.removeEventListener('visibilitychange', visible);
+    };
+  }, [characterId, sessionActorId]);
 
-      if (notRecentlyUpdated && Object.keys(getDeepDiff(character, polledCharacter)).length > 0) {
-        showNotification({
-          icon: <IconRefresh />,
-          title: `Updating character...`,
-          message: `Received a remote update`,
-          autoClose: 1500,
-        });
-        setCharacter(polledCharacter);
-      }
-      return polledCharacter;
-    },
-    refetchInterval: 1000,
-    enabled: false, // notRecentlyUpdated, Fix polling on char item update
-  });
+  const hasPendingChanges =
+    !!uncertainSaveRef.current ||
+    !character ||
+    SAVED_CHARACTER_FIELDS.some((field) => !characterSaveValuesEqual(character[field], lastSyncedRef.current?.[field]));
+  const saveState: CharacterSaveState = readOnlyRef.current
+    ? 'read-only'
+    : saveConflictRef.current
+      ? 'conflict'
+      : !isOnline && hasPendingChanges
+        ? 'offline'
+        : savePhase === 'failed'
+          ? 'failed'
+          : savePhase === 'saving'
+            ? 'saving'
+            : hasPendingChanges
+              ? 'pending'
+              : 'saved';
 
   const isFinished =
     hasLoadedCharacter &&
@@ -733,7 +875,12 @@ export default function useCharacter(
   return {
     character,
     setCharacter,
-    isLoading: !isFinished && !operationError,
+    isLoading: !isFinished && !operationError && !loadError,
+    saveState,
+    draftStored,
+    retrySave: () => retrySaveRef.current(),
+    loadError,
+    retryLoad: () => setLoadAttempt((attempt) => attempt + 1),
     results: operationResults ?? null,
     operationError,
     isCalculating,
@@ -746,19 +893,27 @@ type AutoSaveSnapshot = {
   base: Character | null;
   actorId: string | null;
   canBuffer: boolean;
+  forceBuffer: boolean;
   requiresCalculation: boolean;
 };
 
 /** Buffer eligible changes during editing and synchronously on pagehide or navigation. */
-function useAutoSave(characterId: number, getSnapshot: () => AutoSaveSnapshot): void {
+function useAutoSave(
+  characterId: number,
+  getSnapshot: () => AutoSaveSnapshot,
+  onStorage: (stored: boolean) => void
+): void {
   const snapshotRef = useRef(getSnapshot);
   snapshotRef.current = getSnapshot;
 
   const saveImmediately = useCallback(() => {
-    const { character: current, base, actorId, canBuffer, requiresCalculation } = snapshotRef.current();
+    const { character: current, base, actorId, canBuffer, forceBuffer, requiresCalculation } = snapshotRef.current();
     if (!canBuffer || !actorId || !current || current.id !== characterId || base?.id !== characterId) return;
     // Loading the remote row must not replace a retained local recovery copy.
-    if (SAVED_CHARACTER_FIELDS.every((field) => isEqual(current[field], base[field]))) {
+    if (
+      !forceBuffer &&
+      SAVED_CHARACTER_FIELDS.every((field) => characterSaveValuesEqual(current[field], base[field]))
+    ) {
       if (!requiresCalculation) {
         acknowledgeBufferedCharacterSave(
           current.id,
@@ -771,8 +926,9 @@ function useAutoSave(characterId: number, getSnapshot: () => AutoSaveSnapshot): 
       }
       return;
     }
-    bufferCharacterSave(current, actorId, base.updated_at, { requiresCalculation, base });
-  }, [characterId]);
+    const buffered = bufferCharacterSave(current, actorId, base.updated_at, { requiresCalculation, base });
+    onStorage(buffered.status === 'stored');
+  }, [characterId, onStorage]);
 
   // Preserve inputs before auth events or navigation can unmount the editor.
   // Pending derived values stay local until the next successful calculation.

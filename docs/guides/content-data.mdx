@@ -34,12 +34,21 @@ preserves unsynced character drafts.
 
 The builder waits for the current character's authoritative save context before
 exposing editable controls. A cached route row cannot make the form ready early.
+A failed load leaves the character route available for retry. Save status distinguishes
+server confirmation from a locally retained edit; reconnect and retry use one serialized
+save queue. Each browser page keeps its own recovery copy, so concurrent tabs cannot
+silently overwrite another tab's local draft.
 
 Concurrent character edits merge at nested fields and stable entry IDs. Independent
 changes survive. When both writers change the same value, saving pauses and offers
 **Keep my edits**, **Use saved version**, and **Download my copy**. The local input and
 its original base remain buffered until the conflict is resolved. Choosing the saved
 version removes the matching rejected draft so reloading cannot restore that edit.
+
+Calculation completion applies every guarded state update; it does not debounce several
+updates into only the last one. Health normalization reads the latest HP when applying
+the result, so a slow calculation cannot replace newer damage or healing with an older
+clamped value. Input debouncing remains in place before running operations.
 
 ### Public vs. homebrew
 

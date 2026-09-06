@@ -58,6 +58,7 @@ import { hasArchetypeClassFeatTraits, hasTraitType } from '@utils/traits';
 import { getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
 import { meetsPrerequisites } from '@variables/prereq-detection';
 import { getFinalProfValue } from '@variables/variable-helpers';
+import { previewSkillAdjustment, SkillSelectionPreviewSchema } from '@variables/skill-progression';
 import {
   getAllAncestryTraitVariables,
   getAllArchetypeTraitVariables,
@@ -1382,6 +1383,7 @@ interface GenericAbilityBlock extends AbilityBlock {
   _custom_select?: GenericData;
   _is_core?: boolean;
   _source_level?: number;
+  _skill_preview?: unknown;
 }
 export function GenericSelectionOption(props: {
   option: GenericAbilityBlock;
@@ -1493,14 +1495,16 @@ export function GenericSelectionOption(props: {
           : props.skillAdjustment;
   }
 
-  let limitedByLevel = false;
-  if (props.skillAdjustment === '1') {
-    if (nextProf && nextProf === 'M' && (props.option._source_level ?? 1) < 7) {
-      limitedByLevel = true;
-    } else if (nextProf && nextProf === 'L' && (props.option._source_level ?? 1) < 15) {
-      limitedByLevel = true;
-    }
+  // The engine knows the rank at this occurrence; later feats must not rewrite an earlier choice's preview.
+  const calculatedPreview = SkillSelectionPreviewSchema.safeParse(props.option._skill_preview);
+  if (calculatedPreview.success) {
+    currentProf = calculatedPreview.data.from;
+    nextProf = calculatedPreview.data.to;
   }
+  const limitedByLevel = calculatedPreview.success
+    ? calculatedPreview.data.limitedByLevel
+    : props.skillAdjustment === '1' &&
+      previewSkillAdjustment(currentProf ?? 'U', '1', props.option._source_level ?? 1).limitedByLevel;
 
   let alreadyProficient =
     !props.selected &&
@@ -1510,6 +1514,9 @@ export function GenericSelectionOption(props: {
         maxProficiencyType(currentProf ?? 'U', props.skillAdjustment) === currentProf));
 
   if (nextProf === null) {
+    alreadyProficient = true;
+  }
+  if (calculatedPreview.success && !props.selected && calculatedPreview.data.from === calculatedPreview.data.to) {
     alreadyProficient = true;
   }
 
