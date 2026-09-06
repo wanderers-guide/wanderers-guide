@@ -44,6 +44,16 @@ export function ErrorPage() {
           >
             GitHub Issues
           </Button>
+          <Button
+            variant='light'
+            size='md'
+            onClick={() => {
+              window.dispatchEvent(new Event('wg:before-update'));
+              window.location.reload();
+            }}
+          >
+            Reload app
+          </Button>
         </Group>
       </Container>
     </Box>

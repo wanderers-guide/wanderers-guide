@@ -1,6 +1,6 @@
 // @ts-ignore
 import { serve } from 'std/server';
-import { connect, getPublicUser } from '../_shared/helpers.ts';
+import { connect, createServiceClient, getPublicUser } from '../_shared/helpers.ts';
 import { regenerateGameMasterAccessCode } from '../_shared/patreon.ts';
 
 serve(async (req: Request) => {
@@ -14,7 +14,7 @@ serve(async (req: Request) => {
       };
     }
 
-    const result = await regenerateGameMasterAccessCode(client, user);
+    const result = await regenerateGameMasterAccessCode(createServiceClient(), user);
     if (result.status === 'SUCCESS') {
       return {
         status: 'success',

@@ -101,7 +101,7 @@ rejects unknown versions. Absence of a ledger never substitutes for effect check
    explicitly with Supabase CLI and the repository `supabase/config.toml`; do not
    use an unscoped deploy-all command or a global `--no-verify-jwt` override. A
    shared-module change must deploy all its dependents, and deploying the full
-   54-function inventory is the simple safe default.
+   55-function inventory is the simple safe default.
 4. For a future restrictive grant/schema change, first deploy handlers compatible
    with both schemas, smoke-test them, then apply the restriction. July 18's
    `public_user` permission failure is the reason this order matters.
@@ -160,3 +160,71 @@ Account, character, campaign, encounter, moderation, join-grant and quota state
 are excluded from the production data export. Sanitized content supports local
 development; it is not a backup of user data. Production backups, restore drills
 and provider resource monitoring are separate operational responsibilities.
+
+
+## Authorization rollout for the next release
+
+Deploy `update-user`, `gm-add-to-group`, `gm-regenerate-code`, and
+`create-content-update` from the reviewed commit before applying
+`20260905010000_account_moderation_writes.sql`. These handlers support both permission
+sets. Run the account-setting and moderation smoke checks, then apply this new
+restriction transactionally. Never restore broad profile or moderation writes to
+make an old handler work. The added release requirement checks INSERT/UPDATE column
+grants as well as table privileges and policies; the old baseline remains immutable.
+
+No existing profiles are deleted or demoted by this migration. The production preflight found no duplicate user IDs and confirmed the server-owned
+signup trigger. Existing elevated accounts require a separate identity review before cleanup.
+
+## Browser diagnostics and semantic monitoring
+
+The app reports a maximum of one event per failure category per page to
+`report-client-error`. Supabase function logs receive a fixed category, page category,
+build revision and random trace ID. The endpoint rejects extra fields, accepts at
+most 512 bytes and caps logging at 60 reports per minute per isolate. These are
+sampled operational signals, not an exhaustive error census. Provider log retention
+and alert delivery still need to be configured for the desired response window.
+
+The `Production health` workflow runs four read-only probes every 15 minutes:
+frontend HTML, Auth health, a known content source and source timestamps. It rejects
+HTTP-200 failure envelopes and malformed data. It does not submit content, write
+characters or invoke paid services. Configure the public anonymous key in repository
+variable `WG_MONITOR_ANON_KEY`. Repository owners receive failures through their
+GitHub Actions notification settings; verify that the responsible operator has
+workflow failure notifications enabled. GitHub schedules can be delayed and are not
+an availability guarantee. Controlled authenticated save checks remain a release
+step, not a recurring mutation of a real user's character.
+
+The update notice lets each tab choose when to reload. It flushes character drafts
+before activation; finish edits in other forms before choosing **Reload app**.
+An update activated in another tab shows a prompt instead of forcing this tab to
+reload. The error page also offers an explicit reload for missing old assets.
+
+## Recovery evidence and next drill
+
+On September 5, 2026, production had seven completed daily physical backups (August
+30 through September 5), with PITR disabled. The newest backup was at
+04:44:18 UTC. A daily backup implies up to roughly one day of potential database
+changes to recover separately; it does not prove a restore time.
+
+Database backups cover Storage metadata, not uploaded object bytes. Back up both
+`portraits` and `backgrounds` to an independently recoverable, private destination.
+See [Supabase backups](https://supabase.com/docs/guides/platform/backups).
+
+Before declaring recovery ready:
+
+1. Select an isolated restore destination, encrypted object-backup destination,
+   recovery-point target and recovery-time target. Keep encryption-key recovery
+   separate from the backup; never put plaintext user exports into Git or CI artifacts.
+2. Restore a database backup into that isolated destination, with outbound Discord,
+   email, Patreon and paid integrations disabled. Never restore over production as
+   a test. Record backup age, start/finish times and any missing schema/functions.
+3. Verify profiles, Auth, RLS denial tests, controlled character reads/saves, campaign
+   joins and moderation state. Use dedicated test identities rather than messaging
+   real users. Preserve an evidence report without account data or tokens.
+4. Restore object bytes with their matching metadata and compare counts, sizes and
+   checksums. Load sample restored images through the isolated app.
+5. Record measured recovery time, cleanup and gaps. A sanitized development dump
+   or successful backup listing is not evidence that production can be restored.
+
+This release does not enable PITR, purchase a second project or claim an unperformed
+production restore drill. Those steps require the chosen destination and recovery policy.

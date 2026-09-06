@@ -17,7 +17,7 @@ describe('Buffered character recovery', () => {
       characterId = response?.body.data.id;
     });
     cy.intercept('POST', '**/functions/v1/update-character').as('nameSave');
-    cy.get('input[placeholder="Unknown Wanderer"]').type('Saved remote name');
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).type('Saved remote name');
     cy.wait('@nameSave', { timeout: 15000 });
   });
 
@@ -45,7 +45,7 @@ describe('Buffered character recovery', () => {
       },
     });
     cy.contains('Unsynced character copy kept', { timeout: 30000 }).should('be.visible');
-    cy.get('input[placeholder="Unknown Wanderer"]').should('have.value', 'Saved remote name');
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', 'Saved remote name');
     cy.contains('button', 'Download saved copy').should('be.enabled');
     cy.viewport(1280, 900);
     cy.screenshot('saved-copy-recovery-desktop');
@@ -62,5 +62,47 @@ describe('Buffered character recovery', () => {
       const retained = win.localStorage.getItem(`autosave-character-recovery-${characterId}-${actorId}`);
       expect(JSON.parse(retained ?? '{}').body.name).to.eq('Unsynced local copy');
     });
+  });
+
+  it('pauses a same-field conflict and lets the user keep the saved version', () => {
+    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.visit(`/builder/${characterId}`);
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', 'Saved remote name');
+    cy.request({
+      method: 'POST',
+      url: `${Cypress.env('functions_url')}/update-character`,
+      headers: { Authorization: `Bearer ${token}` },
+      body: { id: characterId, name: 'Changed on another device' },
+      log: false,
+    })
+      .its('body.status')
+      .should('eq', 'success');
+    let saves = 0;
+    cy.intercept('POST', '**/functions/v1/update-character', (req) => {
+      saves++;
+      req.continue();
+    });
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).clear().type('My conflicting edit');
+    cy.contains('Conflicting character edits', { timeout: 30000 }).should('be.visible');
+    cy.viewport(1280, 900);
+    cy.screenshot('save-conflict-desktop');
+    cy.viewport(390, 844);
+    cy.screenshot('save-conflict-mobile');
+    cy.document().then((doc) => {
+      expect(saves).to.eq(1);
+      expect(doc.documentElement.scrollWidth).to.be.at.most(doc.documentElement.clientWidth);
+    });
+    cy.contains('button', 'Download my copy').click();
+    cy.readFile(`cypress/downloads/character-${characterId}-conflict-copy.json`)
+      .its('name')
+      .should('eq', 'My conflicting edit');
+    cy.contains('button', 'Use saved version').click();
+    cy.contains('Conflicting character edits').should('not.exist');
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', 'Changed on another device');
+    cy.reload();
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should(
+      'have.value',
+      'Changed on another device'
+    );
   });
 });

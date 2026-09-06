@@ -68,7 +68,10 @@ globalThis.__sessionTest = {
 };
 await build({
   absWorkingDir: root,
-  define: { 'import.meta.env.VITE_SUPABASE_KEY': JSON.stringify('anonymous-project-key') },
+  define: {
+    'import.meta.env.VITE_SUPABASE_KEY': JSON.stringify('anonymous-project-key'),
+    'import.meta.env.PROD': 'false',
+  },
   stdin: {
     contents: `export * from './src/request/request-manager'; export * from './src/utils/character-save-buffer';`,
     resolveDir: root,
@@ -408,4 +411,13 @@ test('an older acknowledgement cannot discard newly calculation-required input w
   assert.equal(savedDraft().draft.body.expected_updated_at, 'version-2');
   api.acknowledgeBufferedCharacterSave(1, 'owner', character(), 'version-2', 'version-2', true);
   assert.deepEqual(savedDraft(), { status: 'none' });
+});
+
+test('strict reads distinguish a successful missing record from transport and JSend failures', async () => {
+  invoke = async () => ok(null);
+  assert.equal(await api.makeRequest('find-language', { id: 123 }, false, { throwOnFailure: true }), null);
+  invoke = async () => ({ data: { status: 'error', message: 'Unavailable' }, error: null });
+  await assert.rejects(api.makeRequest('find-language', {}, false, { throwOnFailure: true }), /Request failed/);
+  invoke = async () => http(500, { message: 'Unavailable' });
+  await assert.rejects(api.makeRequest('find-language', {}, false, { throwOnFailure: true }), /Request failed/);
 });

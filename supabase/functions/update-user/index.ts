@@ -1,6 +1,6 @@
 // @ts-ignore
 import { serve } from 'std/server';
-import { connect, getPublicUser, updateData } from '../_shared/helpers.ts';
+import { connect, createServiceClient, getPublicUser, updateData } from '../_shared/helpers.ts';
 import type { PublicUser } from '../_shared/content';
 
 serve(async (req: Request) => {
@@ -25,7 +25,7 @@ serve(async (req: Request) => {
       };
     }
 
-    const { status } = await updateData(client, 'public_user', user.id, {
+    const { status } = await updateData(createServiceClient(), 'public_user', user.id, {
       display_name,
       summary,
       image_url,

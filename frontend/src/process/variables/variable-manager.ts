@@ -7,6 +7,7 @@ import {
   VariableType,
   VariableValue,
   VariableNum,
+  VariableListStr,
   ExtendedVariableValue,
   ProficiencyType,
 } from '@schemas/variables';
@@ -390,6 +391,204 @@ function getVariableStore(id: StoreID) {
   return variableMap.get(id)!;
 }
 
+/** Add a bonus with replayable ownership while retaining the existing stacking and display history. */
+export function addVariableBonus(
+  id: StoreID,
+  name: string,
+  value: string | number | undefined,
+  type: string | undefined,
+  text: string,
+  source: string
+): void {
+  mutateVariable(id, () => applyAddVariableBonus(id, name, value, type, text, source));
+}
+
+/** Record variable creation even if another source has already created it. */
+export function addVariable(
+  id: StoreID,
+  type: VariableType,
+  name: string,
+  defaultValue?: VariableValue,
+  source?: string
+): Variable {
+  const value = cloneDeep(defaultValue);
+  return mutateVariable(id, () => applyAddVariable(id, type, name, value, source));
+}
+
+/** Delete a variable through the same replayable write path. */
+export function removeVariable(id: StoreID, name: string): void {
+  mutateVariable(id, () => applyRemoveVariable(id, name));
+}
+
+/** Record assignment intent, including assignments that are currently hidden by a higher value. */
+export function setVariable(id: StoreID, name: string, value: VariableValue, source?: string): void {
+  const input = cloneDeep(value);
+  mutateVariable(id, () => applySetVariable(id, name, input, source));
+}
+
+/** Record adjustments, including currently redundant rank and list grants. */
+export function adjVariable(
+  id: StoreID,
+  name: string,
+  amount: VariableValue | ExtendedVariableValue,
+  source?: string
+): void {
+  const input = cloneDeep(amount);
+  mutateVariable(id, () => applyAdjVariable(id, name, input, source));
+}
+
+/** Record removal as a filter, so replay never restores another removed grant from an old list snapshot. */
+export function filterVariableList(id: StoreID, name: string, keep: (value: string) => boolean, source?: string): void {
+  mutateVariable(id, () => {
+    const values = getVariable<VariableListStr>(id, name)?.value ?? [];
+    applySetVariable(id, name, values.filter(keep), source);
+  });
+}
+
+/** A particular grant occurrence, retained by deferred writes until execution finishes. */
+export type VariableEffectScope = { key: string; content: string; revoked: boolean };
+type VariableIntent = { scopes: VariableEffectScope[]; apply: () => unknown };
+type VariableEffects = {
+  baseline: VariableStore;
+  intents: VariableIntent[];
+  scopes: Map<string, VariableEffectScope>;
+  allScopes: Set<VariableEffectScope>;
+  removals: { owners: VariableEffectScope[]; targets: VariableEffectScope[] }[];
+  replayWork: number;
+  active: VariableEffectScope[];
+  applying: boolean;
+};
+const variableEffects = new WeakMap<VariableStore, VariableEffects>();
+
+/** Start an execution-local intent journal; exported character stores contain only ordinary values and history. */
+export function beginVariableEffects(id: StoreID): void {
+  const store = getVariableStore(id);
+  if (!variableEffects.has(store)) {
+    variableEffects.set(store, {
+      baseline: cloneDeep(store),
+      intents: [],
+      scopes: new Map(),
+      allScopes: new Set(),
+      removals: [],
+      replayWork: 0,
+      active: [],
+      applying: false,
+    });
+  }
+}
+
+/** Release provenance after success or failure so later UI writes are ordinary variable edits. */
+export function finishVariableEffects(id: StoreID): void {
+  variableEffects.delete(getVariableStore(id));
+}
+
+/** Retain every write intention, including grants that currently lose to a higher rank or duplicate value. */
+function mutateVariable<T>(id: StoreID, apply: () => T): T {
+  const effects = variableEffects.get(getVariableStore(id));
+  if (!effects || effects.applying) return apply();
+  if (effects.intents.length >= 200_000)
+    throw new Error('Content operations exceed the variable effect limit (200000).');
+  effects.intents.push({ scopes: [...effects.active], apply });
+  effects.applying = true;
+  try {
+    return apply();
+  } finally {
+    effects.applying = false;
+  }
+}
+
+/** Capture grant ancestry so delayed language replacements and bindings can be revoked with their source. */
+export function getVariableEffectScopes(id: StoreID): VariableEffectScope[] {
+  return [...(variableEffects.get(getVariableStore(id))?.active ?? [])];
+}
+
+/** A child effect belongs to every ancestor grant, so removing its parent also removes the child effect. */
+export function areVariableEffectScopesActive(scopes: VariableEffectScope[]): boolean {
+  return scopes.every((scope) => !scope.revoked);
+}
+
+/** Run writes with their captured ownership while keeping unrelated execution sources independent. */
+export async function withVariableEffectScopes<T>(
+  id: StoreID,
+  scopes: VariableEffectScope[],
+  run: () => Promise<T>
+): Promise<T | undefined> {
+  if (!areVariableEffectScopesActive(scopes)) return undefined;
+  beginVariableEffects(id);
+  const effects = variableEffects.get(getVariableStore(id))!;
+  const previous = effects.active;
+  effects.active = scopes;
+  try {
+    return await run();
+  } finally {
+    effects.active = previous;
+  }
+}
+
+/** Reuse a grant across engine passes; a later explicit grant creates a fresh occurrence after removal. */
+export async function withVariableEffectScope<T>(
+  id: StoreID,
+  key: string,
+  content: string,
+  allowRegrant: boolean,
+  run: () => Promise<T>
+): Promise<T | undefined> {
+  beginVariableEffects(id);
+  const effects = variableEffects.get(getVariableStore(id))!;
+  let scope = effects.scopes.get(key);
+  if (!scope || (scope.revoked && allowRegrant)) {
+    scope = { key, content, revoked: false };
+    effects.scopes.set(key, scope);
+    effects.allScopes.add(scope);
+  }
+  return withVariableEffectScopes(id, [...effects.active, scope], run);
+}
+
+/** Bound repeated grant/remove rebuilds as well as the operation runner's forward traversal. */
+function boundVariableReplay(effects: VariableEffects): void {
+  if (++effects.replayWork > 1_000_000)
+    throw new Error('Content operations exceed the effect reconstruction work limit.');
+}
+
+/**
+ * Rebuild using remaining write intentions, never inverse arithmetic or display labels.
+ * This preserves independent duplicate grants, typed bonuses, assignments and max/clamp semantics.
+ */
+export function removeVariableEffects(id: StoreID, content: string): void {
+  const store = getVariableStore(id);
+  const effects = variableEffects.get(store);
+  if (!effects) return;
+  const targets = [...effects.allScopes].filter((scope) => scope.content === content);
+  if (targets.length === 0) return;
+  effects.removals.push({ owners: [...effects.active], targets });
+  // Later removals decide whether an earlier source still exists. Removing a source
+  // that revoked something restores those earlier grants instead of retaining its side effect.
+  for (const scope of effects.allScopes) scope.revoked = false;
+  for (let index = effects.removals.length - 1; index >= 0; index--) {
+    const removal = effects.removals[index];
+    if (areVariableEffectScopesActive(removal.owners)) {
+      for (const scope of removal.targets) {
+        boundVariableReplay(effects);
+        scope.revoked = true;
+      }
+    }
+  }
+  const baseline = cloneDeep(effects.baseline);
+  for (const name of Object.keys(store.variables)) delete store.variables[name];
+  Object.assign(store.variables, baseline.variables);
+  store.bonuses = baseline.bonuses;
+  store.history = baseline.history;
+  effects.applying = true;
+  try {
+    for (const intent of effects.intents) {
+      boundVariableReplay(effects);
+      if (areVariableEffectScopesActive(intent.scopes)) intent.apply();
+    }
+  } finally {
+    effects.applying = false;
+  }
+}
+
 /**
  * Gets all variables
  * @returns - all variables
@@ -439,7 +638,7 @@ export function getVariableBonuses(
   });
 }
 
-export function addVariableBonus(
+function applyAddVariableBonus(
   id: StoreID,
   name: string,
   value: string | number | undefined,
@@ -498,7 +697,7 @@ function addVariableHistory(id: StoreID, name: string, to: VariableValue, from: 
  * @param defaultValue - optional, default value of the variable
  * @returns - the variable that was added
  */
-export function addVariable(
+function applyAddVariable(
   id: StoreID,
   type: VariableType,
   name: string,
@@ -526,7 +725,7 @@ export function addVariable(
  * Removes a variable
  * @param name - name of the variable to remove
  */
-export function removeVariable(id: StoreID, name: string) {
+function applyRemoveVariable(id: StoreID, name: string) {
   delete getVariables(id)[name];
 }
 
@@ -564,7 +763,7 @@ export function exportVariableStore(id: StoreID): VariableStore {
  * @param name - name of the variable to set
  * @param value - VariableValue
  */
-export function setVariable(id: StoreID, name: string, value: VariableValue, source?: string) {
+function applySetVariable(id: StoreID, name: string, value: VariableValue, source?: string) {
   let variable = getVariables(id)[name];
   if (!variable) {
     // throwError(`Invalid variable name: ${name}`);
@@ -685,7 +884,7 @@ export function normalizeProficiencies(id: StoreID) {
   }
 }
 
-export function adjVariable(id: StoreID, name: string, amount: VariableValue | ExtendedVariableValue, source?: string) {
+function applyAdjVariable(id: StoreID, name: string, amount: VariableValue | ExtendedVariableValue, source?: string) {
   let variable = getVariables(id)[name];
   if (!variable) {
     // throwError(`Invalid variable name: ${name}`);

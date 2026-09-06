@@ -13,7 +13,6 @@ import {
   fetchContentSources,
   getDefaultSources,
   getDefaultSourcesKey,
-  isContentPackageEmpty,
 } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
 import classes from '@css/FaqSimple.module.css';
@@ -76,7 +75,12 @@ export default function CharBuilderCreation(props: { characterId: number; pageHe
   const theme = useMantineTheme();
   const [doneLoading, setDoneLoading] = useState(false);
 
-  const { data: content, isFetching, refetch } = useQuery({
+  const {
+    data: content,
+    isFetching,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: [
       `find-content-${props.characterId}-for-char-builder-creation`,
       { characterId: props.characterId, sources: getDefaultSourcesKey('PAGE') },
@@ -129,20 +133,18 @@ export default function CharBuilderCreation(props: { characterId: number; pageHe
       <Stack align='center' gap='xs' maw={380} px='md'>
         <Text fw={600}>Couldn't load game content</Text>
         <Text size='sm' c='dimmed' ta='center'>
-          The content library didn't load, so the builder stayed closed to avoid saving your character against
-          missing data. Check your connection and try again.
+          The content library didn't load, so the builder stayed closed to avoid saving your character against missing
+          data. Check your connection and try again.
         </Text>
         <Button onClick={() => refetch()}>Retry</Button>
       </Stack>
     </Box>
   );
 
-  if (isFetching || !content) {
-    return loader;
-  } else if (isContentPackageEmpty(content)) {
-    // Resolved-but-empty corpus = failed fetch. Don't mount the builder against no
-    // content (it would degrade the character and the auto-save would persist it, #235).
+  if (isError && !isFetching) {
     return loadError;
+  } else if (isFetching || !content) {
+    return loader;
   } else {
     return (
       <>

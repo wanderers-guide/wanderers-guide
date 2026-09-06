@@ -72,6 +72,20 @@ Content-Type: application/json
 
 JWT requests are subject to the same Postgres row-level security policies as direct database access. You can only read what your role permits.
 
+## Protected account and moderation writes
+
+Profiles are created by the trusted Auth signup trigger. Account settings, API-client
+configuration, Patreon entitlements and GM-group changes go through authenticated
+Edge Functions with explicit owner and field selection. Anonymous and authenticated
+REST clients cannot insert, update or delete profiles, including extra self-owned
+profiles. Role, moderation and entitlement flags are server-managed.
+
+Content submissions are created through `create-content-update`. The server sets the
+submitter, pending status and empty votes; direct database mutation of the moderation
+queue is denied. Only the verified moderation callback changes approvals and votes.
+Character creation remains caller-scoped under RLS and cannot assign another account
+as the owner.
+
 ## Character access grants
 
 Character data is sensitive, so even a valid API key gets `403` from [`find-character`](/api-reference/characters/find-character), [`update-character`](/api-reference/characters/update-character), and the rest unless the character’s owner has explicitly granted that key access. The grant is per-character; one key with grants on three characters works for those three and 403s on every other.

@@ -353,6 +353,10 @@ verify_jwt = true
 [functions.vector-db-query-collection]
 verify_jwt = true
 
+# Public, bounded diagnostic events; no user data or raw error messages.
+[functions.report-client-error]
+verify_jwt = false
+
 # Used only by docker-compose, not a cloud endpoint.
 [functions.main]
 enabled = false

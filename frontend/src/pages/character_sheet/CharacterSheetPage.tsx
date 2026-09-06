@@ -2,12 +2,7 @@ import D20Loader from '@assets/images/D20Loader';
 import { glassStyle } from '@utils/colors';
 import BlurBox from '@common/BlurBox';
 import { OperationError } from '@common/OperationError';
-import {
-  defineDefaultSources,
-  fetchContentPackage,
-  fetchContentSources,
-  isContentPackageEmpty,
-} from '@content/content-store';
+import { defineDefaultSources, fetchContentPackage, fetchContentSources } from '@content/content-store';
 
 import {
   ActionIcon,
@@ -97,13 +92,23 @@ export function Component(props: {}) {
   const theme = useMantineTheme();
   const [doneLoading, setDoneLoading] = useState(false);
 
-  const { data: content, isFetching, refetch } = useQuery({
+  const {
+    data: content,
+    isFetching,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: [`find-content-${characterId}`],
     queryFn: async () => {
       // Set default sources
-      const character = await makeRequest<Character>('find-character', {
-        id: characterId,
-      });
+      const character = await makeRequest<Character>(
+        'find-character',
+        {
+          id: characterId,
+        },
+        false,
+        { throwOnFailure: true }
+      );
       const sv = defineDefaultSources('PAGE', character?.content_sources?.enabled ?? []);
 
       // Prefetch content sources (to avoid multiple requests)
@@ -160,21 +165,18 @@ export function Component(props: {}) {
       <Stack align='center' gap='xs' maw={380} px='md'>
         <Text fw={600}>Couldn't load game content</Text>
         <Text size='sm' c='dimmed' ta='center'>
-          The content library didn't load, so the sheet stayed closed to avoid saving your character against
-          missing data. Check your connection and try again.
+          The content library didn't load, so the sheet stayed closed to avoid saving your character against missing
+          data. Check your connection and try again.
         </Text>
         <Button onClick={() => refetch()}>Retry</Button>
       </Stack>
     </Box>
   );
 
-  if (isFetching || !content) {
-    return loader;
-  } else if (isContentPackageEmpty(content)) {
-    // A resolved-but-empty corpus means the fetch failed (see isContentPackageEmpty).
-    // Do NOT mount the sheet: EXECUTE_OPS against no content wipes HP/boosts/choices
-    // and the auto-save would then persist that loss (#235). Offer a retry instead.
+  if (isError && !isFetching) {
     return loadError;
+  } else if (isFetching || !content) {
+    return loader;
   } else {
     // Render both elements simultaneously so CharacterSheetInner can run
     // EXECUTE_OPS in the background while the loader is still visible.

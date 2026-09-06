@@ -13,6 +13,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import App from './App.tsx';
+import { installClientErrorReporting } from '@utils/client-errors';
+installClientErrorReporting();
 import './index.css';
 import { ErrorPage } from './pages/ErrorPage.tsx';
 import { MantineProvider } from '@mantine/core';
@@ -37,39 +39,6 @@ const queryClient = new QueryClient({
 // The client itself lives in supabase-client.ts so modules that main.tsx transitively
 // depends on (e.g. the request manager) can import it without a circular dependency.
 export { supabase };
-
-// One-time legacy cache cleanup.
-//
-// Earlier builds cleared ALL Cache Storage and unregistered the service worker on EVERY
-// load. That defeated the workbox precache entirely, so the ~10 MB app bundle was
-// re-downloaded from the network on every single visit. We keep a one-shot version of that
-// cleanup so any client still carrying a stale SW / cache from that era gets flushed once,
-// then never again — after that the precache (revisioned, with cleanupOutdatedCaches)
-// serves instantly and handles per-deploy invalidation itself.
-(async () => {
-  const LEGACY_FLUSH_KEY = 'wg-legacy-cache-flushed-v1';
-  try {
-    if (localStorage.getItem(LEGACY_FLUSH_KEY)) return;
-  } catch {
-    return; // storage unavailable (private mode) — skip rather than wipe every load
-  }
-  try {
-    const keys = await caches.keys();
-    await Promise.all(keys.map((key) => caches.delete(key)));
-    if ('serviceWorker' in navigator) {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(registrations.map((r) => r.unregister()));
-    }
-  } catch {
-    // best-effort; don't block app startup on cleanup
-  } finally {
-    try {
-      localStorage.setItem(LEGACY_FLUSH_KEY, '1');
-    } catch {
-      /* ignore */
-    }
-  }
-})();
 
 // The DOM router for determining what pages are rendered at which paths
 const router = createBrowserRouter([
@@ -215,7 +184,7 @@ root.render(
   <StrictMode>
     <MantineProvider forceColorScheme='dark'>
       <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+        <RouterProvider router={router} />
       </QueryClientProvider>
     </MantineProvider>
   </StrictMode>

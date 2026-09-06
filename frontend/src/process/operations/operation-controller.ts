@@ -14,9 +14,17 @@ import {
 } from '@schemas/content';
 import { getRootSelection, resetSelections, setSelections } from './selection-tree';
 import { Operation, OperationOptions, OperationResult, OperationSelect } from '@schemas/operations';
-import { clearDeferredOperations, resolveDeferredOperations, runOperations } from './operation-runner';
+import {
+  clearDeferredOperations,
+  resolveDeferredOperations,
+  runOperations,
+  withContentGrant,
+} from './operation-runner';
 import {
   addVariable,
+  areVariableEffectScopesActive,
+  getVariableEffectScopes,
+  finishVariableEffects,
   adjVariable,
   exportVariableStore,
   getAllAttributeVariables,
@@ -89,21 +97,28 @@ async function _executeOps(
   primarySource: string,
   operations: Operation[],
   options?: OperationOptions,
-  sourceLabel?: string
+  sourceLabel?: string,
+  grantedContent?: { id: number; name: string; prefix?: string }
 ) {
-  const selectionNode = getRootSelection().children[primarySource];
-  let results = await runOperations(
-    varId,
-    { path: `${primarySource}_${selectionNode?.value}`, node: selectionNode },
-    operations,
-    cloneDeep(options),
-    sourceLabel
-  );
-
-  // Make it so you can only select boosts that haven't been selected (or given) yet
-  results = limitBoostOptions(operations, results);
-
-  return results;
+  const execute = async (): Promise<OperationResult[]> => {
+    const selectionNode = getRootSelection().children[primarySource];
+    let results = await runOperations(
+      varId,
+      { path: `${primarySource}_${selectionNode?.value}`, node: selectionNode },
+      operations,
+      cloneDeep(options),
+      sourceLabel
+    );
+    if (grantedContent?.prefix && areVariableEffectScopesActive(getVariableEffectScopes(varId))) {
+      adjVariable(varId, `${grantedContent.prefix}_IDS`, `${grantedContent.id}`, sourceLabel);
+      adjVariable(varId, `${grantedContent.prefix}_NAMES`, grantedContent.name.toUpperCase(), sourceLabel);
+    }
+    results = limitBoostOptions(operations, results);
+    return results;
+  };
+  return grantedContent
+    ? ((await withContentGrant(varId, primarySource, `ability-block:${grantedContent.id}`, options, execute)) ?? [])
+    : execute();
 }
 
 /*
@@ -128,7 +143,14 @@ export async function _executeCharacterOperations(data: {
   ors: OperationCharacterResultPackage;
   errors: string[];
 }> {
-  return withOperationStore(() => executeCharacterOperations(data));
+  return withOperationStore(async () => {
+    try {
+      return await executeCharacterOperations(data);
+    } finally {
+      finishVariableEffects('CHARACTER');
+      clearDeferredOperations();
+    }
+  });
 }
 
 /** Character execution body; access is serialized by the public controller entry. */
@@ -910,17 +932,14 @@ async function executeCharacterOperations(
           `class-feature-${feature.id}`,
           feature.operations ?? [],
           options,
-          `${feature.name} (Lvl. ${feature.level})`
+          `${feature.name} (Lvl. ${feature.level})`,
+          { id: feature.id, name: feature.name, prefix: 'CLASS_FEATURE' }
         );
 
         classFeatureResults.push({
           baseSource: feature,
           baseResults: results,
         });
-
-        // Add class feature to variables
-        adjVariable('CHARACTER', 'CLASS_FEATURE_IDS', `${feature.id}`, undefined);
-        adjVariable('CHARACTER', 'CLASS_FEATURE_NAMES', feature.name.toUpperCase(), undefined);
       }
     }
 
@@ -963,7 +982,8 @@ async function executeCharacterOperations(
         `mode-${mode.id}`,
         mode.operations ?? [],
         options,
-        `${mode.name} Mode`
+        `${mode.name} Mode`,
+        { id: mode.id, name: mode.name }
       );
 
       if (results.length > 0) {
@@ -1039,7 +1059,14 @@ export async function _executeCreatureOperations(data: {
   ors: OperationCreatureResultPackage;
   errors: string[];
 }> {
-  return withOperationStore(() => executeCreatureOperations(data));
+  return withOperationStore(async () => {
+    try {
+      return await executeCreatureOperations(data);
+    } finally {
+      finishVariableEffects(data.id);
+      clearDeferredOperations();
+    }
+  });
 }
 
 /** Creature execution shares the same exclusive context as character execution. */
@@ -1076,16 +1103,16 @@ async function executeCreatureOperations(
       baseResults: OperationResult[];
     }[] = [];
     for (const ability of abilities) {
-      const results = await _executeOps(id, `ability-${ability.id}`, ability.operations ?? [], options, ability.name);
+      const results = await _executeOps(id, `ability-${ability.id}`, ability.operations ?? [], options, ability.name, {
+        id: ability.id,
+        name: ability.name,
+        prefix: 'FEAT',
+      });
 
       abilityResults.push({
         baseSource: ability,
         baseResults: results,
       });
-
-      // Add ability to variables
-      adjVariable(id, 'FEAT_IDS', `${ability.id}`, undefined);
-      adjVariable(id, 'FEAT_NAMES', ability.name.toUpperCase(), undefined);
     }
 
     let itemResults: { baseSource: Item; baseResults: OperationResult[] }[] = [];

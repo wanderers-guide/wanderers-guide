@@ -18,6 +18,7 @@ import {
 } from '@mantine/core';
 import { useMediaQuery, usePrevious } from '@mantine/hooks';
 import { ModalsProvider } from '@mantine/modals';
+import { AppUpdateNotice } from '@common/AppUpdateNotice';
 import { Notifications } from '@mantine/notifications';
 import { notifySessionExpired, resetSessionExpiredNotice } from '@requests/request-manager';
 import { clearUserData, getCachedPublicUser } from '@auth/user-manager';
@@ -31,7 +32,7 @@ import { supabase } from './main';
 import Layout from './nav/Layout';
 import AddNewLoreModal from '@modals/AddNewLoreModal';
 import { phoneQuery } from '@utils/mobile-responsive';
-import { resetContentStore } from '@content/content-store';
+import { resetContentStore, setContentCacheActor } from '@content/content-store';
 import SelectContentModal from '@common/select/SelectContent';
 import ConditionModal from '@modals/ConditionModal';
 import CreateDicePresetModal from '@modals/CreateDicePresetModal';
@@ -106,6 +107,7 @@ export default function App() {
     resetContentStore();
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      setContentCacheActor(session?.user.id ?? null);
       setSession(session);
       // Cold load with a dead session (expired from inactivity while the tab was
       // closed): supabase-js clears its stored session without a SIGNED_OUT event,
@@ -122,6 +124,7 @@ export default function App() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
+      setContentCacheActor(session?.user.id ?? null);
       setSession(session);
       if (session) resetSessionExpiredNotice();
 
@@ -375,6 +378,7 @@ export default function App() {
         )}
         <SearchSpotlight />
         <Notifications position='top-right' zIndex={9400} containerWidth={350} />
+        <AppUpdateNotice />
         <DrawerBase />
         <Box style={{ zoom: getCachedCustomization()?.sheet_theme?.zoom ?? 1 }}>
           <Layout>

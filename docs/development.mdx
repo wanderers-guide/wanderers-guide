@@ -319,3 +319,17 @@ for the read-only production gate, migration baseline and rollout order.
 <Note>
 Curious about how to contribute? Check out our [Discord server](https://discord.com/invite/FxsFZVvedr) and [GitHub issues](https://github.com/wanderers-guide/wanderers-guide/issues)!
 </Note>
+
+
+## Infrastructure regression checks
+
+With the local Docker database running and migrations applied, run
+`npm run test:authorization` to check denied profile/moderation writes, character
+ownership, signup and trusted writes. Its synthetic accounts and changes roll back.
+`npm --prefix frontend run test:infra` covers cache generations, partial-content
+failures, account recovery and nested save conflicts. `npm run test:release` also
+checks semantic health-probe behavior without reaching production.
+
+The optional browser diagnostic intake accepts only bounded categories and a build
+revision. Vite embeds the Git commit (Render uses `RENDER_GIT_COMMIT`). Raw error
+messages, character data and tokens are never part of that request.
