@@ -2,7 +2,7 @@ import { makeRequest } from '@requests/request-manager';
 import { PublicUser } from '@schemas/content';
 import { supabase } from '../supabase-client';
 
-export async function getPublicUser(id?: string) {
+export async function getPublicUser(id?: string, options?: { throwOnFailure?: boolean }) {
   try {
     if (!id) {
       // Fetching "the current user" without a session always resolves to null, but it
@@ -20,7 +20,8 @@ export async function getPublicUser(id?: string) {
       {
         id,
       },
-      false
+      false,
+      options
     );
 
     if (!id) {
@@ -36,6 +37,7 @@ export async function getPublicUser(id?: string) {
     return user;
   } catch (e) {
     console.error('Error fetching public user:', e);
+    if (options?.throwOnFailure) throw e;
     return null;
   }
 }

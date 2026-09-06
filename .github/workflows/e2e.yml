@@ -95,6 +95,9 @@ jobs:
         working-directory: ./data
         run: ./create-db-docker.sh
 
+      - name: Database authorization regression tests
+        run: npm run test:authorization
+
       - name: Install frontend dependencies
         working-directory: ./frontend
         run: npm ci --legacy-peer-deps --no-audit --no-fund

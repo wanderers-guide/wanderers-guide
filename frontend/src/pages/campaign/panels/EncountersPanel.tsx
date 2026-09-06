@@ -7,7 +7,12 @@ import { DisplayIcon } from '@common/IconDisplay';
 import { selectContent } from '@common/select/SelectContent';
 import { applyConditions } from '@conditions/condition-handler';
 import { GUIDE_BLUE, IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
-import { defineDefaultSources, fetchContentPackage, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
+import {
+  defineDefaultSources,
+  fetchContentPackage,
+  getDefaultSources,
+  getDefaultSourcesKey,
+} from '@content/content-store';
 import { getBestArmor } from '@items/inv-utils';
 import {
   Tabs,
@@ -89,7 +94,8 @@ export default function EncountersPanel(props: {
 
       const sv = defineDefaultSources('PAGE', 'ALL-USER-ACCESSIBLE');
       // We could await fetch content for a more seemless experience but it takes a bit too long imo - Quzzar
-      fetchContentPackage(sv, { fetchSources: false, fetchCreatures: false });
+      // Opportunistic prefetch; actual creature calculation awaits its own package.
+      void fetchContentPackage(sv, { fetchSources: false, fetchCreatures: false }).catch(() => undefined);
 
       return result ?? [];
     },

@@ -1,6 +1,7 @@
+import { reportClientFailure } from './client-errors';
 import { characterState } from '@atoms/characterAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
-import { Button } from '@mantine/core';
+import { Button, Group, Text } from '@mantine/core';
 import { downloadObjectAsJson } from '@export/export-to-json';
 import {
   SAVED_CHARACTER_FIELDS,
@@ -9,9 +10,10 @@ import {
   getBufferedCharacterSave,
   replayBufferedCharacterSave,
 } from './character-save-buffer';
+import { mergeCharacterOnConflict } from './character-merge';
 import { getCachedPublicUser } from '@auth/user-manager';
 import { applyConditions } from '@conditions/condition-handler';
-import { defineDefaultSources, isContentPackageEmpty } from '@content/content-store';
+import { defineDefaultSources } from '@content/content-store';
 import { saveCustomization } from '@content/customization-cache';
 import { applyEquipmentPenalties } from '@items/inv-utils';
 import { useDebouncedCallback, useDebouncedValue, useDidUpdate } from '@mantine/hooks';
@@ -57,31 +59,6 @@ type CharStateOptions = CharStateOptionsExecuteOps | CharStateOptionsSimple;
 
 type QueuedCharacterSave = { character: Character; actorId: string; scope: number };
 
-/**
- * Three-way merge for a save conflict: start from the authoritative remote row, then
- * re-apply only the top-level fields the user actually changed since `base` (their last
- * synced state). This preserves a concurrent writer's changes to OTHER fields instead of
- * clobbering them, while never silently dropping the user's own edits.
- *
- * Granularity is per top-level field: if two writers edited the SAME field (e.g. both
- * touched `details`) the local edit wins for that whole field. That's still strictly
- * better than the previous unconditional last-write-wins, and the user is notified.
- */
-function mergeCharacterOnConflict(
-  base: Record<string, unknown> | null,
-  local: Record<string, unknown> | null,
-  remote: Character
-): Character {
-  const merged = cloneDeep(remote);
-  if (!base || !local) return merged;
-  for (const field of SAVED_CHARACTER_FIELDS) {
-    if (!isEqual((local as any)[field], (base as any)[field])) {
-      Object.assign(merged, { [field]: cloneDeep(local[field]) });
-    }
-  }
-  return merged;
-}
-
 /** Offer the preserved input copy without automatically overwriting remote changes. */
 function showCharacterRecovery(characterId: number, recovery: Record<string, unknown>): void {
   showNotification({
@@ -123,6 +100,8 @@ export default function useCharacter(
   const [character, setCharacter] = useAtom(characterState);
   const session = useAtomValue(sessionState);
   const sessionActorId = session?.user.id ?? null;
+  const [loadedIdentity, setLoadedIdentity] = useState<{ id: number; actor: string | null } | null>(null);
+  const hasLoadedCharacter = loadedIdentity?.id === characterId && loadedIdentity.actor === sessionActorId;
   const loadedActorRef = useRef<string | null>(null);
   const saveScopeRef = useRef(0);
   const needsCalculationRef = useRef(false);
@@ -195,14 +174,74 @@ export default function useCharacter(
     [setCharacter]
   );
 
+  const saveConflictRef = useRef(false);
+
+  /** Keep conflicting input recoverable until the same account chooses which copy to save. */
+  const offerConflictResolution = useCallback(
+    (local: Character, remote: Character, fields: string[]) => {
+      saveConflictRef.current = true;
+      const scope = saveScopeRef.current;
+      const actor = loadedActorRef.current;
+      const noticeId = `character-conflict-${characterId}`;
+      const resolve = (useLocal: boolean) => {
+        if (scope !== saveScopeRef.current || !actor || actor !== loadedActorRef.current) return;
+        const chosen = useLocal ? characterRef.current : remote;
+        if (!chosen) return;
+        lastSyncedRef.current = remote;
+        conflictStreakRef.current = 0;
+        saveConflictRef.current = false;
+        if (options.type === 'SIMPLE') needsCalculationRef.current = false;
+        hideNotification(noticeId);
+        setCharacter(cloneDeep(chosen));
+      };
+      showNotification({
+        id: noticeId,
+        title: 'Conflicting character edits',
+        message: (
+          <>
+            <Text size='sm'>
+              Saving paused: {fields.slice(0, 3).join(', ')}
+              {fields.length > 3 ? ', …' : ''}
+            </Text>
+            <Group gap='xs' mt='xs'>
+              <Button size='xs' onClick={() => resolve(true)}>
+                Keep my edits
+              </Button>
+              <Button size='xs' variant='light' onClick={() => resolve(false)}>
+                Use saved version
+              </Button>
+              <Button
+                size='xs'
+                variant='subtle'
+                onClick={() => {
+                  if (scope === saveScopeRef.current && actor === loadedActorRef.current)
+                    downloadObjectAsJson(characterRef.current ?? local, `character-${characterId}-conflict-copy`);
+                }}
+              >
+                Download my copy
+              </Button>
+            </Group>
+          </>
+        ),
+        color: 'yellow',
+        autoClose: false,
+        withCloseButton: false,
+      });
+    },
+    [characterId, options.type, setCharacter]
+  );
+
   // Replay this account's guarded draft before fetching the authoritative row.
   useEffect(() => {
     let active = true;
     const scope = ++saveScopeRef.current;
     loadedActorRef.current = null;
+    setLoadedIdentity(null);
     needsCalculationRef.current = false;
     lastSyncedRef.current = null;
     readOnlyRef.current = false;
+    saveConflictRef.current = false;
+    hideNotification(`character-conflict-${characterId}`);
     conflictStreakRef.current = 0;
     savingRef.current = false;
     pendingSaveRef.current = null;
@@ -219,10 +258,17 @@ export default function useCharacter(
       loadedActorRef.current = sessionActorId;
       if (dbCharacter && replay.status === 'needs-calculation') {
         needsCalculationRef.current = true;
-        handleFetchedCharacter(dbCharacter, mergeCharacterOnConflict(replay.base, replay.body, dbCharacter));
+        const merged = mergeCharacterOnConflict(replay.base, replay.body, dbCharacter);
+        handleFetchedCharacter(dbCharacter, merged.character);
+        if (merged.conflicts.length > 0) {
+          // Retain the common ancestor so navigation cannot silently approve the conflict.
+          lastSyncedRef.current = { ...dbCharacter, ...replay.base };
+          offerConflictResolution(merged.character, dbCharacter, merged.conflicts);
+        }
       } else {
         handleFetchedCharacter(dbCharacter);
       }
+      if (dbCharacter) setLoadedIdentity({ id: characterId, actor: sessionActorId });
     })().catch((error: unknown) => {
       if (!active) return;
       console.error('Could not load character:', error);
@@ -238,7 +284,7 @@ export default function useCharacter(
       saveScopeRef.current = scope + 1;
       hideNotification(recoveryNoticeId);
     };
-  }, [characterId, sessionActorId, handleFetchedCharacter]);
+  }, [characterId, sessionActorId, handleFetchedCharacter, offerConflictResolution]);
 
   // Execute operations
   const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
@@ -289,7 +335,13 @@ export default function useCharacter(
   const operationContext = options.type === 'EXECUTE_OPS' ? options.data.context : undefined;
 
   useEffect(() => {
-    if (options.type !== 'EXECUTE_OPS' || !debouncedCharacter || debouncedCharacter.id !== characterId) return;
+    if (
+      !hasLoadedCharacter ||
+      options.type !== 'EXECUTE_OPS' ||
+      !debouncedCharacter ||
+      debouncedCharacter.id !== characterId
+    )
+      return;
     // Invalidate as soon as an edit arrives, then wait for its debounced input.
     if (currentOperationsHash !== debouncedOperationsHash) return;
     const controller = new AbortController();
@@ -326,6 +378,7 @@ export default function useCharacter(
     operationContent,
     operationContext,
     operationAttempt,
+    hasLoadedCharacter,
   ]);
 
   const handleOperationResults = (results: OperationCharacterResultPackage, signal: AbortSignal) => {
@@ -418,7 +471,9 @@ export default function useCharacter(
   const savingRef = useRef(false);
   const pendingSaveRef = useRef<QueuedCharacterSave | null>(null);
   const canPersist = () =>
+    hasLoadedCharacter &&
     !readOnlyRef.current &&
+    !saveConflictRef.current &&
     characterRef.current?.id === characterId &&
     lastSyncedRef.current?.id === characterId &&
     !!loadedActorRef.current &&
@@ -430,7 +485,7 @@ export default function useCharacter(
         !operationError &&
         !!operationResults &&
         currentOperationsHash === debouncedOperationsHash &&
-        !isContentPackageEmpty(options.data.content));
+        !!options.data.content);
 
   const canPersistRef = useRef(canPersist);
   canPersistRef.current = canPersist;
@@ -442,11 +497,13 @@ export default function useCharacter(
     // Retain raw inputs locally through navigation even while their derived state
     // is waiting or failed. The flag prevents automatic server replay.
     canBuffer: !readOnlyRef.current && loadedActorRef.current === sessionActorId,
-    requiresCalculation: !canPersist() && (needsCalculationRef.current || options.type === 'EXECUTE_OPS'),
+    requiresCalculation:
+      saveConflictRef.current || (!canPersist() && (needsCalculationRef.current || options.type === 'EXECUTE_OPS')),
   }));
 
   useEffect(() => {
     if (!operationError || !loadedActorRef.current) return;
+    reportClientFailure('calculation_failed');
     const stored = getBufferedCharacterSave(characterId, loadedActorRef.current);
     if ('draft' in stored && stored.draft.requiresCalculation) showCharacterRecovery(characterId, stored.draft.body);
   }, [operationError, characterId]);
@@ -525,12 +582,18 @@ export default function useCharacter(
         const base = lastSyncedRef.current;
         lastSyncedRef.current = remote;
         conflictStreakRef.current += 1;
-        if (conflictStreakRef.current >= MAX_CONFLICT_STREAK) {
-          // Merging again would only re-trigger another save → conflict round.
-          console.warn('Repeated save conflicts; pausing merge-and-retry until a save succeeds.');
+        const merge = mergeCharacterOnConflict(base, characterRef.current, remote);
+        const merged = merge.character;
+        if (merge.conflicts.length > 0 || conflictStreakRef.current >= MAX_CONFLICT_STREAK) {
+          lastSyncedRef.current = base;
+          setCharacter(merged);
+          offerConflictResolution(
+            merged,
+            remote,
+            merge.conflicts.length ? merge.conflicts : ['Repeated changes from another session']
+          );
           return;
         }
-        const merged = mergeCharacterOnConflict(base, characterRef.current, remote);
         // Only apply + notify when the merge actually changes local data. Equal on
         // every saved field means the server row already matches what we have
         // (pure token skew) — updating state anyway would fire a pointless save.
@@ -576,6 +639,7 @@ export default function useCharacter(
     onError: (error, save) => {
       if (!isCurrentSave(save)) return;
       console.error('Character save failed:', error);
+      reportClientFailure('save_failed');
       // If the real cause is a dead session, that persistent notification already
       // explains it; a generic "check your connection" toast would just confuse.
       if (hasSessionExpiredNotice()) return;
@@ -644,6 +708,7 @@ export default function useCharacter(
   });
 
   const isFinished =
+    hasLoadedCharacter &&
     // There must be a character
     !!character &&
     // It must be the requested one
@@ -706,9 +771,11 @@ function useAutoSave(characterId: number, getSnapshot: () => AutoSaveSnapshot): 
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
     window.addEventListener('pagehide', saveImmediately);
+    window.addEventListener('wg:before-update', saveImmediately);
     return () => {
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('pagehide', saveImmediately);
+      window.removeEventListener('wg:before-update', saveImmediately);
       saveImmediately();
     };
   }, [characterId, saveImmediately]);

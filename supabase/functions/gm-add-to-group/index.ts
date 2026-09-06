@@ -1,6 +1,6 @@
 // @ts-ignore
 import { serve } from 'std/server';
-import { connect, getPublicUser } from '../_shared/helpers.ts';
+import { connect, createServiceClient, getPublicUser } from '../_shared/helpers.ts';
 import { addToGameMasterGroup } from '../_shared/patreon.ts';
 
 serve(async (req: Request) => {
@@ -19,7 +19,7 @@ serve(async (req: Request) => {
       };
     }
 
-    const result = await addToGameMasterGroup(client, user, gm_user_id, access_code);
+    const result = await addToGameMasterGroup(createServiceClient(), user, gm_user_id, access_code);
     if (result.status === 'SUCCESS') {
       return {
         status: 'success',

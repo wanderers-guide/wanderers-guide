@@ -1,4 +1,4 @@
-import { fetchContentById } from '@content/content-store';
+import { fetchContentById, getCachedContent } from '@content/content-store';
 import { AbilityBlock, Item, Language, Spell, Trait } from '@schemas/content';
 import {
   ConditionCheckData,
@@ -27,7 +27,7 @@ import {
   OperationSendNotification,
   OperationSetValue,
 } from '@schemas/operations';
-import { ProficiencyType, StoreID, VariableNum, VariableProf } from '@schemas/variables';
+import { ProficiencyType, StoreID, VariableListStr, VariableNum, VariableProf } from '@schemas/variables';
 import {
   addVariable,
   addVariableBonus,
@@ -36,6 +36,14 @@ import {
   getVariable,
   getVariables,
   setVariable,
+  beginVariableEffects,
+  getVariableEffectScopes,
+  areVariableEffectScopesActive,
+  withVariableEffectScope,
+  withVariableEffectScopes,
+  removeVariableEffects,
+  filterVariableList,
+  VariableEffectScope,
 } from '@variables/variable-manager';
 import {
   compileProficiencyType,
@@ -79,6 +87,49 @@ function displayError(message: string, debugOnly?: boolean) {
 
 ///
 
+/** Generous hard limits bound malformed content even when Web Workers are unavailable. */
+const MAX_OPERATION_DEPTH = 64;
+const MAX_OPERATION_WORK = 100_000;
+type OperationTraversal = { depth: number; work: number };
+const operationTraversals = new WeakMap<ReturnType<typeof getVariables>, OperationTraversal>();
+
+/** Track work across every source and all three passes, resetting with the variable store. */
+function getOperationTraversal(varId: StoreID): OperationTraversal {
+  const variables = getVariables(varId);
+  let traversal = operationTraversals.get(variables);
+  if (!traversal) {
+    traversal = { depth: 0, work: 0 };
+    operationTraversals.set(variables, traversal);
+  }
+  return traversal;
+}
+
+/**
+ * Own a content grant and its descendants by occurrence, separate from its human-readable source label.
+ * Only the active ancestor path is checked for cycles; another branch may grant the same content.
+ */
+export async function withContentGrant<T>(
+  varId: StoreID,
+  key: string,
+  content: string,
+  options: OperationOptions | undefined,
+  run: () => Promise<T>
+): Promise<T | undefined> {
+  const ancestors = getVariableEffectScopes(varId);
+  if (ancestors.some((scope) => scope.content === content)) {
+    throw new Error(`Cyclic content grant: ${[...ancestors.map((scope) => scope.content), content].join(' -> ')}`);
+  }
+  const occurrence = `${ancestors.at(-1)?.key ?? 'root'}/${key}`;
+  return withVariableEffectScope(
+    varId,
+    occurrence,
+    content,
+    !options?.doOnlyValueCreation && !options?.doOnlyConditionals,
+    run
+  );
+}
+
+/** Execute ordered operations with bounded recursion and source-owned variable effects. */
 export async function runOperations(
   varId: StoreID,
   selectionTrack: SelectionTrack,
@@ -86,6 +137,10 @@ export async function runOperations(
   options?: OperationOptions,
   sourceLabel?: string
 ): Promise<OperationResult[]> {
+  beginVariableEffects(varId);
+  const traversal = getOperationTraversal(varId);
+  if (traversal.depth >= MAX_OPERATION_DEPTH)
+    throw new Error('Content operations exceed the maximum nesting depth (64).');
   const runOp = async (operation: Operation): Promise<OperationResult> => {
     // Value creation
     if (options?.doOnlyValueCreation) {
@@ -159,7 +214,7 @@ export async function runOperations(
     } else if (operation.type === 'giveTrait') {
       return await runGiveTrait(varId, operation, sourceLabel);
     } else if (operation.type === 'giveSpell') {
-      return await runGiveSpell(varId, operation, sourceLabel);
+      return await runGiveSpell(varId, selectionTrack, operation, options, sourceLabel);
     } else if (operation.type === 'giveSpellSlot') {
       return await runGiveSpellSlot(varId, operation, sourceLabel);
     } else if (operation.type === 'defineCastingSource') {
@@ -188,13 +243,18 @@ export async function runOperations(
   };
 
   const results: OperationResult[] = [];
-  for (const operation of operations) {
-    results.push(await runOp(operation));
+  traversal.depth++;
+  try {
+    for (const operation of operations) {
+      if (!areVariableEffectScopesActive(getVariableEffectScopes(varId))) break;
+      if (++traversal.work > MAX_OPERATION_WORK)
+        throw new Error('Content operations exceed the execution work limit (100000).');
+      results.push(await runOp(operation));
+    }
+    return results;
+  } finally {
+    traversal.depth--;
   }
-
-  // Alt. Faster as it runs in parallel but doesn't have consistent execution order
-  // await Promise.all(operations.map(runOp));
-  return results;
 }
 
 async function runSelect(
@@ -236,9 +296,7 @@ async function runSelect(
   // Find selected option
   if (selectionTrack.node && selectionTrack.node.value) {
     let selectedOption = optionList.find((option) => option._select_uuid === selectionTrack.node?.value);
-    if (selectedOption) {
-      updateVariables(varId, operation, selectedOption, sourceLabel, options);
-    } else if (operation.data.optionType === 'ABILITY_BLOCK') {
+    if (!selectedOption && operation.data.optionType === 'ABILITY_BLOCK') {
       // It's probably a feat we selected from an archetype so it's not in the list, let's fetch it
       const abilityBlock = await fetchContentById<AbilityBlock>('ability-block', parseInt(selectionTrack.node.value));
       if (!abilityBlock) {
@@ -253,9 +311,8 @@ async function runSelect(
           _select_uuid: `${abilityBlock.id}`,
           _content_type: 'ability-block',
         } satisfies ObjectWithUUID;
-        updateVariables(varId, operation, selectedOption, sourceLabel, options);
       }
-    } else {
+    } else if (!selectedOption) {
       /*
         We don't display an error on value creation because, with trait giving, we can have values
         that give access to other selection options. In the later passthroughs, they find the options
@@ -276,17 +333,31 @@ async function runSelect(
     }
 
     if (selectedOption) {
-      // Run the operations of the selected option
-      const subOperations = await extendOperations(selectedOption, selectedOption.operations);
-      if (subOperations.length > 0 && selectedOption.type !== 'mode') {
-        const subNode = selectionTrack.node?.children[selectedOption._select_uuid];
-        results = await runOperations(
+      const option = selectedOption;
+      const runSelected = async (): Promise<void> => {
+        await updateVariables(varId, operation, option, sourceLabel, options);
+        const subOperations = await extendOperations(option, option.operations);
+        if (subOperations.length > 0 && option.type !== 'mode') {
+          const subNode = selectionTrack.node?.children[option._select_uuid];
+          results = await runOperations(
+            varId,
+            { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
+            subOperations,
+            options,
+            operation.data.optionType === 'CUSTOM' ? sourceLabel : (option.name ?? 'Unknown')
+          );
+        }
+      };
+      if (operation.data.optionType === 'ABILITY_BLOCK' || operation.data.optionType === 'SPELL') {
+        await withContentGrant(
           varId,
-          { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
-          subOperations,
+          `${selectionTrack.path}/${operation.id}/${option.id}`,
+          `${operation.data.optionType === 'SPELL' ? 'spell' : 'ability-block'}:${option.id}`,
           options,
-          operation.data.optionType === 'CUSTOM' ? sourceLabel : (selectedOption.name ?? 'Unknown')
+          runSelected
         );
+      } else {
+        await runSelected();
       }
     }
 
@@ -514,7 +585,13 @@ async function runSetValue(
   sourceLabel?: string
 ): Promise<OperationResult> {
   if (operation.data.variable === 'LANGUAGE_IDS' || operation.data.variable === 'LANGUAGE_NAMES') {
-    deferredOperations.push({ type: 'languages', varId, data: operation.data, sourceLabel });
+    deferredOperations.push({
+      type: 'languages',
+      varId,
+      data: operation.data,
+      sourceLabel,
+      scopes: getVariableEffectScopes(varId),
+    });
     return null;
   }
   setVariable(varId, operation.data.variable, operation.data.value, sourceLabel);
@@ -529,7 +606,7 @@ async function runSetValue(
  * deferral was lost entirely under worker execution, because the store is exported
  * back to the main thread before the timer ever fires.
  */
-type DeferredOperation =
+type DeferredOperation = { scopes: VariableEffectScope[] } & (
   | {
       type: 'bind';
       varId: StoreID;
@@ -542,7 +619,8 @@ type DeferredOperation =
       varId: StoreID;
       data: OperationSetValue['data'];
       sourceLabel?: string;
-    };
+    }
+);
 let deferredOperations: DeferredOperation[] = [];
 
 /** Drops deferred writes from a previous (possibly aborted) execution. */
@@ -552,9 +630,12 @@ export function clearDeferredOperations(): void {
 
 /** Apply explicit language replacements after grants, then bindings in their original order against final values. */
 export async function resolveDeferredOperations(): Promise<string[]> {
-  const pending: DeferredOperation[] = deferredOperations;
+  const pending: DeferredOperation[] = deferredOperations.filter((operation) =>
+    areVariableEffectScopesActive(operation.scopes)
+  );
   deferredOperations = [];
-  const replacements: { varId: StoreID; languages: Language[]; sourceLabel?: string }[] = [];
+  const replacements: { varId: StoreID; languages: Language[]; sourceLabel?: string; scopes: VariableEffectScope[] }[] =
+    [];
   const errors: string[] = [];
   for (const operation of pending) {
     if (operation.type !== 'languages') continue;
@@ -565,6 +646,7 @@ export async function resolveDeferredOperations(): Promise<string[]> {
         varId: operation.varId,
         languages: await resolveLanguageOverride(operation.varId, override),
         sourceLabel: operation.sourceLabel,
+        scopes: operation.scopes,
       });
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
@@ -574,13 +656,17 @@ export async function resolveDeferredOperations(): Promise<string[]> {
     }
   }
   for (const replacement of replacements) {
-    replaceLanguages(replacement.varId, replacement.languages, replacement.sourceLabel);
+    await withVariableEffectScopes(replacement.varId, replacement.scopes, async () => {
+      replaceLanguages(replacement.varId, replacement.languages, replacement.sourceLabel);
+    });
   }
   for (const bind of pending) {
     if (bind.type !== 'bind') continue;
     const bindValue = getVariable(bind.value.storeId, bind.value.variable);
     if (bindValue) {
-      setVariable(bind.varId, bind.variable, bindValue.value, bind.sourceLabel);
+      await withVariableEffectScopes(bind.varId, bind.scopes, async () => {
+        setVariable(bind.varId, bind.variable, bindValue.value, bind.sourceLabel);
+      });
     }
   }
   return errors;
@@ -593,6 +679,7 @@ async function runBindValue(
 ): Promise<OperationResult> {
   deferredOperations.push({
     type: 'bind',
+    scopes: getVariableEffectScopes(varId),
     varId,
     variable: operation.data.variable,
     value: operation.data.value,
@@ -646,53 +733,63 @@ async function runGiveAbilityBlock(
     return null;
   }
 
-  if (!options?.doOnlyValueCreation && !options?.doOnlyConditionals) {
-    if (operation.data.type === 'feat') {
-      adjVariable(varId, 'FEAT_IDS', `${abilityBlock.id}`, sourceLabel);
-      adjVariable(varId, 'FEAT_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
-    } else if (operation.data.type === 'class-feature') {
-      adjVariable(varId, 'CLASS_FEATURE_IDS', `${abilityBlock.id}`, sourceLabel);
-      adjVariable(varId, 'CLASS_FEATURE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
-    } else if (operation.data.type === 'sense') {
-      adjVariable(varId, 'SENSE_IDS', `${abilityBlock.id}`, sourceLabel);
-      adjVariable(varId, 'SENSE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
-    } else if (operation.data.type === 'heritage') {
-      adjVariable(varId, 'HERITAGE_IDS', `${abilityBlock.id}`, sourceLabel);
-      adjVariable(varId, 'HERITAGE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
-    } else if (operation.data.type === 'physical-feature') {
-      adjVariable(varId, 'PHYSICAL_FEATURE_IDS', `${abilityBlock.id}`, sourceLabel);
-      adjVariable(varId, 'PHYSICAL_FEATURE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
-    } else if (operation.data.type === 'mode') {
-      adjVariable(varId, 'MODE_IDS', `${abilityBlock.id}`, sourceLabel);
-      adjVariable(varId, 'MODE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
-    }
-  }
-
-  let results: OperationResult[] = [];
-  const subOperations = await extendOperations(abilityBlock, abilityBlock.operations ?? undefined);
-  if (subOperations.length > 0 && operation.data.type !== 'mode') {
-    const subNode = selectionTrack.node?.children[operation.id];
-    results = await runOperations(
+  return (
+    (await withContentGrant(
       varId,
-      { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
-      subOperations,
+      `${selectionTrack.path}/${operation.id}`,
+      `ability-block:${abilityBlock.id}`,
       options,
-      abilityBlock.type === 'feat' || abilityBlock.type === 'class-feature'
-        ? `${abilityBlock.name} (Lvl. ${abilityBlock.level})`
-        : abilityBlock.name
-    );
-  }
+      async () => {
+        if (!options?.doOnlyValueCreation && !options?.doOnlyConditionals) {
+          if (operation.data.type === 'feat') {
+            adjVariable(varId, 'FEAT_IDS', `${abilityBlock.id}`, sourceLabel);
+            adjVariable(varId, 'FEAT_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
+          } else if (operation.data.type === 'class-feature') {
+            adjVariable(varId, 'CLASS_FEATURE_IDS', `${abilityBlock.id}`, sourceLabel);
+            adjVariable(varId, 'CLASS_FEATURE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
+          } else if (operation.data.type === 'sense') {
+            adjVariable(varId, 'SENSE_IDS', `${abilityBlock.id}`, sourceLabel);
+            adjVariable(varId, 'SENSE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
+          } else if (operation.data.type === 'heritage') {
+            adjVariable(varId, 'HERITAGE_IDS', `${abilityBlock.id}`, sourceLabel);
+            adjVariable(varId, 'HERITAGE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
+          } else if (operation.data.type === 'physical-feature') {
+            adjVariable(varId, 'PHYSICAL_FEATURE_IDS', `${abilityBlock.id}`, sourceLabel);
+            adjVariable(varId, 'PHYSICAL_FEATURE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
+          } else if (operation.data.type === 'mode') {
+            adjVariable(varId, 'MODE_IDS', `${abilityBlock.id}`, sourceLabel);
+            adjVariable(varId, 'MODE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
+          }
+        }
 
-  return {
-    result: {
-      source: {
-        ...abilityBlock,
-        _select_uuid: operation.id,
-        _content_type: 'ability-block',
-      },
-      results,
-    },
-  };
+        let results: OperationResult[] = [];
+        const subOperations = await extendOperations(abilityBlock, abilityBlock.operations ?? undefined);
+        if (subOperations.length > 0 && operation.data.type !== 'mode') {
+          const subNode = selectionTrack.node?.children[operation.id];
+          results = await runOperations(
+            varId,
+            { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
+            subOperations,
+            options,
+            abilityBlock.type === 'feat' || abilityBlock.type === 'class-feature'
+              ? `${abilityBlock.name} (Lvl. ${abilityBlock.level})`
+              : abilityBlock.name
+          );
+        }
+
+        return {
+          result: {
+            source: {
+              ...abilityBlock,
+              _select_uuid: operation.id,
+              _content_type: 'ability-block',
+            },
+            results,
+          },
+        };
+      }
+    )) ?? null
+  );
 }
 
 async function runGiveLanguage(
@@ -766,7 +863,9 @@ async function runGiveTrait(
 
 async function runGiveSpell(
   varId: StoreID,
+  selectionTrack: SelectionTrack,
   operation: OperationGiveSpell,
+  options?: OperationOptions,
   sourceLabel?: string
 ): Promise<OperationResult> {
   if (operation.data.spellId === -1) return null;
@@ -776,38 +875,42 @@ async function runGiveSpell(
     return null;
   }
 
-  adjVariable(varId, 'SPELL_IDS', `${spell.id}`, sourceLabel);
-  adjVariable(varId, 'SPELL_NAMES', spell.name.toUpperCase(), sourceLabel);
+  return (
+    (await withContentGrant(varId, `${selectionTrack.path}/${operation.id}`, `spell:${spell.id}`, options, async () => {
+      adjVariable(varId, 'SPELL_IDS', `${spell.id}`, sourceLabel);
+      adjVariable(varId, 'SPELL_NAMES', spell.name.toUpperCase(), sourceLabel);
 
-  adjVariable(
-    varId,
-    'SPELL_DATA',
-    JSON.stringify({
-      spellId: spell.id,
-      type: operation.data.type,
-      castingSource: operation.data.castingSource,
-      rank: operation.data.rank,
-      tradition: operation.data.tradition,
-      casts: operation.data.casts,
-    } satisfies GiveSpellData),
-    sourceLabel
-  );
+      adjVariable(
+        varId,
+        'SPELL_DATA',
+        JSON.stringify({
+          spellId: spell.id,
+          type: operation.data.type,
+          castingSource: operation.data.castingSource,
+          rank: operation.data.rank,
+          tradition: operation.data.tradition,
+          casts: operation.data.casts,
+        } satisfies GiveSpellData),
+        sourceLabel
+      );
 
-  if (operation.data.type === 'INNATE') {
-    /*
+      if (operation.data.type === 'INNATE') {
+        /*
       When you gain an innate spell, you become trained in the spell attack modifier
       and spell DC statistics. At 12th level, these proficiencies increase to expert.
     */
-    adjVariable(varId, 'SPELL_ATTACK', { value: 'T', increases: 0 }, sourceLabel);
-    adjVariable(varId, 'SPELL_DC', { value: 'T', increases: 0 }, sourceLabel);
-    const level = getVariable<VariableNum>(varId, 'LEVEL')?.value;
-    if (level && level >= 12) {
-      adjVariable(varId, 'SPELL_ATTACK', { value: 'E', increases: 0 }, sourceLabel);
-      adjVariable(varId, 'SPELL_DC', { value: 'E', increases: 0 }, sourceLabel);
-    }
-  }
+        adjVariable(varId, 'SPELL_ATTACK', { value: 'T', increases: 0 }, sourceLabel);
+        adjVariable(varId, 'SPELL_DC', { value: 'T', increases: 0 }, sourceLabel);
+        const level = getVariable<VariableNum>(varId, 'LEVEL')?.value;
+        if (level && level >= 12) {
+          adjVariable(varId, 'SPELL_ATTACK', { value: 'E', increases: 0 }, sourceLabel);
+          adjVariable(varId, 'SPELL_DC', { value: 'E', increases: 0 }, sourceLabel);
+        }
+      }
 
-  return null;
+      return null;
+    })) ?? null
+  );
 }
 
 async function runGiveSpellSlot(
@@ -881,6 +984,31 @@ async function runSendNotification(
   return null;
 }
 
+/** Remove identity and display membership together, preserving another record that has the same name. */
+function removeContentMembership(
+  varId: StoreID,
+  prefix: string,
+  content: Pick<AbilityBlock, 'id' | 'name'>,
+  type: 'ability-block' | 'spell',
+  sourceLabel?: string
+): void {
+  const name = content.name.toUpperCase();
+  const namesakes = new Set(
+    getCachedContent<AbilityBlock | Spell>(type)
+      .filter((row) => row.id !== content.id && row.name.toUpperCase() === name)
+      .map((row) => `${row.id}`)
+  );
+  filterVariableList(varId, `${prefix}_IDS`, (id) => id !== `${content.id}`, sourceLabel);
+  filterVariableList(
+    varId,
+    `${prefix}_NAMES`,
+    (value) =>
+      value !== name ||
+      (getVariable<VariableListStr>(varId, `${prefix}_IDS`)?.value ?? []).some((id) => namesakes.has(id)),
+    sourceLabel
+  );
+}
+
 async function runRemoveAbilityBlock(
   varId: StoreID,
   operation: OperationRemoveAbilityBlock,
@@ -893,89 +1021,21 @@ async function runRemoveAbilityBlock(
     return null;
   }
 
-  const getVariableList = (varId: StoreID, variableName: string) => {
-    return (getVariable(varId, variableName)?.value ?? []) as string[];
-  };
-
-  if (operation.data.type === 'feat') {
-    setVariable(
-      varId,
-      'FEAT_IDS',
-      getVariableList(varId, 'FEAT_IDS').filter((id) => id !== `${abilityBlock.id}`),
-      sourceLabel
-    );
-    setVariable(
-      varId,
-      'FEAT_NAMES',
-      getVariableList(varId, 'FEAT_NAMES').filter((name) => name !== abilityBlock.name.toUpperCase()),
-      sourceLabel
-    );
-  } else if (operation.data.type === 'class-feature') {
-    setVariable(
-      varId,
-      'CLASS_FEATURE_IDS',
-      getVariableList(varId, 'CLASS_FEATURE_IDS').filter((id) => id !== `${abilityBlock.id}`),
-      sourceLabel
-    );
-    setVariable(
-      varId,
-      'CLASS_FEATURE_NAMES',
-      getVariableList(varId, 'CLASS_FEATURE_NAMES').filter((name) => name !== abilityBlock.name.toUpperCase()),
-      sourceLabel
-    );
-  } else if (operation.data.type === 'sense') {
-    setVariable(
-      varId,
-      'SENSE_IDS',
-      getVariableList(varId, 'SENSE_IDS').filter((id) => id !== `${abilityBlock.id}`),
-      sourceLabel
-    );
-    setVariable(
-      varId,
-      'SENSE_NAMES',
-      getVariableList(varId, 'SENSE_NAMES').filter((name) => name !== abilityBlock.name.toUpperCase()),
-      sourceLabel
-    );
-  } else if (operation.data.type === 'heritage') {
-    setVariable(
-      varId,
-      'HERITAGE_IDS',
-      getVariableList(varId, 'HERITAGE_IDS').filter((id) => id !== `${abilityBlock.id}`),
-      sourceLabel
-    );
-    setVariable(
-      varId,
-      'HERITAGE_NAMES',
-      getVariableList(varId, 'HERITAGE_NAMES').filter((name) => name !== abilityBlock.name.toUpperCase()),
-      sourceLabel
-    );
-  } else if (operation.data.type === 'physical-feature') {
-    setVariable(
-      varId,
-      'PHYSICAL_FEATURE_IDS',
-      getVariableList(varId, 'PHYSICAL_FEATURE_IDS').filter((id) => id !== `${abilityBlock.id}`),
-      sourceLabel
-    );
-    setVariable(
-      varId,
-      'PHYSICAL_FEATURE_NAMES',
-      getVariableList(varId, 'PHYSICAL_FEATURE_NAMES').filter((name) => name !== abilityBlock.name.toUpperCase()),
-      sourceLabel
-    );
-  } else if (operation.data.type === 'mode') {
-    setVariable(
-      varId,
-      'MODE_IDS',
-      getVariableList(varId, 'MODE_IDS').filter((id) => id !== `${abilityBlock.id}`),
-      sourceLabel
-    );
-    setVariable(
-      varId,
-      'MODE_NAMES',
-      getVariableList(varId, 'MODE_NAMES').filter((name) => name !== abilityBlock.name.toUpperCase()),
-      sourceLabel
-    );
+  removeVariableEffects(varId, `ability-block:${abilityBlock.id}`);
+  if (operation.data.type === 'mode') {
+    filterVariableList(varId, 'ACTIVE_MODES', (mode) => mode !== labelToVariable(abilityBlock.name), sourceLabel);
   }
+
+  const prefix: Record<string, string> = {
+    feat: 'FEAT',
+    'class-feature': 'CLASS_FEATURE',
+    sense: 'SENSE',
+    heritage: 'HERITAGE',
+    'physical-feature': 'PHYSICAL_FEATURE',
+    mode: 'MODE',
+  };
+  const variablePrefix = prefix[operation.data.type];
+  if (variablePrefix) removeContentMembership(varId, variablePrefix, abilityBlock, 'ability-block', sourceLabel);
   return null;
 }
 
@@ -1007,20 +1067,16 @@ async function runRemoveSpell(
     return null;
   }
 
-  const getVariableList = (variableName: string) => {
-    return (getVariable(varId, variableName)?.value ?? []) as string[];
-  };
+  removeVariableEffects(varId, `spell:${spell.id}`);
 
-  setVariable(
+  removeContentMembership(varId, 'SPELL', spell, 'spell', sourceLabel);
+  filterVariableList(
     varId,
-    'SPELL_IDS',
-    getVariableList('SPELL_IDS').filter((id) => id !== `${spell.id}`),
-    sourceLabel
-  );
-  setVariable(
-    varId,
-    'SPELL_NAMES',
-    getVariableList('SPELL_NAMES').filter((name) => name !== spell.name.toUpperCase()),
+    'SPELL_DATA',
+    (entry) => {
+      const data: unknown = JSON.parse(entry);
+      return typeof data !== 'object' || data === null || !('spellId' in data) || data.spellId !== spell.id;
+    },
     sourceLabel
   );
   return null;

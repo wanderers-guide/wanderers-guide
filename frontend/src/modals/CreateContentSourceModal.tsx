@@ -390,17 +390,17 @@ export function CreateContentSourceModal(props: {
 }) {
   const theme = useMantineTheme();
 
-  const { data, isFetching } = useQuery({
+  const { data, isFetching, isError, refetch } = useQuery({
     queryKey: [`find-content-source-details-${props.sourceId}`],
     queryFn: async () => {
       const source = (await fetchContentSources([props.sourceId])).find((s) => s.id === props.sourceId)!;
       const sv = await defineDefaultSourcesForSource('BOTH', source);
 
-      // Fill content store with all content (async)
-      fetchContentPackage(sv, { fetchSources: true, fetchCreatures: true });
-
-      // Fetch the source's content
-      const content = await fetchContentPackage([props.sourceId], { fetchSources: true, fetchCreatures: true });
+      // Both the source and its dependencies must load before editing operations.
+      const [, content] = await Promise.all([
+        fetchContentPackage(sv, { fetchSources: true, fetchCreatures: true }),
+        fetchContentPackage([props.sourceId], { fetchSources: true, fetchCreatures: true }),
+      ]);
 
       return {
         content,
@@ -456,468 +456,475 @@ export function CreateContentSourceModal(props: {
       keepMounted={false}
     >
       <LoadingOverlay visible={isFetching} />
-      <Group align='flex-start'>
-        <ContentSourceEditor
-          opened={props.opened}
-          sourceId={props.sourceId}
-          onComplete={(source) => {
-            onSave(source);
-          }}
-          onCancel={() => {}}
-        />
-        <Center style={{ flex: 1 }}>
-          <Tabs w='100%' variant='outline' defaultValue='feats' orientation='vertical' keepMounted={false}>
-            <Tabs.List>
-              <Tabs.Tab
-                value='actions'
-                leftSection={getIconFromContentType('ability-block', '1rem')}
-                rightSection={
-                  <>
-                    {data?.content.abilityBlocks &&
-                      data?.content.abilityBlocks.filter((i) => i.type === 'action').length > 0 && (
+      {isError ? (
+        <Stack align='center' p='lg'>
+          <Text>Couldn't load this bundle and its dependencies.</Text>
+          <Button onClick={() => refetch()}>Retry</Button>
+        </Stack>
+      ) : data ? (
+        <Group align='flex-start'>
+          <ContentSourceEditor
+            opened={props.opened}
+            sourceId={props.sourceId}
+            onComplete={(source) => {
+              onSave(source);
+            }}
+            onCancel={() => {}}
+          />
+          <Center style={{ flex: 1 }}>
+            <Tabs w='100%' variant='outline' defaultValue='feats' orientation='vertical' keepMounted={false}>
+              <Tabs.List>
+                <Tabs.Tab
+                  value='actions'
+                  leftSection={getIconFromContentType('ability-block', '1rem')}
+                  rightSection={
+                    <>
+                      {data?.content.abilityBlocks &&
+                        data?.content.abilityBlocks.filter((i) => i.type === 'action').length > 0 && (
+                          <Badge variant='light' color={theme.primaryColor} size='xs'>
+                            {data?.content.abilityBlocks.filter((i) => i.type === 'action').length}
+                          </Badge>
+                        )}
+                    </>
+                  }
+                >
+                  Actions
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value='feats'
+                  leftSection={getIconFromContentType('ability-block', '1rem')}
+                  rightSection={
+                    <>
+                      {data?.content.abilityBlocks &&
+                        data?.content.abilityBlocks.filter((i) => i.type === 'feat').length > 0 && (
+                          <Badge variant='light' color={theme.primaryColor} size='xs'>
+                            {data?.content.abilityBlocks.filter((i) => i.type === 'feat').length}
+                          </Badge>
+                        )}
+                    </>
+                  }
+                >
+                  Feats
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value='items'
+                  leftSection={getIconFromContentType('item', '1rem')}
+                  rightSection={
+                    <>
+                      {data?.content.items && data?.content.items.length > 0 && (
                         <Badge variant='light' color={theme.primaryColor} size='xs'>
-                          {data?.content.abilityBlocks.filter((i) => i.type === 'action').length}
+                          {data?.content.items.length}
                         </Badge>
                       )}
-                  </>
-                }
-              >
-                Actions
-              </Tabs.Tab>
-              <Tabs.Tab
-                value='feats'
-                leftSection={getIconFromContentType('ability-block', '1rem')}
-                rightSection={
-                  <>
-                    {data?.content.abilityBlocks &&
-                      data?.content.abilityBlocks.filter((i) => i.type === 'feat').length > 0 && (
+                    </>
+                  }
+                >
+                  Items
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value='spells'
+                  leftSection={getIconFromContentType('spell', '1rem')}
+                  rightSection={
+                    <>
+                      {data?.content.spells && data?.content.spells.length > 0 && (
                         <Badge variant='light' color={theme.primaryColor} size='xs'>
-                          {data?.content.abilityBlocks.filter((i) => i.type === 'feat').length}
+                          {data?.content.spells.length}
                         </Badge>
                       )}
-                  </>
-                }
-              >
-                Feats
-              </Tabs.Tab>
-              <Tabs.Tab
-                value='items'
-                leftSection={getIconFromContentType('item', '1rem')}
-                rightSection={
-                  <>
-                    {data?.content.items && data?.content.items.length > 0 && (
-                      <Badge variant='light' color={theme.primaryColor} size='xs'>
-                        {data?.content.items.length}
-                      </Badge>
-                    )}
-                  </>
-                }
-              >
-                Items
-              </Tabs.Tab>
-              <Tabs.Tab
-                value='spells'
-                leftSection={getIconFromContentType('spell', '1rem')}
-                rightSection={
-                  <>
-                    {data?.content.spells && data?.content.spells.length > 0 && (
-                      <Badge variant='light' color={theme.primaryColor} size='xs'>
-                        {data?.content.spells.length}
-                      </Badge>
-                    )}
-                  </>
-                }
-              >
-                Spells
-              </Tabs.Tab>
-              <Tabs.Tab
-                value='traits'
-                leftSection={getIconFromContentType('trait', '1rem')}
-                rightSection={
-                  <>
-                    {data?.content.traits && data?.content.traits.length > 0 && (
-                      <Badge variant='light' color={theme.primaryColor} size='xs'>
-                        {data?.content.traits.length}
-                      </Badge>
-                    )}
-                  </>
-                }
-              >
-                Traits
-              </Tabs.Tab>
-              <Tabs.Tab
-                value='languages'
-                leftSection={getIconFromContentType('language', '1rem')}
-                rightSection={
-                  <>
-                    {data?.content.languages && data?.content.languages.length > 0 && (
-                      <Badge variant='light' color={theme.primaryColor} size='xs'>
-                        {data?.content.languages.length}
-                      </Badge>
-                    )}
-                  </>
-                }
-              >
-                Languages
-              </Tabs.Tab>
-              <Tabs.Tab
-                value='creatures'
-                leftSection={getIconFromContentType('creature', '1rem')}
-                rightSection={
-                  <>
-                    {data?.content.creatures && data?.content.creatures.length > 0 && (
-                      <Badge variant='light' color={theme.primaryColor} size='xs'>
-                        {data?.content.creatures.length}
-                      </Badge>
-                    )}
-                  </>
-                }
-              >
-                Creatures
-              </Tabs.Tab>
-              <Tabs.Tab
-                value='ancestries'
-                leftSection={getIconFromContentType('ancestry', '1rem')}
-                rightSection={
-                  <>
-                    {data?.content.ancestries && data?.content.ancestries.length > 0 && (
-                      <Badge variant='light' color={theme.primaryColor} size='xs'>
-                        {data?.content.ancestries.length}
-                      </Badge>
-                    )}
-                  </>
-                }
-              >
-                Ancestries
-              </Tabs.Tab>
-              <Tabs.Tab
-                value='heritages'
-                leftSection={getIconFromContentType('ability-block', '1rem')}
-                rightSection={
-                  <>
-                    {data?.content.abilityBlocks &&
-                      data?.content.abilityBlocks.filter((i) => i.type === 'heritage').length > 0 && (
+                    </>
+                  }
+                >
+                  Spells
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value='traits'
+                  leftSection={getIconFromContentType('trait', '1rem')}
+                  rightSection={
+                    <>
+                      {data?.content.traits && data?.content.traits.length > 0 && (
                         <Badge variant='light' color={theme.primaryColor} size='xs'>
-                          {data?.content.abilityBlocks.filter((i) => i.type === 'heritage').length}
+                          {data?.content.traits.length}
                         </Badge>
                       )}
-                  </>
-                }
-              >
-                Heritages
-              </Tabs.Tab>
-              <Tabs.Tab
-                value='senses'
-                leftSection={getIconFromContentType('ability-block', '1rem')}
-                rightSection={
-                  <>
-                    {data?.content.abilityBlocks &&
-                      data?.content.abilityBlocks.filter((i) => i.type === 'sense').length > 0 && (
+                    </>
+                  }
+                >
+                  Traits
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value='languages'
+                  leftSection={getIconFromContentType('language', '1rem')}
+                  rightSection={
+                    <>
+                      {data?.content.languages && data?.content.languages.length > 0 && (
                         <Badge variant='light' color={theme.primaryColor} size='xs'>
-                          {data?.content.abilityBlocks.filter((i) => i.type === 'sense').length}
+                          {data?.content.languages.length}
                         </Badge>
                       )}
-                  </>
-                }
-              >
-                Senses
-              </Tabs.Tab>
-              <Tabs.Tab
-                value='physical-features'
-                leftSection={getIconFromContentType('ability-block', '1rem')}
-                rightSection={
-                  <>
-                    {data?.content.abilityBlocks &&
-                      data?.content.abilityBlocks.filter((i) => i.type === 'physical-feature').length > 0 && (
+                    </>
+                  }
+                >
+                  Languages
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value='creatures'
+                  leftSection={getIconFromContentType('creature', '1rem')}
+                  rightSection={
+                    <>
+                      {data?.content.creatures && data?.content.creatures.length > 0 && (
                         <Badge variant='light' color={theme.primaryColor} size='xs'>
-                          {data?.content.abilityBlocks.filter((i) => i.type === 'physical-feature').length}
+                          {data?.content.creatures.length}
                         </Badge>
                       )}
-                  </>
-                }
-              >
-                Physical Features
-              </Tabs.Tab>
-              <Tabs.Tab
-                value='backgrounds'
-                leftSection={getIconFromContentType('background', '1rem')}
-                rightSection={
-                  <>
-                    {data?.content.backgrounds && data?.content.backgrounds.length > 0 && (
-                      <Badge variant='light' color={theme.primaryColor} size='xs'>
-                        {data?.content.backgrounds.length}
-                      </Badge>
-                    )}
-                  </>
-                }
-              >
-                Backgrounds
-              </Tabs.Tab>
-              <Tabs.Tab
-                value='classes'
-                leftSection={getIconFromContentType('class', '1rem')}
-                rightSection={
-                  <>
-                    {data?.content.classes && data?.content.classes.length > 0 && (
-                      <Badge variant='light' color={theme.primaryColor} size='xs'>
-                        {data?.content.classes.length}
-                      </Badge>
-                    )}
-                  </>
-                }
-              >
-                Classes
-              </Tabs.Tab>
-              <Tabs.Tab
-                value='class-features'
-                leftSection={getIconFromContentType('ability-block', '1rem')}
-                rightSection={
-                  <>
-                    {data?.content.abilityBlocks &&
-                      data?.content.abilityBlocks.filter((i) => i.type === 'class-feature').length > 0 && (
+                    </>
+                  }
+                >
+                  Creatures
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value='ancestries'
+                  leftSection={getIconFromContentType('ancestry', '1rem')}
+                  rightSection={
+                    <>
+                      {data?.content.ancestries && data?.content.ancestries.length > 0 && (
                         <Badge variant='light' color={theme.primaryColor} size='xs'>
-                          {data?.content.abilityBlocks.filter((i) => i.type === 'class-feature').length}
+                          {data?.content.ancestries.length}
                         </Badge>
                       )}
-                  </>
-                }
-              >
-                Class Features
-              </Tabs.Tab>
-              <Tabs.Tab
-                value='archetypes'
-                leftSection={getIconFromContentType('archetype', '1rem')}
-                rightSection={
-                  <>
-                    {data?.content.archetypes && data?.content.archetypes.length > 0 && (
-                      <Badge variant='light' color={theme.primaryColor} size='xs'>
-                        {data?.content.archetypes.length}
-                      </Badge>
-                    )}
-                  </>
-                }
-              >
-                Archetypes
-              </Tabs.Tab>
-              <Tabs.Tab
-                value='versatile-heritages'
-                leftSection={getIconFromContentType('versatile-heritage', '1rem')}
-                rightSection={
-                  <>
-                    {data?.content.versatileHeritages && data?.content.versatileHeritages.length > 0 && (
-                      <Badge variant='light' color={theme.primaryColor} size='xs'>
-                        {data?.content.versatileHeritages.length}
-                      </Badge>
-                    )}
-                  </>
-                }
-              >
-                Versatile Heritages
-              </Tabs.Tab>
-              <Tabs.Tab
-                value='class-archetypes'
-                leftSection={getIconFromContentType('class-archetype', '1rem')}
-                rightSection={
-                  <>
-                    {data?.content.classArchetypes && data?.content.classArchetypes.length > 0 && (
-                      <Badge variant='light' color={theme.primaryColor} size='xs'>
-                        {data?.content.classArchetypes.length}
-                      </Badge>
-                    )}
-                  </>
-                }
-              >
-                Class Archetypes
-              </Tabs.Tab>
-              <Tabs.Tab
-                value='modes'
-                leftSection={getIconFromContentType('ability-block', '1rem')}
-                rightSection={
-                  <>
-                    {data?.content.abilityBlocks &&
-                      data?.content.abilityBlocks.filter((i) => i.type === 'mode').length > 0 && (
+                    </>
+                  }
+                >
+                  Ancestries
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value='heritages'
+                  leftSection={getIconFromContentType('ability-block', '1rem')}
+                  rightSection={
+                    <>
+                      {data?.content.abilityBlocks &&
+                        data?.content.abilityBlocks.filter((i) => i.type === 'heritage').length > 0 && (
+                          <Badge variant='light' color={theme.primaryColor} size='xs'>
+                            {data?.content.abilityBlocks.filter((i) => i.type === 'heritage').length}
+                          </Badge>
+                        )}
+                    </>
+                  }
+                >
+                  Heritages
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value='senses'
+                  leftSection={getIconFromContentType('ability-block', '1rem')}
+                  rightSection={
+                    <>
+                      {data?.content.abilityBlocks &&
+                        data?.content.abilityBlocks.filter((i) => i.type === 'sense').length > 0 && (
+                          <Badge variant='light' color={theme.primaryColor} size='xs'>
+                            {data?.content.abilityBlocks.filter((i) => i.type === 'sense').length}
+                          </Badge>
+                        )}
+                    </>
+                  }
+                >
+                  Senses
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value='physical-features'
+                  leftSection={getIconFromContentType('ability-block', '1rem')}
+                  rightSection={
+                    <>
+                      {data?.content.abilityBlocks &&
+                        data?.content.abilityBlocks.filter((i) => i.type === 'physical-feature').length > 0 && (
+                          <Badge variant='light' color={theme.primaryColor} size='xs'>
+                            {data?.content.abilityBlocks.filter((i) => i.type === 'physical-feature').length}
+                          </Badge>
+                        )}
+                    </>
+                  }
+                >
+                  Physical Features
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value='backgrounds'
+                  leftSection={getIconFromContentType('background', '1rem')}
+                  rightSection={
+                    <>
+                      {data?.content.backgrounds && data?.content.backgrounds.length > 0 && (
                         <Badge variant='light' color={theme.primaryColor} size='xs'>
-                          {data?.content.abilityBlocks.filter((i) => i.type === 'mode').length}
+                          {data?.content.backgrounds.length}
                         </Badge>
                       )}
-                  </>
-                }
-              >
-                Modes
-              </Tabs.Tab>
-            </Tabs.List>
+                    </>
+                  }
+                >
+                  Backgrounds
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value='classes'
+                  leftSection={getIconFromContentType('class', '1rem')}
+                  rightSection={
+                    <>
+                      {data?.content.classes && data?.content.classes.length > 0 && (
+                        <Badge variant='light' color={theme.primaryColor} size='xs'>
+                          {data?.content.classes.length}
+                        </Badge>
+                      )}
+                    </>
+                  }
+                >
+                  Classes
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value='class-features'
+                  leftSection={getIconFromContentType('ability-block', '1rem')}
+                  rightSection={
+                    <>
+                      {data?.content.abilityBlocks &&
+                        data?.content.abilityBlocks.filter((i) => i.type === 'class-feature').length > 0 && (
+                          <Badge variant='light' color={theme.primaryColor} size='xs'>
+                            {data?.content.abilityBlocks.filter((i) => i.type === 'class-feature').length}
+                          </Badge>
+                        )}
+                    </>
+                  }
+                >
+                  Class Features
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value='archetypes'
+                  leftSection={getIconFromContentType('archetype', '1rem')}
+                  rightSection={
+                    <>
+                      {data?.content.archetypes && data?.content.archetypes.length > 0 && (
+                        <Badge variant='light' color={theme.primaryColor} size='xs'>
+                          {data?.content.archetypes.length}
+                        </Badge>
+                      )}
+                    </>
+                  }
+                >
+                  Archetypes
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value='versatile-heritages'
+                  leftSection={getIconFromContentType('versatile-heritage', '1rem')}
+                  rightSection={
+                    <>
+                      {data?.content.versatileHeritages && data?.content.versatileHeritages.length > 0 && (
+                        <Badge variant='light' color={theme.primaryColor} size='xs'>
+                          {data?.content.versatileHeritages.length}
+                        </Badge>
+                      )}
+                    </>
+                  }
+                >
+                  Versatile Heritages
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value='class-archetypes'
+                  leftSection={getIconFromContentType('class-archetype', '1rem')}
+                  rightSection={
+                    <>
+                      {data?.content.classArchetypes && data?.content.classArchetypes.length > 0 && (
+                        <Badge variant='light' color={theme.primaryColor} size='xs'>
+                          {data?.content.classArchetypes.length}
+                        </Badge>
+                      )}
+                    </>
+                  }
+                >
+                  Class Archetypes
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value='modes'
+                  leftSection={getIconFromContentType('ability-block', '1rem')}
+                  rightSection={
+                    <>
+                      {data?.content.abilityBlocks &&
+                        data?.content.abilityBlocks.filter((i) => i.type === 'mode').length > 0 && (
+                          <Badge variant='light' color={theme.primaryColor} size='xs'>
+                            {data?.content.abilityBlocks.filter((i) => i.type === 'mode').length}
+                          </Badge>
+                        )}
+                    </>
+                  }
+                >
+                  Modes
+                </Tabs.Tab>
+              </Tabs.List>
 
-            <Tabs.Panel value='actions'>
-              <ContentList<AbilityBlock>
-                sourceId={props.sourceId}
-                type='ability-block'
-                abilityBlockType='action'
-                content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'action')}
-                onUpdate={() => props.onUpdate?.()}
-              />
-            </Tabs.Panel>
+              <Tabs.Panel value='actions'>
+                <ContentList<AbilityBlock>
+                  sourceId={props.sourceId}
+                  type='ability-block'
+                  abilityBlockType='action'
+                  content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'action')}
+                  onUpdate={() => props.onUpdate?.()}
+                />
+              </Tabs.Panel>
 
-            <Tabs.Panel value='feats'>
-              <ContentList<AbilityBlock>
-                sourceId={props.sourceId}
-                type='ability-block'
-                abilityBlockType='feat'
-                content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'feat')}
-                onUpdate={() => props.onUpdate?.()}
-              />
-            </Tabs.Panel>
+              <Tabs.Panel value='feats'>
+                <ContentList<AbilityBlock>
+                  sourceId={props.sourceId}
+                  type='ability-block'
+                  abilityBlockType='feat'
+                  content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'feat')}
+                  onUpdate={() => props.onUpdate?.()}
+                />
+              </Tabs.Panel>
 
-            <Tabs.Panel value='items'>
-              <ContentList<Item>
-                sourceId={props.sourceId}
-                type='item'
-                content={data?.content.items ?? []}
-                onUpdate={() => props.onUpdate?.()}
-              />
-            </Tabs.Panel>
+              <Tabs.Panel value='items'>
+                <ContentList<Item>
+                  sourceId={props.sourceId}
+                  type='item'
+                  content={data?.content.items ?? []}
+                  onUpdate={() => props.onUpdate?.()}
+                />
+              </Tabs.Panel>
 
-            <Tabs.Panel value='spells'>
-              <ContentList<Spell>
-                sourceId={props.sourceId}
-                type='spell'
-                content={data?.content.spells ?? []}
-                onUpdate={() => props.onUpdate?.()}
-              />
-            </Tabs.Panel>
+              <Tabs.Panel value='spells'>
+                <ContentList<Spell>
+                  sourceId={props.sourceId}
+                  type='spell'
+                  content={data?.content.spells ?? []}
+                  onUpdate={() => props.onUpdate?.()}
+                />
+              </Tabs.Panel>
 
-            <Tabs.Panel value='traits'>
-              <ContentList<Trait>
-                sourceId={props.sourceId}
-                type='trait'
-                content={data?.content.traits ?? []}
-                onUpdate={() => props.onUpdate?.()}
-              />
-            </Tabs.Panel>
+              <Tabs.Panel value='traits'>
+                <ContentList<Trait>
+                  sourceId={props.sourceId}
+                  type='trait'
+                  content={data?.content.traits ?? []}
+                  onUpdate={() => props.onUpdate?.()}
+                />
+              </Tabs.Panel>
 
-            <Tabs.Panel value='languages'>
-              <ContentList<Language>
-                sourceId={props.sourceId}
-                type='language'
-                content={data?.content.languages ?? []}
-                onUpdate={() => props.onUpdate?.()}
-              />
-            </Tabs.Panel>
+              <Tabs.Panel value='languages'>
+                <ContentList<Language>
+                  sourceId={props.sourceId}
+                  type='language'
+                  content={data?.content.languages ?? []}
+                  onUpdate={() => props.onUpdate?.()}
+                />
+              </Tabs.Panel>
 
-            <Tabs.Panel value='creatures'>
-              <ContentList<Creature>
-                sourceId={props.sourceId}
-                type='creature'
-                content={data?.content.creatures ?? []}
-                onUpdate={() => props.onUpdate?.()}
-              />
-            </Tabs.Panel>
+              <Tabs.Panel value='creatures'>
+                <ContentList<Creature>
+                  sourceId={props.sourceId}
+                  type='creature'
+                  content={data?.content.creatures ?? []}
+                  onUpdate={() => props.onUpdate?.()}
+                />
+              </Tabs.Panel>
 
-            <Tabs.Panel value='ancestries'>
-              <ContentList<Ancestry>
-                sourceId={props.sourceId}
-                type='ancestry'
-                content={data?.content.ancestries ?? []}
-                onUpdate={() => props.onUpdate?.()}
-              />
-            </Tabs.Panel>
+              <Tabs.Panel value='ancestries'>
+                <ContentList<Ancestry>
+                  sourceId={props.sourceId}
+                  type='ancestry'
+                  content={data?.content.ancestries ?? []}
+                  onUpdate={() => props.onUpdate?.()}
+                />
+              </Tabs.Panel>
 
-            <Tabs.Panel value='heritages'>
-              <ContentList<AbilityBlock>
-                sourceId={props.sourceId}
-                type='ability-block'
-                abilityBlockType='heritage'
-                content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'heritage')}
-                onUpdate={() => props.onUpdate?.()}
-              />
-            </Tabs.Panel>
+              <Tabs.Panel value='heritages'>
+                <ContentList<AbilityBlock>
+                  sourceId={props.sourceId}
+                  type='ability-block'
+                  abilityBlockType='heritage'
+                  content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'heritage')}
+                  onUpdate={() => props.onUpdate?.()}
+                />
+              </Tabs.Panel>
 
-            <Tabs.Panel value='senses'>
-              <ContentList<AbilityBlock>
-                sourceId={props.sourceId}
-                type='ability-block'
-                abilityBlockType='sense'
-                content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'sense')}
-                onUpdate={() => props.onUpdate?.()}
-              />
-            </Tabs.Panel>
+              <Tabs.Panel value='senses'>
+                <ContentList<AbilityBlock>
+                  sourceId={props.sourceId}
+                  type='ability-block'
+                  abilityBlockType='sense'
+                  content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'sense')}
+                  onUpdate={() => props.onUpdate?.()}
+                />
+              </Tabs.Panel>
 
-            <Tabs.Panel value='physical-features'>
-              <ContentList<AbilityBlock>
-                sourceId={props.sourceId}
-                type='ability-block'
-                abilityBlockType='physical-feature'
-                content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'physical-feature')}
-                onUpdate={() => props.onUpdate?.()}
-              />
-            </Tabs.Panel>
+              <Tabs.Panel value='physical-features'>
+                <ContentList<AbilityBlock>
+                  sourceId={props.sourceId}
+                  type='ability-block'
+                  abilityBlockType='physical-feature'
+                  content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'physical-feature')}
+                  onUpdate={() => props.onUpdate?.()}
+                />
+              </Tabs.Panel>
 
-            <Tabs.Panel value='backgrounds'>
-              <ContentList<Background>
-                sourceId={props.sourceId}
-                type='background'
-                content={data?.content.backgrounds ?? []}
-                onUpdate={() => props.onUpdate?.()}
-              />
-            </Tabs.Panel>
+              <Tabs.Panel value='backgrounds'>
+                <ContentList<Background>
+                  sourceId={props.sourceId}
+                  type='background'
+                  content={data?.content.backgrounds ?? []}
+                  onUpdate={() => props.onUpdate?.()}
+                />
+              </Tabs.Panel>
 
-            <Tabs.Panel value='classes'>
-              <ContentList<Class>
-                sourceId={props.sourceId}
-                type='class'
-                content={data?.content.classes ?? []}
-                onUpdate={() => props.onUpdate?.()}
-              />
-            </Tabs.Panel>
+              <Tabs.Panel value='classes'>
+                <ContentList<Class>
+                  sourceId={props.sourceId}
+                  type='class'
+                  content={data?.content.classes ?? []}
+                  onUpdate={() => props.onUpdate?.()}
+                />
+              </Tabs.Panel>
 
-            <Tabs.Panel value='class-features'>
-              <ContentList<AbilityBlock>
-                sourceId={props.sourceId}
-                type='ability-block'
-                abilityBlockType='class-feature'
-                content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'class-feature')}
-                onUpdate={() => props.onUpdate?.()}
-              />
-            </Tabs.Panel>
+              <Tabs.Panel value='class-features'>
+                <ContentList<AbilityBlock>
+                  sourceId={props.sourceId}
+                  type='ability-block'
+                  abilityBlockType='class-feature'
+                  content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'class-feature')}
+                  onUpdate={() => props.onUpdate?.()}
+                />
+              </Tabs.Panel>
 
-            <Tabs.Panel value='archetypes'>
-              <ContentList<Archetype>
-                sourceId={props.sourceId}
-                type='archetype'
-                content={data?.content.archetypes ?? []}
-                onUpdate={() => props.onUpdate?.()}
-              />
-            </Tabs.Panel>
+              <Tabs.Panel value='archetypes'>
+                <ContentList<Archetype>
+                  sourceId={props.sourceId}
+                  type='archetype'
+                  content={data?.content.archetypes ?? []}
+                  onUpdate={() => props.onUpdate?.()}
+                />
+              </Tabs.Panel>
 
-            <Tabs.Panel value='versatile-heritages'>
-              <ContentList<VersatileHeritage>
-                sourceId={props.sourceId}
-                type='versatile-heritage'
-                content={data?.content.versatileHeritages ?? []}
-                onUpdate={() => props.onUpdate?.()}
-              />
-            </Tabs.Panel>
+              <Tabs.Panel value='versatile-heritages'>
+                <ContentList<VersatileHeritage>
+                  sourceId={props.sourceId}
+                  type='versatile-heritage'
+                  content={data?.content.versatileHeritages ?? []}
+                  onUpdate={() => props.onUpdate?.()}
+                />
+              </Tabs.Panel>
 
-            <Tabs.Panel value='class-archetypes'>
-              <ContentList<ClassArchetype>
-                sourceId={props.sourceId}
-                type='class-archetype'
-                content={data?.content.classArchetypes ?? []}
-                onUpdate={() => props.onUpdate?.()}
-              />
-            </Tabs.Panel>
+              <Tabs.Panel value='class-archetypes'>
+                <ContentList<ClassArchetype>
+                  sourceId={props.sourceId}
+                  type='class-archetype'
+                  content={data?.content.classArchetypes ?? []}
+                  onUpdate={() => props.onUpdate?.()}
+                />
+              </Tabs.Panel>
 
-            <Tabs.Panel value='modes'>
-              <ContentList<AbilityBlock>
-                sourceId={props.sourceId}
-                type='ability-block'
-                abilityBlockType='mode'
-                content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'mode')}
-                onUpdate={() => props.onUpdate?.()}
-              />
-            </Tabs.Panel>
-          </Tabs>
-        </Center>
-      </Group>
+              <Tabs.Panel value='modes'>
+                <ContentList<AbilityBlock>
+                  sourceId={props.sourceId}
+                  type='ability-block'
+                  abilityBlockType='mode'
+                  content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'mode')}
+                  onUpdate={() => props.onUpdate?.()}
+                />
+              </Tabs.Panel>
+            </Tabs>
+          </Center>
+        </Group>
+      ) : null}
     </Modal>
   );
 }

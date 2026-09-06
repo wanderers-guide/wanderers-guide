@@ -21,6 +21,14 @@ Every operation looks like this:
 
 `id` is required by the engine for deduplication and result tracking. Never reuse one across operations.
 
+Content grants may nest, but a grant cannot lead back to the same content on its active
+ancestor path. Reusing a feat in separate branches is allowed. Cycles report the content
+IDs involved and fail the calculation; the sheet retains its last completed calculation.
+The engine also limits nesting to 64 levels, forward work to 100,000 operations across
+all passes, retained variable effects to 200,000, and removal reconstruction to 1,000,000 replay steps. These limits also apply
+when Web Workers are unavailable. Split unusually large homebrew operation graphs and
+correct self-grants instead of relying on partial calculation results.
+
 ## Variables, briefly
 
 Most operations read or write a **variable** (proficiencies, attributes, HP, perception, resistances, etc.). The set of named variables is defined in [`frontend/src/process/variables/variable-manager.ts`](https://github.com/wanderers-guide/wanderers-guide/blob/main/frontend/src/process/variables/variable-manager.ts), there are ~166 of them. Each variable has a type:
@@ -199,6 +207,18 @@ Grant or revoke a feat, action, class feature, sense, heritage, mode, or physica
 
 `type` is one of: `'action' | 'feat' | 'physical-feature' | 'sense' | 'class-feature' | 'heritage' | 'mode'`.
 
+Removal revokes the matching grants that have already run, including their nested grants,
+variable changes, typed bonuses, and deferred bindings or language overrides. Effects from
+independent sources remain, even if their equal or lower values were previously hidden.
+The same ownership applies to selected abilities, class features, and creature abilities.
+Removing a mode also deactivates it for this calculation.
+
+A later explicit grant can grant the content again. Removing a source that performed a
+removal also revokes that removal, restoring independent earlier grants. The engine
+rebuilds the remaining write intentions in order; it does not subtract the removed
+source's final numeric difference. Conditions retain the normal three-pass evaluation
+order, rather than repeatedly reevaluating to a fixed point.
+
 ### `giveLanguage` / `removeLanguage`
 
 ```jsonc
@@ -228,6 +248,12 @@ Grant or revoke a single spell. `giveSpell` carries the metadata that determines
 
 { "id": "...", "type": "removeSpell", "data": { "spellId": 4623 } }
 ```
+
+`removeSpell` removes all existing grants of that spell ID, including each casting-source
+record in `SPELL_DATA` and innate spell proficiency granted by that spell. Other spells
+and independently granted casting proficiency remain. Names stay synchronized with IDs,
+including when two different spell records share a name. Spell-slot pools belong to their
+casting source and are not removed with an individual spell.
 
 ### `giveSpellSlot`
 

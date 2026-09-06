@@ -4,7 +4,7 @@ import {
   connect,
   createServiceClient,
   fetchData,
-  insertData,
+  getPublicUser,
   updateData,
   upsertResponseWrapper,
 } from '../_shared/helpers.ts';
@@ -14,19 +14,17 @@ serve(async (req: Request) => {
   return await connect(req, async (client, body, token) => {
     let { type, ref_id, action, data, content_source_id } = body as ContentUpdate;
 
-    const {
-      data: { user },
-    } = await client.auth.getUser(token);
-    if (!user) {
-      return {
-        status: 'error',
-        message: 'Invalid user',
-      };
+    const user = await getPublicUser(client, token, { rejectAnonymous: true });
+    if (!user || user.deactivated) {
+      return { status: 'fail', data: { message: 'Account is unavailable' } };
     }
 
+    // Authenticate first; only the server sets ownership, moderation state and votes.
+    const service = createServiceClient();
     // Create the content_update record
-    const result = await insertData<ContentUpdate>(client, 'content_update', {
-      user_id: user.id,
+    // A proposal is not applied game content: do not update the source's counters or version.
+    const { data: result, error } = await service.from('content_update').insert({
+      user_id: user.user_id,
       type: type,
       ref_id: ref_id,
       action: action,
@@ -39,7 +37,8 @@ serve(async (req: Request) => {
       },
       upvotes: [],
       downvotes: [],
-    });
+    }).select().single();
+    if (error) throw error;
 
     if (result) {
       // Get content source name
@@ -78,7 +77,7 @@ serve(async (req: Request) => {
 
         if (messageId) {
           // Update the content_update with the Discord message_id
-          const { status: updateStatus } = await updateData(client, 'content_update', result.id, {
+          const { status: updateStatus } = await updateData(service, 'content_update', result.id, {
             discord_msg_id: messageId,
           });
 

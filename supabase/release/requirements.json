@@ -3,5 +3,9 @@
     "check": "edge-work-budget.sql",
     "order": "before-functions",
     "function_signature": "public.consume_edge_work_budget(text,text,integer)"
+  },
+  "20260905010000_account_moderation_writes.sql": {
+    "check": "account-moderation-writes.sql",
+    "order": "after-compatible-functions"
   }
 }

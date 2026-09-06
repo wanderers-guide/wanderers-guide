@@ -1,7 +1,7 @@
-import { fetchContentAll, fetchContentById, getDefaultSources } from '@content/content-store';
+import { fetchContentAll, fetchContentById, getCachedContent, getDefaultSources } from '@content/content-store';
 import { Language } from '@schemas/content';
 import { StoreID, VariableListStr, VariableValue } from '@schemas/variables';
-import { adjVariable, getVariable, setVariable } from '@variables/variable-manager';
+import { adjVariable, filterVariableList, getVariable, setVariable } from '@variables/variable-manager';
 import { z } from 'zod';
 
 export type LanguageOverride = {
@@ -83,18 +83,19 @@ export function grantLanguage(id: StoreID, language: Pick<Language, 'id' | 'name
 
 /** Remove a known language from both membership and names without changing other grants. */
 export function removeGrantedLanguage(id: StoreID, language: Language, source?: string): void {
-  const ids: string[] = getVariable<VariableListStr>(id, 'LANGUAGE_IDS')?.value ?? [];
-  const names: string[] = getVariable<VariableListStr>(id, 'LANGUAGE_NAMES')?.value ?? [];
-  setVariable(
-    id,
-    'LANGUAGE_IDS',
-    ids.filter((value) => value !== `${language.id}`),
-    source
+  const name = language.name.toUpperCase();
+  const namesakes = new Set(
+    getCachedContent<Language>('language')
+      .filter((row) => row.id !== language.id && row.name.toUpperCase() === name)
+      .map((row) => `${row.id}`)
   );
-  setVariable(
+  filterVariableList(id, 'LANGUAGE_IDS', (value) => value !== `${language.id}`, source);
+  filterVariableList(
     id,
     'LANGUAGE_NAMES',
-    names.filter((value) => value !== language.name.toUpperCase()),
+    (value) =>
+      value !== name ||
+      (getVariable<VariableListStr>(id, 'LANGUAGE_IDS')?.value ?? []).some((value) => namesakes.has(value)),
     source
   );
 }

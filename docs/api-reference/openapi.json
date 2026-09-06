@@ -846,6 +846,78 @@
     }
   },
   "paths": {
+    "/report-client-error": {
+      "post": {
+        "summary": "Report a bounded browser failure",
+        "description": "Public diagnostic intake. Accepts only enumerated failure and page categories, a build revision and a random trace ID. Rejects raw messages, stack traces, account data, URLs, and extra fields. Maximum body is 512 bytes; logging is capped at 60 reports per minute per isolate. No database changes or paid services.",
+        "tags": [
+          "Integrations"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "surface",
+                  "release",
+                  "trace_id"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "content_load_failed",
+                      "calculation_failed",
+                      "save_failed",
+                      "auth_failed",
+                      "update_failed",
+                      "chunk_failed",
+                      "unhandled_error",
+                      "unhandled_rejection"
+                    ]
+                  },
+                  "surface": {
+                    "type": "string",
+                    "enum": [
+                      "sheet",
+                      "builder",
+                      "account",
+                      "homebrew",
+                      "campaign",
+                      "other"
+                    ]
+                  },
+                  "release": {
+                    "type": "string",
+                    "pattern": "^(?:[a-f0-9]{7,40}|local)$"
+                  },
+                  "trace_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSend success with data true, or fail for an invalid diagnostic report."
+          },
+          "413": {
+            "description": "Report exceeds 512 bytes."
+          },
+          "429": {
+            "description": "Ingress request budget exceeded."
+          }
+        }
+      }
+    },
     "/find-spell": {
       "post": {
         "tags": ["Content"],
@@ -1780,7 +1852,7 @@
       "post": {
         "tags": ["Content"],
         "summary": "Submit a content update / errata for community review",
-        "description": "Creates a content_update record in PENDING state. Discord moderators approve/reject via the bot, which calls `/update-content-update`.",
+        "description": "Creates a content_update record in PENDING state. Discord moderators approve/reject via the bot, which calls `/update-content-update`. Profile and moderation writes run only in the authenticated server handler; direct database writes to these tables are denied. The handler selects the caller and writable fields. Role, entitlement, approval and voting fields cannot be set through account settings or a submission. Anonymous or deactivated accounts cannot submit. Queuing a proposal does not change content counters or version.",
         "operationId": "createContentUpdate",
         "requestBody": {
           "required": true,
@@ -2351,7 +2423,7 @@
       "post": {
         "tags": ["GM"],
         "summary": "Join a Game Master's virtual-tier group",
-        "description": "A GM with the GAME-MASTER Patreon tier shares an `access_code` so members of their group inherit Patreon perks. The caller exchanges the code for membership.",
+        "description": "A GM with the GAME-MASTER Patreon tier shares an `access_code` so members of their group inherit Patreon perks. The caller exchanges the code for membership. Profile and moderation writes run only in the authenticated server handler; direct database writes to these tables are denied. The handler selects the caller and writable fields. Role, entitlement, approval and voting fields cannot be set through account settings or a submission.",
         "operationId": "gmAddToGroup",
         "requestBody": {
           "required": true,
@@ -2473,7 +2545,7 @@
       "post": {
         "tags": ["GM"],
         "summary": "Regenerate your GM access code",
-        "description": "Invalidates the previous code; existing members stay in the group.",
+        "description": "Invalidates the previous code; existing members stay in the group. Profile and moderation writes run only in the authenticated server handler; direct database writes to these tables are denied. The handler selects the caller and writable fields. Role, entitlement, approval and voting fields cannot be set through account settings or a submission.",
         "operationId": "gmRegenerateCode",
         "requestBody": {
           "required": false,
@@ -2544,7 +2616,7 @@
       "post": {
         "tags": ["Users"],
         "summary": "Update your own profile",
-        "description": "Updates a subset of `public_user` fields for the authenticated caller. Accepts `display_name`, `summary`, `image_url`, `background_image_url`, `organized_play_id`, `site_theme`, `subscribed_content_sources`, `api`. The user id and timestamps are never writable.",
+        "description": "Updates a subset of `public_user` fields for the authenticated caller. Accepts `display_name`, `summary`, `image_url`, `background_image_url`, `organized_play_id`, `site_theme`, `subscribed_content_sources`, `api`. The user id and timestamps are never writable. Profile and moderation writes run only in the authenticated server handler; direct database writes to these tables are denied. The handler selects the caller and writable fields. Role, entitlement, approval and voting fields cannot be set through account settings or a submission.",
         "operationId": "updateUser",
         "requestBody": {
           "required": true,

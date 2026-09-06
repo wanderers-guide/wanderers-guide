@@ -23,6 +23,23 @@ WG content lives in Postgres, with one table per primary content type:
 
 A second layer, the **frontend cache**, mirrors a subset of these tables in the browser so the character sheet doesn’t hit the database for every lookup. The cache is populated at app start from `find-*` calls and refreshed when the active character’s `content_sources.enabled` list changes.
 
+### Loading and saving safely
+
+A content package becomes available only after every requested table and source lookup
+succeeds. A successful empty table is valid; a failed request remains an error. The
+sheet and builder offer Retry and do not calculate or save against a partial package.
+Browser caches follow the signed-in account and resolved source set, and resets discard
+late requests and hydration from the previous cache generation. Content cache cleanup
+preserves unsynced character drafts.
+
+The builder waits for the current character's authoritative save context before
+exposing editable controls. A cached route row cannot make the form ready early.
+
+Concurrent character edits merge at nested fields and stable entry IDs. Independent
+changes survive. When both writers change the same value, saving pauses and offers
+**Keep my edits**, **Use saved version**, and **Download my copy**. The local input and
+its original base remain buffered until the conflict is resolved.
+
 ### Public vs. homebrew
 
 `find-*` endpoints implicitly filter to **official, published** sources unless you pass `content_sources` (or query by a specific `id`). This is the rule baked into [`fetchData()`](https://github.com/wanderers-guide/wanderers-guide/blob/main/supabase/functions/_shared/helpers.ts). Without it, a search would surface every random homebrew row in the database.

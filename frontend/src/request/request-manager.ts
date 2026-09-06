@@ -1,3 +1,4 @@
+import { reportClientFailure } from '@utils/client-errors';
 import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError, type Session } from '@supabase/supabase-js';
 import { JSendResponse, RequestType } from '@schemas/requests';
 import { logError, throwError } from '@utils/error-handling';
@@ -40,6 +41,7 @@ let refreshingSession: Promise<Session | null> | null = null;
 export function notifySessionExpired(): void {
   if (notifiedSessionExpired) return;
   notifiedSessionExpired = true;
+  reportClientFailure('auth_failed');
   localStorage.removeItem('user-data');
   showNotification({
     id: 'session-expired',
@@ -113,27 +115,31 @@ export async function makeRequest<T = Record<string, any>>(
   type: RequestType,
   body: Record<string, any>,
   notifyFailure = true,
-  options?: { expectedActorId: string }
+  options?: { expectedActorId?: string; throwOnFailure?: boolean }
 ): Promise<T | null> {
   let lastError: any = null;
   let lastErrorBody: unknown = null;
   let transientRetries = 0;
   let retriedAuthentication = false;
   let requestSession = await getSession();
-  if (options && requestSession?.user.id !== options.expectedActorId) return null;
+  const failure = (): null => {
+    if (options?.throwOnFailure) throw new Error(`Request failed: ${type}`);
+    return null;
+  };
+  if (options?.expectedActorId && requestSession?.user.id !== options.expectedActorId) return failure();
 
   while (true) {
     const { data, error } = await invokeWithTimeout(type, body, DEFAULT_TIMEOUT_MS, requestSession?.access_token);
     if (!error) {
-      if (!data) return null;
+      if (!data) return failure();
       const response = data as JSendResponse;
       if (response.status === 'error') {
         if (notifyFailure) throwError(response.message);
-        return null;
+        return failure();
       }
       if (response.status !== 'success') {
         if (notifyFailure) logError('Failed to make request');
-        return null;
+        return failure();
       }
       return response.data as T;
     }
@@ -190,7 +196,7 @@ export async function makeRequest<T = Record<string, any>>(
   } else if (lastError) {
     console.error(`Request to '${type}' failed:`, lastError?.message ?? lastError);
   }
-  return null;
+  return failure();
 }
 
 /** Suppress redundant save-error notices while authentication recovery requires user action. */

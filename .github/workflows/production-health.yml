@@ -1,0 +1,27 @@
+name: Production health
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-health
+  cancel-in-progress: false
+
+jobs:
+  semantic-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify public content, frontend and authentication availability
+        env:
+          WG_MONITOR_ANON_KEY: ${{ vars.WG_MONITOR_ANON_KEY }}
+        run: node scripts/production-health.mjs

@@ -162,7 +162,8 @@ globalThis.__saveHooks = {
 };
 const boundaries = {
   react: 'export const {useCallback,useRef,useState,useMemo,useEffect} = globalThis.__saveHooks;',
-  'react/jsx-runtime': 'export const jsx = (type,props) => ({type,props}); export const jsxs = jsx;',
+  'react/jsx-runtime':
+    'export const jsx = (type,props) => ({type,props}); export const jsxs = jsx; export const Fragment = "fragment";',
   jotai: 'export const {useAtom,useAtomValue} = globalThis.__saveHooks;',
   '@mantine/hooks':
     'export const {useDidUpdate} = globalThis.__saveHooks; export const useDebouncedValue = value => [value]; export const useDebouncedCallback = callback => callback;',
@@ -171,7 +172,7 @@ const boundaries = {
     'export const {makeRequest} = globalThis.__saveHooks; export const hasSessionExpiredNotice = () => false;',
   '@mantine/notifications':
     'export const showNotification = globalThis.__saveHooks.notify; export const hideNotification = () => {};',
-  '@mantine/core': 'export const Button = "button";',
+  '@mantine/core': 'export const Button = "button"; export const Group = "group"; export const Text = "text";',
   '@export/export-to-json': 'export const downloadObjectAsJson = globalThis.__saveHooks.download;',
   '../supabase-client': 'export const supabase = globalThis.__saveHooks.supabase;',
   '@atoms/characterAtoms': 'export const characterState = {};',
@@ -197,8 +198,10 @@ const boundaries = {
 };
 await build({
   absWorkingDir: root,
+  define: { 'import.meta.env.PROD': 'false' },
   stdin: {
-    contents: "export {default} from './src/utils/use-character'; export * from './src/utils/character-save-buffer';",
+    contents:
+      "export {default} from './src/utils/use-character'; export * from './src/utils/character-save-buffer'; export * from './src/utils/character-merge';",
     resolveDir: root,
   },
   bundle: true,
@@ -225,6 +228,7 @@ const {
   default: useCharacter,
   bufferCharacterSave,
   getBufferedCharacterSave,
+  mergeCharacterOnConflict,
 } = await import(pathToFileURL(join(directory, 'hook.mjs')).href);
 const row = (id = 1) => ({
   id,
@@ -279,6 +283,23 @@ test('late initial fetch cannot replace another character after navigation', asy
   assert.equal(harness.character.id, 2);
   harness.unmount();
   assert.equal(localStorage.getItem('autosave-character-1-owner'), null);
+});
+
+test('a cached route character does not expose editing or calculate until its save context loads', async () => {
+  const pending = deferred();
+  harness.character = row();
+  harness.request = async () => pending.promise;
+  harness.render();
+  await harness.flush();
+  assert.equal(harness.value.isLoading, true);
+  pending.resolve(row());
+  await harness.flush();
+  assert.equal(harness.value.isLoading, false);
+  harness.request = async (_type, body) => [{ ...row(), ...body, updated_at: 'version-2' }];
+  harness.edit({ name: 'First edit after loading' });
+  await harness.flush();
+  assert.equal(harness.requests.filter((request) => request.type === 'update-character').length, 1);
+  harness.unmount();
 });
 
 test('queued edits keep a durable latest snapshot and use the acknowledged server version', async () => {
@@ -447,5 +468,88 @@ test('an intermediate editor without calculations cannot persist a pending calcu
   assert.equal(harness.character.details.class.name, 'Wizard');
   assert.equal(harness.requests.filter((value) => value.type === 'update-character').length, 0);
   assert.equal(getBufferedCharacterSave(1, 'owner').draft.requiresCalculation, true);
+  harness.unmount();
+});
+
+test('nested independent edits and stable-ID array edits survive the three-way merge', () => {
+  const base = {
+    ...row(),
+    details: { class: { id: 1 }, background: { id: 1 } },
+    inventory: {
+      items: [
+        { id: 'a', quantity: 1 },
+        { id: 'b', quantity: 1 },
+      ],
+    },
+  };
+  const local = {
+    ...base,
+    details: { ...base.details, class: { id: 2 } },
+    inventory: {
+      items: [
+        { id: 'a', quantity: 2 },
+        { id: 'b', quantity: 1 },
+      ],
+    },
+  };
+  const remote = {
+    ...base,
+    details: { ...base.details, background: { id: 2 } },
+    inventory: {
+      items: [
+        { id: 'b', quantity: 3 },
+        { id: 'a', quantity: 1 },
+        { id: 'c', quantity: 1 },
+      ],
+    },
+  };
+  const merged = mergeCharacterOnConflict(base, local, remote);
+  assert.deepEqual(merged.conflicts, []);
+  assert.deepEqual(merged.character.details, { class: { id: 2 }, background: { id: 2 } });
+  assert.deepEqual(merged.character.inventory.items, [
+    { id: 'b', quantity: 3 },
+    { id: 'a', quantity: 2 },
+    { id: 'c', quantity: 1 },
+  ]);
+});
+
+test('same-leaf edits and delete-versus-edit conflicts are reported explicitly', () => {
+  const base = { ...row(), details: { class: { id: 1 } }, inventory: { items: [{ id: 'a', quantity: 1 }] } };
+  const merged = mergeCharacterOnConflict(
+    base,
+    { ...base, details: { class: { id: 2 } }, inventory: { items: [] } },
+    { ...base, details: { class: { id: 3 } }, inventory: { items: [{ id: 'a', quantity: 2 }] } }
+  );
+  assert.deepEqual(merged.conflicts, ['inventory.items[a]', 'details.class.id']);
+  assert.equal(merged.character.details.class.id, 2);
+});
+
+test('same-value conflict pauses saves and keeps a draft until explicit resolution', async () => {
+  let saves = 0;
+  harness.request = async (type, body) => {
+    if (type === 'find-character') return row();
+    saves++;
+    if (saves === 1)
+      return { __conflict: true, character: { ...row(), name: 'Remote name', updated_at: 'remote-version' } };
+    return [{ ...row(), ...body, updated_at: 'accepted-version' }];
+  };
+  harness.render();
+  await harness.flush();
+  harness.edit({ name: 'My name' });
+  await harness.flush();
+  assert.equal(saves, 1, 'conflicting value is never silently overwritten');
+  const draft = getBufferedCharacterSave(1, 'owner').draft;
+  assert.equal(draft.requiresCalculation, true, 'pagehide replay cannot bypass conflict choice');
+  assert.equal(draft.body.name, 'My name');
+  const notice = harness.notices.find((value) => value.title === 'Conflicting character edits');
+  assert(notice);
+  const buttons = notice.message.props.children[1].props.children;
+  buttons[0].props.onClick();
+  await harness.flush();
+  assert.equal(saves, 2);
+  assert.equal(
+    harness.requests.filter((value) => value.type === 'update-character')[1].body.expected_updated_at,
+    'remote-version'
+  );
   harness.unmount();
 });

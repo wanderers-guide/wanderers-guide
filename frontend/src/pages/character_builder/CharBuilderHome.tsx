@@ -30,6 +30,8 @@ import {
   HoverCard,
   List,
   Anchor,
+  Center,
+  Loader,
 } from '@mantine/core';
 import { getHotkeyHandler, useElementSize, useMediaQuery } from '@mantine/hooks';
 import { modals, openContextModal } from '@mantine/modals';
@@ -96,7 +98,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
   const queryClient = useQueryClient();
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const { character, setCharacter } = useCharacter(props.characterId, {
+  const { character, setCharacter, isLoading } = useCharacter(props.characterId, {
     type: 'SIMPLE',
   });
 
@@ -1302,6 +1304,15 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
     });
   };
 
+  // The route's cached character may render before the save hook finishes loading
+  // its authoritative version. Keep inputs closed until that save context is ready.
+  if (isLoading)
+    return (
+      <Center h={300}>
+        <Loader aria-label='Loading character' />
+      </Center>
+    );
+
   return (
     <Stack gap={topGap}>
       <Group justify='center' ref={ref} wrap='nowrap'>
@@ -1351,7 +1362,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
                 <TextInput
                   label='Name'
                   placeholder='Unknown Wanderer'
-                  defaultValue={character?.name === 'Unknown Wanderer' ? '' : character?.name}
+                  value={character?.name === 'Unknown Wanderer' ? '' : (character?.name ?? '')}
                   onChange={(e) => {
                     setCharacter((prev) => {
                       if (!prev) return prev;

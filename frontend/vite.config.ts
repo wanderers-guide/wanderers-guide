@@ -1,11 +1,14 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { execFileSync } from 'node:child_process';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { VitePWA, VitePWAOptions } from 'vite-plugin-pwa';
 
 const manifestForPlugin: Partial<VitePWAOptions> = {
   registerType: 'prompt',
+  // Native registration lets each tab choose when to reload and preserve its edits.
+  injectRegister: false,
   includeAssets: ['apple-icon-180.png', 'maskable_icon.png'],
   workbox: {
     maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15 MiB
@@ -46,6 +49,11 @@ const manifestForPlugin: Partial<VitePWAOptions> = {
 // https://vitejs.dev/config/
 export default defineConfig({
   base: './',
+  define: {
+    __WG_RELEASE__: JSON.stringify(
+      process.env.RENDER_GIT_COMMIT ?? execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
+    ),
+  },
   resolve: {
     alias: {
       '@assets': path.resolve(__dirname, './src/assets'),

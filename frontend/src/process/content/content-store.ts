@@ -1,3 +1,5 @@
+import { reportClientFailure } from '@utils/client-errors';
+import { supabase } from '../../supabase-client';
 import { getPublicUser } from '@auth/user-manager';
 import { COMMON_CORE_ID } from '@constants/data';
 import { makeRequest } from '@requests/request-manager';
@@ -80,30 +82,17 @@ function emptyIdStore() {
   return newStore;
 }
 
-function getStoredNames(type: ContentType, data: Record<string, any>) {
-  if (!data.name) return null;
-  if (isString(data.name)) {
-    const contentMap = idStore.get(type);
-    if (!contentMap) return null;
-    for (const content of contentMap.values()) {
-      if (content?.name && content.name.toUpperCase().trim() === data.name.toUpperCase().trim()) {
-        return content;
-      }
-    }
-  }
-  return null;
-}
-
 function getStoredIds(type: ContentType, data: Record<string, any>) {
   if (!data.id) return null;
-  if (Array.isArray(data.id)) {
-    const results = data.id.map((id) => idStore.get(type)?.get(parseInt(id))).filter(isTruthy);
-    if (results.length !== data.id.length) return null;
-    return results;
-  } else {
-    const id = parseInt(data.id);
-    return idStore.get(type)?.get(id);
-  }
+  const ids: number[] = (Array.isArray(data.id) ? data.id : [data.id]).map(Number);
+  const records = ids.map((id) => idStore.get(type)?.get(id));
+  if (
+    records.some(
+      (record) => !record || (type !== 'content-source' && !data.content_sources.includes(record.content_source_id))
+    )
+  )
+    return null;
+  return records;
 }
 
 function setStoredIds(type: ContentType, data: Record<string, any>, value: any) {
@@ -149,7 +138,8 @@ const CONTENT_CACHE_KEY = 'content-store';
 // v3: fetchData previously paginated without an ORDER BY, so any multi-chunk fetch (items,
 // ability blocks) could persist a silently partial corpus that the change-token check then
 // verified as fresh forever. Retire every possibly-partial blob now that pagination is stable.
-const CONTENT_CACHE_VERSION = 3;
+// v4: partition by authenticated actor and require complete, successful source downloads.
+const CONTENT_CACHE_VERSION = 4;
 // Backstop only: staleness is normally caught by the per-source change-token check against
 // get-content-versions on load (see verifyPersistedContentVersions). The TTL exists for the
 // cases where that check cannot run (offline, endpoint unreachable, >500 sources).
@@ -157,6 +147,7 @@ const CONTENT_CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24h
 
 type PersistedContentCache = {
   version: number;
+  actorId: string;
   savedAt: number;
   idStore: Map<ContentType, Map<number, any>>;
   contentStore: Map<number, any>;
@@ -166,14 +157,44 @@ type PersistedContentCache = {
 // lookups share a single in-flight request instead of each hitting the network.
 const inFlightFetches = new Map<string, Promise<any>>();
 
-// One freshness verdict per page load. resetContentStore() re-arms hydration (App mount
-// plus several pages call it), so without memoization every re-hydration would fire its
-// own network check — and a re-hydration racing an in-flight 'stale' verdict could fill
-// the stores from a blob the check is about to condemn. Blobs persisted during THIS page
-// lifetime (savedAt >= PAGE_LOAD_AT) are fresh-from-network by construction and skip the
-// check entirely.
-const PAGE_LOAD_AT = Date.now();
-let versionCheckPromise: Promise<'ok' | 'stale'> | null = null;
+// A generation owns every request, hydration and persist. Reset invalidates all old work.
+let cacheGeneration = 0;
+let cacheActorId = 'anonymous';
+let storageWrites: Promise<void> = Promise.resolve();
+
+/** Serialize this tab's persistence and deletion so a reset cannot delete its new cache. */
+function writeCache(action: () => Promise<void>): Promise<void> {
+  storageWrites = storageWrites.then(action, action);
+  return storageWrites;
+}
+
+/** Cache identity follows the actual session, never the cached display profile. */
+async function ensureCacheActor(): Promise<void> {
+  const generation = cacheGeneration;
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  // An Auth event may have switched accounts while this older session read awaited.
+  if (generation === cacheGeneration) setContentCacheActor(session?.user.id ?? null);
+}
+
+/** Invalidate immediately on Auth events, before any synchronous content consumer runs. */
+export function setContentCacheActor(userId: string | null): void {
+  const actorId = userId ?? 'anonymous';
+  if (actorId !== cacheActorId) {
+    cacheActorId = actorId;
+    resetContentStore(false);
+  }
+}
+
+function cacheKey(actorId = cacheActorId): string {
+  return `${CONTENT_CACHE_KEY}:${actorId}`;
+}
+
+/** Obsolete work must not publish a package or mutate the new working set. */
+function assertCurrentGeneration(generation: number): void {
+  if (generation !== cacheGeneration) throw new Error('Content changed while loading. Retry the request.');
+}
 
 /**
  * Compare a persisted blob's per-source change tokens against the server.
@@ -212,46 +233,33 @@ async function verifyPersistedContentVersions(rec: PersistedContentCache): Promi
   return 'ok';
 }
 
-async function hydrateContentCache(): Promise<void> {
+async function hydrateContentCache(generation: number, actorId: string): Promise<void> {
   try {
-    const rec = await idbGet<PersistedContentCache>(CONTENT_CACHE_KEY);
-    if (!rec) return;
-    if (rec.version !== CONTENT_CACHE_VERSION || Date.now() - rec.savedAt > CONTENT_CACHE_TTL_MS) {
-      await idbDelete(CONTENT_CACHE_KEY);
+    await storageWrites;
+    const rec = await idbGet<PersistedContentCache>(cacheKey(actorId));
+    if (
+      !rec ||
+      rec.version !== CONTENT_CACHE_VERSION ||
+      rec.actorId !== actorId ||
+      Date.now() - rec.savedAt > CONTENT_CACHE_TTL_MS
+    )
       return;
-    }
-    // Freshness gate: only hydrate a blob from a previous page load after its change
-    // tokens check out against the server (see verifyPersistedContentVersions).
-    if (rec.savedAt < PAGE_LOAD_AT) {
-      versionCheckPromise ??= verifyPersistedContentVersions(rec);
-      if ((await versionCheckPromise) === 'stale') {
-        // Re-read before deleting: a slow check can lose the race against a fresh
-        // persist (network fetch + the 10s debounce), and deleting THAT blob would
-        // force a pointless cold load on the next visit.
-        const current = await idbGet<PersistedContentCache>(CONTENT_CACHE_KEY);
-        if (current && current.savedAt === rec.savedAt) {
-          await idbDelete(CONTENT_CACHE_KEY);
-        }
-        return;
-      }
-    }
-    // Fill the in-memory maps WITHOUT overwriting anything already present. Hydration can
-    // resolve after a network fetch has already populated fresher data (it races a 2.5s
-    // timeout, and is re-armed by resetContentStore), so it must never clobber.
+    // Check this exact snapshot, not a verdict memoized for a different blob/account.
+    if ((await verifyPersistedContentVersions(rec)) === 'stale') return;
+    if (generation !== cacheGeneration || actorId !== cacheActorId) return;
     if (rec.contentStore instanceof Map) {
-      for (const [k, v] of rec.contentStore) if (!contentStore.has(k)) contentStore.set(k, v);
+      for (const [key, value] of rec.contentStore) if (!contentStore.has(key)) contentStore.set(key, value);
     }
     if (rec.idStore instanceof Map) {
-      for (const [type, m] of rec.idStore) {
+      for (const [type, records] of rec.idStore) {
         const target = idStore.get(type);
-        if (target && m instanceof Map) {
-          for (const [id, v] of m) if (!target.has(id)) target.set(id, v);
+        if (target && records instanceof Map) {
+          for (const [id, value] of records) if (!target.has(id)) target.set(id, value);
         }
       }
     }
-    console.log('[CONTENT-CACHE] Hydrated content store from IndexedDB');
-  } catch (e) {
-    console.warn('[CONTENT-CACHE] Failed to hydrate from IndexedDB', e);
+  } catch {
+    console.warn('[CONTENT-CACHE] Could not hydrate saved content');
   }
 }
 
@@ -259,7 +267,7 @@ async function hydrateContentCache(): Promise<void> {
 // loses the race, hydration may still populate later (harmlessly, since it never clobbers).
 function beginHydration(): Promise<void> {
   return Promise.race([
-    hydrateContentCache(),
+    hydrateContentCache(cacheGeneration, cacheActorId),
     new Promise<void>((resolve) => setTimeout(resolve, 2500)),
   ]);
 }
@@ -273,21 +281,21 @@ let persistTimer: ReturnType<typeof setTimeout> | null = null;
 async function persistContentCache(): Promise<void> {
   if (!cacheDirty) return;
   cacheDirty = false;
-  try {
-    // Never persist an empty list result: a full-corpus fetch that returned [] is a failure
-    // artifact (network error, interrupted load), and once persisted it would be served as
-    // the real corpus until the version/TTL gates retire it.
-    const filteredContentStore = new Map([...contentStore].filter(([, v]) => !(Array.isArray(v) && v.length === 0)));
-    await idbSet(CONTENT_CACHE_KEY, {
-      version: CONTENT_CACHE_VERSION,
-      savedAt: Date.now(),
-      idStore,
-      contentStore: filteredContentStore,
-    } satisfies PersistedContentCache);
-  } catch (e) {
-    cacheDirty = true; // retry on the next schedule
-    console.warn('[CONTENT-CACHE] Failed to persist to IndexedDB', e);
-  }
+  const generation = cacheGeneration;
+  const actorId = cacheActorId;
+  // Snapshot now: deferred IndexedDB work must never serialize another generation's maps.
+  const record: PersistedContentCache = structuredClone({
+    version: CONTENT_CACHE_VERSION,
+    actorId,
+    savedAt: Date.now(),
+    idStore,
+    contentStore,
+  });
+  await writeCache(async () => {
+    if (generation === cacheGeneration && actorId === cacheActorId) {
+      await idbSet(cacheKey(actorId), record);
+    }
+  });
 }
 
 // Trailing debounce: coalesce bursts (e.g. the initial ~12-request package load) AND avoid
@@ -471,16 +479,36 @@ export async function fetchContent<T = Record<string, any>>(
   // at the call site is convertToContentType().
   if (!FETCH_REQUEST_MAP[type]) {
     console.error(`[CONTENT-STORE] fetchContent called with unknown content type '${type}'`, data);
-    return [] as T[];
+    throw new Error(`Unknown content type: ${type}`);
   }
 
-  // Make sure any cache persisted by a previous session/tab is loaded before we check the
-  // in-memory stores, so a reload can hit the cache instead of re-fetching from the network.
+  await ensureCacheActor();
+  const generation = cacheGeneration;
   await hydrationPromise;
+  assertCurrentGeneration(generation);
 
-  const storedIds = getStoredIds(type, data);
+  // Resolve source scope BEFORE any cache hit, including IDs and names. Capture defaults
+  // now so a later view change cannot alter this request's meaning.
+  data = { ...data };
+  if (type !== 'content-source') {
+    const scope: SourceValue | undefined = data.content_sources;
+    const info = getDefaultSources('INFO');
+    const page = getDefaultSources('PAGE');
+    data.content_sources = Array.isArray(scope)
+      ? uniq(scope).sort((a, b) => a - b)
+      : uniq(
+          (scope
+            ? await fetchContentSources(scope)
+            : [...(await fetchContentSources(info)), ...(await fetchContentSources(page))]
+          ).map((source) => source.id)
+        ).sort((a, b) => a - b);
+    assertCurrentGeneration(generation);
+  }
+
+  const onlyIdentity = Object.keys(data).every((key) => ['id', 'content_sources'].includes(key));
+  const storedIds = onlyIdentity ? getStoredIds(type, data) : null;
   const storedFetch = getStoredFetch(type, data);
-  const storedNames = getStoredNames(type, data);
+  // Name filters are substring searches on the API, so an exact cached name is not a complete result.
 
   if (storedFetch) {
     if (storedFetch && Array.isArray(storedFetch)) {
@@ -494,12 +522,6 @@ export async function fetchContent<T = Record<string, any>>(
     } else {
       return storedIds ? [storedIds as T] : [];
     }
-  } else if (storedNames) {
-    if (storedNames && Array.isArray(storedNames)) {
-      return storedNames as T[];
-    } else {
-      return storedNames ? [storedNames as T] : [];
-    }
   } else {
     // Coalesce concurrent identical fetches (keyed including dontStore so a non-storing
     // fetch can't swallow a storing one). They share a single in-flight network request.
@@ -508,40 +530,12 @@ export async function fetchContent<T = Record<string, any>>(
     if (inFlight) return (await inFlight) as T[];
 
     const fetchPromise = (async () => {
-      // Make sure we're always filtering by content source
-      const newData = { ...data };
-
-      if (type !== 'content-source') {
-        let sv: SourceValue | undefined = cloneDeep(newData.content_sources);
-        let svN: number[] = [];
-
-        if (!sv) {
-          console.log(
-            '[CONTENT-SOURCES] ⚠️ No content sources specified for fetch of type',
-            type,
-            'with data',
-            data,
-            '. Using BOTH default sources',
-            getDefaultSources('INFO'),
-            'and',
-            getDefaultSources('PAGE')
-          );
-          // Use both default sources to be safe
-          svN = uniq([
-            ...(await fetchContentSources(getDefaultSources('INFO'))).map((source) => source.id),
-            ...(await fetchContentSources(getDefaultSources('PAGE'))).map((source) => source.id),
-          ]);
-        } else if (Array.isArray(sv)) {
-          svN = sv;
-        } else {
-          // Convert SourceValue as string -> number array
-          svN = (await fetchContentSources(sv)).map((source) => source.id);
-        }
-
-        newData.content_sources = uniq(svN);
+      const newData = data;
+      const rawResult = await makeRequest<T>(FETCH_REQUEST_MAP[type], newData, false, { throwOnFailure: true });
+      assertCurrentGeneration(generation);
+      if ((rawResult === null || rawResult === undefined) && (data.id === undefined || Array.isArray(data.id))) {
+        throw new Error(`Could not load ${type} content. Retry the request.`);
       }
-
-      const rawResult = await makeRequest<T>(FETCH_REQUEST_MAP[type], newData);
       const schema = CONTENT_SCHEMA_MAP[type];
       const result = rawResult
         ? (Array.isArray(rawResult) ? rawResult : [rawResult]).map((record) => validateAndWarn<T>(type, schema, record))
@@ -564,8 +558,11 @@ export async function fetchContent<T = Record<string, any>>(
     inFlightFetches.set(fetchKey, fetchPromise);
     try {
       return await fetchPromise;
+    } catch (error: unknown) {
+      if (generation === cacheGeneration) reportClientFailure('content_load_failed');
+      throw error;
     } finally {
-      inFlightFetches.delete(fetchKey);
+      if (inFlightFetches.get(fetchKey) === fetchPromise) inFlightFetches.delete(fetchKey);
     }
   }
 }
@@ -583,7 +580,7 @@ export async function fetchContent<T = Record<string, any>>(
  * network fetch happens instead of re-hydrating stale data.
  */
 export function resetContentStore(resetSources = true, clearPersisted = false) {
-  console.warn('⚠️ Resetting Content Store ⚠️');
+  cacheGeneration += 1;
   if (resetSources) {
     defineDefaultSources('BOTH', 'ALL-USER-ACCESSIBLE');
   }
@@ -602,8 +599,8 @@ export function resetContentStore(resetSources = true, clearPersisted = false) {
 
   if (clearPersisted) {
     // Underlying content changed: drop the persisted copy and don't re-hydrate stale data.
-    void idbDelete(CONTENT_CACHE_KEY);
-    hydrationPromise = Promise.resolve();
+    const key = cacheKey();
+    hydrationPromise = writeCache(() => idbDelete(key));
   } else {
     // Re-arm hydration so the next fetch refills the in-memory store from the persisted
     // cache instead of re-downloading the whole corpus.
@@ -651,7 +648,7 @@ export async function fetchContentSources(sources: SourceValue) {
       published: true,
     });
 
-    const user = await getPublicUser();
+    const user = await getPublicUser(undefined, { throwOnFailure: true });
     // Now fetch all the other sources the user has subscribed to
     const ur = await fetchContent<ContentSource>('content-source', {
       id: user?.subscribed_content_sources?.map((s) => s.source_id) ?? [],
@@ -665,7 +662,7 @@ export async function fetchContentSources(sources: SourceValue) {
       homebrew: true,
     });
 
-    const user = await getPublicUser();
+    const user = await getPublicUser(undefined, { throwOnFailure: true });
     // Filter out the homebrew
     results = pr.filter(
       (c) =>
@@ -679,23 +676,6 @@ export async function fetchContentSources(sources: SourceValue) {
   return results.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
 }
 
-/**
- * True when a content package came back effectively empty — i.e. the core content
- * tables (ancestries/classes/items/traits) all failed to load. The global content
- * corpus is never legitimately empty for a real source set, so this reliably means
- * the fetch failed (network/edge/DNS) rather than "the user genuinely has no content."
- * Used to refuse mounting the sheet/builder — and to refuse auto-saving — against a
- * corpus that isn't there, which would otherwise wipe the character (see issue #235).
- */
-export function isContentPackageEmpty(content: ContentPackage): boolean {
-  return (
-    content.ancestries.length === 0 &&
-    content.classes.length === 0 &&
-    content.items.length === 0 &&
-    content.traits.length === 0
-  );
-}
-
 export async function fetchContentPackage(
   sources: SourceValue,
   options?: {
@@ -703,6 +683,9 @@ export async function fetchContentPackage(
     fetchCreatures?: boolean;
   }
 ): Promise<ContentPackage> {
+  await ensureCacheActor();
+  const generation = cacheGeneration;
+  const defaultSources = { PAGE: getDefaultSources('PAGE'), INFO: getDefaultSources('INFO') };
   const content = await Promise.all([
     fetchContentAll<Ancestry>('ancestry', sources),
     fetchContentAll<Background>('background', sources),
@@ -719,6 +702,7 @@ export async function fetchContentPackage(
     options?.fetchSources ? fetchContentSources(sources) : null,
   ]);
 
+  assertCurrentGeneration(generation);
   const p = {
     ancestries: ((content[0] ?? []) as Ancestry[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
     backgrounds: ((content[1] ?? []) as Background[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
@@ -730,18 +714,18 @@ export async function fetchContentPackage(
     traits: ((content[7] ?? []) as Trait[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
     creatures: ((content[8] ?? []) as Creature[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
     archetypes: ((content[9] ?? []) as Archetype[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
-    versatileHeritages: ((content[10] ?? []) as VersatileHeritage[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
-    classArchetypes: ((content[11] ?? []) as ClassArchetype[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
+    versatileHeritages: ((content[10] ?? []) as VersatileHeritage[]).sort((a, b) =>
+      (a.name ?? '').localeCompare(b.name ?? '')
+    ),
+    classArchetypes: ((content[11] ?? []) as ClassArchetype[]).sort((a, b) =>
+      (a.name ?? '').localeCompare(b.name ?? '')
+    ),
     sources: content[12] as ContentSource[],
-    defaultSources: {
-      PAGE: getDefaultSources('PAGE'),
-      INFO: getDefaultSources('INFO'),
-    },
+    defaultSources,
   } satisfies ContentPackage;
 
   // Preload high-need images from package
-  p.ancestries.forEach((a) => preloadImage(a.artwork_url));
-  p.classes.forEach((c) => preloadImage(c.artwork_url));
+  void Promise.allSettled([...p.ancestries, ...p.classes].map((record) => preloadImage(record.artwork_url)));
   // Background artwork loads when displayed; preloading the entire catalog competes with sheet data.
 
   return p;
