@@ -41,6 +41,8 @@ import {
   areVariableEffectScopesActive,
   withVariableEffectScope,
   withVariableEffectScopes,
+  withSkillEffectContext,
+  getSkillEffectContext,
   removeVariableEffects,
   filterVariableList,
   VariableEffectScope,
@@ -245,11 +247,27 @@ export async function runOperations(
   const results: OperationResult[] = [];
   traversal.depth++;
   try {
-    for (const operation of operations) {
+    const orderedOperations = operations.map((operation, index) => ({ operation, index }));
+    if (options?.doOnlyConditionals || options?.doConditionals) {
+      // Resolve self-guarded rank grants before sibling effects that read the granted proficiency.
+      orderedOperations.sort(
+        (left, right) =>
+          Number(getSelfGrantProficiencyVariables(right.operation).size > 0) -
+          Number(getSelfGrantProficiencyVariables(left.operation).size > 0)
+      );
+    }
+    for (const { operation, index } of orderedOperations) {
       if (!areVariableEffectScopesActive(getVariableEffectScopes(varId))) break;
       if (++traversal.work > MAX_OPERATION_WORK)
         throw new Error('Content operations exceed the execution work limit (100000).');
-      results.push(await runOp(operation));
+      const scope = getVariableEffectScopes(varId).at(-1);
+      const occurrence = scope ? `${scope.key}@${scope.revision}` : 'root';
+      results[index] = await withSkillEffectContext(
+        varId,
+        `${occurrence}/${selectionTrack.path}/${operation.id}`,
+        options?.sourceLevel ?? getVariable<VariableNum>(varId, 'LEVEL')?.value ?? 1,
+        () => runOp(operation)
+      );
     }
     return results;
   } finally {
@@ -267,10 +285,10 @@ async function runSelect(
   let optionList: ObjectWithUUID[] = [];
 
   if (operation.data.modeType === 'FILTERED' && operation.data.optionsFilters) {
-    optionList = await determineFilteredSelectionList('CHARACTER', operation.id, operation.data.optionsFilters);
+    optionList = await determineFilteredSelectionList(varId, operation.id, operation.data.optionsFilters);
   } else if (operation.data.modeType === 'PREDEFINED' && operation.data.optionsPredefined) {
     optionList = await determinePredefinedSelectionList(
-      'CHARACTER',
+      varId,
       operation.id,
       operation.data.optionType,
       operation.data.optionsPredefined
@@ -284,7 +302,7 @@ async function runSelect(
   let foundSkills: string[] = [];
   for (const option of optionList) {
     if (option.variable) {
-      const variable = getVariable('CHARACTER', option.variable);
+      const variable = getVariable(varId, option.variable);
       if (variable?.type === 'prof' && variable.name.startsWith('SKILL_')) {
         foundSkills.push(variable.name);
       }
@@ -292,6 +310,10 @@ async function runSelect(
   }
   const skillAdjustment =
     optionList.length > 0 && foundSkills.length === optionList.length ? optionList[0]?.value?.value : undefined;
+  const skillContext = getSkillEffectContext(varId);
+  if (skillAdjustment && skillContext) {
+    optionList = optionList.map((option) => ({ ...option, _skill_context: skillContext }));
+  }
 
   // Find selected option
   if (selectionTrack.node && selectionTrack.node.value) {
@@ -1082,6 +1104,22 @@ async function runRemoveSpell(
   return null;
 }
 
+/** Identify only conditional guards that grant a rank to the proficiency they check. */
+function getSelfGrantProficiencyVariables(operation: Operation): Set<string> {
+  if (operation.type !== 'conditional') return new Set();
+  const checked = new Set((operation.data.conditions ?? []).map((condition) => condition.name));
+  return new Set(
+    [...(operation.data.trueOperations ?? []), ...(operation.data.falseOperations ?? [])]
+      .filter(
+        (op): op is OperationAdjValue =>
+          op.type === 'adjValue' &&
+          checked.has(op.data.variable) &&
+          isProficiencyType((op.data.value as { value?: unknown })?.value)
+      )
+      .map((op) => op.data.variable)
+  );
+}
+
 async function runConditional(
   varId: StoreID,
   selectionTrack: SelectionTrack,
@@ -1097,14 +1135,7 @@ async function runConditional(
   // fires and the increase is consumed reaching the rank the grant should have provided
   // (Medic Dedication at trained + a level-7 increase compiled to expert, not master).
   // Threshold conditions that gate anything else keep the increase-inclusive read below.
-  const selfGrantProfVars = new Set(
-    [...(operation.data.trueOperations ?? []), ...(operation.data.falseOperations ?? [])]
-      .filter(
-        (op): op is OperationAdjValue =>
-          op.type === 'adjValue' && isProficiencyType((op.data.value as { value?: unknown })?.value)
-      )
-      .map((op) => op.data.variable)
-  );
+  const selfGrantProfVars = getSelfGrantProficiencyVariables(operation);
 
   const makeCheck = (check: ConditionCheckData) => {
     let variable = getVariable(varId, check.name);
@@ -1239,6 +1270,23 @@ async function runConditional(
     }
   }
 
+  // A level-gated root/class/ancestry operation is earned when its gate opens, not at the root's level 1.
+  const levelGates = (operation.data.conditions ?? []).filter((check) => check.name === 'LEVEL');
+  let sourceLevel = options?.sourceLevel ?? getVariable<VariableNum>(varId, 'LEVEL')?.value ?? 1;
+  for (const check of levelGates) {
+    const threshold = Number(check.value);
+    if (!Number.isFinite(threshold)) continue;
+    if (isTrue && (check.operator === 'GREATER_THAN_OR_EQUALS' || check.operator === 'EQUALS')) {
+      sourceLevel = Math.max(sourceLevel, Math.ceil(threshold));
+    } else if (isTrue && check.operator === 'GREATER_THAN') {
+      sourceLevel = Math.max(sourceLevel, Math.floor(threshold) + 1);
+    } else if (!isTrue && operation.data.conditions?.length === 1) {
+      // With multiple conditions, a false result does not identify which condition failed.
+      if (check.operator === 'LESS_THAN') sourceLevel = Math.max(sourceLevel, Math.ceil(threshold));
+      if (check.operator === 'LESS_THAN_OR_EQUALS') sourceLevel = Math.max(sourceLevel, Math.floor(threshold) + 1);
+    }
+  }
+
   let results: OperationResult[] = [];
   if (isTrue) {
     results = await runOperations(
@@ -1247,6 +1295,7 @@ async function runConditional(
       operation.data.trueOperations ?? [],
       {
         ...options,
+        sourceLevel,
         doOnlyConditionals: false,
         doConditionals: true,
       },
@@ -1259,6 +1308,7 @@ async function runConditional(
       operation.data.falseOperations ?? [],
       {
         ...options,
+        sourceLevel,
         doOnlyConditionals: false,
         doConditionals: true,
       },

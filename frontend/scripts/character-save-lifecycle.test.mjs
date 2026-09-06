@@ -50,6 +50,10 @@ class HookHost {
     this.request = async (type, body) =>
       type === 'find-character' ? row(body.id) : [{ ...row(body.id), ...body, updated_at: 'version-2' }];
     this.calculate = () => new Promise(() => {});
+    this.confirmHealth = () => {};
+    this.saveCalculatedStats = () => {};
+    this.deferCharacterCommits = false;
+    this.pendingCharacterCommit = null;
   }
   useRef(value) {
     const index = this.cursor++;
@@ -61,8 +65,11 @@ class HookHost {
     return [
       this.slots[index],
       (value) => {
-        this.slots[index] = typeof value === 'function' ? value(this.slots[index]) : value;
-        this.dirty = true;
+        const next = typeof value === 'function' ? value(this.slots[index]) : value;
+        if (!Object.is(this.slots[index], next)) {
+          this.slots[index] = next;
+          this.dirty = true;
+        }
       },
     ];
   }
@@ -97,10 +104,15 @@ class HookHost {
         Promise.resolve()
           .then(() => submitted.mutationFn(save))
           .then(
-            (result) => submitted.onSuccess?.(result, save),
-            (error) => submitted.onError?.(error, save)
-          )
-          .finally(() => submitted.onSettled?.(undefined, undefined, save));
+            (result) => {
+              submitted.onSuccess?.(result, save);
+              submitted.onSettled?.(result, undefined, save);
+            },
+            (error) => {
+              submitted.onError?.(error, save);
+              submitted.onSettled?.(undefined, error, save);
+            }
+          );
       },
     };
   }
@@ -130,6 +142,12 @@ class HookHost {
 }
 class Storage {
   data = new Map();
+  get length() {
+    return this.data.size;
+  }
+  key(index) {
+    return [...this.data.keys()][index] ?? null;
+  }
   getItem(key) {
     return this.data.get(key) ?? null;
   }
@@ -158,6 +176,16 @@ globalThis.__saveHooks = {
   notify: (notice) => harness.notices.push(notice),
   download: (body, name) => harness.downloads.push({ body, name }),
   calculate: () => harness.calculate(),
+  confirmHealth: (...args) => harness.confirmHealth(...args),
+  saveCalculatedStats: (...args) => harness.saveCalculatedStats(...args),
+  debounce: (value) => harness.debouncedCharacter ?? value,
+  debounceCallback:
+    (callback) =>
+    (...args) => {
+      // Mantine coalesces setter callbacks, replacing every earlier updater.
+      if (harness.deferCharacterCommits) harness.pendingCharacterCommit = () => callback(...args);
+      else callback(...args);
+    },
   supabase: { auth: { getSession: async () => ({ data: { session: harness.session } }) } },
 };
 const boundaries = {
@@ -166,7 +194,7 @@ const boundaries = {
     'export const jsx = (type,props) => ({type,props}); export const jsxs = jsx; export const Fragment = "fragment";',
   jotai: 'export const {useAtom,useAtomValue} = globalThis.__saveHooks;',
   '@mantine/hooks':
-    'export const {useDidUpdate} = globalThis.__saveHooks; export const useDebouncedValue = value => [value]; export const useDebouncedCallback = callback => callback;',
+    'export const {useDidUpdate} = globalThis.__saveHooks; export const useDebouncedValue = value => [globalThis.__saveHooks.debounce(value)]; export const useDebouncedCallback = globalThis.__saveHooks.debounceCallback;',
   '@tanstack/react-query': 'export const {useMutation} = globalThis.__saveHooks; export const useQuery = () => {};',
   '@requests/request-manager':
     'export const {makeRequest} = globalThis.__saveHooks; export const hasSessionExpiredNotice = () => false;',
@@ -187,21 +215,33 @@ const boundaries = {
   './numbers': 'export const hashData = value => JSON.stringify(value);',
   './objects': 'export const getDeepDiff = (a,b) => JSON.stringify(a) === JSON.stringify(b) ? {} : { changed: true };',
   './type-fixing': 'export const convertToSetEntity = value => value;',
-  '@conditions/condition-handler': 'export const applyConditions = () => {};',
-  '@items/inv-utils': 'export const applyEquipmentPenalties = () => {};',
-  '@pages/character_sheet/entity-handler': 'export const confirmHealth = () => {};',
-  '@variables/calculated-stats': 'export const saveCalculatedStats = () => {};',
-  '@variables/variable-manager': 'export const setVariable = () => {};',
+  '@conditions/condition-handler':
+    'export const applyConditions = () => {}; export const getConditionByName = name => ({name,value:1});',
+  '@items/inv-utils':
+    'export const applyEquipmentPenalties = () => {}; export const filterByTraitType = () => []; export const getBestArmor = () => undefined;',
+  '@content/collect-content':
+    'export const collectEntitySpellcasting = () => ({}); export const getFocusPoints = () => ({max:0});',
+  '@pages/character_sheet/entity-handler': 'export const confirmHealth = globalThis.__saveHooks.confirmHealth;',
+  '@variables/calculated-stats': 'export const saveCalculatedStats = globalThis.__saveHooks.saveCalculatedStats;',
+  '@variables/variable-manager':
+    'export const setVariable = () => {}; export const getVariable = () => undefined; export const getVariables = () => ({}); export const addVariable = () => {};',
+  './variable-manager':
+    'export const getVariable = () => undefined; export const getVariables = () => ({}); export const addVariable = () => {};',
+  './variable-helpers':
+    'export const getFinalHealthValue = () => 10; export const getFinalStaminaValue = () => 0; export const getFinalResolveValue = () => 0; export const getFinalAcValue = () => 15; export const getFinalProfValue = () => "0";',
+  './variable-utils': 'export const labelToVariable = value => value;',
+  '@utils/objects':
+    'export const getDeepDiff = (a,b) => JSON.stringify(a) === JSON.stringify(b) ? {} : { changed: true };',
   '@items/inv-handlers': 'export const addExtraItems = () => {}; export const checkBulkLimit = () => {};',
   '@variables/variable-helpers':
-    'export const getFinalHealthValue = () => 10; export const getHealthValueParts = () => ({classHp: 6});',
+    'export const getFinalHealthValue = () => 10; export const getHealthValueParts = () => ({classHp: 6}); export const getFinalResolveValue = () => 0; export const getFinalStaminaValue = () => 0; export const isStaminaVariant = () => false;',
 };
 await build({
   absWorkingDir: root,
   define: { 'import.meta.env.PROD': 'false' },
   stdin: {
     contents:
-      "export {default} from './src/utils/use-character'; export * from './src/utils/character-save-buffer'; export * from './src/utils/character-merge';",
+      "export {default} from './src/utils/use-character'; export * from './src/utils/character-save-buffer'; export * from './src/utils/character-merge'; export {confirmHealth as actualConfirmHealth} from './src/pages/character_sheet/entity-handler'; export {saveCalculatedStats as actualSaveCalculatedStats} from './src/process/variables/calculated-stats';",
     resolveDir: root,
   },
   bundle: true,
@@ -228,7 +268,11 @@ const {
   default: useCharacter,
   bufferCharacterSave,
   getBufferedCharacterSave,
+  journalCharacterSaveSubmission,
   mergeCharacterOnConflict,
+  mergeCharacterSave,
+  actualConfirmHealth,
+  actualSaveCalculatedStats,
 } = await import(pathToFileURL(join(directory, 'hook.mjs')).href);
 const row = (id = 1) => ({
   id,
@@ -356,7 +400,7 @@ test('an empty success payload remains a failed save with a retained draft', asy
   harness.edit({ name: 'Retained edit' });
   await harness.flush();
   assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Retained edit');
-  assert.equal(harness.notices.filter((value) => value.id === 'character-save-failed').length, 1);
+  assert.equal(harness.value.saveState, 'failed');
   harness.unmount();
 });
 
@@ -581,6 +625,263 @@ test('choosing the saved version discards the matching conflict draft before nav
   harness.render();
   await harness.flush();
   assert.equal(harness.character.name, 'Remote name');
+  assert.equal(getBufferedCharacterSave(1, 'owner').status, 'none');
+  harness.unmount();
+});
+
+test('a completed failed save retries through the editor when connectivity returns', async () => {
+  let online = false;
+  harness.request = async (type, body) =>
+    type === 'find-character' ? row() : online ? [{ ...row(), ...body, updated_at: 'version-2' }] : null;
+  harness.render();
+  await harness.flush();
+  harness.edit({ name: 'Survives interruption' });
+  await harness.flush();
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Survives interruption');
+  online = true;
+  events.get('online')?.();
+  await harness.flush();
+  assert.equal(harness.requests.filter((request) => request.type === 'update-character').length, 2);
+  assert.equal(getBufferedCharacterSave(1, 'owner').status, 'none');
+  harness.unmount();
+});
+
+test('an uncertain write preserves a later deliberate revert whether it committed or not', () => {
+  const base = { ...row(), hp_current: 20 };
+  const submitted = { ...base, hp_current: 10 };
+  for (const remote of [base, { ...submitted, updated_at: 'version-2' }]) {
+    const merged = mergeCharacterSave(base, { ...base, name: 'Later edit' }, remote, submitted);
+    assert.equal(merged.character.hp_current, 20);
+    assert.equal(merged.character.name, 'Later edit');
+    assert.deepEqual(merged.conflicts, []);
+  }
+  assert.deepEqual(mergeCharacterSave(base, base, { ...base, hp_current: 5 }, submitted).conflicts, ['hp_current']);
+});
+
+test('a lost acknowledgement and a later intentional revert survive reconnect', async () => {
+  let server = { ...row(), hp_current: 20 };
+  const first = deferred();
+  let writes = 0;
+  harness.request = async (type, body) => {
+    if (type === 'find-character') return server;
+    writes++;
+    server = { ...server, ...body, updated_at: `version-${writes + 1}` };
+    return writes === 1 ? first.promise : [server];
+  };
+  harness.render();
+  await harness.flush();
+  harness.edit({ hp_current: 10 });
+  await harness.flush();
+  harness.edit({ hp_current: 20 });
+  await harness.flush();
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.hp_current, 20);
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.submission.body.hp_current, 10);
+  first.resolve(null);
+  await harness.flush();
+  assert.equal(harness.value.saveState, 'failed');
+  events.get('focus')();
+  await harness.flush();
+  assert.equal(server.hp_current, 20);
+  assert.equal(writes, 2);
+  assert.equal(getBufferedCharacterSave(1, 'owner').status, 'none');
+  harness.unmount();
+});
+
+test('reopening reconciles an uncertain submission before saving the latest input', async () => {
+  const base = { ...row(), hp_current: 20 };
+  bufferCharacterSave(base, 'owner', base.updated_at, { base, requiresCalculation: false });
+  journalCharacterSaveSubmission(1, 'owner', { ...base, hp_current: 10 }, base.updated_at);
+  let server = { ...base, hp_current: 10, updated_at: 'version-2' };
+  harness.request = async (type, body) => {
+    if (type === 'find-character') return server;
+    server = { ...server, ...body, updated_at: 'version-3' };
+    return [server];
+  };
+  harness.render();
+  await harness.flush();
+  assert.equal(harness.character.hp_current, 20);
+  assert.equal(server.hp_current, 20);
+  assert.equal(harness.requests.filter((request) => request.type === 'update-character').length, 1);
+  harness.unmount();
+});
+
+test('independent drafts from two tabs merge without granting stale data a newer version', async () => {
+  const base = { ...row(), hp_current: 20 };
+  bufferCharacterSave({ ...base, name: 'Offline rename' }, 'owner', base.updated_at, {
+    base,
+    requiresCalculation: false,
+    writerId: 'other-tab',
+  });
+  let server = { ...base, hp_current: 10, updated_at: 'version-2' };
+  harness.request = async (type, body) => {
+    if (type === 'find-character') return server;
+    assert.equal(body.expected_updated_at, 'version-2');
+    server = { ...server, ...body, updated_at: 'version-3' };
+    return [server];
+  };
+  harness.render();
+  await harness.flush();
+  assert.equal(server.hp_current, 10);
+  assert.equal(server.name, 'Offline rename');
+  assert.equal(getBufferedCharacterSave(1, 'owner', 'other-tab').status, 'none');
+  harness.unmount();
+});
+
+test('failed initial loading stays on the character route and can retry', async () => {
+  harness.request = async () => {
+    throw new Error('Connection unavailable');
+  };
+  harness.render();
+  await harness.flush();
+  assert.equal(harness.value.loadError, true);
+  assert.equal(window.location.href, '');
+  assert.equal(harness.character, null);
+  harness.request = async () => row();
+  harness.value.retryLoad();
+  await harness.flush();
+  assert.equal(harness.value.loadError, false);
+  assert.equal(harness.character.name, row().name);
+  harness.unmount();
+});
+
+test('a full local store never reports the pending edit as saved or durable', async () => {
+  harness.render();
+  await harness.flush();
+  localStorage.setItem = () => {
+    throw new Error('Quota exceeded');
+  };
+  harness.request = async () => null;
+  harness.edit({ name: 'Memory-only edit' });
+  await harness.flush();
+  assert.equal(harness.value.draftStored, false);
+  assert.equal(harness.value.saveState, 'failed');
+  assert.equal(harness.character.name, 'Memory-only edit');
+  harness.unmount();
+});
+
+test('a completed calculation cannot submit a stale debounced route snapshot over restored edits', async () => {
+  bufferCharacterSave({ ...row(), name: 'Recovered name' }, 'owner', 'version-1', {
+    base: row(),
+    requiresCalculation: false,
+    writerId: 'closed-page',
+  });
+  const calculation = deferred();
+  harness.debouncedCharacter = row();
+  harness.options = {
+    type: 'EXECUTE_OPS',
+    data: { content: {}, context: 'CHARACTER-SHEET', onFinishLoading: () => {} },
+  };
+  harness.calculate = () => calculation.promise;
+  harness.render();
+  await harness.flush();
+  assert.equal(harness.character.name, 'Recovered name');
+  calculation.resolve({});
+  await harness.flush();
+  const saves = harness.requests.filter((request) => request.type === 'update-character');
+  assert.equal(saves.length, 1);
+  assert.equal(saves[0].body.name, 'Recovered name');
+  harness.unmount();
+});
+
+test('a slow calculation cannot replace a newer HP edit with its earlier clamped snapshot', async () => {
+  const calculation = deferred();
+  const original = { ...row(), hp_current: 20, meta_data: { reset_hp: false } };
+  harness.options = {
+    type: 'EXECUTE_OPS',
+    data: { content: { items: [] }, context: 'CHARACTER-SHEET', onFinishLoading() {} },
+  };
+  harness.confirmHealth = actualConfirmHealth;
+  harness.calculate = () => calculation.promise;
+  harness.request = async (type, body) =>
+    type === 'find-character' ? original : [{ ...original, ...body, updated_at: 'version-2' }];
+  harness.render();
+  await harness.flush();
+  harness.edit({ hp_current: 5, name: 'Latest name', notes: 'Latest notes' });
+  await harness.flush();
+  assert.equal(harness.character.hp_current, 5);
+  calculation.resolve({});
+  await harness.flush();
+  assert.equal(harness.character.hp_current, 5);
+  assert.equal(harness.character.name, 'Latest name');
+  assert.equal(harness.character.notes, 'Latest notes');
+  const saved = harness.requests.filter((request) => request.type === 'update-character');
+  assert.ok(saved.every((request) => request.body.hp_current === 5));
+  harness.unmount();
+});
+
+test('delayed calculated-stat persistence preserves newer HP, name, and notes', async () => {
+  let current = { ...row(), hp_current: 20, meta_data: { reset_hp: false } };
+  actualSaveCalculatedStats('CHARACTER', current, (update) => {
+    current = typeof update === 'function' ? update(current) : update;
+  });
+  current = { ...current, hp_current: 5, name: 'Latest name', notes: 'Latest notes' };
+  await new Promise((resolve) => setTimeout(resolve, 120));
+  assert.equal(current.hp_current, 5);
+  assert.equal(current.name, 'Latest name');
+  assert.equal(current.notes, 'Latest notes');
+  assert.equal(current.meta_data.calculated_stats.hp_max, 10);
+});
+
+test('HP normalization delivered after another HP edit uses the latest value', async () => {
+  const calculation = deferred();
+  const original = { ...row(), hp_current: 20, meta_data: { reset_hp: false } };
+  harness.options = {
+    type: 'EXECUTE_OPS',
+    data: { content: { items: [] }, context: 'CHARACTER-SHEET', onFinishLoading() {} },
+  };
+  harness.confirmHealth = actualConfirmHealth;
+  harness.deferCharacterCommits = true;
+  harness.calculate = () => calculation.promise;
+  harness.request = async (type, body) =>
+    type === 'find-character' ? original : [{ ...original, ...body, updated_at: 'version-2' }];
+  harness.render();
+  await harness.flush();
+  calculation.resolve({});
+  await harness.flush();
+  harness.edit({ hp_current: 5 });
+  const deliver = harness.pendingCharacterCommit;
+  harness.pendingCharacterCommit = null;
+  deliver?.();
+  await harness.flush();
+  assert.equal(harness.character.hp_current, 5);
+  harness.unmount();
+});
+
+test('one calculation preserves both health normalization and calculated-stat completion updates', async () => {
+  const calculation = deferred();
+  const original = { ...row(), hp_current: 20, meta_data: { reset_hp: false } };
+  harness.options = {
+    type: 'EXECUTE_OPS',
+    data: { content: { items: [] }, context: 'CHARACTER-SHEET', onFinishLoading() {} },
+  };
+  harness.confirmHealth = actualConfirmHealth;
+  harness.saveCalculatedStats = actualSaveCalculatedStats;
+  harness.deferCharacterCommits = true;
+  harness.calculate = () => calculation.promise;
+  harness.request = async (type, body) =>
+    type === 'find-character' ? original : [{ ...original, ...body, updated_at: 'version-2' }];
+  harness.render();
+  await harness.flush();
+  calculation.resolve({});
+  await harness.flush();
+  await new Promise((resolve) => setTimeout(resolve, 120));
+  const deliver = harness.pendingCharacterCommit;
+  harness.pendingCharacterCommit = null;
+  deliver?.();
+  await harness.flush();
+  assert.equal(harness.character.hp_current, 10);
+  assert.equal(harness.character.meta_data.calculated_stats.hp_max, 10);
+  harness.unmount();
+});
+
+test('JSON-normalized save acknowledgements clear the draft and show Saved', async () => {
+  harness.request = async (type, body) =>
+    type === 'find-character' ? row() : JSON.parse(JSON.stringify([{ ...row(), ...body, updated_at: 'version-2' }]));
+  harness.render();
+  await harness.flush();
+  harness.edit({ name: 'Confirmed JSON save', details: { description: undefined } });
+  await harness.flush();
+  assert.equal(harness.value.saveState, 'saved');
   assert.equal(getBufferedCharacterSave(1, 'owner').status, 'none');
   harness.unmount();
 });

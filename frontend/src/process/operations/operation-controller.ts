@@ -33,8 +33,16 @@ import {
   importVariableStore,
   resetVariables,
   setVariable,
+  getSkillSelectionPreview,
 } from '@variables/variable-manager';
-import { isAttributeValue, labelToVariable, variableToLabel } from '@variables/variable-utils';
+import {
+  isAttributeValue,
+  isExtendedProficiencyType,
+  isProficiencyType,
+  labelToVariable,
+  variableToLabel,
+} from '@variables/variable-utils';
+import { SkillEffectContextSchema } from '@variables/skill-progression';
 import { hashData, rankNumber } from '@utils/numbers';
 import { StoreID, VariableListStr, VariableStore } from '@schemas/variables';
 import {
@@ -90,6 +98,7 @@ function defineSelectionTree(entity: LivingEntity) {
  * @param operations - Array of operations to execute
  * @param options - Operation options
  * @param sourceLabel - Label for the source (for logging/debugging)
+ * @param sourceLevel - Level when this source's choices are earned; nested selections inherit it.
  * @returns - Array of operation results
  */
 async function _executeOps(
@@ -98,7 +107,8 @@ async function _executeOps(
   operations: Operation[],
   options?: OperationOptions,
   sourceLabel?: string,
-  grantedContent?: { id: number; name: string; prefix?: string }
+  grantedContent?: { id: number; name: string; prefix?: string },
+  sourceLevel = 1
 ) {
   const execute = async (): Promise<OperationResult[]> => {
     const selectionNode = getRootSelection().children[primarySource];
@@ -106,7 +116,7 @@ async function _executeOps(
       varId,
       { path: `${primarySource}_${selectionNode?.value}`, node: selectionNode },
       operations,
-      cloneDeep(options),
+      { ...cloneDeep(options), sourceLevel },
       sourceLabel
     );
     if (grantedContent?.prefix && areVariableEffectScopesActive(getVariableEffectScopes(varId))) {
@@ -797,7 +807,9 @@ async function executeCharacterOperations(
       'character',
       character.options?.custom_operations ? (character.custom_operations ?? []) : [],
       options,
-      'Custom'
+      'Custom',
+      undefined,
+      character.level
     );
 
     let classResults: OperationResult[] = [];
@@ -910,7 +922,9 @@ async function executeCharacterOperations(
             `ancestry-section-${section.id}`,
             section.operations ?? [],
             options,
-            `${section.name} (Lvl. ${section.level})`
+            `${section.name} (Lvl. ${section.level})`,
+            undefined,
+            section.level ?? 1
           );
 
           ancestrySectionResults.push({
@@ -933,7 +947,8 @@ async function executeCharacterOperations(
           feature.operations ?? [],
           options,
           `${feature.name} (Lvl. ${feature.level})`,
-          { id: feature.id, name: feature.name, prefix: 'CLASS_FEATURE' }
+          { id: feature.id, name: feature.name, prefix: 'CLASS_FEATURE' },
+          feature.level ?? 1
         );
 
         classFeatureResults.push({
@@ -963,7 +978,9 @@ async function executeCharacterOperations(
         `item-${invItem.item.id}`,
         getItemOperations(invItem.item, content),
         options,
-        invItem.item.name
+        invItem.item.name,
+        undefined,
+        character.level
       );
 
       if (results.length > 0) {
@@ -983,7 +1000,8 @@ async function executeCharacterOperations(
         mode.operations ?? [],
         options,
         `${mode.name} Mode`,
-        { id: mode.id, name: mode.name }
+        { id: mode.id, name: mode.name },
+        character.level
       );
 
       if (results.length > 0) {
@@ -1042,11 +1060,46 @@ async function executeCharacterOperations(
   setEidolonRunesInStore(character);
   setCalculatedStatsInStore('CHARACTER', character);
 
+  const mergedResults = mergeOperationResults(results, conditionalResults) as typeof results;
+  for (const group of [
+    mergedResults.characterResults,
+    mergedResults.classResults,
+    mergedResults.class2Results,
+    mergedResults.ancestryResults,
+    mergedResults.backgroundResults,
+    ...mergedResults.contentSourceResults.map(({ baseResults }) => baseResults),
+    ...mergedResults.classFeatureResults.map(({ baseResults }) => baseResults),
+    ...mergedResults.ancestrySectionResults.map(({ baseResults }) => baseResults),
+    ...mergedResults.itemResults.map(({ baseResults }) => baseResults),
+    ...mergedResults.modeResults.map(({ baseResults }) => baseResults),
+  ]) {
+    addSkillSelectionPreviews('CHARACTER', group);
+  }
   return {
     store: exportVariableStore('CHARACTER'),
-    ors: mergeOperationResults(results, conditionalResults) as typeof results,
+    ors: mergedResults,
     errors,
   };
+}
+
+/** Export only computed choice previews after grants from every pass are available. */
+function addSkillSelectionPreviews(id: StoreID, results: OperationResult[]): void {
+  for (const result of results) {
+    for (const option of result?.selection?.options ?? []) {
+      const context = SkillEffectContextSchema.safeParse(option._skill_context);
+      const adjustment: unknown = option.value?.value;
+      if (
+        context.success &&
+        typeof option.variable === 'string' &&
+        (isProficiencyType(adjustment) || (typeof adjustment === 'string' && isExtendedProficiencyType(adjustment)))
+      ) {
+        option._skill_preview = getSkillSelectionPreview(id, option.variable, adjustment, context.data);
+      }
+      delete option._skill_context;
+    }
+    if (result?.result?.source) delete result.result.source._skill_context;
+    if (result?.result?.results) addSkillSelectionPreviews(id, result.result.results);
+  }
 }
 
 export async function _executeCreatureOperations(data: {
@@ -1096,18 +1149,30 @@ async function executeCreatureOperations(
   ];
 
   const operationsPassthrough = async (options?: OperationOptions) => {
-    let creatureResults = await _executeOps(id, 'creature', creature.operations ?? [], options, creature.name);
+    let creatureResults = await _executeOps(
+      id,
+      'creature',
+      creature.operations ?? [],
+      options,
+      creature.name,
+      undefined,
+      getEntityLevel(creature)
+    );
 
     let abilityResults: {
       baseSource: AbilityBlock;
       baseResults: OperationResult[];
     }[] = [];
     for (const ability of abilities) {
-      const results = await _executeOps(id, `ability-${ability.id}`, ability.operations ?? [], options, ability.name, {
-        id: ability.id,
-        name: ability.name,
-        prefix: 'FEAT',
-      });
+      const results = await _executeOps(
+        id,
+        `ability-${ability.id}`,
+        ability.operations ?? [],
+        options,
+        ability.name,
+        { id: ability.id, name: ability.name, prefix: 'FEAT' },
+        getEntityLevel(creature)
+      );
 
       abilityResults.push({
         baseSource: ability,
@@ -1135,7 +1200,9 @@ async function executeCreatureOperations(
         `item-${invItem.item.id}`,
         getItemOperations(invItem.item, content),
         options,
-        invItem.item.name
+        invItem.item.name,
+        undefined,
+        getEntityLevel(creature)
       );
 
       if (results.length > 0) {
@@ -1182,9 +1249,16 @@ async function executeCreatureOperations(
   // Set calculated stats
   setCalculatedStatsInStore(id, creature);
 
+  const mergedResults = mergeOperationResults(results, conditionalResults) as typeof results;
+  for (const group of [
+    mergedResults.creatureResults,
+    ...mergedResults.abilityResults.map(({ baseResults }) => baseResults),
+    ...mergedResults.itemResults.map(({ baseResults }) => baseResults),
+  ])
+    addSkillSelectionPreviews(id, group);
   return {
     store: exportVariableStore(id),
-    ors: mergeOperationResults(results, conditionalResults) as typeof results,
+    ors: mergedResults,
     errors,
   };
 }

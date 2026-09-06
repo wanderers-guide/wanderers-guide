@@ -178,17 +178,29 @@ responses). Concurrent rejected requests share that refresh. A request retries a
 the same account; permission failures do not trigger refresh. Signing in or recovering
 the session clears the persistent session-expired notice.
 
-Ambiguous network and gateway failures retry only explicitly read-only requests, once.
-Writes, AI requests, and vector population are not repeated after a lost response,
-because the server may already have performed the work. A timeout never starts a
-replacement request.
+Ambiguous network and gateway failures retry only explicitly read-only requests, once,
+at the request layer. Other mutations, AI requests and vector population are not
+repeated automatically. The character editor has a separate guarded recovery flow:
+a failed save retains its submitted snapshot, reads the authoritative character,
+merges pending intent, and writes with the current server version. This handles a
+committed write whose response was lost, including later edits returning a value to
+its original state.
 
-Unsynced character edits are buffered locally without bearer tokens and scoped
-to the account editing the character, including authorized GM edits. Replay uses the
-current authenticated session and the saved server version. A failed response, conflict,
-permission rejection, or missing saved row leaves the copy intact. A successful save
-removes only its matching snapshot; newer queued edits retain their data and advance
-to the acknowledged server version. Signing out preserves these account-scoped copies.
+Unsynced character edits are buffered locally without bearer tokens, separately for
+each account, character and browser page. Saving one tab does not rebase or replace
+another tab's newer draft. Reopening loads recoverable drafts into the editor's normal
+merge/calculation/save queue; restoration itself sends no write. Successful saves
+remove only matching recovered snapshots, preserving any newer edits. Signing out
+preserves these account-scoped copies.
+
+The editor distinguishes **Saved**, **Saving**, pending edits, offline drafts and failed
+sync. Completed failures retry with backoff (up to 30 seconds between attempts), on
+reconnect, and when the page becomes visible or focused. **Retry now** uses the same
+serialized queue. Account changes, read-only access, conflicts and incomplete
+calculations still gate persistence. A browser storage failure displays **Not saved:
+keep this page open**, rather than claiming the edit is durable. A failed initial
+character request offers **Retry loading** on the same route; a network outage is not
+treated as an authorization denial.
 
 An older copy without a server version is kept for explicit recovery instead of
 silently overwriting newer server data. When a retained copy needs attention, the

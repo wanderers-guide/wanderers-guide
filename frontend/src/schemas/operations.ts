@@ -15,11 +15,13 @@ import {
 // Runtime-flexible content entity that carries selection metadata.
 // .catchall(z.any()) models the [key: string]: any index signature.
 
-export const ObjectWithUUIDSchema = z.object({
-  _select_uuid: z.string(),
-  _content_type: ContentTypeSchema,
-  _meta_data: z.record(z.string(), z.any()).optional(),
-}).catchall(z.any());
+export const ObjectWithUUIDSchema = z
+  .object({
+    _select_uuid: z.string(),
+    _content_type: ContentTypeSchema,
+    _meta_data: z.record(z.string(), z.any()).optional(),
+  })
+  .catchall(z.any());
 export type ObjectWithUUID = z.infer<typeof ObjectWithUUIDSchema>;
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
@@ -100,6 +102,7 @@ export type ConditionCheckData = z.infer<typeof ConditionCheckDataSchema>;
 // ─── Operation Options ────────────────────────────────────────────────────────
 
 export const OperationOptionsSchema = z.object({
+  sourceLevel: z.number().optional(),
   doOnlyValueCreation: z.boolean().optional(),
   doConditionals: z.boolean().optional(),
   doOnlyConditionals: z.boolean().optional(),

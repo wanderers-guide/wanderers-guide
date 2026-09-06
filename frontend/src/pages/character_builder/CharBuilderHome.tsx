@@ -1,3 +1,5 @@
+import { CharacterSaveStatus } from '@common/CharacterSaveStatus';
+import { CharacterLoadError } from '@common/CharacterLoadError';
 import { generateNames } from '@ai/fantasygen-dev/name-controller';
 import { GroupLinkSwitch, LinkSwitch, LinksGroup } from '@common/LinksGroup';
 import {
@@ -98,9 +100,12 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
   const queryClient = useQueryClient();
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const { character, setCharacter, isLoading } = useCharacter(props.characterId, {
-    type: 'SIMPLE',
-  });
+  const { character, setCharacter, isLoading, saveState, draftStored, retrySave, loadError, retryLoad } = useCharacter(
+    props.characterId,
+    {
+      type: 'SIMPLE',
+    }
+  );
 
   const [loadingGenerateName, setLoadingGenerateName] = useState(false);
   const [displayNameInput, refreshNameInput] = useRefresh();
@@ -1306,6 +1311,8 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
 
   // The route's cached character may render before the save hook finishes loading
   // its authoritative version. Keep inputs closed until that save context is ready.
+  if (loadError) return <CharacterLoadError onRetry={retryLoad} />;
+
   if (isLoading)
     return (
       <Center h={300}>
@@ -1315,6 +1322,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
 
   return (
     <Stack gap={topGap}>
+      <CharacterSaveStatus state={saveState} draftStored={draftStored} onRetry={retrySave} />
       <Group justify='center' ref={ref} wrap='nowrap'>
         <Stack>
           <Box>

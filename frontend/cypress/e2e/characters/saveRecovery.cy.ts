@@ -59,7 +59,10 @@ describe('Buffered character recovery', () => {
       .its('name')
       .should('eq', 'Unsynced local copy');
     cy.window().then((win) => {
-      const retained = win.localStorage.getItem(`autosave-character-recovery-${characterId}-${actorId}`);
+      const key = Object.keys(win.localStorage).find((key) =>
+        key.startsWith(`autosave-character-${characterId}-${actorId}:writer:legacy-account`)
+      );
+      const retained = win.localStorage.getItem(key ?? '');
       expect(JSON.parse(retained ?? '{}').body.name).to.eq('Unsynced local copy');
     });
   });
@@ -98,7 +101,10 @@ describe('Buffered character recovery', () => {
       .should('eq', 'My conflicting edit');
     cy.contains('button', 'Use saved version').click();
     cy.contains('Conflicting character edits').should('not.exist');
-    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', 'Changed on another device');
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should(
+      'have.value',
+      'Changed on another device'
+    );
     cy.reload();
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should(
       'have.value',

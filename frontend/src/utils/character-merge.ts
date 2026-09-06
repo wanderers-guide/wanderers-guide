@@ -4,6 +4,19 @@ import { SAVED_CHARACTER_FIELDS } from './character-save-buffer';
 
 type CharacterMerge = { character: Character; conflicts: string[] };
 
+/** Preserve edits made after an uncertain write, including deliberate returns to the old value. */
+export function mergeCharacterSave(
+  base: Record<string, unknown> | null,
+  local: Record<string, unknown> | null,
+  remote: Character,
+  submitted?: Record<string, unknown>
+): CharacterMerge {
+  if (!submitted) return mergeCharacterOnConflict(base, local, remote);
+  const attempt = mergeCharacterOnConflict(base, submitted, remote);
+  const latest = mergeCharacterOnConflict(submitted, local, attempt.character);
+  return { character: latest.character, conflicts: [...new Set([...attempt.conflicts, ...latest.conflicts])] };
+}
+
 /** Merge independent nested edits; retain local values at explicitly reported conflicts. */
 export function mergeCharacterOnConflict(
   base: Record<string, unknown> | null,

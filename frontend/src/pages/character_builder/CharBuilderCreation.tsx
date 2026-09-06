@@ -1,3 +1,5 @@
+import { CharacterSaveStatus } from '@common/CharacterSaveStatus';
+import { CharacterLoadError } from '@common/CharacterLoadError';
 import D20Loader from '@assets/images/D20Loader';
 import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
@@ -178,17 +180,28 @@ export function CharBuilderCreationInner(props: {
 
   const [levelItemValue, setLevelItemValue] = useState<string | null>(null);
 
-  const { character, setCharacter, results, operationError, isCalculating, retryOperations } = useCharacter(
-    props.characterId,
-    {
-      type: 'EXECUTE_OPS',
-      data: {
-        content: props.content,
-        context: 'CHARACTER-BUILDER',
-        onFinishLoading: props.onFinishLoading,
-      },
-    }
-  );
+  const {
+    character,
+    setCharacter,
+    results,
+    operationError,
+    isCalculating,
+    retryOperations,
+    saveState,
+    draftStored,
+    retrySave,
+    loadError,
+    retryLoad,
+  } = useCharacter(props.characterId, {
+    type: 'EXECUTE_OPS',
+    data: {
+      content: props.content,
+      context: 'CHARACTER-BUILDER',
+      onFinishLoading: props.onFinishLoading,
+    },
+  });
+
+  if (loadError) return <CharacterLoadError onRetry={retryLoad} />;
 
   if (operationError) return <OperationError loading={isCalculating} onRetry={retryOperations} />;
 
@@ -206,6 +219,7 @@ export function CharBuilderCreationInner(props: {
 
   return (
     <Group gap={0} px={isMobile ? undefined : 'sm'}>
+      <CharacterSaveStatus state={saveState} draftStored={draftStored} onRetry={retrySave} />
       {isMobile ? (
         <Drawer
           opened={statPanelOpened}
