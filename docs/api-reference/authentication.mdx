@@ -208,6 +208,15 @@ character page offers **Download saved copy**. Its recovery copy remains availab
 across reloads, even after subsequent edits save successfully. Signed-out viewers and
 sessions identified as read-only do not create buffered writes.
 
+Live character reads run every five seconds while the page is visible, and refresh on
+focus or reconnect. Their account, route, starting server version and write revision
+are checked before applying a response. Reads arriving during an unresolved write are
+ignored; save recovery performs the authoritative reconciliation. A successful incoming
+merge updates the baseline first, so only remaining local edits or changed calculated
+stats can produce a guarded save. Same-field conflicts pause incoming reconciliation
+and writes until the user resolves them. Public viewers can receive updates without
+creating drafts or write attempts.
+
 Inputs changed during a pending or failed calculation remain local with a requirement
 to recalculate. Navigating between builder and sheet restores those inputs using their
 last-synced base and the latest server row, preserving unrelated remote changes. The

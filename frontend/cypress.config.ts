@@ -1,4 +1,5 @@
 import { defineConfig } from 'cypress';
+import { registerCampaignFixtures } from './cypress/support/campaign-fixture';
 
 export default defineConfig({
   env: {
@@ -9,7 +10,7 @@ export default defineConfig({
     pageLoadTimeout: 120000,
     // defaultCommandTimeout: 25000,
     setupNodeEvents(on, config) {
-      // implement node event listeners here
+      registerCampaignFixtures(on, config);
     },
   },
 });

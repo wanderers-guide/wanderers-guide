@@ -29,9 +29,13 @@ import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { JSONContent } from '@tiptap/react';
 import { useSwipeGesture } from '@utils/use-swipe-gesture';
 import { IMPRINT_BG_COLOR } from '@constants/data';
+import { campaignCharactersQuery } from '@utils/campaign-characters-query';
+import { sessionState } from '@atoms/supabaseAtoms';
+import { useAtomValue } from 'jotai';
 
 export default function CampaignDrawer(props: { opened: boolean; onClose: () => void; campaignId: number }) {
   const theme = useMantineTheme();
+  const session = useAtomValue(sessionState);
   const isTablet = useMediaQuery(tabletQuery());
   const isWideDesktop = useMediaQuery(wideDesktopQuery());
 
@@ -47,15 +51,7 @@ export default function CampaignDrawer(props: { opened: boolean; onClose: () => 
     refetchOnWindowFocus: false,
   });
 
-  const { data: characters } = useQuery({
-    queryKey: [`find-campaign-characters`],
-    queryFn: async () => {
-      return await makeRequest<Character[]>('find-character', {
-        campaign_id: props.campaignId,
-      });
-    },
-    refetchInterval: 400,
-  });
+  const { data: characters } = useQuery(campaignCharactersQuery(props.campaignId, session?.user.id));
 
   const swipeHandlers = useSwipeGesture({ onSwipeLeft: props.onClose });
 

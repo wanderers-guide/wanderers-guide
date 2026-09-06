@@ -41,7 +41,7 @@ import { Campaign, Character, Encounter } from '@schemas/content';
 import { setPageTitle } from '@utils/document-change';
 import { isPhoneSized, tabletQuery } from '@utils/mobile-responsive';
 import { cloneDeep, truncate } from 'lodash-es';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { GiRollingDices } from '@common/game-icons-inline';
 import { useLoaderData } from 'react-router-dom';
 import classes from '@css/UserInfoIcons.module.css';
@@ -59,6 +59,8 @@ import BlurButton from '@common/BlurButton';
 import BlurActionIcon from '@common/BlurActionIcon';
 import { getAnchorStyles } from '@utils/anchor';
 import ImprintButton from '@common/ImprintButton';
+import { campaignCharactersQuery } from '@utils/campaign-characters-query';
+import { createEncounterCharacterWriter } from '@utils/encounter-character-writer';
 
 export function Component() {
   const theme = useMantineTheme();
@@ -157,15 +159,7 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
     })();
   }, [debouncedCampaign]);
 
-  const { data: characters, isLoading } = useQuery({
-    queryKey: [`find-campaign-characters`, { campaign_id: props.campaignId }],
-    queryFn: async () => {
-      return await makeRequest<Character[]>('find-character', {
-        campaign_id: props.campaignId,
-      });
-    },
-    refetchInterval: 400,
-  });
+  const { data: characters, isLoading } = useQuery(campaignCharactersQuery(props.campaignId, session?.user.id));
 
   const isLoaded = !isLoading && !isFetching;
 
@@ -401,6 +395,28 @@ function SectionPanels(props: {
   panelHeight: number;
   panelWidth: number;
 }) {
+  const session = useAtomValue(sessionState);
+  const [, refreshCharacterSaves] = useState(0);
+  const characterWriter = useMemo(
+    () =>
+      session?.user.id && props.campaign?.id
+        ? createEncounterCharacterWriter({
+            actorId: session.user.id,
+            request: (type, body) => makeRequest(type, body, false, { expectedActorId: session.user.id }),
+            changed: () => refreshCharacterSaves((value) => value + 1),
+          })
+        : undefined,
+    [session?.user.id, props.campaign?.id]
+  );
+  useEffect(() => {
+    characterWriter?.activate();
+    const retry = () => characterWriter?.retry();
+    window.addEventListener('online', retry);
+    return () => {
+      window.removeEventListener('online', retry);
+      characterWriter?.dispose();
+    };
+  }, [characterWriter]);
   const theme = useMantineTheme();
   const isPhone = isPhoneSized(props.panelWidth);
 
@@ -453,6 +469,7 @@ function SectionPanels(props: {
 
             {activeTab === 'encounters' && (
               <EncountersPanel
+                characterWriter={characterWriter}
                 campaign={{
                   data: props.campaign,
                   players: props.players,
@@ -665,6 +682,7 @@ function SectionPanels(props: {
 
             <Tabs.Panel value='encounters'>
               <EncountersPanel
+                characterWriter={characterWriter}
                 panelHeight={props.panelHeight}
                 panelWidth={props.panelWidth}
                 campaign={{

@@ -1,5 +1,7 @@
 import { CharacterSaveStatus } from '@common/CharacterSaveStatus';
 import { CharacterLoadError } from '@common/CharacterLoadError';
+import { sessionState } from '@atoms/supabaseAtoms';
+import { useAtomValue } from 'jotai';
 import D20Loader from '@assets/images/D20Loader';
 import { glassStyle } from '@utils/colors';
 import BlurBox from '@common/BlurBox';
@@ -92,7 +94,12 @@ export function Component(props: {}) {
   };
 
   const theme = useMantineTheme();
+  const actorId = useAtomValue(sessionState)?.user.id ?? null;
   const [doneLoading, setDoneLoading] = useState(false);
+  const [sourceRequest, setSourceRequest] = useState<{ id: string; actor: string | null; sources: number[] }>();
+  const requestedSources =
+    sourceRequest?.id === characterId && sourceRequest.actor === actorId ? sourceRequest.sources : undefined;
+  useEffect(() => setDoneLoading(false), [characterId, actorId]);
 
   const {
     data: content,
@@ -100,7 +107,7 @@ export function Component(props: {}) {
     isError,
     refetch,
   } = useQuery({
-    queryKey: [`find-content-${characterId}`],
+    queryKey: [`find-content-${characterId}`, { actor: actorId, sources: requestedSources ?? null }],
     queryFn: async () => {
       // Set default sources
       const character = await makeRequest<Character>(
@@ -109,9 +116,9 @@ export function Component(props: {}) {
           id: characterId,
         },
         false,
-        { throwOnFailure: true }
+        { throwOnFailure: true, ...(actorId ? { expectedActorId: actorId } : {}) }
       );
-      const sv = defineDefaultSources('PAGE', character?.content_sources?.enabled ?? []);
+      const sv = defineDefaultSources('PAGE', requestedSources ?? character?.content_sources?.enabled ?? []);
 
       // Prefetch content sources (to avoid multiple requests)
       await fetchContentSources(sv);
@@ -190,6 +197,10 @@ export function Component(props: {}) {
           <CharacterSheetInner
             key={characterId}
             content={content}
+            onSourcesChange={(sources) => {
+              setDoneLoading(false);
+              setSourceRequest({ id: characterId, actor: actorId, sources });
+            }}
             characterId={parseInt(characterId)}
             onFinishLoading={() => {
               interval.stop();
@@ -207,7 +218,12 @@ export function Component(props: {}) {
  * tabbed panel area. Also owns the floating action buttons anchored to the
  * bottom-left corner (modes, campaign, dice roller).
  */
-function CharacterSheetInner(props: { content: ContentPackage; characterId: number; onFinishLoading: () => void }) {
+function CharacterSheetInner(props: {
+  content: ContentPackage;
+  characterId: number;
+  onFinishLoading: () => void;
+  onSourcesChange: (sources: number[]) => void;
+}) {
   const isTablet = useMediaQuery(tabletQuery());
   const isPhone = useMediaQuery(phoneQuery());
   const { ref, width, height } = useElementSize();
@@ -237,6 +253,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
       content: props.content,
       context: 'CHARACTER-SHEET',
       onFinishLoading: props.onFinishLoading,
+      onSourcesChange: props.onSourcesChange,
     },
   });
 

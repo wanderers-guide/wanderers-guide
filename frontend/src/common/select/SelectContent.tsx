@@ -804,17 +804,15 @@ function SelectionOptions(props: {
     options = options.filter((option) => !languageIds.includes(option.id));
   }
 
-  // Filter options based on search query
-  const search = useRef(new JsSearch.Search('id'));
-  useEffect(() => {
-    if (!options) return;
-    search.current.addIndex('name');
-    //search.current.addIndex('description');
-    search.current.addDocuments(options);
-  }, [options]);
-  let filteredOptions = props.searchQuery
-    ? (search.current.search(props.searchQuery) as Record<string, any>[])
-    : options;
+  // Build from this render's eligible options. An effect leaves an already typed
+  // query empty when content arrives, and an accumulating index retains removed choices.
+  const filteredOptions = useMemo(() => {
+    if (!props.searchQuery) return [...options];
+    const search = new JsSearch.Search('id');
+    search.addIndex('name');
+    search.addDocuments(options);
+    return search.search(props.searchQuery) as Record<string, any>[];
+  }, [options, props.searchQuery]);
 
   // Pre-compute the prereq-met rank per option once (rather than re-running
   // `meetsPrerequisites` on every comparator call). Lower rank = better fit:
@@ -833,7 +831,7 @@ function SelectionOptions(props: {
   }
 
   // Sort by level/rank, then prereqs-met (when enabled for feats), then name
-  filteredOptions = filteredOptions.sort((a, b) => {
+  filteredOptions.sort((a, b) => {
     if (a.level !== undefined && b.level !== undefined) {
       if (a.level !== b.level) {
         // Sort greatest first if it's overrideOptions

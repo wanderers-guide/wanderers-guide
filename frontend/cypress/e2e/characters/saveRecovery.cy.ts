@@ -71,6 +71,25 @@ describe('Buffered character recovery', () => {
     cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
     cy.visit(`/builder/${characterId}`);
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', 'Saved remote name');
+    let saves = 0;
+    let releaseSave: (() => void) | undefined;
+    cy.intercept('POST', '**/functions/v1/update-character', (req) => {
+      saves++;
+      if (saves === 1) {
+        expect(req.body.name).to.eq('My conflicting edit');
+        return new Promise<void>((resolve) => {
+          releaseSave = () => {
+            req.continue();
+            resolve();
+          };
+        });
+      }
+      req.continue();
+    });
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).clear().type('My conflicting edit');
+    // Hold the local write while another device commits. Otherwise a live poll can
+    // legitimately receive the remote edit before typing starts, leaving no conflict.
+    cy.wrap(null).should(() => expect(releaseSave).to.be.a('function'));
     cy.request({
       method: 'POST',
       url: `${Cypress.env('functions_url')}/update-character`,
@@ -79,13 +98,8 @@ describe('Buffered character recovery', () => {
       log: false,
     })
       .its('body.status')
-      .should('eq', 'success');
-    let saves = 0;
-    cy.intercept('POST', '**/functions/v1/update-character', (req) => {
-      saves++;
-      req.continue();
-    });
-    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).clear().type('My conflicting edit');
+      .should('eq', 'success')
+      .then(() => releaseSave!());
     cy.contains('Conflicting character edits', { timeout: 30000 }).should('be.visible');
     cy.viewport(1280, 900);
     cy.screenshot('save-conflict-desktop');
