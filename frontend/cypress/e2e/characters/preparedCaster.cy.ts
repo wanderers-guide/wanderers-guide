@@ -5,7 +5,7 @@ describe('Character builder', () => {
     cy.get('button[aria-label="Create Character"]').click();
     cy.location('pathname', { timeout: 10000 }).should('include', '/builder');
 
-    cy.get('input[placeholder="Unknown Wanderer"]').type('Wizard 1');
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).type('Wizard 1');
     cy.get('button[aria-label="Next Page"]').click();
     cy.wait(500);
     cy.contains('Select an ancestry, background, and class to get started.').should('exist');

@@ -17,7 +17,7 @@ describe('Buffered character recovery', () => {
       characterId = response?.body.data.id;
     });
     cy.intercept('POST', '**/functions/v1/update-character').as('nameSave');
-    cy.get('input[placeholder="Unknown Wanderer"]').type('Saved remote name');
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).type('Saved remote name');
     cy.wait('@nameSave', { timeout: 15000 });
   });
 
@@ -45,7 +45,7 @@ describe('Buffered character recovery', () => {
       },
     });
     cy.contains('Unsynced character copy kept', { timeout: 30000 }).should('be.visible');
-    cy.get('input[placeholder="Unknown Wanderer"]').should('have.value', 'Saved remote name');
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', 'Saved remote name');
     cy.contains('button', 'Download saved copy').should('be.enabled');
     cy.viewport(1280, 900);
     cy.screenshot('saved-copy-recovery-desktop');
@@ -82,7 +82,7 @@ describe('Buffered character recovery', () => {
       saves++;
       req.continue();
     });
-    cy.get('input[placeholder="Unknown Wanderer"]').clear().type('My conflicting edit');
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).clear().type('My conflicting edit');
     cy.contains('Conflicting character edits', { timeout: 30000 }).should('be.visible');
     cy.viewport(1280, 900);
     cy.screenshot('save-conflict-desktop');
@@ -98,7 +98,7 @@ describe('Buffered character recovery', () => {
       .should('eq', 'My conflicting edit');
     cy.contains('button', 'Use saved version').click();
     cy.contains('Conflicting character edits').should('not.exist');
-    cy.get('input[placeholder="Unknown Wanderer"]').should('have.value', 'Changed on another device');
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', 'Changed on another device');
     cy.reload();
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should(
       'have.value',

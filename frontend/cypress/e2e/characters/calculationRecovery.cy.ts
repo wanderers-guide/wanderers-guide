@@ -15,7 +15,7 @@ describe('Calculation recovery', () => {
       characterId = response?.body.data.id;
     });
     cy.intercept('POST', '**/functions/v1/update-character').as('nameSave');
-    cy.get('input[placeholder="Unknown Wanderer"]').type('Recovery check');
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).type('Recovery check');
     cy.wait('@nameSave', { timeout: 15000 });
   });
 

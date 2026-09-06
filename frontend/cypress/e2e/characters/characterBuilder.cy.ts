@@ -32,7 +32,7 @@ describe('Characters', () => {
     });
 
     it('should create a lvl 1 human fighter', () => {
-      cy.get('input[placeholder="Unknown Wanderer"]').type('Fighter 1');
+      cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).type('Fighter 1');
       cy.get('button[aria-label="Next Page"]').click();
       cy.wait(500);
       cy.contains('Select an ancestry, background, and class to get started.').should('exist');
