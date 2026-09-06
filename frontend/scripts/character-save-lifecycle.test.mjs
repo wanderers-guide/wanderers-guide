@@ -553,3 +553,34 @@ test('same-value conflict pauses saves and keeps a draft until explicit resoluti
   );
   harness.unmount();
 });
+
+test('choosing the saved version discards the matching conflict draft before navigation', async () => {
+  const remote = { ...row(), name: 'Remote name', updated_at: 'remote-version' };
+  let saves = 0;
+  harness.request = async (type) => {
+    if (type === 'find-character') return row();
+    saves++;
+    return { __conflict: true, character: remote };
+  };
+  harness.render();
+  await harness.flush();
+  harness.edit({ name: 'My rejected name' });
+  await harness.flush();
+  const notice = harness.notices.find((value) => value.title === 'Conflicting character edits');
+  notice.message.props.children[1].props.children[1].props.onClick();
+  assert.equal(getBufferedCharacterSave(1, 'owner').status, 'none');
+  await harness.flush();
+  assert.equal(harness.character.name, 'Remote name');
+  assert.equal(saves, 1, 'choosing remote must not write rejected input back');
+  harness.unmount();
+  harness = new HookHost();
+  harness.request = async (type) => {
+    assert.equal(type, 'find-character', 'the rejected draft must never replay');
+    return remote;
+  };
+  harness.render();
+  await harness.flush();
+  assert.equal(harness.character.name, 'Remote name');
+  assert.equal(getBufferedCharacterSave(1, 'owner').status, 'none');
+  harness.unmount();
+});

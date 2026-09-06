@@ -38,7 +38,8 @@ exposing editable controls. A cached route row cannot make the form ready early.
 Concurrent character edits merge at nested fields and stable entry IDs. Independent
 changes survive. When both writers change the same value, saving pauses and offers
 **Keep my edits**, **Use saved version**, and **Download my copy**. The local input and
-its original base remain buffered until the conflict is resolved.
+its original base remain buffered until the conflict is resolved. Choosing the saved
+version removes the matching rejected draft so reloading cannot restore that edit.
 
 ### Public vs. homebrew
 

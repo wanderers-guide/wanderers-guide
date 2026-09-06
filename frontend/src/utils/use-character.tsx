@@ -187,12 +187,26 @@ export default function useCharacter(
         if (scope !== saveScopeRef.current || !actor || actor !== loadedActorRef.current) return;
         const chosen = useLocal ? characterRef.current : remote;
         if (!chosen) return;
+        // An explicit remote choice also discards this matching local draft;
+        // otherwise navigation would restore the very edit the user rejected.
+        // The snapshot comparison preserves any newer draft from another tab.
+        if (!useLocal && characterRef.current) {
+          acknowledgeBufferedCharacterSave(
+            characterId,
+            actor,
+            Object.fromEntries(SAVED_CHARACTER_FIELDS.map((field) => [field, characterRef.current?.[field]])),
+            lastSyncedRef.current?.updated_at,
+            remote.updated_at,
+            true
+          );
+        }
         lastSyncedRef.current = remote;
         conflictStreakRef.current = 0;
         saveConflictRef.current = false;
         if (options.type === 'SIMPLE') needsCalculationRef.current = false;
         hideNotification(noticeId);
-        setCharacter(cloneDeep(chosen));
+        characterRef.current = cloneDeep(chosen);
+        setCharacter(characterRef.current);
       };
       showNotification({
         id: noticeId,
