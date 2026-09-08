@@ -1,0 +1,215 @@
+/* Neutral diagram tokens deliberately omit the proposed production glass treatment. */
+.wire-study {
+  --wire-bg: var(--mantine-color-dark-8);
+  --wire-panel: var(--mantine-color-dark-7);
+  --wire-fill: var(--mantine-color-dark-6);
+  --wire-line: var(--mantine-color-dark-3);
+  --wire-ink: var(--mantine-color-gray-2);
+  --wire-muted: var(--mantine-color-gray-5);
+  --wire-height: 680px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--mantine-spacing-xl);
+  color: var(--wire-ink);
+  font-family: var(--mantine-font-family);
+}
+.wire-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 285px), 1fr));
+  gap: var(--mantine-spacing-xl);
+  align-items: start;
+}
+.wire-grid[data-single] {
+  max-width: 390px;
+  margin: 0 auto;
+}
+.wire-phone {
+  isolation: isolate;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: var(--wire-height);
+  min-width: 0;
+  overflow: hidden;
+  background: var(--wire-bg);
+  border: 1px solid var(--wire-line);
+  border-radius: var(--mantine-radius-sm);
+}
+.wire-existing {
+  flex-shrink: 0;
+  padding: var(--mantine-spacing-sm);
+  border-bottom: 1px dashed var(--wire-line);
+  text-align: center;
+  color: var(--wire-muted);
+  font-size: var(--mantine-font-size-xs);
+}
+.wire-title-row {
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+}
+.wire-search {
+  padding: 0 var(--mantine-spacing-sm) var(--mantine-spacing-xs);
+}
+.wire-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--mantine-spacing-sm);
+}
+.wire-rank {
+  color: var(--wire-muted);
+  font-size: var(--mantine-font-size-xs);
+  padding: var(--mantine-spacing-sm) 0 var(--mantine-spacing-xs);
+}
+.wire-row-wrap {
+  border-bottom: 1px solid var(--wire-line);
+}
+.wire-spell-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-xs);
+  min-height: 48px;
+  padding: var(--mantine-spacing-xs) 0;
+  flex: 1;
+  min-width: 0;
+}
+.wire-row-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.wire-muted {
+  color: var(--wire-muted);
+}
+.wire-phone button:disabled {
+  opacity: 0.6;
+}
+.wire-phone button:focus-visible {
+  outline: 2px solid var(--wire-ink);
+  outline-offset: -2px;
+}
+.wire-phone button:hover:not(:disabled) {
+  background-color: var(--wire-fill);
+}
+.wire-pin {
+  min-width: 44px;
+  min-height: 44px;
+}
+.wire-source-block {
+  border: 1px solid var(--wire-line);
+  padding: var(--mantine-spacing-sm);
+  margin: var(--mantine-spacing-xs) 0 var(--mantine-spacing-sm);
+}
+.wire-slot-grid,
+.wire-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--mantine-spacing-xs);
+}
+.wire-slot {
+  border: 1px solid var(--wire-line);
+  min-height: 56px;
+  padding: var(--mantine-spacing-xs);
+  overflow-wrap: anywhere;
+}
+.wire-resource {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--wire-line);
+  padding: var(--mantine-spacing-xs);
+  margin-top: var(--mantine-spacing-xs);
+  min-height: 48px;
+  overflow-wrap: anywhere;
+}
+.wire-quick-tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--mantine-spacing-xs);
+  min-height: 112px;
+  padding: var(--mantine-spacing-sm);
+  border: 1px solid var(--wire-line);
+  overflow-wrap: anywhere;
+}
+.wire-add {
+  border-style: dashed;
+  color: var(--wire-muted);
+}
+.wire-bottom {
+  padding: var(--mantine-spacing-sm);
+  border-top: 1px solid var(--wire-line);
+}
+.wire-bottom button,
+.wire-modal button {
+  border-radius: var(--mantine-radius-xs);
+  white-space: normal;
+}
+.wire-dashed {
+  border: 1px dashed var(--wire-line);
+}
+.wire-blank-area {
+  margin-top: var(--mantine-spacing-md);
+  padding: var(--mantine-spacing-xl) var(--mantine-spacing-sm);
+  text-align: center;
+}
+.wire-placeholder {
+  padding: var(--mantine-spacing-xl) var(--mantine-spacing-sm);
+  color: var(--wire-muted);
+}
+.wire-flow-note {
+  min-height: 36px;
+  padding-top: var(--mantine-spacing-xs);
+  color: var(--wire-muted);
+}
+.wire-modal .mantine-Modal-overlay {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.5);
+}
+.wire-modal .mantine-Modal-inner {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  align-items: flex-end;
+}
+.wire-modal .mantine-Modal-content {
+  width: 100%;
+  flex: 0 0 100%;
+  max-height: 88%;
+  background: var(--wire-panel);
+  border: 1px solid var(--wire-line);
+  border-radius: 0;
+  box-shadow: none;
+}
+.wire-modal .mantine-Modal-header {
+  background: var(--wire-panel);
+}
+.wire-modal .mantine-Modal-title {
+  font-size: var(--mantine-font-size-md);
+  overflow-wrap: anywhere;
+}
+.wire-modal[data-sheet-kind='manage'] .mantine-Modal-content {
+  height: 88%;
+}
+.wire-detail-shape {
+  padding: var(--mantine-spacing-md);
+}
+.wire-text-line {
+  height: 6px;
+  margin-top: var(--mantine-spacing-sm);
+  background: var(--wire-line);
+  width: 100%;
+}
+.wire-short-line {
+  width: 65%;
+}
+@media (max-width: 600px) {
+  .wire-study {
+    padding: var(--mantine-spacing-md);
+  }
+  .wire-grid {
+    max-width: 390px;
+    margin: 0 auto;
+  }
+}

@@ -1,6 +1,7 @@
 # Mobile Spells UI: audit and design brief
 
-Status: the user rejected both September 8 layout studies as clunky. They remain review
+Status: three rough wireframes now compare different organizations before visual styling.
+The user rejected the earlier September 8 layout studies as clunky. Those remain review
 references, not proposed production designs. Work stays on `codex/mobile-sheet-ui`; merging
 requires explicit user approval.
 
@@ -17,17 +18,45 @@ though either was selected.
 Rendered review suggests two contributors: source sections spend substantial vertical space
 on metadata and rank headings around small groups, while the switcher stacks source, search
 and rank controls before the spell list. These are the agent's diagnosis, not yet the user's
-confirmed reasons. Clarification about visual clutter versus interaction steps is pending.
+confirmed reasons. The user's next instruction was to retry with three rough arrangements
+using shapes and placement ideas before building the actual UI.
 
 The proposed next direction keeps the earlier smoked material preference and puts spell
 names first: quieter grouping, less persistent management UI, and compact rows with readable
 resource counts and comfortable touch targets. Source identity and separate resources still
-need to remain clear. A replacement composition has not been selected or implemented.
+need to remain clear. A replacement composition has not been selected.
 
-## Reviewing the two designs
+## Current review: three rough wireframes
+
+Open `http://127.0.0.1:5175/?view=spell-wireframes&scenario=mixed&layout=all`.
+The prototype's default opening view is now this wireframe board. The review controls can
+isolate A, B, or C and switch the sample character.
+
+- **A. One spell list:** rank groups contain spells from all sources, with source identity in
+  each row. A spell opens the detail/casting area at the bottom of the phone.
+- **B. Resources first:** prepared slots appear as individual boxes. Spontaneous rank pools,
+  focus pools and items open their own spell choices. Empty slots open the preparation area.
+- **C. Quick spells:** a small set of pinned spells occupies the initial screen. All spells
+  opens the full list, where individual entries can be pinned or unpinned.
+
+These intentionally use neutral outlines, labeled rectangles and description placeholders.
+The character header and sheet navigation are reserved space. Manage and Resources reveal
+placement diagrams, not implemented editors. Cast and Done only finish a preview path and
+update an explanatory note outside the phone; quantities never change. Pins and search are
+temporary local state. This is not a visual treatment proposal or another rules simulation.
+
+The diagrams reuse the earlier ten sample loadouts and their resource helpers, preserving
+separate prepared slots and item copies. No production UI or casting code is involved.
+
+The wireframes passed TypeScript, scoped ESLint and the standalone prototype build. Browser
+inspection covered mixed-source layouts at 344px, a 390px detail panel, long homebrew names,
+prepared slot and preparation paths, focus and spontaneous pool selection, and pinning a spell
+from the full list. These are diagram and navigation checks, not casting-engine tests.
+
+## Earlier review: the two styled designs
 
 Run `npm --prefix frontend run prototype:mobile-sheet` and open
-`http://127.0.0.1:5175/?view=spell-designs`. This is now the prototype's opening view.
+`http://127.0.0.1:5175/?view=spell-designs`. These are the rejected styled references.
 
 - **Source sections:** one list of compact, genuinely collapsible source sections.
 - **Source switcher:** a source selector plus rank navigation. Text search covers all sources
