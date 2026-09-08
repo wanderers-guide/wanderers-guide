@@ -233,11 +233,13 @@ async function verifyPersistedContentVersions(rec: PersistedContentCache): Promi
   return 'ok';
 }
 
-async function hydrateContentCache(generation: number, actorId: string): Promise<void> {
+async function hydrateContentCache(generation: number, actorId: string, signal: AbortSignal): Promise<void> {
   try {
     await storageWrites;
+    if (signal.aborted || generation !== cacheGeneration || actorId !== cacheActorId) return;
     const rec = await idbGet<PersistedContentCache>(cacheKey(actorId));
     if (
+      signal.aborted ||
       !rec ||
       rec.version !== CONTENT_CACHE_VERSION ||
       rec.actorId !== actorId ||
@@ -246,7 +248,7 @@ async function hydrateContentCache(generation: number, actorId: string): Promise
       return;
     // Check this exact snapshot, not a verdict memoized for a different blob/account.
     if ((await verifyPersistedContentVersions(rec)) === 'stale') return;
-    if (generation !== cacheGeneration || actorId !== cacheActorId) return;
+    if (signal.aborted || generation !== cacheGeneration || actorId !== cacheActorId) return;
     if (rec.contentStore instanceof Map) {
       for (const [key, value] of rec.contentStore) if (!contentStore.has(key)) contentStore.set(key, value);
     }
@@ -263,13 +265,23 @@ async function hydrateContentCache(generation: number, actorId: string): Promise
   }
 }
 
-// Race a timeout so a stuck/blocked IndexedDB can never hold up content loading — if it
-// loses the race, hydration may still populate later (harmlessly, since it never clobbers).
+/** Bound optional hydration and retire its snapshot before fresh network loading starts. */
 function beginHydration(): Promise<void> {
+  const controller = new AbortController();
+  let timeout: ReturnType<typeof setTimeout> | undefined;
   return Promise.race([
-    hydrateContentCache(cacheGeneration, cacheActorId),
-    new Promise<void>((resolve) => setTimeout(resolve, 2500)),
-  ]);
+    hydrateContentCache(cacheGeneration, cacheActorId, controller.signal),
+    new Promise<void>((resolve) => {
+      timeout = setTimeout(() => {
+        // A late cached row could resurrect content absent from a fresh download,
+        // even when hydration never overwrites an existing ID.
+        controller.abort();
+        resolve();
+      }, 2500);
+    }),
+  ]).finally(() => {
+    if (timeout !== undefined) clearTimeout(timeout);
+  });
 }
 // Started at module load and re-armed by resetContentStore(), so the in-memory store can
 // refill from the persisted cache after an in-memory clear instead of re-fetching the corpus.
@@ -598,9 +610,13 @@ export function resetContentStore(resetSources = true, clearPersisted = false) {
   cacheDirty = false;
 
   if (clearPersisted) {
-    // Underlying content changed: drop the persisted copy and don't re-hydrate stale data.
+    // The generation already invalidated old readers. Keep deletion ordered with
+    // persistence, but optional storage must not hold up fresh network content.
     const key = cacheKey();
-    hydrationPromise = writeCache(() => idbDelete(key));
+    void writeCache(() => idbDelete(key)).catch(() => {
+      console.warn('[CONTENT-CACHE] Could not discard saved content');
+    });
+    hydrationPromise = Promise.resolve();
   } else {
     // Re-arm hydration so the next fetch refills the in-memory store from the persisted
     // cache instead of re-downloading the whole corpus.

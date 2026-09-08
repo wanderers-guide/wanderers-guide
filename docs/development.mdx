@@ -152,6 +152,23 @@ These bundle the actual operation engine and drawer components against explicit 
 selected rules content comes from the checked-in sanitized data dump. They need no running
 database or authentication account.
 
+The broad PF2e matrix is part of `test:rules`: **1,211 comparisons across 469 engine
+calculations**, grouped into 49 named scenarios and a coverage guard. It loads four
+official sources from the checked-in dump, uses fixed content identities, and freezes
+fixtures so one calculation cannot change later inputs. A discrepancy fails the command
+and CI. It requires no ignored audit exports or local database. To run only that matrix:
+
+```bash
+node --test frontend/scripts/pf2e-matrix.test.mjs
+```
+
+These are correlated comparisons, not 1,211 independent user journeys. They cover
+Fighter, Wizard, Rogue and Monk at selected levels, controlled attributes, condition
+combinations, armor thresholds, variants, replay and selected skill progression. They
+do not certify complete legal builds, every class/archetype, every property rune or
+arbitrary homebrew. Absolute rule examples and condition deltas have separate oracles;
+a baseline comparison alone cannot establish the correctness of that baseline.
+
 The rules suite includes the retained PF2e stress cases for combined typed modifiers,
 attack attributes, armor potency, speed penalties, deterministic condition derivation,
 and explicit Drained/Dying/Wounded transitions. The infrastructure suite verifies
@@ -159,6 +176,11 @@ coupled HP/condition conflicts, including companion levels and lost acknowledgem
 The Cypress `conditionMath.cy.ts` and `encounterSync.cy.ts` specs exercise these edits
 through actual sheet and GM controls, local API saves, mobile viewports, reloading,
 and simulated connection failures. They create and clean up synthetic characters.
+The sheet spec also holds a required content response, verifies no partial save occurs,
+then checks nested homebrew variables and binding chains through level changes and
+reopening. A cyclic homebrew graph must show calculation recovery without persisting
+partial math. The fast homebrew tests cover conditional custom Lore, binding order,
+self-links, repeated assignments, long chains, and companion isolation.
 
 Run request recovery, buffered character saves, and worker lifecycle regressions with
 `npm --prefix frontend run test:infra`. These exercise the real request manager, save hook,
@@ -167,6 +189,15 @@ boundaries. They require no running database or production credentials. CI runs 
 regression suites before the production build. The content selector tests also exercise an
 already typed search while its catalog is still loading, and verify that removed sources
 or filtered choices disappear from search results without another keystroke.
+
+Timing failures belong in the correctness suite when they can change results. Cache
+tests hold IndexedDB reads, writes and deletion independently: fresh downloads must
+continue, and a late cache cannot resurrect content a completed download says is absent.
+Worker tests include the production four-worker pool, queued companions, rapid owner
+changes, reversed completions and a worker failure. These are deterministic integration
+tests with controlled I/O boundaries; Cypress adds the actual browser, worker and API.
+A passing run is evidence for these behaviors, not a universal clean bill of health or
+a physical iPhone/Android performance benchmark.
 
 ## Creating a user
 

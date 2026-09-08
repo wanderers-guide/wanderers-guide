@@ -6,13 +6,63 @@ import { build } from 'esbuild';
 
 const frontend = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Read selected, unmodified official content rows from the checked-in PostgreSQL COPY dump. */
+/** Decode a one-dimensional PostgreSQL array after the COPY layer has been unescaped. */
+function parseContentArray(value) {
+  if (value === '{}') return [];
+  const entries = [];
+  let index = 1;
+  while (index < value.length - 1) {
+    const quoted = value[index] === '"';
+    if (quoted) index++;
+    let entry = '';
+    while (index < value.length - 1) {
+      const character = value[index++];
+      if (character === '\\') entry += value[index++];
+      else if (quoted && character === '"') break;
+      else if (!quoted && character === ',') break;
+      else entry += character;
+    }
+    if (quoted && value[index] === ',') index++;
+    entries.push(!quoted && entry === 'NULL' ? null : entry);
+  }
+  return entries;
+}
+
+/**
+ * Read unmodified content from the checked-in PostgreSQL COPY dump without a database.
+ * Exact IDs fail when absent; source selections load a table's official test corpus.
+ * @param {Array<{ table: string, id: number } | { table: string, sourceIds: number[] }>} targets
+ */
 export async function readContentRows(targets) {
-  const wanted = new Set(targets.map(({ table, id }) => `${table}:${id}`));
+  const wanted = new Set(targets.filter((target) => 'id' in target).map(({ table, id }) => `${table}:${id}`));
+  const sources = new Map();
+  for (const target of targets.filter((target) => 'sourceIds' in target)) {
+    sources.set(target.table, new Set([...(sources.get(target.table) ?? []), ...target.sourceIds]));
+  }
   const rows = [];
   const text = await readFile(join(frontend, '../data/data.sql'), 'utf8');
-  const arrayColumns = new Set(['operations', 'traits', 'prerequisites', 'traditions', 'cast']);
-  const numberColumns = new Set(['id', 'level', 'trait_id', 'content_source_id', 'skill_training_base']);
+  const arrayColumns = new Set([
+    'operations',
+    'traits',
+    'prerequisites',
+    'traditions',
+    'cast',
+    'required_content_sources',
+    'keys',
+  ]);
+  const numberArrayColumns = new Set(['traits', 'required_content_sources']);
+  const numberColumns = new Set([
+    'id',
+    'level',
+    'rank',
+    'trait_id',
+    'content_source_id',
+    'skill_training_base',
+    'class_id',
+    'archetype_id',
+    'override_skill_training_base',
+  ]);
+  const booleanColumns = new Set(['deprecated', 'override_class_operations', 'require_key', 'is_published']);
   const escapes = { '\\': '\\', n: '\n', t: '\t', r: '\r', b: '\b', f: '\f', v: '\v' };
   let table;
   let columns = [];
@@ -26,22 +76,27 @@ export async function readContentRows(targets) {
     if (line === '\\.') table = undefined;
     if (!table) continue;
     const cells = line.split('\t');
-    if (!wanted.has(`${table}:${cells[columns.indexOf('id')]}`)) continue;
+    const matchesId = wanted.has(`${table}:${cells[columns.indexOf('id')]}`);
+    const matchesSource = sources.get(table)?.has(Number(cells[columns.indexOf('content_source_id')]));
+    if (!matchesId && !matchesSource) continue;
     const row = Object.fromEntries(
       columns.map((key, index) => {
         const raw = cells[index];
         if (raw === '\\N') return [key, null];
         const value = raw.replace(/\\([\\ntrbfv])/g, (_, escaped) => escapes[escaped]);
         if (arrayColumns.has(key) && value.startsWith('{')) {
-          const entries = JSON.parse(`[${value.slice(1, -1)}]`);
+          const entries = parseContentArray(value);
           return [
             key,
             key === 'operations'
               ? entries.map((entry) => (typeof entry === 'string' ? JSON.parse(entry) : entry))
-              : entries,
+              : numberArrayColumns.has(key)
+                ? entries.map((entry) => (entry === null ? null : Number(entry)))
+                : entries,
           ];
         }
         if (numberColumns.has(key)) return [key, Number(value)];
+        if (booleanColumns.has(key)) return [key, value === 't'];
         if (value.startsWith('{')) return [key, JSON.parse(value)];
         return [key, value];
       })

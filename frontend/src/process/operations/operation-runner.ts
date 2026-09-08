@@ -199,6 +199,10 @@ export async function runOperations(
     // Normal
     if (options?.doConditionals && operation.type === 'conditional') {
       return await runConditional(varId, selectionTrack, operation, options, sourceLabel);
+    } else if (options?.doConditionals && operation.type === 'createValue') {
+      // Conditional branches are chosen after the creation pass. Create their
+      // variables only when that branch runs, before its following adjustments.
+      return await runCreateValue(varId, operation, sourceLabel);
     } else if (operation.type === 'adjValue') {
       return await runAdjValue(varId, operation, selectionTrack, options, sourceLabel);
     } else if (operation.type === 'setValue') {
@@ -249,11 +253,13 @@ export async function runOperations(
   try {
     const orderedOperations = operations.map((operation, index) => ({ operation, index }));
     if (options?.doOnlyConditionals || options?.doConditionals) {
-      // Resolve self-guarded rank grants before sibling effects that read the granted proficiency.
+      // Active branches create their local variables before proficiency guards;
+      // guards then precede sibling effects that read their granted proficiency.
       orderedOperations.sort(
         (left, right) =>
+          Number(right.operation.type === 'createValue') - Number(left.operation.type === 'createValue') ||
           Number(getSelfGrantProficiencyVariables(right.operation).size > 0) -
-          Number(getSelfGrantProficiencyVariables(left.operation).size > 0)
+            Number(getSelfGrantProficiencyVariables(left.operation).size > 0)
       );
     }
     for (const { operation, index } of orderedOperations) {
@@ -644,13 +650,78 @@ type DeferredOperation = { scopes: VariableEffectScope[] } & (
     }
 );
 let deferredOperations: DeferredOperation[] = [];
+type DeferredBinding = Extract<DeferredOperation, { type: 'bind' }>;
+
+/** Resolve final-value dependencies without depending on source traversal order or call-stack depth. */
+async function resolveBindings(pending: DeferredOperation[]): Promise<void> {
+  const keyFor = (storeId: StoreID, variable: string): string => JSON.stringify([storeId, variable]);
+  const bindings = new Map<string, DeferredBinding[]>();
+  for (const operation of pending) {
+    if (
+      operation.type === 'bind' &&
+      getVariable(operation.varId, operation.variable) &&
+      getVariable(operation.value.storeId, operation.value.variable)
+    ) {
+      const key = keyFor(operation.varId, operation.variable);
+      // Self-copies cannot replace an earlier source or introduce a dependency.
+      if (key === keyFor(operation.value.storeId, operation.value.variable)) continue;
+      const writes = bindings.get(key) ?? [];
+      writes.push(operation);
+      bindings.set(key, writes);
+    }
+  }
+  const resolved = new Set<string>();
+  const ordered: string[] = [];
+  for (const key of bindings.keys()) {
+    if (resolved.has(key)) continue;
+    const stack = [{ key, next: 0 }];
+    const visiting = new Set([key]);
+    while (stack.length > 0) {
+      const current = stack[stack.length - 1];
+      const writes = bindings.get(current.key)!;
+      if (current.next === writes.length) {
+        ordered.push(current.key);
+        resolved.add(current.key);
+        visiting.delete(current.key);
+        stack.pop();
+        continue;
+      }
+      const write = writes[current.next++];
+      const dependency = keyFor(write.value.storeId, write.value.variable);
+      if (!bindings.has(dependency) || resolved.has(dependency)) continue;
+      if (visiting.has(dependency)) {
+        const start = stack.findIndex((entry) => entry.key === dependency);
+        const cycle = [...stack.slice(start).map((entry) => entry.key), dependency].map((entry) => {
+          const binding = bindings.get(entry)![0];
+          return binding.varId + '.' + binding.variable;
+        });
+        throw new Error('Cyclic variable binding: ' + cycle.join(' -> '));
+      }
+      visiting.add(dependency);
+      stack.push({ key: dependency, next: 0 });
+    }
+  }
+  // Validate the complete graph before applying any binding. A cycle must never
+  // publish a partial result as a successful character or companion calculation.
+  for (const key of ordered) {
+    // Preserve every authored assignment and its provenance. The existing setter
+    // owns maximum-speed/HP rules, proficiency metadata, and ordinary replacement.
+    for (const binding of bindings.get(key)!) {
+      const source = getVariable(binding.value.storeId, binding.value.variable);
+      if (!source) continue;
+      await withVariableEffectScopes(binding.varId, binding.scopes, async () => {
+        setVariable(binding.varId, binding.variable, source.value, binding.sourceLabel);
+      });
+    }
+  }
+}
 
 /** Drops deferred writes from a previous (possibly aborted) execution. */
 export function clearDeferredOperations(): void {
   deferredOperations = [];
 }
 
-/** Apply explicit language replacements after grants, then bindings in their original order against final values. */
+/** Apply explicit language replacements after grants, then bindings against their resolved final source values. */
 export async function resolveDeferredOperations(): Promise<string[]> {
   const pending: DeferredOperation[] = deferredOperations.filter((operation) =>
     areVariableEffectScopesActive(operation.scopes)
@@ -682,15 +753,7 @@ export async function resolveDeferredOperations(): Promise<string[]> {
       replaceLanguages(replacement.varId, replacement.languages, replacement.sourceLabel);
     });
   }
-  for (const bind of pending) {
-    if (bind.type !== 'bind') continue;
-    const bindValue = getVariable(bind.value.storeId, bind.value.variable);
-    if (bindValue) {
-      await withVariableEffectScopes(bind.varId, bind.scopes, async () => {
-        setVariable(bind.varId, bind.variable, bindValue.value, bind.sourceLabel);
-      });
-    }
-  }
+  await resolveBindings(pending);
   return errors;
 }
 
