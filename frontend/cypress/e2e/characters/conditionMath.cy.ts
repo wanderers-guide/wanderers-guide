@@ -2,6 +2,7 @@
 describe('Condition math and recovery through the real sheet', () => {
   let characterId: number;
   let token: string;
+  let releaseContent: (() => void) | undefined;
   const request = (endpoint: string, body: Record<string, unknown>) =>
     cy
       .request({
@@ -61,6 +62,7 @@ describe('Condition math and recovery through the real sheet', () => {
       .then((text) => parseInt(text));
   beforeEach(() => {
     characterId = 0;
+    releaseContent = undefined;
     cy.viewport(1280, 900);
     cy.intercept('POST', '**/auth/v1/token*').as('signIn');
     cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
@@ -94,6 +96,7 @@ describe('Condition math and recovery through the real sheet', () => {
     });
   });
   afterEach(() => {
+    releaseContent?.();
     if (characterId && token)
       request('delete-content', { id: characterId, type: 'character' }).then(() =>
         request('find-character', { id: [characterId] }).should('deep.equal', [])
@@ -287,5 +290,147 @@ describe('Condition math and recovery through the real sheet', () => {
       }
     });
     cy.screenshot('drained-lost-ack-recovered-mobile');
+  });
+
+  it('waits for delayed content before saving nested homebrew effects and preserves them through level changes', () => {
+    read().then((base) =>
+      request('update-character', {
+        id: characterId,
+        expected_updated_at: base.updated_at,
+        custom_operations: [
+          ...base.custom_operations,
+          {
+            id: 'homebrew-conditional',
+            type: 'conditional',
+            data: {
+              conditions: [
+                { id: 'homebrew-level', name: 'LEVEL', type: 'num', operator: 'GREATER_THAN_OR_EQUALS', value: '5' },
+              ],
+              trueOperations: [
+                {
+                  id: 'homebrew-counter',
+                  type: 'createValue',
+                  data: { variable: 'BREW_COUNTER', type: 'num', value: 2 },
+                },
+                { id: 'homebrew-adjust', type: 'adjValue', data: { variable: 'BREW_COUNTER', value: 3 } },
+                { id: 'homebrew-link', type: 'createValue', data: { variable: 'BREW_LINK', type: 'num', value: 0 } },
+                {
+                  id: 'homebrew-hp',
+                  type: 'bindValue',
+                  data: { variable: 'MAX_HEALTH_BONUS', value: { storeId: 'CHARACTER', variable: 'BREW_LINK' } },
+                },
+                {
+                  id: 'homebrew-final',
+                  type: 'bindValue',
+                  data: { variable: 'BREW_LINK', value: { storeId: 'CHARACTER', variable: 'BREW_COUNTER' } },
+                },
+              ],
+              falseOperations: [
+                { id: 'homebrew-low-level', type: 'setValue', data: { variable: 'MAX_HEALTH_BONUS', value: 1 } },
+              ],
+            },
+          },
+        ],
+      })
+    );
+    let saves = 0;
+    let contentRequests = 0;
+    const gate = new Promise<void>((resolve) => {
+      releaseContent = resolve;
+    });
+    cy.intercept('POST', '**/functions/v1/update-character', (req) => {
+      saves++;
+      req.continue();
+    }).as('homebrewSave');
+    cy.intercept('POST', '**/functions/v1/get-content-versions', { body: { status: 'success', data: [] } });
+    cy.intercept('POST', '**/functions/v1/find-ability-block', (req) => {
+      contentRequests++;
+      return gate.then(() => {
+        req.continue();
+      });
+    });
+    cy.viewport(390, 844);
+    cy.visit(`/sheet/${characterId}`);
+    cy.wrap(null).should(() => expect(contentRequests, 'the required table is held').to.be.greaterThan(0));
+    cy.contains('Hit Points').should('not.exist');
+    cy.then(() => {
+      expect(saves, 'no partial calculation can save').to.eq(0);
+      releaseContent?.();
+    });
+    cy.wait('@homebrewSave', { timeout: 30000 });
+    settled();
+    cy.contains('Hit Points', { timeout: 30000 }).parent().find('a').should('have.text', '53');
+    read().its('meta_data.calculated_stats.hp_max').should('eq', 53);
+    cy.screenshot('homebrew-conditional-bindings-mobile');
+    for (const [level, maximum] of [
+      [1, 17],
+      [5, 53],
+    ]) {
+      read().then((base) =>
+        request('update-character', { id: characterId, expected_updated_at: base.updated_at, level })
+      );
+      cy.reload();
+      cy.wait('@homebrewSave', { timeout: 30000 });
+      settled();
+      cy.contains('Hit Points', { timeout: 30000 }).parent().find('a').should('have.text', String(maximum));
+      read().its('meta_data.calculated_stats.hp_max').should('eq', maximum);
+    }
+    cy.reload();
+    cy.contains('Hit Points', { timeout: 30000 }).parent().find('a').should('have.text', '53');
+    settled();
+  });
+
+  it('shows a cyclic homebrew calculation error without saving partial math and recovers after correction', () => {
+    cy.intercept('POST', '**/functions/v1/update-character').as('baselineHomebrewSave');
+    cy.visit(`/sheet/${characterId}`);
+    cy.wait('@baselineHomebrewSave', { timeout: 30000 });
+    settled();
+    read().then((base) =>
+      request('update-character', {
+        id: characterId,
+        expected_updated_at: base.updated_at,
+        custom_operations: [
+          ...base.custom_operations,
+          { id: 'cycle-a', type: 'createValue', data: { variable: 'BREW_A', type: 'num', value: 1 } },
+          { id: 'cycle-b', type: 'createValue', data: { variable: 'BREW_B', type: 'num', value: 2 } },
+          {
+            id: 'cycle-first',
+            type: 'bindValue',
+            data: { variable: 'BREW_A', value: { storeId: 'CHARACTER', variable: 'BREW_B' } },
+          },
+          {
+            id: 'cycle-second',
+            type: 'bindValue',
+            data: { variable: 'BREW_B', value: { storeId: 'CHARACTER', variable: 'BREW_A' } },
+          },
+        ],
+      })
+    );
+    let saves = 0;
+    cy.intercept('POST', '**/functions/v1/update-character', (req) => {
+      saves++;
+      req.continue();
+    });
+    cy.viewport(390, 844);
+    cy.reload();
+    cy.contains("Couldn't calculate this character", { timeout: 30000 }).should('be.visible');
+    cy.contains('button', 'Retry calculation').should('be.enabled');
+    cy.then(() => expect(saves, 'failed homebrew cannot save derived state').to.eq(0));
+    read().its('meta_data.calculated_stats.hp_max').should('eq', 48);
+    cy.screenshot('homebrew-cycle-paused-mobile');
+    read().then((base) =>
+      request('update-character', {
+        id: characterId,
+        expected_updated_at: base.updated_at,
+        custom_operations: base.custom_operations.filter(
+          (operation: { id: string }) => !operation.id.startsWith('cycle-')
+        ),
+      })
+    );
+    cy.reload();
+    cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
+    cy.contains("Couldn't calculate this character").should('not.exist');
+    settled();
+    read().its('meta_data.calculated_stats.hp_max').should('eq', 48);
   });
 });

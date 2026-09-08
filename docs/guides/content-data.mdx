@@ -32,6 +32,14 @@ Browser caches follow the signed-in account and resolved source set, and resets 
 late requests and hydration from the previous cache generation. Content cache cleanup
 preserves unsynced character drafts.
 
+Optional browser-cache work cannot block authoritative content loading. Homebrew
+invalidation clears the current in-memory generation immediately and queues persistent
+deletion in order with other storage writes. Cache hydration has a 2.5-second deadline;
+after that deadline its late result cannot publish rows, even after a delayed source
+version check. A successful empty download therefore stays empty. If browser storage
+itself remains stalled, fresh content still loads but persistence waits for that storage
+operation to finish.
+
 The builder waits for the current character's authoritative save context before
 exposing editable controls. A cached route row cannot make the form ready early.
 A failed load leaves the character route available for retry. Save status distinguishes

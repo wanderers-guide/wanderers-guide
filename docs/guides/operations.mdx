@@ -67,6 +67,10 @@ Introduce a new named variable on the character. Used for variables that aren’
 ```
 
 If the variable already exists, this is a no-op.
+An active conditional branch can create its own variables. The selected branch's
+declarations run before its proficiency guards and other effects; inactive branches
+create nothing. Recalculating after a level or selection change removes variables
+whose creating branch no longer runs.
 
 ### `setValue`
 
@@ -210,6 +214,13 @@ Bind one variable to another’s source so the bound value follows the original.
 ```
 
 `storeId` is `'CHARACTER'` for the active character; companion stores use their own IDs.
+Bindings resolve after ordinary operations and explicit language overrides. A chain
+reads each source's final bound value regardless of authoring order. Multiple bindings
+to one target retain their authored assignment order and the variable's existing setter
+rules: ordinary numeric values use the last assignment, while speeds and class HP per
+level retain the highest value. Self-copies do nothing. A dependency cycle between
+distinct variables fails the calculation with its variable path; the sheet retains
+its last completed state until the graph is corrected.
 
 ---
 

@@ -369,3 +369,70 @@ test('a direct companion cannot restore over a newer worker character commit', a
   await Promise.all([companion, current]);
   assert.equal(level(), 9);
 });
+
+test('four busy workers and queued companions converge on the newest parent despite reordered replies and one failure', async () => {
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { hardwareConcurrency: 8 } });
+  const ids = ['parallel-a', 'parallel-b', 'parallel-c', 'parallel-d', 'queued-e', 'queued-f'];
+  const outcomes = new Map(
+    ids.map((id) => [
+      id,
+      engine.executeOperations(creature(id)).then(
+        () => 'success',
+        (error) => error
+      ),
+    ])
+  );
+  assert.equal(workers.length, 4, 'the production pool runs four jobs and queues the remainder');
+  const staleChildren = workers.slice();
+  const firstParent = engine.executeOperations(execution(1));
+  const superseded = assert.rejects(firstParent, { name: 'AbortError' });
+  const staleParent = workers.at(-1);
+  const finalParent = engine.executeOperations(execution(9));
+  for (const worker of staleChildren) {
+    assert.equal(worker.terminated, true);
+    worker.reply(creatureResults[0]);
+  }
+  staleParent.reply(results[0]);
+  workers.at(-1).reply(results[1]);
+  await Promise.all([superseded, finalParent]);
+  const seen = new Set();
+  let failedId;
+  for (let round = 0; round < 20 && seen.size < ids.length; round++) {
+    await flush();
+    const active = workers
+      .filter(
+        (worker) =>
+          !worker.terminated &&
+          worker.requests.at(-1)?.execution.type === 'CREATURE' &&
+          !seen.has(worker.requests.at(-1).id)
+      )
+      .reverse();
+    for (const worker of active) {
+      const request = worker.requests.at(-1);
+      assert.equal(request.charStore.variables.LEVEL.value, 9, 'every retried companion uses the final parent');
+      seen.add(request.id);
+      if (!failedId) {
+        failedId = request.execution.data.id;
+        worker.onerror({ preventDefault() {} });
+      } else worker.reply(creatureResults[1]);
+    }
+  }
+  assert.equal(seen.size, ids.length, 'all queued work was dispatched');
+  for (const id of ids) {
+    const result = await outcomes.get(id);
+    if (id === failedId) assert.match(result.message, /worker failed/);
+    else {
+      assert.equal(result, 'success');
+      assert.equal(engine.getVariable(id, 'LEVEL').value, 9);
+    }
+  }
+  const retry = engine.executeOperations(creature(failedId));
+  const retryWorker = workers.find(
+    (worker) => !worker.terminated && worker.requests.at(-1)?.execution.data.id === failedId
+  );
+  assert.equal(retryWorker.requests.at(-1).charStore.variables.LEVEL.value, 9);
+  retryWorker.reply(creatureResults[1]);
+  await retry;
+  assert.equal(engine.getVariable(failedId, 'LEVEL').value, 9);
+  assert.equal(level(), 9);
+});

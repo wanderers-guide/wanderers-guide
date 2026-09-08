@@ -15,13 +15,19 @@ const deferred = () => {
 };
 
 /** Exercise real cache logic with explicit session, network and IndexedDB boundaries. */
-test('content packages and cache respect failures, sources, actors and generations', async () => {
+test('content packages and cache respect failures, sources, actors and generations', async (t) => {
   const directory = await mkdtemp(join(tmpdir(), 'wg-content-cache-'));
   const state = (globalThis.__contentCacheTest = {
     actor: 'A',
     records: new Map(),
     requests: [],
     read: async (key) => state.records.get(key),
+    write: async (key, value) => {
+      state.records.set(key, structuredClone(value));
+    },
+    delete: async (key) => {
+      state.records.delete(key);
+    },
     request: async () => [],
     session: async () => ({ data: { session: { user: { id: state.actor } } } }),
   });
@@ -30,7 +36,7 @@ test('content packages and cache respect failures, sources, actors and generatio
     'supabase-client': `export const supabase = {auth:{getSession:()=>globalThis.__contentCacheTest.session()}};`,
     '@requests/request-manager': `export const makeRequest = async (...args) => { globalThis.__contentCacheTest.requests.push(args); return globalThis.__contentCacheTest.request(...args); };`,
     '@utils/images': `export const preloadImage = async () => {};`,
-    'content-cache-db': `export const idbGet = key => globalThis.__contentCacheTest.read(key); export const idbSet = async (key,value) => {globalThis.__contentCacheTest.records.set(key,structuredClone(value));}; export const idbDelete = async key => {globalThis.__contentCacheTest.records.delete(key);};`,
+    'content-cache-db': `export const idbGet = key => globalThis.__contentCacheTest.read(key); export const idbSet = (key,value) => globalThis.__contentCacheTest.write(key,value); export const idbDelete = key => globalThis.__contentCacheTest.delete(key);`,
   };
   let store;
   try {
@@ -174,6 +180,128 @@ test('content packages and cache respect failures, sources, actors and generatio
       /content-source/,
       'failed source resolution cannot masquerade as an empty source set'
     );
+    await t.test('a stalled optional cache deletion cannot block fresh homebrew content', async () => {
+      const deleting = deferred();
+      state.delete = () => deleting.promise;
+      state.request = async () => [row];
+      store.resetContentStore(false, true);
+      const pending = store.fetchContent('language', query);
+      let timeout;
+      try {
+        const result = await Promise.race([
+          pending,
+          new Promise((resolve) => {
+            timeout = setTimeout(() => resolve('blocked'), 3000);
+          }),
+        ]);
+        assert.notEqual(result, 'blocked', 'optional storage must not prevent a healthy network read');
+        assert.equal(result[0].id, row.id);
+      } finally {
+        clearTimeout(timeout);
+        deleting.resolve();
+        await pending;
+        state.delete = async (key) => {
+          state.records.delete(key);
+        };
+      }
+    });
+    await t.test('late hydration cannot resurrect rows absent from a fresh source download', async () => {
+      const reading = deferred();
+      state.read = () => reading.promise;
+      state.request = async () => [];
+      store.resetContentStore(false);
+      try {
+        assert.deepEqual(await store.fetchContent('language', { content_sources: [81000] }), []);
+        reading.resolve({
+          version: 4,
+          actorId: state.actor,
+          savedAt: Date.now(),
+          idStore: new Map([['language', new Map([[row.id, row]])]]),
+          contentStore: new Map(),
+        });
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.deepEqual(store.getCachedContent('language'), [], 'late cache rows must not reappear in selectors');
+        assert.deepEqual(await store.fetchContent('language', query), [], 'ID lookups must respect the fresh download');
+      } finally {
+        reading.resolve(null);
+        state.read = async (key) => state.records.get(key);
+        store.resetContentStore(false, true);
+      }
+    });
+    await t.test('fresh content stays usable and survives deletion queued behind an old write', async (t) => {
+      store.resetContentStore(false, true);
+      await new Promise((resolve) => setImmediate(resolve));
+      t.mock.timers.enable({ apis: ['setTimeout'] });
+      const writing = deferred();
+      const started = deferred();
+      let fresh;
+      state.write = async (key, value) => {
+        if (value.idStore.get('language')?.get(row.id)?.name === 'Before homebrew edit') {
+          started.resolve();
+          await writing.promise;
+        }
+        state.records.set(key, structuredClone(value));
+      };
+      try {
+        state.request = async () => [{ ...row, name: 'Before homebrew edit' }];
+        await store.fetchContent('language', query);
+        t.mock.timers.tick(10000);
+        await started.promise;
+        store.resetContentStore(false, true);
+        state.request = async () => [{ ...row, name: 'After homebrew edit' }];
+        let displayed;
+        fresh = store.fetchContent('language', query).then((rows) => {
+          displayed = rows;
+          return rows;
+        });
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.equal(displayed?.[0].name, 'After homebrew edit', 'a stuck old write must not block fresh content');
+        t.mock.timers.tick(10000);
+        writing.resolve();
+        await new Promise((resolve) => setImmediate(resolve));
+        const saved = state.records.get(`content-store:${state.actor}`);
+        assert.equal(saved.idStore.get('language').get(row.id).name, 'After homebrew edit');
+        store.resetContentStore(false);
+        state.request = async () => {
+          throw new Error('The fresh persisted copy should satisfy this read');
+        };
+        assert.equal((await store.fetchContent('language', query))[0].name, 'After homebrew edit');
+      } finally {
+        writing.resolve();
+        await fresh;
+        state.write = async (key, value) => {
+          state.records.set(key, structuredClone(value));
+        };
+        store.resetContentStore(false, true);
+      }
+    });
+    await t.test('a late source-version response cannot publish its timed-out snapshot', async () => {
+      const checking = deferred();
+      const snapshot = {
+        version: 4,
+        actorId: state.actor,
+        savedAt: Date.now(),
+        idStore: new Map([
+          ['content-source', new Map([[81000, { id: 81000, updated_at: 'old-source-token' }]])],
+          ['language', new Map([[row.id, row]])],
+        ]),
+        contentStore: new Map(),
+      };
+      state.read = async () => snapshot;
+      state.request = async (type) => (type === 'get-content-versions' ? checking.promise : []);
+      store.resetContentStore(false);
+      try {
+        assert.deepEqual(await store.fetchContent('language', { content_sources: [81000] }), []);
+        checking.resolve([{ id: 81000, updated_at: 'old-source-token' }]);
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.deepEqual(store.getCachedContent('language'), []);
+        assert.deepEqual(await store.fetchContent('language', query), []);
+      } finally {
+        checking.resolve(null);
+        state.read = async (key) => state.records.get(key);
+        store.resetContentStore(false, true);
+      }
+    });
   } finally {
     store?.resetContentStore(true, true);
     await rm(directory, { recursive: true, force: true });
