@@ -1,7 +1,7 @@
 import { Spell } from '@schemas/content';
 import { StoreID } from '@schemas/variables';
 import { toLabel } from '@utils/strings';
-import { getFinalVariableValue, getProfValueParts } from '@variables/variable-helpers';
+import { getCombinedVariableValue, getModifierParts, getProfValueParts } from '@variables/variable-helpers';
 
 export function getSpellStats(id: StoreID, spell: Spell | null, tradition: string, attribute: string) {
   return {
@@ -10,57 +10,29 @@ export function getSpellStats(id: StoreID, spell: Spell | null, tradition: strin
   };
 }
 
+/** Stack raw spell, general, range and applicable attribute modifiers as one attack roll. */
 function getSpellAttack(id: StoreID, spell: Spell | null, tradition: string, attribute: string) {
-  const attackBonus = getFinalVariableValue(id, 'ATTACK_ROLLS_BONUS').total;
-  const dexAttackBonus = getFinalVariableValue(id, 'DEX_ATTACK_ROLLS_BONUS').total;
-  const strAttackBonus = getFinalVariableValue(id, 'STR_ATTACK_ROLLS_BONUS').total;
-  const meleeAttackBonus =
-    spell?.range?.toLowerCase() === 'touch' ? getFinalVariableValue(id, 'MELEE_ATTACK_ROLLS_BONUS').total : 0;
-  const rangedAttackBonus =
-    spell?.range?.toLowerCase() !== 'touch' ? getFinalVariableValue(id, 'RANGED_ATTACK_ROLLS_BONUS').total : 0;
-
-  const profParts = getProfValueParts(id, `SPELL_ATTACK`, attribute)!;
-
-  ///
-
-  const parts = new Map<string, number>();
-  parts.set('This is your proficiency bonus for spell attacks.', profParts.profValue + profParts.level);
-
-  parts.set(
-    `This is your ${toLabel(attribute)} modifier. You add your ${toLabel(attribute)} modifier to spell attacks from this casting source.`,
-    profParts.attributeMod ?? 0
-  );
-
-  if (attackBonus) {
-    parts.set('This is a bonus you receive to all attack rolls.', attackBonus);
-  }
-
-  if (dexAttackBonus) {
-    parts.set('This is a bonus you receive to Dexterity-based attack rolls.', dexAttackBonus);
-  }
-
-  if (strAttackBonus) {
-    parts.set('This is a bonus you receive to Strength-based attack rolls.', strAttackBonus);
-  }
-
-  if (meleeAttackBonus) {
-    parts.set('This is a bonus you receive to melee attack rolls.', meleeAttackBonus);
-  }
-
-  if (rangedAttackBonus) {
-    parts.set('This is a bonus you receive to ranged attack rolls.', rangedAttackBonus);
-  }
-
-  if (profParts.breakdown.bonusValue) {
-    parts.set('This is a bonus you receive to spell attacks from various sources.', profParts.breakdown.bonusValue);
-  }
-
+  const profParts = getProfValueParts(id, 'SPELL_ATTACK', attribute)!;
+  const rangeVariable = spell?.range?.trim().toLowerCase() === 'touch' ? 'MELEE' : 'RANGED';
+  const attributeVariable = attribute === 'ATTRIBUTE_STR' ? 'STR' : attribute === 'ATTRIBUTE_DEX' ? 'DEX' : null;
+  const modifiers = getCombinedVariableValue(id, [
+    'SPELL_ATTACK',
+    'ATTACK_ROLLS_BONUS',
+    `${rangeVariable}_ATTACK_ROLLS_BONUS`,
+    ...(attributeVariable ? [`${attributeVariable}_ATTACK_ROLLS_BONUS`] : []),
+  ]);
+  const parts = new Map<string, number>([
+    ['This is your proficiency bonus for spell attacks.', profParts.profValue + profParts.level],
+    [`This is your ${toLabel(attribute)} modifier for this casting source.`, profParts.attributeMod ?? 0],
+    ...getModifierParts(modifiers),
+  ]);
   return {
     total: getMAPedTotal(
       id,
-      [...parts.values()].reduce((a, b) => a + b, 0)
+      [...parts.values()].reduce((total, part) => total + part, 0)
     ),
-    parts: parts,
+    parts,
+    conditionals: modifiers.conditionals,
   };
 }
 

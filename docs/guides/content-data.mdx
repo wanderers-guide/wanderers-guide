@@ -64,6 +64,27 @@ clamped value. Input debouncing remains in place before running operations.
 HP initialization clears its reset flag even if the numeric HP already equals the
 maximum, so a later condition recalculation cannot heal newly received damage.
 
+Explicit condition edits apply their HP consequences in the same saved update on the
+sheet, companions, and campaign encounter controls. Increasing Drained loses current
+HP equal to the increase times the character's level (minimum level 1), as well as
+reducing maximum HP. Decreasing or removing it does not restore current HP. Loading
+an existing Drained condition, recalculating, retrying a save, or receiving a remote
+update never deducts HP again. This HP loss is not damage and does not add Dying.
+
+Removing Dying increases Wounded once. Stabilizing at zero HP leaves the character
+Unconscious; subsequently healing that stable character does not increase Wounded
+again. Normalization and loading do not create these combat events.
+
+Drained with its HP and level, and Dying/Wounded with their HP transition, are coupled
+edits. A concurrent change to these values pauses saving even if two independent
+actions happened to produce the same HP number. The local recovery copy preserves
+the complete local transition for review. Identical accepted snapshots from a lost
+save acknowledgement reconcile without replaying the action.
+
+Condition dialogs apply their edit to the current entity when selected, including
+remote HP received while the dialog was open. Companion and GM controls preserve
+that current state through the same update, including queued unsynced GM damage.
+
 ### Public vs. homebrew
 
 `find-*` endpoints implicitly filter to **official, published** sources unless you pass `content_sources` (or query by a specific `id`). This is the rule baked into [`fetchData()`](https://github.com/wanderers-guide/wanderers-guide/blob/main/supabase/functions/_shared/helpers.ts). Without it, a search would surface every random homebrew row in the database.

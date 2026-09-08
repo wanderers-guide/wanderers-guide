@@ -152,6 +152,14 @@ These bundle the actual operation engine and drawer components against explicit 
 selected rules content comes from the checked-in sanitized data dump. They need no running
 database or authentication account.
 
+The rules suite includes the retained PF2e stress cases for combined typed modifiers,
+attack attributes, armor potency, speed penalties, deterministic condition derivation,
+and explicit Drained/Dying/Wounded transitions. The infrastructure suite verifies
+coupled HP/condition conflicts, including companion levels and lost acknowledgements.
+The Cypress `conditionMath.cy.ts` and `encounterSync.cy.ts` specs exercise these edits
+through actual sheet and GM controls, local API saves, mobile viewports, reloading,
+and simulated connection failures. They create and clean up synthetic characters.
+
 Run request recovery, buffered character saves, and worker lifecycle regressions with
 `npm --prefix frontend run test:infra`. These exercise the real request manager, save hook,
 and operation lifecycle with controlled authentication, network, storage, and worker

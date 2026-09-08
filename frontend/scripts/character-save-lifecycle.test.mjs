@@ -235,7 +235,7 @@ const boundaries = {
   './objects': 'export const getDeepDiff = (a,b) => JSON.stringify(a) === JSON.stringify(b) ? {} : { changed: true };',
   './type-fixing': 'export const convertToSetEntity = value => value;',
   '@conditions/condition-handler':
-    'export const applyConditions = () => {}; export const getConditionByName = name => ({name,value:1});',
+    'export const applyConditions = () => {}; export const compiledConditions = values => values; export const getConditionByName = name => ({name,value:1});',
   '@items/inv-utils':
     'export const applyEquipmentPenalties = () => {}; export const filterByTraitType = () => []; export const getBestArmor = () => undefined;',
   '@content/collect-content':

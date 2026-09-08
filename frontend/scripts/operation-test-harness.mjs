@@ -86,8 +86,9 @@ export async function createOperationEngine() {
           export * from '@variables/variable-helpers';
           export { applyConditions, compiledConditions, getConditionByName } from '@conditions/condition-handler';
           export { getSpellStats } from '@spells/spell-handler';
-          export { confirmHealth } from '@pages/character_sheet/entity-handler';
+          export { changeEntityConditions, confirmHealth } from '@pages/character_sheet/entity-handler';
           export { getWeaponStats } from '@items/weapon-handler';
+          export { getAcParts } from '@items/armor-handler';
           export * from '@items/eidolon-runes';
           export { handleDeleteItem, handleUpdateItem, handleMoveItem } from '@items/inv-handlers';
           export { isItemInvestable, getFlatInvItems, applyEquipmentPenalties, getBestArmor } from '@items/inv-utils';

@@ -35,7 +35,7 @@ import { getHotkeyHandler, useHover, useMediaQuery } from '@mantine/hooks';
 import { openContextModal } from '@mantine/modals';
 import { CreateCombatantModal } from '@modals/CreateCombatantModal';
 import { executeOperations } from '@operations/operations.main';
-import { confirmHealth } from '@pages/character_sheet/entity-handler';
+import { changeEntityConditions, confirmHealth } from '@pages/character_sheet/entity-handler';
 import { ConditionPills, selectCondition } from '@pages/character_sheet/sections/ConditionSection';
 import { makeRequest } from '@requests/request-manager';
 import {
@@ -56,7 +56,7 @@ import { getEntityLevel } from '@utils/entity-utils';
 import { isPhoneSized, phoneQuery } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';
 import { rollDie } from '@utils/random';
-import { isCharacter, isCreature, setterOrUpdaterToValue } from '@utils/type-fixing';
+import { isCharacter, isCreature, setterOrUpdaterToValue, type SetterOrUpdater } from '@utils/type-fixing';
 import useRefresh from '@utils/use-refresh';
 import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-helpers';
 import { cloneDeep, debounce, isEqual, mean, truncate } from 'lodash-es';
@@ -470,6 +470,8 @@ function EncounterView(props: {
   panelHeight: number;
 }) {
   const [openedAddCombatant, setOpenedAddCombatant] = useState(false);
+  const latestPropsRef = useRef(props);
+  latestPropsRef.current = props;
 
   /**
    * Update the encounter with a new combatant
@@ -528,6 +530,40 @@ function EncounterView(props: {
     props.setEncounter(newEncounter);
 
     return newEncounter;
+  };
+
+  /** Modal callbacks keep only identity; apply each action once to the latest visible entity. */
+  const updateCombatantEntity = (
+    id: string,
+    input: Parameters<SetterOrUpdater<LivingEntity>>[0],
+    source: LivingEntity
+  ): void => {
+    const currentProps = latestPropsRef.current;
+    const combatant = currentProps.encounter.combatants.list.find((entry) => entry._id === id);
+    if (!combatant) return;
+    if (combatant.type === 'CHARACTER') {
+      const player = currentProps.players?.find((entry) => entry.id === combatant.character);
+      if (!player) return;
+      // Full snapshots retain the source they were edited from. Functional modal
+      // actions instead resolve against fresh polling and queued GM changes.
+      const current =
+        typeof input === 'function'
+          ? (currentProps.characterWriter?.display(player) ?? player)
+          : isCharacter(source)
+            ? source
+            : player;
+      const entity = cloneDeep(typeof input === 'function' ? input(current) : input);
+      if (isCharacter(entity)) currentProps.characterWriter?.update(current, entity);
+    } else if (combatant.creature) {
+      const entity = cloneDeep(typeof input === 'function' ? input(combatant.creature) : input);
+      if (!isCreature(entity)) return;
+      const encounter = cloneDeep(currentProps.encounter);
+      encounter.combatants.list = encounter.combatants.list.map((entry) =>
+        entry._id === id ? { ...entry, creature: entity } : entry
+      );
+      latestPropsRef.current = { ...currentProps, encounter };
+      currentProps.setEncounter(encounter);
+    }
   };
 
   /**
@@ -791,42 +827,7 @@ function EncounterView(props: {
                   save={combatant.character ? props.characterWriter?.status(combatant.character) : undefined}
                   retrySave={() => props.characterWriter?.retry(combatant.character)}
                   // Returning updated populated entity data, will trigger update of the combatant
-                  updateEntity={(input) => {
-                    let entity = cloneDeep(input);
-
-                    // If health changes, confirm and update entity with new changes
-                    if (entity.hp_current !== combatant.data.hp_current) {
-                      const computed = getComputedData(combatant);
-                      if (computed) {
-                        const result = confirmHealth(`${entity.hp_current}`, computed.maxHp, combatant.data);
-
-                        if (result) {
-                          entity.hp_current = result.entity.hp_current;
-                          entity.details = {
-                            ...entity.details,
-                            conditions: result.entity.details?.conditions ?? [],
-                          };
-                          entity.meta_data = {
-                            ...entity.meta_data,
-                            reset_hp: false,
-                          };
-                        }
-                      }
-                    }
-
-                    if (combatant.type === 'CHARACTER') {
-                      // Preserve player edits and pending GM changes through the same
-                      // versioned merge/recovery format used by character sheets.
-                      props.characterWriter?.update(combatant.data as Character, entity as Character);
-                    } else if (combatant.type === 'CREATURE') {
-                      updateCombatant({
-                        ...combatant,
-                        creature: {
-                          ...(entity as Creature),
-                        },
-                      });
-                    }
-                  }}
+                  updateEntity={(input) => updateCombatantEntity(combatant._id, input, combatant.data)}
                   // Update the initiative
                   updateInitiative={(init) => {
                     updateCombatant({
@@ -887,7 +888,7 @@ function CombatantCard(props: {
     maxHp: number;
   };
   updateInitiative: (init: number) => void;
-  updateEntity: (entity: LivingEntity) => void;
+  updateEntity: SetterOrUpdater<LivingEntity>;
   onRemove: () => void;
 }) {
   const isPhone = useMediaQuery(phoneQuery());
@@ -936,23 +937,9 @@ function CombatantCard(props: {
     // Enter causes blur too. Commit that user action once, including under latency.
     if (submittedHealthRef.current === inputHealth) return;
     submittedHealthRef.current = inputHealth;
-    let result = -1;
-    try {
-      result = evaluate(inputHealth);
-    } catch (e) {
-      result = parseInt(inputHealth);
-    }
-    if (isNaN(result)) result = 0;
-    result = Math.floor(result);
-    if (result < 0) result = 0;
-    if (props.computed && result > props.computed.maxHp) result = props.computed.maxHp;
-
-    props.updateEntity({
-      ...props.combatant.data,
-      hp_current: result,
-    });
-
-    setHealth(`${result}` === 'null' ? `${props.computed?.maxHp ?? ''}` : `${result}`);
+    const result = confirmHealth(inputHealth, props.computed?.maxHp ?? Number.POSITIVE_INFINITY, props.combatant.data);
+    if (result) props.updateEntity(result.entity);
+    setHealth(`${result?.value ?? props.combatant.data.hp_current}`);
     healthRef.current?.blur();
   };
 
@@ -1141,15 +1128,7 @@ function CombatantCard(props: {
             id={getCombatantStoreID(props.combatant)}
             entity={props.combatant.data}
             setEntity={(call) => {
-              const result = setterOrUpdaterToValue(call, props.combatant.data);
-
-              props.updateEntity({
-                ...props.combatant.data,
-                details: {
-                  ...props.combatant.data.details,
-                  conditions: result?.details?.conditions ?? [],
-                },
-              });
+              props.updateEntity((current) => setterOrUpdaterToValue(call, current) ?? current);
             }}
             groupProps={{
               w: 170,
@@ -1163,14 +1142,14 @@ function CombatantCard(props: {
             color='dark.3'
             onClick={() => {
               selectCondition(props.combatant?.data.details?.conditions ?? [], (condition) => {
-                if (!props.combatant) return;
-                props.updateEntity({
-                  ...props.combatant.data,
-                  details: {
-                    ...props.combatant.data.details,
-                    conditions: [...(props.combatant.data.details?.conditions ?? []), condition],
-                  },
-                });
+                props.updateEntity((current) =>
+                  current.details?.conditions?.some((entry) => entry.name === condition.name)
+                    ? current
+                    : changeEntityConditions(getCombatantStoreID(props.combatant), current, [
+                        ...(current.details?.conditions ?? []),
+                        condition,
+                      ])
+                );
               });
             }}
             style={{

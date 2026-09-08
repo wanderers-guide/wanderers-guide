@@ -134,6 +134,24 @@ A **typed** numeric bonus that respects PF2e bonus stacking rules (item / status
 
 The three fields are `value` (number, or `null` for a non-numeric note), `type` (`"item"` / `"status"` / `"circumstance"` / `""` for untyped), and `text` (free-form rider).
 
+For one check or damage roll, applicable modifier categories share one stacking
+calculation. The highest bonus and worst penalty of each type apply separately;
+untyped modifiers add together. For example, Frightened 1 and Stupefied 2 impose
+one status penalty of 2 on an Intelligence spell attack. Clumsy applies to
+Dexterity attacks, while Enfeebled applies to Strength attacks and damage. Neither
+automatically penalizes an Intelligence spell attack. Conditional text remains a
+displayed rider rather than an unconditional numeric modifier.
+
+Armor and an active invested potency rune form one item bonus to AC, which then
+competes with other item bonuses. Unburdened Iron ignores the armor speed penalty
+and reduces just one eligible other speed penalty by up to 5 feet, then applies
+normal typed stacking to the remaining penalties.
+
+Effective conditions use the strongest explicit or derived value regardless of
+selection order. Derived conditions do not replace their independently selected
+sources: removing Encumbered also removes its derived Clumsy 1, but keeps an
+independently selected Clumsy condition.
+
 #### How it renders
 
 WG composes `value`, `type`, and `text` into a single line shown beneath the stat. The shape of that line is what makes this operation feel different from `adjValue`:

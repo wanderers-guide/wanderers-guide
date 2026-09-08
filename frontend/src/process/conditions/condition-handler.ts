@@ -10,7 +10,7 @@ import {
 } from '../variables/variable-manager';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
 import { isPlayingPathfinder, isPlayingStarfinder } from '@content/system-handler';
-import { cloneDeep, isEqual, uniqWith } from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
 
 const CONDITIONS: Condition[] = [
   {
@@ -371,59 +371,64 @@ export function applyConditions(id: StoreID, conditions: Condition[]) {
   });
 }
 
-// Applies cascading and overriding conditions
+/**
+ * Derive effective conditions without changing the explicit list saved on the entity.
+ * The strongest value wins; equally strong explicit conditions keep their own source.
+ */
 export function compiledConditions(conditions: Condition[]): Condition[] {
-  let newConditions: Condition[] = [];
+  const cascades: Map<string, string[]> = new Map([
+    ['Confused', ['Off-guard']],
+    ['Dying', ['Unconscious']],
+    ['Encumbered', ['Clumsy']],
+    ['Grabbed', ['Off-guard', 'Immobilized']],
+    ['Paralyzed', ['Off-guard']],
+    ['Prone', ['Off-guard']],
+    ['Restrained', ['Off-guard', 'Immobilized']],
+    ['Unconscious', ['Off-guard', 'Blinded', 'Prone']],
+    ['Unnoticed', ['Undetected']],
+  ]);
+  const overrides: Map<string, string> = new Map([
+    ['Blinded', 'Dazzled'],
+    ['Restrained', 'Grabbed'],
+    ['Stunned', 'Slowed'],
+  ]);
 
-  const processConditions = () => {
-    for (const condition of [...conditions, ...newConditions]) {
-      if (condition.name === 'Blinded') {
-        newConditions = newConditions.filter((cond) => cond.name !== 'Dazzled');
-      }
-      if (condition.name === 'Confused') {
-        newConditions.push(getConditionByName('Off-guard', 'Confused')!);
-      }
-      if (condition.name === 'Dying') {
-        newConditions.push(getConditionByName('Unconscious', 'Dying')!);
-      }
-      if (condition.name === 'Encumbered') {
-        newConditions.push(getConditionByName('Clumsy', 'Encumbered')!);
-      }
-      if (condition.name === 'Grabbed') {
-        newConditions.push(getConditionByName('Off-guard', 'Grabbed')!);
-        newConditions.push(getConditionByName('Immobilized', 'Grabbed')!);
-      }
-      if (condition.name === 'Paralyzed') {
-        newConditions.push(getConditionByName('Off-guard', 'Paralyzed')!);
-      }
-      if (condition.name === 'Prone') {
-        newConditions.push(getConditionByName('Off-guard', 'Prone')!);
-      }
-      if (condition.name === 'Restrained') {
-        newConditions = newConditions.filter((cond) => cond.name !== 'Grabbed');
-        newConditions.push(getConditionByName('Off-guard', 'Restrained')!);
-        newConditions.push(getConditionByName('Immobilized', 'Restrained')!);
-      }
-      if (condition.name === 'Stunned') {
-        newConditions = newConditions.filter((cond) => cond.name !== 'Slowed');
-      }
-      if (condition.name === 'Unconscious') {
-        newConditions.push(getConditionByName('Off-guard', 'Unconscious')!);
-        newConditions.push(getConditionByName('Blinded', 'Unconscious')!);
-        newConditions.push(getConditionByName('Prone', 'Unconscious')!);
-      }
-      if (condition.name === 'Unnoticed') {
-        newConditions.push(getConditionByName('Undetected', 'Unnoticed')!);
-      }
-      newConditions.push(condition);
+  // Discover the full cascade before resolving overrides, including Blinded from Dying.
+  const names: Set<string> = new Set(conditions.map((condition) => condition.name));
+  for (const name of names) {
+    for (const child of cascades.get(name) ?? []) names.add(child);
+  }
+  const suppressed: Set<string> = new Set(
+    [...overrides].filter(([name]) => names.has(name)).map(([, overridden]) => overridden)
+  );
+
+  const candidates: { condition: Condition; derived: boolean }[] = conditions
+    .filter((condition) => !suppressed.has(condition.name))
+    .map((condition) => ({ condition: cloneDeep(condition), derived: false }));
+  const expanded: Set<string> = new Set();
+  for (const { condition } of candidates) {
+    if (expanded.has(condition.name)) continue;
+    expanded.add(condition.name);
+    for (const name of cascades.get(condition.name) ?? []) {
+      if (suppressed.has(name)) continue;
+      const child: Condition | undefined = getConditionByName(name, condition.name);
+      if (child) candidates.push({ condition: child, derived: true });
     }
-  };
-  // Run it twice to make sure we got all the conditions,
-  processConditions();
-  processConditions();
+  }
 
-  // Remove duplicates
-  return uniqWith(newConditions, (a, b) => a.name === b.name).sort((a, b) => a.name.localeCompare(b.name));
+  // Suppressed sources never contribute candidates. Resolve remaining ties consistently,
+  // preferring explicit ownership so an independent condition remains removable in the UI.
+  candidates.sort(
+    (a, b) =>
+      (b.condition.value ?? 0) - (a.condition.value ?? 0) ||
+      Number(a.derived) - Number(b.derived) ||
+      (a.condition.source ?? '').localeCompare(b.condition.source ?? '')
+  );
+  const effective: Map<string, Condition> = new Map();
+  for (const { condition } of candidates) {
+    if (!effective.has(condition.name)) effective.set(condition.name, condition);
+  }
+  return [...effective.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function applyCondition(id: StoreID, condition: Condition) {

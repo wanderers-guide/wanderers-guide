@@ -12,7 +12,7 @@ import { IconPlus, IconJewishStar, IconJewishStarFilled } from '@tabler/icons-re
 import { Condition, LivingEntity } from '@schemas/content';
 import { StoreID } from '@schemas/variables';
 import { isCharacter } from '@utils/type-fixing';
-import { cloneDeep } from 'lodash-es';
+import { changeEntityConditions } from '../entity-handler';
 import { useNavigate } from 'react-router-dom';
 import { useAtom } from 'jotai';
 import { SetterOrUpdater } from '@utils/type-fixing';
@@ -65,14 +65,11 @@ export function ConditionSection(props: {
           color='gray'
           onClick={() => {
             selectCondition(props.entity?.details?.conditions ?? [], (condition) => {
-              if (!props.entity) return;
-              props.setEntity({
-                ...props.entity,
-                details: {
-                  ...props.entity.details,
-                  conditions: [...(props.entity.details?.conditions ?? []), condition],
-                },
-              });
+              props.setEntity((current) =>
+                current
+                  ? changeEntityConditions(props.id, current, [...(current.details?.conditions ?? []), condition])
+                  : current
+              );
             });
           }}
         >
@@ -92,10 +89,10 @@ export function ConditionSection(props: {
   );
 }
 
-export function ConditionPills(props: {
+export function ConditionPills<T extends LivingEntity>(props: {
   id: StoreID;
-  entity: LivingEntity | null;
-  setEntity: SetterOrUpdater<LivingEntity | null>;
+  entity: T | null;
+  setEntity: SetterOrUpdater<T | null>;
   groupProps?: GroupProps;
   displayNoneActive?: boolean;
   zIndex?: number;
@@ -108,20 +105,6 @@ export function ConditionPills(props: {
           text={condition.name}
           amount={condition.value}
           onClick={() => {
-            //// Unneeded code because 'Over Bulk Limit' is already set ////
-            // Check if the condition is from being over bulk limit
-            // const isEncumberedFromBulk =
-            //   condition.name === 'Encumbered' &&
-            //   props.entity?.inventory &&
-            //   Math.floor(getInvBulk(props.entity.inventory)) > getBulkLimit(props.id);
-            // if (
-            //   isCharacter(props.entity) &&
-            //   props.entity?.options?.ignore_bulk_limit !== true &&
-            //   isEncumberedFromBulk
-            // ) {
-            //   source = 'Over Bulk Limit';
-            // }
-
             openContextModal({
               modal: 'condition',
               title: (
@@ -140,29 +123,15 @@ export function ConditionPills(props: {
                       onClick={() => {
                         modals.closeAll();
 
-                        let newConditions = cloneDeep(props.entity?.details?.conditions ?? []);
-                        // Remove condition
-                        newConditions = newConditions.filter((c) => c.name !== condition.name);
-                        // Add wounded condition if we're removing dying
-                        if (condition.name === 'Dying') {
-                          const wounded = newConditions.find((c) => c.name === 'Wounded');
-                          if (wounded) {
-                            wounded.value = 1 + wounded.value!;
-                          } else {
-                            newConditions.push(getConditionByName('Wounded')!);
-                          }
-                        }
-
-                        props.setEntity((c) => {
-                          if (!c) return c;
-                          return {
-                            ...c,
-                            details: {
-                              ...c.details,
-                              conditions: newConditions,
-                            },
-                          };
-                        });
+                        props.setEntity((current) =>
+                          current
+                            ? changeEntityConditions(
+                                props.id,
+                                current,
+                                (current.details?.conditions ?? []).filter((entry) => entry.name !== condition.name)
+                              )
+                            : current
+                        );
                       }}
                     >
                       Remove
@@ -173,25 +142,17 @@ export function ConditionPills(props: {
               innerProps: {
                 condition: condition,
                 onValueChange: (condition: Condition, value: number) => {
-                  props.setEntity((c) => {
-                    if (!c) return c;
-                    return {
-                      ...c,
-                      details: {
-                        ...c.details,
-                        conditions: c.details?.conditions?.map((c) => {
-                          if (c.name === condition.name) {
-                            return {
-                              ...c,
-                              value: value,
-                            };
-                          } else {
-                            return c;
-                          }
-                        }),
-                      },
-                    };
-                  });
+                  props.setEntity((current) =>
+                    current
+                      ? changeEntityConditions(
+                          props.id,
+                          current,
+                          (current.details?.conditions ?? []).map((entry) =>
+                            entry.name === condition.name ? { ...entry, value } : entry
+                          )
+                        )
+                      : current
+                  );
                 },
               },
               styles: {

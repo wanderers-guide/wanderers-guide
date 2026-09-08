@@ -1,9 +1,4 @@
-/**
- * Opt-in PF2e audit repros: node --test scripts/pf2e-stress-audit.mjs
- * These assert the published rules, and intentionally fail for unresolved audit findings.
- * Not part of test:rules until the corresponding application fixes land.
- * Full character/browser stress evidence is retained locally under .scratch/pf2e-stress-2026-09-06.
- */
+/** Regression cases retained from the PF2e character and operations stress audit. */
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';

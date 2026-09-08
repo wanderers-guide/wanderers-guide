@@ -1,87 +1,97 @@
 import { Item } from '@schemas/content';
-import { StoreID, VariableBool } from '@schemas/variables';
+import { StoreID, VariableBool, VariableNum } from '@schemas/variables';
 import { hasTraitType } from '@utils/traits';
-import { getFinalProfValue, getFinalVariableValue, getVariableBreakdown } from '@variables/variable-helpers';
-import { getVariable } from '@variables/variable-manager';
+import {
+  getCombinedVariableValue,
+  getFinalVariableValue,
+  getProfValueParts,
+  ModifierBonus,
+} from '@variables/variable-helpers';
+import { getVariable, getVariableBonuses } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
 
-function getProfTotal(id: StoreID, item: Item) {
-  const category = item.meta_data?.category ?? 'light';
-  let categoryProfTotal = 0;
-  if (category === 'light') {
-    if (hasTraitType('COMPANION', item.traits ?? undefined)) {
-      categoryProfTotal = parseInt(getFinalProfValue(id, `LIGHT_BARDING`));
-    } else {
-      categoryProfTotal = parseInt(getFinalProfValue(id, `LIGHT_ARMOR`));
-    }
-  } else if (category === 'medium') {
-    categoryProfTotal = parseInt(getFinalProfValue(id, `MEDIUM_ARMOR`));
-  } else if (category === 'heavy') {
-    if (hasTraitType('COMPANION', item.traits ?? undefined)) {
-      categoryProfTotal = parseInt(getFinalProfValue(id, `HEAVY_BARDING`));
-    } else {
-      categoryProfTotal = parseInt(getFinalProfValue(id, `HEAVY_ARMOR`));
-    }
-  } else if (category === 'unarmored_defense') {
-    categoryProfTotal = parseInt(getFinalProfValue(id, `UNARMORED_DEFENSE`));
+function getProfTotal(id: StoreID, item?: Item) {
+  const category = item?.meta_data?.category ?? 'light';
+  const companion = hasTraitType('COMPANION', item?.traits ?? undefined);
+  const categoryVariables: Record<string, string> = {
+    light: companion ? 'LIGHT_BARDING' : 'LIGHT_ARMOR',
+    medium: 'MEDIUM_ARMOR',
+    heavy: companion ? 'HEAVY_BARDING' : 'HEAVY_ARMOR',
+    unarmored_defense: 'UNARMORED_DEFENSE',
+  };
+  const variables = item
+    ? [
+        categoryVariables[category],
+        `ARMOR_GROUP_${labelToVariable(item.meta_data?.group ?? 'leather')}`,
+        `ARMOR_${labelToVariable(item.name)}`,
+      ].filter((name): name is string => !!name)
+    : ['UNARMORED_DEFENSE', 'ARMOR_NONE'];
+  const total = Math.max(
+    ...variables.map((name) => {
+      const parts = getProfValueParts(id, name);
+      return parts
+        ? parts.profValue + parts.level
+        : getVariable<VariableBool>('CHARACTER', 'PROF_WITHOUT_LEVEL')?.value
+          ? -2
+          : 0;
+    })
+  );
+  return { total, variables };
+}
+
+/** Armor potency increases the armor's item bonus before it competes with other item bonuses. */
+function getAcModifiers(id: StoreID, item?: Item) {
+  const proficiency = getProfTotal(id, item);
+  const bonuses: ModifierBonus[] = getVariableBonuses(id, 'AC_BONUS');
+  let armorItemBonus = item?.meta_data?.ac_bonus ?? 0;
+  const potency = Math.min(item?.meta_data?.runes?.potency ?? 0, 4);
+  // Equipment operations grant invested armor runes under the item's source name. Only combine an
+  // active grant, so merely owning an uninvested rune does not activate its magic here.
+  const potencyIndex =
+    potency > 0 && item
+      ? bonuses.findIndex(
+          (bonus) =>
+            bonus.source === item.name &&
+            bonus.value === potency &&
+            bonus.type?.trim().toLowerCase() === 'item' &&
+            !bonus.text
+        )
+      : -1;
+  if (potencyIndex >= 0) {
+    armorItemBonus += potency;
+    bonuses.splice(potencyIndex, 1);
   }
-
-  const group = item.meta_data?.group ?? 'leather';
-  let groupProfTotal = 0;
-  if (group === 'leather') {
-    groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_LEATHER`));
-  } else if (group === 'composite') {
-    groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_COMPOSITE`));
-  } else if (group === 'chain') {
-    groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_CHAIN`));
-  } else if (group === 'cloth') {
-    groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_CLOTH`));
-  } else if (group === 'plate') {
-    groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_PLATE`));
-  } else if (group === 'ceramic') {
-    groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_CERAMIC`));
-  } else if (group === 'polymer') {
-    groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_POLYMER`));
-  } else if (group === 'skeletal') {
-    groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_SKELETAL`));
-  } else if (group === 'wood') {
-    groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_WOOD`));
-  }
-
-  const individualProfTotal = parseInt(getFinalProfValue(id, `ARMOR_${labelToVariable(item.name)}`));
-
-  return Math.max(categoryProfTotal, groupProfTotal, individualProfTotal);
+  if (armorItemBonus) bonuses.push({ value: armorItemBonus, type: 'item', text: '', source: item!.name });
+  const modifiers = getCombinedVariableValue(id, proficiency.variables, bonuses);
+  const baseValue = modifiers.value + (getVariable<VariableNum>(id, 'AC_BONUS')?.value ?? 0);
+  const armorBonus =
+    armorItemBonus > 0 && modifiers.bmap.get('item bonus')?.value === armorItemBonus ? armorItemBonus : 0;
+  const remainingBonuses = new Map(modifiers.bmap);
+  // The armor item bonus has its own term in the AC equation. Do not display it twice.
+  if (armorBonus) remainingBonuses.delete('item bonus');
+  const bonusAc = baseValue + modifiers.bonus - armorBonus;
+  return {
+    profBonus: proficiency.total,
+    armorBonus,
+    bonusAc,
+    hasConditionals: modifiers.conditionals.length > 0,
+    breakdown: {
+      bonuses: remainingBonuses,
+      bonusValue: modifiers.bonus - armorBonus,
+      baseValue,
+      conditionals: modifiers.conditionals,
+    },
+  };
 }
 
 export function getAcParts(id: StoreID, item?: Item) {
-  const breakdown = getVariableBreakdown(id, 'AC_BONUS');
-  const hasConditionals = breakdown.conditionals.length > 0;
-
+  const modifiers = getAcModifiers(id, item);
+  let dexBonus = getFinalVariableValue(id, 'ATTRIBUTE_DEX').total;
   if (!item) {
-    // If wearing nothing, that's 10 + dex + prof + bonus
-    const categoryProfTotal = parseInt(getFinalProfValue(id, `UNARMORED_DEFENSE`));
-    const individualProfTotal = parseInt(getFinalProfValue(id, `ARMOR_NONE`));
-    const profTotal = Math.max(categoryProfTotal, individualProfTotal);
-
-    const bonusAc = getFinalVariableValue(id, 'AC_BONUS').total;
-    const dexMod = getFinalVariableValue(id, 'ATTRIBUTE_DEX').total;
-    return {
-      profBonus: profTotal,
-      bonusAc: bonusAc,
-      dexBonus: dexMod,
-      armorBonus: 0,
-      checkPenalty: 0,
-      speedPenalty: 0,
-      hasConditionals,
-      breakdown,
-    };
+    return { ...modifiers, dexBonus, checkPenalty: 0, speedPenalty: 0 };
   }
 
-  const profBonus = getProfTotal(id, item);
-  const bonusAc = getFinalVariableValue(id, 'AC_BONUS').total;
   const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
-  let dexBonus = getFinalVariableValue(id, 'ATTRIBUTE_DEX').total;
-  const armorBonus = item.meta_data?.ac_bonus ?? 0;
   const dexCap = item.meta_data?.dex_cap ?? 0;
   const strengthReq = item.meta_data?.strength ?? 0;
   let checkPenalty = -1 * Math.abs(Number(item.meta_data?.check_penalty ?? 0));
@@ -94,24 +104,9 @@ export function getAcParts(id: StoreID, item?: Item) {
 
   if (strReqMod >= strengthReq) {
     checkPenalty = 0;
-    speedPenalty += 5;
-    if (speedPenalty > 0) {
-      speedPenalty = 0;
-    }
+    speedPenalty = Math.min(0, speedPenalty + 5);
   }
+  dexBonus = Math.min(dexBonus, dexCap);
 
-  if (dexBonus > dexCap) {
-    dexBonus = dexCap;
-  }
-
-  return {
-    profBonus,
-    bonusAc,
-    dexBonus,
-    armorBonus,
-    checkPenalty,
-    speedPenalty,
-    hasConditionals,
-    breakdown,
-  };
+  return { ...modifiers, dexBonus, checkPenalty, speedPenalty };
 }
