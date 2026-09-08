@@ -7,7 +7,7 @@ import { IconBlockquote, IconMathSymbols } from '@tabler/icons-react';
 import { Inventory, InventoryItem } from '@schemas/content';
 import { StoreID } from '@schemas/variables';
 import { sign } from '@utils/numbers';
-import { getFinalAcValue, getVariableBreakdown } from '@variables/variable-helpers';
+import { getFinalAcValue } from '@variables/variable-helpers';
 import { useAtomValue } from 'jotai';
 
 export function StatAcDrawerTitle(props: {
@@ -58,7 +58,7 @@ export function StatAcDrawerContent(props: { data: { id: StoreID; inventory?: In
   const parts = getAcParts(props.data.id, bestArmor?.item);
   const armorName = bestArmor?.item.name ?? 'nothing';
 
-  const acBonusParts = getVariableBreakdown(props.data.id, 'AC_BONUS')!;
+  const acBonusParts = parts.breakdown;
 
   return (
     <Box>

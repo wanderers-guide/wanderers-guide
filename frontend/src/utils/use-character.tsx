@@ -548,7 +548,8 @@ export default function useCharacter(
         maxHealth,
         previous,
         convertToSetEntity(retainHealth),
-        resetHealth && classHp === 0
+        resetHealth && classHp === 0,
+        'normalize'
       );
       return normalized;
     });

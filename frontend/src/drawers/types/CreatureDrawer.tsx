@@ -232,7 +232,7 @@ export function CreatureDrawerContent(props: {
           const handleRestHP = () => {
             if (controller.signal.aborted) return;
             const maxHealth = getFinalHealthValue(STORE_ID);
-            confirmHealth(`${maxHealth}`, maxHealth, creature, convertToSetEntity(setCreature));
+            confirmHealth(`${maxHealth}`, maxHealth, creature, convertToSetEntity(setCreature), false, 'normalize');
           };
 
           // We run it twice for it to break out of the debouncing lock (not a perfect solution, but works)
@@ -241,7 +241,14 @@ export function CreatureDrawerContent(props: {
         } else {
           // Because of the drained condition, let's confirm health
           const maxHealth = getFinalHealthValue(STORE_ID);
-          confirmHealth(`${creature.hp_current}`, maxHealth, creature, convertToSetEntity(setCreature));
+          confirmHealth(
+            `${creature.hp_current}`,
+            maxHealth,
+            creature,
+            convertToSetEntity(setCreature),
+            false,
+            'normalize'
+          );
         }
 
         setOperationResults(results);

@@ -2,7 +2,13 @@ import { getCachedContent } from '@content/content-store';
 import { Item, Trait } from '@schemas/content';
 import { StoreID, VariableBool, VariableListStr, VariableNum, VariableProf, VariableStr } from '@schemas/variables';
 import { hasTraitType } from '@utils/traits';
-import { getFinalProfValue, getFinalVariableValue, getProfValueParts } from '@variables/variable-helpers';
+import {
+  getCombinedVariableValue,
+  getFinalVariableValue,
+  getModifierParts,
+  getProfValueParts,
+  ModifierBonus,
+} from '@variables/variable-helpers';
 import { getVariable } from '@variables/variable-manager';
 import { compileProficiencyType, labelToVariable } from '@variables/variable-utils';
 import { compileTraits, getGradeImprovements, isItemRangedWeapon } from './inv-utils';
@@ -95,407 +101,134 @@ export function getWeaponStats(id: StoreID, item: Item) {
   };
 }
 
+/** Resolve a weapon attack using only its actual attack attribute and one shared typed-modifier pool. */
 function getAttackBonus(id: StoreID, item: Item) {
-  if (isItemRangedWeapon(item)) {
-    return getRangedAttackBonus(id, item);
-  } else {
-    return getMeleeAttackBonus(id, item);
-  }
-}
-
-function getRangedAttackBonus(id: StoreID, item: Item) {
-  const itemTraits = compileTraits(item);
-  const attackBonus = getFinalVariableValue(id, 'ATTACK_ROLLS_BONUS').total;
-  const dexAttackBonus = getFinalVariableValue(id, 'DEX_ATTACK_ROLLS_BONUS').total;
-  const strAttackBonus = getFinalVariableValue(id, 'STR_ATTACK_ROLLS_BONUS').total;
-  const rangedAttackBonus = getFinalVariableValue(id, 'RANGED_ATTACK_ROLLS_BONUS').total;
-  const extraItemBonus = item.meta_data?.attack_bonus ?? 0;
-
-  const hasBrutal = hasTraitType('BRUTAL', itemTraits);
-  const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
-  const dexMod = getFinalVariableValue(id, 'ATTRIBUTE_DEX').total;
-
-  const hasTracking1 = hasTraitType('TRACKING-1', itemTraits);
-  const hasTracking2 = hasTraitType('TRACKING-2', itemTraits);
-  const hasTracking3 = hasTraitType('TRACKING-3', itemTraits);
-  const hasTracking4 = hasTraitType('TRACKING-4', itemTraits);
-
-  ///
-  const profData = getProfTotal(id, item);
-
-  const parts = new Map<string, number>();
-  parts.set('This is your proficiency bonus with this weapon.', profData.total);
-
-  if (hasBrutal) {
-    parts.set(
-      'This is your Strength modifier. Because this weapon has the brutal trait, you use your Strength modifier instead of Dexterity on attack rolls.',
-      strMod
-    );
-  } else {
-    parts.set(
-      'This is your Dexterity modifier. You add your Dexterity modifier to attack rolls with most ranged weapons.',
-      dexMod
-    );
-  }
-
+  const traits = compileTraits(item);
+  const ranged = isItemRangedWeapon(item);
+  const brutal = hasTraitType('BRUTAL', traits);
+  const finesse = !ranged && hasTraitType('FINESSE', traits);
+  const attributes = ranged ? [brutal ? 'STR' : 'DEX'] : finesse ? ['STR', 'DEX'] : ['STR'];
+  const proficiency = getProfTotal(id, item);
   const sharedPotency = getSharedEidolonRunes(id, item).potency;
   const ownPotency = Math.min(item.meta_data?.runes?.potency ?? 0, 4);
   const potency = Math.max(ownPotency, sharedPotency);
-  if (potency) {
-    parts.set(
-      sharedPotency > ownPotency
-        ? "This is the potency rune bonus shared by your summoner's invested item."
-        : "This is the bonus you receive from the weapon's potency rune.",
-      potency
-    );
-  }
-
-  if (attackBonus) {
-    parts.set('This is a bonus you receive to all attack rolls.', attackBonus);
-  }
-
-  if (dexAttackBonus) {
-    parts.set('This is a bonus you receive to Dexterity-based attack rolls.', dexAttackBonus);
-  }
-
-  if (strAttackBonus) {
-    parts.set('This is a bonus you receive to Strength-based attack rolls.', strAttackBonus);
-  }
-
-  if (rangedAttackBonus) {
-    parts.set('This is a bonus you receive to ranged attack rolls.', rangedAttackBonus);
-  }
-
-  if (extraItemBonus) {
-    parts.set('This is an item bonus you receive from the item itself.', extraItemBonus);
-  }
-
-  if (hasTracking1) {
-    parts.set("This is an item bonus you receive from the weapon's tracking trait.", 1);
-  }
-  if (hasTracking2) {
-    parts.set("This is an item bonus you receive from the weapon's tracking trait.", 2);
-  }
-  if (hasTracking3) {
-    parts.set("This is an item bonus you receive from the weapon's tracking trait.", 3);
-  }
-  if (hasTracking4) {
-    parts.set("This is an item bonus you receive from the weapon's tracking trait.", 4);
-  }
-
-  return {
-    total: getMAPedTotal(
+  const tracking = Math.max(
+    0,
+    ...(['TRACKING-1', 'TRACKING-2', 'TRACKING-3', 'TRACKING-4'] as const).map((trait, index) =>
+      hasTraitType(trait, traits) ? index + 1 : 0
+    )
+  );
+  const itemBonuses: ModifierBonus[] = [
+    {
+      value: potency,
+      type: 'item',
+      text: '',
+      source: sharedPotency > ownPotency ? "Summoner's shared potency rune" : `${item.name} potency rune`,
+    },
+    { value: item.meta_data?.attack_bonus ?? 0, type: 'item', text: '', source: `${item.name} attack bonus` },
+    { value: tracking, type: 'item', text: '', source: `${item.name} tracking trait` },
+  ].filter((bonus) => bonus.value !== 0);
+  const candidates = attributes.map((attribute) => {
+    const modifiers = getCombinedVariableValue(
       id,
-      item,
-      [...parts.values()].reduce((a, b) => a + b, 0)
-    ),
-    parts: parts,
-  };
+      [
+        ...proficiency.bonusVariables,
+        'ATTACK_ROLLS_BONUS',
+        'NON_SPELL_ATTACK_ROLLS_BONUS',
+        `${ranged ? 'RANGED' : 'MELEE'}_ATTACK_ROLLS_BONUS`,
+        `${attribute}_ATTACK_ROLLS_BONUS`,
+      ],
+      itemBonuses
+    );
+    const attributeMod = getFinalVariableValue(id, `ATTRIBUTE_${attribute}`).total;
+    const parts = new Map<string, number>([
+      ['This is your proficiency bonus with this weapon.', proficiency.total],
+      [`This attack uses your ${attribute === 'DEX' ? 'Dexterity' : 'Strength'} modifier.`, attributeMod],
+      ...getModifierParts(modifiers),
+    ]);
+    return { total: proficiency.total + attributeMod + modifiers.total, parts, conditionals: modifiers.conditionals };
+  });
+  // Finesse is optional: compare the complete legal attack totals, including attribute-specific penalties.
+  const best = candidates.reduce((best, candidate) => (candidate.total > best.total ? candidate : best));
+  return { ...best, total: getMAPedTotal(id, item, best.total) };
 }
 
-function getMeleeAttackBonus(id: StoreID, item: Item) {
-  const itemTraits = compileTraits(item);
-  const attackBonus = getFinalVariableValue(id, 'ATTACK_ROLLS_BONUS').total;
-  const dexAttackBonus = getFinalVariableValue(id, 'DEX_ATTACK_ROLLS_BONUS').total;
-  const strAttackBonus = getFinalVariableValue(id, 'STR_ATTACK_ROLLS_BONUS').total;
-  const meleeAttackBonus = getFinalVariableValue(id, 'MELEE_ATTACK_ROLLS_BONUS').total;
-  const nonSpellAttackBonus = getFinalVariableValue(id, 'NON_SPELL_ATTACK_ROLLS_BONUS').total;
-  const extraItemBonus = item.meta_data?.attack_bonus ?? 0;
-
-  const hasFinesse = hasTraitType('FINESSE', itemTraits);
-  const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
-  const dexMod = getFinalVariableValue(id, 'ATTRIBUTE_DEX').total;
-
-  const hasTracking1 = hasTraitType('TRACKING-1', itemTraits);
-  const hasTracking2 = hasTraitType('TRACKING-2', itemTraits);
-  const hasTracking3 = hasTraitType('TRACKING-3', itemTraits);
-  const hasTracking4 = hasTraitType('TRACKING-4', itemTraits);
-
-  ///
-  const profData = getProfTotal(id, item);
-
-  const parts = new Map<string, number>();
-  parts.set('This is your proficiency bonus with this weapon.', profData.total);
-
-  const usesDex = hasFinesse && dexMod > strMod;
-
-  if (usesDex) {
-    parts.set(
-      'This is your Dexterity modifier. Because this weapon has the finesse trait, you can use your Dexterity modifier instead of Strength on attack rolls.',
-      dexMod
-    );
-  } else {
-    parts.set(
-      'This is your Strength modifier. You add your Strength modifier to attack rolls with most melee weapons.',
-      strMod
-    );
-  }
-
-  const sharedPotency = getSharedEidolonRunes(id, item).potency;
-  const ownPotency = Math.min(item.meta_data?.runes?.potency ?? 0, 4);
-  const potency = Math.max(ownPotency, sharedPotency);
-  if (potency) {
-    parts.set(
-      sharedPotency > ownPotency
-        ? "This is the potency rune bonus shared by your summoner's invested item."
-        : "This is the bonus you receive from the weapon's potency rune.",
-      potency
-    );
-  }
-
-  if (attackBonus) {
-    parts.set('This is a bonus you receive to all attack rolls.', attackBonus);
-  }
-
-  // Only if we added the Dexterity modifier because we don't want to penalize non-dexerity-based melee weapons
-  if (dexAttackBonus && usesDex) {
-    parts.set('This is a bonus you receive to Dexterity-based attack rolls.', dexAttackBonus);
-  }
-
-  // Only if we didn't add the Dexterity modifier (aka it's therefore a Strength-based ranged weapon)
-  if (strAttackBonus && !usesDex) {
-    parts.set('This is a bonus you receive to Strength-based attack rolls.', strAttackBonus);
-  }
-
-  if (meleeAttackBonus) {
-    parts.set('This is a bonus you receive to melee attack rolls.', meleeAttackBonus);
-  }
-
-  if (nonSpellAttackBonus) {
-    parts.set('This is a bonus you receive to non-spell attack rolls.', nonSpellAttackBonus);
-  }
-
-  if (extraItemBonus) {
-    parts.set('This is an item bonus you receive from the item itself.', extraItemBonus);
-  }
-
-  if (hasTracking1) {
-    parts.set("This is an item bonus you receive from the weapon's tracking trait.", 1);
-  }
-  if (hasTracking2) {
-    parts.set("This is an item bonus you receive from the weapon's tracking trait.", 2);
-  }
-  if (hasTracking3) {
-    parts.set("This is an item bonus you receive from the weapon's tracking trait.", 3);
-  }
-  if (hasTracking4) {
-    parts.set("This is an item bonus you receive from the weapon's tracking trait.", 4);
-  }
-
-  return {
-    total: getMAPedTotal(
-      id,
-      item,
-      [...parts.values()].reduce((a, b) => a + b, 0)
-    ),
-    parts: parts,
-  };
-}
-
+/** Choose the damage attribute independently of the attack attribute, preserving thrown and propulsive rules. */
 function getAttackDamage(id: StoreID, item: Item) {
-  if (isItemRangedWeapon(item)) {
-    return getRangedAttackDamage(id, item);
-  } else {
-    return getMeleeAttackDamage(id, item);
-  }
+  const traits = compileTraits(item);
+  const ranged = isItemRangedWeapon(item);
+  const splash = hasTraitType('SPLASH', traits);
+  const thrown = (
+    [
+      'THROWN',
+      'THROWN-5',
+      'THROWN-10',
+      'THROWN-15',
+      'THROWN-20',
+      'THROWN-25',
+      'THROWN-30',
+      'THROWN-40',
+      'THROWN-100',
+      'THROWN-200',
+    ] as const
+  ).some((trait) => hasTraitType(trait, traits));
+  const propulsive = ranged && hasTraitType('PROPULSIVE', traits);
+  const usesFullStrength = ranged ? (thrown && !splash) || hasTraitType('FLARE', traits) : !splash;
+  const mayUseDexterity =
+    !ranged &&
+    !splash &&
+    hasTraitType('FINESSE', traits) &&
+    (getVariable<VariableBool>(id, 'USE_DEX_FOR_MELEE_FINESSE')?.value ?? false);
+  const attributes = usesFullStrength || propulsive ? (mayUseDexterity ? ['STR', 'DEX'] : ['STR']) : [];
+  const specialization = getWeaponSpecialization(id, item);
+  const candidates = (attributes.length ? attributes : [null]).map((attribute) => {
+    const modifiers = getCombinedVariableValue(id, [
+      'ATTACK_DAMAGE_BONUS',
+      'NON_SPELL_ATTACK_DAMAGE_BONUS',
+      `${ranged ? 'RANGED' : 'MELEE'}_ATTACK_DAMAGE_BONUS`,
+      ...(attribute ? [`${attribute}_ATTACK_DAMAGE_BONUS`] : []),
+    ]);
+    let attributeMod = attribute ? getFinalVariableValue(id, `ATTRIBUTE_${attribute}`).total : 0;
+    if (propulsive && !usesFullStrength && attributeMod > 0) attributeMod = Math.floor(attributeMod / 2);
+    const parts = new Map<string, number>();
+    if (attribute)
+      parts.set(
+        propulsive && !usesFullStrength
+          ? 'Propulsive adds half your positive Strength modifier, or your full negative Strength modifier.'
+          : `This damage uses your ${attribute === 'DEX' ? 'Dexterity' : 'Strength'} modifier.`,
+        attributeMod
+      );
+    for (const [description, value] of getModifierParts(modifiers)) parts.set(description, value);
+    if (specialization.value) parts.set(specialization.description, specialization.value);
+    return {
+      total: attributeMod + modifiers.total + specialization.value,
+      parts,
+      conditionals: modifiers.conditionals,
+    };
+  });
+  return candidates.reduce((best, candidate) => (candidate.total > best.total ? candidate : best));
 }
 
-function getRangedAttackDamage(id: StoreID, item: Item) {
-  const itemTraits = compileTraits(item);
-  const attackDamage = getFinalVariableValue(id, 'ATTACK_DAMAGE_BONUS').total;
-  const dexAttackDamage = getFinalVariableValue(id, 'DEX_ATTACK_DAMAGE_BONUS').total;
-  const strAttackDamage = getFinalVariableValue(id, 'STR_ATTACK_DAMAGE_BONUS').total;
-  const rangedAttackDamage = getFinalVariableValue(id, 'RANGED_ATTACK_DAMAGE_BONUS').total;
-
-  const hasThrown =
-    hasTraitType('THROWN', itemTraits) ||
-    hasTraitType('THROWN-5', itemTraits) ||
-    hasTraitType('THROWN-10', itemTraits) ||
-    hasTraitType('THROWN-15', itemTraits) ||
-    hasTraitType('THROWN-20', itemTraits) ||
-    hasTraitType('THROWN-25', itemTraits) ||
-    hasTraitType('THROWN-30', itemTraits) ||
-    hasTraitType('THROWN-40', itemTraits) ||
-    hasTraitType('THROWN-100', itemTraits) ||
-    hasTraitType('THROWN-200', itemTraits);
-  const hasSplash = hasTraitType('SPLASH', itemTraits);
-  const hasPropulsive = hasTraitType('PROPULSIVE', itemTraits);
-
-  const hasFlare = hasTraitType('FLARE', itemTraits);
-
-  const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
-
-  const parts = new Map<string, number>();
-
-  let usesStr = false;
-  if (hasThrown && !hasSplash) {
-    parts.set(
-      'This is your Strength modifier. Because this is a thrown ranged weapon, you add your Strength modifier to the damage.',
-      strMod
-    );
-    usesStr = true;
-  } else if (hasFlare) {
-    parts.set(
-      'This is your Strength modifier. Because this is a flare ranged weapon, you add your Strength modifier to the damage.',
-      strMod
-    );
-    usesStr = true;
-  } else if (hasPropulsive) {
-    if (strMod >= 0) {
-      let halfStr = Math.floor(strMod / 2);
-      if (halfStr !== 0) {
-        parts.set(
-          'This is half of your Strength modifier. Because this weapon has the propulsive trait and you have a positive Strength modifier, you add half of your Strength modifier (rounded down) to the damage.',
-          halfStr
-        );
-      }
-    } else {
-      parts.set(
-        'This is your Strength modifier. Because this weapon has the propulsive trait and you have a negative Strength modifier, you add your full Strength modifier to the damage.',
-        strMod
-      );
-    }
-    usesStr = true;
-  }
-
-  if (attackDamage) {
-    parts.set('This is a bonus you receive to all attack damage.', attackDamage);
-  }
-
-  // Only if we didn't add the Strength modifier (aka it's therefore a Dexterity-based ranged weapon)
-  if (dexAttackDamage && !usesStr) {
-    parts.set('This is a bonus you receive to damage for Dexterity-based attacks.', dexAttackDamage);
-  }
-
-  // Only if we added the Strength modifier because we don't want to penalize non-strength-based ranged weapons
-  if (strAttackDamage && usesStr) {
-    parts.set('This is a bonus you receive to damage for Strength-based attacks.', strAttackDamage);
-  }
-
-  if (rangedAttackDamage) {
-    parts.set('This is a bonus you receive to damage for ranged attacks.', rangedAttackDamage);
-  }
-
-  // Weapon Specialization
-  const profData = getProfTotal(id, item);
-  const hasWeaponSpecialization = getVariable<VariableBool>(id, 'WEAPON_SPECIALIZATION')?.value ?? false;
-  const hasGreaterWeaponSpecialization = getVariable<VariableBool>(id, 'WEAPON_SPECIALIZATION_GREATER')?.value ?? false;
-
-  if (hasGreaterWeaponSpecialization) {
-    if (profData.prof === 'E') {
-      parts.set(`Since you're expert and have greater weapon specialization, you deal 4 additional damage.`, 4);
-    } else if (profData.prof === 'M') {
-      parts.set(`Since you're master and have greater weapon specialization, you deal 6 additional damage.`, 6);
-    } else if (profData.prof === 'L') {
-      parts.set(`Since you're legendary and have greater weapon specialization, you deal 8 additional damage.`, 8);
-    }
-  } else if (hasWeaponSpecialization) {
-    if (profData.prof === 'E') {
-      parts.set(`Since you're expert and have weapon specialization, you deal 2 additional damage.`, 2);
-    } else if (profData.prof === 'M') {
-      parts.set(`Since you're master and have weapon specialization, you deal 3 additional damage.`, 3);
-    } else if (profData.prof === 'L') {
-      parts.set(`Since you're legendary and have weapon specialization, you deal 4 additional damage.`, 4);
-    }
-  }
-
+/** Specialization is an untyped rules contribution determined by the weapon's actual proficiency rank. */
+function getWeaponSpecialization(id: StoreID, item: Item): { value: number; description: string } {
+  const proficiency = getProfTotal(id, item).prof;
+  const greater = getVariable<VariableBool>(id, 'WEAPON_SPECIALIZATION_GREATER')?.value ?? false;
+  const enabled = greater || (getVariable<VariableBool>(id, 'WEAPON_SPECIALIZATION')?.value ?? false);
+  const base = proficiency === 'E' ? 2 : proficiency === 'M' ? 3 : proficiency === 'L' ? 4 : 0;
   return {
-    total: [...parts.values()].reduce((a, b) => a + b, 0),
-    parts: parts,
+    value: enabled ? base * (greater ? 2 : 1) : 0,
+    description: `Additional damage from ${greater ? 'greater weapon specialization' : 'weapon specialization'} at your weapon proficiency.`,
   };
 }
 
-function getMeleeAttackDamage(id: StoreID, item: Item) {
-  const itemTraits = compileTraits(item);
-  const attackDamage = getFinalVariableValue(id, 'ATTACK_DAMAGE_BONUS').total;
-  const dexAttackDamage = getFinalVariableValue(id, 'DEX_ATTACK_DAMAGE_BONUS').total;
-  const strAttackDamage = getFinalVariableValue(id, 'STR_ATTACK_DAMAGE_BONUS').total;
-  const meleeAttackDamage = getFinalVariableValue(id, 'MELEE_ATTACK_DAMAGE_BONUS').total;
-  const nonSpellAttackDamage = getFinalVariableValue(id, 'NON_SPELL_ATTACK_DAMAGE_BONUS').total;
-
-  const hasSplash = hasTraitType('SPLASH', itemTraits);
-  const hasFinesse = hasTraitType('FINESSE', itemTraits);
-
-  const hasFinesseUseDexDamage = getVariable<VariableBool>(id, 'USE_DEX_FOR_MELEE_FINESSE')?.value ?? false;
-
-  const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
-  const dexMod = getFinalVariableValue(id, 'ATTRIBUTE_DEX').total;
-
-  ///
-
-  const parts = new Map<string, number>();
-
-  if (hasFinesseUseDexDamage && hasFinesse) {
-    if (dexMod >= strMod) {
-      if (dexMod) {
-        parts.set(
-          `This is your Dexterity modifier. You're adding Dexterity instead of Strength to your weapon's damage because this weapon has the finesse trait and you have an ability that allows you to use your Dexterity modifier instead of Strength for damage with finesse weapons.`,
-          dexMod
-        );
-      }
-    } else {
-      if (strMod) {
-        parts.set(
-          'This is your Strength modifier. You have an ability that allows you to use your Dexterity modifier instead of Strength for damage with finesse weapons. However, your Strength modifier is greater than your Dexterity so it is being used instead.',
-          strMod
-        );
-      }
-    }
-  } else {
-    if (!hasSplash && strMod) {
-      parts.set(
-        'This is your Strength modifier. You generally add your Strength modifier to damage with melee weapons.',
-        strMod
-      );
-    }
-  }
-
-  if (attackDamage) {
-    parts.set('This is a bonus you receive to all attack damage.', attackDamage);
-  }
-
-  if (dexAttackDamage) {
-    parts.set('This is a bonus you receive to damage for Dexterity-based attacks.', dexAttackDamage);
-  }
-
-  if (strAttackDamage) {
-    parts.set('This is a bonus you receive to damage for Strength-based attacks.', strAttackDamage);
-  }
-
-  if (meleeAttackDamage) {
-    parts.set('This is a bonus you receive to damage for melee attacks.', meleeAttackDamage);
-  }
-
-  if (nonSpellAttackDamage) {
-    parts.set('This is a bonus you receive to damage for non-spell attacks.', nonSpellAttackDamage);
-  }
-
-  // Weapon Specialization
-  const profData = getProfTotal(id, item);
-  const hasWeaponSpecialization = getVariable<VariableBool>(id, 'WEAPON_SPECIALIZATION')?.value ?? false;
-  const hasGreaterWeaponSpecialization = getVariable<VariableBool>(id, 'WEAPON_SPECIALIZATION_GREATER')?.value ?? false;
-  if (hasGreaterWeaponSpecialization) {
-    if (profData.prof === 'E') {
-      parts.set(`Since you're expert and have greater weapon specialization, you deal 4 additional damage.`, 4);
-    } else if (profData.prof === 'M') {
-      parts.set(`Since you're master and have greater weapon specialization, you deal 6 additional damage.`, 6);
-    } else if (profData.prof === 'L') {
-      parts.set(`Since you're legendary and have greater weapon specialization, you deal 8 additional damage.`, 8);
-    }
-  } else if (hasWeaponSpecialization) {
-    if (profData.prof === 'E') {
-      parts.set(`Since you're expert and have weapon specialization, you deal 2 additional damage.`, 2);
-    } else if (profData.prof === 'M') {
-      parts.set(`Since you're master and have weapon specialization, you deal 3 additional damage.`, 3);
-    } else if (profData.prof === 'L') {
-      parts.set(`Since you're legendary and have weapon specialization, you deal 4 additional damage.`, 4);
-    }
-  }
-
-  return {
-    total: [...parts.values()].reduce((a, b) => a + b, 0),
-    parts: parts,
-  };
+/** Compare proficiency rank and level without prematurely stacking its bonuses into the attack. */
+function getWeaponProficiencyBase(id: StoreID, variable: string): number {
+  const parts = getProfValueParts(id, variable);
+  return parts
+    ? parts.profValue + parts.level
+    : getVariable<VariableBool>('CHARACTER', 'PROF_WITHOUT_LEVEL')?.value
+      ? -2
+      : 0;
 }
 
 /**
@@ -568,18 +301,18 @@ function getProfTotal(id: StoreID, item: Item) {
   } else if (category === 'unarmed_attack') {
     categoryVariable = 'UNARMED_ATTACKS';
   }
-  categoryProfTotal = parseInt(getFinalProfValue(id, categoryVariable));
+  categoryProfTotal = getWeaponProficiencyBase(id, categoryVariable);
 
   const group = getWeaponGroup(id, item) ?? 'brawling';
 
   const groupVariable = `WEAPON_GROUP_${group.trim().toUpperCase()}`;
-  const groupProfTotal = parseInt(getFinalProfValue(id, groupVariable));
+  const groupProfTotal = getWeaponProficiencyBase(id, groupVariable);
 
   const divisionVariables = determineWeaponDivisions(item);
   let divisionVariable = null;
   let divisionProfTotal = 0;
   for (const v of divisionVariables) {
-    const newTotal = parseInt(getFinalProfValue(id, v));
+    const newTotal = getWeaponProficiencyBase(id, v);
     if (newTotal > divisionProfTotal) {
       divisionProfTotal = newTotal;
       divisionVariable = v;
@@ -587,7 +320,7 @@ function getProfTotal(id: StoreID, item: Item) {
   }
 
   const individualVariable = `WEAPON_${labelToVariable(item.name)}`;
-  const individualProfTotal = parseInt(getFinalProfValue(id, individualVariable));
+  const individualProfTotal = getWeaponProficiencyBase(id, individualVariable);
 
   let maxProfTotal = categoryProfTotal;
   let maxVariable = categoryVariable;
@@ -616,7 +349,7 @@ function getProfTotal(id: StoreID, item: Item) {
     const downgradedVariable =
       rawCategory === 'martial' ? 'SIMPLE_WEAPONS' : rawCategory === 'advanced' ? 'MARTIAL_WEAPONS' : null;
     if (downgradedVariable) {
-      const downgradedTotal = parseInt(getFinalProfValue(id, downgradedVariable));
+      const downgradedTotal = getWeaponProficiencyBase(id, downgradedVariable);
       for (const skillVariable of professionalSkills) {
         const skillParts = getProfValueParts(id, skillVariable);
         if (!skillParts) continue;
@@ -647,6 +380,7 @@ function getProfTotal(id: StoreID, item: Item) {
 
   return {
     total: maxProfTotal,
+    bonusVariables: [categoryVariable, groupVariable, ...divisionVariables, individualVariable],
     variable: maxVariable,
     prof: compileProficiencyType(getVariable<VariableProf>(id, maxVariable)?.value),
   };

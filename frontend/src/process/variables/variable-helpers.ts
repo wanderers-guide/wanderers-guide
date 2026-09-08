@@ -40,56 +40,73 @@ export function getFinalProfValue(
     : sign(parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.breakdown.bonusValue);
 }
 
-export function getFinalVariableValue(id: StoreID, variableName: string) {
-  const variable = getVariable(id, variableName);
-  const bonuses = getVariableBonuses(id, variableName);
+/** A raw modifier already resolved from any variable expression, before typed stacking. */
+export type ModifierBonus = Pick<ReturnType<typeof getVariableBonuses>[number], 'value' | 'type' | 'text' | 'source'>;
+export type ModifierGroup = { value: number; composition: { amount: number; source: string }[] };
 
-  let value = 0;
-  if (variable?.type === 'num') {
-    value = variable.value;
-  } else if (variable?.type === 'attr') {
-    value = variable.value.value;
-  }
-
-  const bMap = new Map<string, { value: number; composition: { amount: number; source: string }[] }>();
-  /*
-    If there's no display text, we add the number and compare against type.
-    If there's display text, we don't add the value.
-
-    If there's no type, we add the number either way.
-  */
+/**
+ * Resolve all applicable raw modifiers together. Positive and negative modifiers have separate
+ * typed limits; untyped entries stack. Descriptive conditions remain available without changing totals.
+ */
+export function resolveModifierBonuses(bonuses: ModifierBonus[]) {
+  const bmap = new Map<string, ModifierGroup>();
+  const conditionals: { text: string; source: string }[] = [];
   for (const bonus of bonuses) {
     if (bonus.text) {
+      conditionals.push({ text: getBonusText(bonus), source: bonus.source });
       continue;
+    }
+    if (bonus.value === null || bonus.value === undefined || !Number.isFinite(bonus.value)) continue;
+    const type = bonus.type?.trim().toLowerCase() || 'untyped';
+    const adjustment = bonus.value >= 0 ? 'bonus' : 'penalty';
+    const key = `${type} ${adjustment}`;
+    const existing = bmap.get(key);
+    if (existing) {
+      existing.value =
+        type === 'untyped'
+          ? existing.value + bonus.value
+          : (adjustment === 'bonus' ? Math.max : Math.min)(existing.value, bonus.value);
+      existing.composition.push({ amount: bonus.value, source: bonus.source });
     } else {
-      const type = bonus.type ? bonus.type.trim().toLowerCase() : 'untyped';
-      const adj = (bonus.value ?? 0) >= 0 ? 'bonus' : 'penalty';
-      const key = `${type} ${adj}`;
-      if (bMap.has(key)) {
-        const bMapValue = bMap.get(key)!;
-        bMap.set(key, {
-          value: key.startsWith('untyped ')
-            ? bMapValue.value + (bonus.value ?? 0)
-            : (adj === 'bonus' ? Math.max : Math.min)(bMapValue.value, bonus.value ?? 0),
-          composition: [...bMapValue.composition, { amount: bonus.value ?? 0, source: bonus.source }],
-        });
-      } else {
-        bMap.set(key, {
-          value: bonus.value!,
-          composition: [{ amount: bonus.value!, source: bonus.source }],
-        });
-      }
+      bmap.set(key, { value: bonus.value, composition: [{ amount: bonus.value, source: bonus.source }] });
     }
   }
+  return { bonus: [...bmap.values()].reduce((total, group) => total + group.value, 0), bmap, conditionals };
+}
 
-  const totalBonusValue = Array.from(bMap.values()).reduce((acc, bonus) => acc + bonus.value, 0);
+/** Combine category baselines additively and apply typed stacking once across their raw modifiers. */
+export function getCombinedVariableValue(
+  id: StoreID,
+  variableNames: string[],
+  additionalBonuses: ModifierBonus[] = []
+) {
+  let value = 0;
+  const bonuses: ModifierBonus[] = [...additionalBonuses];
+  for (const name of new Set(variableNames)) {
+    const variable = getVariable(id, name);
+    if (variable?.type === 'num') value += variable.value;
+    else if (variable?.type === 'attr') value += variable.value.value;
+    bonuses.push(...getVariableBonuses(id, name));
+  }
+  const resolved = resolveModifierBonuses(bonuses);
+  return { ...resolved, value, total: value + resolved.bonus };
+}
 
-  return {
-    total: value + totalBonusValue,
-    value: value,
-    bonus: totalBonusValue,
-    bmap: bMap,
-  };
+/** Resolve one variable using the same modifier rules as combined attack, damage, and AC categories. */
+export function getFinalVariableValue(id: StoreID, variableName: string) {
+  return getCombinedVariableValue(id, [variableName]);
+}
+
+/** Numeric breakdown entries use the resolved groups, so the displayed equation matches the actual total. */
+export function getModifierParts(modifiers: ReturnType<typeof getCombinedVariableValue>): Map<string, number> {
+  const parts = new Map<string, number>();
+  if (modifiers.value) parts.set('Additional base adjustments from applicable operations.', modifiers.value);
+  for (const [type, group] of modifiers.bmap) {
+    if (!group.value) continue;
+    const sources = group.composition.map((entry) => `${entry.source}: ${sign(entry.amount)}`).join('; ');
+    parts.set(`${type} (${sources}).`, group.value);
+  }
+  return parts;
 }
 
 export function getProfValueParts(
@@ -151,27 +168,11 @@ export function getProfValueParts(
 }
 
 export function getVariableBreakdown(id: StoreID, variableName: string) {
-  const bonuses = getVariableBonuses(id, variableName);
-
-  const conditionals: { text: string; source: string }[] = [];
-  for (const bonus of bonuses) {
-    if (bonus.text) {
-      conditionals.push({ text: getBonusText(bonus), source: bonus.source });
-    }
-  }
-
   const final = getFinalVariableValue(id, variableName);
-
-  return { bonuses: final.bmap, bonusValue: final.bonus, baseValue: final.value, conditionals };
+  return { bonuses: final.bmap, bonusValue: final.bonus, baseValue: final.value, conditionals: final.conditionals };
 }
 
-export function getBonusText(bonus: {
-  value?: number | null;
-  type?: string | null;
-  text: string;
-  source: string;
-  timestamp: number;
-}) {
+export function getBonusText(bonus: ModifierBonus) {
   if (bonus.value) {
     const suffix = bonus.value > 0 ? 'bonus' : 'penalty';
     if (bonus.type) {
@@ -262,44 +263,34 @@ export function getFinalAcValue(id: StoreID, item?: Item) {
   return 10 + profBonus + bonusAc + dexBonus + armorBonus;
 }
 
+/**
+ * Ignore the eligible armor penalty, then choose one other penalty to reduce by up to 5 feet.
+ * Re-stack each legal candidate from raw modifiers; suppressed penalties never create extra Speed.
+ */
 export function getSpeedValue(id: StoreID, variable: VariableNum, entity: LivingEntity | null) {
-  const finalData = getFinalVariableValue(id, variable.name);
-
-  const armorItem = getBestArmor(id, entity?.inventory);
-  const hasHindering = hasTraitType('HINDERING', armorItem?.item.traits ?? undefined);
+  const base = getFinalVariableValue(id, variable.name).value;
   const unburdenedIron = getVariable<VariableBool>(id, 'UNBURDENED_IRON')?.value ?? false;
-
-  for (const [key, value] of finalData.bmap) {
-    if (unburdenedIron && key.endsWith(' penalty')) {
-      let totalCompAdj = 0;
-      for (const comp of value.composition) {
-        if (comp.source === armorItem?.item.name && !hasHindering) {
-          // Remove all penalties from the armor
-          totalCompAdj += Math.abs(comp.amount);
-          comp.amount = 0;
-        } else {
-          // Reduce all other penalties by 5
-          if (Math.abs(comp.amount) > 5) {
-            totalCompAdj += 5;
-            comp.amount += 5;
-          }
-        }
-      }
-
-      finalData.bmap.set(key, {
-        value: value.value + totalCompAdj,
-        composition: value.composition,
-      });
+  let bonuses: ModifierBonus[] = getVariableBonuses(id, variable.name);
+  if (unburdenedIron) {
+    const armor = getBestArmor(id, entity?.inventory)?.item;
+    const ignoreArmor = armor && !hasTraitType('HINDERING', armor.traits ?? undefined);
+    bonuses = bonuses.map((bonus) =>
+      ignoreArmor && bonus.source === armor.name && !bonus.text && (bonus.value ?? 0) < 0
+        ? { ...bonus, value: 0 }
+        : bonus
+    );
+  }
+  let resolved = resolveModifierBonuses(bonuses);
+  if (unburdenedIron) {
+    for (const [index, bonus] of bonuses.entries()) {
+      if (bonus.text || (bonus.value ?? 0) >= 0) continue;
+      const candidate = resolveModifierBonuses(
+        bonuses.map((entry, candidateIndex) =>
+          candidateIndex === index ? { ...entry, value: Math.min(0, (entry.value ?? 0) + 5) } : entry
+        )
+      );
+      if (candidate.bonus > resolved.bonus) resolved = candidate;
     }
   }
-
-  const totalBonusValue = Array.from(finalData.bmap.values()).reduce((acc, bonus) => acc + bonus.value, 0);
-
-  return {
-    // Minimum speed is 5
-    total: Math.max(5, finalData.value + totalBonusValue),
-    value: finalData.value,
-    bonus: totalBonusValue,
-    bmap: finalData.bmap,
-  };
+  return { ...resolved, total: Math.max(5, base + resolved.bonus), value: base };
 }

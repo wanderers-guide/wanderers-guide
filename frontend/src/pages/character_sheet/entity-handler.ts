@@ -1,7 +1,7 @@
-import { getConditionByName } from '@conditions/condition-handler';
+import { compiledConditions, getConditionByName } from '@conditions/condition-handler';
 import { collectEntitySpellcasting, getFocusPoints } from '@content/collect-content';
 import { filterByTraitType } from '@items/inv-utils';
-import { LivingEntity } from '@schemas/content';
+import { Condition, LivingEntity } from '@schemas/content';
 import { StoreID, VariableAttr, VariableNum } from '@schemas/variables';
 import {
   getFinalHealthValue,
@@ -13,14 +13,17 @@ import { getVariable } from '@variables/variable-manager';
 import { cloneDeep } from 'lodash-es';
 import { evaluate } from 'mathjs';
 import { SetterOrUpdater } from '@utils/type-fixing';
+import { getEntityLevel } from '@utils/entity-utils';
 
-export function confirmHealth(
+/** Apply a user HP edit; normalization only clamps/initializes and never creates combat events. */
+export function confirmHealth<T extends LivingEntity>(
   hp: string,
   maxHealth: number,
-  entity: LivingEntity,
+  entity: T,
   setEntity?: SetterOrUpdater<LivingEntity | null>,
-  keepResetHp?: boolean
-) {
+  keepResetHp?: boolean,
+  intent: 'edit' | 'normalize' = 'edit'
+): { value: number; entity: T } | undefined {
   let result = -1;
   try {
     result = evaluate(hp);
@@ -40,26 +43,20 @@ export function confirmHealth(
 
   let newConditions = cloneDeep(entity.details?.conditions ?? []);
   // Add dying condition
-  if (result === 0 && entity.hp_current > 0 && !newConditions.find((c) => c.name === 'Dying')) {
+  if (intent === 'edit' && result === 0 && entity.hp_current > 0 && !newConditions.find((c) => c.name === 'Dying')) {
     const dying = getConditionByName('Dying')!;
-    const wounded = newConditions.find((c) => c.name === 'Wounded');
+    const wounded = compiledConditions(newConditions).find((c) => c.name === 'Wounded');
     if (wounded) {
       dying.value = 1 + wounded.value!;
     }
     newConditions.push(dying);
-  } else if (result > 0 && entity.hp_current === 0) {
-    // Remove dying condition
-    newConditions = newConditions.filter((c) => c.name !== 'Dying');
-    // Increase wounded condition
-    const wounded = newConditions.find((c) => c.name === 'Wounded');
-    if (wounded) {
-      wounded.value = 1 + wounded.value!;
-    } else {
-      newConditions.push(getConditionByName('Wounded')!);
-    }
+  } else if (intent === 'edit' && result > 0 && entity.hp_current === 0) {
+    const wasDying = newConditions.some((c) => c.name === 'Dying');
+    newConditions = newConditions.filter((c) => c.name !== 'Dying' && c.name !== 'Unconscious');
+    if (wasDying) newConditions = increaseWounded(newConditions);
   }
 
-  const getResultingEntity = (c: LivingEntity): LivingEntity => ({
+  const getResultingEntity = <E extends LivingEntity>(c: E): E => ({
     ...c,
     hp_current: result,
     details: {
@@ -79,6 +76,48 @@ export function confirmHealth(
   return {
     value: result,
     entity: getResultingEntity(entity),
+  };
+}
+
+/** Increase Wounded once when an explicit action removes Dying. */
+function increaseWounded(conditions: Condition[]): Condition[] {
+  const previous = compiledConditions(conditions).find((condition) => condition.name === 'Wounded');
+  return [
+    ...conditions.filter((condition) => condition.name !== 'Wounded'),
+    { ...getConditionByName('Wounded')!, value: (previous?.value ?? 0) + 1 },
+  ];
+}
+
+/**
+ * Apply an explicit condition edit and its one-time HP consequence as one entity update.
+ * Reads, operation replays, save retries, and hydration must never call this function.
+ */
+export function changeEntityConditions<T extends LivingEntity>(id: StoreID, entity: T, conditions: Condition[]): T {
+  const previous = compiledConditions(entity.details?.conditions ?? []);
+  let next = cloneDeep(conditions);
+  const effective = compiledConditions(next);
+  const drainedBefore = previous.find((condition) => condition.name === 'Drained')?.value ?? 0;
+  const drainedAfter = effective.find((condition) => condition.name === 'Drained')?.value ?? 0;
+  const hpLoss = Math.max(0, drainedAfter - drainedBefore) * Math.max(1, getEntityLevel(entity));
+  // An uninitialized sheet displays its current maximum. Capture that value before
+  // adding Drained, then clear reset_hp so the next calculation cannot heal the loss.
+  const currentHp = entity.hp_current < 0 ? getFinalHealthValue(id) : entity.hp_current;
+  if (
+    previous.some((condition) => condition.name === 'Dying') &&
+    !effective.some((condition) => condition.name === 'Dying')
+  ) {
+    next = increaseWounded(next);
+    // Stabilizing at zero removes Dying but does not wake the character.
+    if (currentHp === 0 && !next.some((condition) => condition.name === 'Unconscious')) {
+      next.push(getConditionByName('Unconscious')!);
+    }
+  }
+  return {
+    ...entity,
+    details: { ...entity.details, conditions: next },
+    ...(hpLoss > 0
+      ? { hp_current: Math.max(0, currentHp - hpLoss), meta_data: { ...entity.meta_data, reset_hp: false } }
+      : {}),
   };
 }
 

@@ -19,14 +19,13 @@ import { Creature, Trait } from '@schemas/content';
 import { StoreID } from '@schemas/variables';
 import { findCreatureTraits } from '@utils/creature';
 import { phoneQuery } from '@utils/mobile-responsive';
-import { evaluate } from 'mathjs';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAtom } from 'jotai';
-import { confirmHealth } from '../entity-handler';
+import { changeEntityConditions, confirmHealth } from '../entity-handler';
 import { DisplayIcon } from '@common/IconDisplay';
 import { sign } from '@utils/numbers';
 import { ConditionPills, selectCondition } from '../sections/ConditionSection';
-import { isTruthy, setterOrUpdaterToValue } from '@utils/type-fixing';
+import { isTruthy, setterOrUpdaterToValue, type SetterOrUpdater } from '@utils/type-fixing';
 import { IconPlus, IconX } from '@tabler/icons-react';
 import { cloneDeep } from 'lodash-es';
 import { executeOperations } from '@operations/operations.main';
@@ -96,30 +95,14 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
               companion={c}
               computed={computedData?.find((d) => d._id === `COMPANION_${index}`)}
               updateCreature={(input) => {
-                let entity = cloneDeep(input);
-
-                // If health changes, confirm and update entity with new changes
-                if (entity.hp_current !== c.hp_current) {
-                  const computed = computedData?.find((d) => d._id === `COMPANION_${index}`);
-                  if (computed) {
-                    const result = confirmHealth(`${entity.hp_current}`, computed.maxHp, c);
-
-                    if (result) {
-                      entity.hp_current = result.entity.hp_current;
-                      entity.details = {
-                        ...entity.details,
-                        conditions: result.entity.details?.conditions ?? [],
-                      };
-                      entity.meta_data = {
-                        ...entity.meta_data,
-                        reset_hp: false,
-                      };
-                    }
-                  }
-                }
-
                 setCharacter((prev) => {
                   if (!prev) return prev;
+                  const current = prev.companions?.list?.[index];
+                  // A modal can outlive both remote HP edits and this list position.
+                  if (!current || current.id !== c.id) return prev;
+                  const updated = typeof input === 'function' ? input(current) : input;
+                  if (updated === current) return prev;
+                  const entity = cloneDeep(updated);
                   return {
                     ...prev,
                     companions: {
@@ -176,7 +159,7 @@ function CompanionCard(props: {
     will: number;
     maxHp: number;
   };
-  updateCreature: (creature: Creature) => void;
+  updateCreature: SetterOrUpdater<Creature>;
   onRemove: () => void;
 }) {
   const isPhone = useMediaQuery(phoneQuery());
@@ -188,6 +171,7 @@ function CompanionCard(props: {
 
   const [health, setHealth] = useState<string | undefined>();
   const healthRef = useRef<HTMLInputElement>(null);
+  const refreshDrawerAfterUpdateRef = useRef(false);
 
   useEffect(() => {
     if (props.companion) {
@@ -197,47 +181,48 @@ function CompanionCard(props: {
     }
   }, [props.companion, props.computed]);
 
-  const handleUpdateCreature = (c: Creature) => {
-    props.updateCreature(c);
+  /** Resolve condition actions in the parent atom; refresh an open drawer after that commit. */
+  const handleUpdateCreature: SetterOrUpdater<Creature> = (input) => {
+    if (typeof input === 'function') {
+      refreshDrawerAfterUpdateRef.current = true;
+      props.updateCreature(input);
+      return;
+    }
+    props.updateCreature(input);
 
     // If the drawer is open, do janky refresh
     if (creatureDrawer) {
-      handleOpenDrawer(c);
+      handleOpenDrawer(input);
     }
   };
 
-  const handleOpenDrawer = (c: Creature) => {
-    openCreatureDrawer(null);
-    setTimeout(() => {
-      openCreatureDrawer({
-        data: {
-          STORE_ID: props.storeId,
-          creature: c,
-          updateCreature: props.updateCreature,
-        },
-      });
-    }, 1);
-  };
+  const handleOpenDrawer = useCallback(
+    (c: Creature) => {
+      openCreatureDrawer(null);
+      setTimeout(() => {
+        openCreatureDrawer({
+          data: {
+            STORE_ID: props.storeId,
+            creature: c,
+            updateCreature: props.updateCreature,
+          },
+        });
+      }, 1);
+    },
+    [openCreatureDrawer, props.storeId, props.updateCreature]
+  );
+
+  useEffect(() => {
+    if (!refreshDrawerAfterUpdateRef.current) return;
+    refreshDrawerAfterUpdateRef.current = false;
+    if (creatureDrawer?.data.STORE_ID === props.storeId) handleOpenDrawer(props.companion);
+  }, [props.companion, props.storeId, creatureDrawer?.data.STORE_ID, handleOpenDrawer]);
 
   const handleHealthSubmit = () => {
     const inputHealth = health ?? '0';
-    let result = -1;
-    try {
-      result = evaluate(inputHealth);
-    } catch (e) {
-      result = parseInt(inputHealth);
-    }
-    if (isNaN(result)) result = 0;
-    result = Math.floor(result);
-    if (result < 0) result = 0;
-    if (props.computed && result > props.computed.maxHp) result = props.computed.maxHp;
-
-    handleUpdateCreature({
-      ...props.companion,
-      hp_current: result,
-    });
-
-    setHealth(`${result}` === 'null' ? `${props.computed?.maxHp ?? ''}` : `${result}`);
+    const result = confirmHealth(inputHealth, props.computed?.maxHp ?? Number.POSITIVE_INFINITY, props.companion);
+    if (result) handleUpdateCreature(result.entity);
+    setHealth(`${result?.value ?? props.companion.hp_current}`);
     healthRef.current?.blur();
   };
 
@@ -377,15 +362,7 @@ function CompanionCard(props: {
             id={props.storeId}
             entity={props.companion}
             setEntity={(call) => {
-              const result = setterOrUpdaterToValue(call, props.companion);
-
-              handleUpdateCreature({
-                ...props.companion,
-                details: {
-                  ...props.companion.details,
-                  conditions: result?.details?.conditions ?? [],
-                },
-              });
+              handleUpdateCreature((current) => setterOrUpdaterToValue(call, current) ?? current);
             }}
             groupProps={{
               w: props.panelWidth - 500,
@@ -399,14 +376,14 @@ function CompanionCard(props: {
             color='dark.0'
             onClick={() => {
               selectCondition(props.companion.details?.conditions ?? [], (condition) => {
-                if (!props.companion) return;
-                handleUpdateCreature({
-                  ...props.companion,
-                  details: {
-                    ...props.companion.details,
-                    conditions: [...(props.companion.details?.conditions ?? []), condition],
-                  },
-                });
+                handleUpdateCreature((current) =>
+                  current.details?.conditions?.some((entry) => entry.name === condition.name)
+                    ? current
+                    : changeEntityConditions(props.storeId, current, [
+                        ...(current.details?.conditions ?? []),
+                        condition,
+                      ])
+                );
               });
             }}
             style={{
