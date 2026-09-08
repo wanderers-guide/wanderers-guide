@@ -1,33 +1,7 @@
 /** Rendered checks of width, overflow, local interactions and text contrast over extreme backdrops. */
 export {};
 
-function luminance(rgb: number[]): number {
-  const linear = rgb.map((channel) => {
-    const value = channel / 255;
-    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-  });
-  return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
-}
-
-function rgba(value: string): number[] {
-  const channels = value.match(/[\d.]+/g)?.map(Number) ?? [];
-  return [channels[0], channels[1], channels[2], channels[3] ?? 1];
-}
-
-function contrastOf(element: Element, win: Window): number {
-  const foreground = rgba(win.getComputedStyle(element).color);
-  expect(foreground[3], 'opaque text').to.equal(1);
-  const layers: number[][] = [];
-  for (let ancestor: Element | null = element; ancestor; ancestor = ancestor.parentElement) {
-    layers.unshift(rgba(win.getComputedStyle(ancestor).backgroundColor));
-  }
-  const background = layers.reduce(
-    (under, over) => over.slice(0, 3).map((channel, i) => channel * over[3] + under[i] * (1 - over[3])),
-    [255, 255, 255]
-  );
-  const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
-  return (values[0] + 0.05) / (values[1] + 0.05);
-}
+import { contrastOf } from './study-check-helpers';
 
 describe('Glass material study', () => {
   const contrastSamples: { variant: string; width: number; screen: string; backdrop: string; minimum: number }[] = [];
@@ -79,7 +53,8 @@ describe('Glass material study', () => {
         cy.get('.sheet-skill-row').should('have.length', 2);
         cy.get('.sheet-input').clear();
         cy.get('.glass-phone').screenshot(`${width}-${variant}-skills`, { overwrite: true });
-        cy.contains('label', 'Spells').click();
+        cy.get('[role="combobox"][aria-label="Sample screen"]').click().clear().type('Spells');
+        cy.contains('[role="option"]', /^Spells$/).click({ scrollBehavior: false });
         cy.get('[aria-label="Rank 1 slot 2 used"]').check();
         cy.contains('2 of 4 slots used').should('be.visible');
         cy.get('.glass-phone').screenshot(`${width}-${variant}-spells`, { overwrite: true });

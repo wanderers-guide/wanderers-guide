@@ -1,20 +1,20 @@
-import { Box, Checkbox, Group, TextInput, UnstyledButton } from '@mantine/core';
-import {
-  IconChevronDown,
-  IconGridDots,
-  IconMenu2,
-  IconMoon,
-  IconSearch,
-  IconStar,
-  IconStarFilled,
-  IconX,
-} from '@tabler/icons-react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Box, Button, Checkbox, FocusTrap, Group, Text, TextInput, UnstyledButton } from '@mantine/core';
+import { IconGridDots, IconMenu2, IconMoon, IconSearch, IconStar, IconStarFilled, IconX } from '@tabler/icons-react';
+import { useEffect, useRef, useState } from 'react';
 import LogoIcon from '../../../assets/images/LogoIcon';
 import ArmorIcon from '../../../assets/images/ArmorIcon';
+import { AdditionalSheetPanels } from './AdditionalSheetPanels';
+import {
+  parentScreen,
+  sheetDestinations,
+  studyDescriptions,
+  type GlassScreen,
+  type StudyEntry,
+} from './sheet-study-data';
+import { SheetSurface as Surface, SheetTabs } from './SheetStudyParts';
+export type { GlassScreen } from './sheet-study-data';
 
 export type GlassVariant = 'smoked' | 'unified' | 'frosted';
-export type GlassScreen = 'overview' | 'skills' | 'spells';
 const portrait =
   'https://fdrjqcyjklatdrmjdnys.supabase.co/storage/v1/object/public/portraits/0b7a9464-cf77-4a95-8018-6e4c6fc414b4/3524096663233119.png';
 const skillRows: [string, number, string][] = [
@@ -41,10 +41,6 @@ const skillRows: [string, number, string][] = [
 ];
 const ranks: Record<string, string> = { U: 'Untrained', T: 'Trained', E: 'Expert' };
 
-function Surface({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <Box className={`sheet-surface ${className}`}>{children}</Box>;
-}
-
 function StatRow({ label, bonus, rank }: { label: string; bonus: number; rank?: string }) {
   return (
     <Box className='sheet-stat-row'>
@@ -65,16 +61,34 @@ export function GlassSheet({
   screen,
   onScreenChange,
   backdrop,
+  tint = 'balanced',
 }: {
   variant: GlassVariant;
   screen: GlassScreen;
   onScreenChange: (screen: GlassScreen) => void;
   backdrop: string;
+  tint?: string;
 }) {
   const [heroPoints, setHeroPoints] = useState(1);
   const [search, setSearch] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [usedSlots, setUsedSlots] = useState([true, false, false, false]);
+  const [detail, setDetail] = useState<StudyEntry | null>(null);
+  const detailOpener = useRef<HTMLElement | null>(null);
+  const openDetail = (entry: StudyEntry) => {
+    detailOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setDetail({ ...entry, description: entry.description ?? studyDescriptions[entry.name]?.description });
+  };
+  const closeDetail = () => {
+    setDetail(null);
+  };
+  // The previous target becomes focusable after React removes inert from the sheet.
+  useEffect(() => {
+    if (!detail && detailOpener.current) {
+      detailOpener.current.focus({ preventScroll: true });
+      detailOpener.current = null;
+    }
+  }, [detail]);
   const viewport = useRef<HTMLDivElement>(null);
   const pickerButton = useRef<HTMLButtonElement>(null);
   const firstDestination = useRef<HTMLButtonElement>(null);
@@ -90,8 +104,14 @@ export function GlassSheet({
   };
 
   return (
-    <Box className='glass-phone' data-glass={variant} data-backdrop={backdrop}>
-      <Box className='sheet-viewport' ref={viewport} tabIndex={0} aria-label={`${variant} character sheet, scrollable`}>
+    <Box className='glass-phone' data-glass={variant} data-backdrop={backdrop} data-tint={tint}>
+      <Box
+        className='sheet-viewport'
+        inert={pickerOpen || !!detail}
+        ref={viewport}
+        tabIndex={0}
+        aria-label={`${variant} character sheet, scrollable`}
+      >
         <Box className='sheet-app-header'>
           <IconMenu2 size={23} aria-hidden />
           <LogoIcon size={31} color='var(--sheet-accent)' />
@@ -205,10 +225,14 @@ export function GlassSheet({
 
           {screen === 'skills' && (
             <Surface className='sheet-panel'>
-              <Box className='sheet-panel-tabs'>
-                <strong>Skills</strong>
-                <span className='sheet-muted'>Actions / Abilities</span>
-              </Box>
+              <SheetTabs
+                value={screen}
+                options={[
+                  { value: 'skills', label: 'Skills' },
+                  { value: 'actions', label: 'Actions / Abilities' },
+                ]}
+                onChange={onScreenChange}
+              />
               <TextInput
                 classNames={{ input: 'sheet-input' }}
                 leftSection={<IconSearch size={17} />}
@@ -296,6 +320,7 @@ export function GlassSheet({
               </Box>
             </Surface>
           )}
+          <AdditionalSheetPanels screen={screen} onScreenChange={onScreenChange} onOpen={openDetail} />
         </Box>
       </Box>
 
@@ -317,27 +342,24 @@ export function GlassSheet({
               <IconX size={20} />
             </UnstyledButton>
           </Group>
-          {(
-            [
-              ['overview', 'Health, Attributes, Saves'],
-              ['skills', 'Skills & Actions'],
-              ['spells', 'Spells'],
-            ] as const
-          ).map(([id, label], index) => (
-            <UnstyledButton
-              ref={index === 0 ? firstDestination : undefined}
-              key={id}
-              className='sheet-picker-option'
-              aria-current={screen === id ? 'page' : undefined}
-              onClick={() => {
-                onScreenChange(id);
-                closePicker();
-              }}
-            >
-              {label}
-              <IconChevronDown size={16} />
-            </UnstyledButton>
-          ))}
+          <Box className='sheet-picker-grid'>
+            {sheetDestinations.map(({ id, label, icon: Icon }, index) => (
+              <Button
+                ref={index === 0 ? firstDestination : undefined}
+                key={id}
+                className='sheet-picker-option'
+                variant='light'
+                leftSection={<Icon size={19} />}
+                aria-current={parentScreen(screen) === id ? 'page' : undefined}
+                onClick={() => {
+                  onScreenChange(id);
+                  closePicker();
+                }}
+              >
+                {label}
+              </Button>
+            ))}
+          </Box>
         </Box>
       )}
       <UnstyledButton
@@ -345,10 +367,73 @@ export function GlassSheet({
         className='sheet-grid-button'
         aria-label='Panel grid'
         aria-expanded={pickerOpen}
+        inert={!!detail}
         onClick={() => (pickerOpen ? closePicker() : setPickerOpen(true))}
       >
         <IconGridDots size={27} />
       </UnstyledButton>
+      {detail && (
+        <FocusTrap active>
+          <Box
+            className='sheet-detail'
+            role='dialog'
+            aria-label={detail.name}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                event.stopPropagation();
+                closeDetail();
+              }
+            }}
+          >
+            <Group className='sheet-detail-header' justify='space-between' wrap='nowrap'>
+              <Text component='h4'>{detail.name}</Text>
+              <UnstyledButton className='sheet-picker-close' aria-label='Close details' onClick={closeDetail}>
+                <IconX size={21} />
+              </UnstyledButton>
+            </Group>
+            <Box className='sheet-detail-body'>
+              {(detail.level !== undefined || detail.summary) && (
+                <Text className='sheet-muted' size='sm' mb='md'>
+                  {detail.level !== undefined ? `Level ${detail.level}` : detail.summary}
+                </Text>
+              )}
+              {detail.name === 'Bastard Sword' && (
+                <>
+                  <Group gap='xs' mb='lg'>
+                    <Text className='sheet-trait'>Common</Text>
+                    <Text className='sheet-trait'>Two-Hand d12</Text>
+                  </Group>
+                  <Box className='sheet-detail-facts'>
+                    <Text>
+                      Price <strong>4 gp</strong>
+                    </Text>
+                    <Text>
+                      Bulk <strong>1</strong>
+                    </Text>
+                    <Text>
+                      Hands <strong>1</strong>
+                    </Text>
+                    <Text>
+                      Damage <strong>1d8 S</strong>
+                    </Text>
+                  </Box>
+                </>
+              )}
+              {detail.description && <Text className='sheet-detail-prose'>{detail.description}</Text>}
+              {detail.name === 'Bastard Sword' && (
+                <Text className='sheet-muted' size='xs' mt='xl'>
+                  Player Core · page 278
+                </Text>
+              )}
+              {detail.name === 'Impressive Performance' && (
+                <Text className='sheet-muted' size='xs' mt='xl'>
+                  Player Core · page 256
+                </Text>
+              )}
+            </Box>
+          </Box>
+        </FocusTrap>
+      )}
     </Box>
   );
 }

@@ -1,6 +1,7 @@
 # Mobile character sheet UI exploration
 
-Status: current UI reference plus three glass material concepts. Branch: `codex/mobile-sheet-ui`.
+Status: smoked-glass exploration across the mobile sheet, with the current UI and earlier
+material concepts retained for comparison. Branch: `codex/mobile-sheet-ui`.
 
 **Do not merge this branch until the user explicitly approves merging it.** Earlier
 authorization to merge reliability fixes does not apply to this UI branch.
@@ -12,8 +13,9 @@ the completed mobile loading and quiet-save work. Production sheet styling and b
 remain unchanged while the material concepts below are reviewed.
 
 Run `npm --prefix frontend run prototype:mobile-sheet` and open
-`http://127.0.0.1:5175`. The opening view compares glass concepts. Choose **Current UI**
-or use `/?view=current` for the captured reference. The prototype lives beside the actual sheet in
+`http://127.0.0.1:5175`. The opening view is Smoked glass. Choose **Before / After** for
+matching screenshots, **Current UI** for the original navigation map, or **Compare all**
+for the three material concepts. The prototype lives beside the actual sheet in
 `frontend/src/pages/character_sheet/prototype/`. It is a separate Vite entry point,
 not an application route or a production build input.
 
@@ -31,16 +33,17 @@ review covers conditional surfaces below. It is not an accessibility or performa
 ## Glass material study
 
 Three concepts use the same public character, artwork, typeface and sample values.
-Overview, Skills and Spells are rendered with local Mantine components so colors, surfaces,
-search, hero points and spell slots can actually be inspected. These are representative
+All thirteen primary and nested screen states are rendered with local Mantine components
+so surfaces, fields, rows and navigation can actually be inspected. These are representative
 material studies, not pixel-identical replacements for the original sheet. Edit, Rest,
-the header menu and unimplemented nested tabs are visual context only. The grid includes
-the three sample destinations. There are no game operations, application API calls or saves.
+the header menu, catalog/currency editing and adventure creation are visual context only.
+The grid includes all nine existing destinations. There are no game operations, application
+API calls or saves.
 
 | Concept | Surface treatment | Tradeoff |
 | --- | --- | --- |
-| Smoked glass (`/?view=smoked`) | Separate cards with 88% dark tint, neutral saturation and opaque text. | Closest to the current visual structure. Retains the many panel boundaries and blur layers. |
-| Unified glass (`/?view=unified`) | One 80% tinted glass frame around 94% tinted reading sections. Inner sections use dividers and do not apply blur. | Preferred for reducing visual noise. More of the artwork is concentrated around the frame rather than behind text. |
+| Smoked glass (`/?view=smoked`) | Separate cards with 82% dark tint by default, neutral saturation and opaque text. Deeper tint preserves the earlier 88% option. | The direction selected for the expanded pass. Keeps section boundaries and shows more of the artwork. |
+| Unified glass (`/?view=unified`) | One 80% tinted glass frame around 94% tinted reading sections. Inner sections use dividers and do not apply blur. | An earlier alternative. Quieter edges, but fewer visual breaks between sections. |
 | Frosted light (`/?view=frosted`) | 90% pale glass, dark text and darker green accents. | Optional exploration. A production light theme needs a separate scope covering drawers, editors, controls and content rendering. |
 
 All three share three semantic roles: **glass shell**, **reading surface**, and **control
@@ -52,8 +55,44 @@ captures remain unmodified and are the authority for the exact existing layout.
 The review controls switch between 390 and 430px frames, capped to the available window
 width. Compare all places concepts side by side when space permits and stacks them in
 narrow windows. The concept tabs support keyboard navigation and their selection is in
-the URL. White and black backdrop options expose extreme conditions independently of the
-illustration. Local interactions reset on reload; this is intentional prototype behavior.
+the URL. The selected screen is also in the URL, for example
+`/?view=before-after&screen=inventory`. White and black backdrop options expose extreme
+conditions independently of the illustration. Local interactions reset on reload; this is
+intentional prototype behavior. They never reach the character saving or operations systems.
+
+### Expanded smoked pass
+
+The follow-up brief chose Smoked as the direction to extend, while leaving the final
+production choice open. Shared styling does not require one continuous visual panel.
+Keep separate overview cards, but use the same surface, border, text and control roles.
+The earlier preference for Unified is retained as an alternative, not the current recommendation.
+
+The first three-screen picker used downward arrows on destination rows. That implied an
+accordion without expanding anything and was rejected. The revised picker uses nine actual
+destination buttons in the current ordering, with an outlined active selection. Downward
+chevrons now appear only on genuine content accordions or selection controls.
+
+| Screen | Proposed refinement |
+| --- | --- |
+| Skills / Actions | Shared tab treatment. Search occupies its own row; action filters have their own row. Long weapon names wrap with bonus and damage underneath. |
+| Feats / Features | Shared expandable groups and entry rows. Search checks both categories. Levels and action symbols retain their roles. |
+| Inventory | Full wrapping names, secondary weapon summaries, separate equipment targets. Options remain explicit. |
+| Spells | Readable rank separators, casting values and spell-slot controls. |
+| Notes | Stable editor surface, compact formatting toolbar, page controls above the text. Local edits survive switching panels. |
+| Details | Consistent labels and fields. Longer text gets multiline inputs; short facts can share a row. Nested navigation remains explicit. |
+| Languages / Proficiencies | Wrapping pills; real expandable proficiency categories; ranks are distinct from numerical bonuses. |
+| Companions | Compact Badger card with a separate removal control, confirmation and empty state. No invented companion combat calculations. |
+| Extras | Quiet placeholder only. |
+| Detail samples | Stronger opaque reading surface, clear close control, readable prose and metadata. |
+
+Notes are illustrative local prose because the captured public sheet contains a long pasted
+code sample. `study-descriptions.json` contains first paragraphs extracted from the sanitized
+`data/data.sql` for local typography samples; content-link labels are retained as text. It is
+not a new content store or a replacement for the production rich-text renderer. Expanded action
+lists and proficiency rows are representative fixtures, not an exhaustive recalculation of Kip.
+Catalog selection, currency management, campaign sharing, organized-play adventure editing,
+full companion combat details, and complete content-drawer navigation remain outside this
+visual prototype. Disabled reference controls do not imply a proposed product restriction.
 
 ### Why the current glass is harder to read
 
@@ -75,28 +114,45 @@ study does not establish a frame-rate, battery or loading improvement.
 
 ### Checking the concepts
 
-The manual prototype check exercises actual rendered frames at 390 and 430px, narrow-page
+The manual prototype checks exercise actual rendered frames at 390 and 430px, narrow-page
 overflow, hero points, skill search, spell slots, menu focus and the current screenshot
-navigation. It captures each concept's overview, skills, spells and menu, plus a desktop
-comparison. It is separate from the application's regression suite:
+navigation. The material spec captures each concept's overview, skills, spells and menu.
+The expanded spec captures the remaining primary and nested panels, sample detail overlays,
+the companion empty state, destination buttons, and a matching before/after comparison.
+It also checks equipment targets, cross-category feat search, local note and field edits
+across navigation, and detail focus restoration. These are separate from the application's
+regression suite:
 
 ```sh
 npm --prefix frontend run cy:run -- --config-file src/pages/character_sheet/prototype/glass-check.config.mjs --browser electron
 ```
 
+The config runs both `glass-check.cy.ts` (seven material/reference scenarios) and
+`smoked-check.cy.ts` (three expanded-panel scenarios). Use Cypress's `--spec` argument
+with either spec's repository-relative path from `frontend/` to run that group alone.
+
 Artifacts go to the ignored `.scratch/mobile-sheet-ui/glass-captures/` directory.
-`glass-contrast.json` records sampled foreground/background contrast. The check composites
+`glass-contrast.json` and `smoked-contrast.json` record sampled foreground/background contrast. The check composites
 computed CSS background colors over solid white and black and checks sampled primary,
 secondary, warning and accent colors against 4.5:1. This follows the normal-text threshold
 in [WCAG contrast guidance](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html).
 It is a focused check of these prototype samples, not a whole-application accessibility
 certification or a substitute for device testing. Decorative artwork and icons are not text.
 
-Verified on September 8, 2026: all seven browser scenarios passed. The lowest sampled
+The initial material study was verified on September 8, 2026: all seven browser scenarios passed. The lowest sampled
 ratios across both widths and extreme backdrops were 6.86:1 for Smoked, 7.06:1 for Unified,
-and 4.96:1 for Frosted. The standalone prototype build, project TypeScript check and scoped
-ESLint check passed. The prototype build has a size warning from the combined reference and
-study bundle; it is not part of the production application build.
+and 4.96:1 for Frosted.
+
+The expanded pass was also verified on September 8: the seven material/reference scenarios
+passed again, followed by all three expanded scenarios in a separate run. The expanded
+contrast report contains 48 screen/width/backdrop samples, with a minimum of 5.79:1 under
+the more translucent Smoked treatment. The standalone prototype build, project TypeScript
+check and scoped ESLint check passed. The prototype build has a size warning from the
+combined reference, editor and study bundle; it is not part of the production application build.
+
+The larger text and separate metadata lines use more vertical space, especially in Feats
+and Inventory. Compare that readability/density tradeoff in the prototype before adopting
+the treatment. No phone performance gain or full game interaction coverage is claimed.
 
 ## Navigation map
 

@@ -44,9 +44,20 @@ const images: Record<string, string> = import.meta.glob('./captures/*.png', {
   import: 'default',
 });
 
+/** Reuse the untouched captures in the matching before/after view. */
+export function CurrentSheetImage({ screen, width }: { screen: string; width: string }) {
+  return (
+    <Image
+      src={images[`./captures/${width}-${screen}.png`]}
+      alt={`Current ${screen} screen at ${width} pixels`}
+      className='study-baseline-image'
+    />
+  );
+}
+
 /** A click-through record of the current UI. It has no application API or save path. */
-export function MobileSheetPrototype() {
-  const [activeId, setActiveId] = useState<string>('overview');
+export function MobileSheetPrototype({ initialScreen = 'overview' }: { initialScreen?: string }) {
+  const [activeId, setActiveId] = useState<string>(initialScreen);
   const [previousId, setPreviousId] = useState<string>('overview');
   const [width, setWidth] = useState<string>('390');
   const [showHotspots, setShowHotspots] = useState<boolean>(false);

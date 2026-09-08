@@ -7,7 +7,10 @@ export default defineConfig({
   e2e: {
     baseUrl: 'http://127.0.0.1:5175',
     supportFile: false,
-    specPattern: 'src/pages/character_sheet/prototype/glass-check.cy.ts',
+    specPattern: [
+      'src/pages/character_sheet/prototype/glass-check.cy.ts',
+      'src/pages/character_sheet/prototype/smoked-check.cy.ts',
+    ],
     setupNodeEvents(on) {
       on('before:browser:launch', (browser, launchOptions) => {
         if (browser.name === 'electron') {

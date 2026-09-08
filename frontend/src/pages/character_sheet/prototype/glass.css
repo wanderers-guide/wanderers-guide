@@ -521,12 +521,6 @@
   outline-offset: -3px;
 }
 
-@media (max-width: 1050px) {
-  .study-concepts {
-    grid-template-columns: minmax(0, var(--study-width));
-    gap: 36px;
-  }
-}
 @media (max-width: 480px) {
   .glass-study {
     padding: 20px 0;

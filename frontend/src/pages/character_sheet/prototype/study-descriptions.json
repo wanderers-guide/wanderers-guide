@@ -1,0 +1,134 @@
+{
+  "Seek": {
+    "description": "You scan an area for signs of creatures or objects, possibly including secret doors or hazards. Choose an area to scan. The GM determines the area you can scan with one Seek action--almost always 30 feet or less in any dimension. The GM might impose a penalty if you search far away from you or adjust the number of actions it takes to Seek a particularly cluttered area."
+  },
+  "Investigate": {
+    "description": "You seek out information about your surroundings while traveling at half speed. You use Recall Knowledge as a secret check to discover clues among the various things you can see and engage with as you journey along. You can use any skill that has a Recall Knowledge action while Investigating, but the GM determines whether the skill is relevant to the clues you could find."
+  },
+  "Release": {
+    "description": "You release something you're holding in your hand or hands. This might mean dropping an item, removing one hand from your weapon while continuing to hold it in another hand, releasing a rope suspending a chandelier, or performing a similar action. Unlike most manipulate actions, Release does not trigger reactions that can be triggered by actions with the manipulate trait (such as Reactive Strike)."
+  },
+  "Make an Impression": {
+    "description": "With at least 1 minute of conversation, during which you engage in charismatic overtures, flattery, and other acts of goodwill, you seek to make a good impression on someone to make them temporarily agreeable. At the end of the conversation, attempt a Diplomacy check against the Will DC of one target. You can instead choose up to five targets if you take a –2 penalty. The GM might add other bonuses or penalties based on the situation. Any impression you make lasts for only the current social interaction unless the GM decides otherwise. See Changing Attitudes below for a summary of the attitude conditions."
+  },
+  "Sense Motive": {
+    "description": "You try to tell whether a creature's behavior is abnormal. Choose one creature and assess it for odd body language, signs of nervousness, and other indicators that it might be trying to deceive someone. The GM attempts a single secret Perception check for you and compares the result to the Deception DC of the creature, the DC of a spell affecting the creature's mental state, or another appropriate DC determined by the GM. You typically can't try to Sense the Motive of the same creature again until the situation changes significantly."
+  },
+  "Step": {
+    "description": "You carefully move 5 feet. Unlike most types of movement, Stepping doesn't trigger reactions, such as Reactive Strike, that can be triggered by move actions or upon leaving or entering a square."
+  },
+  "Avoid Notice": {
+    "description": "You attempt a Stealth check to avoid notice while traveling at half speed. If you're Avoiding Notice at the start of an encounter, you usually roll a Stealth check instead of a Perception check both to determine your initiative and to see if the enemies notice you (based on their Perception DCs, as normal for Sneak, regardless of their initiative check results)."
+  },
+  "Defend": {
+    "description": "You move at half your travel speed with your shield raised. If combat breaks out, you gain the benefits of Raising a Shield before your first turn begins."
+  },
+  "Recall Knowledge": {
+    "description": "You attempt a skill check to try to remember a bit of knowledge regarding a topic related to that skill. Suggest which skill you'd like to use and ask the GM one question. The GM determines the DC. You might need to collaborate with the GM to narrow down the question or skills, and you can decide not to Recall Knowledge before committing to the action if you don't like your options."
+  },
+  "Demoralize": {
+    "description": "With a sudden shout, a well-timed taunt, or a cutting put-down, you can shake an enemy's resolve. Choose a creature within 30 feet of you who you're aware of. Attempt an Intimidation check against that target's Will DC. If the target doesn't understand the language you are speaking, or you're not speaking a language, you take a –4 circumstance penalty to the check. Regardless of your result, the target is temporarily immune to your attempts to Demoralize it for 10 minutes."
+  },
+  "Craft": {
+    "description": "You can make an item from raw materials. You need the Alchemical Crafting skill feat to create alchemical items and the Magical Crafting feat to create magic items."
+  },
+  "Aid": {
+    "description": "You try to help your ally with a task. To use this reaction, you must first prepare to help, usually by using an action (1) during your turn. You must explain to the GM exactly how you're trying to help, and they determine whether you can Aid your ally."
+  },
+  "Ancestral Paragon": {
+    "description": "Whether through instinct, study, or magic, you feel a deeper connection to your ancestry. You gain a 1st-level ancestry feat."
+  },
+  "Impressive Performance": {
+    "description": "Your performances inspire admiration and win you fans. You can Make an Impression using Performance instead of Diplomacy. If you spend at least 10 minutes performing in front of an audience, you can Make an Impression targeting up to 10 members of the audience who were there for the whole performance, without taking the normal penalty. The number of targets increases to 20 for a 1-hour performance and 50 for a 2-hour performance."
+  },
+  "Mystery": {
+    "description": "An oracle wields divine power, but not from a single divine being. This power could come from a potent concept or ideal, the attention of multiple divine entities whose areas of concern all touch on that subject, or a direct and dangerous conduit to raw divine power. This is the oracle’s mystery, a source of divine magic not beholden to any deity."
+  },
+  "Stride": {
+    "description": "You move up to your Speed."
+  },
+  "Interact": {
+    "description": "You use your hand or hands to manipulate an object or the terrain. You can grab an unattended or stored object, draw a weapon, swap a held item for another, open a door, or achieve a similar effect. On rare occasions, you might have to attempt a skill check to determine if your Interact action was successful."
+  },
+  "Awakened Mind": {
+    "description": "Awakening altered your mind. You are no longer an animal, but you can still ask questions of, receive answers from, and use the Diplomacy skill with animals of your kind. By remembering your instincts, you can allow yourself to be affected by spells and other effects as though you were an animal."
+  },
+  "Awakened Form": {
+    "description": "Awakening altered your form, enabling you to speak verbally and stand on two legs. You can wear, hold, wield, and use items. Which limbs you use to manipulate items and how many are determined by you and your GM, but for the rules you function like a humanoid with two hands."
+  },
+  "Oracular Warning": {
+    "description": "You have a premonition about impending danger that you use to warn your allies. Each ally within 20 feet gains a +2 status bonus to their initiative roll and gains temporary Hit Points equal to half your level, which last for 1 minute. If you are cursebound 2 when you use Oracular Warning, the bonus increases to +3, and if you are cursebound 3, the bonus increases to +4."
+  },
+  "Predict Weather": {
+    "description": "By observing often subtle indicators in the environment, you may try to predict the day's weather. Spend 10 minutes outdoors then attempt a DC 20 Survival check. (This check is reduced to DC 15 if you have a commanding view of the region, but increases to 30 if conditions are poor, such as attempting to predict weather with impaired visibility)."
+  },
+  "Earn Income": {
+    "description": "You can use a skill to earn money during downtime. You must be trained in the skill to do so. This takes time to set up, and your income depends on your proficiency rank and how lucrative a task you can find. Because this process requires a significant amount of time and involves tracking things outside the progress of adventures, it won't come up in every campaign. The most typical ways to earn income, detailed further in this section are:"
+  },
+  "Awakened Animal Attacks": {
+    "description": "Your heritage gives you a special unarmed attack instead of the fist unarmed attack humanoids typically gain. This attack is in the brawling weapon group. Work with your GM to determine which one you have, using the type of animal you are and suggestions in your heritage for guidance. For example, you might choose a beak, talon, or wing for an eagle, a fist or tail for a monkey, or a tongue or jaws for a toad."
+  },
+  "Signature Spells (Oracle)": {
+    "description": "Experience enables you to cast some spells more flexibly. For each spell rank you have access to, choose one spell of that rank to be a signature spell. You don’t need to learn heightened versions of signature spells separately; instead, you can heighten these spells freely. If you’ve learned a signature spell at a higher rank than its minimum, you can also cast all its lower-rank versions without learning those separately. If you swap out a signature spell, you can replace it with any spell you could have chosen when you first selected it (i.e., of the same spell rank or lower). You can also retrain specifically to change a signature spell to a different spell of that rank without swapping any spells; this takes as much time as retraining a spell normally does."
+  },
+  "Subsist": {
+    "description": "You try to provide food and shelter for yourself, and possibly others as well, with a standard of living. This typically uses Society if you’re in a settlement or Survival if you’re in the wild. The GM determines the DC based on the nature of the place where you're trying to Subsist. You might need a minimum proficiency rank to Subsist in particularly strange environments. Unlike most downtime activities, you can Subsist after 8 hours or less of exploration, but if you do, you take a –5 penalty."
+  },
+  "Oracle Spellcasting": {
+    "description": "You have an unfiltered connection to the great powers of the universe and the planes beyond, and you can let this power spill forth in the form of divine magic. You are a spellcaster, and you can cast spells of the divine tradition using the Cast a Spell activity. As an oracle, when you cast spells, your incantations may spill from your lips rapidly as you speak in tongues or intone in a voice not quite your own, and your gestures might be wild and unrestrained as religious ecstasy briefly touches your mind."
+  },
+  "Curse of Turbulent Moments": {
+    "description": "Time passes differently for you than for everyone else. You experience fluxes that might manifest as minor day-to-day changes in your apparent age, such as a gray lock of hair or a disappearing wrinkle, or as occasional ghostly temporal afterimages that slightly trail your movement. As you become more affected by your curse, time’s passage becomes more disjointed for you, making it difficult for you to react to the quick actions of others. You take a status penalty to your AC against attacks made against you from reactions or free actions and a status penalty to saving throws against effects that would make you fatigued or slowed equal to your cursebound value."
+  },
+  "Mystery of Time": {
+    "description": "Whether by accident, fate, or purposeful meddling, you exist slightly outside of time. While initially unmoored by moments, the countless march of milliseconds builds up to drift you further and further out of sync with your natural timeline, often in contradictory directions. You might view this as a blessing, perhaps as a sign you’re somehow beyond mortality or you can’t be contained within reality’s limitations, or you might view it as a cruel curse that causes your life to slip by adrift even as you gain power over time. Many oracles of time are without faith and either come to rely upon their own instincts to survive or turn to strange rituals and forbidden magic in attempts to break free of time’s grasp. Those oracles who worship deities most often venerate Pharasma, goddess of fate who sees all possible futures for all who ever lived, or Alseta, goddess of transitions and the passage through time."
+  },
+  "Spell Repertoire (Oracle)": {
+    "description": "The collection of spells you can cast is called your spell repertoire. At 1st level, you learn three 1st-rank divine spells of your choice and five divine cantrips of your choice. You choose these from the common spells on the divine list or from other divine spells to which you have access. You can cast any spell in your spell repertoire by using a spell slot of an appropriate spell rank."
+  },
+  "Wildsong": {
+    "description": "You know the Wildsong, a secret language known only within druid orders, in addition to any languages you know through your ancestry. The Wildsong is a melodic and tonal language sounding more like animal calls than a spoken tongue, and its alphabet involves fractals and spirals, like the arrangement of a seashell’s chambers, a snowflake’s crystals, or a fern’s fronds. Teaching the Wildsong to non-druids is anathema."
+  },
+  "Spellcasting": {
+    "description": "Choose a spell in your repertoire or that you prepared today at least 5 ranks lower than your highest-rank spell slot. Your familiar can Cast that Spell once per day using your magical tradition, spell attack modifier, and spell DC. If the spell has a drawback that affects the caster, both you and your familiar are affected. You must be able to cast 6th-rank spells using spell slots to select this."
+  },
+  "Fascinated by Society": {
+    "description": "Just as some humanoids find themselves driven to study nature, you are obsessed with the artificial constructs of society and can’t get enough. You are trained in Society. If you would automatically become trained in Society, you instead become trained in a skill of your choice."
+  },
+  "Climbing Animal": {
+    "description": "You are an animal whose limbs are adapted to grab, climb, and brachiate. You might be dexterous and ready to use tools like a chimpanzee or otter, or you may simply be a quick climber like a bear, raccoon, or sloth."
+  },
+  "Nudge the Scales": {
+    "description": "You lay a finger on the scales of life and death to heal a creature, regardless of whether it’s living or undead. You restore Hit Points equal to 2 + double your level to one creature within 30 feet."
+  },
+  "Awakened Animal": {
+    "description": "This indicates content from the awakened animal ancestry."
+  },
+  "Beast": {
+    "description": "A creature similar to an animal but with an Intelligence modifier of –3 or higher is usually a beast. Unlike an animal, a beast might be able to speak and reason."
+  },
+  "Spyglass": {
+    "description": "A typical spyglass lets you see eight times farther than normal."
+  },
+  "Awakened Animal Claw": {
+    "description": "Your heritage gives you a special unarmed attack instead of the fist unarmed attack humanoids typically gain."
+  },
+  "Spring-Loaded Net Launcher": {
+    "description": "Activate 1 (manipulate)"
+  },
+  "Leather Armor": {
+    "description": "A mix of flexible and molded boiled leather, a suit of this type of armor provides some protection with maximum flexibility."
+  },
+  "Fist": {
+    "description": "_Sometimes, the only way you can make someone listen is with your fist._"
+  },
+  "Club": {
+    "description": "This is a piece of stout wood shaped or repurposed to bludgeon an enemy. Clubs can be intricately carved pieces of martial art or as simple as a tree branch or piece of wood."
+  },
+  "Bastard Sword": {
+    "description": "This broad-bladed sword, sometimes called the hand-and-a-half sword, has a longer grip so it can be held in one hand or used with two hands to provide extra slashing power."
+  },
+  "Common": {
+    "description": "Common is a relative term used to denote the most prevalent human language spoken in a particular region. In each different region there may be different dialects and variations in the common language. In general, Common is the name for the standard language in which most humanoids speak."
+  }
+}
