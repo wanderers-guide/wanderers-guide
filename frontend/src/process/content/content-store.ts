@@ -146,6 +146,7 @@ const CONTENT_CACHE_VERSION = 4;
 const CONTENT_CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24h
 const CONTENT_CACHE_READ_TIMEOUT_MS = 2500;
 const CONTENT_CACHE_VERSION_TIMEOUT_MS = 750;
+const CONTENT_LOOKUP_TIMEOUT_MS = 750;
 // Unverified snapshots keep their original age even when new lookups are persisted.
 let unverifiedCacheSavedAt: number | undefined;
 
@@ -520,6 +521,10 @@ export async function fetchContent<T = Record<string, any>>(
 
   const workerContent = getWorkerContentReader();
   if (workerContent && !bypassWorkerPackage) {
+    if (type === 'trait' && data.content_sources === undefined) {
+      const traits = workerContent.lookupTrait(data);
+      if (traits !== undefined) return traits as T[];
+    }
     // Name/filter reads with the implicit INFO+PAGE scope may have more matches
     // outside the posted PAGE package. Preserve their original scoped lookup.
     if (type !== 'content-source' && data.id === undefined && data.content_sources === undefined)
@@ -747,6 +752,18 @@ export async function fetchContentPackage(
   await ensureCacheActor();
   const generation = cacheGeneration;
   const defaultSources = { PAGE: getDefaultSources('PAGE'), INFO: getDefaultSources('INFO') };
+  // Legacy operation filters resolve trait names across INFO+PAGE. Capture that
+  // full catalog without expanding PAGE candidates or blocking unrelated sheets.
+  const lookupTraitsPromise: Promise<Trait[] | undefined> = (async () => {
+    const lookupSources = await Promise.all([
+      fetchContentSources(defaultSources.INFO),
+      fetchContentSources(defaultSources.PAGE),
+    ]);
+    assertCurrentGeneration(generation);
+    return await fetchContent<Trait>('trait', {
+      content_sources: uniq(lookupSources.flat().map((source) => source.id)),
+    });
+  })().catch(() => undefined);
   const content = await Promise.all([
     fetchContentAll<Ancestry>('ancestry', sources),
     fetchContentAll<Background>('background', sources),
@@ -763,6 +780,7 @@ export async function fetchContentPackage(
     options?.fetchSources ? fetchContentSources(sources) : null,
   ]);
 
+  const lookupTraits = await withinCacheBudget(lookupTraitsPromise, CONTENT_LOOKUP_TIMEOUT_MS, undefined);
   assertCurrentGeneration(generation);
   const p = {
     ancestries: ((content[0] ?? []) as Ancestry[]).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
@@ -782,6 +800,7 @@ export async function fetchContentPackage(
       (a.name ?? '').localeCompare(b.name ?? '')
     ),
     sources: content[12] as ContentSource[],
+    lookupTraits,
     defaultSources,
   } satisfies ContentPackage;
 

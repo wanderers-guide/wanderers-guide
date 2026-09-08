@@ -5,6 +5,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { build } from 'esbuild';
+import { readContentRows } from './operation-test-harness.mjs';
 
 const directory = await mkdtemp(join(tmpdir(), 'wg-worker-package-'));
 const root = resolve(import.meta.dirname, '..');
@@ -348,4 +349,91 @@ test('the dedicated worker override cannot hijack a main-thread direct calculati
   } finally {
     delete globalThis.document;
   }
+});
+
+test('implicit trait lookups preserve the complete INFO catalog and first matching ID without expanding PAGE', async () => {
+  const content = packet();
+  const pageTrait = { id: 30, name: 'Wizard School', content_source_id: 1 };
+  const infoTrait = { id: 10, name: 'Wizard School', content_source_id: 9 };
+  const privateTrait = { id: 20, name: 'Wizard School', content_source_id: 8 };
+  content.traits = [pageTrait];
+  content.lookupTraits = [pageTrait, privateTrait, infoTrait, { id: 40, name: 'School_1', content_source_id: 9 }];
+  await api.withWorkerContentPackage(content, async () => {
+    assert.deepEqual(await api.fetchContent('trait', { name: '  WIZARD school  ' }), [infoTrait]);
+    assert.deepEqual(await api.fetchContent('trait', { name: 'Wizard %' }), [infoTrait]);
+    assert.deepEqual(await api.fetchContent('trait', { id: [30, 10] }), [infoTrait, pageTrait]);
+    assert.deepEqual(await api.fetchContent('trait', { id: 30, name: 'ignored by API' }), [pageTrait]);
+    assert.equal((await api.fetchContent('trait', { name: 'School\\_1' }))[0].id, 40);
+    assert.deepEqual(await api.fetchContent('trait', { name: 'Missing trait' }), []);
+    assert.deepEqual(await api.fetchContent('trait', { name: '' }), [infoTrait]);
+    assert.deepEqual(await api.fetchContent('trait', { name: '   ' }), []);
+    assert.deepEqual(await api.fetchContent('trait', { content_sources: [1, 3] }), [pageTrait]);
+    assert.deepEqual(api.getCachedContent('trait'), [pageTrait]);
+    assert.equal(networkCalls, 0);
+  });
+  assert.equal(api.getWorkerContentReader(), undefined);
+  assert.deepEqual(api.getCachedContent('trait'), [], 'lookup metadata is not retained between actors or jobs');
+});
+
+test('older packets without trait metadata retain the original implicit lookup fallback', async () => {
+  allowCrossBookLookup();
+  const request = globalThis.__workerPackageTest.request;
+  globalThis.__workerPackageTest.request = async (type, body) => {
+    if (type !== 'find-trait') return request(type, body);
+    networkCalls += 1;
+    assert.ok(body.content_sources.includes(9));
+    return { id: 10, name: 'Wizard School', content_source_id: 9 };
+  };
+  await api.withWorkerContentPackage(packet(), async () => {
+    assert.equal((await api.fetchContent('trait', { name: 'Wizard School' }))[0].id, 10);
+  });
+  assert.ok(networkCalls > 0);
+  assert.equal(api.getWorkerContentReader(), undefined);
+});
+
+test('a real core Wizard resolves its complete selection catalog without another network request', async () => {
+  const tables = {
+    ability_block: 'abilityBlocks',
+    ancestry: 'ancestries',
+    archetype: 'archetypes',
+    background: 'backgrounds',
+    class: 'classes',
+    class_archetype: 'classArchetypes',
+    creature: 'creatures',
+    item: 'items',
+    language: 'languages',
+    spell: 'spells',
+    trait: 'traits',
+    versatile_heritage: 'versatileHeritages',
+  };
+  const rows = await readContentRows([
+    ...Object.keys(tables)
+      .filter((table) => table !== 'creature')
+      .map((table) => ({ table, sourceIds: [1, 3] })),
+    { table: 'content_source', id: 1 },
+    { table: 'content_source', id: 3 },
+  ]);
+  const content = {
+    ...Object.fromEntries(
+      Object.entries(tables).map(([table, field]) => [
+        field,
+        rows.filter((entry) => entry.table === table).map((entry) => entry.row),
+      ])
+    ),
+    sources: rows.filter((entry) => entry.table === 'content_source').map((entry) => entry.row),
+    lookupTraits: rows.filter((entry) => entry.table === 'trait').map((entry) => entry.row),
+    defaultSources: { PAGE: [1, 3], INFO: [1, 3] },
+  };
+  const wizard = {
+    ...character(),
+    custom_operations: [],
+    details: { class: content.classes.find((row) => row.id === 26) },
+  };
+  assert.equal(wizard.details.class?.name, 'Wizard');
+  await self.onmessage({
+    data: { id: 1, execution: { type: 'CHARACTER', data: { character: wizard, content, context: 'CHARACTER-SHEET' } } },
+  });
+  const result = messages.pop();
+  assert.equal(result.status, 'success', result.message);
+  assert.equal(networkCalls, 0, JSON.stringify(requests));
 });

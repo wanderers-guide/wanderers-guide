@@ -50,8 +50,13 @@ content from another book; when that reference is absent from the package, the e
 scoped lookup still runs without storing fallback rows in the worker cache. A failed
 lookup stops calculation rather than dropping the grant. Such uncached dependencies
 still require a connection. Explicit main-thread calculations retain the normal content
-store behavior. Spell panels use the same complete page package, so an early render
-cannot cache an empty catalog while a character is being restored.
+store behavior. Trait-name filters also receive a separately cached INFO+PAGE trait
+catalog, preserving the endpoint's first-by-ID choice when names occur in more than one
+book. This optional metadata starts loading with the PAGE package and gets at most
+750 milliseconds of extra wait after the required tables finish. Failure or a late result
+cannot block an unrelated character or mutate a posted package; an actual missing lookup
+uses the existing scoped request. Spell panels use the same complete page package, so an
+early render cannot cache an empty catalog while a character is being restored.
 
 The builder waits for the current character's authoritative save context before
 exposing editable controls. A cached route row cannot make the form ready early.

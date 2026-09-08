@@ -334,6 +334,9 @@ and content store with network and authentication lookups unavailable. It checks
 source boundaries, consecutive packages, missing tables, and cleanup after failure.
 Separate cases cover cross-book references: their existing scoped lookup must still
 work online and fail clearly when an uncached dependency cannot be downloaded.
+The real Wizard fixture also exercises its legacy trait-name filter with all network
+access disabled; duplicate trait names preserve the API's first-by-ID result across
+INFO and PAGE while selection lists keep their PAGE source boundaries.
 Use a production build and preview for startup measurements; development modules have
 different download behavior. These are controlled Chromium scenarios, not measurements
 on a physical phone.

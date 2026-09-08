@@ -1,4 +1,4 @@
-import type { ContentPackage, ContentSource, ContentType, SourceValue } from '@schemas/content';
+import type { ContentPackage, ContentSource, ContentType, SourceValue, Trait } from '@schemas/content';
 import { COMMON_CORE_ID } from '@constants/data';
 import { SourceValueSchema } from '@schemas/shared';
 
@@ -21,13 +21,24 @@ const TABLES = {
 type PackageRow = { id: number; name: string; content_source_id?: number };
 
 /** Match the endpoint's case-insensitive SQL LIKE name filter, including explicit wildcards. */
-function matchesName(name: string, pattern: string): boolean {
-  const expression = [...pattern]
-    .map((character) =>
-      character === '%' ? '.*' : character === '_' ? '.' : character.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    )
-    .join('');
-  return new RegExp(`^${expression}$`, 'i').test(name);
+function namePattern(pattern: string): RegExp {
+  let expression = '';
+  let escaped = false;
+  for (const character of pattern) {
+    if (!escaped && character === '\\') {
+      escaped = true;
+      continue;
+    }
+    expression +=
+      !escaped && character === '%'
+        ? '.*'
+        : !escaped && character === '_'
+          ? '.'
+          : character.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    escaped = false;
+  }
+  if (escaped) throw new Error('Invalid trailing escape in a content name filter.');
+  return new RegExp(`^${expression}$`, 'is');
 }
 
 /** Read only the complete content supplied for this calculation, without another account or network lookup. */
@@ -40,6 +51,9 @@ export function createOperationContentReader(content: ContentPackage) {
   const enabled = Array.isArray(page) ? new Set([COMMON_CORE_ID, ...page]) : null;
   const scopedTables = new Map<ContentType, PackageRow[]>();
   const indexedTables = new Map<ContentType, Map<number, PackageRow>>();
+  const lookupTraits = content.lookupTraits
+    ? [...content.lookupTraits].sort((left, right) => left.id - right.id)
+    : undefined;
 
   const table = (type: ContentType, required: boolean): PackageRow[] => {
     const cached = scopedTables.get(type);
@@ -72,6 +86,21 @@ export function createOperationContentReader(content: ContentPackage) {
   };
   return {
     sources,
+    /** Match find-trait's implicit scope, ID precedence, trimming and first-row behavior. */
+    lookupTrait(data: Record<string, unknown>): Trait[] | undefined {
+      if (!lookupTraits) return undefined;
+      if (data.id) {
+        const ids = new Set((Array.isArray(data.id) ? data.id : [data.id]).map(Number));
+        const rows = lookupTraits.filter((row) => ids.has(row.id));
+        return Array.isArray(data.id) && data.name === undefined ? rows : rows.slice(0, 1);
+      }
+      if (typeof data.name === 'string') {
+        const match = data.name ? namePattern(data.name.trim()) : null;
+        const row = lookupTraits.find((row) => !match || match.test(row.name));
+        return row ? [row] : [];
+      }
+      return undefined;
+    },
     /** Optional prose/cache lookups retain their existing empty result for unknown subtypes. */
     cached<T>(type: ContentType): T[] {
       // Fetch boundaries already validated these rows. Preserve extension fields and
@@ -105,10 +134,11 @@ export function createOperationContentReader(content: ContentPackage) {
           if (!data.id && value === false) rows = rows.filter((row) => 'user_id' in row && row.user_id === null);
           continue;
         }
+        const nameMatch = key === 'name' && typeof value === 'string' ? namePattern(value) : null;
         rows = rows.filter((row) => {
           const column = key === 'published' ? 'is_published' : key;
           const actual = Reflect.get(row, column);
-          if (key === 'name' && typeof value === 'string') return matchesName(row.name, value);
+          if (nameMatch) return nameMatch.test(row.name);
           if (Array.isArray(value)) {
             if (key === 'traits' || key === 'prerequisites')
               return Array.isArray(actual) && value.every((item) => actual.includes(item));
