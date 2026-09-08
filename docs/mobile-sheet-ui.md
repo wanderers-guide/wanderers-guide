@@ -1,6 +1,6 @@
 # Mobile character sheet UI exploration
 
-Status: baseline capture only. Branch: `codex/mobile-sheet-ui`.
+Status: current UI reference plus three glass material concepts. Branch: `codex/mobile-sheet-ui`.
 
 **Do not merge this branch until the user explicitly approves merging it.** Earlier
 authorization to merge reliability fixes does not apply to this UI branch.
@@ -8,10 +8,12 @@ authorization to merge reliability fixes does not apply to this UI branch.
 ## Current baseline
 
 The branch starts from main commit `02940a970a9b7d46507834a7c11ad4edf4735351`, including
-the completed mobile loading and quiet-save work. No redesign is proposed in this pass.
+the completed mobile loading and quiet-save work. Production sheet styling and behavior
+remain unchanged while the material concepts below are reviewed.
 
 Run `npm --prefix frontend run prototype:mobile-sheet` and open
-`http://127.0.0.1:5175`. The prototype lives beside the actual sheet in
+`http://127.0.0.1:5175`. The opening view compares glass concepts. Choose **Current UI**
+or use `/?view=current` for the captured reference. The prototype lives beside the actual sheet in
 `frontend/src/pages/character_sheet/prototype/`. It is a separate Vite entry point,
 not an application route or a production build input.
 
@@ -25,6 +27,76 @@ dark appearance, font, artwork, character values and density are preserved in th
 
 This captures a representative character, not every possible character variant. Source
 review covers conditional surfaces below. It is not an accessibility or performance audit.
+
+## Glass material study
+
+Three concepts use the same public character, artwork, typeface and sample values.
+Overview, Skills and Spells are rendered with local Mantine components so colors, surfaces,
+search, hero points and spell slots can actually be inspected. These are representative
+material studies, not pixel-identical replacements for the original sheet. Edit, Rest,
+the header menu and unimplemented nested tabs are visual context only. The grid includes
+the three sample destinations. There are no game operations, application API calls or saves.
+
+| Concept | Surface treatment | Tradeoff |
+| --- | --- | --- |
+| Smoked glass (`/?view=smoked`) | Separate cards with 88% dark tint, neutral saturation and opaque text. | Closest to the current visual structure. Retains the many panel boundaries and blur layers. |
+| Unified glass (`/?view=unified`) | One 80% tinted glass frame around 94% tinted reading sections. Inner sections use dividers and do not apply blur. | Preferred for reducing visual noise. More of the artwork is concentrated around the frame rather than behind text. |
+| Frosted light (`/?view=frosted`) | 90% pale glass, dark text and darker green accents. | Optional exploration. A production light theme needs a separate scope covering drawers, editors, controls and content rendering. |
+
+All three share three semantic roles: **glass shell**, **reading surface**, and **control
+surface**. Controls and the sample menu use an opaque background. Text colors are opaque
+and have a consistent primary/secondary distinction. Supporting labels are generally
+12 or 13px, with 12px proficiency markers instead of the current 8px markers. The baseline
+captures remain unmodified and are the authority for the exact existing layout.
+
+The review controls switch between 390 and 430px frames, capped to the available window
+width. Compare all places concepts side by side when space permits and stacks them in
+narrow windows. The concept tabs support keyboard navigation and their selection is in
+the URL. White and black backdrop options expose extreme conditions independently of the
+illustration. Local interactions reset on reload; this is intentional prototype behavior.
+
+### Why the current glass is harder to read
+
+- `App.tsx` defines translucent dark and gray palettes. The shared dark-7 surface is only
+  67% opaque, and explicit gray text can be translucent too.
+- `utils/colors.ts` applies 16px blur with 180% saturation. The illustration's color fields
+  remain prominent inside panels, so additional blur alone does not establish contrast.
+- Global body and dimmed text are almost identical in lightness, while explicit gray text
+  and placeholders can be much weaker. Secondary text does not have one dependable treatment.
+- The overview renders six separate BlurBoxes. Some controls also use the glass helper,
+  while the panel picker overrides its background with 40% black.
+
+If a direction is selected, the existing consolidation seam is `index.css` tokens,
+`App.tsx` theme/component overrides, and `glassStyle` / `BlurBox` / `ImprintButton`.
+The eventual change should include menus, fields and drawers. It should not require
+independent styling decisions for each character panel. No production consolidation has
+been made on this branch. Fewer blurred layers are a rendering simplification, but this
+study does not establish a frame-rate, battery or loading improvement.
+
+### Checking the concepts
+
+The manual prototype check exercises actual rendered frames at 390 and 430px, narrow-page
+overflow, hero points, skill search, spell slots, menu focus and the current screenshot
+navigation. It captures each concept's overview, skills, spells and menu, plus a desktop
+comparison. It is separate from the application's regression suite:
+
+```sh
+npm --prefix frontend run cy:run -- --config-file src/pages/character_sheet/prototype/glass-check.config.mjs --browser electron
+```
+
+Artifacts go to the ignored `.scratch/mobile-sheet-ui/glass-captures/` directory.
+`glass-contrast.json` records sampled foreground/background contrast. The check composites
+computed CSS background colors over solid white and black and checks sampled primary,
+secondary, warning and accent colors against 4.5:1. This follows the normal-text threshold
+in [WCAG contrast guidance](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html).
+It is a focused check of these prototype samples, not a whole-application accessibility
+certification or a substitute for device testing. Decorative artwork and icons are not text.
+
+Verified on September 8, 2026: all seven browser scenarios passed. The lowest sampled
+ratios across both widths and extreme backdrops were 6.86:1 for Smoked, 7.06:1 for Unified,
+and 4.96:1 for Frosted. The standalone prototype build, project TypeScript check and scoped
+ESLint check passed. The prototype build has a size warning from the combined reference and
+study bundle; it is not part of the production application build.
 
 ## Navigation map
 
