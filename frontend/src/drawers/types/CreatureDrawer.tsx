@@ -448,6 +448,7 @@ export function CreatureDrawerContent(props: {
 
                 {activeTab === 'spells' && (
                   <SpellsPanel
+                    content={content}
                     panelHeight={panelHeight}
                     panelWidth={panelWidth}
                     id={STORE_ID}

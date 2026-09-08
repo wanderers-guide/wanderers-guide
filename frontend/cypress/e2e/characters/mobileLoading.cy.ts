@@ -30,6 +30,7 @@ describe('Mobile content loading', () => {
         uploadThroughput: 96 * 1024,
       });
       protocol('Emulation.setCPUThrottlingRate', { rate: 4 });
+      cy.intercept('GET', '**/assets/game-icons-*.js').as('gameIcons');
       cy.intercept('POST', '**/auth/v1/token*').as('signIn');
       cy.login(created.gm.email, created.gm.password);
       cy.wait('@signIn').then(({ response }) => {
@@ -84,6 +85,7 @@ describe('Mobile content loading', () => {
             cy.contains('Hit Points', { timeout: 60000 }).should('be.visible');
             cy.get('[data-testid="character-save-status"]').should('not.exist');
             cy.contains('Changes not saved').should('not.exist');
+            cy.get('@gameIcons.all').should('have.length', 0);
             cy.screenshot('mobile-cold-content-loaded');
             // Wait for the actual IndexedDB transaction, not a guessed debounce sleep.
             cy.window().then((win) => win.dispatchEvent(new Event('pagehide')));

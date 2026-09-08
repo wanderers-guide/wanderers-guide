@@ -43,6 +43,16 @@ original timestamp when persisted, preserving the 24-hour age limit. If browser 
 itself remains stalled, fresh content still loads but persistence waits for that storage
 operation to finish. Catalog artwork loads only when displayed.
 
+Calculation workers reuse the package posted for their current job. Catalog selections
+remain scoped to its enabled sources, and the reader is released after success or
+failure. A missing required table fails the calculation. Explicit grants can reference
+content from another book; when that reference is absent from the package, the existing
+scoped lookup still runs without storing fallback rows in the worker cache. A failed
+lookup stops calculation rather than dropping the grant. Such uncached dependencies
+still require a connection. Explicit main-thread calculations retain the normal content
+store behavior. Spell panels use the same complete page package, so an early render
+cannot cache an empty catalog while a character is being restored.
+
 The builder waits for the current character's authoritative save context before
 exposing editable controls. A cached route row cannot make the form ready early.
 A failed load leaves the character route available for retry. Save status distinguishes

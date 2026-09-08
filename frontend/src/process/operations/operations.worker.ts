@@ -4,6 +4,7 @@ export {};
 import { OperationExecution } from '@schemas/content';
 import { _executeCharacterOperations, _executeCreatureOperations } from '../operations/operation-controller';
 import { VariableStore } from '@schemas/variables';
+import { withWorkerContentPackage } from './operation-content-package';
 
 type WorkerRequest = {
   id: number;
@@ -17,18 +18,12 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
   const { id, execution, charStore } = e.data;
 
   try {
-    let result;
-
-    if (execution.type === 'CHARACTER') {
-      result = await _executeCharacterOperations(execution.data);
-    } else if (execution.type === 'CREATURE') {
-      result = await _executeCreatureOperations({
-        ...execution.data,
-        charStore: charStore!,
-      });
-    } else {
+    const result = await withWorkerContentPackage(execution.data.content, async () => {
+      if (execution.type === 'CHARACTER') return await _executeCharacterOperations(execution.data);
+      if (execution.type === 'CREATURE')
+        return await _executeCreatureOperations({ ...execution.data, charStore: charStore! });
       throw new Error('Unknown operation execution type');
-    }
+    });
 
     const response: WorkerResponse = {
       id,

@@ -329,6 +329,11 @@ download throughput, 96 KiB/s upload throughput, and 4x CPU throttling before vi
 the app. It creates a fresh account scope, loads a sheet, waits for the actual content
 cache transaction, and reloads with a delayed freshness check and unavailable catalog
 endpoints. The cached sheet must become usable without replacement catalog requests.
+The worker-package regression in `test:infra` runs the real worker entry point, controller,
+and content store with network and authentication lookups unavailable. It checks grants,
+source boundaries, consecutive packages, missing tables, and cleanup after failure.
+Separate cases cover cross-book references: their existing scoped lookup must still
+work online and fail clearly when an uncached dependency cannot be downloaded.
 Use a production build and preview for startup measurements; development modules have
 different download behavior. These are controlled Chromium scenarios, not measurements
 on a physical phone.

@@ -222,7 +222,7 @@ describe('Interrupted character saves', () => {
       cy.get('input[placeholder="Search spells"]')
         .last()
         .closest('.mantine-Modal-body')
-        .contains('p', /^Charm$/)
+        .contains('p', /^Charm$/, { timeout: 30000 })
         .parents('.mantine-Group-root')
         .filter(':has(button)')
         .first()
@@ -237,7 +237,16 @@ describe('Interrupted character saves', () => {
     cy.get('button.mantine-Modal-close').last().click();
     cy.get('[data-testid="character-save-status"]').should('not.exist');
     cy.screenshot('mobile-spells-waiting-to-sync');
-    cy.window().then((win) => win.dispatchEvent(new Event('pagehide')));
+    cy.window().then((win) => {
+      win.dispatchEvent(new Event('pagehide'));
+      const drafts = Object.entries(win.localStorage)
+        .filter(([key]) => key.startsWith(`autosave-character-${characterId}-${actorId}:writer:`))
+        .map(([, raw]) => JSON.parse(raw));
+      expect(
+        drafts.some((draft) => draft.body?.spells?.slots?.some((slot: { spell_id?: number }) => !!slot.spell_id)),
+        'prepared spell retained before reopening'
+      ).to.eq(true);
+    });
     cy.reload();
     cy.get('button[aria-label="Panel Grid"]', { timeout: 30000 }).should('be.visible').click();
     cy.contains('button', /^Spells$/).click();

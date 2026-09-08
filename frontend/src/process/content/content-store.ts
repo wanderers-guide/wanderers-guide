@@ -42,6 +42,7 @@ import { z } from 'zod';
 import { hashData } from '@utils/numbers';
 import { isTruthy } from '@utils/type-fixing';
 import { cloneDeep, isString, uniq, uniqBy } from 'lodash-es';
+import { getWorkerContentReader } from '@operations/operation-content-package';
 
 ///////////////////////////////////////////////////////
 //                      Storing                      //
@@ -298,7 +299,12 @@ function beginHydration(): Promise<void> {
 }
 // Started at module load and re-armed by resetContentStore(), so the in-memory store can
 // refill from the persisted cache after an in-memory clear instead of re-fetching the corpus.
-let hydrationPromise: Promise<void> = beginHydration();
+// Calculation workers receive their complete package from the page. They must not
+// hydrate an anonymous browser cache or start a competing freshness request.
+let hydrationPromise: Promise<void> =
+  typeof WorkerGlobalScope !== 'undefined' && globalThis instanceof WorkerGlobalScope
+    ? Promise.resolve()
+    : beginHydration();
 
 let cacheDirty = false;
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
@@ -404,6 +410,8 @@ export function getDefaultSourcesKey(view: SourceKey): string {
  * @param packageData - Content package data to import
  */
 export function importFromContentPackage(packageData: ContentPackage) {
+  // A worker reads its posted snapshot directly; never accumulate it in a shared cache.
+  if (getWorkerContentReader()) return;
   // Import all content
   packageData.abilityBlocks.forEach((c) => idStore.get('ability-block')?.set(c.id, c));
   packageData.ancestries.forEach((c) => idStore.get('ancestry')?.set(c.id, c));
@@ -426,6 +434,8 @@ export function importFromContentPackage(packageData: ContentPackage) {
  * @returns - Array of cached content
  */
 export function getCachedContent<T = Record<string, any>>(type: ContentType): T[] {
+  const workerContent = getWorkerContentReader();
+  if (workerContent) return workerContent.cached<T>(type);
   return [...(idStore.get(type)?.values() ?? [])].filter(isTruthy) as T[];
 }
 
@@ -463,7 +473,8 @@ export async function fetchContentAll<T = Record<string, any>>(type: ContentType
 export async function fetchContent<T = Record<string, any>>(
   type: ContentType,
   data: Record<string, any>,
-  dontStore?: boolean
+  dontStore?: boolean,
+  bypassWorkerPackage = false
 ) {
   const CONTENT_SCHEMA_MAP: Record<ContentType, z.ZodTypeAny> = {
     'ability-block': AbilityBlockSchema,
@@ -507,6 +518,19 @@ export async function fetchContent<T = Record<string, any>>(
     throw new Error(`Unknown content type: ${type}`);
   }
 
+  const workerContent = getWorkerContentReader();
+  if (workerContent && !bypassWorkerPackage) {
+    // Name/filter reads with the implicit INFO+PAGE scope may have more matches
+    // outside the posted PAGE package. Preserve their original scoped lookup.
+    if (type !== 'content-source' && data.id === undefined && data.content_sources === undefined)
+      return await fetchContent<T>(type, data, true, true);
+    const rows = workerContent.fetch<T>(type, data);
+    const ids = data.id === undefined ? null : [...new Set((Array.isArray(data.id) ? data.id : [data.id]).map(Number))];
+    if (ids && rows.length !== ids.length) return await fetchContent<T>(type, data, true, true);
+    return rows;
+  }
+  if (bypassWorkerPackage) dontStore = true;
+
   await ensureCacheActor();
   const generation = cacheGeneration;
   await hydrationPromise;
@@ -523,16 +547,19 @@ export async function fetchContent<T = Record<string, any>>(
       ? uniq(scope).sort((a, b) => a - b)
       : uniq(
           (scope
-            ? await fetchContentSources(scope)
-            : [...(await fetchContentSources(info)), ...(await fetchContentSources(page))]
+            ? await fetchContentSources(scope, bypassWorkerPackage)
+            : [
+                ...(await fetchContentSources(info, bypassWorkerPackage)),
+                ...(await fetchContentSources(page, bypassWorkerPackage)),
+              ]
           ).map((source) => source.id)
         ).sort((a, b) => a - b);
     assertCurrentGeneration(generation);
   }
 
   const onlyIdentity = Object.keys(data).every((key) => ['id', 'content_sources'].includes(key));
-  const storedIds = onlyIdentity ? getStoredIds(type, data) : null;
-  const storedFetch = getStoredFetch(type, data);
+  const storedIds = onlyIdentity && !bypassWorkerPackage ? getStoredIds(type, data) : null;
+  const storedFetch = bypassWorkerPackage ? null : getStoredFetch(type, data);
   // Name filters are substring searches on the API, so an exact cached name is not a complete result.
 
   if (storedFetch) {
@@ -550,7 +577,7 @@ export async function fetchContent<T = Record<string, any>>(
   } else {
     // Coalesce concurrent identical fetches (keyed including dontStore so a non-storing
     // fetch can't swallow a storing one). They share a single in-flight network request.
-    const fetchKey = `${hashFetch(type, data)}|${dontStore ? 1 : 0}`;
+    const fetchKey = `${hashFetch(type, data)}|${dontStore ? 1 : 0}|${bypassWorkerPackage ? 1 : 0}`;
     const inFlight = inFlightFetches.get(fetchKey);
     if (inFlight) return (await inFlight) as T[];
 
@@ -642,23 +669,27 @@ export function resetContentStore(resetSources = true, clearPersisted = false) {
 //                 Utility Functions                 //
 ///////////////////////////////////////////////////////
 
-export async function fetchContentSources(sources: SourceValue) {
+export async function fetchContentSources(sources: SourceValue, bypassWorkerPackage = false) {
+  const workerContent = getWorkerContentReader();
+  if (workerContent && !bypassWorkerPackage) return workerContent.sources(sources);
+  const fetchSources = (data: Record<string, unknown>) =>
+    fetchContent<ContentSource>('content-source', data, bypassWorkerPackage, bypassWorkerPackage);
   let results: ContentSource[] = [];
 
   if (Array.isArray(sources)) {
     // Fetch by ids
-    results = await fetchContent<ContentSource>('content-source', {
+    results = await fetchSources({
       id: sources,
     });
   } else if (sources === 'ALL-OFFICIAL-PUBLIC') {
     // This gives us everything public that is not homebrew
-    results = await fetchContent<ContentSource>('content-source', {
+    results = await fetchSources({
       homebrew: false,
       published: true,
     });
   } else if (sources === 'ALL-HOMEBREW-PUBLIC') {
     // This gives us everything public, including homebrew
-    const r = await fetchContent<ContentSource>('content-source', {
+    const r = await fetchSources({
       homebrew: true,
       published: true,
     });
@@ -667,27 +698,27 @@ export async function fetchContentSources(sources: SourceValue) {
     //
   } else if (sources === 'ALL-PUBLIC') {
     // This gives us everything public, including homebrew
-    results = await fetchContent<ContentSource>('content-source', {
+    results = await fetchSources({
       homebrew: true,
       published: true,
     });
   } else if (sources === 'ALL-USER-ACCESSIBLE') {
     // This gives us everything public that is not homebrew
-    const pr = await fetchContent<ContentSource>('content-source', {
+    const pr = await fetchSources({
       homebrew: false,
       published: true,
     });
 
     const user = await getPublicUser(undefined, { throwOnFailure: true });
     // Now fetch all the other sources the user has subscribed to
-    const ur = await fetchContent<ContentSource>('content-source', {
+    const ur = await fetchSources({
       id: user?.subscribed_content_sources?.map((s) => s.source_id) ?? [],
     });
 
     results = uniqBy([...pr, ...ur], (source) => source.id);
   } else if (sources === 'ALL-HOMEBREW-ACCESSIBLE') {
     // This gives everything with homebrew (that the user can access)
-    const pr = await fetchContent<ContentSource>('content-source', {
+    const pr = await fetchSources({
       id: undefined,
       homebrew: true,
     });
