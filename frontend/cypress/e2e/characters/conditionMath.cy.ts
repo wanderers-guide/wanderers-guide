@@ -203,6 +203,7 @@ describe('Condition math and recovery through the real sheet', () => {
     );
     cy.intercept('POST', '**/functions/v1/update-character').as('companionInitialCalculation');
     cy.visit(`/sheet/${characterId}`);
+    cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
     cy.wait('@companionInitialCalculation', { timeout: 30000 }).its('response.body.status').should('eq', 'success');
     cy.get('button[aria-label="Tab Options"]').trigger('mouseover');
     cy.contains('[role="menuitem"]', /^Companions$/).click();
@@ -246,6 +247,7 @@ describe('Condition math and recovery through the real sheet', () => {
   it('recovers an accepted Drained edit after a lost acknowledgement and mobile reopen without charging HP twice', () => {
     cy.intercept('POST', '**/functions/v1/update-character').as('initialCalculation');
     cy.visit(`/sheet/${characterId}`);
+    cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
     cy.wait('@initialCalculation', { timeout: 30000 }).its('response.body.status').should('eq', 'success');
     cy.viewport(390, 844);
     const submissions: Record<string, unknown>[] = [];
@@ -356,7 +358,9 @@ describe('Condition math and recovery through the real sheet', () => {
     });
     cy.viewport(390, 844);
     cy.visit(`/sheet/${characterId}`);
-    cy.wrap(null).should(() => expect(contentRequests, 'the required table is held').to.be.greaterThan(0));
+    cy.wrap(null, { timeout: 30000 }).should(() =>
+      expect(contentRequests, 'the required table is held').to.be.greaterThan(0)
+    );
     cy.contains('Hit Points').should('not.exist');
     cy.then(() => {
       expect(saves, 'no partial calculation can save').to.eq(0);
@@ -385,6 +389,7 @@ describe('Condition math and recovery through the real sheet', () => {
   it('shows a cyclic homebrew calculation error without saving partial math and recovers after correction', () => {
     cy.intercept('POST', '**/functions/v1/update-character').as('baselineHomebrewSave');
     cy.visit(`/sheet/${characterId}`);
+    cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
     cy.wait('@baselineHomebrewSave', { timeout: 30000 });
     savedMaximum(48);
     read().then((base) =>

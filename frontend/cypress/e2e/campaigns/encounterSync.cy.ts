@@ -70,6 +70,13 @@ describe('Campaign encounter synchronization', () => {
       const previousPolls = campaignPolls;
       cy.wrap(null, { timeout: 15000 }).should(() => expect(campaignPolls).to.be.at.least(previousPolls + 2));
     });
+    // A campaign poll is independent of the writer's reconciliation read. Wait for
+    // acknowledgement to retire the draft before expecting its error toast to clear.
+    cy.window({ timeout: 15000 }).should((win) => {
+      expect(
+        Object.keys(win.localStorage).filter((key) => key.startsWith(`autosave-character-${fixture!.characterId}-`))
+      ).to.be.empty;
+    });
     cy.contains('Changes not saved').should('not.exist');
     cy.then(() => expect(writes, 'accepted snapshot acknowledged by a read, without replay').to.eq(1));
     cy.reload();
@@ -123,6 +130,27 @@ describe('Campaign encounter synchronization', () => {
     });
     cy.then(() => expect(writes).to.eq(1));
     cy.screenshot('campaign-drained-player-damage-conflict');
+  });
+
+  it('replaces a failed-save toast when retry discovers conflicting player damage', () => {
+    let writes = 0;
+    cy.intercept('POST', '**/functions/v1/update-character', (request) => {
+      if (request.body.id !== fixture!.characterId) return;
+      writes += 1;
+      request.alias = 'failedDamageSave';
+      request.reply({ statusCode: 503, body: { status: 'error', message: 'Simulated weak connection' } });
+    });
+    cy.get('input[placeholder="HP"]').clear().type('16{enter}');
+    cy.wait('@failedDamageSave');
+    cy.contains('Changes not saved', { timeout: 15000 }).should('be.visible');
+    cy.task('campaignFixture:playerUpdate', { key: fixture!.key, hp: 12 }, { log: false });
+    cy.window().then((win) => win.dispatchEvent(new Event('online')));
+    cy.contains('Conflicting character edits', { timeout: 15000 }).should('be.visible');
+    cy.contains('Open character').should('be.visible');
+    cy.contains('Changes not saved').should('not.exist');
+    cy.get('input[placeholder="HP"]').should('have.value', '16');
+    readPlayer().its('hp_current').should('eq', 12);
+    cy.then(() => expect(writes, 'conflicting damage must not be retried as a write').to.eq(1));
   });
 
   it('keeps typed HP through fresh player polls, preserves player details, and sends one Enter/blur write', () => {

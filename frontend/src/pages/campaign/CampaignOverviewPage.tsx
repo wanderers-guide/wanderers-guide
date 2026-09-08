@@ -422,6 +422,9 @@ function SectionPanels(props: {
       if (save.phase === 'saving' || saveNoticesRef.current.get(player.id) === save.phase) continue;
       saveNoticesRef.current.set(player.id, save.phase);
       const conflict = save.phase === 'conflict';
+      // Mantine ignores show calls for an existing ID. Replace the previous failure
+      // when a retry discovers a conflict or revoked access, including dismissed notices.
+      hideNotification(noticeId);
       showNotification({
         id: noticeId,
         title: conflict ? 'Conflicting character edits' : 'Changes not saved',
@@ -447,14 +450,15 @@ function SectionPanels(props: {
     }
   }, [characterWriter, props.players, saveRevision]);
   useEffect(() => {
+    const saveNotices = saveNoticesRef.current;
     characterWriter?.activate();
     const retry = () => characterWriter?.retry();
     window.addEventListener('online', retry);
     return () => {
       window.removeEventListener('online', retry);
       characterWriter?.dispose();
-      for (const id of saveNoticesRef.current.keys()) hideNotification(`encounter-character-save-${id}`);
-      saveNoticesRef.current.clear();
+      for (const id of saveNotices.keys()) hideNotification(`encounter-character-save-${id}`);
+      saveNotices.clear();
     };
   }, [characterWriter]);
   const theme = useMantineTheme();

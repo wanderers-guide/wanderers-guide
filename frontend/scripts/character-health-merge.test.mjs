@@ -111,6 +111,28 @@ test('an exact accepted response loss never replays the Drained HP reduction', (
   assert.equal(result.character.hp_current, 25);
 });
 
+test('JSON-omitted condition properties do not conflict with an accepted save or independent remote edits', () => {
+  const base = row();
+  const submitted = row(25, [{ ...condition('Drained'), source: undefined }]);
+  const remote = JSON.parse(JSON.stringify({ ...submitted, updated_at: 'version-2' }));
+  remote.details.appearance = 'Remote edit';
+  const local = { ...submitted, name: 'Later local name' };
+  const result = mergeCharacterSave(base, local, remote, submitted);
+  assert.deepEqual(result.conflicts, []);
+  assert.equal(result.character.hp_current, 25);
+  assert.equal(result.character.details.conditions.length, 1);
+  assert.equal(result.character.details.appearance, 'Remote edit');
+  assert.equal(result.character.name, 'Later local name');
+});
+
+test('an explicit null and a deleted nested value remain distinct competing edits', () => {
+  const base = { ...row(), details: { conditions: [], extension: 'Original' } };
+  const local = { ...base, details: { conditions: [] } };
+  const remote = { ...base, details: { conditions: [], extension: null } };
+  const result = mergeCharacterSave(base, local, remote);
+  assert.deepEqual(result.conflicts, ['details.extension']);
+});
+
 test('an uncertain submitted transition preserves later deliberate healing when committed or uncommitted', () => {
   const base = row();
   const submitted = row(25, [condition('Drained')]);

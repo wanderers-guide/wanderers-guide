@@ -196,22 +196,43 @@ test('pending changes serialize and a later deliberate return to old HP survives
   assert.equal(storage.size, 0);
 });
 
-test('lost ACK retries by reading; it does not repeat a committed HP write', async (t) => {
-  let writes = 0;
-  const state = setup(t, row(), async (request) => {
-    if (request.type === 'find-character') return structuredClone(request.server);
-    writes++;
-    request.commit(request.body);
-    return null;
+for (const withDrained of [false, true]) {
+  test(`lost ACK acknowledges committed ${withDrained ? 'Drained and HP' : 'HP'} by reading without replay`, async (t) => {
+    let writes = 0;
+    const state = setup(t, row(), async (request) => {
+      if (request.type === 'find-character') return structuredClone(request.server);
+      writes++;
+      // HTTP JSON drops optional object properties whose value is undefined.
+      request.commit(JSON.parse(JSON.stringify(request.body)));
+      return null;
+    });
+    const original = row();
+    const edited = { ...original, hp_current: withDrained ? 19 : 15 };
+    if (withDrained)
+      edited.details = {
+        ...original.details,
+        conditions: [
+          {
+            name: 'Drained',
+            description: 'Test condition',
+            value: 1,
+            for_object: false,
+            for_creature: true,
+            source: undefined,
+          },
+        ],
+      };
+    state.writer.update(original, edited);
+    await until(() => state.writer.status(1)?.phase === 'failed');
+    assert.ok(JSON.parse([...storage.values()][0]).submission);
+    state.writer.retry(1);
+    await until(() => state.writer.status(1)?.phase === 'saved');
+    assert.equal(writes, 1);
+    assert.equal(storage.size, 0);
+    assert.deepEqual(state.server.details.conditions, JSON.parse(JSON.stringify(edited.details.conditions)));
+    assert.equal(state.server.hp_current, edited.hp_current);
   });
-  state.writer.update(row(), { ...row(), hp_current: 15 });
-  await until(() => state.writer.status(1)?.phase === 'failed');
-  assert.ok(JSON.parse([...storage.values()][0]).submission);
-  state.writer.retry(1);
-  await until(() => state.writer.status(1)?.phase === 'saved');
-  assert.equal(writes, 1);
-  assert.equal(storage.size, 0);
-});
+}
 
 test('guard conflicts merge unrelated writes made between GET and POST', async (t) => {
   let writes = 0;
