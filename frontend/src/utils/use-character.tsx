@@ -2,6 +2,7 @@ import { reportClientFailure } from './client-errors';
 import { characterState } from '@atoms/characterAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { Button, Group, Text } from '@mantine/core';
+import { modals } from '@mantine/modals';
 import { downloadObjectAsJson } from '@export/export-to-json';
 import {
   SAVED_CHARACTER_FIELDS,
@@ -14,6 +15,7 @@ import {
   acknowledgeBufferedCharacterRecovery,
   journalCharacterSaveSubmission,
   type BufferedCharacterSaveRecord,
+  type BufferedCharacterRecoveryRecord,
 } from './character-save-buffer';
 import { mergeCharacterSave } from './character-merge';
 import type { CharacterSaveState } from '@common/CharacterSaveStatus';
@@ -72,18 +74,20 @@ type QueuedCharacterSave = { character: Character; actorId: string; scope: numbe
 const remoteCharacterVersionSchema = CharacterSchema.pick({ id: true, updated_at: true });
 const REMOTE_CHARACTER_INTERVAL = 5000;
 
-/** Offer the preserved input copy without automatically overwriting remote changes. */
-function showCharacterRecovery(characterId: number, recovery: Record<string, unknown>): void {
+/** Failed current calculations retain a download without offering to discard active edits. */
+function showCharacterRecovery(characterId: number, recovery: Record<string, unknown>, isCurrent: () => boolean): void {
   showNotification({
     id: `character-recovery-${characterId}`,
-    title: 'Unsynced character copy kept',
+    title: 'Unsaved changes',
     message: (
       <Button
         size='xs'
         variant='light'
-        onClick={() => downloadObjectAsJson(recovery, `character-${characterId}-saved-copy`)}
+        onClick={() => {
+          if (isCurrent()) downloadObjectAsJson(recovery, `character-${characterId}-saved-copy`);
+        }}
       >
-        Download saved copy
+        Download changes
       </Button>
     ),
     color: 'yellow',
@@ -114,6 +118,7 @@ export default function useCharacter(
   retrySave: () => void;
   loadError: boolean;
   retryLoad: () => void;
+  reviewEarlierChanges: (() => void) | undefined;
 } {
   const [character, setCharacter] = useAtom(characterState);
   const session = useAtomValue(sessionState);
@@ -130,6 +135,7 @@ export default function useCharacter(
   const [isOnline, setIsOnline] = useState(typeof navigator === 'undefined' || navigator.onLine !== false);
   const [loadError, setLoadError] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const [earlierChanges, setEarlierChanges] = useState<BufferedCharacterRecoveryRecord[]>([]);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryCountRef = useRef(0);
   const retrySaveRef = useRef<() => void>(() => {});
@@ -142,6 +148,87 @@ export default function useCharacter(
   const clearSaveRetry = () => {
     if (retryTimerRef.current !== null) clearTimeout(retryTimerRef.current);
     retryTimerRef.current = null;
+  };
+
+  /** Re-read retained history without treating it as a failure of the current save. */
+  const refreshEarlierChanges = useCallback((): BufferedCharacterRecoveryRecord[] | null => {
+    if (!sessionActorId || loadedActorRef.current !== sessionActorId) return null;
+    const loaded = loadBufferedCharacterSaves(characterId, sessionActorId);
+    if (loaded.status !== 'loaded') return null;
+    const records = loaded.retained.filter((record) => !!record.body);
+    setEarlierChanges(records);
+    return records;
+  }, [characterId, sessionActorId]);
+
+  /** Historical drafts only open on request; closing or downloading never deletes them. */
+  const reviewEarlierChanges = (): void => {
+    if (!hasLoadedCharacter || !sessionActorId || loadedActorRef.current !== sessionActorId) return;
+    const records = refreshEarlierChanges();
+    if (records === null) {
+      showNotification({ title: 'Could not load earlier changes', message: 'Please try again.', color: 'yellow' });
+      return;
+    }
+    if (!records.length) return;
+    const scope = saveScopeRef.current;
+    const actor = sessionActorId;
+    const isCurrent = (): boolean => scope === saveScopeRef.current && actor === loadedActorRef.current;
+    const modalId = `character-recovery-${characterId}`;
+    const copies = records.flatMap((record) => (record.body ? [record.body] : []));
+    modals.open({
+      modalId,
+      title: 'Unsaved changes',
+      closeButtonProps: { 'aria-label': 'Close' },
+      children: (
+        <>
+          <Text size='sm'>Earlier changes are available to review.</Text>
+          <Group gap='xs' mt='sm'>
+            <Button
+              variant='light'
+              onClick={() => {
+                if (!isCurrent()) return;
+                downloadObjectAsJson(
+                  copies.length === 1 ? copies[0] : { copies },
+                  `character-${characterId}-saved-copy`
+                );
+                modals.close(modalId);
+              }}
+            >
+              Download changes
+            </Button>
+            <Button
+              variant='subtle'
+              color='red'
+              onClick={() => {
+                if (!isCurrent()) return;
+                modals.openConfirmModal({
+                  modalId: `character-recovery-discard-${characterId}`,
+                  title: 'Discard earlier changes?',
+                  closeButtonProps: { 'aria-label': 'Cancel' },
+                  children: <Text size='sm'>This permanently removes those earlier changes from this device.</Text>,
+                  labels: { confirm: 'Discard changes', cancel: 'Cancel' },
+                  confirmProps: { color: 'red' },
+                  onConfirm: () => {
+                    if (!isCurrent()) return;
+                    const results = records.map((record) => acknowledgeBufferedCharacterRecovery(record));
+                    // A newer replacement or failed removal must remain discoverable.
+                    refreshEarlierChanges();
+                    modals.close(modalId);
+                    if (results.some((result) => result.status === 'unavailable'))
+                      showNotification({
+                        title: 'Could not discard changes',
+                        message: 'Please try again.',
+                        color: 'yellow',
+                      });
+                  },
+                });
+              }}
+            >
+              Discard earlier changes
+            </Button>
+          </Group>
+        </>
+      ),
+    });
   };
 
   // Always-current view of the atom (the `character` closure goes stale inside async
@@ -217,7 +304,7 @@ export default function useCharacter(
 
   /** Keep conflicting input recoverable until the same account chooses which copy to save. */
   const offerConflictResolution = useCallback(
-    (local: Character, remote: Character, fields: string[]) => {
+    (local: Character, remote: Character) => {
       saveConflictRef.current = true;
       hideNotification('character-save-failed');
       clearSaveRetry();
@@ -254,10 +341,7 @@ export default function useCharacter(
         title: 'Conflicting character edits',
         message: (
           <>
-            <Text size='sm'>
-              Saving paused: {fields.slice(0, 3).join(', ')}
-              {fields.length > 3 ? ', …' : ''}
-            </Text>
+            <Text size='sm'>Choose which changes to keep.</Text>
             <Group gap='xs' mt='xs'>
               <Button size='xs' onClick={() => resolve(true)}>
                 Keep my edits
@@ -306,6 +390,7 @@ export default function useCharacter(
     retryCountRef.current = 0;
     uncertainSaveRef.current = null;
     recoveredDraftsRef.current = [];
+    setEarlierChanges([]);
     needsCalculationRef.current = false;
     lastSyncedRef.current = null;
     readOnlyRef.current = false;
@@ -330,12 +415,14 @@ export default function useCharacter(
       let displayed = dbCharacter;
       const conflicts: string[] = [];
       if (restored?.status === 'loaded') {
-        const copies = restored.retained.flatMap((record) => (record.body ? [record.body] : []));
-        if (copies.length) showCharacterRecovery(characterId, copies.length === 1 ? copies[0] : { copies });
+        setEarlierChanges(restored.retained.filter((record) => !!record.body));
         for (const record of restored.records) {
           const draft = record.draft;
           if (!draft.base || !draft.body.expected_updated_at) {
-            showCharacterRecovery(characterId, draft.body);
+            setEarlierChanges((records) => [
+              ...records,
+              { key: record.key, raw: record.raw, body: draft.body, reason: 'missing-base' },
+            ]);
             continue;
           }
           const merged = mergeCharacterSave(draft.base, draft.body, displayed, draft.submission?.body);
@@ -350,7 +437,7 @@ export default function useCharacter(
         // Original records remain available until the user resolves the conflict.
         const firstBase = recoveredDraftsRef.current[0]?.draft.base;
         if (firstBase) lastSyncedRef.current = { ...dbCharacter, ...firstBase };
-        offerConflictResolution(displayed, dbCharacter, [...new Set(conflicts)]);
+        offerConflictResolution(displayed, dbCharacter);
       } else if (sessionActorId) {
         if (recoveredDraftsRef.current.length) {
           const reconciled = reconcileBufferedCharacterSave(displayed, sessionActorId, dbCharacter, {
@@ -378,6 +465,8 @@ export default function useCharacter(
       clearSaveRetry();
       window.removeEventListener('online', retryLoadOnReconnect);
       hideNotification(recoveryNoticeId);
+      modals.close(recoveryNoticeId);
+      modals.close(`character-recovery-discard-${characterId}`);
       hideNotification('character-save-failed');
     };
   }, [characterId, sessionActorId, loadAttempt, handleFetchedCharacter, offerConflictResolution]);
@@ -610,7 +699,14 @@ export default function useCharacter(
     if (!operationError || !loadedActorRef.current) return;
     reportClientFailure('calculation_failed');
     const stored = getBufferedCharacterSave(characterId, loadedActorRef.current);
-    if ('draft' in stored && stored.draft.requiresCalculation) showCharacterRecovery(characterId, stored.draft.body);
+    const scope = saveScopeRef.current;
+    const actor = loadedActorRef.current;
+    if ('draft' in stored && stored.draft.requiresCalculation)
+      showCharacterRecovery(
+        characterId,
+        stored.draft.body,
+        () => scope === saveScopeRef.current && actor === loadedActorRef.current
+      );
   }, [operationError, characterId]);
 
   const isCurrentSave = (save: QueuedCharacterSave) =>
@@ -631,11 +727,7 @@ export default function useCharacter(
     if (merge.conflicts.length || repeatedConflict) {
       characterRef.current = merged;
       setCharacter(merged);
-      offerConflictResolution(
-        merged,
-        remote,
-        merge.conflicts.length ? merge.conflicts : ['Repeated changes from another session']
-      );
+      offerConflictResolution(merged, remote);
       return null;
     }
     const changed = SAVED_CHARACTER_FIELDS.some(
@@ -798,7 +890,7 @@ export default function useCharacter(
       if (!hasSessionExpiredNotice() && retryCountRef.current === 0)
         showNotification({
           id: 'character-save-failed',
-          title: 'Changes not synced',
+          title: 'Changes not saved',
           message: (
             <Group gap='xs'>
               <Text size='sm'>Retrying automatically.</Text>
@@ -917,7 +1009,11 @@ export default function useCharacter(
   useEffect(() => {
     const wake = () => {
       setIsOnline(typeof navigator === 'undefined' || navigator.onLine !== false);
+      refreshEarlierChanges();
       retrySaveRef.current();
+    };
+    const storageChanged = () => {
+      refreshEarlierChanges();
     };
     const offline = () => setIsOnline(false);
     const visible = () => {
@@ -926,15 +1022,17 @@ export default function useCharacter(
     window.addEventListener('online', wake);
     window.addEventListener('focus', wake);
     window.addEventListener('offline', offline);
+    window.addEventListener('storage', storageChanged);
     document.addEventListener('visibilitychange', visible);
     return () => {
       clearSaveRetry();
       window.removeEventListener('online', wake);
       window.removeEventListener('focus', wake);
       window.removeEventListener('offline', offline);
+      window.removeEventListener('storage', storageChanged);
       document.removeEventListener('visibilitychange', visible);
     };
-  }, [characterId, sessionActorId]);
+  }, [characterId, sessionActorId, refreshEarlierChanges]);
 
   const hasPendingChanges =
     !!uncertainSaveRef.current ||
@@ -972,6 +1070,7 @@ export default function useCharacter(
     retrySave: () => retrySaveRef.current(),
     loadError,
     retryLoad: () => setLoadAttempt((attempt) => attempt + 1),
+    reviewEarlierChanges: hasLoadedCharacter && earlierChanges.length ? reviewEarlierChanges : undefined,
     results: operationResults ?? null,
     operationError,
     isCalculating,

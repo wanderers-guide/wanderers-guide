@@ -209,6 +209,7 @@ export function CharBuilderCreationInner(props: {
     retrySave,
     loadError,
     retryLoad,
+    reviewEarlierChanges,
   } = useCharacter(props.characterId, {
     type: 'EXECUTE_OPS',
     data: {
@@ -237,7 +238,12 @@ export function CharBuilderCreationInner(props: {
 
   return (
     <Group gap={0} px={isMobile ? undefined : 'sm'}>
-      <CharacterSaveStatus state={saveState} draftStored={draftStored} onRetry={retrySave} />
+      <CharacterSaveStatus
+        state={saveState}
+        draftStored={draftStored}
+        onRetry={retrySave}
+        onReviewEarlierChanges={reviewEarlierChanges}
+      />
       {isMobile ? (
         <Drawer
           opened={statPanelOpened}

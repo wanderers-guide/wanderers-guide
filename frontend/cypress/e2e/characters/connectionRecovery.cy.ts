@@ -60,7 +60,7 @@ describe('Interrupted character saves', () => {
     });
     cy.get('input[placeholder="Unknown Wanderer"]').type('Kept through a connection drop');
     cy.wait('@droppedSave', { timeout: 15000 });
-    cy.contains('Not synced: retrying automatically', { timeout: 40000 }).should('be.visible');
+    cy.contains('Not saved: retrying automatically', { timeout: 40000 }).should('be.visible');
     cy.window().should((win) => {
       const key = Object.keys(win.localStorage).find((key) =>
         key.startsWith(`autosave-character-${characterId}-${actorId}:writer:`)
@@ -165,7 +165,7 @@ describe('Interrupted character saves', () => {
     cy.get('button[aria-label="Dismiss save notice"]', { timeout: 30000 }).click();
     cy.get('#character-save-failed').should('not.exist');
     cy.get('button.mantine-Modal-close').last().click();
-    cy.contains('Not synced: retrying automatically', { timeout: 30000 }).should('be.visible');
+    cy.contains('Not saved: retrying automatically', { timeout: 30000 }).should('be.visible');
     cy.screenshot('mobile-spells-waiting-to-sync');
     cy.window().then((win) => win.dispatchEvent(new Event('pagehide')));
     cy.reload();

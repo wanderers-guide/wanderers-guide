@@ -45,6 +45,7 @@ class HookHost {
     this.requests = [];
     this.notices = [];
     this.downloads = [];
+    this.modals = [];
     this.dirty = false;
     this.active = true;
     this.request = async (type, body) =>
@@ -193,6 +194,7 @@ globalThis.__saveHooks = {
   },
   notify: (notice) => harness.notices.push(notice),
   download: (body, name) => harness.downloads.push({ body, name }),
+  openModal: (modal) => harness.modals.push(modal),
   calculate: () => harness.calculate(),
   confirmHealth: (...args) => harness.confirmHealth(...args),
   saveCalculatedStats: (...args) => harness.saveCalculatedStats(...args),
@@ -220,6 +222,8 @@ const boundaries = {
   '@mantine/notifications':
     'export const showNotification = globalThis.__saveHooks.notify; export const hideNotification = () => {};',
   '@mantine/core': 'export const Button = "button"; export const Group = "group"; export const Text = "text";',
+  '@mantine/modals':
+    'export const modals = { open: globalThis.__saveHooks.openModal, openConfirmModal: globalThis.__saveHooks.openModal, close: () => {} };',
   '@export/export-to-json': 'export const downloadObjectAsJson = globalThis.__saveHooks.download;',
   '../supabase-client': 'export const supabase = globalThis.__saveHooks.supabase;',
   '@atoms/characterAtoms': 'export const characterState = {};',
@@ -319,17 +323,131 @@ beforeEach(() => {
   harness = new HookHost();
 });
 
-test('retained replay still loads the server row and exposes a downloadable copy', async () => {
+/** Find a real rendered action within the hook's controlled JSX boundary. */
+const recoveryButton = (node, label) => {
+  if (!node) return undefined;
+  if (Array.isArray(node)) return node.flatMap((child) => recoveryButton(child, label) ?? [])[0];
+  if (node.type === 'button' && node.props.children === label) return node;
+  return recoveryButton(node.props?.children, label);
+};
+
+test('earlier changes stay available without interrupting download, navigation or reopen', async () => {
   bufferCharacterSave({ ...row(), name: 'Unsynced copy' }, 'owner');
   harness.render();
   await harness.flush();
   assert.equal(harness.character.name, 'Character 1');
-  const notice = harness.notices.find((value) => value.id === 'character-recovery-1');
-  assert.ok(notice);
-  notice.message.props.onClick();
+  assert.equal(harness.notices.length, 0, 'historical drafts must not open automatic warnings');
+  assert.equal(harness.modals.length, 0);
+  assert.equal(typeof harness.value.reviewEarlierChanges, 'function');
+  harness.value.reviewEarlierChanges();
+  const review = harness.modals.at(-1);
+  assert.equal(review.title, 'Unsaved changes');
+  recoveryButton(review.children, 'Download changes').props.onClick();
   assert.equal(harness.downloads[0].body.name, 'Unsynced copy');
   assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Unsynced copy');
-  assert.equal(harness.requests.filter((value) => value.type === 'update-character').length, 0);
+  assert.ok(harness.requests.every((value) => value.type === 'find-character'));
+  // Both download and closing the review leave the retained data accessible.
+  harness.unmount();
+  harness = new HookHost();
+  harness.render();
+  await harness.flush();
+  assert.equal(harness.notices.length, 0);
+  assert.equal(harness.modals.length, 0);
+  assert.equal(typeof harness.value.reviewEarlierChanges, 'function');
+  assert.equal(harness.character.name, 'Character 1');
+  harness.unmount();
+});
+
+test('discard requires confirmation and removes only earlier changes, never the saved character', async () => {
+  bufferCharacterSave({ ...row(), name: 'Earlier changes' }, 'owner');
+  harness.render();
+  await harness.flush();
+  harness.value.reviewEarlierChanges();
+  recoveryButton(harness.modals.at(-1).children, 'Discard earlier changes').props.onClick();
+  const confirmation = harness.modals.at(-1);
+  assert.equal(confirmation.title, 'Discard earlier changes?');
+  assert.ok('draft' in getBufferedCharacterSave(1, 'owner'), 'opening or cancelling confirmation must keep the draft');
+  confirmation.onConfirm();
+  await harness.flush();
+  assert.equal(getBufferedCharacterSave(1, 'owner').status, 'none');
+  assert.equal(harness.value.reviewEarlierChanges, undefined);
+  assert.equal(harness.character.name, 'Character 1');
+  assert.ok(harness.requests.every((value) => value.type === 'find-character'));
+  harness.unmount();
+  harness = new HookHost();
+  harness.render();
+  await harness.flush();
+  assert.equal(harness.value.reviewEarlierChanges, undefined);
+  assert.equal(harness.notices.length, 0);
+  harness.unmount();
+});
+
+test('discarding a displayed earlier draft preserves a newer replacement', async () => {
+  const original = bufferCharacterSave({ ...row(), name: 'Earlier changes' }, 'owner');
+  harness.render();
+  await harness.flush();
+  harness.value.reviewEarlierChanges();
+  recoveryButton(harness.modals.at(-1).children, 'Discard earlier changes').props.onClick();
+  const newer = { ...original.record.draft, body: { ...original.record.draft.body, name: 'Newer changes' } };
+  localStorage.setItem(original.record.key, JSON.stringify(newer));
+  harness.modals.at(-1).onConfirm();
+  await harness.flush();
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Newer changes');
+  assert.equal(typeof harness.value.reviewEarlierChanges, 'function');
+  assert.ok(harness.requests.every((value) => value.type === 'find-character'));
+  harness.unmount();
+});
+
+test('failed local deletion keeps earlier changes accessible for retry', async () => {
+  bufferCharacterSave({ ...row(), name: 'Earlier changes' }, 'owner');
+  harness.render();
+  await harness.flush();
+  harness.value.reviewEarlierChanges();
+  recoveryButton(harness.modals.at(-1).children, 'Discard earlier changes').props.onClick();
+  localStorage.removeItem = () => {
+    throw new Error('Storage denied');
+  };
+  harness.modals.at(-1).onConfirm();
+  await harness.flush();
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Earlier changes');
+  assert.equal(typeof harness.value.reviewEarlierChanges, 'function');
+  assert.ok(harness.notices.some((notice) => notice.title === 'Could not discard changes'));
+  harness.unmount();
+});
+
+test('old recovery callbacks cannot download or discard after account or character navigation', async () => {
+  for (const transition of ['account', 'character']) {
+    bufferCharacterSave({ ...row(), name: 'Earlier changes' }, 'owner');
+    harness = new HookHost();
+    harness.render();
+    await harness.flush();
+    harness.value.reviewEarlierChanges();
+    const review = harness.modals.at(-1);
+    recoveryButton(review.children, 'Discard earlier changes').props.onClick();
+    const confirmation = harness.modals.at(-1);
+    if (transition === 'account') harness.session = { user: { id: 'other' } };
+    else harness.characterId = 2;
+    harness.render();
+    await harness.flush();
+    recoveryButton(review.children, 'Download changes').props.onClick();
+    confirmation.onConfirm();
+    assert.equal(harness.downloads.length, 0);
+    assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Earlier changes');
+    assert.equal(harness.value.reviewEarlierChanges, undefined);
+    harness.unmount();
+  }
+});
+
+test('new earlier changes become visible on focus without an automatic warning', async () => {
+  harness.render();
+  await harness.flush();
+  assert.equal(harness.value.reviewEarlierChanges, undefined);
+  bufferCharacterSave({ ...row(), name: 'Earlier changes' }, 'owner');
+  events.get('focus')?.();
+  await harness.flush();
+  assert.equal(typeof harness.value.reviewEarlierChanges, 'function');
+  assert.equal(harness.notices.length, 0);
+  assert.equal(harness.modals.length, 0);
   harness.unmount();
 });
 
@@ -444,6 +562,13 @@ test('pending and failed calculations retain inputs locally without writing deri
   assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Edit during calculation');
   assert.equal(harness.requests.filter((value) => value.type === 'update-character').length, 0);
   assert.ok(harness.value.operationError);
+  events.get('focus')();
+  await harness.flush();
+  assert.equal(harness.value.reviewEarlierChanges, undefined, 'active edits must never be offered for discard');
+  const recovery = harness.notices.find(({ title }) => title === 'Unsaved changes');
+  assert.ok(recovery, 'a failed current calculation must still offer a download');
+  recoveryButton(recovery.message, 'Download changes').props.onClick();
+  assert.equal(harness.downloads.at(-1).body.name, 'Edit during calculation');
   harness.unmount();
 });
 
