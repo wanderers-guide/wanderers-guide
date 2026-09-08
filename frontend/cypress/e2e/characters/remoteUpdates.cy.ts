@@ -18,6 +18,12 @@ describe('Incoming character updates', () => {
         return result.data;
       });
   const read = () => request('find-character', { id: characterId });
+  /** Wait for the complete calculated snapshot before introducing another client's edit. */
+  const interceptInitialCalculation = () =>
+    cy.intercept('POST', '**/functions/v1/update-character', (req) => {
+      if (req.body.meta_data?.calculated_stats?.ac === 13 && req.body.meta_data?.calculated_stats?.hp_max === 10)
+        req.alias = 'initialCalculationSave';
+    });
 
   beforeEach(() => {
     characterId = undefined;
@@ -47,7 +53,7 @@ describe('Incoming character updates', () => {
   });
 
   it('receives damage and conditions while open, without an autosave loop', () => {
-    cy.intercept('POST', '**/functions/v1/update-character').as('initialCalculationSave');
+    interceptInitialCalculation();
     cy.visit(`/sheet/${characterId}`);
     cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
     cy.wait('@initialCalculationSave', { timeout: 30000 }).its('response.body.status').should('eq', 'success');
@@ -131,7 +137,7 @@ describe('Incoming character updates', () => {
   });
 
   it('reloads matching content after a remote source change and settles', () => {
-    cy.intercept('POST', '**/functions/v1/update-character').as('initialCalculationSave');
+    interceptInitialCalculation();
     cy.visit(`/sheet/${characterId}`);
     cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
     cy.wait('@initialCalculationSave', { timeout: 30000 }).its('response.body.status').should('eq', 'success');

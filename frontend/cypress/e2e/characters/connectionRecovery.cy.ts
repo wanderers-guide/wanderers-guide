@@ -124,6 +124,7 @@ describe('Interrupted character saves', () => {
     cy.buildABC('Elf', 'Acolyte', 'Wizard');
     cy.get('button[aria-label="Next Page"]').click();
     cy.location('pathname').should('include', '/sheet');
+    cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
     cy.viewport(390, 844);
     cy.then(() =>
       Cypress.automation('remote:debugger:protocol', { command: 'Emulation.setCPUThrottlingRate', params: { rate: 4 } })
