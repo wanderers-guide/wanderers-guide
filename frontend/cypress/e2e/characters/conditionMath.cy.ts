@@ -293,6 +293,17 @@ describe('Condition math and recovery through the real sheet', () => {
   });
 
   it('waits for delayed content before saving nested homebrew effects and preserves them through level changes', () => {
+    // Level changes can save HP normalization before the calculated-stat update.
+    // Read the API again until it confirms the expected result, rather than
+    // assuming the first intercepted save was the final calculation.
+    const savedMaximum = (expected: number, retries = 40): Cypress.Chainable<unknown> =>
+      read().then((saved) => {
+        if (saved.meta_data.calculated_stats.hp_max === expected || retries === 0) {
+          expect(saved.meta_data.calculated_stats.hp_max).to.eq(expected);
+          return;
+        }
+        return cy.wait(250, { log: false }).then(() => savedMaximum(expected, retries - 1));
+      });
     read().then((base) =>
       request('update-character', {
         id: characterId,
@@ -360,7 +371,7 @@ describe('Condition math and recovery through the real sheet', () => {
     cy.wait('@homebrewSave', { timeout: 30000 });
     settled();
     cy.contains('Hit Points', { timeout: 30000 }).parent().find('a').should('have.text', '53');
-    read().its('meta_data.calculated_stats.hp_max').should('eq', 53);
+    savedMaximum(53);
     cy.screenshot('homebrew-conditional-bindings-mobile');
     for (const [level, maximum] of [
       [1, 17],
@@ -373,7 +384,7 @@ describe('Condition math and recovery through the real sheet', () => {
       cy.wait('@homebrewSave', { timeout: 30000 });
       settled();
       cy.contains('Hit Points', { timeout: 30000 }).parent().find('a').should('have.text', String(maximum));
-      read().its('meta_data.calculated_stats.hp_max').should('eq', maximum);
+      savedMaximum(maximum);
     }
     cy.reload();
     cy.contains('Hit Points', { timeout: 30000 }).parent().find('a').should('have.text', '53');
