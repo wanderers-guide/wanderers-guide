@@ -103,7 +103,7 @@ describe('Campaign encounter synchronization', () => {
     cy.wrap(null).should(() => expect(releaseSave).to.be.a('function'));
     cy.task('campaignFixture:playerUpdate', { key: fixture!.key, hp: 19 }, { log: false }).then(() => releaseSave!());
     cy.wait('@heldDrainedSave').its('response.body.data.__conflict').should('eq', true);
-    cy.contains('Conflicting character edits', { timeout: 30000 }).should('be.visible');
+    cy.contains('Saving paused: resolve conflicting edits', { timeout: 30000 }).should('be.visible');
     cy.contains('Review changes').should('be.visible');
     cy.get('input[placeholder="HP"]').should('have.value', '19');
     cy.contains('Drained').should('be.visible');
@@ -174,7 +174,7 @@ describe('Campaign encounter synchronization', () => {
       expect(response?.body.status).to.eq('success');
     });
     cy.get('input[placeholder="HP"]').should('have.value', '17');
-    cy.contains('Conflicting character edits').should('not.exist');
+    cy.contains('Saving paused: resolve conflicting edits').should('not.exist');
     readPlayer().then((character) => {
       expect(character.hp_current).to.eq(17);
       expect(character.details.conditions[0].name).to.eq('Drained');
