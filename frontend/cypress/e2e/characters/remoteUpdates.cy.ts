@@ -51,7 +51,6 @@ describe('Incoming character updates', () => {
     cy.visit(`/sheet/${characterId}`);
     cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
     cy.wait('@initialCalculationSave', { timeout: 30000 }).its('response.body.status').should('eq', 'success');
-    cy.get('[data-testid="character-save-status"]', { timeout: 30000 }).should('contain', 'Saved');
     let writes = 0;
     cy.intercept('POST', '**/functions/v1/update-character', (req) => {
       writes++;
@@ -88,12 +87,12 @@ describe('Incoming character updates', () => {
       })
     );
     cy.contains('Frightened', { timeout: 20000 }).should('be.visible');
-    cy.get('[data-testid="character-save-status"]', { timeout: 20000 }).should('contain', 'Saved');
     // One derived-stat save is allowed after applying the condition; repeated reads must settle.
     cy.wait('@poll', { timeout: 15000 });
     cy.wait('@poll', { timeout: 15000 });
     cy.then(() => expect(writes, 'bounded recalculation after the condition').to.be.at.most(1));
     cy.viewport(1280, 900);
+    cy.get('.mantine-Notification-root').should('not.exist');
     cy.screenshot('incoming-campaign-condition-desktop');
     cy.viewport(390, 844);
     cy.screenshot('incoming-campaign-condition-mobile');
@@ -107,7 +106,6 @@ describe('Incoming character updates', () => {
   it('ignores a stale poll arriving after a newer local save', () => {
     cy.visit(`/builder/${characterId}`);
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', 'Incoming update check');
-    cy.get('[data-testid="character-save-status"]', { timeout: 15000 }).should('contain', 'Saved');
     let held = false;
     cy.intercept('POST', '**/functions/v1/find-character', (req) => {
       if (!held) {
@@ -128,7 +126,6 @@ describe('Incoming character updates', () => {
     cy.wait('@localSave', { timeout: 15000 }).its('response.body.status').should('eq', 'success');
     cy.wait('@staleRead', { timeout: 15000 });
     cy.get('input[placeholder="Unknown Wanderer"]').should('have.value', 'Newer accepted name');
-    cy.get('[data-testid="character-save-status"]').should('contain', 'Saved');
     cy.then(() => expect(writes).to.eq(1));
     read().its('name').should('eq', 'Newer accepted name');
   });
@@ -138,7 +135,6 @@ describe('Incoming character updates', () => {
     cy.visit(`/sheet/${characterId}`);
     cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
     cy.wait('@initialCalculationSave', { timeout: 30000 }).its('response.body.status').should('eq', 'success');
-    cy.get('[data-testid="character-save-status"]', { timeout: 30000 }).should('contain', 'Saved');
     cy.intercept('POST', '**/functions/v1/find-character').as('poll');
     read().then((base) =>
       request('update-character', {
@@ -150,7 +146,6 @@ describe('Incoming character updates', () => {
     cy.wait('@poll', { timeout: 15000 });
     cy.wait('@poll', { timeout: 15000 });
     cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
-    cy.get('[data-testid="character-save-status"]', { timeout: 30000 }).should('contain', 'Saved');
     read().its('content_sources.enabled').should('deep.eq', [1, 256]);
     cy.wait('@poll', { timeout: 15000 });
     cy.contains('Hit Points').should('be.visible');
@@ -179,11 +174,9 @@ describe('Incoming character updates', () => {
     });
     cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
     cy.wait('@recoveredSources', { timeout: 30000 }).its('response.body.status').should('eq', 'success');
-    cy.get('[data-testid="character-save-status"]', { timeout: 30000 }).should('contain', 'Saved');
     read().its('content_sources.enabled').should('deep.eq', [1, 256]);
     cy.reload();
     cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
-    cy.get('[data-testid="character-save-status"]', { timeout: 30000 }).should('contain', 'Saved');
     cy.contains('Conflicting character edits').should('not.exist');
   });
 });

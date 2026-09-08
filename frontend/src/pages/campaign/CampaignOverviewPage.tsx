@@ -41,7 +41,7 @@ import { Campaign, Character, Encounter } from '@schemas/content';
 import { setPageTitle } from '@utils/document-change';
 import { isPhoneSized, tabletQuery } from '@utils/mobile-responsive';
 import { cloneDeep, truncate } from 'lodash-es';
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { GiRollingDices } from '@common/game-icons-inline';
 import { useLoaderData } from 'react-router-dom';
 import classes from '@css/UserInfoIcons.module.css';
@@ -49,7 +49,7 @@ import { getDefaultCampaignBackgroundImage } from '@utils/background-images';
 import NotesPanel from './panels/NotesPanel';
 import InspirationPanel from './panels/InspirationPanel';
 import SettingsPanel from './panels/SettingsPanel';
-import { showNotification } from '@mantine/notifications';
+import { hideNotification, showNotification } from '@mantine/notifications';
 import EncountersPanel from './panels/EncountersPanel';
 import ShopsPanel from './panels/ShopsPanel';
 import { sessionState } from '@atoms/supabaseAtoms';
@@ -396,7 +396,8 @@ function SectionPanels(props: {
   panelWidth: number;
 }) {
   const session = useAtomValue(sessionState);
-  const [, refreshCharacterSaves] = useState(0);
+  const [saveRevision, refreshCharacterSaves] = useState(0);
+  const saveNoticesRef = useRef(new Map<number, string>());
   const characterWriter = useMemo(
     () =>
       session?.user.id && props.campaign?.id
@@ -408,6 +409,43 @@ function SectionPanels(props: {
         : undefined,
     [session?.user.id, props.campaign?.id]
   );
+  /** Report actual failures once per incident, without adding status controls to combatants. */
+  useEffect(() => {
+    for (const player of props.players) {
+      const save = characterWriter?.status(player.id);
+      if (!save) continue;
+      const noticeId = `encounter-character-save-${player.id}`;
+      if (save.phase === 'saved') {
+        if (saveNoticesRef.current.delete(player.id)) hideNotification(noticeId);
+        continue;
+      }
+      if (save.phase === 'saving' || saveNoticesRef.current.get(player.id) === save.phase) continue;
+      saveNoticesRef.current.set(player.id, save.phase);
+      const conflict = save.phase === 'conflict';
+      showNotification({
+        id: noticeId,
+        title: conflict ? 'Conflicting character edits' : 'Changes not saved',
+        message: (
+          <>
+            <Text size='sm'>
+              {conflict
+                ? `${player.name} was changed elsewhere. Open the character to resolve the conflicting edits.`
+                : save.phase === 'forbidden'
+                  ? `You no longer have permission to edit ${player.name}.`
+                  : `Could not save ${player.name}. Retrying automatically.`}
+            </Text>
+            {conflict && (
+              <Button component='a' href={`/sheet/${player.id}`} variant='light' size='compact-xs' mt='xs'>
+                Open character
+              </Button>
+            )}
+          </>
+        ),
+        color: 'yellow',
+        autoClose: false,
+      });
+    }
+  }, [characterWriter, props.players, saveRevision]);
   useEffect(() => {
     characterWriter?.activate();
     const retry = () => characterWriter?.retry();
@@ -415,6 +453,8 @@ function SectionPanels(props: {
     return () => {
       window.removeEventListener('online', retry);
       characterWriter?.dispose();
+      for (const id of saveNoticesRef.current.keys()) hideNotification(`encounter-character-save-${id}`);
+      saveNoticesRef.current.clear();
     };
   }, [characterWriter]);
   const theme = useMantineTheme();

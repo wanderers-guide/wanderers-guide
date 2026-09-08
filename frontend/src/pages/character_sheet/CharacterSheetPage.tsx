@@ -1,4 +1,3 @@
-import { CharacterSaveStatus } from '@common/CharacterSaveStatus';
 import { CharacterLoadError } from '@common/CharacterLoadError';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { useAtomValue } from 'jotai';
@@ -235,28 +234,16 @@ function CharacterSheetInner(props: {
 
   // EXECUTE_OPS triggers the character's operation pipeline and calls
   // onFinishLoading when it completes, which dismisses the loading screen.
-  const {
-    character,
-    setCharacter,
-    isLoading,
-    operationError,
-    isCalculating,
-    retryOperations,
-    saveState,
-    draftStored,
-    retrySave,
-    loadError,
-    retryLoad,
-    reviewEarlierChanges,
-  } = useCharacter(props.characterId, {
-    type: 'EXECUTE_OPS',
-    data: {
-      content: props.content,
-      context: 'CHARACTER-SHEET',
-      onFinishLoading: props.onFinishLoading,
-      onSourcesChange: props.onSourcesChange,
-    },
-  });
+  const { character, setCharacter, isLoading, operationError, isCalculating, retryOperations, loadError, retryLoad } =
+    useCharacter(props.characterId, {
+      type: 'EXECUTE_OPS',
+      data: {
+        content: props.content,
+        context: 'CHARACTER-SHEET',
+        onFinishLoading: props.onFinishLoading,
+        onSourcesChange: props.onSourcesChange,
+      },
+    });
 
   setPageTitle(character && character.name.trim() ? character.name : 'Sheet');
 
@@ -285,12 +272,6 @@ function CharacterSheetInner(props: {
   return (
     <Center>
       <Box maw={1000} w='100%' pb={isPhone ? 100 : 'sm'}>
-        <CharacterSaveStatus
-          state={saveState}
-          draftStored={draftStored}
-          onRetry={retrySave}
-          onReviewEarlierChanges={reviewEarlierChanges}
-        />
         <Box ref={ref}>
           <Stack gap='xs' style={{ position: 'relative' }}>
             {/* Top stat sections: layout collapses from 3 → 2 → 1 columns on smaller screens */}

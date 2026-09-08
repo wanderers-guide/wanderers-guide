@@ -1,4 +1,4 @@
-/** Verify that an unreplayable draft remains visible and downloadable without replacing server data. */
+/** Verify that an unreplayable draft stays quietly preserved without replacing server data. */
 describe('Buffered character recovery', () => {
   let characterId: number;
   let token: string;
@@ -35,7 +35,21 @@ describe('Buffered character recovery', () => {
       .should('eq', 'success');
   });
 
-  it('keeps earlier changes quiet across download, close, reload and sheet navigation', () => {
+  it('preserves earlier changes silently through reload and builder/sheet navigation', () => {
+    const assertQuiet = () => {
+      cy.get('[data-testid="character-save-status"]').should('not.exist');
+      cy.contains('Review earlier changes').should('not.exist');
+      cy.contains('Download changes').should('not.exist');
+      cy.contains('Discard earlier changes').should('not.exist');
+      cy.get('.mantine-Notification-root').should('not.exist');
+      cy.get('[role="dialog"]').should('not.exist');
+      cy.window().then((win) => {
+        const key = Object.keys(win.localStorage).find((key) =>
+          key.startsWith(`autosave-character-${characterId}-${actorId}:writer:legacy-account`)
+        );
+        expect(JSON.parse(win.localStorage.getItem(key ?? '') ?? '{}').body.name).to.eq('Unsynced local copy');
+      });
+    };
     cy.visit(`/builder/${characterId}`, {
       onBeforeLoad(win) {
         win.localStorage.setItem(
@@ -45,49 +59,33 @@ describe('Buffered character recovery', () => {
       },
     });
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', 'Saved remote name');
-    cy.contains('Unsynced character copy kept').should('not.exist');
-    cy.get('[role="dialog"]').should('not.exist');
-    cy.contains('button', 'Review earlier changes').click();
-    cy.get('[role="dialog"]').should('contain.text', 'Unsaved changes');
-    cy.contains('button', 'Download changes').should('be.enabled');
+    assertQuiet();
+    cy.reload();
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', 'Saved remote name');
+    assertQuiet();
     cy.viewport(1280, 900);
-    cy.screenshot('saved-copy-recovery-desktop');
+    cy.visit(`/sheet/${characterId}`);
+    cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
+    assertQuiet();
+    cy.screenshot('silent-sheet-desktop');
     cy.viewport(390, 844);
-    cy.screenshot('saved-copy-recovery-mobile');
+    assertQuiet();
+    cy.screenshot('silent-sheet-mobile');
     cy.document().then((doc) => {
       expect(doc.documentElement.scrollWidth).to.be.at.most(doc.documentElement.clientWidth);
     });
-    cy.contains('button', 'Download changes').click();
-    cy.readFile(`cypress/downloads/character-${characterId}-saved-copy.json`)
-      .its('name')
-      .should('eq', 'Unsynced local copy');
-    cy.window().then((win) => {
-      const key = Object.keys(win.localStorage).find((key) =>
-        key.startsWith(`autosave-character-${characterId}-${actorId}:writer:legacy-account`)
-      );
-      const retained = win.localStorage.getItem(key ?? '');
-      expect(JSON.parse(retained ?? '{}').body.name).to.eq('Unsynced local copy');
-    });
-    cy.reload();
-    cy.contains('button', 'Review earlier changes', { timeout: 30000 }).should('be.visible');
-    cy.get('[role="dialog"]').should('not.exist');
-    cy.contains('button', 'Review earlier changes').click();
-    cy.get('[role="dialog"] button[aria-label="Close"]').click();
-    cy.visit(`/sheet/${characterId}`);
-    cy.contains('button', 'Review earlier changes', { timeout: 30000 }).should('be.visible');
-    cy.get('[role="dialog"]').should('not.exist');
-    cy.screenshot('earlier-changes-sheet-mobile');
-    cy.contains('button', 'Review earlier changes').click();
-    cy.contains('button', 'Discard earlier changes').click();
-    cy.contains('button', 'Cancel').click();
-    cy.contains('button', 'Discard earlier changes').click();
-    cy.screenshot('discard-earlier-changes-mobile');
-    cy.contains('button', /^Discard changes$/).click();
-    cy.contains('button', 'Review earlier changes').should('not.exist');
     cy.visit(`/builder/${characterId}`);
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', 'Saved remote name');
-    cy.contains('button', 'Review earlier changes').should('not.exist');
-    cy.get('[role="dialog"]').should('not.exist');
+    assertQuiet();
+    cy.request({
+      method: 'POST',
+      url: `${Cypress.env('functions_url')}/find-character`,
+      headers: { Authorization: `Bearer ${token}` },
+      body: { id: characterId },
+      log: false,
+    })
+      .its('body.data.name')
+      .should('eq', 'Saved remote name');
   });
 
   it('pauses a same-field conflict and lets the user keep the saved version', () => {
@@ -132,10 +130,6 @@ describe('Buffered character recovery', () => {
       expect(saves).to.eq(1);
       expect(doc.documentElement.scrollWidth).to.be.at.most(doc.documentElement.clientWidth);
     });
-    cy.contains('button', 'Download my copy').click();
-    cy.readFile(`cypress/downloads/character-${characterId}-conflict-copy.json`)
-      .its('name')
-      .should('eq', 'My conflicting edit');
     cy.contains('button', 'Use saved version').click();
     cy.contains('Conflicting character edits').should('not.exist');
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should(

@@ -17,7 +17,19 @@ describe('Condition math and recovery through the real sheet', () => {
         return body.data;
       });
   const read = () => request('find-character', { id: characterId });
-  const settled = () => cy.get('[data-testid="character-save-status"]', { timeout: 30000 }).should('contain', 'Saved');
+  // Initial and level-change saves can precede the calculated-stat update.
+  // Read the API again until it confirms the expected result, rather than
+  // assuming the first intercepted save was the final calculation.
+  const savedMaximum = (expected: number, retries = 40): Cypress.Chainable<unknown> =>
+    read().then((saved) => {
+      const actual = saved.meta_data?.calculated_stats?.hp_max;
+      if (actual === expected || retries === 0) {
+        expect(actual, 'saved calculated maximum HP').to.eq(expected);
+        return;
+      }
+      return cy.wait(250, { log: false }).then(() => savedMaximum(expected, retries - 1));
+    });
+
   const check = (label: string, expected: unknown, actual: unknown) => expect(actual, label).to.deep.equal(expected);
   const conditions = (values: [string, number?][]) =>
     values.map(([name, value]) => ({
@@ -44,7 +56,6 @@ describe('Condition math and recovery through the real sheet', () => {
         if (expectCalculationSave)
           cy.wait(`@${alias}`, { timeout: 30000 }).its('response.body.status').should('eq', 'success');
         cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
-        settled();
       });
   const spellPanel = () => {
     cy.get('button[aria-label="Panel Grid"]').click();
@@ -107,7 +118,7 @@ describe('Condition math and recovery through the real sheet', () => {
     cy.visit(`/sheet/${characterId}`);
     cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
     cy.wait('@sheetCalculation', { timeout: 30000 }).its('response.body.status').should('eq', 'success');
-    settled();
+    savedMaximum(48);
     cy.viewport(390, 844);
     spellPanel();
     spellValue().then((actual) => check('INT spell baseline', 11, actual));
@@ -135,7 +146,7 @@ describe('Condition math and recovery through the real sheet', () => {
     cy.visit(`/sheet/${characterId}`);
     cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
     cy.wait('@sheetCalculation', { timeout: 30000 }).its('response.body.status').should('eq', 'success');
-    settled();
+    savedMaximum(48);
     changeConditions([['Encumbered'], ['Clumsy', 3]]);
     read().then((saved) => check('Encumbered first: saved AC', 17, saved.meta_data.calculated_stats.ac));
     cy.screenshot('encumbered-before-clumsy-desktop');
@@ -148,7 +159,7 @@ describe('Condition math and recovery through the real sheet', () => {
     cy.visit(`/sheet/${characterId}`);
     cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
     cy.wait('@sheetCalculation', { timeout: 30000 }).its('response.body.status').should('eq', 'success');
-    settled();
+    savedMaximum(48);
     read().then((saved) => {
       check('Injured baseline HP', 20, saved.hp_current);
       check('Baseline maximum HP', 48, saved.meta_data.calculated_stats.hp_max);
@@ -161,10 +172,9 @@ describe('Condition math and recovery through the real sheet', () => {
     });
     cy.contains('Drained', { timeout: 30000 }).should('be.visible');
     cy.wait('@drainedCalculation', { timeout: 30000 }).its('response.body.status').should('eq', 'success');
-    settled();
+    savedMaximum(43);
     cy.reload();
     cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
-    settled();
     read().then((saved) => {
       check('Adding Drained 1 loses level 5 HP', 15, saved.hp_current);
       check('Drained maximum HP', 43, saved.meta_data.calculated_stats.hp_max);
@@ -194,7 +204,6 @@ describe('Condition math and recovery through the real sheet', () => {
     cy.intercept('POST', '**/functions/v1/update-character').as('companionInitialCalculation');
     cy.visit(`/sheet/${characterId}`);
     cy.wait('@companionInitialCalculation', { timeout: 30000 }).its('response.body.status').should('eq', 'success');
-    settled();
     cy.get('button[aria-label="Tab Options"]').trigger('mouseover');
     cy.contains('[role="menuitem"]', /^Companions$/).click();
     cy.get('input[placeholder="HP"]', { timeout: 30000 })
@@ -218,7 +227,6 @@ describe('Condition math and recovery through the real sheet', () => {
     );
     // The dialog is still open while the authoritative HP and save baseline advance.
     cy.get('input[placeholder="HP"]', { timeout: 20000 }).should('have.value', '20');
-    settled();
     cy.intercept('POST', '**/functions/v1/update-character').as('companionDrainedSave');
     cy.contains('.mantine-Modal-content', 'Select a Condition')
       .contains(/^Drained$/)
@@ -228,7 +236,6 @@ describe('Condition math and recovery through the real sheet', () => {
       expect(response?.body.status).to.eq('success');
       expect(response?.body.data[0].companions.list[0].hp_current).to.eq(15);
     });
-    settled();
     read().then((saved) => {
       expect(saved.companions.list[0].hp_current).to.eq(15);
       expect(saved.companions.list[0].details.conditions[0].name).to.eq('Drained');
@@ -240,7 +247,6 @@ describe('Condition math and recovery through the real sheet', () => {
     cy.intercept('POST', '**/functions/v1/update-character').as('initialCalculation');
     cy.visit(`/sheet/${characterId}`);
     cy.wait('@initialCalculation', { timeout: 30000 }).its('response.body.status').should('eq', 'success');
-    settled();
     cy.viewport(390, 844);
     const submissions: Record<string, unknown>[] = [];
     let failed = false;
@@ -268,7 +274,6 @@ describe('Condition math and recovery through the real sheet', () => {
     // A persisted submission can be reconciled against the accepted snapshot after reload.
     cy.reload();
     cy.contains('Drained', { timeout: 30000 }).should('be.visible');
-    settled();
     cy.intercept('POST', '**/functions/v1/find-character').as('recoveryPoll');
     cy.wait('@recoveryPoll', { timeout: 15000 });
     cy.wait('@recoveryPoll', { timeout: 15000 });
@@ -293,18 +298,6 @@ describe('Condition math and recovery through the real sheet', () => {
   });
 
   it('waits for delayed content before saving nested homebrew effects and preserves them through level changes', () => {
-    // Initial and level-change saves can precede the calculated-stat update.
-    // Read the API again until it confirms the expected result, rather than
-    // assuming the first intercepted save was the final calculation.
-    const savedMaximum = (expected: number, retries = 40): Cypress.Chainable<unknown> =>
-      read().then((saved) => {
-        const actual = saved.meta_data?.calculated_stats?.hp_max;
-        if (actual === expected || retries === 0) {
-          expect(actual, 'saved calculated maximum HP').to.eq(expected);
-          return;
-        }
-        return cy.wait(250, { log: false }).then(() => savedMaximum(expected, retries - 1));
-      });
     read().then((base) =>
       request('update-character', {
         id: characterId,
@@ -370,7 +363,6 @@ describe('Condition math and recovery through the real sheet', () => {
       releaseContent?.();
     });
     cy.wait('@homebrewSave', { timeout: 30000 });
-    settled();
     cy.contains('Hit Points', { timeout: 30000 }).parent().find('a').should('have.text', '53');
     savedMaximum(53);
     cy.screenshot('homebrew-conditional-bindings-mobile');
@@ -383,20 +375,18 @@ describe('Condition math and recovery through the real sheet', () => {
       );
       cy.reload();
       cy.wait('@homebrewSave', { timeout: 30000 });
-      settled();
       cy.contains('Hit Points', { timeout: 30000 }).parent().find('a').should('have.text', String(maximum));
       savedMaximum(maximum);
     }
     cy.reload();
     cy.contains('Hit Points', { timeout: 30000 }).parent().find('a').should('have.text', '53');
-    settled();
   });
 
   it('shows a cyclic homebrew calculation error without saving partial math and recovers after correction', () => {
     cy.intercept('POST', '**/functions/v1/update-character').as('baselineHomebrewSave');
     cy.visit(`/sheet/${characterId}`);
     cy.wait('@baselineHomebrewSave', { timeout: 30000 });
-    settled();
+    savedMaximum(48);
     read().then((base) =>
       request('update-character', {
         id: characterId,
@@ -442,7 +432,6 @@ describe('Condition math and recovery through the real sheet', () => {
     cy.reload();
     cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
     cy.contains("Couldn't calculate this character").should('not.exist');
-    settled();
     read().its('meta_data.calculated_stats.hp_max').should('eq', 48);
   });
 });

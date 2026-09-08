@@ -199,25 +199,30 @@ before activation; finish edits in other forms before choosing **Reload app**.
 An update activated in another tab shows a prompt instead of forcing this tab to
 reload. The error page also offers an explicit reload for missing old assets.
 
-## Earlier character changes
+## Quiet character saving
+
+Normal saving, successful retries and compatible remote updates run without a
+status row, toast or recovery controls on the character sheet and builder. Changes
+to that layout require an intentional UI scope decision.
+
+Actual save failures use an error toast while retries continue automatically. The
+toast disappears after server confirmation. Conflicting edits that cannot be safely
+merged ask which version to keep. An encounter conflict links to the character to
+resolve it. Authentication and calculation failures retain their existing recovery
+paths. There is no download or discard workflow for save history.
 
 Retained drafts stay on the device under the same character ID. They do not create
-additional characters on the server. The builder and sheet show **Review earlier
-changes** beside the current save status when a draft cannot be replayed safely.
-Opening or reloading a character does not automatically open a recovery notice.
+additional server characters. Versioned drafts with a known common ancestor can be
+reconciled automatically. Older drafts without enough information for a safe merge
+remain untouched; their presence alone does not interrupt the user or replace a
+newer server save.
 
-The **Unsaved changes** dialog offers **Download changes** and **Discard earlier
-changes**. Closing or downloading preserves the draft. Discarding requires a
-confirmation and removes only the exact records shown when the dialog opened.
-Newer replacements and records that could not be removed stay available. These
-controls never discard the current draft waiting for a calculation or server save.
-
-Recovery verification must continue beyond the first download: close, reload,
-switch between builder and sheet, then confirm the server character is unchanged
-and earlier changes remain accessible without a recurring popup. The Cypress
-`saveRecovery` scenario covers that lifecycle and cancel/confirm behavior on phone
-and desktop layouts. Hook integration tests cover newer replacements, storage
-failures, and stale callbacks after account or character changes.
+Recovery verification covers reload, account changes and builder/sheet navigation,
+with server reads proving saved values and local checks proving unreplayable drafts
+are preserved. The Cypress `saveRecovery` scenario also checks that the ordinary
+sheet has no added saving controls or notifications at desktop and phone widths.
+Connection, encounter and remote-update scenarios verify real acknowledgements,
+reopening, and error-only notifications rather than relying on a displayed Saved label.
 
 ## Recovery evidence and next drill
 

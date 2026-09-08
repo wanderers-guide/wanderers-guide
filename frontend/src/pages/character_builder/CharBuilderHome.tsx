@@ -1,4 +1,3 @@
-import { CharacterSaveStatus } from '@common/CharacterSaveStatus';
 import { CharacterLoadError } from '@common/CharacterLoadError';
 import { generateNames } from '@ai/fantasygen-dev/name-controller';
 import { GroupLinkSwitch, LinkSwitch, LinksGroup } from '@common/LinksGroup';
@@ -100,17 +99,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
   const queryClient = useQueryClient();
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const {
-    character,
-    setCharacter,
-    isLoading,
-    saveState,
-    draftStored,
-    retrySave,
-    loadError,
-    retryLoad,
-    reviewEarlierChanges,
-  } = useCharacter(props.characterId, {
+  const { character, setCharacter, isLoading, loadError, retryLoad } = useCharacter(props.characterId, {
     type: 'SIMPLE',
   });
 
@@ -1329,12 +1318,6 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
 
   return (
     <Stack gap={topGap}>
-      <CharacterSaveStatus
-        state={saveState}
-        draftStored={draftStored}
-        onRetry={retrySave}
-        onReviewEarlierChanges={reviewEarlierChanges}
-      />
       <Group justify='center' ref={ref} wrap='nowrap'>
         <Stack>
           <Box>

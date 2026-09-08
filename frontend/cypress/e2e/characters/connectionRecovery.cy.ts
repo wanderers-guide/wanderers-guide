@@ -60,7 +60,7 @@ describe('Interrupted character saves', () => {
     });
     cy.get('input[placeholder="Unknown Wanderer"]').type('Kept through a connection drop');
     cy.wait('@droppedSave', { timeout: 15000 });
-    cy.contains('Not saved: retrying automatically', { timeout: 40000 }).should('be.visible');
+    cy.contains('Changes not saved', { timeout: 40000 }).should('be.visible');
     cy.window().should((win) => {
       const key = Object.keys(win.localStorage).find((key) =>
         key.startsWith(`autosave-character-${characterId}-${actorId}:writer:`)
@@ -108,9 +108,7 @@ describe('Interrupted character saves', () => {
     cy.wrap(null).should(() => expect(committed).to.eq(true));
     readCharacter().its('name').should('eq', 'Committed before timeout');
     cy.get('input[placeholder="Unknown Wanderer"]').clear().type('Newest edit during timeout');
-    cy.get('[data-testid="character-save-status"]').should('contain', 'Saving');
     cy.wait('@latestSave', { timeout: 45000 }).its('response.body.status').should('eq', 'success');
-    cy.get('[data-testid="character-save-status"]').should('contain', 'Saved');
     readCharacter().its('name').should('eq', 'Newest edit during timeout');
     cy.reload();
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should(
@@ -126,7 +124,6 @@ describe('Interrupted character saves', () => {
     cy.buildABC('Elf', 'Acolyte', 'Wizard');
     cy.get('button[aria-label="Next Page"]').click();
     cy.location('pathname').should('include', '/sheet');
-    cy.get('[data-testid="character-save-status"]', { timeout: 30000 }).should('contain', 'Saved');
     cy.viewport(390, 844);
     cy.then(() =>
       Cypress.automation('remote:debugger:protocol', { command: 'Emulation.setCPUThrottlingRate', params: { rate: 4 } })
@@ -165,7 +162,7 @@ describe('Interrupted character saves', () => {
     cy.get('button[aria-label="Dismiss save notice"]', { timeout: 30000 }).click();
     cy.get('#character-save-failed').should('not.exist');
     cy.get('button.mantine-Modal-close').last().click();
-    cy.contains('Not saved: retrying automatically', { timeout: 30000 }).should('be.visible');
+    cy.get('[data-testid="character-save-status"]').should('not.exist');
     cy.screenshot('mobile-spells-waiting-to-sync');
     cy.window().then((win) => win.dispatchEvent(new Event('pagehide')));
     cy.reload();
@@ -177,7 +174,6 @@ describe('Interrupted character saves', () => {
       win.dispatchEvent(new Event('online'));
     });
     cy.wait('@spellsSaved', { timeout: 30000 }).its('response.body.status').should('eq', 'success');
-    cy.get('[data-testid="character-save-status"]', { timeout: 30000 }).should('contain', 'Saved');
     readCharacter()
       .its('spells')
       .then((spells) => {
