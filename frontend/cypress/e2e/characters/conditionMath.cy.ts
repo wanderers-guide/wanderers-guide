@@ -249,15 +249,19 @@ describe('Condition math and recovery through the real sheet', () => {
     cy.visit(`/sheet/${characterId}`);
     cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
     cy.wait('@initialCalculation', { timeout: 30000 }).its('response.body.status').should('eq', 'success');
+    savedMaximum(48);
     cy.viewport(390, 844);
     const submissions: Record<string, unknown>[] = [];
     let failed = false;
     cy.intercept('POST', '**/functions/v1/update-character', (req) => {
+      const hasDrained = req.body.details?.conditions?.some(
+        (condition: { name: string }) => condition.name === 'Drained'
+      );
+      // Initial calculation can finish after the first save. Count the selected
+      // condition and every subsequent write, including an erroneous reversion.
+      if (!failed && !hasDrained) return;
       submissions.push(structuredClone(req.body));
-      if (
-        !failed &&
-        req.body.details?.conditions?.some((condition: { name: string }) => condition.name === 'Drained')
-      ) {
+      if (!failed && hasDrained) {
         failed = true;
         req.alias = 'lostDrainedAck';
         req.continue((res) => {
@@ -289,7 +293,15 @@ describe('Condition math and recovery through the real sheet', () => {
     cy.then(() => {
       // HP and conditions commit together. An interrupted calculation may persist its
       // derived stats after reopening, but cannot replay HP or change other saved fields.
-      expect(submissions.length, 'one edit plus at most one derived-stat save').to.be.within(1, 2);
+      const submittedHealth = submissions.map((body: any) => ({
+        hp: body.hp_current,
+        maximum: body.meta_data?.calculated_stats?.hp_max,
+        conditions: body.details?.conditions?.map((condition: { name: string }) => condition.name),
+      }));
+      expect(
+        submissions.length,
+        `one edit plus at most one derived-stat save: ${JSON.stringify(submittedHealth)}`
+      ).to.be.within(1, 2);
       const persistedInputs = (body: Record<string, unknown>) =>
         Cypress._.omit(body, ['expected_updated_at', 'meta_data.calculated_stats']);
       for (const submission of submissions.slice(1)) {
