@@ -180,6 +180,105 @@ test('content packages and cache respect failures, sources, actors and generatio
       /content-source/,
       'failed source resolution cannot masquerade as an empty source set'
     );
+    const pageTrait = {
+      id: 81001,
+      name: 'Wizard School',
+      description: 'Fixture',
+      created_at: row.created_at,
+      meta_data: {},
+      content_source_id: 81000,
+    };
+    const infoTrait = { ...pageTrait, id: 81002, content_source_id: 81009 };
+    const prepareTraitLookup = (readLookup) => {
+      store.resetContentStore(true, true);
+      store.defineDefaultSources('PAGE', [81000]);
+      store.defineDefaultSources('INFO', [81009]);
+      state.request = async (type, body) => {
+        if (type === 'find-content-source') return body.id.map((id) => ({ id, name: `Fixture source ${id}` }));
+        if (type === 'find-trait') {
+          if (body.content_sources.includes(81009)) {
+            assert.deepEqual(body.content_sources, [3, 81000, 81009], 'lookup catalog keeps captured INFO+PAGE scope');
+            return readLookup();
+          }
+          return [pageTrait];
+        }
+        return [];
+      };
+    };
+    await t.test(
+      'trait lookup metadata uses the normal cache while PAGE candidates keep their source scope',
+      async () => {
+        prepareTraitLookup(async () => [infoTrait, pageTrait]);
+        const content = await store.fetchContentPackage([3, 81000]);
+        assert.deepEqual(content.traits, [pageTrait]);
+        assert.deepEqual(content.lookupTraits, [infoTrait, pageTrait]);
+        const before = state.requests.length;
+        const warm = await store.fetchContentPackage([3, 81000]);
+        assert.deepEqual(warm.lookupTraits, content.lookupTraits);
+        assert.equal(state.requests.length, before, 'a warm package does not download lookup metadata again');
+      }
+    );
+    await t.test('unavailable optional trait lookup metadata does not fail otherwise complete content', async () => {
+      prepareTraitLookup(async () => null);
+      const content = await store.fetchContentPackage([3, 81000]);
+      assert.deepEqual(content.traits, [pageTrait]);
+      assert.equal(content.lookupTraits, undefined);
+    });
+    await t.test(
+      'slow optional metadata has a bounded wait and cannot change an already returned packet',
+      async (t) => {
+        const lookup = deferred(),
+          started = deferred();
+        prepareTraitLookup(() => {
+          started.resolve();
+          return lookup.promise;
+        });
+        t.mock.timers.enable({ apis: ['setTimeout'] });
+        const pending = store.fetchContentPackage([3, 81000]);
+        try {
+          await started.promise;
+          await new Promise((resolve) => setImmediate(resolve));
+          t.mock.timers.tick(750);
+          const content = await pending;
+          assert.deepEqual(content.traits, [pageTrait]);
+          assert.equal(
+            content.lookupTraits,
+            undefined,
+            'required content returns without waiting for the network timeout'
+          );
+          lookup.resolve([infoTrait, pageTrait]);
+          await new Promise((resolve) => setImmediate(resolve));
+          assert.equal(content.lookupTraits, undefined, 'late data cannot enter a running calculation');
+          assert.deepEqual(content.traits, [pageTrait]);
+        } finally {
+          lookup.resolve([]);
+          await pending;
+          t.mock.timers.reset();
+          store.resetContentStore(true, true);
+        }
+      }
+    );
+    await t.test('an account change retires both a pending package and its optional trait catalog', async () => {
+      const lookup = deferred(),
+        started = deferred();
+      prepareTraitLookup(() => {
+        started.resolve();
+        return lookup.promise;
+      });
+      const pending = store.fetchContentPackage([3, 81000]);
+      const rejected = assert.rejects(pending, /Content changed/);
+      try {
+        await started.promise;
+        state.actor = 'trait-next-actor';
+        store.setContentCacheActor(state.actor);
+        lookup.resolve([infoTrait, pageTrait]);
+        await rejected;
+        assert.deepEqual(store.getCachedContent('trait'), [], 'old actor metadata never populates the new cache');
+      } finally {
+        lookup.resolve([]);
+        store.resetContentStore(true, true);
+      }
+    });
     await t.test('a stalled optional cache deletion cannot block fresh homebrew content', async () => {
       const deleting = deferred();
       state.delete = () => deleting.promise;
@@ -275,26 +374,108 @@ test('content packages and cache respect failures, sources, actors and generatio
         store.resetContentStore(false, true);
       }
     });
-    await t.test('a late source-version response cannot publish its timed-out snapshot', async () => {
+    const cachedSnapshot = (savedAt = Date.now()) => ({
+      version: 4,
+      actorId: state.actor,
+      savedAt,
+      idStore: new Map([
+        ['content-source', new Map([[81000, { id: 81000, updated_at: 'old-source-token' }]])],
+        ['language', new Map([[row.id, row]])],
+      ]),
+      contentStore: new Map(),
+    });
+
+    await t.test('a slow version check uses the recent snapshot without extending its age', async (t) => {
       const checking = deferred();
-      const snapshot = {
-        version: 4,
-        actorId: state.actor,
-        savedAt: Date.now(),
-        idStore: new Map([
-          ['content-source', new Map([[81000, { id: 81000, updated_at: 'old-source-token' }]])],
-          ['language', new Map([[row.id, row]])],
-        ]),
-        contentStore: new Map(),
-      };
+      const snapshot = cachedSnapshot(Date.now() - 20 * 60 * 60 * 1000);
       state.read = async () => snapshot;
       state.request = async (type) => (type === 'get-content-versions' ? checking.promise : []);
       store.resetContentStore(false);
       try {
-        assert.deepEqual(await store.fetchContent('language', { content_sources: [81000] }), []);
-        checking.resolve([{ id: 81000, updated_at: 'old-source-token' }]);
+        const before = state.requests.length;
+        assert.deepEqual(await store.fetchContent('language', query), [row]);
+        assert.deepEqual(
+          state.requests.slice(before).map(([type]) => type),
+          ['get-content-versions'],
+          'slow freshness must not trigger a replacement download'
+        );
+        checking.resolve([{ id: 81000, updated_at: 'new-source-token' }]);
         await new Promise((resolve) => setImmediate(resolve));
+        assert.deepEqual(
+          await store.fetchContent('language', query),
+          [row],
+          'a late verdict cannot change content underneath running calculations'
+        );
+
+        t.mock.timers.enable({ apis: ['setTimeout'] });
+        await store.fetchContent('language', { ...query, id: 81002 });
+        t.mock.timers.tick(10000);
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.equal(
+          state.records.get(`content-store:${state.actor}`).savedAt,
+          snapshot.savedAt,
+          'persisting another lookup must not renew unverified cached content'
+        );
+      } finally {
+        checking.resolve(null);
+        t.mock.timers.reset();
+        state.read = async (key) => state.records.get(key);
+        store.resetContentStore(false, true);
+      }
+    });
+
+    await t.test('a prompt changed source token still rejects stale cached content', async () => {
+      state.read = async () => cachedSnapshot();
+      state.request = async (type) =>
+        type === 'get-content-versions' ? [{ id: 81000, updated_at: 'new-source-token' }] : [];
+      store.resetContentStore(false);
+      try {
+        assert.deepEqual(await store.fetchContent('language', query), []);
         assert.deepEqual(store.getCachedContent('language'), []);
+      } finally {
+        state.read = async (key) => state.records.get(key);
+        store.resetContentStore(false, true);
+      }
+    });
+
+    await t.test('an expired snapshot cannot be used during an outage', async () => {
+      state.read = async () => cachedSnapshot(Date.now() - 25 * 60 * 60 * 1000);
+      state.request = async () => [];
+      store.resetContentStore(false);
+      try {
+        const before = state.requests.length;
+        assert.deepEqual(await store.fetchContent('language', query), []);
+        assert.deepEqual(
+          state.requests.slice(before).map(([type]) => type),
+          ['find-language']
+        );
+      } finally {
+        state.read = async (key) => state.records.get(key);
+        store.resetContentStore(false, true);
+      }
+    });
+
+    await t.test('account changes retire a snapshot waiting for its version check', async () => {
+      const checking = deferred(),
+        started = deferred();
+      const snapshot = cachedSnapshot();
+      state.read = async () => snapshot;
+      state.request = async (type) => {
+        if (type === 'get-content-versions') {
+          started.resolve();
+          return checking.promise;
+        }
+        return [];
+      };
+      store.resetContentStore(false);
+      const pending = store.fetchContent('language', query);
+      const rejected = assert.rejects(pending, /Content changed/);
+      try {
+        await started.promise;
+        state.actor = 'D';
+        store.setContentCacheActor('D');
+        checking.resolve([{ id: 81000, updated_at: 'old-source-token' }]);
+        await rejected;
         assert.deepEqual(await store.fetchContent('language', query), []);
       } finally {
         checking.resolve(null);

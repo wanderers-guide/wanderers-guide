@@ -205,8 +205,11 @@ Normal saving, successful retries and compatible remote updates run without a
 status row, toast or recovery controls on the character sheet and builder. Changes
 to that layout require an intentional UI scope decision.
 
-Actual save failures use an error toast while retries continue automatically. The
-toast disappears after server confirmation. Conflicting edits that cannot be safely
+Temporary network failures retry quietly while edits remain retained on the device.
+A toast appears when local retention fails, editing permission is lost, or the server
+explicitly rejects the change. An explicitly rejected payload stays buffered and is
+not repeatedly submitted; a corrected edit can save again. Storage warnings clear
+after local retention or server confirmation succeeds. Conflicting edits that cannot be safely
 merged ask which version to keep. An encounter conflict links to the character to
 resolve it. Authentication and calculation failures retain their existing recovery
 paths. There is no download or discard workflow for save history.

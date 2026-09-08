@@ -1124,6 +1124,8 @@ export const ContentPackageSchema = z.object({
   versatileHeritages: z.array(VersatileHeritageSchema),
   classArchetypes: z.array(ClassArchetypeSchema),
   sources: z.array(ContentSourceSchema).optional(),
+  // Complete INFO+PAGE trait lookup data, separate from PAGE selection candidates.
+  lookupTraits: z.array(TraitSchema).optional(),
   defaultSources: z.record(SourceKeySchema, SourceValueSchema),
 });
 export type ContentPackage = z.infer<typeof ContentPackageSchema>;

@@ -508,6 +508,7 @@ function SectionPanels(props: {
 
             {activeTab === 'spells' && (
               <SpellsPanel
+                content={props.content}
                 panelHeight={props.panelHeight}
                 panelWidth={props.panelWidth}
                 id={'CHARACTER'}
@@ -881,6 +882,7 @@ function SectionPanels(props: {
               <AnimatePresence mode='wait'>
                 <motion.div key='spells' {...panelMotion}>
                   <SpellsPanel
+                    content={props.content}
                     panelHeight={props.panelHeight}
                     panelWidth={props.panelWidth}
                     id={'CHARACTER'}

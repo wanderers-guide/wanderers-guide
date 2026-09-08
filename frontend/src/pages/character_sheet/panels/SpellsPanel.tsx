@@ -1,7 +1,7 @@
 import { ActionSymbol } from '@common/Actions';
 import TokenSelect from '@common/TokenSelect';
 import { collectEntitySpellcasting } from '@content/collect-content';
-import { fetchContentAll, getContentFast, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
+import { getContentFast } from '@content/content-store';
 import {
   Accordion,
   ActionIcon,
@@ -18,10 +18,10 @@ import {
 import ManageSpellsModal from '@modals/ManageSpellsModal';
 import { isCantrip } from '@spells/spell-utils';
 import { IconSearch, IconSquareRounded, IconSquareRoundedFilled, IconX } from '@tabler/icons-react';
-import { useQuery } from '@tanstack/react-query';
 import {
   ActionCost,
   CastingSource,
+  ContentPackage,
   LivingEntity,
   Spell,
   SpellInnateEntry,
@@ -51,6 +51,7 @@ import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 
 export default function SpellsPanel(props: {
   id: StoreID;
+  content: ContentPackage;
   entity: LivingEntity | null;
   setEntity: SetterOrUpdater<LivingEntity | null>;
   panelHeight: number;
@@ -75,14 +76,9 @@ export default function SpellsPanel(props: {
     | undefined
   >();
 
-  const { data: spells } = useQuery({
-    queryKey: [`find-spells-and-data`, { sources: getDefaultSourcesKey('PAGE') }],
-    queryFn: async () => {
-      if (!props.entity) return null;
-
-      return await fetchContentAll<Spell>('spell', getDefaultSources('PAGE'));
-    },
-  });
+  // The page already loaded this complete catalog before calculating the entity.
+  // A separate query could cache null while the entity was still being restored.
+  const spells = props.content.spells;
 
   const charData = useMemo(() => {
     if (!props.entity) return null;

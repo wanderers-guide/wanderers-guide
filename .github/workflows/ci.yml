@@ -66,7 +66,9 @@ jobs:
           VITE_SUPABASE_URL: http://localhost:8000
           VITE_SUPABASE_KEY: ci-placeholder
           VITE_ENV: production
-        run: npm run build
+        run: |
+          npm run build
+          npm run test:build
 
   docs:
     runs-on: ubuntu-latest

@@ -51,11 +51,17 @@ export function SelectIconModalContents(props: {
   const [allIconNames, setAllIconNames] = useState<string[] | null>(null);
   useEffect(() => {
     let active = true;
-    getAllIconsAsync().then((names) => {
-      if (active) setAllIconNames(names);
-    });
+    const load = () =>
+      void getAllIconsAsync()
+        .then((names) => {
+          if (active) setAllIconNames(names);
+        })
+        .catch(() => console.warn('Could not load the icon picker; retrying on reconnect.'));
+    load();
+    window.addEventListener('online', load);
     return () => {
       active = false;
+      window.removeEventListener('online', load);
     };
   }, []);
 

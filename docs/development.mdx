@@ -313,7 +313,7 @@ npm --prefix frontend run cy:e2e -- --spec "cypress/e2e/login/*.cy.ts"
 ```
 
 The `characters/calculationRecovery.cy.ts` and `characters/saveRecovery.cy.ts` specs
-verify worker failure/retry and retained-copy download in the rendered app, including
+verify worker failure/retry and retained-edit recovery in the rendered app, including
 desktop and mobile screenshots. Both create and clean up their own local test character.
 
 The `characters/connectionRecovery.cy.ts` spec interrupts real character writes, lets a
@@ -324,11 +324,35 @@ simulate flaky transport, constrained CPU and page lifecycle boundaries, not iOS
 process eviction or a measured physical-device performance profile. The save-hook regressions also cover uncertain writes,
 intentional reversions, separate-tab drafts, storage exhaustion, and account changes.
 
+The `characters/mobileLoading.cy.ts` scenario applies 150 ms latency, 192 KiB/s
+download throughput, 96 KiB/s upload throughput, and 4x CPU throttling before visiting
+the app. It creates a fresh account scope, loads a sheet, waits for the actual content
+cache transaction, and reloads with a delayed freshness check and unavailable catalog
+endpoints. The cached sheet must become usable without replacement catalog requests.
+The worker-package regression in `test:infra` runs the real worker entry point, controller,
+and content store with network and authentication lookups unavailable. It checks grants,
+source boundaries, consecutive packages, missing tables, and cleanup after failure.
+Separate cases cover cross-book references: their existing scoped lookup must still
+work online and fail clearly when an uncached dependency cannot be downloaded.
+The real Wizard fixture also exercises its legacy trait-name filter with all network
+access disabled; duplicate trait names preserve the API's first-by-ID result across
+INFO and PAGE while selection lists keep their PAGE source boundaries.
+Use a production build and preview for startup measurements; development modules have
+different download behavior. These are controlled Chromium scenarios, not measurements
+on a physical phone.
+
+After `npm --prefix frontend run build`, run `npm --prefix frontend run test:build`.
+This checks the generated service worker and output files: the app shell stays precached,
+the developer report is excluded, and the optional game-icon chunk is cached after use.
+Bundle reports are written to `frontend/.scratch/bundle-stats.html` for local analysis.
+The first use of a game icon or icon picker can require a download; reopening it can
+use the runtime cache. The complete icon library is not fetched on an idle timer.
+
 The encounter writer regressions run in `test:infra`. They exercise GM/player races,
 serialized HP edits, lost acknowledgements, narrow guarded writes, retained drafts,
 and failure/conflict responses. The encounter keeps unsynced edits visible and retries
-transport failures. Conflicting edits offer **Review changes**, which opens the sheet's
-existing recovery flow. Navigating away preserves its versioned local draft; the campaign
+transport failures. Conflicting edits offer **Open character**, which opens the sheet's
+existing conflict resolution flow. Navigating away preserves its versioned local draft; the campaign
 does not automatically restore old drafts into encounter controls on a new visit.
 
 `campaigns/encounterSync.cy.ts` creates two confirmed synthetic accounts, joins a real

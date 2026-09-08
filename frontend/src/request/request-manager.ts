@@ -4,6 +4,7 @@ import { JSendResponse, RequestType } from '@schemas/requests';
 import { logError, throwError } from '@utils/error-handling';
 import { hideNotification, showNotification } from '@mantine/notifications';
 import { supabase } from '../supabase-client';
+import { RequestRejectedError } from './request-rejection';
 
 const MAX_TRANSIENT_RETRIES = 1;
 // A lost response can follow a committed write. Only explicitly read-only handlers
@@ -115,7 +116,7 @@ export async function makeRequest<T = Record<string, any>>(
   type: RequestType,
   body: Record<string, any>,
   notifyFailure = true,
-  options?: { expectedActorId?: string; throwOnFailure?: boolean }
+  options?: { expectedActorId?: string; throwOnFailure?: boolean; throwOnRejection?: boolean }
 ): Promise<T | null> {
   let lastError: any = null;
   let lastErrorBody: unknown = null;
@@ -139,6 +140,7 @@ export async function makeRequest<T = Record<string, any>>(
       }
       if (response.status !== 'success') {
         if (notifyFailure) logError('Failed to make request');
+        if (response.status === 'fail' && options?.throwOnRejection) throw new RequestRejectedError(type);
         return failure();
       }
       return response.data as T;
@@ -170,6 +172,12 @@ export async function makeRequest<T = Record<string, any>>(
         )
           notifySessionExpired();
         break;
+      }
+      // JWT-related 400 responses above retain their existing auth recovery. Only
+      // explicit input rejection can stop a writer repeating the same payload.
+      if (options?.throwOnRejection && [400, 413, 422].includes(error.context.status)) {
+        console.error(`Request to '${type}' rejected (HTTP ${error.context.status})`, lastErrorBody);
+        throw new RequestRejectedError(type);
       }
     }
 
