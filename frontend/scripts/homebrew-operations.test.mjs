@@ -210,3 +210,72 @@ test('nested skill guards can read a variable created earlier in their active br
   ]);
   assert.equal(packet.store.variables.SKILL_LORE_BREW.value.value, 'E');
 });
+
+test('all proficiency assignments preserve attribute metadata before downstream copies', async () => {
+  const packet = await calculate([
+    op('create-first-prof', 'createValue', {
+      variable: 'BREW_FIRST_PROF',
+      type: 'prof',
+      value: { value: 'T', attribute: 'ATTRIBUTE_STR' },
+    }),
+    op('create-second-prof', 'createValue', { variable: 'BREW_SECOND_PROF', type: 'prof', value: { value: 'E' } }),
+    bind('SAVE_FORT', 'SAVE_REFLEX', 'downstream-reflex'),
+    bind('SAVE_REFLEX', 'BREW_FIRST_PROF', 'initial-proficiency'),
+    bind('SAVE_REFLEX', 'BREW_SECOND_PROF', 'final-proficiency'),
+  ]);
+  assert.equal(packet.store.variables.SAVE_REFLEX.value.value, 'E');
+  assert.equal(packet.store.variables.SAVE_REFLEX.value.attribute, 'ATTRIBUTE_STR');
+  assert.equal(packet.store.variables.SAVE_FORT.value.value, 'E');
+  assert.equal(packet.store.variables.SAVE_FORT.value.attribute, 'ATTRIBUTE_STR');
+});
+
+test('removed cyclic grants do not enter the remaining binding graph', async () => {
+  const feat = {
+    id: 92001,
+    name: 'Removed cyclic grant',
+    type: 'feat',
+    level: 1,
+    operations: [bind('BREW_A', 'BREW_B', 'removed-forward'), bind('BREW_B', 'BREW_A', 'removed-backward')],
+  };
+  engine.setFixtures([{ table: 'ability_block', row: feat }]);
+  try {
+    const packet = await calculate([
+      create('BREW_A', 3),
+      create('BREW_B', 7),
+      op('give-cyclic-feat', 'giveAbilityBlock', { type: 'feat', abilityBlockId: 92001 }),
+      op('remove-cyclic-feat', 'removeAbilityBlock', { type: 'feat', abilityBlockId: 92001 }),
+      bind('MAX_HEALTH_BONUS', 'BREW_A'),
+      bind('BREW_A', 'BREW_B', 'remaining-link'),
+    ]);
+    assert.equal(packet.store.variables.BREW_A.value, 7);
+    assert.equal(packet.store.variables.MAX_HEALTH_BONUS.value, 7);
+  } finally {
+    engine.setFixtures([]);
+  }
+});
+
+test('removing a later assignment preserves an independent earlier binding', async () => {
+  const feat = {
+    id: 92002,
+    name: 'Removed later binding',
+    type: 'feat',
+    level: 1,
+    operations: [bind('BREW_A', 'BREW_SECOND', 'removed-assignment')],
+  };
+  engine.setFixtures([{ table: 'ability_block', row: feat }]);
+  try {
+    const packet = await calculate([
+      create('BREW_A'),
+      create('BREW_FIRST', 3),
+      create('BREW_SECOND', 7),
+      bind('MAX_HEALTH_BONUS', 'BREW_A'),
+      bind('BREW_A', 'BREW_FIRST', 'independent-assignment'),
+      op('give-later-assignment', 'giveAbilityBlock', { type: 'feat', abilityBlockId: 92002 }),
+      op('remove-later-assignment', 'removeAbilityBlock', { type: 'feat', abilityBlockId: 92002 }),
+    ]);
+    assert.equal(packet.store.variables.BREW_A.value, 3);
+    assert.equal(packet.store.variables.MAX_HEALTH_BONUS.value, 3);
+  } finally {
+    engine.setFixtures([]);
+  }
+});
