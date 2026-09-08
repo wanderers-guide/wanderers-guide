@@ -70,7 +70,7 @@ describe('Campaign encounter synchronization', () => {
       const previousPolls = campaignPolls;
       cy.wrap(null, { timeout: 15000 }).should(() => expect(campaignPolls).to.be.at.least(previousPolls + 2));
     });
-    cy.contains('Not synced: retrying automatically').should('not.exist');
+    cy.contains('Not saved: retrying automatically').should('not.exist');
     cy.then(() => expect(writes, 'accepted snapshot acknowledged by a read, without replay').to.eq(1));
     cy.reload();
     cy.contains('button[role="tab"]', /^Encounters$/, { timeout: 30000 }).click();
@@ -192,7 +192,7 @@ describe('Campaign encounter synchronization', () => {
     });
     cy.get('input[placeholder="HP"]').clear().type('16{enter}');
     cy.wait('@blockedHealthSave');
-    cy.contains('Not synced: retrying automatically', { timeout: 15000 }).should('be.visible');
+    cy.contains('Not saved: retrying automatically', { timeout: 15000 }).should('be.visible');
     addDrained();
     cy.get('input[placeholder="HP"]').should('have.value', '15');
     readPlayer().its('hp_current').should('eq', 20);
@@ -210,7 +210,7 @@ describe('Campaign encounter synchronization', () => {
       expect(character.hp_current).to.eq(15);
       expect(character.details.conditions[0].name).to.eq('Drained');
     });
-    cy.contains('Not synced: retrying automatically').should('not.exist');
+    cy.contains('Not saved: retrying automatically').should('not.exist');
   });
 
   it('retains unsynced GM HP through failed polls and mobile layout changes, then retries successfully', () => {
@@ -224,7 +224,7 @@ describe('Campaign encounter synchronization', () => {
     });
     cy.get('input[placeholder="HP"]').clear().should('have.value', '').type('16{enter}');
     cy.wait('@failedGmSave');
-    cy.contains('Not synced: retrying automatically', { timeout: 15000 }).should('be.visible');
+    cy.contains('Not saved: retrying automatically', { timeout: 15000 }).should('be.visible');
     cy.then(() => {
       failPolls = true;
     });
@@ -237,7 +237,7 @@ describe('Campaign encounter synchronization', () => {
     cy.viewport(390, 844);
     cy.get('button[aria-label="Panel Grid"]').click();
     cy.contains('button', /^Encounters$/).click();
-    cy.contains('Not synced: retrying automatically', { timeout: 10000 }).should('be.visible');
+    cy.contains('Not saved: retrying automatically', { timeout: 10000 }).should('be.visible');
     cy.contains('button', 'Retry now').scrollIntoView();
     cy.document().should((document) => {
       expect(document.documentElement.scrollWidth).to.be.at.most(document.documentElement.clientWidth);
@@ -252,7 +252,7 @@ describe('Campaign encounter synchronization', () => {
         $button[0].click();
       });
     cy.wait('@recoveredGmSave', { timeout: 15000 }).its('response.body.status').should('eq', 'success');
-    cy.contains('Not synced: retrying automatically').should('not.exist');
+    cy.contains('Not saved: retrying automatically').should('not.exist');
     readPlayer().its('hp_current').should('eq', 16);
     cy.viewport(1280, 900);
     cy.get('input[placeholder="HP"]', { timeout: 10000 }).should('have.value', '16');

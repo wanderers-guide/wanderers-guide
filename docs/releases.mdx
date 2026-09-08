@@ -199,6 +199,26 @@ before activation; finish edits in other forms before choosing **Reload app**.
 An update activated in another tab shows a prompt instead of forcing this tab to
 reload. The error page also offers an explicit reload for missing old assets.
 
+## Earlier character changes
+
+Retained drafts stay on the device under the same character ID. They do not create
+additional characters on the server. The builder and sheet show **Review earlier
+changes** beside the current save status when a draft cannot be replayed safely.
+Opening or reloading a character does not automatically open a recovery notice.
+
+The **Unsaved changes** dialog offers **Download changes** and **Discard earlier
+changes**. Closing or downloading preserves the draft. Discarding requires a
+confirmation and removes only the exact records shown when the dialog opened.
+Newer replacements and records that could not be removed stay available. These
+controls never discard the current draft waiting for a calculation or server save.
+
+Recovery verification must continue beyond the first download: close, reload,
+switch between builder and sheet, then confirm the server character is unchanged
+and earlier changes remain accessible without a recurring popup. The Cypress
+`saveRecovery` scenario covers that lifecycle and cancel/confirm behavior on phone
+and desktop layouts. Hook integration tests cover newer replacements, storage
+failures, and stale callbacks after account or character changes.
+
 ## Recovery evidence and next drill
 
 On September 5, 2026, production had seven completed daily physical backups (August

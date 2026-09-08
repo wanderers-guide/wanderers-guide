@@ -247,6 +247,7 @@ function CharacterSheetInner(props: {
     retrySave,
     loadError,
     retryLoad,
+    reviewEarlierChanges,
   } = useCharacter(props.characterId, {
     type: 'EXECUTE_OPS',
     data: {
@@ -284,7 +285,12 @@ function CharacterSheetInner(props: {
   return (
     <Center>
       <Box maw={1000} w='100%' pb={isPhone ? 100 : 'sm'}>
-        <CharacterSaveStatus state={saveState} draftStored={draftStored} onRetry={retrySave} />
+        <CharacterSaveStatus
+          state={saveState}
+          draftStored={draftStored}
+          onRetry={retrySave}
+          onReviewEarlierChanges={reviewEarlierChanges}
+        />
         <Box ref={ref}>
           <Stack gap='xs' style={{ position: 'relative' }}>
             {/* Top stat sections: layout collapses from 3 → 2 → 1 columns on smaller screens */}

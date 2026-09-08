@@ -293,13 +293,14 @@ describe('Condition math and recovery through the real sheet', () => {
   });
 
   it('waits for delayed content before saving nested homebrew effects and preserves them through level changes', () => {
-    // Level changes can save HP normalization before the calculated-stat update.
+    // Initial and level-change saves can precede the calculated-stat update.
     // Read the API again until it confirms the expected result, rather than
     // assuming the first intercepted save was the final calculation.
     const savedMaximum = (expected: number, retries = 40): Cypress.Chainable<unknown> =>
       read().then((saved) => {
-        if (saved.meta_data.calculated_stats.hp_max === expected || retries === 0) {
-          expect(saved.meta_data.calculated_stats.hp_max).to.eq(expected);
+        const actual = saved.meta_data?.calculated_stats?.hp_max;
+        if (actual === expected || retries === 0) {
+          expect(actual, 'saved calculated maximum HP').to.eq(expected);
           return;
         }
         return cy.wait(250, { log: false }).then(() => savedMaximum(expected, retries - 1));

@@ -7,10 +7,12 @@ export function CharacterSaveStatus({
   state,
   draftStored,
   onRetry,
+  onReviewEarlierChanges,
 }: {
   state: CharacterSaveState;
   draftStored: boolean;
   onRetry: () => void;
+  onReviewEarlierChanges?: () => void;
 }) {
   const message =
     state === 'saved'
@@ -22,23 +24,37 @@ export function CharacterSaveStatus({
           : !draftStored
             ? 'Not saved: keep this page open'
             : state === 'failed'
-              ? 'Not synced: retrying automatically'
+              ? 'Not saved: retrying automatically'
               : state === 'offline'
                 ? 'Offline: changes kept on this device'
                 : state === 'saving'
                   ? 'Saving…'
                   : 'Changes waiting to save';
   return (
-    <Group gap='xs' justify='flex-end' px='xs' py='xs' w='100%' data-testid='character-save-status'>
+    <Group
+      gap='xs'
+      justify='flex-end'
+      px='xs'
+      py='xs'
+      w='100%'
+      bg='var(--glass-bg-color)'
+      style={{ borderRadius: 'var(--mantine-radius-md)' }}
+      data-testid='character-save-status'
+    >
       <Text
         size='xs'
-        c={state === 'failed' || state === 'conflict' || !draftStored ? 'orange' : 'dimmed'}
+        c={state === 'failed' || state === 'conflict' || !draftStored ? 'orange.3' : 'gray.0'}
         role='status'
       >
         {message}
       </Text>
+      {onReviewEarlierChanges && (
+        <Button size='compact-xs' variant='subtle' c='gray.0' onClick={onReviewEarlierChanges}>
+          Review earlier changes
+        </Button>
+      )}
       {(state === 'failed' || state === 'offline') && (
-        <Button size='compact-xs' variant='subtle' onClick={onRetry}>
+        <Button size='compact-xs' variant='subtle' c='gray.0' onClick={onRetry}>
           Retry now
         </Button>
       )}

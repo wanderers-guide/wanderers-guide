@@ -35,7 +35,7 @@ describe('Buffered character recovery', () => {
       .should('eq', 'success');
   });
 
-  it('keeps an unversioned copy accessible after loading the current character', () => {
+  it('keeps earlier changes quiet across download, close, reload and sheet navigation', () => {
     cy.visit(`/builder/${characterId}`, {
       onBeforeLoad(win) {
         win.localStorage.setItem(
@@ -44,9 +44,12 @@ describe('Buffered character recovery', () => {
         );
       },
     });
-    cy.contains('Unsynced character copy kept', { timeout: 30000 }).should('be.visible');
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', 'Saved remote name');
-    cy.contains('button', 'Download saved copy').should('be.enabled');
+    cy.contains('Unsynced character copy kept').should('not.exist');
+    cy.get('[role="dialog"]').should('not.exist');
+    cy.contains('button', 'Review earlier changes').click();
+    cy.get('[role="dialog"]').should('contain.text', 'Unsaved changes');
+    cy.contains('button', 'Download changes').should('be.enabled');
     cy.viewport(1280, 900);
     cy.screenshot('saved-copy-recovery-desktop');
     cy.viewport(390, 844);
@@ -54,7 +57,7 @@ describe('Buffered character recovery', () => {
     cy.document().then((doc) => {
       expect(doc.documentElement.scrollWidth).to.be.at.most(doc.documentElement.clientWidth);
     });
-    cy.contains('button', 'Download saved copy').click();
+    cy.contains('button', 'Download changes').click();
     cy.readFile(`cypress/downloads/character-${characterId}-saved-copy.json`)
       .its('name')
       .should('eq', 'Unsynced local copy');
@@ -65,6 +68,26 @@ describe('Buffered character recovery', () => {
       const retained = win.localStorage.getItem(key ?? '');
       expect(JSON.parse(retained ?? '{}').body.name).to.eq('Unsynced local copy');
     });
+    cy.reload();
+    cy.contains('button', 'Review earlier changes', { timeout: 30000 }).should('be.visible');
+    cy.get('[role="dialog"]').should('not.exist');
+    cy.contains('button', 'Review earlier changes').click();
+    cy.get('[role="dialog"] button[aria-label="Close"]').click();
+    cy.visit(`/sheet/${characterId}`);
+    cy.contains('button', 'Review earlier changes', { timeout: 30000 }).should('be.visible');
+    cy.get('[role="dialog"]').should('not.exist');
+    cy.screenshot('earlier-changes-sheet-mobile');
+    cy.contains('button', 'Review earlier changes').click();
+    cy.contains('button', 'Discard earlier changes').click();
+    cy.contains('button', 'Cancel').click();
+    cy.contains('button', 'Discard earlier changes').click();
+    cy.screenshot('discard-earlier-changes-mobile');
+    cy.contains('button', /^Discard changes$/).click();
+    cy.contains('button', 'Review earlier changes').should('not.exist');
+    cy.visit(`/builder/${characterId}`);
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', 'Saved remote name');
+    cy.contains('button', 'Review earlier changes').should('not.exist');
+    cy.get('[role="dialog"]').should('not.exist');
   });
 
   it('pauses a same-field conflict and lets the user keep the saved version', () => {

@@ -100,12 +100,19 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
   const queryClient = useQueryClient();
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const { character, setCharacter, isLoading, saveState, draftStored, retrySave, loadError, retryLoad } = useCharacter(
-    props.characterId,
-    {
-      type: 'SIMPLE',
-    }
-  );
+  const {
+    character,
+    setCharacter,
+    isLoading,
+    saveState,
+    draftStored,
+    retrySave,
+    loadError,
+    retryLoad,
+    reviewEarlierChanges,
+  } = useCharacter(props.characterId, {
+    type: 'SIMPLE',
+  });
 
   const [loadingGenerateName, setLoadingGenerateName] = useState(false);
   const [displayNameInput, refreshNameInput] = useRefresh();
@@ -1322,7 +1329,12 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
 
   return (
     <Stack gap={topGap}>
-      <CharacterSaveStatus state={saveState} draftStored={draftStored} onRetry={retrySave} />
+      <CharacterSaveStatus
+        state={saveState}
+        draftStored={draftStored}
+        onRetry={retrySave}
+        onReviewEarlierChanges={reviewEarlierChanges}
+      />
       <Group justify='center' ref={ref} wrap='nowrap'>
         <Stack>
           <Box>
