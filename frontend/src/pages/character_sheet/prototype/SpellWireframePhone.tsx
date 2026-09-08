@@ -1,5 +1,8 @@
 import { Box, Button, Group, Modal, Stack, Text, TextInput, UnstyledButton } from '@mantine/core';
 import { useState } from 'react';
+import { CastingSourceOutline } from './CastingSourceOutline';
+import { CastingModelDialog } from './CastingModelDialog';
+import { type CastingSourceOptions } from './casting-model-data';
 import {
   entryName,
   entryResource,
@@ -9,13 +12,14 @@ import {
   type SpellScenario,
 } from './spell-study-data';
 
-export type WireframeLayout = 'list' | 'resources' | 'quick';
+export type WireframeLayout = 'list' | 'resources' | 'quick' | 'casting';
 type SpellLocation = { source: SampleSource; entry: SampleEntry };
-type WireframeSheet =
+export type WireframeSheet =
   | { kind: 'spell'; location: SpellLocation }
   | { kind: 'pool'; source: SampleSource; rank?: number }
   | { kind: 'manage'; source?: SampleSource }
   | { kind: 'resources' }
+  | { kind: 'resource'; source: SampleSource; pool: string }
   | null;
 
 /** Describe the existing fixture's resources without implementing another casting engine. */
@@ -30,7 +34,15 @@ function remainingLabel({ source, entry }: SpellLocation): string {
 }
 
 /** Neutral labeled rectangles show three different tap paths using the same sample loadout. */
-export function SpellWireframePhone({ layout, scenario }: { layout: WireframeLayout; scenario: SpellScenario }) {
+export function SpellWireframePhone({
+  layout,
+  scenario,
+  sourceOptions = {},
+}: {
+  layout: WireframeLayout;
+  scenario: SpellScenario;
+  sourceOptions?: Record<string, CastingSourceOptions>;
+}) {
   const [sheet, setSheet] = useState<WireframeSheet>(null);
   const [query, setQuery] = useState<string>('');
   const [showLibrary, setShowLibrary] = useState<boolean>(false);
@@ -175,12 +187,14 @@ export function SpellWireframePhone({ layout, scenario }: { layout: WireframeLay
         <Box className='wire-existing'>Character header / sheet navigation</Box>
         <Group className='wire-title-row' justify='space-between' wrap='nowrap'>
           <Text fw={600}>{layout === 'quick' && showLibrary ? 'All spells' : 'Spells'}</Text>
-          <Button color='gray' variant='subtle' size='compact-sm' onClick={() => setSheet({ kind: 'manage' })}>
-            Manage
-          </Button>
+          {(layout !== 'casting' || !hasSpells) && (
+            <Button color='gray' variant='subtle' size='compact-sm' onClick={() => setSheet({ kind: 'manage' })}>
+              Manage
+            </Button>
+          )}
         </Group>
 
-        {layout === 'list' || (layout === 'quick' && showLibrary) ? (
+        {layout === 'list' || layout === 'casting' || (layout === 'quick' && showLibrary) ? (
           <Box className='wire-search'>
             {showLibrary && (
               <Button
@@ -229,6 +243,23 @@ export function SpellWireframePhone({ layout, scenario }: { layout: WireframeLay
             </>
           )}
           {layout === 'resources' && scenario.sources.map(renderSource)}
+          {layout === 'casting' &&
+            scenario.sources.map((source) => (
+              <CastingSourceOutline
+                key={source.id}
+                source={source}
+                options={sourceOptions[source.id] ?? {}}
+                query={query}
+                onSpell={(entry) => openSpell({ source, entry })}
+                onManage={() => setSheet({ kind: 'manage', source })}
+                onResource={(pool) => setSheet({ kind: 'resource', source, pool })}
+              />
+            ))}
+          {layout === 'casting' && hasSpells && filtered.length === 0 && (
+            <Text size='sm' className='wire-placeholder'>
+              No matching spells.
+            </Text>
+          )}
           {layout === 'quick' && !showLibrary && (
             <>
               <Text className='wire-rank'>Pinned spells</Text>
@@ -263,145 +294,165 @@ export function SpellWireframePhone({ layout, scenario }: { layout: WireframeLay
           )}
         </Box>
 
-        <Group className='wire-bottom' grow gap='xs'>
-          {layout === 'quick' && (
-            <Button
-              variant='default'
-              onClick={() => {
-                setShowLibrary(!showLibrary);
-                setQuery('');
-              }}
-            >
-              {showLibrary ? 'Quick spells' : 'All spells'}
+        {layout !== 'casting' && (
+          <Group className='wire-bottom' grow gap='xs'>
+            {layout === 'quick' && (
+              <Button
+                variant='default'
+                onClick={() => {
+                  setShowLibrary(!showLibrary);
+                  setQuery('');
+                }}
+              >
+                {showLibrary ? 'Quick spells' : 'All spells'}
+              </Button>
+            )}
+            <Button variant='default' onClick={() => setSheet({ kind: 'resources' })}>
+              Resources
             </Button>
-          )}
-          <Button variant='default' onClick={() => setSheet({ kind: 'resources' })}>
-            Resources
-          </Button>
-        </Group>
+          </Group>
+        )}
 
-        <Modal
-          opened={sheet !== null}
-          onClose={() => setSheet(null)}
-          title={
-            sheet?.kind === 'spell'
-              ? entryName(sheet.location.entry)
-              : sheet?.kind === 'pool'
-                ? sheet.source.name
-                : sheet?.kind === 'manage'
-                  ? 'Manage spells'
-                  : 'Resources'
-          }
-          withinPortal={false}
-          lockScroll={false}
-          transitionProps={{ duration: 0 }}
-          className='wire-modal'
-          data-sheet-kind={sheet?.kind}
-          closeButtonProps={{ 'aria-label': 'Close wireframe panel' }}
-        >
-          {selectedSpell && (
-            <Stack gap='md'>
-              <Text size='xs' className='wire-muted'>
-                {selectedSpell.entry.origin ?? selectedSpell.source.name} ·{' '}
-                {selectedSpell.entry.rank === 0 ? 'Cantrip' : `Rank ${selectedSpell.entry.rank}`}
-              </Text>
-              <Box className='wire-dashed wire-detail-shape'>
-                <Text size='sm'>Spell description</Text>
-                <Box className='wire-text-line' />
-                <Box className='wire-text-line' />
-                <Box className='wire-text-line wire-short-line' />
-              </Box>
-              <Box className='wire-dashed' p='sm'>
-                <Text size='xs'>Casting stats / rank choices</Text>
-                <Text size='xs' className='wire-muted' mt={4}>
-                  {selectedSpell.source.name} · {remainingLabel(selectedSpell)}
-                </Text>
-              </Box>
-              {selectedSpell.source.kind !== 'ritual' && (
-                <Button
-                  variant='default'
-                  fullWidth
-                  onClick={() =>
-                    finishPreview(`Cast ${entryName(selectedSpell.entry)} from ${selectedSpell.source.name}`)
-                  }
-                >
-                  Cast
-                </Button>
-              )}
-              {selectedSpell.source.kind === 'ritual' && (
+        {layout === 'casting' ? (
+          <CastingModelDialog
+            key={
+              sheet?.kind === 'spell'
+                ? `${sheet.location.source.id}-${sheet.location.entry.id}`
+                : sheet && 'source' in sheet
+                  ? `${sheet.kind}-${sheet.source?.id}-${sheet.kind === 'resource' ? sheet.pool : ''}`
+                  : (sheet?.kind ?? 'closed')
+            }
+            sheet={sheet}
+            scenario={scenario}
+            options={sourceOptions}
+            onClose={() => setSheet(null)}
+            onChange={setSheet}
+            onFinish={finishPreview}
+          />
+        ) : (
+          <Modal
+            opened={sheet !== null}
+            onClose={() => setSheet(null)}
+            title={
+              sheet?.kind === 'spell'
+                ? entryName(sheet.location.entry)
+                : sheet?.kind === 'pool'
+                  ? sheet.source.name
+                  : sheet?.kind === 'manage'
+                    ? 'Manage spells'
+                    : 'Resources'
+            }
+            withinPortal={false}
+            lockScroll={false}
+            transitionProps={{ duration: 0 }}
+            className='wire-modal'
+            data-sheet-kind={sheet?.kind}
+            closeButtonProps={{ 'aria-label': 'Close wireframe panel' }}
+          >
+            {selectedSpell && (
+              <Stack gap='md'>
                 <Text size='xs' className='wire-muted'>
-                  Ritual reference, without a spell-slot control.
+                  {selectedSpell.entry.origin ?? selectedSpell.source.name} ·{' '}
+                  {selectedSpell.entry.rank === 0 ? 'Cantrip' : `Rank ${selectedSpell.entry.rank}`}
                 </Text>
-              )}
-            </Stack>
-          )}
-          {sheet?.kind === 'pool' && (
-            <Stack gap='xs'>
-              <Text size='xs' className='wire-muted'>
-                Choose a spell for this source.
-              </Text>
-              {locations
-                .filter(
-                  ({ source, entry }) =>
-                    source.id === sheet.source.id && (sheet.rank === undefined || entry.rank === sheet.rank)
-                )
-                .map((location) => renderRow(location))}
-            </Stack>
-          )}
-          {sheet?.kind === 'resources' && (
-            <Stack gap='sm'>
-              {scenario.sources.map((source) => (
-                <Box key={source.id} className='wire-dashed' p='sm'>
-                  <Text size='sm'>{source.name}</Text>
-                  <Text size='xs' className='wire-muted'>
-                    {isPrepared(source)
-                      ? 'Prepared slots and recovery controls'
-                      : Object.values(source.pools)
-                          .map((pool) => `${pool.remaining} / ${pool.max} ${pool.unit}`)
-                          .join(' · ') || 'No shared pool'}
-                  </Text>
-                  <Text size='xs' className='wire-muted' mt='xs'>
-                    [ Resource adjustment controls ]
-                  </Text>
-                </Box>
-              ))}
-              {!scenario.sources.length && <Text size='sm'>No spell resources.</Text>}
-            </Stack>
-          )}
-          {sheet?.kind === 'manage' && (
-            <Stack gap='sm'>
-              {(sheet.source ? [sheet.source] : scenario.sources).map((source) => (
-                <Box key={source.id} className='wire-dashed' p='sm'>
-                  <Text size='sm'>{source.name}</Text>
-                  <Text size='xs' className='wire-muted' mt='xs'>
-                    {isPrepared(source)
-                      ? 'Prepared slots / spell selection'
-                      : source.kind === 'spontaneous'
-                        ? 'Repertoire / learned ranks'
-                        : source.kind === 'ritual'
-                          ? 'Ritual collection'
-                          : 'Source or item settings'}
-                  </Text>
-                  {source.kind === 'prepared-book' && (
-                    <Text size='xs' className='wire-muted' mt='xs'>
-                      Spellbook editing
-                    </Text>
-                  )}
+                <Box className='wire-dashed wire-detail-shape'>
+                  <Text size='sm'>Spell description</Text>
+                  <Box className='wire-text-line' />
                   <Box className='wire-text-line' />
                   <Box className='wire-text-line wire-short-line' />
                 </Box>
-              ))}
-              {!scenario.sources.length && (
-                <Box className='wire-dashed' p='md'>
-                  Spell source setup
+                <Box className='wire-dashed' p='sm'>
+                  <Text size='xs'>Casting stats / rank choices</Text>
+                  <Text size='xs' className='wire-muted' mt={4}>
+                    {selectedSpell.source.name} · {remainingLabel(selectedSpell)}
+                  </Text>
                 </Box>
-              )}
-              <Button variant='default' onClick={() => finishPreview('Preparation or collection editing')}>
-                Done
-              </Button>
-            </Stack>
-          )}
-        </Modal>
+                {selectedSpell.source.kind !== 'ritual' && (
+                  <Button
+                    variant='default'
+                    fullWidth
+                    onClick={() =>
+                      finishPreview(`Cast ${entryName(selectedSpell.entry)} from ${selectedSpell.source.name}`)
+                    }
+                  >
+                    Cast
+                  </Button>
+                )}
+                {selectedSpell.source.kind === 'ritual' && (
+                  <Text size='xs' className='wire-muted'>
+                    Ritual reference, without a spell-slot control.
+                  </Text>
+                )}
+              </Stack>
+            )}
+            {sheet?.kind === 'pool' && (
+              <Stack gap='xs'>
+                <Text size='xs' className='wire-muted'>
+                  Choose a spell for this source.
+                </Text>
+                {locations
+                  .filter(
+                    ({ source, entry }) =>
+                      source.id === sheet.source.id && (sheet.rank === undefined || entry.rank === sheet.rank)
+                  )
+                  .map((location) => renderRow(location))}
+              </Stack>
+            )}
+            {sheet?.kind === 'resources' && (
+              <Stack gap='sm'>
+                {scenario.sources.map((source) => (
+                  <Box key={source.id} className='wire-dashed' p='sm'>
+                    <Text size='sm'>{source.name}</Text>
+                    <Text size='xs' className='wire-muted'>
+                      {isPrepared(source)
+                        ? 'Prepared slots and recovery controls'
+                        : Object.values(source.pools)
+                            .map((pool) => `${pool.remaining} / ${pool.max} ${pool.unit}`)
+                            .join(' · ') || 'No shared pool'}
+                    </Text>
+                    <Text size='xs' className='wire-muted' mt='xs'>
+                      [ Resource adjustment controls ]
+                    </Text>
+                  </Box>
+                ))}
+                {!scenario.sources.length && <Text size='sm'>No spell resources.</Text>}
+              </Stack>
+            )}
+            {sheet?.kind === 'manage' && (
+              <Stack gap='sm'>
+                {(sheet.source ? [sheet.source] : scenario.sources).map((source) => (
+                  <Box key={source.id} className='wire-dashed' p='sm'>
+                    <Text size='sm'>{source.name}</Text>
+                    <Text size='xs' className='wire-muted' mt='xs'>
+                      {isPrepared(source)
+                        ? 'Prepared slots / spell selection'
+                        : source.kind === 'spontaneous'
+                          ? 'Repertoire / learned ranks'
+                          : source.kind === 'ritual'
+                            ? 'Ritual collection'
+                            : 'Source or item settings'}
+                    </Text>
+                    {source.kind === 'prepared-book' && (
+                      <Text size='xs' className='wire-muted' mt='xs'>
+                        Spellbook editing
+                      </Text>
+                    )}
+                    <Box className='wire-text-line' />
+                    <Box className='wire-text-line wire-short-line' />
+                  </Box>
+                ))}
+                {!scenario.sources.length && (
+                  <Box className='wire-dashed' p='md'>
+                    Spell source setup
+                  </Box>
+                )}
+                <Button variant='default' onClick={() => finishPreview('Preparation or collection editing')}>
+                  Done
+                </Button>
+              </Stack>
+            )}
+          </Modal>
+        )}
       </Box>
       <Text size='xs' className='wire-flow-note' role='status'>
         {flowNote}

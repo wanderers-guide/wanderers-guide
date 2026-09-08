@@ -1,6 +1,7 @@
 # Mobile Spells UI: audit and design brief
 
-Status: three rough wireframes now compare different organizations before visual styling.
+Status: the current rough mock compares prepared and spontaneous casting side by side,
+with dedicated layouts for every currently supported spell source and its item states.
 The user rejected the earlier September 8 layout studies as clunky. Those remain review
 references, not proposed production designs. Work stays on `codex/mobile-sheet-ui`; merging
 requires explicit user approval.
@@ -26,10 +27,61 @@ names first: quieter grouping, less persistent management UI, and compact rows w
 resource counts and comfortable touch targets. Source identity and separate resources still
 need to remain clear. A replacement composition has not been selected.
 
-## Current review: three rough wireframes
+## Current review: casting models and items
+
+The user agreed that prepared and spontaneous casting should share a visual language while
+placing resources differently. This is a per-source distinction, not a character-wide mode.
+They requested expanded mocks for both and the remaining spell and item surfaces.
+
+Open `http://127.0.0.1:5175/?view=spell-models&group=casting`, now the default preview.
+The Compare control selects prepared/spontaneous, preparation types, focus/innate/rituals,
+staves/wands/spellhearts, mixed sources, empty/exhausted/missing states, or item readiness/damage.
+
+- Prepared entries show individual Ready/Used states and distinct empty/restricted slots.
+  Prepare opens a full-width slot editor. Spellbook access appears only for the book variant.
+- Spontaneous entries use one counter per source/rank. The signature example offers casting
+  ranks in the detail view. Repertoire management has its own location.
+- Focus spells share a single pool while retaining their origins. Cantrips do not consume it.
+- Innate activations show their own frequency. Ritual details reserve space for requirements
+  and participants without an ordinary spell-slot Cast control.
+- Staves have preparation state, one charge pool and per-spell charge costs. Preparation
+  reserves the optional prepared-slot sacrifice; it is disabled after preparation in the sample.
+  Spontaneous casting offers charges alone or one charge plus a named eligible source/slot.
+- Wands retain item identity, rank, daily use and overcharge history. Used wands lead through
+  confirmation and outcome sketches. Broken, destroyed and already-overcharged items cannot
+  use the ordinary casting control, including a repaired wand already overcharged that day.
+- Spellheart sketches show attachment, a repeatable cantrip, and independent daily activations.
+  Broken and unaffixed states disable casting. This multi-activation layout is proposed behavior;
+  the production spellheart renderer currently handles only the first detected spell.
+
+All cases reuse the previous phone frame, modal containment, sample catalog and source types.
+The new source rows and dialogs are specific to these casting-model wireframes. The generic
+page Manage button is absent when source-specific controls already provide those paths.
+
+Quantities, source builds and item spell combinations are illustrative, not complete legal
+characters or canonical item records. Search, rank/payment selection, and preparation fields
+are interactive local drafts. Cast, recovery, resource correction and Done end a preview path
+without spending resources, writing saves or invoking production operations. Restriction
+eligibility, full spell catalogs, specialty-item effects and all heightening exceptions are
+not implemented by this mock. Scrolls remain outside the existing Spells panel source types.
+
+The item state sketches were checked against [staff rules](https://2e.aonprd.com/Rules.aspx?ID=3211),
+[wand rules](https://2e.aonprd.com/Rules.aspx?ID=3218),
+[spellheart rules](https://2e.aonprd.com/Rules.aspx?ID=1510), and the independent activations
+in a [major five-feather wreath](https://2e.aonprd.com/Equipment.aspx?ID=5152).
+
+Verification: all seven comparison boards rendered without horizontal overflow in the
+inspected phone frames (roughly 344px to 390px). Browser interactions covered preparation,
+resource correction, signature rank selection, spontaneous staff payment, overcharge outcomes,
+zero-charge cantrip casting, broken-item blocking and mixed-source search. TypeScript, scoped
+ESLint, the standalone prototype build and docs link checks passed. The existing prototype
+bundle-size warning and unrelated docs OpenAPI warning remain. These checks validate the mock,
+not the production rules engine.
+
+## Earlier review: three rough wireframes
 
 Open `http://127.0.0.1:5175/?view=spell-wireframes&scenario=mixed&layout=all`.
-The prototype's default opening view is now this wireframe board. The review controls can
+This earlier board remains a reference. Its review controls can
 isolate A, B, or C and switch the sample character.
 
 - **A. One spell list:** rank groups contain spells from all sources, with source identity in

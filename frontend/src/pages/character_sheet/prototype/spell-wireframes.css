@@ -213,3 +213,76 @@
     margin: 0 auto;
   }
 }
+
+/* Casting-model studies retain the neutral wireframe palette and compact shared rows. */
+.casting-study {
+  --wire-height: 740px;
+}
+.casting-study .wire-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 850px;
+  margin: 0 auto;
+}
+.casting-study .wire-grid[data-single] {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 390px;
+}
+.casting-example-note {
+  min-height: 64px;
+}
+.casting-source {
+  padding: var(--mantine-spacing-sm) 0 var(--mantine-spacing-md);
+  border-bottom: 1px solid var(--wire-line);
+}
+.casting-source-heading {
+  margin-bottom: var(--mantine-spacing-xs);
+}
+.casting-spell-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-xs);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--mantine-spacing-xs) 0;
+  border-bottom: 1px solid var(--mantine-color-dark-5);
+}
+.casting-row-state {
+  color: var(--wire-muted);
+  flex-shrink: 0;
+  max-width: 42%;
+  text-align: right;
+}
+.casting-rank {
+  min-height: 36px;
+  margin-top: var(--mantine-spacing-xs);
+}
+.casting-counter {
+  min-height: 36px;
+  height: auto;
+}
+.casting-source-heading button {
+  min-height: 44px;
+  flex-shrink: 0;
+}
+.casting-source-heading .wire-row-copy {
+  flex: 1;
+}
+.casting-source .casting-spell-row:last-child {
+  border-bottom: 0;
+}
+.casting-study .mantine-Button-label {
+  white-space: normal;
+}
+.casting-study .wire-modal .mantine-Modal-content {
+  max-height: 90%;
+}
+@media (max-width: 650px) {
+  .casting-study .wire-grid {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 390px;
+  }
+  .casting-example-note {
+    min-height: 0;
+  }
+}
