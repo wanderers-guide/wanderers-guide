@@ -1,10 +1,24 @@
 # Mobile character sheet UI exploration
 
-Status: smoked-glass exploration across the mobile sheet, with the current UI and earlier
-material concepts retained for comparison. Branch: `codex/mobile-sheet-ui`.
+Status: the expanded layout and controls were rejected. The next focus is the real Spells
+page and its casting variants. Earlier material concepts remain review references, not an
+approved redesign. Branch: `codex/mobile-sheet-ui`.
 
 **Do not merge this branch until the user explicitly approves merging it.** Earlier
 authorization to merge reliability fixes does not apply to this UI branch.
+
+## Latest direction: focus on Spells
+
+On September 8, the user rejected the expanded pass because **the layout and controls felt
+wrong**. Do not interpret this as a request to keep increasing opacity, enlarge every row,
+or apply the same layout across more panels. The earlier positive response to the Smoked
+material did not approve the subsequent layout changes.
+
+The next discussion starts from the actual Spells page. It must account for prepared and
+spontaneous casters, focus-only and ritual-only characters, innate spells, staves, wands,
+spellhearts, and combinations of those sources. See [the focused Spells audit](mobile-spells-ui.md)
+for the interaction map, concrete findings, and candidate structures. No new Spells layout
+has been selected or implemented yet.
 
 ## Current baseline
 
@@ -42,7 +56,7 @@ API calls or saves.
 
 | Concept | Surface treatment | Tradeoff |
 | --- | --- | --- |
-| Smoked glass (`/?view=smoked`) | Separate cards with 82% dark tint by default, neutral saturation and opaque text. Deeper tint preserves the earlier 88% option. | The direction selected for the expanded pass. Keeps section boundaries and shows more of the artwork. |
+| Smoked glass (`/?view=smoked`) | Separate cards with 82% dark tint by default, neutral saturation and opaque text. Deeper tint preserves the earlier 88% option. | Material reference. The expanded layout and controls were subsequently rejected. |
 | Unified glass (`/?view=unified`) | One 80% tinted glass frame around 94% tinted reading sections. Inner sections use dividers and do not apply blur. | An earlier alternative. Quieter edges, but fewer visual breaks between sections. |
 | Frosted light (`/?view=frosted`) | 90% pale glass, dark text and darker green accents. | Optional exploration. A production light theme needs a separate scope covering drawers, editors, controls and content rendering. |
 
