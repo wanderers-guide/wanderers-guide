@@ -54,7 +54,7 @@ describe('Interrupted character saves', () => {
         req.alias = 'droppedSave';
         req.destroy();
       } else {
-        req.alias = 'recoveredSave';
+        if (req.body.name === 'Kept through a connection drop') req.alias = 'recoveredSave';
         req.continue();
       }
     });
@@ -93,14 +93,14 @@ describe('Interrupted character saves', () => {
     let committed = false;
     let first = true;
     cy.intercept('POST', '**/functions/v1/update-character', (req) => {
-      if (first) {
+      if (first && req.body.name === 'Committed before timeout') {
         first = false;
         req.continue((res) => {
           committed = res.body.status === 'success';
           res.setDelay(31000);
         });
       } else {
-        req.alias = 'latestSave';
+        if (req.body.name === 'Newest edit during timeout') req.alias = 'latestSave';
         req.continue();
       }
     });

@@ -95,6 +95,12 @@ describe('Buffered character recovery', () => {
     let saves = 0;
     let releaseSave: (() => void) | undefined;
     cy.intercept('POST', '**/functions/v1/update-character', (req) => {
+      // Slow typing may legitimately save the cleared name or an intermediate value.
+      // Hold the completed edit so the competing write tests the intended conflict.
+      if (saves === 0 && req.body.name !== 'My conflicting edit') {
+        req.continue();
+        return;
+      }
       saves++;
       if (saves === 1) {
         expect(req.body.name).to.eq('My conflicting edit');
