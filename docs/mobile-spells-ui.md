@@ -1,11 +1,47 @@
 # Mobile Spells UI: audit and design brief
 
-Status: inspected and mapped on September 8, 2026. No replacement layout has been selected
-or implemented. Work stays on `codex/mobile-sheet-ui`; merging requires explicit user approval.
+Status: two isolated layout prototypes are implemented following the September 8 audit.
+Neither has been selected for production. Work stays on `codex/mobile-sheet-ui`; merging
+requires explicit user approval.
 
 The user rejected the broad mobile prototype because its layout and controls felt wrong.
 The next pass is specifically about the Spells page. Do not reuse the earlier simplified
 Oracle sample as proof that a new layout handles the full system.
+
+## Reviewing the two designs
+
+Run `npm --prefix frontend run prototype:mobile-sheet` and open
+`http://127.0.0.1:5175/?view=spell-designs`. This is now the prototype's opening view.
+
+- **Source sections:** one list of compact, genuinely collapsible source sections.
+- **Source switcher:** a source selector plus rank navigation. Text search covers all sources
+  and labels that scope explicitly; source identity remains visible in results.
+
+Both use the same rows, resource behavior and sample data. The phone frames intentionally show
+the Spells panel without the character identity card. The existing dark glass roles, artwork
+and typeface provide context; this pass focuses on composition and controls. The earlier
+current-UI capture remains reachable through Current spells.
+
+Choose among ten scenarios: mixed sources, both prepared types, spontaneous, focus-only,
+rituals-only, innate, magic items, long names/missing references, and empty. Both designs support
+390px and 430px frames. The URL retains the scenario and design, for example
+`/?view=spell-designs&scenario=mixed&design=switcher`.
+
+Working sample interactions include per-preparation casting/recovery, source/rank slot pools,
+a shared focus pool, cantrips without resource consumption, innate uses, staff charges,
+independent wand uses, remaining-resource correction, and local spell selection. Preparation
+and spellbook editing use full-width views instead of two narrow columns. Empty preparations
+are summarized in the casting list but remain individually selectable in Prepare.
+
+These interactions operate only on temporary React state. Reset samples, reload, or remounting
+a design resets that instance. No character data, production operations or saving code is used.
+The small spell catalog uses first-paragraph excerpts and metadata from the sanitized dump;
+resource quantities and loadouts are illustrative, not validated complete characters. Staff
+preparation, staff charge-plus-slot casting, wand overcharge, signature/heightening rules,
+full tradition catalogs, and inventory editing remain outside these navigation prototypes.
+
+The source-level defects below remain unfixed in production. A working filter in the isolated
+mock does not constitute a fix to `SpellsPanel.tsx`.
 
 ## What the page needs to support
 
@@ -92,8 +128,25 @@ preparations, duplicate items, the same spell across sources and ranks, empty/ex
 long homebrew names, missing references, and unmatched search. Filters must not alter resource
 totals. Preparation and casting must affect exactly the intended slot, pool or item.
 
-This pass inspected the existing Oracle and prepared Wizard captures and audited all eight
-list components and their management/casting flows. The local `/sheet/142809` reference returned
-Private Character, so it was not used as a live visual verification. The other modes were
-mapped from source, not rendered as a complete scenario suite. No production characters were
-changed, and no new design has been presented as validated.
+The initial audit inspected the existing Oracle and prepared Wizard captures and audited all
+eight list components and their management/casting flows. The local `/sheet/142809` reference
+returned Private Character, so that audit did not use it as a live visual verification.
+
+The new prototypes have their own manual browser checks:
+
+```sh
+npm --prefix frontend run cy:run -- --config-file src/pages/character_sheet/prototype/spell-design-check.config.mjs --browser electron
+```
+
+The scenario matrix renders ten loadouts in both designs at 390px and 430px, checks overflow,
+and captures representative screens. Interaction checks exercise prepared duplicates, selecting
+an empty slot, source switching, search across sources, variable-action filtering, stable pools,
+cantrips, separate wands, staff exhaustion, resource correction, innate uses, and rituals without
+a Cast button. Screenshots and logs live under the ignored `.scratch/mobile-sheet-ui/` directory.
+These verify the isolated mock behavior, not the production casting engine or complete PF2e rules.
+
+Verification on September 8: all eight browser scenarios passed, including the 40 rendered
+design/scenario/width combinations. The project TypeScript check and scoped ESLint passed.
+The standalone prototype build passed with the existing large-chunk warning for this separate
+reference/study bundle. The desktop comparison, phone samples, and contained dialogs were also
+visually inspected. A final primary-button color adjustment was checked in the rendered browser.

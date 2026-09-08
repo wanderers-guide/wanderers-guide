@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { GlassSheet, type GlassScreen, type GlassVariant } from './GlassSheet';
 import { CurrentSheetImage, MobileSheetPrototype } from './MobileSheetPrototype';
 import { isGlassScreen, studyScreens } from './sheet-study-data';
+import { SpellDesignStudy } from './SpellDesignStudy';
 import './glass.css';
 import './sheet-panels.css';
 
@@ -13,7 +14,7 @@ const concepts: { id: GlassVariant; letter: string; title: string; description: 
     letter: '01',
     title: 'Smoked glass',
     description: 'Separate cards, clearer text, and more visible artwork.',
-    tradeoff: 'The direction for this pass. Shared styling keeps the separate cards consistent.',
+    tradeoff: 'Earlier material reference. The expanded layout and controls were not selected.',
   },
   {
     id: 'unified',
@@ -34,7 +35,7 @@ const concepts: { id: GlassVariant; letter: string; title: string; description: 
 /** Local material study. The captured current UI remains a separate reference. */
 export function GlassComparison() {
   const [params, setParams] = useSearchParams();
-  const requestedView = params.get('view') ?? 'smoked';
+  const requestedView = params.get('view') ?? 'spell-designs';
   const view = ['compare', 'current', 'before-after', ...concepts.map((concept) => concept.id)].includes(requestedView)
     ? requestedView
     : 'compare';
@@ -55,13 +56,15 @@ export function GlassComparison() {
     (concept) => view === 'compare' || view === concept.id || (view === 'before-after' && concept.id === 'smoked')
   );
 
+  if (requestedView === 'spell-designs') return <SpellDesignStudy />;
+
   return (
     <Box className='glass-study'>
       <Box component='header' className='study-header'>
         <Text className='study-eyebrow'>Wanderer’s Guide / Mobile sheet</Text>
         <Group justify='space-between' align='flex-end' gap='md'>
           <Stack gap={6}>
-            <Title order={1}>Smoked glass, across the sheet.</Title>
+            <Title order={1}>Earlier sheet studies.</Title>
             <Text c='dimmed' size='sm'>
               Review every panel, compare the current UI, and try the revised controls.
             </Text>
@@ -72,6 +75,7 @@ export function GlassComparison() {
         </Group>
         <Tabs value={view} onChange={(value) => updateParam('view', value ?? 'smoked')} mt='xl'>
           <Tabs.List aria-label='Glass concepts'>
+            <Tabs.Tab value='spell-designs'>Spells designs</Tabs.Tab>
             <Tabs.Tab value='before-after'>Before / After</Tabs.Tab>
             {concepts.map((concept) => (
               <Tabs.Tab key={concept.id} value={concept.id}>

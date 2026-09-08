@@ -1,0 +1,122 @@
+{
+  "Heal": {
+    "name": "Heal",
+    "rank": 1,
+    "cast": "ONE-TO-THREE-ACTIONS",
+    "range": "varies",
+    "defense": "",
+    "description": "You channel vital energy to heal the living or damage the undead. If the target is a willing living creature, you restore 1d8 Hit Points. If the target is undead, you deal that amount of vitality damage to it, and it gets a basic Fortitude save. The number of actions you spend when Casting this Spell determines its targets, range, area, and other parameters."
+  },
+  "Resurrect": {
+    "name": "Resurrect",
+    "rank": 5,
+    "cast": "1 day",
+    "range": "10 feet",
+    "defense": "",
+    "description": "You attempt to call forth the target's soul and return it to its body. This requires the target's body to be present and relatively intact. The target must have died within the past year. If \\[\\[Pharasma\\]\\] has decided that the target's time has come or the target doesn't wish to return, this ritual automatically fails, but you discover this after the successful Religion check and can end the ritual without paying the cost."
+  },
+  "Shield": {
+    "name": "Shield",
+    "rank": 0,
+    "cast": "ONE-ACTION",
+    "range": "",
+    "defense": "",
+    "description": "You raise a magical shield of force. This counts as using the Raise a Shield action, giving you a +1 circumstance bonus to AC until the start of your next turn, but it doesn't require a hand to use."
+  },
+  "Charm": {
+    "name": "Charm",
+    "rank": 1,
+    "cast": "TWO-ACTIONS",
+    "range": "30 feet",
+    "defense": "Will",
+    "description": "To the target, your words are honey and your visage seems bathed in a dreamy haze. It must attempt a Will save, with a +4 circumstance bonus if you or your allies recently threatened it or used hostile actions against it."
+  },
+  "Courageous Anthem": {
+    "name": "Courageous Anthem",
+    "rank": 0,
+    "cast": "ONE-ACTION",
+    "range": "",
+    "defense": "",
+    "description": "You inspire yourself and your allies with words or tunes of encouragement. You and all allies in the area gain a +1 status bonus to attack rolls, damage rolls, and saves against fear effects."
+  },
+  "Force Barrage": {
+    "name": "Force Barrage",
+    "rank": 1,
+    "cast": "ONE-TO-THREE-ACTIONS",
+    "range": "120 feet",
+    "defense": "",
+    "description": "You fire a shard of solidified magic toward a creature that you can see. It automatically hits and deals 1d4+1 force damage. For each additional action you use when Casting the Spell, increase the number of shards you shoot by one, to a maximum of three shards for 3 actions. You choose the target for each shard individually. If you shoot more than one shard at the same target, combine the damage before applying bonuses or penalties to damage, resistances, weaknesses, and so forth."
+  },
+  "Invisibility": {
+    "name": "Invisibility",
+    "rank": 2,
+    "cast": "TWO-ACTIONS",
+    "range": "touch",
+    "defense": "",
+    "description": "Illusions bend light around the target, rendering it invisible. This makes it undetected to all creatures, though the creatures can attempt to find the target, making it hidden to them instead. If the target uses a hostile action, the spell ends after that hostile action is completed."
+  },
+  "Lay on Hands": {
+    "name": "Lay on Hands",
+    "rank": 1,
+    "cast": "ONE-ACTION",
+    "range": "touch",
+    "defense": "",
+    "description": "Your hands become infused with powerful vitality, capable of healing a living creature or damaging an undead creature with a touch."
+  },
+  "Light": {
+    "name": "Light",
+    "rank": 0,
+    "cast": "TWO-ACTIONS",
+    "range": "120 feet",
+    "defense": "",
+    "description": "You create an orb of light that sheds bright light in a 20-foot radius (and dim light for the next 20 feet) in a color you choose. If you create the light in the same space as a willing creature, you can attach the light to the creature, causing it to float near that creature as it moves. You can Sustain the spell to move the light up to 60 feet; you can attach or detach it from a creature as part of this movement."
+  },
+  "Fireball": {
+    "name": "Fireball",
+    "rank": 3,
+    "cast": "TWO-ACTIONS",
+    "range": "500 feet",
+    "defense": "basic Reflex",
+    "description": "A roaring blast of fire detonates at a spot you designate, dealing 6d6 fire damage."
+  },
+  "Bless": {
+    "name": "Bless",
+    "rank": 1,
+    "cast": "TWO-ACTIONS",
+    "range": "",
+    "defense": "",
+    "description": "Blessings from beyond help your companions strike true. You and your allies gain a +1 status bonus to attack rolls while within the emanation. Once per round on subsequent turns, you can Sustain the spell to increase the emanation's radius by 10 feet."
+  },
+  "Daze": {
+    "name": "Daze",
+    "rank": 0,
+    "cast": "TWO-ACTIONS",
+    "range": "60 feet",
+    "defense": "basic Will",
+    "description": "You push into the target's mind and daze it with a mental jolt. The jolt deals 1d6 (⬆️{{ceil(level/4)}}d6) mental damage, with a basic Will save. If the target critically fails the save, it is also stunned 1."
+  },
+  "Guidance": {
+    "name": "Guidance",
+    "rank": 0,
+    "cast": "ONE-ACTION",
+    "range": "30 feet",
+    "defense": "",
+    "description": "You ask for the guidance of supernatural entities, granting the target a +1 status bonus to one attack roll, Perception check, saving throw, or skill check the target attempts before the duration ends. The target chooses which roll to use the bonus on before rolling. If the target uses the bonus, the spell ends. Either way, the target is then temporarily immune for 1 hour."
+  },
+  "Fear": {
+    "name": "Fear",
+    "rank": 1,
+    "cast": "TWO-ACTIONS",
+    "range": "30 feet",
+    "defense": "Will",
+    "description": "You plant fear in the target; it must attempt a Will save."
+  },
+  "Befuddle": {
+    "name": "Befuddle",
+    "rank": 1,
+    "cast": "TWO-ACTIONS",
+    "range": "30 feet",
+    "defense": "Will",
+    "description": "You sow seeds of confusion in your target’s mind, causing its actions and thoughts to become clumsy."
+  }
+}

@@ -1,0 +1,369 @@
+/* Composition studies share the existing glass palette. Only the Spells panel changes. */
+.spell-study .study-eyebrow {
+  margin-bottom: 8px;
+}
+.spell-study .study-description {
+  min-height: 40px;
+}
+.spell-phone {
+  display: flex;
+  flex-direction: column;
+  --spell-row-height: 44px;
+  --spell-panel-gap: 12px;
+}
+.spell-phone .sheet-app-header {
+  flex-shrink: 0;
+}
+.spell-phone .sheet-app-header span {
+  font-size: 22px;
+}
+.spell-page {
+  margin: 12px;
+  padding: 12px;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--sheet-reading);
+  border: 1px solid var(--sheet-edge);
+  border-radius: var(--mantine-radius-md);
+  backdrop-filter: var(--sheet-blur);
+  -webkit-backdrop-filter: var(--sheet-blur);
+}
+.spell-phone .spell-page-heading {
+  margin-bottom: 12px;
+}
+.spell-phone .spell-page-heading h3 {
+  font-size: 21px;
+  margin: 0;
+}
+.spell-phone .spell-secondary {
+  color: var(--sheet-muted);
+}
+.spell-phone .mantine-Input-input {
+  background: var(--sheet-control);
+  border-color: var(--sheet-edge);
+  color: var(--sheet-ink);
+  font: inherit;
+  font-size: 13px;
+}
+.spell-phone .mantine-Input-input::placeholder {
+  color: var(--sheet-muted);
+  opacity: 1;
+}
+.spell-phone .mantine-Input-section {
+  color: var(--sheet-muted);
+}
+.spell-phone .mantine-InputWrapper-label {
+  font-size: 12px;
+  color: var(--sheet-muted);
+  margin-bottom: 5px;
+}
+.spell-phone .mantine-Combobox-dropdown {
+  background: var(--sheet-control);
+  border-color: var(--sheet-field-edge);
+  color: var(--sheet-ink);
+  font-size: 13px;
+}
+.spell-phone .mantine-Combobox-option[data-combobox-selected],
+.spell-phone .mantine-Combobox-option:hover {
+  background: var(--sheet-ornament);
+}
+.spell-phone .mantine-ActionIcon-root,
+.spell-phone .mantine-Button-root[data-variant='subtle'],
+.spell-phone .mantine-Button-root[data-variant='light'] {
+  color: var(--sheet-accent);
+}
+.spell-phone .mantine-Button-root {
+  font-family: inherit;
+}
+.spell-phone .spell-primary {
+  background: var(--sheet-accent);
+  color: var(--mantine-color-dark-9);
+}
+.spell-phone .mantine-Button-root:disabled {
+  color: var(--sheet-muted);
+  background: var(--sheet-ornament);
+  opacity: 0.6;
+}
+.spell-search {
+  margin-bottom: 10px;
+}
+.spell-search .mantine-Input-input {
+  height: 40px;
+}
+.spell-source-select {
+  margin-bottom: 10px;
+}
+.spell-source-select .mantine-Input-input {
+  height: 44px;
+  font-weight: 600;
+  font-size: 14px;
+  border-color: var(--sheet-field-edge);
+}
+.spell-cost-select {
+  margin-bottom: 12px;
+}
+.spell-search-scope {
+  color: var(--sheet-muted);
+  margin-bottom: 8px !important;
+}
+.spell-rank-nav {
+  margin: 0 0 12px;
+}
+.spell-rank-nav .mantine-SegmentedControl-root {
+  background: transparent;
+  padding: 0;
+  border-bottom: 1px solid var(--sheet-divider);
+  border-radius: 0;
+}
+.spell-rank-nav .mantine-SegmentedControl-label {
+  color: var(--sheet-muted);
+  font-family: inherit;
+  min-height: 36px;
+  align-content: center;
+}
+.spell-rank-nav .mantine-SegmentedControl-label[data-active] {
+  color: var(--sheet-accent);
+}
+.spell-rank-nav .mantine-SegmentedControl-indicator {
+  background: var(--sheet-ornament);
+  box-shadow: none;
+}
+.spell-list-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sheet-field-edge) transparent;
+  padding-right: 2px;
+}
+.spell-list-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.spell-list-scroll::-webkit-scrollbar-thumb {
+  background: var(--sheet-field-edge);
+  border-radius: 4px;
+}
+.spell-source-accordion .mantine-Accordion-item {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--sheet-divider);
+  margin-bottom: 10px;
+}
+.spell-source-accordion .mantine-Accordion-control {
+  padding: 0 2px;
+  min-height: 40px;
+  color: var(--sheet-ink);
+}
+.spell-source-accordion .mantine-Accordion-control:hover {
+  background: transparent;
+  color: var(--sheet-accent);
+}
+.spell-source-accordion .mantine-Accordion-label {
+  padding: 8px 0;
+}
+.spell-source-accordion .mantine-Accordion-chevron {
+  width: 16px;
+  min-width: 16px;
+  color: var(--sheet-muted);
+  margin-left: 8px;
+}
+.spell-source-accordion .mantine-Accordion-content {
+  padding: 0 0 12px;
+}
+.spell-source-context {
+  min-width: 0;
+}
+.spell-source-stats {
+  margin-top: 3px !important;
+  font-variant-numeric: tabular-nums;
+}
+.spell-solo-title {
+  margin-bottom: 8px !important;
+}
+.spell-source-body {
+  padding-top: 2px;
+}
+.spell-manage {
+  min-height: 32px;
+  flex-shrink: 0;
+  padding-inline: 6px;
+  font-size: 12px;
+}
+.spell-rank {
+  margin-top: 10px;
+}
+.spell-rank-heading {
+  min-height: 27px;
+  color: var(--sheet-muted);
+}
+.spell-resource {
+  padding-inline: 4px;
+  min-height: 30px;
+  height: auto;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.spell-resource .mantine-Button-label {
+  gap: 3px;
+  white-space: normal;
+  flex-wrap: wrap;
+}
+.spell-row-wrap {
+  border-bottom: 1px solid var(--sheet-divider);
+}
+.spell-row-wrap:last-child {
+  border-bottom: 0;
+}
+.spell-row {
+  min-height: var(--spell-row-height);
+  padding: 8px 2px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  color: var(--sheet-ink);
+  border-radius: var(--mantine-radius-xs);
+}
+.spell-row:hover {
+  background: color-mix(in srgb, var(--sheet-accent) 6%, transparent);
+}
+.spell-row-copy {
+  min-width: 0;
+  flex: 1;
+}
+.spell-phone .spell-row-name {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.spell-phone .spell-row-note {
+  display: block;
+  color: var(--sheet-muted);
+  font-size: 11px;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+.spell-row[data-used] .spell-row-name {
+  color: var(--sheet-muted);
+  text-decoration: line-through;
+}
+.spell-row:disabled {
+  cursor: default;
+}
+.spell-glyph {
+  color: var(--sheet-muted);
+  font-size: 19px;
+  flex-shrink: 0;
+}
+.spell-cast-time {
+  color: var(--sheet-muted);
+  font-size: 10px;
+  text-align: right;
+  max-width: 75px;
+  flex-shrink: 0;
+}
+.spell-empty-preparation {
+  min-height: 36px;
+  margin-block: 3px;
+  padding-inline: 2px;
+  font-size: 11px;
+}
+.spell-inline-use {
+  padding-bottom: 6px;
+}
+.spell-empty {
+  color: var(--sheet-muted);
+  font-size: 13px;
+  padding: 16px 0;
+}
+.spell-empty-state {
+  color: var(--sheet-muted);
+  text-align: center;
+  padding: 70px 10px;
+}
+.spell-phone .mantine-Modal-inner {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  align-items: flex-end;
+}
+.spell-phone .mantine-Modal-overlay {
+  position: absolute;
+  inset: 0;
+}
+.spell-phone .mantine-Modal-content {
+  flex: 0 0 100%;
+  max-height: calc(100% - 28px);
+  border-radius: 16px 16px 0 0;
+  background: var(--sheet-control);
+  color: var(--sheet-ink);
+  overflow-x: hidden;
+}
+.spell-phone .spell-dialog[data-kind='manage'] .mantine-Modal-content {
+  height: calc(100% - 28px);
+}
+.spell-phone .mantine-Modal-header {
+  background: var(--sheet-control);
+  color: var(--sheet-ink);
+  border-bottom: 1px solid var(--sheet-divider);
+  padding: 16px;
+}
+.spell-phone .mantine-Modal-title {
+  font:
+    600 17px/1.4 'Montserrat',
+    sans-serif;
+  overflow-wrap: anywhere;
+}
+.spell-phone .mantine-Modal-close {
+  color: var(--sheet-ink);
+  flex-shrink: 0;
+}
+.spell-phone .mantine-Modal-body {
+  padding: 16px;
+}
+.spell-phone .mantine-Tabs-tab {
+  color: var(--sheet-muted);
+  font-size: 13px;
+}
+.spell-phone .mantine-Tabs-tab[data-active] {
+  color: var(--sheet-accent);
+  border-color: var(--sheet-accent);
+}
+.spell-phone .mantine-Tabs-list::before {
+  border-color: var(--sheet-divider);
+}
+.spell-prose {
+  font-size: 14px;
+  line-height: 1.75;
+}
+.spell-facts {
+  color: var(--sheet-muted);
+}
+.spell-cast-footer {
+  margin-top: 8px;
+  border-top: 1px solid var(--sheet-divider);
+  padding-top: 16px;
+}
+.spell-collection-row {
+  border-bottom: 1px solid var(--sheet-divider);
+  padding: 12px 0;
+}
+.spell-phone :focus-visible {
+  outline: 2px solid var(--sheet-accent);
+  outline-offset: 2px;
+}
+@media (max-width: 480px) {
+  .spell-study {
+    padding-inline: 12px;
+  }
+  .spell-study .study-controls {
+    margin-block: 18px;
+  }
+}
