@@ -1,12 +1,28 @@
 # Mobile Spells UI: audit and design brief
 
-Status: two isolated layout prototypes are implemented following the September 8 audit.
-Neither has been selected for production. Work stays on `codex/mobile-sheet-ui`; merging
+Status: the user rejected both September 8 layout studies as clunky. They remain review
+references, not proposed production designs. Work stays on `codex/mobile-sheet-ui`; merging
 requires explicit user approval.
 
 The user rejected the broad mobile prototype because its layout and controls felt wrong.
 The next pass is specifically about the Spells page. Do not reuse the earlier simplified
 Oracle sample as proof that a new layout handles the full system.
+
+## Feedback on the Spells studies
+
+The user described the whole comparison as "kind of clunky" and did not like it. Do not
+treat passing interaction checks as design approval or keep polishing these structures as
+though either was selected.
+
+Rendered review suggests two contributors: source sections spend substantial vertical space
+on metadata and rank headings around small groups, while the switcher stacks source, search
+and rank controls before the spell list. These are the agent's diagnosis, not yet the user's
+confirmed reasons. Clarification about visual clutter versus interaction steps is pending.
+
+The proposed next direction keeps the earlier smoked material preference and puts spell
+names first: quieter grouping, less persistent management UI, and compact rows with readable
+resource counts and comfortable touch targets. Source identity and separate resources still
+need to remain clear. A replacement composition has not been selected or implemented.
 
 ## Reviewing the two designs
 

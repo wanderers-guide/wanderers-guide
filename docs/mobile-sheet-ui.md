@@ -1,8 +1,9 @@
 # Mobile character sheet UI exploration
 
-Status: the expanded layout and controls were rejected. The next focus is the real Spells
-page and its casting variants. Two Spells layout prototypes are now available. Earlier
-material concepts remain review references, not an approved redesign. Branch: `codex/mobile-sheet-ui`.
+Status: the expanded layout and controls were rejected, followed by both Spells layout
+studies, which the user found clunky. The focus remains the real Spells page and its casting
+variants. These prototypes and earlier material concepts are review references, not an
+approved redesign. Branch: `codex/mobile-sheet-ui`.
 
 **Do not merge this branch until the user explicitly approves merging it.** Earlier
 authorization to merge reliability fixes does not apply to this UI branch.
@@ -18,7 +19,8 @@ The next discussion starts from the actual Spells page. It must account for prep
 spontaneous casters, focus-only and ritual-only characters, innate spells, staves, wands,
 spellhearts, and combinations of those sources. See [the focused Spells audit](mobile-spells-ui.md)
 for the interaction map, concrete findings, and the two implemented navigation prototypes.
-Neither Spells layout has been selected for production.
+Both Spells layouts were subsequently rejected as clunky. See the focused audit's feedback
+section before proposing another composition.
 
 ## Current baseline
 
