@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { mergeCharacterSave } from './character-merge';
 import { compareCharacterVersions } from './character-version';
 import { EncounterCharacterSchema } from './encounter-character-schema';
+import { RequestRejectedError } from '@requests/request-rejection';
 import {
   bufferCharacterSave,
   characterSaveValuesEqual,
@@ -14,7 +15,7 @@ import {
 
 export type EncounterCharacterSave = {
   character: Character;
-  phase: 'saving' | 'saved' | 'failed' | 'conflict' | 'forbidden';
+  phase: 'saving' | 'saved' | 'failed' | 'conflict' | 'forbidden' | 'rejected';
   stored: boolean;
   conflicts: string[];
 };
@@ -22,6 +23,7 @@ type Entry = EncounterCharacterSave & {
   base: Character;
   running: boolean;
   uncertain?: Character;
+  rejected?: Character;
   retries: number;
   timer?: ReturnType<typeof setTimeout>;
 };
@@ -72,10 +74,12 @@ export function createEncounterCharacterWriter(options: { actorId: string; reque
   /** Re-read before retries, including an ambiguous write whose response was lost. */
   const run = async (entry: Entry): Promise<void> => {
     if (disposed || entry.running || entry.phase === 'conflict' || entry.phase === 'forbidden') return;
+    if (entry.phase === 'rejected' && (!entry.rejected || same(entry.character, entry.rejected))) return;
     if (entry.timer) clearTimeout(entry.timer);
     entry.timer = undefined;
     entry.running = true;
     entry.phase = 'saving';
+    entry.rejected = undefined;
     publish();
     try {
       let remote = parseRow(await options.request('find-character', { id: entry.character.id }), entry.character.id);
@@ -142,12 +146,20 @@ export function createEncounterCharacterWriter(options: { actorId: string; reque
     } catch (error) {
       if (disposed) return;
       console.error('Encounter character save failed:', error);
+      if (error instanceof RequestRejectedError) {
+        entry.phase = 'rejected';
+        entry.rejected = entry.uncertain;
+        reconcile(entry, entry.base);
+        return;
+      }
       entry.phase = 'failed';
       retain(entry);
       entry.timer = setTimeout(() => void run(entry), Math.min(30000, 2000 * 2 ** Math.min(entry.retries++, 4)));
     } finally {
       entry.running = false;
       publish();
+      // A newer edit queued while the rejected request was in flight still saves.
+      if (entry.phase === 'rejected' && entry.rejected && !same(entry.character, entry.rejected)) void run(entry);
     }
   };
 

@@ -12,7 +12,7 @@ const folder = mkdtempSync(join(tmpdir(), 'wg-encounter-save-'));
 after(() => rmSync(folder, { recursive: true, force: true }));
 await build({
   stdin: {
-    contents: `export * from './src/utils/encounter-character-writer'; export * from './src/utils/character-version';`,
+    contents: `export * from './src/utils/encounter-character-writer'; export * from './src/utils/character-version'; export * from './src/request/request-rejection';`,
     resolveDir: root,
   },
   absWorkingDir: root,
@@ -21,7 +21,9 @@ await build({
   format: 'esm',
   outfile: `${folder}/writer.mjs`,
 });
-const { createEncounterCharacterWriter, compareCharacterVersions } = await import(`${folder}/writer.mjs`);
+const { createEncounterCharacterWriter, compareCharacterVersions, RequestRejectedError } = await import(
+  `${folder}/writer.mjs`
+);
 const storage = new Map();
 globalThis.localStorage = {
   getItem: (key) => storage.get(key) ?? null,
@@ -257,6 +259,48 @@ test('forbidden and empty results never claim the change was saved', async (t) =
     assert.equal(storage.size, 1);
     state.writer.dispose();
   }
+});
+
+test('confirmed encounter rejection retains its draft and only a changed edit retries it', async (t) => {
+  const state = setup(t, row(), (request) => {
+    if (request.type === 'find-character') return structuredClone(request.server);
+    if (request.body.hp_current === 15) throw new RequestRejectedError(request.type);
+    return request.commit(request.body);
+  });
+  state.writer.update(row(), { ...row(), hp_current: 15 });
+  await until(() => state.writer.status(1)?.phase === 'rejected');
+  assert.equal(JSON.parse([...storage.values()][0]).body.hp_current, 15);
+  assert.equal(JSON.parse([...storage.values()][0]).submission, undefined);
+  state.writer.retry();
+  state.writer.activate();
+  assert.equal(state.requests.filter(({ type }) => type === 'update-character').length, 1);
+  const current = state.writer.display(row());
+  state.writer.update(current, { ...current, hp_current: 16 });
+  await until(() => state.writer.status(1)?.phase === 'saved');
+  assert.equal(state.server.hp_current, 16);
+  assert.equal(state.requests.filter(({ type }) => type === 'update-character').length, 2);
+  assert.equal(storage.size, 0);
+});
+
+test('a corrected encounter edit queued during rejection still saves automatically', async (t) => {
+  const pending = deferred();
+  const state = setup(t, row(), async (request) => {
+    if (request.type === 'find-character') return structuredClone(request.server);
+    if (request.body.hp_current === 15) {
+      await pending.promise;
+      throw new RequestRejectedError(request.type);
+    }
+    return request.commit(request.body);
+  });
+  state.writer.update(row(), { ...row(), hp_current: 15 });
+  await until(() => state.requests.filter(({ type }) => type === 'update-character').length === 1);
+  const current = state.writer.display(row());
+  state.writer.update(current, { ...current, hp_current: 16 });
+  pending.resolve();
+  await until(() => state.writer.status(1)?.phase === 'saved');
+  assert.equal(state.server.hp_current, 16);
+  assert.equal(state.requests.filter(({ type }) => type === 'update-character').length, 2);
+  assert.equal(storage.size, 0);
 });
 
 test('acknowledged overlay prevents stale polling from reverting HP, then follows newer reads', async (t) => {

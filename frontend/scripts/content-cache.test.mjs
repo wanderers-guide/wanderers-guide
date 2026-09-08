@@ -275,26 +275,108 @@ test('content packages and cache respect failures, sources, actors and generatio
         store.resetContentStore(false, true);
       }
     });
-    await t.test('a late source-version response cannot publish its timed-out snapshot', async () => {
+    const cachedSnapshot = (savedAt = Date.now()) => ({
+      version: 4,
+      actorId: state.actor,
+      savedAt,
+      idStore: new Map([
+        ['content-source', new Map([[81000, { id: 81000, updated_at: 'old-source-token' }]])],
+        ['language', new Map([[row.id, row]])],
+      ]),
+      contentStore: new Map(),
+    });
+
+    await t.test('a slow version check uses the recent snapshot without extending its age', async (t) => {
       const checking = deferred();
-      const snapshot = {
-        version: 4,
-        actorId: state.actor,
-        savedAt: Date.now(),
-        idStore: new Map([
-          ['content-source', new Map([[81000, { id: 81000, updated_at: 'old-source-token' }]])],
-          ['language', new Map([[row.id, row]])],
-        ]),
-        contentStore: new Map(),
-      };
+      const snapshot = cachedSnapshot(Date.now() - 20 * 60 * 60 * 1000);
       state.read = async () => snapshot;
       state.request = async (type) => (type === 'get-content-versions' ? checking.promise : []);
       store.resetContentStore(false);
       try {
-        assert.deepEqual(await store.fetchContent('language', { content_sources: [81000] }), []);
-        checking.resolve([{ id: 81000, updated_at: 'old-source-token' }]);
+        const before = state.requests.length;
+        assert.deepEqual(await store.fetchContent('language', query), [row]);
+        assert.deepEqual(
+          state.requests.slice(before).map(([type]) => type),
+          ['get-content-versions'],
+          'slow freshness must not trigger a replacement download'
+        );
+        checking.resolve([{ id: 81000, updated_at: 'new-source-token' }]);
         await new Promise((resolve) => setImmediate(resolve));
+        assert.deepEqual(
+          await store.fetchContent('language', query),
+          [row],
+          'a late verdict cannot change content underneath running calculations'
+        );
+
+        t.mock.timers.enable({ apis: ['setTimeout'] });
+        await store.fetchContent('language', { ...query, id: 81002 });
+        t.mock.timers.tick(10000);
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.equal(
+          state.records.get(`content-store:${state.actor}`).savedAt,
+          snapshot.savedAt,
+          'persisting another lookup must not renew unverified cached content'
+        );
+      } finally {
+        checking.resolve(null);
+        t.mock.timers.reset();
+        state.read = async (key) => state.records.get(key);
+        store.resetContentStore(false, true);
+      }
+    });
+
+    await t.test('a prompt changed source token still rejects stale cached content', async () => {
+      state.read = async () => cachedSnapshot();
+      state.request = async (type) =>
+        type === 'get-content-versions' ? [{ id: 81000, updated_at: 'new-source-token' }] : [];
+      store.resetContentStore(false);
+      try {
+        assert.deepEqual(await store.fetchContent('language', query), []);
         assert.deepEqual(store.getCachedContent('language'), []);
+      } finally {
+        state.read = async (key) => state.records.get(key);
+        store.resetContentStore(false, true);
+      }
+    });
+
+    await t.test('an expired snapshot cannot be used during an outage', async () => {
+      state.read = async () => cachedSnapshot(Date.now() - 25 * 60 * 60 * 1000);
+      state.request = async () => [];
+      store.resetContentStore(false);
+      try {
+        const before = state.requests.length;
+        assert.deepEqual(await store.fetchContent('language', query), []);
+        assert.deepEqual(
+          state.requests.slice(before).map(([type]) => type),
+          ['find-language']
+        );
+      } finally {
+        state.read = async (key) => state.records.get(key);
+        store.resetContentStore(false, true);
+      }
+    });
+
+    await t.test('account changes retire a snapshot waiting for its version check', async () => {
+      const checking = deferred(),
+        started = deferred();
+      const snapshot = cachedSnapshot();
+      state.read = async () => snapshot;
+      state.request = async (type) => {
+        if (type === 'get-content-versions') {
+          started.resolve();
+          return checking.promise;
+        }
+        return [];
+      };
+      store.resetContentStore(false);
+      const pending = store.fetchContent('language', query);
+      const rejected = assert.rejects(pending, /Content changed/);
+      try {
+        await started.promise;
+        state.actor = 'D';
+        store.setContentCacheActor('D');
+        checking.resolve([{ id: 81000, updated_at: 'old-source-token' }]);
+        await rejected;
         assert.deepEqual(await store.fetchContent('language', query), []);
       } finally {
         checking.resolve(null);

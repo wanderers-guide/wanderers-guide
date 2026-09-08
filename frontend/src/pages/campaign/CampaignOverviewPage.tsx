@@ -403,25 +403,35 @@ function SectionPanels(props: {
       session?.user.id && props.campaign?.id
         ? createEncounterCharacterWriter({
             actorId: session.user.id,
-            request: (type, body) => makeRequest(type, body, false, { expectedActorId: session.user.id }),
+            request: (type, body) =>
+              makeRequest(type, body, false, {
+                expectedActorId: session.user.id,
+                throwOnRejection: type === 'update-character',
+              }),
             changed: () => refreshCharacterSaves((value) => value + 1),
           })
         : undefined,
     [session?.user.id, props.campaign?.id]
   );
-  /** Report actual failures once per incident, without adding status controls to combatants. */
+  /** Report actionable failures once per incident; safe queued retries stay quiet. */
   useEffect(() => {
     for (const player of props.players) {
       const save = characterWriter?.status(player.id);
       if (!save) continue;
       const noticeId = `encounter-character-save-${player.id}`;
-      if (save.phase === 'saved') {
+      const problem =
+        save.phase === 'conflict' || save.phase === 'forbidden' || save.phase === 'rejected'
+          ? save.phase
+          : save.phase !== 'saved' && !save.stored
+            ? 'storage'
+            : null;
+      if (!problem) {
         if (saveNoticesRef.current.delete(player.id)) hideNotification(noticeId);
         continue;
       }
-      if (save.phase === 'saving' || saveNoticesRef.current.get(player.id) === save.phase) continue;
-      saveNoticesRef.current.set(player.id, save.phase);
-      const conflict = save.phase === 'conflict';
+      if (saveNoticesRef.current.get(player.id) === problem) continue;
+      saveNoticesRef.current.set(player.id, problem);
+      const conflict = problem === 'conflict';
       // Mantine ignores show calls for an existing ID. Replace the previous failure
       // when a retry discovers a conflict or revoked access, including dismissed notices.
       hideNotification(noticeId);
@@ -433,9 +443,11 @@ function SectionPanels(props: {
             <Text size='sm'>
               {conflict
                 ? `${player.name} was changed elsewhere. Open the character to resolve the conflicting edits.`
-                : save.phase === 'forbidden'
+                : problem === 'forbidden'
                   ? `You no longer have permission to edit ${player.name}.`
-                  : `Could not save ${player.name}. Retrying automatically.`}
+                  : problem === 'rejected'
+                    ? 'These changes could not be saved.'
+                    : 'Keep this page open until saving completes.'}
             </Text>
             {conflict && (
               <Button component='a' href={`/sheet/${player.id}`} variant='light' size='compact-xs' mt='xs'>

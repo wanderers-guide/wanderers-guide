@@ -34,11 +34,14 @@ preserves unsynced character drafts.
 
 Optional browser-cache work cannot block authoritative content loading. Homebrew
 invalidation clears the current in-memory generation immediately and queues persistent
-deletion in order with other storage writes. Cache hydration has a 2.5-second deadline;
-after that deadline its late result cannot publish rows, even after a delayed source
-version check. A successful empty download therefore stays empty. If browser storage
+deletion in order with other storage writes. Reading storage has a 2.5-second deadline;
+a late read cannot publish rows after fresh downloads start. A recent snapshot gets a
+separate 750-millisecond source-version check. Confirmed changes reject the snapshot;
+a slow or unavailable check uses the account-scoped snapshot for this visit. A late
+verdict never replaces content during calculations. Unverified snapshots keep their
+original timestamp when persisted, preserving the 24-hour age limit. If browser storage
 itself remains stalled, fresh content still loads but persistence waits for that storage
-operation to finish.
+operation to finish. Catalog artwork loads only when displayed.
 
 The builder waits for the current character's authoritative save context before
 exposing editable controls. A cached route row cannot make the form ready early.
@@ -61,7 +64,7 @@ repeatedly loading the server's older sources would otherwise create a reload lo
 
 Concurrent character edits merge at nested fields and stable entry IDs. Independent
 changes survive. When both writers change the same value, saving pauses and offers
-**Keep my edits**, **Use saved version**, and **Download my copy**. The local input and
+**Keep my edits** and **Use saved version**. The local input and
 its original base remain buffered until the conflict is resolved. Choosing the saved
 version removes the matching rejected draft so reloading cannot restore that edit.
 

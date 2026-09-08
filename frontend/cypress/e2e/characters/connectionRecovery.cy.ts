@@ -60,7 +60,6 @@ describe('Interrupted character saves', () => {
     });
     cy.get('input[placeholder="Unknown Wanderer"]').type('Kept through a connection drop');
     cy.wait('@droppedSave', { timeout: 15000 });
-    cy.contains('Changes not saved', { timeout: 40000 }).should('be.visible');
     cy.window().should((win) => {
       const key = Object.keys(win.localStorage).find((key) =>
         key.startsWith(`autosave-character-${characterId}-${actorId}:writer:`)
@@ -68,6 +67,7 @@ describe('Interrupted character saves', () => {
       const draft = JSON.parse(win.localStorage.getItem(key ?? '') ?? '{}');
       expect(draft.body?.name).to.eq('Kept through a connection drop');
     });
+    cy.contains('Changes not saved').should('not.exist');
     cy.window().then((win) => {
       disrupted = false;
       win.dispatchEvent(new Event('online'));
@@ -109,12 +109,82 @@ describe('Interrupted character saves', () => {
     readCharacter().its('name').should('eq', 'Committed before timeout');
     cy.get('input[placeholder="Unknown Wanderer"]').clear().type('Newest edit during timeout');
     cy.wait('@latestSave', { timeout: 45000 }).its('response.body.status').should('eq', 'success');
+    cy.contains('Changes not saved').should('not.exist');
     readCharacter().its('name').should('eq', 'Newest edit during timeout');
     cy.reload();
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should(
       'have.value',
       'Newest edit during timeout'
     );
+  });
+
+  it('warns when an interrupted edit cannot be retained locally, then clears when storage recovers', () => {
+    let disrupted = true;
+    let restoreStorage: () => void;
+    cy.intercept('POST', '**/functions/v1/update-character', (req) => {
+      if (disrupted) {
+        req.alias = 'unretainedSave';
+        req.reply({ statusCode: 503, body: { status: 'error', message: 'Test connection interruption' } });
+      } else req.alias = 'retainedSave';
+    });
+    cy.window().then((win) => {
+      const setItem = win.Storage.prototype.setItem;
+      const stub = cy.stub(win.Storage.prototype, 'setItem').callsFake(function (
+        this: Storage,
+        key: string,
+        value: string
+      ) {
+        if (key.startsWith(`autosave-character-${characterId}-`)) throw new Error('Test storage quota exceeded');
+        return setItem.call(this, key, value);
+      });
+      restoreStorage = () => stub.restore();
+    });
+    cy.get('input[placeholder="Unknown Wanderer"]').type('Retained after storage recovery');
+    cy.wait('@unretainedSave', { timeout: 15000 });
+    cy.contains('Keep this page open until saving completes.').should('be.visible');
+    cy.window().then((win) => {
+      restoreStorage();
+      win.dispatchEvent(new Event('pagehide'));
+    });
+    cy.contains('Changes not saved').should('not.exist');
+    cy.window().should((win) => {
+      const key = Object.keys(win.localStorage).find((key) =>
+        key.startsWith(`autosave-character-${characterId}-${actorId}:writer:`)
+      );
+      expect(JSON.parse(win.localStorage.getItem(key ?? '') ?? '{}').body?.name).to.eq(
+        'Retained after storage recovery'
+      );
+    });
+    cy.window().then((win) => {
+      disrupted = false;
+      win.dispatchEvent(new Event('online'));
+    });
+    cy.wait('@retainedSave', { timeout: 15000 }).its('response.body.status').should('eq', 'success');
+    readCharacter().its('name').should('eq', 'Retained after storage recovery');
+  });
+
+  it('retains an explicitly rejected save and saves a corrected edit', () => {
+    cy.intercept('POST', '**/functions/v1/update-character', (req) => {
+      if (req.body.name === 'Rejected save') {
+        req.alias = 'rejectedSave';
+        req.reply({ statusCode: 413, body: { status: 'fail', data: { message: 'Test payload rejection' } } });
+      } else if (req.body.name === 'Corrected save') req.alias = 'correctedSave';
+    });
+    cy.get('input[placeholder="Unknown Wanderer"]').type('Rejected save');
+    cy.wait('@rejectedSave', { timeout: 15000 });
+    cy.contains('These changes could not be saved.').should('be.visible');
+    cy.window().should((win) => {
+      const key = Object.keys(win.localStorage).find((key) =>
+        key.startsWith(`autosave-character-${characterId}-${actorId}:writer:`)
+      );
+      const draft = JSON.parse(win.localStorage.getItem(key ?? '') ?? '{}');
+      expect(draft.body?.name).to.eq('Rejected save');
+      expect(draft.submission).to.eq(undefined);
+    });
+    cy.get('input[placeholder="Unknown Wanderer"]').clear().type('Corrected save');
+    cy.wait('@correctedSave', { timeout: 15000 }).its('response.body.status').should('eq', 'success');
+    cy.contains('Changes not saved').should('not.exist');
+    readCharacter().its('name').should('eq', 'Corrected save');
   });
 
   it('recovers prepared spells after interruption and reopening at phone width', () => {
@@ -133,8 +203,10 @@ describe('Interrupted character saves', () => {
     cy.contains('button', /^Spells$/).click();
     let disrupted = true;
     cy.intercept('POST', '**/functions/v1/update-character', (req) => {
-      if (disrupted) req.reply({ statusCode: 503, body: { status: 'error', message: 'Test connection interruption' } });
-      else {
+      if (disrupted) {
+        req.alias = 'interruptedSpellSave';
+        req.reply({ statusCode: 503, body: { status: 'error', message: 'Test connection interruption' } });
+      } else {
         req.alias = 'spellsSaved';
         req.continue((res) => {
           res.setDelay(750);
@@ -160,8 +232,8 @@ describe('Interrupted character saves', () => {
     chooseCharm();
     cy.get('[data-wg-name="rank-1"]').contains('Select Spell').first().click();
     chooseCharm();
-    cy.get('button[aria-label="Dismiss save notice"]', { timeout: 30000 }).click();
-    cy.get('#character-save-failed').should('not.exist');
+    cy.wait('@interruptedSpellSave', { timeout: 30000 });
+    cy.contains('Changes not saved').should('not.exist');
     cy.get('button.mantine-Modal-close').last().click();
     cy.get('[data-testid="character-save-status"]').should('not.exist');
     cy.screenshot('mobile-spells-waiting-to-sync');

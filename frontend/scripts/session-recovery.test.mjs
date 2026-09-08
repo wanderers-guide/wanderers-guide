@@ -73,7 +73,7 @@ await build({
     'import.meta.env.PROD': 'false',
   },
   stdin: {
-    contents: `export * from './src/request/request-manager'; export * from './src/utils/character-save-buffer';`,
+    contents: `export * from './src/request/request-manager'; export * from './src/request/request-rejection'; export * from './src/utils/character-save-buffer';`,
     resolveDir: root,
   },
   outfile: join(directory, 'session.mjs'),
@@ -207,6 +207,47 @@ test('permission, API-key, and application failures never trigger auth retries',
     assert.equal(calls.length, 1);
     assert.equal(refreshes, 0);
     assert.equal(notices, 0);
+  }
+});
+
+test('character writes can distinguish confirmed input rejection without changing default callers', async () => {
+  for (const response of [
+    http(400, { message: 'Invalid input' }),
+    http(413, { message: 'Payload too large' }),
+    http(422, { message: 'Invalid character value' }),
+    { data: { status: 'fail', data: { name: 'Invalid input' } }, error: null },
+  ]) {
+    calls = [];
+    invoke = async () => response;
+    await assert.rejects(
+      api.makeRequest('update-character', { id: 1 }, false, { throwOnRejection: true }),
+      api.RequestRejectedError
+    );
+    assert.equal(calls.length, 1);
+    assert.equal(refreshes, 0);
+    assert.equal(notices, 0);
+    assert.equal(await api.makeRequest('update-character', { id: 1 }, false), null);
+  }
+});
+
+test('rejection-aware writes preserve JWT recovery and never classify ambiguous failures as rejected', async () => {
+  invoke = async () => (calls.length === 1 ? expired() : ok());
+  assert.deepEqual(await api.makeRequest('update-character', { id: 1 }, false, { throwOnRejection: true }), [
+    { id: 1 },
+  ]);
+  assert.equal(refreshes, 1);
+  for (const response of [
+    http(429, { status: 'fail', data: { message: 'Rate limited' } }),
+    http(500, { message: 'Server failure' }),
+    http(503, { message: 'Unavailable' }),
+    { data: null, error: new FunctionsFetchError('Offline') },
+    { data: null, error: new Error('Timeout') },
+    { data: { status: 'error', message: 'Unavailable' }, error: null },
+  ]) {
+    calls = [];
+    invoke = async () => response;
+    assert.equal(await api.makeRequest('update-character', { id: 1 }, false, { throwOnRejection: true }), null);
+    assert.equal(calls.length, 1);
   }
 });
 

@@ -23,6 +23,20 @@ const manifestForPlugin: Partial<VitePWAOptions> = {
   includeAssets: ['apple-icon-180.png', 'maskable_icon.png'],
   workbox: {
     maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15 MiB
+    // Developer reports never belong in the offline app. Cache the optional icon set
+    // when it is used, without competing with the initial sheet/content download.
+    globIgnores: ['**/stats.html', '**/game-icons-*.js'],
+    runtimeCaching: [
+      {
+        urlPattern: /\/assets\/game-icons-[^/]+\.js$/,
+        handler: 'CacheFirst',
+        options: {
+          cacheName: 'wg-game-icons',
+          expiration: { maxEntries: 3, maxAgeSeconds: 30 * 24 * 60 * 60 },
+          cacheableResponse: { statuses: [200] },
+        },
+      },
+    ],
   },
   manifest: {
     name: "Wanderer's Guide",
@@ -96,12 +110,21 @@ export default defineConfig({
   plugins: [
     react(),
     visualizer({
-      emitFile: true,
-      filename: 'stats.html',
+      emitFile: false,
+      filename: '.scratch/bundle-stats.html',
     }),
     VitePWA(manifestForPlugin),
   ],
   build: {
+    rollupOptions: {
+      output: {
+        // Give the existing dynamic icon chunk a stable purpose for the cache policy.
+        chunkFileNames: (chunk) =>
+          chunk.moduleIds.some((id) => id.includes('/react-icons/gi/'))
+            ? 'assets/game-icons-[hash].js'
+            : 'assets/[name]-[hash].js',
+      },
+    },
     // Was: a @babel/preset-env pass (targets ios15) running over the whole bundle on top
     // of esbuild — a redundant second transpile. esbuild lowers syntax to the same target
     // in a single pass; 'safari15' preserves the original iOS 15 support intent.

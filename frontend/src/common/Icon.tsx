@@ -142,28 +142,22 @@ const gameIconSubscribers = new Set<() => void>();
 /** Load + cache the game-icon set once. Notifies mounted <GameIcon>s when it resolves. */
 export function loadGameIcons(): Promise<Record<string, IconType>> {
   if (gameIconsCache) return Promise.resolve(gameIconsCache);
-  gameIconsPromise ??= import('react-icons/gi').then((mod) => {
-    const map: Record<string, IconType> = {};
-    for (const [rawName, Component] of Object.entries(mod)) {
-      // Strip the leading 'Gi' and lowercase, matching the previous naming.
-      map[rawName.slice(2).toLowerCase()] = Component as IconType;
-    }
-    gameIconsCache = map;
-    gameIconSubscribers.forEach((cb) => cb());
-    return map;
-  });
+  gameIconsPromise ??= import('react-icons/gi')
+    .then((mod) => {
+      const map: Record<string, IconType> = {};
+      for (const [rawName, Component] of Object.entries(mod)) {
+        // Strip the leading 'Gi' and lowercase, matching the previous naming.
+        map[rawName.slice(2).toLowerCase()] = Component as IconType;
+      }
+      gameIconsCache = map;
+      gameIconSubscribers.forEach((cb) => cb());
+      return map;
+    })
+    .catch((error: unknown) => {
+      gameIconsPromise = null;
+      throw error;
+    });
   return gameIconsPromise;
-}
-
-// Preload during idle time so game icons in content are usually ready before they render,
-// without blocking the initial critical path (the reason for splitting them out).
-if (typeof window !== 'undefined') {
-  const w = window as unknown as {
-    requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void;
-  };
-  const preload = () => void loadGameIcons();
-  if (typeof w.requestIdleCallback === 'function') w.requestIdleCallback(preload, { timeout: 3000 });
-  else setTimeout(preload, 2000);
 }
 
 // Tabler Icons
@@ -315,12 +309,16 @@ function GameIcon({ name, ...restProps }: IconProps) {
   const [, rerender] = useReducer((n: number) => n + 1, 0);
 
   useEffect(() => {
-    if (gameIconsCache) return; // already available — no need to subscribe
+    if (gameIconsCache) return;
     const onLoaded = () => rerender();
     gameIconSubscribers.add(onLoaded);
-    void loadGameIcons();
+    const load = () =>
+      void loadGameIcons().catch(() => console.warn('Could not load game icons; retrying on reconnect.'));
+    load();
+    window.addEventListener('online', load);
     return () => {
       gameIconSubscribers.delete(onLoaded);
+      window.removeEventListener('online', load);
     };
   }, []);
 

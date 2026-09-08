@@ -39,7 +39,6 @@ import {
 import { RequestType } from '@schemas/requests';
 import { formatZodError } from '@schemas/shared';
 import { z } from 'zod';
-import { preloadImage } from '@utils/images';
 import { hashData } from '@utils/numbers';
 import { isTruthy } from '@utils/type-fixing';
 import { cloneDeep, isString, uniq, uniqBy } from 'lodash-es';
@@ -144,6 +143,25 @@ const CONTENT_CACHE_VERSION = 4;
 // get-content-versions on load (see verifyPersistedContentVersions). The TTL exists for the
 // cases where that check cannot run (offline, endpoint unreachable, >500 sources).
 const CONTENT_CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24h
+const CONTENT_CACHE_READ_TIMEOUT_MS = 2500;
+const CONTENT_CACHE_VERSION_TIMEOUT_MS = 750;
+// Unverified snapshots keep their original age even when new lookups are persisted.
+let unverifiedCacheSavedAt: number | undefined;
+
+/** Optional cache work has a deadline; late results never publish into the working set. */
+async function withinCacheBudget<T>(work: Promise<T>, timeoutMs: number, fallback: T): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<T>((resolve) => {
+        timeout = setTimeout(() => resolve(fallback), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeout !== undefined) clearTimeout(timeout);
+  }
+}
 
 type PersistedContentCache = {
   version: number;
@@ -208,47 +226,56 @@ function assertCurrentGeneration(generation: number): void {
  * backstop — this is what makes every rollout order safe. A cached source with NO token
  * (pre-migration blob) compares as `undefined` vs a server string and reads as stale.
  */
-async function verifyPersistedContentVersions(rec: PersistedContentCache): Promise<'ok' | 'stale'> {
+async function verifyPersistedContentVersions(rec: PersistedContentCache): Promise<'ok' | 'stale' | 'unverified'> {
   const sourceMap = rec.idStore instanceof Map ? rec.idStore.get('content-source') : undefined;
   const sources = sourceMap instanceof Map ? ([...sourceMap.values()].filter(isTruthy) as ContentSource[]) : [];
   // Nothing to compare against (or too many for one call): fall back to the TTL.
-  if (sources.length === 0 || sources.length > 500) return 'ok';
+  if (sources.length === 0 || sources.length > 500) return 'unverified';
 
   const result = await makeRequest<{ id: number; updated_at: string }[]>(
     'get-content-versions',
     { ids: sources.map((s) => s.id) },
     false
   );
-  if (!Array.isArray(result)) return 'ok';
+  if (!Array.isArray(result)) return 'unverified';
 
   const serverTokens = new Map(result.map((r) => [r.id, r.updated_at]));
   for (const source of sources) {
     // Missing on the server = the source was deleted; token mismatch = something in it
     // changed. Raw string comparison on purpose — tokens are opaque, never date-parsed.
     if (serverTokens.get(source.id) !== source.updated_at) {
-      console.log('[CONTENT-CACHE] Source', source.id, 'changed on the server; dropping persisted cache');
+      console.log('[CONTENT-CACHE] Source', source.id, 'changed on the server');
       return 'stale';
     }
   }
   return 'ok';
 }
 
-async function hydrateContentCache(generation: number, actorId: string, signal: AbortSignal): Promise<void> {
+async function hydrateContentCache(generation: number, actorId: string): Promise<void> {
   try {
-    await storageWrites;
-    if (signal.aborted || generation !== cacheGeneration || actorId !== cacheActorId) return;
-    const rec = await idbGet<PersistedContentCache>(cacheKey(actorId));
+    const rec = await withinCacheBudget(
+      storageWrites.then(() => idbGet<PersistedContentCache>(cacheKey(actorId))),
+      CONTENT_CACHE_READ_TIMEOUT_MS,
+      null
+    );
     if (
-      signal.aborted ||
+      generation !== cacheGeneration ||
+      actorId !== cacheActorId ||
       !rec ||
       rec.version !== CONTENT_CACHE_VERSION ||
       rec.actorId !== actorId ||
       Date.now() - rec.savedAt > CONTENT_CACHE_TTL_MS
     )
       return;
-    // Check this exact snapshot, not a verdict memoized for a different blob/account.
-    if ((await verifyPersistedContentVersions(rec)) === 'stale') return;
-    if (signal.aborted || generation !== cacheGeneration || actorId !== cacheActorId) return;
+    // A slow freshness endpoint must not turn a usable local snapshot into a full download.
+    // Keep this visit consistent: a late verdict cannot swap content during calculations.
+    const freshness = await withinCacheBudget(
+      verifyPersistedContentVersions(rec),
+      CONTENT_CACHE_VERSION_TIMEOUT_MS,
+      'unverified'
+    );
+    if (freshness === 'stale' || generation !== cacheGeneration || actorId !== cacheActorId) return;
+    unverifiedCacheSavedAt = freshness === 'unverified' ? rec.savedAt : undefined;
     if (rec.contentStore instanceof Map) {
       for (const [key, value] of rec.contentStore) if (!contentStore.has(key)) contentStore.set(key, value);
     }
@@ -265,23 +292,9 @@ async function hydrateContentCache(generation: number, actorId: string, signal: 
   }
 }
 
-/** Bound optional hydration and retire its snapshot before fresh network loading starts. */
+/** Read one account's cache and check freshness within separate storage/network budgets. */
 function beginHydration(): Promise<void> {
-  const controller = new AbortController();
-  let timeout: ReturnType<typeof setTimeout> | undefined;
-  return Promise.race([
-    hydrateContentCache(cacheGeneration, cacheActorId, controller.signal),
-    new Promise<void>((resolve) => {
-      timeout = setTimeout(() => {
-        // A late cached row could resurrect content absent from a fresh download,
-        // even when hydration never overwrites an existing ID.
-        controller.abort();
-        resolve();
-      }, 2500);
-    }),
-  ]).finally(() => {
-    if (timeout !== undefined) clearTimeout(timeout);
-  });
+  return hydrateContentCache(cacheGeneration, cacheActorId);
 }
 // Started at module load and re-armed by resetContentStore(), so the in-memory store can
 // refill from the persisted cache after an in-memory clear instead of re-fetching the corpus.
@@ -299,7 +312,7 @@ async function persistContentCache(): Promise<void> {
   const record: PersistedContentCache = structuredClone({
     version: CONTENT_CACHE_VERSION,
     actorId,
-    savedAt: Date.now(),
+    savedAt: unverifiedCacheSavedAt ?? Date.now(),
     idStore,
     contentStore,
   });
@@ -608,6 +621,7 @@ export function resetContentStore(resetSources = true, clearPersisted = false) {
     persistTimer = null;
   }
   cacheDirty = false;
+  unverifiedCacheSavedAt = undefined;
 
   if (clearPersisted) {
     // The generation already invalidated old readers. Keep deletion ordered with
@@ -740,9 +754,7 @@ export async function fetchContentPackage(
     defaultSources,
   } satisfies ContentPackage;
 
-  // Preload high-need images from package
-  void Promise.allSettled([...p.ancestries, ...p.classes].map((record) => preloadImage(record.artwork_url)));
-  // Background artwork loads when displayed; preloading the entire catalog competes with sheet data.
+  // Artwork loads when displayed so unused catalog images do not compete with sheet data.
 
   return p;
 }

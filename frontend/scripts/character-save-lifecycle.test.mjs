@@ -37,6 +37,7 @@ class HookHost {
     };
     this.character = null;
     this.session = { user: { id: 'owner' } };
+    this.sessionExpired = false;
     this.characterId = 1;
     this.options = { type: 'SIMPLE' };
     this.slots = [];
@@ -193,6 +194,7 @@ globalThis.__saveHooks = {
   },
   notify: (notice) => harness.notices.push(notice),
   hideNotice: (id) => harness.hiddenNotices.push(id),
+  hasSessionExpiredNotice: () => harness.sessionExpired,
   calculate: () => harness.calculate(),
   confirmHealth: (...args) => harness.confirmHealth(...args),
   saveCalculatedStats: (...args) => harness.saveCalculatedStats(...args),
@@ -215,8 +217,7 @@ const boundaries = {
     'export const {useDidUpdate} = globalThis.__saveHooks; export const useDebouncedValue = value => [globalThis.__saveHooks.debounce(value)]; export const useDebouncedCallback = globalThis.__saveHooks.debounceCallback;',
   '@tanstack/react-query': 'export const {useMutation,useQuery} = globalThis.__saveHooks;',
   '@constants/data': 'export const COMMON_CORE_ID = 3;',
-  '@requests/request-manager':
-    'export const {makeRequest} = globalThis.__saveHooks; export const hasSessionExpiredNotice = () => false;',
+  '@requests/request-manager': 'export const {makeRequest,hasSessionExpiredNotice} = globalThis.__saveHooks;',
   '@mantine/notifications':
     'export const showNotification = globalThis.__saveHooks.notify; export const hideNotification = globalThis.__saveHooks.hideNotice;',
   '@mantine/core': 'export const Button = "button"; export const Group = "group"; export const Text = "text";',
@@ -259,7 +260,7 @@ await build({
   define: { 'import.meta.env.PROD': 'false' },
   stdin: {
     contents:
-      "export {default} from './src/utils/use-character'; export * from './src/utils/character-save-buffer'; export * from './src/utils/character-merge'; export {confirmHealth as actualConfirmHealth} from './src/pages/character_sheet/entity-handler'; export {saveCalculatedStats as actualSaveCalculatedStats} from './src/process/variables/calculated-stats';",
+      "export {default} from './src/utils/use-character'; export * from './src/utils/character-save-buffer'; export * from './src/utils/character-merge'; export * from './src/request/request-rejection'; export {confirmHealth as actualConfirmHealth} from './src/pages/character_sheet/entity-handler'; export {saveCalculatedStats as actualSaveCalculatedStats} from './src/process/variables/calculated-stats';",
     resolveDir: root,
   },
   bundle: true,
@@ -291,6 +292,7 @@ const {
   mergeCharacterSave,
   actualConfirmHealth,
   actualSaveCalculatedStats,
+  RequestRejectedError,
 } = await import(pathToFileURL(join(directory, 'hook.mjs')).href);
 const row = (id = 1) => ({
   id,
@@ -703,7 +705,7 @@ test('choosing the saved version discards the matching conflict draft before nav
   harness.unmount();
 });
 
-test('a completed failed save retries through the editor when connectivity returns', async () => {
+test('a completed failed save retries quietly through the editor when connectivity returns', async () => {
   let online = false;
   harness.request = async (type, body) =>
     type === 'find-character' ? row() : online ? [{ ...row(), ...body, updated_at: 'version-2' }] : null;
@@ -712,18 +714,187 @@ test('a completed failed save retries through the editor when connectivity retur
   harness.edit({ name: 'Survives interruption' });
   await harness.flush();
   assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Survives interruption');
-  assert.equal(harness.notices.length, 1);
-  assert.equal(harness.notices[0].title, 'Changes not saved');
-  harness.hiddenNotices = [];
+  assert.equal(harness.notices.length, 0);
   online = true;
   events.get('online')?.();
   await harness.flush();
   assert.equal(harness.requests.filter((request) => request.type === 'update-character').length, 2);
   assert.equal(getBufferedCharacterSave(1, 'owner').status, 'none');
-  assert.equal(harness.notices.length, 1, 'successful retry must not add another toast');
-  assert.ok(harness.hiddenNotices.includes('character-save-failed'));
+  assert.equal(harness.notices.length, 0, 'recovery must not require or produce a toast');
   harness.unmount();
 });
+
+test('repeated failures recover with automatic backoff without a reconnect event or toast', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let attempts = 0;
+  harness.request = async (type, body) => {
+    if (type === 'find-character') return row();
+    attempts += 1;
+    return attempts < 3 ? null : [{ ...row(), ...body, updated_at: 'version-2' }];
+  };
+  harness.render();
+  await harness.flush();
+  harness.edit({ name: 'Eventually saved quietly' });
+  await harness.flush();
+  assert.equal(attempts, 1);
+  t.mock.timers.tick(2000);
+  await harness.flush();
+  assert.equal(attempts, 2);
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Eventually saved quietly');
+  assert.equal(harness.notices.length, 0);
+  t.mock.timers.tick(4000);
+  await harness.flush();
+  assert.equal(attempts, 3);
+  assert.equal(getBufferedCharacterSave(1, 'owner').status, 'none');
+  assert.equal(harness.value.saveState, 'saved');
+  assert.equal(harness.notices.length, 0);
+  harness.unmount();
+});
+
+test('session expiry keeps the draft and leaves notification and recovery to authentication', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  harness.request = async (type) => {
+    if (type === 'find-character') return row();
+    harness.sessionExpired = true;
+    return null;
+  };
+  harness.render();
+  await harness.flush();
+  harness.edit({ name: 'Sign in to finish saving' });
+  await harness.flush();
+  t.mock.timers.tick(30000);
+  events.get('online')?.();
+  await harness.flush();
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 1);
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Sign in to finish saving');
+  assert.equal(harness.notices.length, 0, 'the request manager already owns the session-expiry notice');
+  harness.unmount();
+});
+
+test('a confirmed rejected snapshot remains local and paused until a changed edit can save', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  harness.request = async (type, body) => {
+    if (type === 'find-character') return row();
+    if (body.name === 'Rejected input') throw new RequestRejectedError(type);
+    return [{ ...row(), ...body, updated_at: 'version-2' }];
+  };
+  harness.render();
+  await harness.flush();
+  harness.edit({ name: 'Rejected input' });
+  await harness.flush();
+  assert.equal(harness.notices.length, 1);
+  assert.equal(harness.notices[0].title, 'Changes not saved');
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Rejected input');
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.submission, undefined);
+  t.mock.timers.tick(60000);
+  events.get('online')?.();
+  events.get('focus')?.();
+  harness.value.retrySave();
+  await harness.flush();
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 1);
+  harness.edit({ name: 'Corrected input' });
+  await harness.flush();
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 2);
+  assert.equal(harness.value.saveState, 'saved');
+  assert.equal(getBufferedCharacterSave(1, 'owner').status, 'none');
+  assert.ok(harness.hiddenNotices.includes('character-save-rejected-1'));
+  harness.unmount();
+});
+
+test('a newer edit queued during a rejected request still reaches the server', async () => {
+  const rejection = deferred();
+  harness.request = async (type, body) => {
+    if (type === 'find-character') return row();
+    if (body.name === 'Rejected input') return rejection.promise;
+    return [{ ...row(), ...body, updated_at: 'version-2' }];
+  };
+  harness.render();
+  await harness.flush();
+  harness.edit({ name: 'Rejected input' });
+  await harness.flush();
+  harness.edit({ name: 'Already corrected while waiting' });
+  await harness.flush();
+  rejection.reject(new RequestRejectedError('update-character'));
+  await harness.flush();
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 2);
+  assert.equal(harness.character.name, 'Already corrected while waiting');
+  assert.equal(harness.value.saveState, 'saved');
+  assert.equal(getBufferedCharacterSave(1, 'owner').status, 'none');
+  assert.equal(harness.notices.length, 0, 'an already corrected rejection needs no stale warning');
+  harness.unmount();
+});
+
+for (const editor of ['owner', 'known-gm', 'public-viewer']) {
+  test(`forbidden writes stop retrying and notify only a known editor: ${editor}`, async () => {
+    harness.session = { user: { id: editor === 'owner' ? 'owner' : 'other' } };
+    let remote = row();
+    let revoked = editor !== 'known-gm';
+    harness.request = async (type, body) => {
+      if (type === 'find-character') return remote;
+      if (revoked) return { __forbidden: true };
+      remote = { ...remote, ...body, updated_at: 'version-2' };
+      return [remote];
+    };
+    harness.render();
+    await harness.flush();
+    if (editor === 'known-gm') {
+      harness.edit({ name: 'Earlier authorized edit' });
+      await harness.flush();
+      revoked = true;
+    }
+    harness.edit({ name: 'Rejected edit' });
+    await harness.flush();
+    assert.equal(harness.value.saveState, 'read-only');
+    assert.equal(harness.notices.length, editor === 'public-viewer' ? 0 : 1);
+    if (editor !== 'public-viewer') {
+      assert.equal(harness.notices[0].title, 'Changes not saved');
+      assert.match(harness.notices[0].message, /permission/);
+    }
+    assert.equal(getBufferedCharacterSave(1, harness.session.user.id).draft.body.name, 'Rejected edit');
+    const requests = harness.requests.length;
+    events.get('online')?.();
+    harness.value.retrySave();
+    await harness.flush();
+    assert.equal(harness.requests.length, requests);
+    harness.unmount();
+  });
+}
+
+for (const recovery of ['local storage', 'server acknowledgement']) {
+  test(`pending edits warn once when local storage fails, then clear after ${recovery}`, async () => {
+    const save = deferred();
+    harness.request = async (type) => (type === 'find-character' ? row() : save.promise);
+    harness.render();
+    await harness.flush();
+    const setItem = localStorage.setItem;
+    localStorage.setItem = () => {
+      throw new Error('Quota exceeded');
+    };
+    harness.edit({ name: 'Keep this pending edit' });
+    await harness.flush();
+    assert.equal(harness.value.draftStored, false);
+    assert.equal(harness.notices.length, 1);
+    assert.equal(harness.notices[0].message, 'Keep this page open until saving completes.');
+    harness.render();
+    await harness.flush();
+    assert.equal(harness.notices.length, 1, 'repeated storage failures must not produce repeated notices');
+    if (recovery === 'local storage') {
+      localStorage.setItem = setItem;
+      harness.render();
+      await harness.flush();
+      assert.equal(harness.value.draftStored, true);
+      assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Keep this pending edit');
+    } else {
+      save.resolve([{ ...row(), name: 'Keep this pending edit', updated_at: 'version-2' }]);
+      await harness.flush();
+      assert.equal(harness.value.saveState, 'saved');
+    }
+    assert.ok(harness.hiddenNotices.includes('character-save-storage-1'));
+    harness.unmount();
+    save.resolve([{ ...row(), name: 'Keep this pending edit', updated_at: 'version-2' }]);
+    await harness.flush();
+  });
+}
 
 test('an uncertain write preserves a later deliberate revert whether it committed or not', () => {
   const base = { ...row(), hp_current: 20 };
