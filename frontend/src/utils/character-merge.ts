@@ -1,8 +1,13 @@
 import type { Character } from '@schemas/content';
 import { cloneDeep, isEqual, isPlainObject } from 'lodash-es';
-import { SAVED_CHARACTER_FIELDS } from './character-save-buffer';
+import { characterSaveValuesEqual, SAVED_CHARACTER_FIELDS } from './character-save-buffer';
 
 type CharacterMerge = { character: Character; conflicts: string[] };
+
+/** Ignore JSON serialization differences inside values, while preserving explicit null versus deletion. */
+function sameStoredValue(left: unknown, right: unknown): boolean {
+  return isEqual(left, right) || (left != null && right != null && characterSaveValuesEqual(left, right));
+}
 
 /** Preserve edits made after an uncertain write, including deliberate returns to the old value. */
 export function mergeCharacterSave(
@@ -68,8 +73,8 @@ export function mergeCharacterOnConflict(
   }
 
   const mergeValue = (ancestor: unknown, mine: unknown, theirs: unknown, path: string, depth: number): unknown => {
-    if (isEqual(mine, ancestor)) return cloneDeep(theirs);
-    if (isEqual(theirs, ancestor) || isEqual(mine, theirs)) return cloneDeep(mine);
+    if (sameStoredValue(mine, ancestor)) return cloneDeep(theirs);
+    if (sameStoredValue(theirs, ancestor) || sameStoredValue(mine, theirs)) return cloneDeep(mine);
     if (depth < 64 && isRecord(mine) && isRecord(theirs) && (isRecord(ancestor) || ancestor === undefined)) {
       const previous = isRecord(ancestor) ? ancestor : {};
       return Object.fromEntries(

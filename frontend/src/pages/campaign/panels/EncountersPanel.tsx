@@ -66,8 +66,7 @@ import { GiDiceTwentyFacesTwenty } from '@common/game-icons-inline';
 import { useAtom, useAtomValue } from 'jotai';
 import BlurBox from '@common/BlurBox';
 import ImprintButton from '@common/ImprintButton';
-import { CharacterSaveStatus } from '@common/CharacterSaveStatus';
-import { createEncounterCharacterWriter, type EncounterCharacterSave } from '@utils/encounter-character-writer';
+import { createEncounterCharacterWriter } from '@utils/encounter-character-writer';
 
 export default function EncountersPanel(props: {
   panelHeight: number;
@@ -824,8 +823,6 @@ function EncounterView(props: {
                   key={combatant._id}
                   combatant={combatant}
                   computed={getComputedData(combatant)}
-                  save={combatant.character ? props.characterWriter?.status(combatant.character) : undefined}
-                  retrySave={() => props.characterWriter?.retry(combatant.character)}
                   // Returning updated populated entity data, will trigger update of the combatant
                   updateEntity={(input) => updateCombatantEntity(combatant._id, input, combatant.data)}
                   // Update the initiative
@@ -875,8 +872,6 @@ function EncounterView(props: {
 }
 
 function CombatantCard(props: {
-  save?: EncounterCharacterSave;
-  retrySave: () => void;
   combatant: PopulatedCombatant;
   computed?: {
     id: number;
@@ -1043,21 +1038,6 @@ function CombatantCard(props: {
               </ActionIcon>
             )}
           </Group>
-
-          {props.save && props.save.phase !== 'saved' && (
-            <Box onClick={(event) => event.stopPropagation()}>
-              <CharacterSaveStatus
-                state={props.save.phase === 'forbidden' ? 'read-only' : props.save.phase}
-                draftStored={props.save.stored}
-                onRetry={props.retrySave}
-              />
-              {(props.save.phase === 'conflict' || props.save.phase === 'forbidden') && (
-                <Button component='a' href={`/sheet/${props.combatant.character}`} variant='subtle' size='compact-xs'>
-                  Review changes
-                </Button>
-              )}
-            </Box>
-          )}
 
           {props.computed && (
             <Group gap={5} wrap='nowrap'>

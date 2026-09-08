@@ -70,7 +70,14 @@ describe('Campaign encounter synchronization', () => {
       const previousPolls = campaignPolls;
       cy.wrap(null, { timeout: 15000 }).should(() => expect(campaignPolls).to.be.at.least(previousPolls + 2));
     });
-    cy.contains('Not saved: retrying automatically').should('not.exist');
+    // A campaign poll is independent of the writer's reconciliation read. Wait for
+    // acknowledgement to retire the draft before expecting its error toast to clear.
+    cy.window({ timeout: 15000 }).should((win) => {
+      expect(
+        Object.keys(win.localStorage).filter((key) => key.startsWith(`autosave-character-${fixture!.characterId}-`))
+      ).to.be.empty;
+    });
+    cy.contains('Changes not saved').should('not.exist');
     cy.then(() => expect(writes, 'accepted snapshot acknowledged by a read, without replay').to.eq(1));
     cy.reload();
     cy.contains('button[role="tab"]', /^Encounters$/, { timeout: 30000 }).click();
@@ -103,8 +110,8 @@ describe('Campaign encounter synchronization', () => {
     cy.wrap(null).should(() => expect(releaseSave).to.be.a('function'));
     cy.task('campaignFixture:playerUpdate', { key: fixture!.key, hp: 19 }, { log: false }).then(() => releaseSave!());
     cy.wait('@heldDrainedSave').its('response.body.data.__conflict').should('eq', true);
-    cy.contains('Saving paused: resolve conflicting edits', { timeout: 30000 }).should('be.visible');
-    cy.contains('Review changes').should('be.visible');
+    cy.contains('Conflicting character edits', { timeout: 30000 }).should('be.visible');
+    cy.contains('Open character').should('be.visible');
     cy.get('input[placeholder="HP"]').should('have.value', '19');
     cy.contains('Drained').should('be.visible');
     readPlayer().then((character) => {
@@ -123,6 +130,27 @@ describe('Campaign encounter synchronization', () => {
     });
     cy.then(() => expect(writes).to.eq(1));
     cy.screenshot('campaign-drained-player-damage-conflict');
+  });
+
+  it('replaces a failed-save toast when retry discovers conflicting player damage', () => {
+    let writes = 0;
+    cy.intercept('POST', '**/functions/v1/update-character', (request) => {
+      if (request.body.id !== fixture!.characterId) return;
+      writes += 1;
+      request.alias = 'failedDamageSave';
+      request.reply({ statusCode: 503, body: { status: 'error', message: 'Simulated weak connection' } });
+    });
+    cy.get('input[placeholder="HP"]').clear().type('16{enter}');
+    cy.wait('@failedDamageSave');
+    cy.contains('Changes not saved', { timeout: 15000 }).should('be.visible');
+    cy.task('campaignFixture:playerUpdate', { key: fixture!.key, hp: 12 }, { log: false });
+    cy.window().then((win) => win.dispatchEvent(new Event('online')));
+    cy.contains('Conflicting character edits', { timeout: 15000 }).should('be.visible');
+    cy.contains('Open character').should('be.visible');
+    cy.contains('Changes not saved').should('not.exist');
+    cy.get('input[placeholder="HP"]').should('have.value', '16');
+    readPlayer().its('hp_current').should('eq', 12);
+    cy.then(() => expect(writes, 'conflicting damage must not be retried as a write').to.eq(1));
   });
 
   it('keeps typed HP through fresh player polls, preserves player details, and sends one Enter/blur write', () => {
@@ -174,7 +202,7 @@ describe('Campaign encounter synchronization', () => {
       expect(response?.body.status).to.eq('success');
     });
     cy.get('input[placeholder="HP"]').should('have.value', '17');
-    cy.contains('Saving paused: resolve conflicting edits').should('not.exist');
+    cy.contains('Conflicting character edits').should('not.exist');
     readPlayer().then((character) => {
       expect(character.hp_current).to.eq(17);
       expect(character.details.conditions[0].name).to.eq('Drained');
@@ -192,16 +220,14 @@ describe('Campaign encounter synchronization', () => {
     });
     cy.get('input[placeholder="HP"]').clear().type('16{enter}');
     cy.wait('@blockedHealthSave');
-    cy.contains('Not saved: retrying automatically', { timeout: 15000 }).should('be.visible');
+    cy.contains('Changes not saved', { timeout: 15000 }).should('be.visible');
     addDrained();
     cy.get('input[placeholder="HP"]').should('have.value', '15');
     readPlayer().its('hp_current').should('eq', 20);
-    cy.contains('button', 'Retry now', { timeout: 15000 })
-      .should('be.visible')
-      .then(($button) => {
-        disrupted = false;
-        $button[0].click();
-      });
+    cy.window().then((win) => {
+      disrupted = false;
+      win.dispatchEvent(new Event('online'));
+    });
     cy.wait('@combinedHealthSave', { timeout: 15000 }).then(({ response }) => {
       expect(response?.body.status).to.eq('success');
       expect(response?.body.data[0].hp_current).to.eq(15);
@@ -210,7 +236,7 @@ describe('Campaign encounter synchronization', () => {
       expect(character.hp_current).to.eq(15);
       expect(character.details.conditions[0].name).to.eq('Drained');
     });
-    cy.contains('Not saved: retrying automatically').should('not.exist');
+    cy.contains('Changes not saved').should('not.exist');
   });
 
   it('retains unsynced GM HP through failed polls and mobile layout changes, then retries successfully', () => {
@@ -224,7 +250,7 @@ describe('Campaign encounter synchronization', () => {
     });
     cy.get('input[placeholder="HP"]').clear().should('have.value', '').type('16{enter}');
     cy.wait('@failedGmSave');
-    cy.contains('Not saved: retrying automatically', { timeout: 15000 }).should('be.visible');
+    cy.contains('Changes not saved', { timeout: 15000 }).should('be.visible');
     cy.then(() => {
       failPolls = true;
     });
@@ -237,22 +263,18 @@ describe('Campaign encounter synchronization', () => {
     cy.viewport(390, 844);
     cy.get('button[aria-label="Panel Grid"]').click();
     cy.contains('button', /^Encounters$/).click();
-    cy.contains('Not saved: retrying automatically', { timeout: 10000 }).should('be.visible');
-    cy.contains('button', 'Retry now').scrollIntoView();
+    cy.contains('Changes not saved', { timeout: 10000 }).should('be.visible');
     cy.document().should((document) => {
       expect(document.documentElement.scrollWidth).to.be.at.most(document.documentElement.clientWidth);
     });
     cy.screenshot('campaign-gm-unsynced-mobile');
-    cy.contains('button', 'Retry now')
-      .should('be.visible')
-      .then(($button) => {
-        // Restore transport and click in the same turn, before an automatic retry can remove the control.
-        disrupted = false;
-        failPolls = false;
-        $button[0].click();
-      });
+    cy.window().then((win) => {
+      disrupted = false;
+      failPolls = false;
+      win.dispatchEvent(new Event('online'));
+    });
     cy.wait('@recoveredGmSave', { timeout: 15000 }).its('response.body.status').should('eq', 'success');
-    cy.contains('Not saved: retrying automatically').should('not.exist');
+    cy.contains('Changes not saved').should('not.exist');
     readPlayer().its('hp_current').should('eq', 16);
     cy.viewport(1280, 900);
     cy.get('input[placeholder="HP"]', { timeout: 10000 }).should('have.value', '16');
