@@ -1,0 +1,3866 @@
+[
+  {
+    "id": "overview",
+    "width": 430,
+    "height": 844,
+    "controls": [
+      {
+        "label": "",
+        "role": "button",
+        "x": 16,
+        "y": 10.5,
+        "width": 28,
+        "height": 28
+      },
+      {
+        "label": "Search everything\n\n⌘ + K",
+        "role": "button",
+        "x": -426,
+        "y": 16,
+        "width": 275,
+        "height": 32
+      },
+      {
+        "label": "Sign in / Register",
+        "role": "button",
+        "x": -426,
+        "y": 53,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Community",
+        "role": "a",
+        "x": -426,
+        "y": 95.6953125,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Support",
+        "role": "a",
+        "x": -426,
+        "y": 132.390625,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Legacy Site",
+        "role": "a",
+        "x": -426,
+        "y": 169.0859375,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Awakened Animal",
+        "role": "button",
+        "x": 117,
+        "y": 106.8984375,
+        "width": 147.5390625,
+        "height": 22
+      },
+      {
+        "label": "Chatty",
+        "role": "button",
+        "x": 117,
+        "y": 131.8984375,
+        "width": 77.4140625,
+        "height": 22
+      },
+      {
+        "label": "Oracle",
+        "role": "button",
+        "x": 117,
+        "y": 156.8984375,
+        "width": 76.671875,
+        "height": 22
+      },
+      {
+        "label": "Edit",
+        "role": "a",
+        "x": 323,
+        "y": 82,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "Rest",
+        "role": "button",
+        "x": 323,
+        "y": 109,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "XP",
+        "role": "input",
+        "x": 323,
+        "y": 159.59375,
+        "width": 80,
+        "height": 20
+      },
+      {
+        "label": "33",
+        "role": "a",
+        "x": 133.5703125,
+        "y": 244.9921875,
+        "width": 20.21875,
+        "height": 22
+      },
+      {
+        "label": "Resistances & Weaknesses",
+        "role": "button",
+        "x": 127.578125,
+        "y": 281.390625,
+        "width": 174.8359375,
+        "height": 22
+      },
+      {
+        "label": "Add Condition",
+        "role": "button",
+        "x": 163.640625,
+        "y": 333.7890625,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 326,
+        "y": 370.1875,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Hero Point, Full",
+        "role": "button",
+        "x": 326,
+        "y": 372.7890625,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 326,
+        "y": 370.1875,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Hero Point, Full",
+        "role": "button",
+        "x": 326,
+        "y": 372.7890625,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 344,
+        "y": 370.1875,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Hero Point, Empty",
+        "role": "button",
+        "x": 344,
+        "y": 372.7890625,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 362,
+        "y": 370.1875,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Hero Point, Empty",
+        "role": "button",
+        "x": 362,
+        "y": 372.7890625,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "Strength",
+        "role": "button",
+        "x": 85.609375,
+        "y": 457.390625,
+        "width": 88.390625,
+        "height": 22
+      },
+      {
+        "label": "+1",
+        "role": "button",
+        "x": 174,
+        "y": 457.390625,
+        "width": 35,
+        "height": 22
+      },
+      {
+        "label": "Intelligence",
+        "role": "button",
+        "x": 221,
+        "y": 457.390625,
+        "width": 88.390625,
+        "height": 22
+      },
+      {
+        "label": "+1",
+        "role": "button",
+        "x": 309.390625,
+        "y": 457.390625,
+        "width": 35,
+        "height": 22
+      },
+      {
+        "label": "Dexterity",
+        "role": "button",
+        "x": 85.609375,
+        "y": 487.390625,
+        "width": 88.390625,
+        "height": 22
+      },
+      {
+        "label": "+1",
+        "role": "button",
+        "x": 174,
+        "y": 487.390625,
+        "width": 35,
+        "height": 22
+      },
+      {
+        "label": "Wisdom",
+        "role": "button",
+        "x": 221,
+        "y": 487.390625,
+        "width": 88.390625,
+        "height": 22
+      },
+      {
+        "label": "+1",
+        "role": "button",
+        "x": 309.390625,
+        "y": 487.390625,
+        "width": 35,
+        "height": 22
+      },
+      {
+        "label": "Constitution",
+        "role": "button",
+        "x": 85.609375,
+        "y": 517.390625,
+        "width": 88.390625,
+        "height": 22
+      },
+      {
+        "label": "+1",
+        "role": "button",
+        "x": 174,
+        "y": 517.390625,
+        "width": 35,
+        "height": 22
+      },
+      {
+        "label": "Charisma",
+        "role": "button",
+        "x": 221,
+        "y": 517.390625,
+        "width": 88.390625,
+        "height": 22
+      },
+      {
+        "label": "+4",
+        "role": "button",
+        "x": 309.390625,
+        "y": 517.390625,
+        "width": 35,
+        "height": 22
+      },
+      {
+        "label": "Fortitude",
+        "role": "button",
+        "x": 277.7890625,
+        "y": 576.2890625,
+        "width": 70.2109375,
+        "height": 22
+      },
+      {
+        "label": "+6\n\nT",
+        "role": "button",
+        "x": 348,
+        "y": 576.2890625,
+        "width": 55,
+        "height": 22
+      },
+      {
+        "label": "Reflex",
+        "role": "button",
+        "x": 277.7890625,
+        "y": 606.2890625,
+        "width": 70.2109375,
+        "height": 22
+      },
+      {
+        "label": "+6\n\nT",
+        "role": "button",
+        "x": 348,
+        "y": 606.2890625,
+        "width": 55,
+        "height": 22
+      },
+      {
+        "label": "Will",
+        "role": "button",
+        "x": 277.7890625,
+        "y": 636.2890625,
+        "width": 70.2109375,
+        "height": 22
+      },
+      {
+        "label": "+8\n\nE",
+        "role": "button",
+        "x": 348,
+        "y": 636.2890625,
+        "width": 55,
+        "height": 22
+      },
+      {
+        "label": "Panel Grid",
+        "role": "button",
+        "x": 355,
+        "y": 769,
+        "width": 55,
+        "height": 55
+      },
+      {
+        "label": "Modes",
+        "role": "button",
+        "x": 20,
+        "y": 727.609375,
+        "width": 40,
+        "height": 40
+      },
+      {
+        "label": "Campaigns View",
+        "role": "button",
+        "x": 20,
+        "y": 784,
+        "width": 40,
+        "height": 40
+      }
+    ],
+    "text": "Search everything\n\n⌘ + K\n\nSign in / Register\nCommunity\nSupport\nLegacy Site\n\nKip\n\nAwakened Animal\nChatty\nOracle\nEdit\nRest\n\nLvl. 3\n\nHit Points\n\n11\n\n/\n\n33\n\nTemp. HP\n\n—\n\nResistances & Weaknesses\n\nConditions\n\nNone active\n\nHero Points\n\nStrength\n\n+1\n\nIntelligence\n\n+1\n\nDexterity\n\n+1\n\nWisdom\n\n+1\n\nConstitution\n\n+1\n\nCharisma\n\n+4\n\n17\n\nAC\n\nFortitude\n\n+6\n\nT\n\nReflex\n\n+6\n\nT\n\nWill\n\n+8\n\nE\n\nPerception\n\n+6\n\nNormal Vision\n\nSpeed\n\n20 ft.\n\nAnd Others\n\nClass DC\n\n19"
+  },
+  {
+    "id": "overview-bottom",
+    "width": 430,
+    "height": 844,
+    "controls": [
+      {
+        "label": "Search everything\n\n⌘ + K",
+        "role": "button",
+        "x": -426,
+        "y": 16,
+        "width": 275,
+        "height": 32
+      },
+      {
+        "label": "Sign in / Register",
+        "role": "button",
+        "x": -426,
+        "y": 53,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Community",
+        "role": "a",
+        "x": -426,
+        "y": 95.6953125,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Support",
+        "role": "a",
+        "x": -426,
+        "y": 132.390625,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Legacy Site",
+        "role": "a",
+        "x": -426,
+        "y": 169.0859375,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Awakened Animal",
+        "role": "button",
+        "x": 117,
+        "y": 44.8984375,
+        "width": 147.5390625,
+        "height": 22
+      },
+      {
+        "label": "Chatty",
+        "role": "button",
+        "x": 117,
+        "y": 69.8984375,
+        "width": 77.4140625,
+        "height": 22
+      },
+      {
+        "label": "Oracle",
+        "role": "button",
+        "x": 117,
+        "y": 94.8984375,
+        "width": 76.671875,
+        "height": 22
+      },
+      {
+        "label": "Edit",
+        "role": "a",
+        "x": 323,
+        "y": 20,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "Rest",
+        "role": "button",
+        "x": 323,
+        "y": 47,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "XP",
+        "role": "input",
+        "x": 323,
+        "y": 97.59375,
+        "width": 80,
+        "height": 20
+      },
+      {
+        "label": "33",
+        "role": "a",
+        "x": 133.5703125,
+        "y": 182.9921875,
+        "width": 20.21875,
+        "height": 22
+      },
+      {
+        "label": "Resistances & Weaknesses",
+        "role": "button",
+        "x": 127.578125,
+        "y": 219.390625,
+        "width": 174.8359375,
+        "height": 22
+      },
+      {
+        "label": "Add Condition",
+        "role": "button",
+        "x": 163.640625,
+        "y": 271.7890625,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 326,
+        "y": 308.1875,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Hero Point, Full",
+        "role": "button",
+        "x": 326,
+        "y": 310.7890625,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 326,
+        "y": 308.1875,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Hero Point, Full",
+        "role": "button",
+        "x": 326,
+        "y": 310.7890625,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 344,
+        "y": 308.1875,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Hero Point, Empty",
+        "role": "button",
+        "x": 344,
+        "y": 310.7890625,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 362,
+        "y": 308.1875,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Hero Point, Empty",
+        "role": "button",
+        "x": 362,
+        "y": 310.7890625,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "Strength",
+        "role": "button",
+        "x": 85.609375,
+        "y": 395.390625,
+        "width": 88.390625,
+        "height": 22
+      },
+      {
+        "label": "+1",
+        "role": "button",
+        "x": 174,
+        "y": 395.390625,
+        "width": 35,
+        "height": 22
+      },
+      {
+        "label": "Intelligence",
+        "role": "button",
+        "x": 221,
+        "y": 395.390625,
+        "width": 88.390625,
+        "height": 22
+      },
+      {
+        "label": "+1",
+        "role": "button",
+        "x": 309.390625,
+        "y": 395.390625,
+        "width": 35,
+        "height": 22
+      },
+      {
+        "label": "Dexterity",
+        "role": "button",
+        "x": 85.609375,
+        "y": 425.390625,
+        "width": 88.390625,
+        "height": 22
+      },
+      {
+        "label": "+1",
+        "role": "button",
+        "x": 174,
+        "y": 425.390625,
+        "width": 35,
+        "height": 22
+      },
+      {
+        "label": "Wisdom",
+        "role": "button",
+        "x": 221,
+        "y": 425.390625,
+        "width": 88.390625,
+        "height": 22
+      },
+      {
+        "label": "+1",
+        "role": "button",
+        "x": 309.390625,
+        "y": 425.390625,
+        "width": 35,
+        "height": 22
+      },
+      {
+        "label": "Constitution",
+        "role": "button",
+        "x": 85.609375,
+        "y": 455.390625,
+        "width": 88.390625,
+        "height": 22
+      },
+      {
+        "label": "+1",
+        "role": "button",
+        "x": 174,
+        "y": 455.390625,
+        "width": 35,
+        "height": 22
+      },
+      {
+        "label": "Charisma",
+        "role": "button",
+        "x": 221,
+        "y": 455.390625,
+        "width": 88.390625,
+        "height": 22
+      },
+      {
+        "label": "+4",
+        "role": "button",
+        "x": 309.390625,
+        "y": 455.390625,
+        "width": 35,
+        "height": 22
+      },
+      {
+        "label": "Fortitude",
+        "role": "button",
+        "x": 277.7890625,
+        "y": 514.2890625,
+        "width": 70.2109375,
+        "height": 22
+      },
+      {
+        "label": "+6\n\nT",
+        "role": "button",
+        "x": 348,
+        "y": 514.2890625,
+        "width": 55,
+        "height": 22
+      },
+      {
+        "label": "Reflex",
+        "role": "button",
+        "x": 277.7890625,
+        "y": 544.2890625,
+        "width": 70.2109375,
+        "height": 22
+      },
+      {
+        "label": "+6\n\nT",
+        "role": "button",
+        "x": 348,
+        "y": 544.2890625,
+        "width": 55,
+        "height": 22
+      },
+      {
+        "label": "Will",
+        "role": "button",
+        "x": 277.7890625,
+        "y": 574.2890625,
+        "width": 70.2109375,
+        "height": 22
+      },
+      {
+        "label": "+8\n\nE",
+        "role": "button",
+        "x": 348,
+        "y": 574.2890625,
+        "width": 55,
+        "height": 22
+      },
+      {
+        "label": "Panel Grid",
+        "role": "button",
+        "x": 355,
+        "y": 769,
+        "width": 55,
+        "height": 55
+      },
+      {
+        "label": "Modes",
+        "role": "button",
+        "x": 20,
+        "y": 727.609375,
+        "width": 40,
+        "height": 40
+      },
+      {
+        "label": "Campaigns View",
+        "role": "button",
+        "x": 20,
+        "y": 784,
+        "width": 40,
+        "height": 40
+      }
+    ],
+    "text": "Search everything\n\n⌘ + K\n\nSign in / Register\nCommunity\nSupport\nLegacy Site\n\nKip\n\nAwakened Animal\nChatty\nOracle\nEdit\nRest\n\nLvl. 3\n\nHit Points\n\n11\n\n/\n\n33\n\nTemp. HP\n\n—\n\nResistances & Weaknesses\n\nConditions\n\nNone active\n\nHero Points\n\nStrength\n\n+1\n\nIntelligence\n\n+1\n\nDexterity\n\n+1\n\nWisdom\n\n+1\n\nConstitution\n\n+1\n\nCharisma\n\n+4\n\n17\n\nAC\n\nFortitude\n\n+6\n\nT\n\nReflex\n\n+6\n\nT\n\nWill\n\n+8\n\nE\n\nPerception\n\n+6\n\nNormal Vision\n\nSpeed\n\n20 ft.\n\nAnd Others\n\nClass DC\n\n19"
+  },
+  {
+    "id": "picker",
+    "width": 430,
+    "height": 844,
+    "controls": [
+      {
+        "label": "",
+        "role": "button",
+        "x": 16,
+        "y": 10.5,
+        "width": 28,
+        "height": 28
+      },
+      {
+        "label": "Search everything\n\n⌘ + K",
+        "role": "button",
+        "x": -426,
+        "y": 16,
+        "width": 275,
+        "height": 32
+      },
+      {
+        "label": "Sign in / Register",
+        "role": "button",
+        "x": -426,
+        "y": 53,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Community",
+        "role": "a",
+        "x": -426,
+        "y": 95.6953125,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Support",
+        "role": "a",
+        "x": -426,
+        "y": 132.390625,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Legacy Site",
+        "role": "a",
+        "x": -426,
+        "y": 169.0859375,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Awakened Animal",
+        "role": "button",
+        "x": 117,
+        "y": 106.8984375,
+        "width": 147.5390625,
+        "height": 22
+      },
+      {
+        "label": "Chatty",
+        "role": "button",
+        "x": 117,
+        "y": 131.8984375,
+        "width": 77.4140625,
+        "height": 22
+      },
+      {
+        "label": "Oracle",
+        "role": "button",
+        "x": 117,
+        "y": 156.8984375,
+        "width": 76.671875,
+        "height": 22
+      },
+      {
+        "label": "Edit",
+        "role": "a",
+        "x": 323,
+        "y": 82,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "Rest",
+        "role": "button",
+        "x": 323,
+        "y": 109,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "XP",
+        "role": "input",
+        "x": 323,
+        "y": 159.59375,
+        "width": 80,
+        "height": 20
+      },
+      {
+        "label": "33",
+        "role": "a",
+        "x": 133.5703125,
+        "y": 244.9921875,
+        "width": 20.21875,
+        "height": 22
+      },
+      {
+        "label": "Resistances & Weaknesses",
+        "role": "button",
+        "x": 127.578125,
+        "y": 281.390625,
+        "width": 174.8359375,
+        "height": 22
+      },
+      {
+        "label": "Add Condition",
+        "role": "button",
+        "x": 163.640625,
+        "y": 333.7890625,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 326,
+        "y": 370.1875,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Hero Point, Full",
+        "role": "button",
+        "x": 326,
+        "y": 372.7890625,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 326,
+        "y": 370.1875,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Hero Point, Full",
+        "role": "button",
+        "x": 326,
+        "y": 372.7890625,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 344,
+        "y": 370.1875,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Hero Point, Empty",
+        "role": "button",
+        "x": 344,
+        "y": 372.7890625,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 362,
+        "y": 370.1875,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Hero Point, Empty",
+        "role": "button",
+        "x": 362,
+        "y": 372.7890625,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "Strength",
+        "role": "button",
+        "x": 85.609375,
+        "y": 457.390625,
+        "width": 88.390625,
+        "height": 22
+      },
+      {
+        "label": "+1",
+        "role": "button",
+        "x": 174,
+        "y": 457.390625,
+        "width": 35,
+        "height": 22
+      },
+      {
+        "label": "Intelligence",
+        "role": "button",
+        "x": 221,
+        "y": 457.390625,
+        "width": 88.390625,
+        "height": 22
+      },
+      {
+        "label": "+1",
+        "role": "button",
+        "x": 309.390625,
+        "y": 457.390625,
+        "width": 35,
+        "height": 22
+      },
+      {
+        "label": "Dexterity",
+        "role": "button",
+        "x": 85.609375,
+        "y": 487.390625,
+        "width": 88.390625,
+        "height": 22
+      },
+      {
+        "label": "+1",
+        "role": "button",
+        "x": 174,
+        "y": 487.390625,
+        "width": 35,
+        "height": 22
+      },
+      {
+        "label": "Wisdom",
+        "role": "button",
+        "x": 221,
+        "y": 487.390625,
+        "width": 88.390625,
+        "height": 22
+      },
+      {
+        "label": "+1",
+        "role": "button",
+        "x": 309.390625,
+        "y": 487.390625,
+        "width": 35,
+        "height": 22
+      },
+      {
+        "label": "Constitution",
+        "role": "button",
+        "x": 85.609375,
+        "y": 517.390625,
+        "width": 88.390625,
+        "height": 22
+      },
+      {
+        "label": "+1",
+        "role": "button",
+        "x": 174,
+        "y": 517.390625,
+        "width": 35,
+        "height": 22
+      },
+      {
+        "label": "Charisma",
+        "role": "button",
+        "x": 221,
+        "y": 517.390625,
+        "width": 88.390625,
+        "height": 22
+      },
+      {
+        "label": "+4",
+        "role": "button",
+        "x": 309.390625,
+        "y": 517.390625,
+        "width": 35,
+        "height": 22
+      },
+      {
+        "label": "Fortitude",
+        "role": "button",
+        "x": 277.7890625,
+        "y": 576.2890625,
+        "width": 70.2109375,
+        "height": 22
+      },
+      {
+        "label": "+6\n\nT",
+        "role": "button",
+        "x": 348,
+        "y": 576.2890625,
+        "width": 55,
+        "height": 22
+      },
+      {
+        "label": "Reflex",
+        "role": "button",
+        "x": 277.7890625,
+        "y": 606.2890625,
+        "width": 70.2109375,
+        "height": 22
+      },
+      {
+        "label": "+6\n\nT",
+        "role": "button",
+        "x": 348,
+        "y": 606.2890625,
+        "width": 55,
+        "height": 22
+      },
+      {
+        "label": "Will",
+        "role": "button",
+        "x": 277.7890625,
+        "y": 636.2890625,
+        "width": 70.2109375,
+        "height": 22
+      },
+      {
+        "label": "+8\n\nE",
+        "role": "button",
+        "x": 348,
+        "y": 636.2890625,
+        "width": 55,
+        "height": 22
+      },
+      {
+        "label": "Panel Grid",
+        "role": "button",
+        "x": 355,
+        "y": 769,
+        "width": 55,
+        "height": 55
+      },
+      {
+        "label": "Modes",
+        "role": "button",
+        "x": 20,
+        "y": 727.609375,
+        "width": 40,
+        "height": 40
+      },
+      {
+        "label": "Campaigns View",
+        "role": "button",
+        "x": 20,
+        "y": 784,
+        "width": 40,
+        "height": 40
+      },
+      {
+        "label": "Health, Attributes, Saves",
+        "role": "button",
+        "x": 13,
+        "y": 500.5,
+        "width": 404,
+        "height": 36
+      },
+      {
+        "label": "Skills & Actions",
+        "role": "button",
+        "x": 13,
+        "y": 552.5,
+        "width": 194,
+        "height": 36
+      },
+      {
+        "label": "Feats & Features",
+        "role": "button",
+        "x": 223,
+        "y": 552.5,
+        "width": 194,
+        "height": 36
+      },
+      {
+        "label": "Inventory",
+        "role": "button",
+        "x": 13,
+        "y": 604.5,
+        "width": 194,
+        "height": 36
+      },
+      {
+        "label": "Spells",
+        "role": "button",
+        "x": 223,
+        "y": 604.5,
+        "width": 194,
+        "height": 36
+      },
+      {
+        "label": "Notes",
+        "role": "button",
+        "x": 13,
+        "y": 656.5,
+        "width": 194,
+        "height": 36
+      },
+      {
+        "label": "Details",
+        "role": "button",
+        "x": 223,
+        "y": 656.5,
+        "width": 194,
+        "height": 36
+      },
+      {
+        "label": "Companions",
+        "role": "button",
+        "x": 13,
+        "y": 708.5,
+        "width": 194,
+        "height": 36
+      },
+      {
+        "label": "Extras",
+        "role": "button",
+        "x": 223,
+        "y": 708.5,
+        "width": 194,
+        "height": 36
+      }
+    ],
+    "text": "Search everything\n\n⌘ + K\n\nSign in / Register\nCommunity\nSupport\nLegacy Site\n\nKip\n\nAwakened Animal\nChatty\nOracle\nEdit\nRest\n\nLvl. 3\n\nHit Points\n\n11\n\n/\n\n33\n\nTemp. HP\n\n—\n\nResistances & Weaknesses\n\nConditions\n\nNone active\n\nHero Points\n\nStrength\n\n+1\n\nIntelligence\n\n+1\n\nDexterity\n\n+1\n\nWisdom\n\n+1\n\nConstitution\n\n+1\n\nCharisma\n\n+4\n\n17\n\nAC\n\nFortitude\n\n+6\n\nT\n\nReflex\n\n+6\n\nT\n\nWill\n\n+8\n\nE\n\nPerception\n\n+6\n\nNormal Vision\n\nSpeed\n\n20 ft.\n\nAnd Others\n\nClass DC\n\n19\n\nHealth, Attributes, Saves\nSkills & Actions\nFeats & Features\nInventory\nSpells\nNotes\nDetails\nCompanions\nExtras"
+  },
+  {
+    "id": "skills",
+    "width": 430,
+    "height": 844,
+    "controls": [
+      {
+        "label": "",
+        "role": "button",
+        "x": 16,
+        "y": 10.5,
+        "width": 28,
+        "height": 28
+      },
+      {
+        "label": "Search everything\n\n⌘ + K",
+        "role": "button",
+        "x": -426,
+        "y": 16,
+        "width": 275,
+        "height": 32
+      },
+      {
+        "label": "Sign in / Register",
+        "role": "button",
+        "x": -426,
+        "y": 53,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Community",
+        "role": "a",
+        "x": -426,
+        "y": 95.6953125,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Support",
+        "role": "a",
+        "x": -426,
+        "y": 132.390625,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Legacy Site",
+        "role": "a",
+        "x": -426,
+        "y": 169.0859375,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Awakened Animal",
+        "role": "button",
+        "x": 117,
+        "y": 106.8984375,
+        "width": 147.5390625,
+        "height": 22
+      },
+      {
+        "label": "Chatty",
+        "role": "button",
+        "x": 117,
+        "y": 131.8984375,
+        "width": 77.4140625,
+        "height": 22
+      },
+      {
+        "label": "Oracle",
+        "role": "button",
+        "x": 117,
+        "y": 156.8984375,
+        "width": 76.671875,
+        "height": 22
+      },
+      {
+        "label": "Edit",
+        "role": "a",
+        "x": 323,
+        "y": 82,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "Rest",
+        "role": "button",
+        "x": 323,
+        "y": 109,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "XP",
+        "role": "input",
+        "x": 323,
+        "y": 159.59375,
+        "width": 80,
+        "height": 20
+      },
+      {
+        "label": "Skills",
+        "role": "tab",
+        "x": 29,
+        "y": 208.59375,
+        "width": 186,
+        "height": 36
+      },
+      {
+        "label": "Actions / Abilities",
+        "role": "tab",
+        "x": 215,
+        "y": 208.59375,
+        "width": 186,
+        "height": 36
+      },
+      {
+        "label": "Search skills",
+        "role": "input",
+        "x": 29,
+        "y": 249.59375,
+        "width": 372,
+        "height": 36
+      },
+      {
+        "label": "Acrobatics\n\n+6\n\nT",
+        "role": "button",
+        "x": 29,
+        "y": 290.59375,
+        "width": 372,
+        "height": 34
+      },
+      {
+        "label": "Arcana\n\n+1\n\nU",
+        "role": "button",
+        "x": 29,
+        "y": 329.59375,
+        "width": 372,
+        "height": 34
+      },
+      {
+        "label": "Athletics\n\n+1\n\nU",
+        "role": "button",
+        "x": 29,
+        "y": 368.59375,
+        "width": 372,
+        "height": 34
+      },
+      {
+        "label": "Computers\n\n+1\n\nU",
+        "role": "button",
+        "x": 29,
+        "y": 407.59375,
+        "width": 372,
+        "height": 34
+      },
+      {
+        "label": "Crafting\n\n+1\n\nU",
+        "role": "button",
+        "x": 29,
+        "y": 446.59375,
+        "width": 372,
+        "height": 34
+      },
+      {
+        "label": "Deception\n\n+4\n\nU",
+        "role": "button",
+        "x": 29,
+        "y": 485.59375,
+        "width": 372,
+        "height": 34
+      },
+      {
+        "label": "Diplomacy\n\n+9\n\nT",
+        "role": "button",
+        "x": 29,
+        "y": 524.59375,
+        "width": 372,
+        "height": 34
+      },
+      {
+        "label": "Intimidation\n\n+9\n\nT",
+        "role": "button",
+        "x": 29,
+        "y": 563.59375,
+        "width": 372,
+        "height": 34
+      },
+      {
+        "label": "Ferret Lore\n\n+6\n\nT",
+        "role": "button",
+        "x": 29,
+        "y": 602.59375,
+        "width": 372,
+        "height": 34
+      },
+      {
+        "label": "Technology Lore\n\n+6\n\nT",
+        "role": "button",
+        "x": 29,
+        "y": 641.59375,
+        "width": 372,
+        "height": 34
+      },
+      {
+        "label": "Medicine\n\n+1\n\nU",
+        "role": "button",
+        "x": 29,
+        "y": 680.59375,
+        "width": 372,
+        "height": 34
+      },
+      {
+        "label": "Nature\n\n+1\n\nU",
+        "role": "button",
+        "x": 29,
+        "y": 719.59375,
+        "width": 372,
+        "height": 34
+      },
+      {
+        "label": "Occultism\n\n+8\n\nE",
+        "role": "button",
+        "x": 29,
+        "y": 758.59375,
+        "width": 372,
+        "height": 34
+      },
+      {
+        "label": "Performance\n\n+9\n\n*\n\nT",
+        "role": "button",
+        "x": 29,
+        "y": 797.59375,
+        "width": 372,
+        "height": 34
+      },
+      {
+        "label": "Piloting\n\n+1\n\nU",
+        "role": "button",
+        "x": 29,
+        "y": 836.59375,
+        "width": 372,
+        "height": 34
+      },
+      {
+        "label": "Panel Grid",
+        "role": "button",
+        "x": 355,
+        "y": 769,
+        "width": 55,
+        "height": 55
+      },
+      {
+        "label": "Modes",
+        "role": "button",
+        "x": 20,
+        "y": 727.609375,
+        "width": 40,
+        "height": 40
+      },
+      {
+        "label": "Campaigns View",
+        "role": "button",
+        "x": 20,
+        "y": 784,
+        "width": 40,
+        "height": 40
+      }
+    ],
+    "text": "Search everything\n\n⌘ + K\n\nSign in / Register\nCommunity\nSupport\nLegacy Site\n\nKip\n\nAwakened Animal\nChatty\nOracle\nEdit\nRest\n\nLvl. 3\n\nSkills\nActions / Abilities\n\nAcrobatics\n\n+6\n\nT\n\nArcana\n\n+1\n\nU\n\nAthletics\n\n+1\n\nU\n\nComputers\n\n+1\n\nU\n\nCrafting\n\n+1\n\nU\n\nDeception\n\n+4\n\nU\n\nDiplomacy\n\n+9\n\nT\n\nIntimidation\n\n+9\n\nT\n\nFerret Lore\n\n+6\n\nT\n\nTechnology Lore\n\n+6\n\nT\n\nMedicine\n\n+1\n\nU\n\nNature\n\n+1\n\nU\n\nOccultism\n\n+8\n\nE\n\nPerformance\n\n+9\n\n*\n\nT\n\nPiloting\n\n+1\n\nU\n\nReligion\n\n+6\n\nT\n\nSociety\n\n+6\n\n*\n\nT\n\nStealth\n\n+1\n\nU\n\nSurvival\n\n+6\n\nT\n\nThievery\n\n+1\n\nU"
+  },
+  {
+    "id": "actions",
+    "width": 430,
+    "height": 844,
+    "controls": [
+      {
+        "label": "",
+        "role": "button",
+        "x": 16,
+        "y": 10.5,
+        "width": 28,
+        "height": 28
+      },
+      {
+        "label": "Search everything\n\n⌘ + K",
+        "role": "button",
+        "x": -426,
+        "y": 16,
+        "width": 275,
+        "height": 32
+      },
+      {
+        "label": "Sign in / Register",
+        "role": "button",
+        "x": -426,
+        "y": 53,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Community",
+        "role": "a",
+        "x": -426,
+        "y": 95.6953125,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Support",
+        "role": "a",
+        "x": -426,
+        "y": 132.390625,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Legacy Site",
+        "role": "a",
+        "x": -426,
+        "y": 169.0859375,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Awakened Animal",
+        "role": "button",
+        "x": 117,
+        "y": 106.8984375,
+        "width": 147.5390625,
+        "height": 22
+      },
+      {
+        "label": "Chatty",
+        "role": "button",
+        "x": 117,
+        "y": 131.8984375,
+        "width": 77.4140625,
+        "height": 22
+      },
+      {
+        "label": "Oracle",
+        "role": "button",
+        "x": 117,
+        "y": 156.8984375,
+        "width": 76.671875,
+        "height": 22
+      },
+      {
+        "label": "Edit",
+        "role": "a",
+        "x": 323,
+        "y": 82,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "Rest",
+        "role": "button",
+        "x": 323,
+        "y": 109,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "XP",
+        "role": "input",
+        "x": 323,
+        "y": 159.59375,
+        "width": 80,
+        "height": 20
+      },
+      {
+        "label": "Skills",
+        "role": "tab",
+        "x": 29,
+        "y": 208.59375,
+        "width": 186,
+        "height": 36
+      },
+      {
+        "label": "Actions / Abilities",
+        "role": "tab",
+        "x": 215,
+        "y": 208.59375,
+        "width": 186,
+        "height": 36
+      },
+      {
+        "label": "Search actions & activities",
+        "role": "input",
+        "x": 29,
+        "y": 249.59375,
+        "width": 127,
+        "height": 36
+      },
+      {
+        "label": "Filter One Action",
+        "role": "button",
+        "x": 172,
+        "y": 250.59375,
+        "width": 34,
+        "height": 34
+      },
+      {
+        "label": "Filter One Action",
+        "role": "button",
+        "x": 211,
+        "y": 250.59375,
+        "width": 34,
+        "height": 34
+      },
+      {
+        "label": "Filter Two Actions",
+        "role": "button",
+        "x": 250,
+        "y": 250.59375,
+        "width": 34,
+        "height": 34
+      },
+      {
+        "label": "Filter Three Actions",
+        "role": "button",
+        "x": 289,
+        "y": 250.59375,
+        "width": 34,
+        "height": 34
+      },
+      {
+        "label": "Filter Free Action",
+        "role": "button",
+        "x": 328,
+        "y": 250.59375,
+        "width": 34,
+        "height": 34
+      },
+      {
+        "label": "Filter Reaction",
+        "role": "button",
+        "x": 367,
+        "y": 250.59375,
+        "width": 34,
+        "height": 34
+      },
+      {
+        "label": "Weapon Attacks\n\n4",
+        "role": "button",
+        "x": 29,
+        "y": 290.59375,
+        "width": 372,
+        "height": 31.6953125
+      },
+      {
+        "label": "Awakened Animal Claw\n\n+6\n1d4 + 1 S",
+        "role": "button",
+        "x": 45,
+        "y": 327.2890625,
+        "width": 340,
+        "height": 34
+      },
+      {
+        "label": "Bastard Sword\n\n+1\n1d8 + 1 S",
+        "role": "button",
+        "x": 45,
+        "y": 366.2890625,
+        "width": 340,
+        "height": 34
+      },
+      {
+        "label": "Club\n\n+6\n1d6 + 1 B",
+        "role": "button",
+        "x": 45,
+        "y": 405.2890625,
+        "width": 340,
+        "height": 34
+      },
+      {
+        "label": "Fist\n\n+6\n1d4 + 1 B",
+        "role": "button",
+        "x": 45,
+        "y": 444.2890625,
+        "width": 340,
+        "height": 34
+      },
+      {
+        "label": "Feats (with Actions)\n\n2",
+        "role": "button",
+        "x": 29,
+        "y": 499.2890625,
+        "width": 372,
+        "height": 31.6953125
+      },
+      {
+        "label": "Items (with Actions)\n\n1",
+        "role": "button",
+        "x": 29,
+        "y": 535.984375,
+        "width": 372,
+        "height": 31.6953125
+      },
+      {
+        "label": "Basic Actions\n\n22",
+        "role": "button",
+        "x": 29,
+        "y": 572.6796875,
+        "width": 372,
+        "height": 31.6953125
+      },
+      {
+        "label": "Skill Actions\n\n55",
+        "role": "button",
+        "x": 29,
+        "y": 609.375,
+        "width": 372,
+        "height": 31.6953125
+      },
+      {
+        "label": "Speciality Basics\n\n27",
+        "role": "button",
+        "x": 29,
+        "y": 646.0703125,
+        "width": 372,
+        "height": 31.6953125
+      },
+      {
+        "label": "Exploration Activities\n\n41",
+        "role": "button",
+        "x": 29,
+        "y": 682.765625,
+        "width": 372,
+        "height": 31.6953125
+      },
+      {
+        "label": "Downtime Activities\n\n8",
+        "role": "button",
+        "x": 29,
+        "y": 719.4609375,
+        "width": 372,
+        "height": 31.6953125
+      },
+      {
+        "label": "Panel Grid",
+        "role": "button",
+        "x": 355,
+        "y": 769,
+        "width": 55,
+        "height": 55
+      },
+      {
+        "label": "Modes",
+        "role": "button",
+        "x": 20,
+        "y": 727.609375,
+        "width": 40,
+        "height": 40
+      },
+      {
+        "label": "Campaigns View",
+        "role": "button",
+        "x": 20,
+        "y": 784,
+        "width": 40,
+        "height": 40
+      }
+    ],
+    "text": "Search everything\n\n⌘ + K\n\nSign in / Register\nCommunity\nSupport\nLegacy Site\n\nKip\n\nAwakened Animal\nChatty\nOracle\nEdit\nRest\n\nLvl. 3\n\nSkills\nActions / Abilities\n\nAll\n\n1\n\n2\n\n3\n\n4\n\n5\n\nWeapon Attacks\n\n4\n\nAwakened Animal Claw\n\n+6\n1d4 + 1 S\n\nBastard Sword\n\n+1\n1d8 + 1 S\n\nClub\n\n+6\n1d6 + 1 B\n\nFist\n\n+6\n1d4 + 1 B\n\nFeats (with Actions)\n\n2\n\nItems (with Actions)\n\n1\n\nBasic Actions\n\n22\n\nSkill Actions\n\n55\n\nSpeciality Basics\n\n27\n\nExploration Activities\n\n41\n\nDowntime Activities\n\n8"
+  },
+  {
+    "id": "feats",
+    "width": 430,
+    "height": 844,
+    "controls": [
+      {
+        "label": "",
+        "role": "button",
+        "x": 16,
+        "y": 10.5,
+        "width": 28,
+        "height": 28
+      },
+      {
+        "label": "Search everything\n\n⌘ + K",
+        "role": "button",
+        "x": -426,
+        "y": 16,
+        "width": 275,
+        "height": 32
+      },
+      {
+        "label": "Sign in / Register",
+        "role": "button",
+        "x": -426,
+        "y": 53,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Community",
+        "role": "a",
+        "x": -426,
+        "y": 95.6953125,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Support",
+        "role": "a",
+        "x": -426,
+        "y": 132.390625,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Legacy Site",
+        "role": "a",
+        "x": -426,
+        "y": 169.0859375,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Awakened Animal",
+        "role": "button",
+        "x": 117,
+        "y": 106.8984375,
+        "width": 147.5390625,
+        "height": 22
+      },
+      {
+        "label": "Chatty",
+        "role": "button",
+        "x": 117,
+        "y": 131.8984375,
+        "width": 77.4140625,
+        "height": 22
+      },
+      {
+        "label": "Oracle",
+        "role": "button",
+        "x": 117,
+        "y": 156.8984375,
+        "width": 76.671875,
+        "height": 22
+      },
+      {
+        "label": "Edit",
+        "role": "a",
+        "x": 323,
+        "y": 82,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "Rest",
+        "role": "button",
+        "x": 323,
+        "y": 109,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "XP",
+        "role": "input",
+        "x": 323,
+        "y": 159.59375,
+        "width": 80,
+        "height": 20
+      },
+      {
+        "label": "Search feats & features",
+        "role": "input",
+        "x": 29,
+        "y": 208.59375,
+        "width": 209.4375,
+        "height": 36
+      },
+      {
+        "label": "Feats",
+        "role": "label",
+        "x": 258.4375,
+        "y": 212.7421875,
+        "width": 57.6328125,
+        "height": 27.6953125
+      },
+      {
+        "label": "Features",
+        "role": "label",
+        "x": 316.0703125,
+        "y": 212.7421875,
+        "width": 80.9296875,
+        "height": 27.6953125
+      },
+      {
+        "label": "Class Feats",
+        "role": "button",
+        "x": 30,
+        "y": 255.59375,
+        "width": 370,
+        "height": 34.796875
+      },
+      {
+        "label": "Ancestry Feats",
+        "role": "button",
+        "x": 30,
+        "y": 443.4765625,
+        "width": 370,
+        "height": 34.796875
+      },
+      {
+        "label": "General & Skill Feats",
+        "role": "button",
+        "x": 30,
+        "y": 584.6640625,
+        "width": 370,
+        "height": 34.796875
+      },
+      {
+        "label": "Other Feats",
+        "role": "button",
+        "x": 30,
+        "y": 772.546875,
+        "width": 370,
+        "height": 34.796875
+      },
+      {
+        "label": "Panel Grid",
+        "role": "button",
+        "x": 355,
+        "y": 769,
+        "width": 55,
+        "height": 55
+      },
+      {
+        "label": "Modes",
+        "role": "button",
+        "x": 20,
+        "y": 727.609375,
+        "width": 40,
+        "height": 40
+      },
+      {
+        "label": "Campaigns View",
+        "role": "button",
+        "x": 20,
+        "y": 784,
+        "width": 40,
+        "height": 40
+      }
+    ],
+    "text": "Search everything\n\n⌘ + K\n\nSign in / Register\nCommunity\nSupport\nLegacy Site\n\nKip\n\nAwakened Animal\nChatty\nOracle\nEdit\nRest\n\nLvl. 3\n\nFeats\nFeatures\n\nClass Feats\n\nCurse of Turbulent Moments\n\n1.\n\nNudge the Scales\n\n1\n\n1.\n\nOracular Warning\n\n4\n\nAncestry Feats\n\n1.\n\nFascinated by Society\n\n1.\n\nYou're so Cute!\n\nGeneral & Skill Feats\n\n1.\n\nImpressive Performance\n\n2.\n\nPredict Weather\n\n3.\n\nAncestral Paragon\n\nOther Feats\n\nAwakened Animal Attacks\n\n1.\n\nMystery of Time"
+  },
+  {
+    "id": "features",
+    "width": 430,
+    "height": 844,
+    "controls": [
+      {
+        "label": "",
+        "role": "button",
+        "x": 16,
+        "y": 10.5,
+        "width": 28,
+        "height": 28
+      },
+      {
+        "label": "Search everything\n\n⌘ + K",
+        "role": "button",
+        "x": -426,
+        "y": 16,
+        "width": 275,
+        "height": 32
+      },
+      {
+        "label": "Sign in / Register",
+        "role": "button",
+        "x": -426,
+        "y": 53,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Community",
+        "role": "a",
+        "x": -426,
+        "y": 95.6953125,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Support",
+        "role": "a",
+        "x": -426,
+        "y": 132.390625,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Legacy Site",
+        "role": "a",
+        "x": -426,
+        "y": 169.0859375,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Awakened Animal",
+        "role": "button",
+        "x": 117,
+        "y": 106.8984375,
+        "width": 147.5390625,
+        "height": 22
+      },
+      {
+        "label": "Chatty",
+        "role": "button",
+        "x": 117,
+        "y": 131.8984375,
+        "width": 77.4140625,
+        "height": 22
+      },
+      {
+        "label": "Oracle",
+        "role": "button",
+        "x": 117,
+        "y": 156.8984375,
+        "width": 76.671875,
+        "height": 22
+      },
+      {
+        "label": "Edit",
+        "role": "a",
+        "x": 323,
+        "y": 82,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "Rest",
+        "role": "button",
+        "x": 323,
+        "y": 109,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "XP",
+        "role": "input",
+        "x": 323,
+        "y": 159.59375,
+        "width": 80,
+        "height": 20
+      },
+      {
+        "label": "Search feats & features",
+        "role": "input",
+        "x": 29,
+        "y": 208.59375,
+        "width": 209.4375,
+        "height": 36
+      },
+      {
+        "label": "Feats",
+        "role": "label",
+        "x": 258.4375,
+        "y": 212.7421875,
+        "width": 57.6328125,
+        "height": 27.6953125
+      },
+      {
+        "label": "Features",
+        "role": "label",
+        "x": 316.0703125,
+        "y": 212.7421875,
+        "width": 80.9296875,
+        "height": 27.6953125
+      },
+      {
+        "label": "Class Features",
+        "role": "button",
+        "x": 30,
+        "y": 255.59375,
+        "width": 370,
+        "height": 34.796875
+      },
+      {
+        "label": "Heritage",
+        "role": "button",
+        "x": 30,
+        "y": 490.171875,
+        "width": 370,
+        "height": 34.796875
+      },
+      {
+        "label": "Ancestry Features",
+        "role": "button",
+        "x": 30,
+        "y": 584.6640625,
+        "width": 370,
+        "height": 34.796875
+      },
+      {
+        "label": "Panel Grid",
+        "role": "button",
+        "x": 355,
+        "y": 769,
+        "width": 55,
+        "height": 55
+      },
+      {
+        "label": "Modes",
+        "role": "button",
+        "x": 20,
+        "y": 727.609375,
+        "width": 40,
+        "height": 40
+      },
+      {
+        "label": "Campaigns View",
+        "role": "button",
+        "x": 20,
+        "y": 784,
+        "width": 40,
+        "height": 40
+      }
+    ],
+    "text": "Search everything\n\n⌘ + K\n\nSign in / Register\nCommunity\nSupport\nLegacy Site\n\nKip\n\nAwakened Animal\nChatty\nOracle\nEdit\nRest\n\nLvl. 3\n\nFeats\nFeatures\n\nClass Features\n\n1.\n\nMystery\n\n1.\n\nOracle Spellcasting\n\n1.\n\nSpell Repertoire (Oracle)\n\n3.\n\nSignature Spells (Oracle)\n\nHeritage\n\nClimbing Animal\n\nAncestry Features\n\nAwakened Form\n\nAwakened Mind"
+  },
+  {
+    "id": "inventory",
+    "width": 430,
+    "height": 844,
+    "controls": [
+      {
+        "label": "",
+        "role": "button",
+        "x": 16,
+        "y": 10.5,
+        "width": 28,
+        "height": 28
+      },
+      {
+        "label": "Search everything\n\n⌘ + K",
+        "role": "button",
+        "x": -426,
+        "y": 16,
+        "width": 275,
+        "height": 32
+      },
+      {
+        "label": "Sign in / Register",
+        "role": "button",
+        "x": -426,
+        "y": 53,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Community",
+        "role": "a",
+        "x": -426,
+        "y": 95.6953125,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Support",
+        "role": "a",
+        "x": -426,
+        "y": 132.390625,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Legacy Site",
+        "role": "a",
+        "x": -426,
+        "y": 169.0859375,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Awakened Animal",
+        "role": "button",
+        "x": 117,
+        "y": 106.8984375,
+        "width": 147.5390625,
+        "height": 22
+      },
+      {
+        "label": "Chatty",
+        "role": "button",
+        "x": 117,
+        "y": 131.8984375,
+        "width": 77.4140625,
+        "height": 22
+      },
+      {
+        "label": "Oracle",
+        "role": "button",
+        "x": 117,
+        "y": 156.8984375,
+        "width": 76.671875,
+        "height": 22
+      },
+      {
+        "label": "Edit",
+        "role": "a",
+        "x": 323,
+        "y": 82,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "Rest",
+        "role": "button",
+        "x": 323,
+        "y": 109,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "XP",
+        "role": "input",
+        "x": 323,
+        "y": 159.59375,
+        "width": 80,
+        "height": 20
+      },
+      {
+        "label": "Search items",
+        "role": "input",
+        "x": 29,
+        "y": 208.59375,
+        "width": 322,
+        "height": 36
+      },
+      {
+        "label": "Inventory Options",
+        "role": "button",
+        "x": 367,
+        "y": 209.59375,
+        "width": 34,
+        "height": 34
+      },
+      {
+        "label": "View Bastard Sword",
+        "role": "button",
+        "x": 42,
+        "y": 279.1875,
+        "width": 234,
+        "height": 21.6953125
+      },
+      {
+        "label": "Unequip",
+        "role": "button",
+        "x": 292,
+        "y": 281.0078125,
+        "width": 96,
+        "height": 22
+      },
+      {
+        "label": "View Club",
+        "role": "button",
+        "x": 42,
+        "y": 331.828125,
+        "width": 234,
+        "height": 21.6953125
+      },
+      {
+        "label": "Unequip",
+        "role": "button",
+        "x": 292,
+        "y": 333.6484375,
+        "width": 96,
+        "height": 22
+      },
+      {
+        "label": "View Leather Armor",
+        "role": "button",
+        "x": 42,
+        "y": 384.46875,
+        "width": 234,
+        "height": 21.6953125
+      },
+      {
+        "label": "Unequip",
+        "role": "button",
+        "x": 292,
+        "y": 386.2890625,
+        "width": 96,
+        "height": 22
+      },
+      {
+        "label": "View Spring-Loaded Net Launcher",
+        "role": "button",
+        "x": 42,
+        "y": 437.109375,
+        "width": 234,
+        "height": 21.6953125
+      },
+      {
+        "label": "View Spyglass",
+        "role": "button",
+        "x": 42,
+        "y": 492.25,
+        "width": 234,
+        "height": 21.6953125
+      },
+      {
+        "label": "Panel Grid",
+        "role": "button",
+        "x": 355,
+        "y": 769,
+        "width": 55,
+        "height": 55
+      },
+      {
+        "label": "Modes",
+        "role": "button",
+        "x": 20,
+        "y": 727.609375,
+        "width": 40,
+        "height": 40
+      },
+      {
+        "label": "Campaigns View",
+        "role": "button",
+        "x": 20,
+        "y": 784,
+        "width": 40,
+        "height": 40
+      }
+    ],
+    "text": "Search everything\n\n⌘ + K\n\nSign in / Register\nCommunity\nSupport\nLegacy Site\n\nKip\n\nAwakened Animal\nChatty\nOracle\nEdit\nRest\n\nLvl. 3\n\nName\n\nBastard Sword\n\n+1\n1d8 + 1 S\nUnequip\n\nClub\n\n+6\n1d6 + 1 B\nUnequip\n\nLeather Armor\n\nUnequip\n\nSpring-Loaded Net Launcher\n\nSpyglass"
+  },
+  {
+    "id": "spells",
+    "width": 430,
+    "height": 844,
+    "controls": [
+      {
+        "label": "",
+        "role": "button",
+        "x": 16,
+        "y": 10.5,
+        "width": 28,
+        "height": 28
+      },
+      {
+        "label": "Search everything\n\n⌘ + K",
+        "role": "button",
+        "x": -426,
+        "y": 16,
+        "width": 275,
+        "height": 32
+      },
+      {
+        "label": "Sign in / Register",
+        "role": "button",
+        "x": -426,
+        "y": 53,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Community",
+        "role": "a",
+        "x": -426,
+        "y": 95.6953125,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Support",
+        "role": "a",
+        "x": -426,
+        "y": 132.390625,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Legacy Site",
+        "role": "a",
+        "x": -426,
+        "y": 169.0859375,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Awakened Animal",
+        "role": "button",
+        "x": 117,
+        "y": 106.8984375,
+        "width": 147.5390625,
+        "height": 22
+      },
+      {
+        "label": "Chatty",
+        "role": "button",
+        "x": 117,
+        "y": 131.8984375,
+        "width": 77.4140625,
+        "height": 22
+      },
+      {
+        "label": "Oracle",
+        "role": "button",
+        "x": 117,
+        "y": 156.8984375,
+        "width": 76.671875,
+        "height": 22
+      },
+      {
+        "label": "Edit",
+        "role": "a",
+        "x": 323,
+        "y": 82,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "Rest",
+        "role": "button",
+        "x": 323,
+        "y": 109,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "XP",
+        "role": "input",
+        "x": 323,
+        "y": 159.59375,
+        "width": 80,
+        "height": 20
+      },
+      {
+        "label": "Search spells",
+        "role": "input",
+        "x": 29,
+        "y": 208.59375,
+        "width": 127,
+        "height": 36
+      },
+      {
+        "label": "Filter One Action",
+        "role": "button",
+        "x": 172,
+        "y": 209.59375,
+        "width": 34,
+        "height": 34
+      },
+      {
+        "label": "Filter One Action",
+        "role": "button",
+        "x": 211,
+        "y": 209.59375,
+        "width": 34,
+        "height": 34
+      },
+      {
+        "label": "Filter Two Actions",
+        "role": "button",
+        "x": 250,
+        "y": 209.59375,
+        "width": 34,
+        "height": 34
+      },
+      {
+        "label": "Filter Three Actions",
+        "role": "button",
+        "x": 289,
+        "y": 209.59375,
+        "width": 34,
+        "height": 34
+      },
+      {
+        "label": "Filter Free Action",
+        "role": "button",
+        "x": 328,
+        "y": 209.59375,
+        "width": 34,
+        "height": 34
+      },
+      {
+        "label": "Filter Reaction",
+        "role": "button",
+        "x": 367,
+        "y": 209.59375,
+        "width": 34,
+        "height": 34
+      },
+      {
+        "label": "Oracle Spells\n\nManage",
+        "role": "button",
+        "x": 30,
+        "y": 255.59375,
+        "width": 370,
+        "height": 40
+      },
+      {
+        "label": "Manage",
+        "role": "button",
+        "x": 281.796875,
+        "y": 260.59375,
+        "width": 79.203125,
+        "height": 30
+      },
+      {
+        "label": "Spell Attack\n+9",
+        "role": "button",
+        "x": 40,
+        "y": 295.59375,
+        "width": 135.6015625,
+        "height": 34
+      },
+      {
+        "label": "Spell DC\n19",
+        "role": "button",
+        "x": 191.6015625,
+        "y": 295.59375,
+        "width": 108.8359375,
+        "height": 34
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 86,
+        "y": 413.984375,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Spell Slot, Exhuasted",
+        "role": "button",
+        "x": 86,
+        "y": 414.984375,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 86,
+        "y": 413.984375,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Spell Slot, Exhuasted",
+        "role": "button",
+        "x": 86,
+        "y": 414.984375,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 104,
+        "y": 413.984375,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Spell Slot, Unused",
+        "role": "button",
+        "x": 104,
+        "y": 414.984375,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 122,
+        "y": 413.984375,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Spell Slot, Unused",
+        "role": "button",
+        "x": 122,
+        "y": 414.984375,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 140,
+        "y": 413.984375,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Spell Slot, Unused",
+        "role": "button",
+        "x": 140,
+        "y": 414.984375,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "Befuddle\n\n2",
+        "role": "button",
+        "x": 40,
+        "y": 449.78125,
+        "width": 350,
+        "height": 34
+      },
+      {
+        "label": "Overheat\n\n2",
+        "role": "button",
+        "x": 40,
+        "y": 488.78125,
+        "width": 350,
+        "height": 34
+      },
+      {
+        "label": "Déjà Vu\n\n2",
+        "role": "button",
+        "x": 40,
+        "y": 527.78125,
+        "width": 350,
+        "height": 34
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 86,
+        "y": 569.78125,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Spell Slot, Exhuasted",
+        "role": "button",
+        "x": 86,
+        "y": 570.78125,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 86,
+        "y": 569.78125,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Spell Slot, Unused",
+        "role": "button",
+        "x": 86,
+        "y": 570.78125,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 104,
+        "y": 569.78125,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Spell Slot, Unused",
+        "role": "button",
+        "x": 104,
+        "y": 570.78125,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 122,
+        "y": 569.78125,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Spell Slot, Unused",
+        "role": "button",
+        "x": 122,
+        "y": 570.78125,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "Oracle Focus Spells",
+        "role": "button",
+        "x": 30,
+        "y": 659.2734375,
+        "width": 370,
+        "height": 40
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 343,
+        "y": 668.375,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Spell Slot, Exhuasted",
+        "role": "button",
+        "x": 343,
+        "y": 669.375,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "",
+        "role": "label",
+        "x": 343,
+        "y": 668.375,
+        "width": 18,
+        "height": 24.796875
+      },
+      {
+        "label": "Spell Slot, Unused",
+        "role": "button",
+        "x": 343,
+        "y": 669.375,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "Spell Attack\n+9",
+        "role": "button",
+        "x": 40,
+        "y": 699.2734375,
+        "width": 135.6015625,
+        "height": 34
+      },
+      {
+        "label": "Spell DC\n19",
+        "role": "button",
+        "x": 191.6015625,
+        "y": 699.2734375,
+        "width": 108.8359375,
+        "height": 34
+      },
+      {
+        "label": "Temporal Distortion\n\n1",
+        "role": "button",
+        "x": 40,
+        "y": 777.96875,
+        "width": 350,
+        "height": 34
+      },
+      {
+        "label": "Rituals\n\n0\nManage",
+        "role": "button",
+        "x": 30,
+        "y": 833.96875,
+        "width": 370,
+        "height": 40
+      },
+      {
+        "label": "Manage",
+        "role": "button",
+        "x": 281.796875,
+        "y": 838.96875,
+        "width": 79.203125,
+        "height": 30
+      },
+      {
+        "label": "Panel Grid",
+        "role": "button",
+        "x": 355,
+        "y": 769,
+        "width": 55,
+        "height": 55
+      },
+      {
+        "label": "Modes",
+        "role": "button",
+        "x": 20,
+        "y": 727.609375,
+        "width": 40,
+        "height": 40
+      },
+      {
+        "label": "Campaigns View",
+        "role": "button",
+        "x": 20,
+        "y": 784,
+        "width": 40,
+        "height": 40
+      }
+    ],
+    "text": "Search everything\n\n⌘ + K\n\nSign in / Register\nCommunity\nSupport\nLegacy Site\n\nKip\n\nAwakened Animal\nChatty\nOracle\nEdit\nRest\n\nLvl. 3\n\nAll\n\n1\n\n2\n\n3\n\n4\n\n5\n\nOracle Spells\n\nManage\nSpell Attack\n+9\nSpell DC\n19\n\nCantrips\n\n0\n\nNo spells known\n\n1st\n\n3\n\nBefuddle\n\n2\n\nOverheat\n\n2\n\nDéjà Vu\n\n2\n\n2nd\n\n0\n\nNo spells known\n\nOracle Focus Spells\n\nSpell Attack\n+9\nSpell DC\n19\n\n1st\n\n1\n\nTemporal Distortion\n\n1\n\nRituals\n\n0\nManage"
+  },
+  {
+    "id": "notes",
+    "width": 430,
+    "height": 844,
+    "controls": [
+      {
+        "label": "",
+        "role": "button",
+        "x": 16,
+        "y": 10.5,
+        "width": 28,
+        "height": 28
+      },
+      {
+        "label": "Search everything\n\n⌘ + K",
+        "role": "button",
+        "x": -426,
+        "y": 16,
+        "width": 275,
+        "height": 32
+      },
+      {
+        "label": "Sign in / Register",
+        "role": "button",
+        "x": -426,
+        "y": 53,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Community",
+        "role": "a",
+        "x": -426,
+        "y": 95.6953125,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Support",
+        "role": "a",
+        "x": -426,
+        "y": 132.390625,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Legacy Site",
+        "role": "a",
+        "x": -426,
+        "y": 169.0859375,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Awakened Animal",
+        "role": "button",
+        "x": 117,
+        "y": 106.8984375,
+        "width": 147.5390625,
+        "height": 22
+      },
+      {
+        "label": "Chatty",
+        "role": "button",
+        "x": 117,
+        "y": 131.8984375,
+        "width": 77.4140625,
+        "height": 22
+      },
+      {
+        "label": "Oracle",
+        "role": "button",
+        "x": 117,
+        "y": 156.8984375,
+        "width": 76.671875,
+        "height": 22
+      },
+      {
+        "label": "Edit",
+        "role": "a",
+        "x": 323,
+        "y": 82,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "Rest",
+        "role": "button",
+        "x": 323,
+        "y": 109,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "XP",
+        "role": "input",
+        "x": 323,
+        "y": 159.59375,
+        "width": 80,
+        "height": 20
+      },
+      {
+        "label": "Link Content",
+        "role": "button",
+        "x": 46,
+        "y": 219.59375,
+        "width": 26,
+        "height": 26
+      },
+      {
+        "label": "Link Content",
+        "role": "button",
+        "x": 98,
+        "y": 219.59375,
+        "width": 26,
+        "height": 26
+      },
+      {
+        "label": "Remove link",
+        "role": "button",
+        "x": 124,
+        "y": 219.59375,
+        "width": 26,
+        "height": 26
+      },
+      {
+        "label": "Bold",
+        "role": "button",
+        "x": 176,
+        "y": 219.59375,
+        "width": 26,
+        "height": 26
+      },
+      {
+        "label": "Italic",
+        "role": "button",
+        "x": 202,
+        "y": 219.59375,
+        "width": 26,
+        "height": 26
+      },
+      {
+        "label": "Underline",
+        "role": "button",
+        "x": 228,
+        "y": 219.59375,
+        "width": 26,
+        "height": 26
+      },
+      {
+        "label": "Blockquote",
+        "role": "button",
+        "x": 280,
+        "y": 219.59375,
+        "width": 26,
+        "height": 26
+      },
+      {
+        "label": "Horizontal line",
+        "role": "button",
+        "x": 306,
+        "y": 219.59375,
+        "width": 26,
+        "height": 26
+      },
+      {
+        "label": "Bullet list",
+        "role": "button",
+        "x": 332,
+        "y": 219.59375,
+        "width": 26,
+        "height": 26
+      },
+      {
+        "label": "Ordered list",
+        "role": "button",
+        "x": 358,
+        "y": 219.59375,
+        "width": 26,
+        "height": 26
+      },
+      {
+        "label": "Page Settings",
+        "role": "button",
+        "x": 39,
+        "y": 668.59375,
+        "width": 130,
+        "height": 30
+      },
+      {
+        "label": "",
+        "role": "button",
+        "x": 70.1484375,
+        "y": 674.59375,
+        "width": 18,
+        "height": 18
+      },
+      {
+        "label": "Page Settings",
+        "role": "button",
+        "x": 179,
+        "y": 670.59375,
+        "width": 28,
+        "height": 28
+      },
+      {
+        "label": "Panel Grid",
+        "role": "button",
+        "x": 355,
+        "y": 769,
+        "width": 55,
+        "height": 55
+      },
+      {
+        "label": "Modes",
+        "role": "button",
+        "x": 20,
+        "y": 727.609375,
+        "width": 40,
+        "height": 40
+      },
+      {
+        "label": "Campaigns View",
+        "role": "button",
+        "x": 20,
+        "y": 784,
+        "width": 40,
+        "height": 40
+      }
+    ],
+    "text": "Search everything\n\n⌘ + K\n\nSign in / Register\nCommunity\nSupport\nLegacy Site\n\nKip\n\nAwakened Animal\nChatty\nOracle\nEdit\nRest\n\nLvl. 3\n\n1\n\n    Gallery\n        </Tabs.Tab>\n        <Tabs.Tab value=\"messages\" leftSection={<ChatCircleIcon size={12} />}>\n          Messages\n        </Tabs.Tab>\n        <Tabs.Tab value=\"settings\" leftSection={<GearSixIcon size={12} />}>\n          Settings\n        </Tabs.Tab>\n      </Tabs.List>\n\n      <Tabs.Panel value=\"gallery\">\n        Gallery tab content\n      </Tabs.Panel>\n\n      <Tabs.Panel value=\"messages\">\n        Messages tab content\n      </Tabs.Panel>\n\n      <Tabs.Panel value=\"settings\">\n        Settings tab content\n      </Tabs.Panel>\n    </Tabs>\n  );\n}\nControlled Tabs\n\nTo control the Tabs state, use value and onChange props:\n\nimport { useState } from 'react';\nimport { Tabs } from '@mantine/core';\n\nfunction Demo() {\n  const [activeTab, setActiveTab] = useState<string | null>('first');\n\n  return (\n    <Tabs value={activeTab} onChange={setActiveTab}>\n      <Tabs.List>\n        <Tabs.Tab value=\"first\">First tab</Tabs.Tab>\n        <Tabs.Tab value=\"second\">Second tab</Tabs.Tab>\n      </Tabs.List>\n\n      <Tabs.Panel value=\"first\">First panel</Tabs.Panel>\n      <Tabs.Panel value=\"second\">Second panel</Tabs.Panel>\n    </Tabs>\n  );\n}\nUncontrolled Tabs\n\nIf you do not need to subscribe to Tabs state changes, use defaultValue:\n\nimport { Tabs } from '@mantine/core';\n\nfunction Demo() {\n  return (\n    <Tabs defaultValue=\"first\">\n      <Tabs.List>\n        <Tabs.Tab value=\"first\">First tab</Tabs.Tab>\n        <Tabs.Tab value=\"second\">Second tab</Tabs.Tab>\n      </Tabs.List>\n\n      <Tabs.Panel value=\"first\">First panel</Tabs.Panel>\n      <Tabs.Panel value=\"second\">Second panel</Tabs.Panel>\n    </Tabs>\n  );\n}\nChange colors\n\nTo change the colors of all tabs, set color on the Tabs component; to change the color of an individual tab, set color on Tabs.Tab.\n\nFirst tab color is teal, it gets this value from context\n\nimport { Tabs } from '@mantine/core';\n\nfunction Demo() {\n  return (\n    <Tabs color=\"teal\" defaultValue=\"first\">\n      <Tabs.List>\n        <Tabs.Tab value=\"first\">Teal tab</Tabs.Tab>\n        <Tabs.Tab value=\"second\" color=\"blue\">\n          Blue tab\n        </Tabs.Tab>\n      </Tabs.List>\n\n      <Tabs.Panel value=\"first\" pt=\"xs\">\n        First tab color is teal, it gets this value from context\n      </Tabs.Panel>\n\n      <Tabs.Panel value=\"second\" pt=\"xs\">\n        Second tab color is blue, it gets this value from props, props have the priority and will\n        override context value\n      </Tabs.Panel>\n    </Tabs>\n  );\n}\nTabs position\n\nGrow\n\nJustify\n\nFlex-startCenterFlex-endSpace-between\n\nimport { Tabs } from '@mantine/core';\n\nfunction Demo() {\n  return (\n    <Tabs defaultValue=\"first\">\n      <Tabs.List>\n        <Tabs.Tab value=\"first\">First tab</Tabs.Tab>\n        <Tabs.Tab value=\"second\">Second tab</Tabs.Tab>\n        <Tabs.Tab value=\"third\">Third tab</Tabs.Tab>\n      </Tabs.List>\n    </Tabs>\n  );\n}\n\nTo display a tab on the opposite side, set margin-left: auto with the ml=\"auto\" prop or with className:\n\nimport { Tabs } from '@mantine/core';\n\nfunction Demo() {\n  return (\n    <Tabs defaultValue=\"chat\">\n      <Tabs.List>\n        <Tabs.Tab value=\"chat\">Chat</Tabs.Tab>\n        <Tabs.Tab value=\"gallery\">Gallery</Tabs.Tab>\n        <Tabs.Tab value=\"settings\">Settings</Tabs.Tab>\n        <Tabs.Tab value=\"account\" ml=\"auto\">\n          Account\n        </Tabs.Tab>\n      </Tabs.List>\n    </Tabs>\n  );\n}\nInverted tabs\n\nTo make tabs inverted, place Tabs.Panel components before Tabs.List and add the inverted prop to the Tabs component:\n\nNotes"
+  },
+  {
+    "id": "details",
+    "width": 430,
+    "height": 844,
+    "controls": [
+      {
+        "label": "",
+        "role": "button",
+        "x": 16,
+        "y": 10.5,
+        "width": 28,
+        "height": 28
+      },
+      {
+        "label": "Search everything\n\n⌘ + K",
+        "role": "button",
+        "x": -426,
+        "y": 16,
+        "width": 275,
+        "height": 32
+      },
+      {
+        "label": "Sign in / Register",
+        "role": "button",
+        "x": -426,
+        "y": 53,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Community",
+        "role": "a",
+        "x": -426,
+        "y": 95.6953125,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Support",
+        "role": "a",
+        "x": -426,
+        "y": 132.390625,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Legacy Site",
+        "role": "a",
+        "x": -426,
+        "y": 169.0859375,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Awakened Animal",
+        "role": "button",
+        "x": 117,
+        "y": 106.8984375,
+        "width": 147.5390625,
+        "height": 22
+      },
+      {
+        "label": "Chatty",
+        "role": "button",
+        "x": 117,
+        "y": 131.8984375,
+        "width": 77.4140625,
+        "height": 22
+      },
+      {
+        "label": "Oracle",
+        "role": "button",
+        "x": 117,
+        "y": 156.8984375,
+        "width": 76.671875,
+        "height": 22
+      },
+      {
+        "label": "Edit",
+        "role": "a",
+        "x": 323,
+        "y": 82,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "Rest",
+        "role": "button",
+        "x": 323,
+        "y": 109,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "XP",
+        "role": "input",
+        "x": 323,
+        "y": 159.59375,
+        "width": 80,
+        "height": 20
+      },
+      {
+        "label": "Information",
+        "role": "tab",
+        "x": 29,
+        "y": 208.59375,
+        "width": 115.3984375,
+        "height": 36
+      },
+      {
+        "label": "Languages",
+        "role": "tab",
+        "x": 144.3984375,
+        "y": 208.59375,
+        "width": 110.109375,
+        "height": 36
+      },
+      {
+        "label": "Proficiencies",
+        "role": "tab",
+        "x": 254.5078125,
+        "y": 208.59375,
+        "width": 120.75,
+        "height": 36
+      },
+      {
+        "label": "General",
+        "role": "tab",
+        "x": 75,
+        "y": 292.6875,
+        "width": 88.265625,
+        "height": 36
+      },
+      {
+        "label": "Organized Play",
+        "role": "tab",
+        "x": 163.265625,
+        "y": 292.6875,
+        "width": 140.3046875,
+        "height": 36
+      },
+      {
+        "label": "Appearance",
+        "role": "label",
+        "x": 75,
+        "y": 336.1875,
+        "width": 84.5078125,
+        "height": 21.6953125
+      },
+      {
+        "label": "Personality",
+        "role": "label",
+        "x": 75,
+        "y": 401.984375,
+        "width": 77.421875,
+        "height": 21.6953125
+      },
+      {
+        "label": "Alignment",
+        "role": "label",
+        "x": 75,
+        "y": 467.78125,
+        "width": 75.0859375,
+        "height": 21.6953125
+      },
+      {
+        "label": "Beliefs",
+        "role": "label",
+        "x": 75,
+        "y": 533.578125,
+        "width": 46.578125,
+        "height": 21.6953125
+      },
+      {
+        "label": "Age",
+        "role": "label",
+        "x": 75,
+        "y": 617.375,
+        "width": 28.015625,
+        "height": 21.6953125
+      },
+      {
+        "label": "Age",
+        "role": "input",
+        "x": 75,
+        "y": 639.671875,
+        "width": 280,
+        "height": 36
+      },
+      {
+        "label": "Height",
+        "role": "label",
+        "x": 75,
+        "y": 683.171875,
+        "width": 48.34375,
+        "height": 21.6953125
+      },
+      {
+        "label": "Height",
+        "role": "input",
+        "x": 75,
+        "y": 705.46875,
+        "width": 280,
+        "height": 36
+      },
+      {
+        "label": "Weight",
+        "role": "label",
+        "x": 75,
+        "y": 748.96875,
+        "width": 51.75,
+        "height": 21.6953125
+      },
+      {
+        "label": "Weight",
+        "role": "input",
+        "x": 75,
+        "y": 771.265625,
+        "width": 280,
+        "height": 36
+      },
+      {
+        "label": "Gender",
+        "role": "label",
+        "x": 75,
+        "y": 814.765625,
+        "width": 52.3046875,
+        "height": 21.6953125
+      },
+      {
+        "label": "Gender",
+        "role": "input",
+        "x": 75,
+        "y": 837.0625,
+        "width": 280,
+        "height": 36
+      },
+      {
+        "label": "Panel Grid",
+        "role": "button",
+        "x": 355,
+        "y": 769,
+        "width": 55,
+        "height": 55
+      },
+      {
+        "label": "Modes",
+        "role": "button",
+        "x": 20,
+        "y": 727.609375,
+        "width": 40,
+        "height": 40
+      },
+      {
+        "label": "Campaigns View",
+        "role": "button",
+        "x": 20,
+        "y": 784,
+        "width": 40,
+        "height": 40
+      }
+    ],
+    "text": "Search everything\n\n⌘ + K\n\nSign in / Register\nCommunity\nSupport\nLegacy Site\n\nKip\n\nAwakened Animal\nChatty\nOracle\nEdit\nRest\n\nLvl. 3\n\nInformation\nLanguages\nProficiencies\nInformation\nGeneral\nOrganized Play\nAppearance\nPersonality\nAlignment\nBeliefs\nAge\nHeight\nWeight\nGender\nPronouns\nFaction\nEthnicity\nNationality\nBirthplace"
+  },
+  {
+    "id": "languages",
+    "width": 430,
+    "height": 844,
+    "controls": [
+      {
+        "label": "",
+        "role": "button",
+        "x": 16,
+        "y": 10.5,
+        "width": 28,
+        "height": 28
+      },
+      {
+        "label": "Search everything\n\n⌘ + K",
+        "role": "button",
+        "x": -426,
+        "y": 16,
+        "width": 275,
+        "height": 32
+      },
+      {
+        "label": "Sign in / Register",
+        "role": "button",
+        "x": -426,
+        "y": 53,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Community",
+        "role": "a",
+        "x": -426,
+        "y": 95.6953125,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Support",
+        "role": "a",
+        "x": -426,
+        "y": 132.390625,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Legacy Site",
+        "role": "a",
+        "x": -426,
+        "y": 169.0859375,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Awakened Animal",
+        "role": "button",
+        "x": 117,
+        "y": 106.8984375,
+        "width": 147.5390625,
+        "height": 22
+      },
+      {
+        "label": "Chatty",
+        "role": "button",
+        "x": 117,
+        "y": 131.8984375,
+        "width": 77.4140625,
+        "height": 22
+      },
+      {
+        "label": "Oracle",
+        "role": "button",
+        "x": 117,
+        "y": 156.8984375,
+        "width": 76.671875,
+        "height": 22
+      },
+      {
+        "label": "Edit",
+        "role": "a",
+        "x": 323,
+        "y": 82,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "Rest",
+        "role": "button",
+        "x": 323,
+        "y": 109,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "XP",
+        "role": "input",
+        "x": 323,
+        "y": 159.59375,
+        "width": 80,
+        "height": 20
+      },
+      {
+        "label": "Information",
+        "role": "tab",
+        "x": 29,
+        "y": 208.59375,
+        "width": 115.3984375,
+        "height": 36
+      },
+      {
+        "label": "Languages",
+        "role": "tab",
+        "x": 144.3984375,
+        "y": 208.59375,
+        "width": 110.109375,
+        "height": 36
+      },
+      {
+        "label": "Proficiencies",
+        "role": "tab",
+        "x": 254.5078125,
+        "y": 208.59375,
+        "width": 120.75,
+        "height": 36
+      },
+      {
+        "label": "Panel Grid",
+        "role": "button",
+        "x": 355,
+        "y": 769,
+        "width": 55,
+        "height": 55
+      },
+      {
+        "label": "Modes",
+        "role": "button",
+        "x": 20,
+        "y": 727.609375,
+        "width": 40,
+        "height": 40
+      },
+      {
+        "label": "Campaigns View",
+        "role": "button",
+        "x": 20,
+        "y": 784,
+        "width": 40,
+        "height": 40
+      }
+    ],
+    "text": "Search everything\n\n⌘ + K\n\nSign in / Register\nCommunity\nSupport\nLegacy Site\n\nKip\n\nAwakened Animal\nChatty\nOracle\nEdit\nRest\n\nLvl. 3\n\nInformation\nLanguages\nProficiencies\nLanguages\nCommon\nWildsong\nTraits\nBeast\nAwakened Animal\nSize\nTiny"
+  },
+  {
+    "id": "proficiencies",
+    "width": 430,
+    "height": 844,
+    "controls": [
+      {
+        "label": "",
+        "role": "button",
+        "x": 16,
+        "y": 10.5,
+        "width": 28,
+        "height": 28
+      },
+      {
+        "label": "Search everything\n\n⌘ + K",
+        "role": "button",
+        "x": -426,
+        "y": 16,
+        "width": 275,
+        "height": 32
+      },
+      {
+        "label": "Sign in / Register",
+        "role": "button",
+        "x": -426,
+        "y": 53,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Community",
+        "role": "a",
+        "x": -426,
+        "y": 95.6953125,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Support",
+        "role": "a",
+        "x": -426,
+        "y": 132.390625,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Legacy Site",
+        "role": "a",
+        "x": -426,
+        "y": 169.0859375,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Awakened Animal",
+        "role": "button",
+        "x": 117,
+        "y": 106.8984375,
+        "width": 147.5390625,
+        "height": 22
+      },
+      {
+        "label": "Chatty",
+        "role": "button",
+        "x": 117,
+        "y": 131.8984375,
+        "width": 77.4140625,
+        "height": 22
+      },
+      {
+        "label": "Oracle",
+        "role": "button",
+        "x": 117,
+        "y": 156.8984375,
+        "width": 76.671875,
+        "height": 22
+      },
+      {
+        "label": "Edit",
+        "role": "a",
+        "x": 323,
+        "y": 82,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "Rest",
+        "role": "button",
+        "x": 323,
+        "y": 109,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "XP",
+        "role": "input",
+        "x": 323,
+        "y": 159.59375,
+        "width": 80,
+        "height": 20
+      },
+      {
+        "label": "Information",
+        "role": "tab",
+        "x": 29,
+        "y": 208.59375,
+        "width": 115.3984375,
+        "height": 36
+      },
+      {
+        "label": "Languages",
+        "role": "tab",
+        "x": 144.3984375,
+        "y": 208.59375,
+        "width": 110.109375,
+        "height": 36
+      },
+      {
+        "label": "Proficiencies",
+        "role": "tab",
+        "x": 254.5078125,
+        "y": 208.59375,
+        "width": 120.75,
+        "height": 36
+      },
+      {
+        "label": "Attacks",
+        "role": "button",
+        "x": 76,
+        "y": 293.6875,
+        "width": 278,
+        "height": 31.6953125
+      },
+      {
+        "label": "Defenses",
+        "role": "button",
+        "x": 76,
+        "y": 332.3828125,
+        "width": 278,
+        "height": 31.6953125
+      },
+      {
+        "label": "Spellcasting",
+        "role": "button",
+        "x": 76,
+        "y": 371.078125,
+        "width": 278,
+        "height": 31.6953125
+      },
+      {
+        "label": "Class DC\n\n19\n\nT",
+        "role": "button",
+        "x": 75,
+        "y": 408.7734375,
+        "width": 280,
+        "height": 34
+      },
+      {
+        "label": "Panel Grid",
+        "role": "button",
+        "x": 355,
+        "y": 769,
+        "width": 55,
+        "height": 55
+      },
+      {
+        "label": "Modes",
+        "role": "button",
+        "x": 20,
+        "y": 727.609375,
+        "width": 40,
+        "height": 40
+      },
+      {
+        "label": "Campaigns View",
+        "role": "button",
+        "x": 20,
+        "y": 784,
+        "width": 40,
+        "height": 40
+      }
+    ],
+    "text": "Search everything\n\n⌘ + K\n\nSign in / Register\nCommunity\nSupport\nLegacy Site\n\nKip\n\nAwakened Animal\nChatty\nOracle\nEdit\nRest\n\nLvl. 3\n\nInformation\nLanguages\nProficiencies\nProficiencies\n\nAttacks\n\nDefenses\n\nSpellcasting\n\nClass DC\n\n19\n\nT"
+  },
+  {
+    "id": "companions",
+    "width": 430,
+    "height": 844,
+    "controls": [
+      {
+        "label": "",
+        "role": "button",
+        "x": 16,
+        "y": 10.5,
+        "width": 28,
+        "height": 28
+      },
+      {
+        "label": "Search everything\n\n⌘ + K",
+        "role": "button",
+        "x": -426,
+        "y": 16,
+        "width": 275,
+        "height": 32
+      },
+      {
+        "label": "Sign in / Register",
+        "role": "button",
+        "x": -426,
+        "y": 53,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Community",
+        "role": "a",
+        "x": -426,
+        "y": 95.6953125,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Support",
+        "role": "a",
+        "x": -426,
+        "y": 132.390625,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Legacy Site",
+        "role": "a",
+        "x": -426,
+        "y": 169.0859375,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Awakened Animal",
+        "role": "button",
+        "x": 117,
+        "y": 106.8984375,
+        "width": 147.5390625,
+        "height": 22
+      },
+      {
+        "label": "Chatty",
+        "role": "button",
+        "x": 117,
+        "y": 131.8984375,
+        "width": 77.4140625,
+        "height": 22
+      },
+      {
+        "label": "Oracle",
+        "role": "button",
+        "x": 117,
+        "y": 156.8984375,
+        "width": 76.671875,
+        "height": 22
+      },
+      {
+        "label": "Edit",
+        "role": "a",
+        "x": 323,
+        "y": 82,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "Rest",
+        "role": "button",
+        "x": 323,
+        "y": 109,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "XP",
+        "role": "input",
+        "x": 323,
+        "y": 159.59375,
+        "width": 80,
+        "height": 20
+      },
+      {
+        "label": "",
+        "role": "button",
+        "x": 42,
+        "y": 232.5859375,
+        "width": 40,
+        "height": 40
+      },
+      {
+        "label": "Remove Companion",
+        "role": "button",
+        "x": 360,
+        "y": 241.5859375,
+        "width": 22,
+        "height": 22
+      },
+      {
+        "label": "Companion",
+        "role": "combobox",
+        "x": 121.546875,
+        "y": 651.59375,
+        "width": 120,
+        "height": 36
+      },
+      {
+        "label": "Type",
+        "role": "combobox",
+        "x": 241.546875,
+        "y": 651.59375,
+        "width": 120,
+        "height": 36
+      },
+      {
+        "label": "Panel Grid",
+        "role": "button",
+        "x": 355,
+        "y": 769,
+        "width": 55,
+        "height": 55
+      },
+      {
+        "label": "Modes",
+        "role": "button",
+        "x": 20,
+        "y": 727.609375,
+        "width": 40,
+        "height": 40
+      },
+      {
+        "label": "Campaigns View",
+        "role": "button",
+        "x": 20,
+        "y": 784,
+        "width": 40,
+        "height": 40
+      }
+    ],
+    "text": "Search everything\n\n⌘ + K\n\nSign in / Register\nCommunity\nSupport\nLegacy Site\n\nKip\n\nAwakened Animal\nChatty\nOracle\nEdit\nRest\n\nLvl. 3\n\nLvl. 3\n\nBadger\n\n18 AC\n\n|\n\nFort. +10,\n\nRef. +10,\n\nWill +10\n\nAdd"
+  },
+  {
+    "id": "extras",
+    "width": 430,
+    "height": 844,
+    "controls": [
+      {
+        "label": "",
+        "role": "button",
+        "x": 16,
+        "y": 10.5,
+        "width": 28,
+        "height": 28
+      },
+      {
+        "label": "Search everything\n\n⌘ + K",
+        "role": "button",
+        "x": -426,
+        "y": 16,
+        "width": 275,
+        "height": 32
+      },
+      {
+        "label": "Sign in / Register",
+        "role": "button",
+        "x": -426,
+        "y": 53,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Community",
+        "role": "a",
+        "x": -426,
+        "y": 95.6953125,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Support",
+        "role": "a",
+        "x": -426,
+        "y": 132.390625,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Legacy Site",
+        "role": "a",
+        "x": -426,
+        "y": 169.0859375,
+        "width": 421,
+        "height": 31.6953125
+      },
+      {
+        "label": "Awakened Animal",
+        "role": "button",
+        "x": 117,
+        "y": 106.8984375,
+        "width": 147.5390625,
+        "height": 22
+      },
+      {
+        "label": "Chatty",
+        "role": "button",
+        "x": 117,
+        "y": 131.8984375,
+        "width": 77.4140625,
+        "height": 22
+      },
+      {
+        "label": "Oracle",
+        "role": "button",
+        "x": 117,
+        "y": 156.8984375,
+        "width": 76.671875,
+        "height": 22
+      },
+      {
+        "label": "Edit",
+        "role": "a",
+        "x": 323,
+        "y": 82,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "Rest",
+        "role": "button",
+        "x": 323,
+        "y": 109,
+        "width": 80,
+        "height": 22
+      },
+      {
+        "label": "XP",
+        "role": "input",
+        "x": 323,
+        "y": 159.59375,
+        "width": 80,
+        "height": 20
+      },
+      {
+        "label": "Panel Grid",
+        "role": "button",
+        "x": 355,
+        "y": 769,
+        "width": 55,
+        "height": 55
+      },
+      {
+        "label": "Modes",
+        "role": "button",
+        "x": 20,
+        "y": 727.609375,
+        "width": 40,
+        "height": 40
+      },
+      {
+        "label": "Campaigns View",
+        "role": "button",
+        "x": 20,
+        "y": 784,
+        "width": 40,
+        "height": 40
+      }
+    ],
+    "text": "Search everything\n\n⌘ + K\n\nSign in / Register\nCommunity\nSupport\nLegacy Site\n\nKip\n\nAwakened Animal\nChatty\nOracle\nEdit\nRest\n\nLvl. 3\n\nMore to come!\n\nThis miscellaneous section will be updated with more features in the future. You can expect to see support for vehicles, snares, and whatever other awesome stuff Paizo comes up with! 🔥"
+  }
+]

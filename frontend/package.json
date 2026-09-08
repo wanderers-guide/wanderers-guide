@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
+    "prototype:mobile-sheet": "vite --config src/pages/character_sheet/prototype/vite.config.ts",
     "build": "tsc && vite build",
     "predeploy": "tsc && vite build",
     "deploy": "gh-pages -d dist",

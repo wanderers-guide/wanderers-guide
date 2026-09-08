@@ -298,6 +298,11 @@ For the full wiring notes, what's included, and what you'll have to set up yours
 
 ## Running end-to-end tests
 
+The current mobile sheet reference prototype starts with
+`npm --prefix frontend run prototype:mobile-sheet` at `http://127.0.0.1:5175`.
+It is a separate local entry point with captured screens and clickable navigation.
+Its scope and branch approval restriction are recorded in `docs/mobile-sheet-ui.md`.
+
 Cypress runs against the Docker stack above. With `npm run docker:start` already running:
 
 ```bash

@@ -1,0 +1,72 @@
+/* Prototype framing only. The sheet itself consists of unaltered rendered captures. */
+.prototype-shell {
+  max-width: 1400px;
+  margin-inline: auto;
+}
+
+.prototype-layout {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) minmax(280px, 2fr) minmax(200px, 1fr);
+  gap: var(--mantine-spacing-xl);
+  align-items: start;
+}
+
+.prototype-map {
+  max-height: calc(100dvh - 170px);
+  overflow-y: auto;
+}
+
+.prototype-phone {
+  /* Pixel dimensions come from the captured viewport, not replacement sheet styling. */
+  width: min(calc(var(--capture-width) * 1px), calc((100dvh - 180px) * var(--capture-width) / var(--capture-height)));
+  max-width: 100%;
+  aspect-ratio: var(--capture-width) / var(--capture-height);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-lg);
+  box-shadow: var(--mantine-shadow-lg);
+}
+
+.prototype-hotspot {
+  position: absolute;
+  border-radius: var(--mantine-radius-sm);
+}
+
+.prototype-phone[data-actual-size] {
+  width: calc(var(--capture-width) * 1px);
+}
+
+.prototype-hotspot:focus-visible,
+.prototype-hotspot[data-highlighted] {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  background: color-mix(in srgb, var(--mantine-primary-color-filled) 12%, transparent);
+  outline-offset: -2px;
+}
+
+@media (max-width: 62em) {
+  .prototype-layout {
+    grid-template-columns: minmax(180px, 1fr) minmax(280px, 2fr);
+  }
+  .prototype-context {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 36em) {
+  .prototype-layout {
+    display: flex;
+    flex-direction: column;
+  }
+  .prototype-stage {
+    order: -1;
+    width: 100%;
+  }
+  .prototype-phone {
+    width: min(calc(var(--capture-width) * 1px), 100%);
+  }
+  .prototype-map {
+    width: 100%;
+    max-height: none;
+  }
+}
