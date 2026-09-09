@@ -3,8 +3,9 @@
 Status: the expanded layout and controls were rejected, followed by both Spells layout
 studies, which the user found clunky. The focus remains the real Spells page and its casting
 variants. These prototypes and earlier material concepts are review references, not an
-approved redesign. The latest mock applies the smoked-glass treatment to the Mobbin-inspired
-Spells arrangement, with working temporary casting and preparation controls. The reference
+approved redesign. The first interactive treatment was also rejected visually. The user chose
+a compact, structured direction; the latest revision groups sources, tightens rows and reduces
+repeated labels while retaining the temporary casting and preparation controls. The reference
 board and earlier casting-model diagrams remain available. Branch: `codex/mobile-sheet-ui`.
 
 **Do not merge this branch until the user explicitly approves merging it.** Earlier

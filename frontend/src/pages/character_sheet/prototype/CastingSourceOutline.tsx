@@ -48,7 +48,17 @@ export function CastingSourceOutline({
         onClick={() => onResource(poolKey)}
         aria-label={`${source.name}: ${pool.remaining} of ${pool.max} ${pool.unit} remaining`}
       >
-        {pool.remaining} / {pool.max} {pool.unit} left
+        {finished && pool.max > 0 && pool.max <= 8 && (
+          <Box component='span' className='casting-resource-pips' aria-hidden>
+            {Array.from({ length: pool.max }, (_, index) => (
+              <Box component='span' key={index} data-available={index < pool.remaining || undefined} />
+            ))}
+          </Box>
+        )}
+        <Box component='span'>
+          {pool.remaining} / {pool.max} {pool.unit}
+          {!finished && ' left'}
+        </Box>
       </Button>
     );
   }
@@ -63,7 +73,8 @@ export function CastingSourceOutline({
     else if (isEmpty) status = options.restrictions?.[entry.id] ?? 'Empty slot';
     else if (isPrepared(source) && entry.rank > 0) status = entry.used ? 'Used' : 'Ready';
     else if (source.kind === 'staff')
-      status = entry.rank === 0 ? 'Free' : `${entry.rank} ${entry.rank === 1 ? 'charge' : 'charges'}`;
+      status =
+        entry.rank === 0 ? (finished ? 'At will' : 'Free') : `${entry.rank} ${entry.rank === 1 ? 'charge' : 'charges'}`;
     else if (source.kind === 'innate' || source.kind === 'spellheart')
       status = pool ? `${pool.remaining} / ${pool.max} left today` : 'At will';
     else if (source.kind === 'wand')
@@ -88,12 +99,24 @@ export function CastingSourceOutline({
         disabled={entry.missing}
       >
         <Box className='wire-row-copy'>
-          <Text size='sm'>
-            {finished && source.kind === 'wand' ? source.name : isEmpty ? '+ Prepare spell' : entryName(entry)}
-          </Text>
+          <Box className='casting-entry-heading'>
+            <Text size='sm' className='casting-entry-name'>
+              {finished && source.kind === 'wand' ? source.name : isEmpty ? '+ Prepare spell' : entryName(entry)}
+            </Text>
+            {finished && spell && (
+              <Text
+                className={`casting-entry-actions${actionGlyph(spell.cast) ? ' sheet-actions' : ''}`}
+                size='xs'
+                aria-label={actionLabel(spell.cast)}
+              >
+                {actionGlyph(spell.cast) || actionLabel(spell.cast)}
+              </Text>
+            )}
+          </Box>
           {(entry.origin ||
             options.signatures?.includes(entry.id) ||
-            ['wand', 'spellheart', 'innate', 'ritual'].includes(source.kind)) && (
+            ['wand', 'spellheart', 'innate', 'ritual'].includes(source.kind) ||
+            (finished && source.kind === 'staff')) && (
             <Text size='xs' className='wire-muted'>
               {finished && source.kind === 'wand'
                 ? `${entryName(entry)} · Rank ${entry.rank}`
@@ -107,15 +130,6 @@ export function CastingSourceOutline({
           )}
         </Box>
         <Box className='casting-row-tail'>
-          {finished && spell && (
-            <Text
-              className={actionGlyph(spell.cast) ? 'sheet-actions' : ''}
-              size='xs'
-              aria-label={actionLabel(spell.cast)}
-            >
-              {actionGlyph(spell.cast) || actionLabel(spell.cast)}
-            </Text>
-          )}
           {(!finished || status) && (
             <Text className='casting-row-state' data-ready={status === 'Ready' || undefined} size='xs'>
               {status ?? '›'}
@@ -153,7 +167,7 @@ export function CastingSourceOutline({
             {finished && source.kind === 'focus'
               ? counter('focus')
               : (!finished || !['innate', 'ritual'].includes(source.kind)) && (
-                  <Button variant='subtle' color='gray' size='compact-xs' onClick={onManage}>
+                  <Button className='casting-manage' variant='subtle' color='gray' size='compact-xs' onClick={onManage}>
                     {managementLabel}
                   </Button>
                 )}
@@ -170,7 +184,7 @@ export function CastingSourceOutline({
             </Group>
           )}
           {source.kind === 'staff' && (
-            <Group justify='space-between' mb='xs'>
+            <Group justify='space-between' mb='xs' className='casting-item-resource'>
               <Text size='xs'>{options.staffPrepared === false ? 'Not prepared today' : 'Prepared today'}</Text>
               {options.staffPrepared !== false && counter('charges')}
             </Group>
@@ -182,7 +196,11 @@ export function CastingSourceOutline({
           )}
         </>
       )}
-      {source.kind === 'wand' || source.kind === 'spellheart' || source.kind === 'innate' || source.kind === 'ritual'
+      {source.kind === 'wand' ||
+      source.kind === 'spellheart' ||
+      source.kind === 'innate' ||
+      source.kind === 'ritual' ||
+      (finished && source.kind === 'staff')
         ? visible.map(row)
         : ranks.map((rank) => (
             <Box key={rank}>

@@ -30,12 +30,32 @@ need to remain clear. A replacement composition has not been selected.
 
 ## Latest review: interactive Spells mock
 
+The first interactive visual treatment was rejected: the user said it looked bad. Passing
+interaction checks did not establish visual approval. The user then selected **compact and
+structured**, with clearer source groups, tighter spell rows and restrained controls.
+
+The current revision keeps one smoked reading surface and puts sources in subtle imprint
+groups. Staff ranks move onto spell rows instead of creating a heading between each spell.
+Action symbols sit beside names, counts use compact resource indicators, and numeric totals
+remain visible on narrow phones where the indicators are omitted. The extra character bar and
+bright artwork frame were removed; the compact wordmark header remains. Casting sheets have
+less repeated cost text and management sheets size to their contents. This revises the existing
+interactive mock rather than adding another design implementation. The composition still needs
+the user's review, and merge permission has not been given.
+
+Revision verification: all 18 sample cases were checked at 320px without page, row or source
+heading overflow. Staff and spontaneous layouts and casting sheets were visually inspected at
+390px; long homebrew names at 320px; the prepared list and preparation sheet at 1200px. Prepared
+casting and staff charge spending were exercised after the layout changes. TypeScript, scoped
+ESLint and the standalone build passed. This is visual/mock verification, not a production
+rules test.
+
 On September 9, the user requested a higher fidelity version to judge both appearance and
 interaction. Open `http://127.0.0.1:5175/?view=spell-playground&sample=prepared`, now the default
 preview. The sample selector is above the phone and includes all 18 casting-model cases.
 
 The mock inherits the existing smoked-glass palette, artwork and typeface. One reading surface
-contains search, restrained source/rank headings and spell rows. Prepared entries retain their
+contains search, compact source groups and spell rows. Prepared entries retain their
 individual Ready/Used state, spontaneous ranks own their slot counts, and each wand appears as
 one named item row. Tapping a spell opens its excerpt and casting controls in a contained sheet.
 

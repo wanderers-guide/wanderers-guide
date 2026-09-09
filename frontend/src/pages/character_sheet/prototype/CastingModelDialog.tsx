@@ -209,18 +209,22 @@ export function CastingModelDialog({
                     />
                   )}
                   <Text size='sm'>
-                    Uses 1 {source.name} rank {selectedRank} slot.
+                    {finished
+                      ? `${source.pools[`rank-${selectedRank}`]?.remaining ?? 0} slots left at rank ${selectedRank}`
+                      : `Uses 1 ${source.name} rank ${selectedRank} slot.`}
                   </Text>
                 </>
               )}
-              {isPrepared(source) && entry.rank > 0 && (
+              {isPrepared(source) && entry.rank > 0 && (!finished || entry.used) && (
                 <Text size='sm'>{entry.used ? 'This preparation has been used.' : 'Uses this preparation only.'}</Text>
               )}
               {source.kind === 'focus' && (
                 <Text size='sm'>
                   {entry.rank === 0
                     ? 'No focus points needed.'
-                    : `Uses 1 focus point · ${source.pools.focus.remaining} left`}
+                    : finished
+                      ? `${source.pools.focus.remaining} focus points left`
+                      : `Uses 1 focus point · ${source.pools.focus.remaining} left`}
                 </Text>
               )}
               {source.kind === 'staff' && entry.rank > 0 && (
@@ -246,9 +250,11 @@ export function CastingModelDialog({
                       )}
                     </>
                   ) : (
-                    <Text size='sm'>
-                      Uses {entry.rank} {entry.rank === 1 ? 'charge' : 'charges'}.
-                    </Text>
+                    !finished && (
+                      <Text size='sm'>
+                        Uses {entry.rank} {entry.rank === 1 ? 'charge' : 'charges'}.
+                      </Text>
+                    )
                   )}
                 </>
               )}

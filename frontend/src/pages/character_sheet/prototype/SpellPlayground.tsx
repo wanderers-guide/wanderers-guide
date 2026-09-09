@@ -93,15 +93,12 @@ function InteractiveSpellExample({ example }: { example: CastingModelCase }) {
         <Box className='glass-phone finished-phone' data-glass='smoked' data-tint='balanced'>
           <Box className='sheet-app-header'>
             <LogoIcon size={27} color='var(--sheet-accent)' />
-            <Text>Wanderer’s Guide</Text>
+            <Text component='span'>Wanderer’s Guide</Text>
           </Box>
-          <Group className='finished-character' justify='space-between'>
-            <Text fw={600}>Aster</Text>
-            <Text size='xs'>Character sheet / Spells</Text>
-          </Group>
           <Box className='finished-panel'>
-            <Group justify='space-between' mb='md'>
+            <Group className='finished-page-heading' justify='space-between'>
               <Text className='finished-page-title'>Spells</Text>
+              <Text className='finished-character-name'>Aster</Text>
             </Group>
             <TextInput
               value={query}
@@ -149,7 +146,7 @@ function InteractiveSpellExample({ example }: { example: CastingModelCase }) {
             )}
             <Box className='finished-list' role='region' aria-label='Spell list'>
               {visible.map((item, index) => (
-                <Box key={item.id}>
+                <Box key={item.id} className='finished-source-block'>
                   {item.kind === 'wand' && visible[index - 1]?.kind !== 'wand' && (
                     <Text className='finished-item-heading'>Wands</Text>
                   )}
@@ -210,7 +207,7 @@ function InteractiveSpellExample({ example }: { example: CastingModelCase }) {
             Spells, in use.
           </Title>
           <Text size='sm' c='gray.4' mt='sm'>
-            Smoked glass, quieter lists, and working sample controls.
+            Compact source groups with resources kept beside their spells.
           </Text>
         </Box>
         <Box>
