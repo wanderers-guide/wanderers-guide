@@ -1,0 +1,301 @@
+/* This palette inherits the existing smoked-glass study. Only the composition changes. */
+.spell-playground {
+  max-width: 58rem;
+  margin: auto;
+  padding: var(--mantine-spacing-xl);
+}
+.finished-study-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 24.375rem) minmax(0, 19rem);
+  gap: calc(var(--mantine-spacing-xl) * 2);
+  justify-content: center;
+  align-items: start;
+}
+.finished-review {
+  padding-top: var(--mantine-spacing-lg);
+}
+.finished-sample-picker {
+  max-width: 24.375rem;
+}
+.glass-phone.finished-phone {
+  --wire-panel: var(--sheet-control);
+  --wire-muted: var(--sheet-muted);
+  --wire-line: var(--sheet-divider);
+  --wire-ink: var(--sheet-ink);
+  --wire-fill: var(--sheet-ornament);
+  display: flex;
+  flex-direction: column;
+  height: min(52.75rem, calc(100dvh - 10.5rem));
+  min-height: 30rem;
+}
+.finished-phone .sheet-app-header {
+  flex-shrink: 0;
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 500;
+}
+.finished-character {
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+  color: var(--sheet-ink);
+  background: var(--sheet-glass);
+  flex-shrink: 0;
+}
+.finished-character > :last-child {
+  color: var(--sheet-muted);
+}
+.finished-panel {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin: var(--mantine-spacing-xs);
+  padding: var(--mantine-spacing-md);
+  background: var(--sheet-reading);
+  border: 1px solid var(--sheet-edge);
+  border-radius: var(--mantine-radius-md);
+  backdrop-filter: var(--sheet-blur);
+}
+.finished-page-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+.finished-list {
+  min-height: 0;
+  overflow-y: auto;
+  flex: 1;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sheet-edge) transparent;
+  margin-top: var(--mantine-spacing-sm);
+}
+.finished-phone .casting-source {
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--mantine-spacing-xl);
+}
+.finished-phone .casting-source-heading {
+  padding: 0;
+  min-height: 2.75rem;
+  border: 0;
+}
+.finished-phone .casting-source-heading .wire-row-copy > p {
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+  color: var(--sheet-ink);
+}
+.finished-phone .casting-rank {
+  border: 0;
+  margin-top: var(--mantine-spacing-sm);
+  padding: 0;
+  min-height: 2rem;
+}
+.finished-phone .casting-rank p {
+  font-size: var(--mantine-font-size-xs);
+}
+.finished-phone .casting-spell-row {
+  padding: var(--mantine-spacing-xs) 0;
+  min-height: 3.4rem;
+  border-bottom: 1px solid var(--sheet-divider);
+}
+.finished-phone .casting-spell-row .wire-row-copy > p:first-child {
+  font-size: var(--mantine-font-size-md);
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--sheet-ink);
+}
+.finished-phone .casting-spell-row .wire-row-copy > p + p {
+  margin-top: 0.25rem;
+}
+.finished-phone .casting-spell-row[data-used] .wire-row-copy > p:first-child {
+  color: var(--sheet-muted);
+}
+.finished-phone .casting-spell-row:hover {
+  background: var(--sheet-ornament);
+}
+.casting-row-tail {
+  flex-shrink: 0;
+  text-align: right;
+  max-width: 40%;
+}
+.casting-row-tail .casting-row-state {
+  max-width: none;
+}
+.finished-phone .casting-row-tail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  color: var(--sheet-muted);
+}
+.finished-phone .casting-row-state {
+  white-space: normal;
+}
+.finished-phone .casting-row-state[data-ready] {
+  color: var(--sheet-accent);
+}
+.finished-phone .casting-counter {
+  color: var(--sheet-accent);
+  padding: 0 var(--mantine-spacing-xs);
+  font-size: var(--mantine-font-size-xs);
+  border-radius: var(--mantine-radius-sm);
+  background: color-mix(in srgb, var(--sheet-accent) 7%, transparent);
+}
+.finished-phone .casting-source[data-kind='wand'] {
+  margin: 0;
+}
+.finished-item-heading {
+  margin-top: var(--mantine-spacing-lg) !important;
+  color: var(--sheet-muted);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+}
+.finished-phone .finished-empty-slot {
+  padding: 0;
+  margin-top: var(--mantine-spacing-xs);
+}
+.finished-phone .mantine-Input-input {
+  background: var(--sheet-control);
+  border-color: var(--sheet-edge);
+  color: var(--sheet-ink);
+  font: inherit;
+  font-size: var(--mantine-font-size-sm);
+  min-height: 2.75rem;
+}
+.finished-phone .mantine-Input-input::placeholder {
+  color: var(--sheet-muted);
+  opacity: 1;
+}
+.finished-phone .mantine-Input-section {
+  color: var(--sheet-muted);
+}
+.finished-phone .mantine-InputWrapper-label {
+  color: var(--sheet-ink);
+  font-family: inherit;
+}
+.finished-phone .mantine-InputWrapper-description {
+  color: var(--sheet-muted);
+}
+.finished-phone .mantine-Combobox-dropdown {
+  color: var(--sheet-ink);
+  background: var(--sheet-control);
+  border-color: var(--sheet-field-edge);
+}
+.finished-phone .mantine-Combobox-option:hover,
+.finished-phone .mantine-Combobox-option[data-combobox-selected] {
+  background: var(--sheet-ornament);
+}
+.finished-phone .mantine-Button-root {
+  font-family: inherit;
+  font-weight: 500;
+  min-height: 2.75rem;
+  white-space: normal;
+}
+.finished-phone .mantine-Button-label {
+  white-space: normal;
+  line-height: 1.4;
+}
+.finished-phone .mantine-ActionIcon-root {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}
+.finished-phone .mantine-Button-root[data-variant='subtle'],
+.finished-phone .mantine-Button-root[data-variant='light'],
+.finished-phone .mantine-ActionIcon-root {
+  color: var(--sheet-accent);
+}
+.finished-phone .mantine-Button-root:disabled {
+  opacity: 0.55;
+}
+.finished-phone button:focus-visible {
+  outline: 2px solid var(--sheet-accent);
+  outline-offset: -2px;
+}
+.finished-dialog .mantine-Modal-content {
+  max-height: 91%;
+  background: var(--sheet-control);
+  border: 1px solid var(--sheet-edge);
+  border-radius: var(--mantine-radius-lg) var(--mantine-radius-lg) 0 0;
+  box-shadow: var(--mantine-shadow-xl);
+}
+.finished-dialog .mantine-Modal-header {
+  background: var(--sheet-control);
+  padding: var(--mantine-spacing-md);
+  border-bottom: 1px solid var(--sheet-edge);
+}
+.finished-dialog .mantine-Modal-title {
+  color: var(--sheet-ink);
+  font-size: var(--mantine-font-size-xl);
+  font-weight: 600;
+  line-height: 1.4;
+}
+.finished-dialog .mantine-Modal-close {
+  color: var(--sheet-muted);
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}
+.finished-dialog .mantine-Modal-body {
+  padding: var(--mantine-spacing-md);
+}
+.finished-dialog .mantine-Modal-body > .mantine-Stack-root {
+  gap: var(--mantine-spacing-md);
+}
+.finished-dialog .finished-primary,
+.finished-dialog .mantine-Button-root[data-variant='default'] {
+  background: var(--sheet-accent);
+  color: var(--mantine-color-dark-9);
+  border: 0;
+  font-weight: 600;
+  min-height: 3rem;
+  border-radius: var(--mantine-radius-md);
+}
+.finished-dialog .finished-primary {
+  position: sticky;
+  bottom: 0;
+  box-shadow: 0 0 0 var(--mantine-spacing-xs) var(--sheet-control);
+}
+.finished-dialog .finished-primary:disabled {
+  background: var(--sheet-ornament);
+  color: var(--sheet-muted);
+  opacity: 1;
+}
+.finished-facts {
+  color: var(--sheet-accent);
+}
+.finished-description {
+  padding-bottom: var(--mantine-spacing-sm);
+  border-bottom: 1px solid var(--sheet-edge);
+}
+.finished-dialog .mantine-Radio-label {
+  line-height: 1.5;
+  padding-block: var(--mantine-spacing-xs);
+}
+.finished-dialog .mantine-Radio-body {
+  align-items: center;
+}
+.finished-dialog .mantine-Radio-radio:checked {
+  background: var(--sheet-accent);
+  border-color: var(--sheet-accent);
+}
+.finished-dialog .mantine-Radio-icon {
+  color: var(--mantine-color-dark-9);
+}
+.finished-dialog .mantine-Tabs-tab {
+  color: var(--sheet-muted);
+  min-height: 2.75rem;
+}
+.finished-dialog .mantine-Tabs-tab[data-active] {
+  color: var(--sheet-accent);
+  border-color: var(--sheet-accent);
+}
+@media (max-width: 48em) {
+  .spell-playground {
+    padding: var(--mantine-spacing-md);
+  }
+  .finished-study-layout {
+    grid-template-columns: minmax(0, 24.375rem);
+    gap: var(--mantine-spacing-lg);
+  }
+  .finished-review {
+    padding-top: 0;
+  }
+}

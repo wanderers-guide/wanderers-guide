@@ -184,9 +184,14 @@ export function SpellReferenceStudy() {
             finished visual design.
           </Text>
         </Box>
-        <Anchor component={Link} to='/?view=spell-models&group=casting' size='sm'>
-          All casting models →
-        </Anchor>
+        <Stack gap='xs'>
+          <Anchor component={Link} to='/?view=spell-playground' size='sm'>
+            Try the interactive mock →
+          </Anchor>
+          <Anchor component={Link} to='/?view=spell-models&group=casting' size='sm'>
+            All casting models →
+          </Anchor>
+        </Stack>
       </Group>
       <Tabs
         value={reference.id}

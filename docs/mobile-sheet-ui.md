@@ -3,9 +3,9 @@
 Status: the expanded layout and controls were rejected, followed by both Spells layout
 studies, which the user found clunky. The focus remains the real Spells page and its casting
 variants. These prototypes and earlier material concepts are review references, not an
-approved redesign. The latest board pairs Mobbin references with limited placement sketches;
-the earlier rough mock compares prepared/spontaneous casting and the remaining source and item
-states before styling. Branch: `codex/mobile-sheet-ui`.
+approved redesign. The latest mock applies the smoked-glass treatment to the Mobbin-inspired
+Spells arrangement, with working temporary casting and preparation controls. The reference
+board and earlier casting-model diagrams remain available. Branch: `codex/mobile-sheet-ui`.
 
 **Do not merge this branch until the user explicitly approves merging it.** Earlier
 authorization to merge reliability fixes does not apply to this UI branch.
@@ -33,7 +33,8 @@ the completed mobile loading and quiet-save work. Production sheet styling and b
 remain unchanged while the material concepts below are reviewed.
 
 Run `npm --prefix frontend run prototype:mobile-sheet` and open
-`http://127.0.0.1:5175`. The opening view is now the Mobbin reference board. The casting-model
+`http://127.0.0.1:5175`. The opening view is now the interactive Spells mock, with a sample
+selector for all 18 cases. The Mobbin board is at `/?view=spell-references`; the casting-model
 comparison is available at `/?view=spell-models&group=casting`. The earlier glass study
 is available at `/?view=smoked`. Choose **Before / After** there for
 matching screenshots, **Current UI** for the original navigation map, or **Compare all**

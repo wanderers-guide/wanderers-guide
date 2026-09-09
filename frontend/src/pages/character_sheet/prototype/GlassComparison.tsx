@@ -8,6 +8,7 @@ import { SpellDesignStudy } from './SpellDesignStudy';
 import { SpellWireframeStudy } from './SpellWireframeStudy';
 import { SpellCastingStudy } from './SpellCastingStudy';
 import { SpellReferenceStudy } from './SpellReferenceStudy';
+import { SpellPlayground } from './SpellPlayground';
 import './glass.css';
 import './sheet-panels.css';
 
@@ -38,7 +39,7 @@ const concepts: { id: GlassVariant; letter: string; title: string; description: 
 /** Local material study. The captured current UI remains a separate reference. */
 export function GlassComparison() {
   const [params, setParams] = useSearchParams();
-  const requestedView = params.get('view') ?? 'spell-references';
+  const requestedView = params.get('view') ?? 'spell-playground';
   const view = ['compare', 'current', 'before-after', ...concepts.map((concept) => concept.id)].includes(requestedView)
     ? requestedView
     : 'compare';
@@ -63,6 +64,7 @@ export function GlassComparison() {
   if (requestedView === 'spell-wireframes') return <SpellWireframeStudy />;
   if (requestedView === 'spell-models') return <SpellCastingStudy />;
   if (requestedView === 'spell-references') return <SpellReferenceStudy />;
+  if (requestedView === 'spell-playground') return <SpellPlayground />;
 
   return (
     <Box className='glass-study'>

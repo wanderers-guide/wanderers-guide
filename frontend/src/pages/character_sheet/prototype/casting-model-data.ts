@@ -8,7 +8,7 @@ export type CastingSourceOptions = {
   wandState?: 'used' | 'broken' | 'destroyed' | 'overcharged';
   signatures?: string[];
   restrictions?: Record<string, string>;
-  slotChoices?: { value: string; label: string; rank: number }[];
+  slotChoices?: { value: string; label: string; rank: number; sourceId?: string; pool?: string; disabled?: boolean }[];
 };
 export type CastingModelCase = {
   id: string;

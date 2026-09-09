@@ -1,8 +1,8 @@
 # Mobile Spells UI: audit and design brief
 
-Status: the latest review pairs three inspected Mobbin references with limited arrangement
-sketches. The casting-model mock still compares prepared and spontaneous casting side by side,
-with dedicated layouts for every currently supported spell source and its item states.
+Status: the latest review is a higher fidelity, interactive smoked-glass Spells mock, building
+on the three inspected Mobbin references. The casting-model diagrams remain available for
+comparing prepared and spontaneous casting and the remaining source and item states.
 The user rejected the earlier September 8 layout studies as clunky. Those remain review
 references, not proposed production designs. Work stays on `codex/mobile-sheet-ui`; merging
 requires explicit user approval.
@@ -28,14 +28,54 @@ names first: quieter grouping, less persistent management UI, and compact rows w
 resource counts and comfortable touch targets. Source identity and separate resources still
 need to remain clear. A replacement composition has not been selected.
 
-## Latest review: Mobbin references
+## Latest review: interactive Spells mock
+
+On September 9, the user requested a higher fidelity version to judge both appearance and
+interaction. Open `http://127.0.0.1:5175/?view=spell-playground&sample=prepared`, now the default
+preview. The sample selector is above the phone and includes all 18 casting-model cases.
+
+The mock inherits the existing smoked-glass palette, artwork and typeface. One reading surface
+contains search, restrained source/rank headings and spell rows. Prepared entries retain their
+individual Ready/Used state, spontaneous ranks own their slot counts, and each wand appears as
+one named item row. Tapping a spell opens its excerpt and casting controls in a contained sheet.
+
+The existing source outline and casting-model dialog are reused with a styled presentation and
+typed local actions. A small preview state reducer updates the selected preparation, casting
+source/rank, focus pool, staff charge pool, or item activation. It rechecks availability before
+spending resources. Staff-only cases include an actual sample caster so preparation and slot
+payment can affect visible resources. Undo and Reset are review controls outside the phone.
+
+Working sample interactions include casting, recovering a preparation, editing preparations,
+adding an example spell to the spellbook, signature rank selection, correcting resource counts,
+staff preparation with a slot sacrifice, staff charge/slot payment, and wand overcharging.
+Search and casting-time filters affect the visible list without changing resources.
+
+This is an isolated visual/interaction mock with no character API calls or persistence. Spell
+text is excerpted at base rank; loadouts and quantities are illustrative. It is not a PF2e rules
+implementation. Full ritual requirements, damage rolls, school eligibility, repertoire editing,
+equipment attachment/repair, and production character saves are outside this pass. The current
+repertoire and attachment state are viewable. Changing the sample or reloading resets its state.
+No visual composition or merge has been approved.
+
+Browser verification: all 18 cases rendered at 390px without page or row horizontal overflow.
+Prepared casting consumed the selected duplicate; Undo restored it. Editing and learning spells,
+signature casting at rank 2, linked staff payment, staff preparation with a rank 2 sacrifice,
+focus spending/correction/exhaustion and free cantrips, independent spellheart uses, and wand
+use/overcharge were exercised in the browser. These checks verify the mock, not production rules.
+The one-action filter retained Guidance and variable-action Heal; clearing unmatched search
+restored the list. Screenshots were inspected at 390px and 1200px, including long names and
+contained dialogs. The earlier casting-model comparison still renders. TypeScript, scoped
+ESLint, Prettier and the isolated prototype build passed, with the existing study-bundle size
+warning. No automated production integration coverage was added by this visual pass.
+
+## Earlier review: Mobbin references
 
 On September 9, the user requested Mobbin setup and real UI examples before revisiting the
 design. The global Codex Mobbin MCP configuration was added and OAuth reported success.
 Its tools were not exposed to the running task, so reference research used Mobbin's public
 Explore pages through the browser. No authenticated MCP search was performed in this pass.
 
-Open `http://127.0.0.1:5175/?view=spell-references&pattern=browse`, now the default preview.
+Open `http://127.0.0.1:5175/?view=spell-references&pattern=browse`.
 Three review tabs pair actual hosted screenshots with observations and our static sketches:
 
 - [Ultrahuman: Breathing Protocols](https://mobbin.com/explore/screens/b7af4af8-5458-485c-887a-bd81ecbbfe01):

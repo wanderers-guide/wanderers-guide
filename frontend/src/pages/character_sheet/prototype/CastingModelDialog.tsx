@@ -1,8 +1,16 @@
 import { Box, Button, Group, Modal, NumberInput, Radio, Select, Stack, Tabs, Text } from '@mantine/core';
 import { useState } from 'react';
-import { entryName, isPrepared, spellCatalog, type SampleSource, type SpellScenario } from './spell-study-data';
+import {
+  actionLabel,
+  entryName,
+  isPrepared,
+  spellCatalog,
+  type SampleSource,
+  type SpellScenario,
+} from './spell-study-data';
 import { type CastingSourceOptions } from './casting-model-data';
 import { type WireframeSheet } from './SpellWireframePhone';
+import { type SpellPreviewAction } from './spell-preview-state';
 
 /** The model-specific dialogs illustrate resource choices and preparation without simulating saves. */
 export function CastingModelDialog({
@@ -12,6 +20,7 @@ export function CastingModelDialog({
   onClose,
   onChange,
   onFinish,
+  onCommit,
 }: {
   sheet: WireframeSheet;
   scenario: SpellScenario;
@@ -19,10 +28,15 @@ export function CastingModelDialog({
   onClose: () => void;
   onChange: (sheet: WireframeSheet) => void;
   onFinish: (action: string) => void;
+  onCommit?: (action: SpellPreviewAction) => void;
 }) {
-  const source =
+  const selectedSource =
     sheet?.kind === 'spell' ? sheet.location.source : sheet && 'source' in sheet ? sheet.source : undefined;
-  const entry = sheet?.kind === 'spell' ? sheet.location.entry : undefined;
+  const source = scenario.sources.find((item) => item.id === selectedSource?.id);
+  const entry =
+    sheet?.kind === 'spell' ? source?.entries.find((item) => item.id === sheet.location.entry.id) : undefined;
+  const spell = entry?.spell ? spellCatalog[entry.spell] : undefined;
+  const finished = !!onCommit;
   const settings = source ? (options[source.id] ?? {}) : {};
   const [payment, setPayment] = useState<string>('charges');
   const [slot, setSlot] = useState<string | null>(null);
@@ -30,15 +44,32 @@ export function CastingModelDialog({
   const [wandStep, setWandStep] = useState<'detail' | 'confirm' | 'outcome'>('detail');
   const [tab, setTab] = useState<string | null>('prepare');
   const [draftSlots, setDraftSlots] = useState<Record<string, string | null>>({});
+  const [remaining, setRemaining] = useState<number | undefined>(undefined);
+  const [newSpell, setNewSpell] = useState<string | null>(null);
   const poolKey = sheet?.kind === 'resource' ? sheet.pool : entry?.pool;
   const pool = source && poolKey ? source.pools[poolKey] : undefined;
   const selectedRank = Number(rank ?? entry?.rank ?? 0);
   const signature = !!entry && settings.signatures?.includes(entry.id);
   const eligibleSlots = (settings.slotChoices ?? []).filter((choice) => choice.rank >= (entry?.rank ?? 0));
+  const sacrifices = scenario.sources.filter(isPrepared).flatMap((owner) =>
+    owner.entries
+      .filter((item) => item.rank > 0 && item.spell && !item.used)
+      .map((item) => ({
+        value: `${owner.id}:${item.id}`,
+        label: `${owner.name} · Rank ${item.rank} · ${entryName(item)}`,
+        sourceId: owner.id,
+        entryId: item.id,
+      }))
+  );
+  /** The wireframe keeps its existing path-only behavior; the finished mock commits a typed local action. */
+  function finish(label: string, action?: SpellPreviewAction): void {
+    if (onCommit && action) onCommit(action);
+    else onFinish(label);
+  }
   const title = entry
     ? entryName(entry)
     : sheet?.kind === 'resource'
-      ? 'Adjust remaining uses'
+      ? `Adjust ${pool?.unit ?? 'uses'}`
       : sheet?.kind === 'manage'
         ? source
           ? isPrepared(source)
@@ -64,7 +95,8 @@ export function CastingModelDialog({
     if (source.kind === 'staff') {
       const cost = payment === 'slot' ? 1 : entry.rank;
       if (source.pools.charges.remaining < cost) return 'Not enough charges';
-      if (payment === 'slot' && !slot) return 'Choose a spell slot';
+      if (payment === 'slot' && !eligibleSlots.some((choice) => choice.value === slot && !choice.disabled))
+        return 'Choose a spell slot';
     }
     if (source.kind === 'spontaneous' && !source.pools[`rank-${selectedRank}`]?.remaining)
       return 'No slots left at this rank';
@@ -108,7 +140,7 @@ export function CastingModelDialog({
       withinPortal={false}
       lockScroll={false}
       transitionProps={{ duration: 0 }}
-      className='wire-modal'
+      className={`wire-modal${finished ? ' finished-dialog' : ''}`}
       data-sheet-kind={sheet?.kind}
       closeButtonProps={{ 'aria-label': 'Close casting preview' }}
     >
@@ -118,28 +150,45 @@ export function CastingModelDialog({
             {entry.origin ?? source.name} ·{' '}
             {entry.rank === 0 ? 'Cantrip' : `Rank ${source.kind === 'spontaneous' ? selectedRank : entry.rank}`}
           </Text>
-          <Box className='wire-dashed wire-detail-shape'>
-            <Text size='sm'>Spell description</Text>
-            <Box className='wire-text-line' />
-            <Box className='wire-text-line wire-short-line' />
-          </Box>
+          {finished && spell ? (
+            <Box className='finished-description'>
+              <Group gap='sm' className='finished-facts' mb='md'>
+                <Text size='xs'>{actionLabel(spell.cast)}</Text>
+                {spell.range && <Text size='xs'>{spell.range}</Text>}
+                {spell.defense && <Text size='xs'>{spell.defense}</Text>}
+              </Group>
+              <Text size='sm' lh={1.7}>
+                {spell.description
+                  .replace(/\\?\[\\?\[|\\?\]\\?\]/g, '')
+                  .replace(/\s*\(⬆️\{\{ceil\(level\/4\)\}\}d6\)/g, '')}
+              </Text>
+            </Box>
+          ) : (
+            <Box className='wire-dashed wire-detail-shape'>
+              <Text size='sm'>Spell description</Text>
+              <Box className='wire-text-line' />
+              <Box className='wire-text-line wire-short-line' />
+            </Box>
+          )}
           {source.attack !== undefined && (
             <Text size='xs'>
               Attack +{source.attack} · DC {source.dc}
             </Text>
           )}
-          {source.kind === 'focus' && (
+          {source.kind === 'focus' && !finished && (
             <Box className='wire-dashed' p='xs'>
               <Text size='xs'>Casting stats for {entry.origin}</Text>
             </Box>
           )}
           {source.kind === 'ritual' ? (
-            <Box className='wire-dashed' p='sm'>
-              <Text size='sm'>Ritual requirements</Text>
-              <Text size='xs' className='wire-muted' mt='xs'>
-                Casting time · cost · primary check · secondary casters
-              </Text>
-            </Box>
+            !finished && (
+              <Box className='wire-dashed' p='sm'>
+                <Text size='sm'>Ritual requirements</Text>
+                <Text size='xs' className='wire-muted' mt='xs'>
+                  Casting time · cost · primary check · secondary casters
+                </Text>
+              </Box>
+            )
           ) : (
             <>
               {source.kind === 'spontaneous' && entry.rank > 0 && (
@@ -151,7 +200,7 @@ export function CastingModelDialog({
                       onChange={setRank}
                       allowDeselect={false}
                       data={Object.entries(source.pools)
-                        .filter(([key]) => key.startsWith('rank-'))
+                        .filter(([key]) => key.startsWith('rank-') && Number(key.slice(5)) >= entry.rank)
                         .map(([key, value]) => ({
                           value: key.slice(5),
                           label: `Rank ${key.slice(5)} · ${value.remaining} slots left`,
@@ -191,7 +240,7 @@ export function CastingModelDialog({
                           placeholder='Choose source and rank'
                           value={slot}
                           onChange={setSlot}
-                          data={eligibleSlots.map(({ value, label }) => ({ value, label }))}
+                          data={eligibleSlots.map(({ value, label, disabled }) => ({ value, label, disabled }))}
                           comboboxProps={{ withinPortal: false }}
                         />
                       )}
@@ -207,7 +256,7 @@ export function CastingModelDialog({
               {(source.kind === 'innate' || source.kind === 'spellheart') && (
                 <Text size='sm'>{pool ? `${pool.remaining} / ${pool.max} uses left today` : 'At will'}</Text>
               )}
-              {source.kind === 'spellheart' && (
+              {source.kind === 'spellheart' && !finished && (
                 <Box className='wire-dashed' p='xs'>
                   <Text size='xs'>
                     {entry.rank === 0
@@ -244,10 +293,28 @@ export function CastingModelDialog({
                   {wandStep === 'outcome' && (
                     <Stack gap='xs'>
                       <Text size='sm'>Flat check outcome</Text>
-                      <Button variant='default' onClick={() => onFinish('Overcharge succeeded; wand becomes broken')}>
+                      <Button
+                        variant='default'
+                        onClick={() =>
+                          finish('Overcharge succeeded; wand becomes broken', {
+                            kind: 'overcharge',
+                            sourceId: source.id,
+                            outcome: 'broken',
+                          })
+                        }
+                      >
                         Success: broken
                       </Button>
-                      <Button variant='default' onClick={() => onFinish('Overcharge failed; wand is destroyed')}>
+                      <Button
+                        variant='default'
+                        onClick={() =>
+                          finish('Overcharge failed; wand is destroyed', {
+                            kind: 'overcharge',
+                            sourceId: source.id,
+                            outcome: 'destroyed',
+                          })
+                        }
+                      >
                         Failure: destroyed
                       </Button>
                     </Stack>
@@ -256,16 +323,40 @@ export function CastingModelDialog({
               ) : (
                 <Button
                   variant='default'
+                  className={finished ? 'finished-primary' : undefined}
                   disabled={!!unavailableReason()}
-                  onClick={() =>
-                    onFinish(
+                  onClick={() => {
+                    const choice = payment === 'slot' ? eligibleSlots.find((item) => item.value === slot) : undefined;
+                    finish(
                       isPrepared(source) && entry.used
                         ? `Recover preparation: ${entryName(entry)}`
-                        : `Cast ${entryName(entry)} from ${source.name}`
-                    )
-                  }
+                        : `Cast ${entryName(entry)} from ${source.name}`,
+                      isPrepared(source) && entry.used
+                        ? { kind: 'recover', sourceId: source.id, entryId: entry.id }
+                        : {
+                            kind: 'cast',
+                            sourceId: source.id,
+                            entryId: entry.id,
+                            rank: selectedRank,
+                            ...(choice?.sourceId && choice.pool
+                              ? { slot: { sourceId: choice.sourceId, pool: choice.pool } }
+                              : {}),
+                          }
+                    );
+                  }}
                 >
-                  {unavailableReason() ?? (isPrepared(source) && entry.used ? 'Recover preparation' : 'Cast')}
+                  {unavailableReason() ??
+                    (isPrepared(source) && entry.used
+                      ? 'Recover preparation'
+                      : finished && entry.rank === 0
+                        ? 'Cast cantrip'
+                        : finished && source.kind === 'staff'
+                          ? `Cast · ${payment === 'slot' ? '1 charge + slot' : `${entry.rank} ${entry.rank === 1 ? 'charge' : 'charges'}`}`
+                          : finished && source.kind === 'spontaneous'
+                            ? `Cast · Rank ${selectedRank} slot`
+                            : finished && source.kind === 'focus'
+                              ? 'Cast · 1 focus point'
+                              : 'Cast')}
                 </Button>
               )}
             </>
@@ -277,13 +368,25 @@ export function CastingModelDialog({
         <Stack>
           <Text size='sm'>{source.name}</Text>
           <NumberInput
-            label={`${pool.unit} remaining`}
-            defaultValue={pool.remaining}
+            label={`${pool.unit[0].toUpperCase()}${pool.unit.slice(1)} remaining`}
+            value={remaining ?? pool.remaining}
+            onChange={(value) => setRemaining(Number(value) || 0)}
             min={0}
             max={pool.max}
             allowDecimal={false}
           />
-          <Button variant='default' onClick={() => onFinish(`Resource adjustment for ${source.name}`)}>
+          <Button
+            variant='default'
+            className={finished ? 'finished-primary' : undefined}
+            onClick={() =>
+              finish(`Resource adjustment for ${source.name}`, {
+                kind: 'pool',
+                sourceId: source.id,
+                pool: poolKey!,
+                remaining: remaining ?? pool.remaining,
+              })
+            }
+          >
             Done
           </Button>
         </Stack>
@@ -308,9 +411,33 @@ export function CastingModelDialog({
                         {name}
                       </Text>
                     ))}
-                    <Box className='wire-dashed' p='sm'>
-                      Learn or remove spells
-                    </Box>
+                    {finished ? (
+                      <Group align='end' wrap='nowrap'>
+                        <Select
+                          label='Add to spellbook'
+                          value={newSpell}
+                          onChange={setNewSpell}
+                          searchable
+                          data={['Befuddle', 'Daze', 'Fireball'].filter((name) => !source.known.includes(name))}
+                          comboboxProps={{ withinPortal: false }}
+                          style={{ flex: 1 }}
+                        />
+                        <Button
+                          variant='light'
+                          disabled={!newSpell}
+                          onClick={() => {
+                            if (newSpell) onCommit?.({ kind: 'learn', sourceId: source.id, spell: newSpell });
+                            setNewSpell(null);
+                          }}
+                        >
+                          Add
+                        </Button>
+                      </Group>
+                    ) : (
+                      <Box className='wire-dashed' p='sm'>
+                        Learn or remove spells
+                      </Box>
+                    )}
                   </Stack>
                 </Tabs.Panel>
               </Tabs>
@@ -331,9 +458,11 @@ export function CastingModelDialog({
                   </Text>
                 </Group>
               ))}
-              <Box className='wire-dashed' p='sm'>
-                Add spells / select signature spells
-              </Box>
+              {!finished && (
+                <Box className='wire-dashed' p='sm'>
+                  Add spells / select signature spells
+                </Box>
+              )}
             </Stack>
           )}
           {source.kind === 'staff' && (
@@ -343,14 +472,16 @@ export function CastingModelDialog({
                   ? 'Prepare this staff for today.'
                   : 'This staff is prepared for today.'}
               </Text>
-              <Box className='wire-dashed' p='sm'>
-                Base charges from highest spell-slot rank
-              </Box>
+              <Text size='sm'>Charges equal your highest spell-slot rank.</Text>
               {(settings.staffCaster === 'prepared' || settings.staffCaster === 'both') && (
                 <Select
                   label='Optional extra charges during preparation'
                   placeholder='Keep all spell slots'
-                  data={['Wizard · Rank 2 · Slot 1', 'Wizard · Rank 1 · Slot 2']}
+                  data={
+                    finished
+                      ? sacrifices.map(({ value, label }) => ({ value, label }))
+                      : ['Wizard · Rank 2 · Slot 1', 'Wizard · Rank 1 · Slot 2']
+                  }
                   value={slot}
                   onChange={setSlot}
                   clearable
@@ -368,9 +499,11 @@ export function CastingModelDialog({
           {source.kind === 'spellheart' && (
             <>
               <Text size='sm'>Affixed to: {settings.affixedTo ?? 'not affixed'}</Text>
-              <Box className='wire-dashed' p='sm'>
-                Equipment attachment / passive benefits
-              </Box>
+              {!finished && (
+                <Box className='wire-dashed' p='sm'>
+                  Equipment attachment / passive benefits
+                </Box>
+              )}
               <Text size='xs' className='wire-muted'>
                 Each activation keeps its own frequency.
               </Text>
@@ -381,21 +514,43 @@ export function CastingModelDialog({
               <Text size='sm'>
                 {source.name} · {settings.wandState ?? 'Ready'}
               </Text>
-              <Box className='wire-dashed' p='sm'>
-                Item description / specialty effects / condition
-              </Box>
+              {!finished && (
+                <Box className='wire-dashed' p='sm'>
+                  Item description / specialty effects / condition
+                </Box>
+              )}
               <Text size='xs' className='wire-muted'>
                 Repair and daily use are separate.
               </Text>
             </>
           )}
-          {['focus', 'innate', 'ritual'].includes(source.kind) && (
+          {['focus', 'innate', 'ritual'].includes(source.kind) && !finished && (
             <Box className='wire-dashed' p='md'>
               Collection / source settings
             </Box>
           )}
-          <Button variant='default' onClick={() => onFinish(`Manage ${source.name}`)}>
-            Done
+          <Button
+            variant='default'
+            className={finished ? 'finished-primary' : undefined}
+            onClick={() => {
+              const sacrifice = sacrifices.find((item) => item.value === slot);
+              finish(
+                `Manage ${source.name}`,
+                isPrepared(source)
+                  ? { kind: 'prepare', sourceId: source.id, spells: draftSlots }
+                  : source.kind === 'staff' && settings.staffPrepared === false
+                    ? {
+                        kind: 'staff-prepare',
+                        sourceId: source.id,
+                        ...(sacrifice
+                          ? { sacrifice: { sourceId: sacrifice.sourceId, entryId: sacrifice.entryId } }
+                          : {}),
+                      }
+                    : undefined
+              );
+            }}
+          >
+            {finished && source.kind === 'staff' && settings.staffPrepared === false ? 'Prepare staff' : 'Done'}
           </Button>
         </Stack>
       )}
