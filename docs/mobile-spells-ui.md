@@ -1,6 +1,7 @@
 # Mobile Spells UI: audit and design brief
 
-Status: the current rough mock compares prepared and spontaneous casting side by side,
+Status: the latest review pairs three inspected Mobbin references with limited arrangement
+sketches. The casting-model mock still compares prepared and spontaneous casting side by side,
 with dedicated layouts for every currently supported spell source and its item states.
 The user rejected the earlier September 8 layout studies as clunky. Those remain review
 references, not proposed production designs. Work stays on `codex/mobile-sheet-ui`; merging
@@ -27,13 +28,49 @@ names first: quieter grouping, less persistent management UI, and compact rows w
 resource counts and comfortable touch targets. Source identity and separate resources still
 need to remain clear. A replacement composition has not been selected.
 
-## Current review: casting models and items
+## Latest review: Mobbin references
+
+On September 9, the user requested Mobbin setup and real UI examples before revisiting the
+design. The global Codex Mobbin MCP configuration was added and OAuth reported success.
+Its tools were not exposed to the running task, so reference research used Mobbin's public
+Explore pages through the browser. No authenticated MCP search was performed in this pass.
+
+Open `http://127.0.0.1:5175/?view=spell-references&pattern=browse`, now the default preview.
+Three review tabs pair actual hosted screenshots with observations and our static sketches:
+
+- [Ultrahuman: Breathing Protocols](https://mobbin.com/explore/screens/b7af4af8-5458-485c-887a-bd81ecbbfe01):
+  repeated rows and restrained dividers. The suggested spell list keeps readable secondary text
+  and omits decorative thumbnails. Switch Prepared/Spontaneous to compare resource placement.
+- [Saturn Calendar: Class List](https://mobbin.com/explore/screens/e9572bcf-347b-4fd3-8680-eda6f59cb547):
+  filled and empty positions in one editor. Our sketch retains duplicate preparations, slot
+  identity and restrictions. The play-list sketch summarizes empty preparations per rank.
+- [Target: Item List](https://mobbin.com/explore/screens/3f313f42-170f-4c42-b55b-cd84610db824):
+  a contained sheet with a clear bottom action. Our staff sketch reserves description space,
+  payment choices and an explicit cost alongside Cast. This is not a batch-casting proposal.
+
+Also inspected [Origin: Updated Overview](https://mobbin.com/explore/screens/413f86df-ddd9-4956-8dfa-515256bd949d).
+Its per-category amounts illustrate resource ownership, but the large gauge and nested cards
+would consume too much of this spell list. It was not selected for the board.
+
+These are design inferences from screenshots, not measured usability findings or an approved
+composition. The board uses existing casting fixtures; search, rows, slot fields and Cast
+are static placement shapes. Only the reference tabs, model toggle and links are interactive.
+The complete interactive model study remains accessible through All casting models.
+Mobbin images remain remotely hosted with attribution and source links; they are not copied
+into the repo. A fallback link remains available if a hosted image cannot load.
+
+Verification: three reference tabs and the casting-model toggle were exercised; all three
+reference images loaded. Desktop and 390px screenshots were inspected without horizontal
+overflow. TypeScript, scoped ESLint and the isolated prototype build passed. Production UI,
+casting, saves and deployment remain unchanged; this branch still requires merge approval.
+
+## Earlier review: casting models and items
 
 The user agreed that prepared and spontaneous casting should share a visual language while
 placing resources differently. This is a per-source distinction, not a character-wide mode.
 They requested expanded mocks for both and the remaining spell and item surfaces.
 
-Open `http://127.0.0.1:5175/?view=spell-models&group=casting`, now the default preview.
+Open `http://127.0.0.1:5175/?view=spell-models&group=casting`.
 The Compare control selects prepared/spontaneous, preparation types, focus/innate/rituals,
 staves/wands/spellhearts, mixed sources, empty/exhausted/missing states, or item readiness/damage.
 

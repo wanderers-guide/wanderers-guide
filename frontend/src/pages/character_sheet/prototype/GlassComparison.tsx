@@ -7,6 +7,7 @@ import { isGlassScreen, studyScreens } from './sheet-study-data';
 import { SpellDesignStudy } from './SpellDesignStudy';
 import { SpellWireframeStudy } from './SpellWireframeStudy';
 import { SpellCastingStudy } from './SpellCastingStudy';
+import { SpellReferenceStudy } from './SpellReferenceStudy';
 import './glass.css';
 import './sheet-panels.css';
 
@@ -37,7 +38,7 @@ const concepts: { id: GlassVariant; letter: string; title: string; description: 
 /** Local material study. The captured current UI remains a separate reference. */
 export function GlassComparison() {
   const [params, setParams] = useSearchParams();
-  const requestedView = params.get('view') ?? 'spell-models';
+  const requestedView = params.get('view') ?? 'spell-references';
   const view = ['compare', 'current', 'before-after', ...concepts.map((concept) => concept.id)].includes(requestedView)
     ? requestedView
     : 'compare';
@@ -61,6 +62,7 @@ export function GlassComparison() {
   if (requestedView === 'spell-designs') return <SpellDesignStudy />;
   if (requestedView === 'spell-wireframes') return <SpellWireframeStudy />;
   if (requestedView === 'spell-models') return <SpellCastingStudy />;
+  if (requestedView === 'spell-references') return <SpellReferenceStudy />;
 
   return (
     <Box className='glass-study'>
@@ -79,6 +81,7 @@ export function GlassComparison() {
         </Group>
         <Tabs value={view} onChange={(value) => updateParam('view', value ?? 'smoked')} mt='xl'>
           <Tabs.List aria-label='Glass concepts'>
+            <Tabs.Tab value='spell-references'>Mobbin references</Tabs.Tab>
             <Tabs.Tab value='spell-models'>Casting models</Tabs.Tab>
             <Tabs.Tab value='spell-wireframes'>Spells wireframes</Tabs.Tab>
             <Tabs.Tab value='spell-designs'>Spells designs</Tabs.Tab>

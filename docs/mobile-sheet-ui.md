@@ -3,8 +3,9 @@
 Status: the expanded layout and controls were rejected, followed by both Spells layout
 studies, which the user found clunky. The focus remains the real Spells page and its casting
 variants. These prototypes and earlier material concepts are review references, not an
-approved redesign. The current rough Spells mock compares prepared/spontaneous casting and
-the remaining source and item states before styling. Branch: `codex/mobile-sheet-ui`.
+approved redesign. The latest board pairs Mobbin references with limited placement sketches;
+the earlier rough mock compares prepared/spontaneous casting and the remaining source and item
+states before styling. Branch: `codex/mobile-sheet-ui`.
 
 **Do not merge this branch until the user explicitly approves merging it.** Earlier
 authorization to merge reliability fixes does not apply to this UI branch.
@@ -23,7 +24,7 @@ for the interaction map, concrete findings, and the two implemented navigation p
 Both styled Spells layouts were subsequently rejected as clunky. The user then requested
 three rough arrangements using shapes before building actual UI, then agreed to a shared
 visual language with different resource layouts per casting model. See the focused audit's
-current casting-model review and feedback before proposing another composition.
+Mobbin reference review, casting-model review and feedback before proposing another composition.
 
 ## Current baseline
 
@@ -32,7 +33,8 @@ the completed mobile loading and quiet-save work. Production sheet styling and b
 remain unchanged while the material concepts below are reviewed.
 
 Run `npm --prefix frontend run prototype:mobile-sheet` and open
-`http://127.0.0.1:5175`. The opening view is now the casting-model comparison. The earlier glass study
+`http://127.0.0.1:5175`. The opening view is now the Mobbin reference board. The casting-model
+comparison is available at `/?view=spell-models&group=casting`. The earlier glass study
 is available at `/?view=smoked`. Choose **Before / After** there for
 matching screenshots, **Current UI** for the original navigation map, or **Compare all**
 for the three material concepts. The prototype lives beside the actual sheet in
