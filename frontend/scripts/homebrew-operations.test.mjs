@@ -1,7 +1,7 @@
 /** Run authored homebrew graphs through the same controller used by the worker. */
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
-import { createOperationEngine } from './operation-test-harness.mjs';
+import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
 
 let engine;
 const content = {
@@ -54,6 +54,51 @@ test('an active conditional creates its custom counter before its adjustments an
   assert.deepEqual(packet.errors, []);
   assert.equal(packet.store.variables.BREW_COUNTER?.value, 5);
   assert.equal(packet.store.variables.MAX_HEALTH_BONUS.value, 5);
+});
+
+test('a granted character trait is available to later TRAIT_NAMES conditionals', async () => {
+  const holyTrait = { id: 4213, name: 'Holy (creature)', meta_data: { creature_trait: true } };
+  engine.setFixtures([{ table: 'trait', row: holyTrait }]);
+  try {
+    const packet = await calculate([
+      op('grant-holy', 'giveTrait', { traitId: holyTrait.id }),
+      op('holy-check', 'conditional', {
+        conditions: [
+          {
+            id: 'has-holy',
+            name: 'TRAIT_NAMES',
+            type: 'list-str',
+            operator: 'INCLUDES',
+            value: holyTrait.name,
+          },
+        ],
+        trueOperations: [set('MAX_HEALTH_BONUS', 7)],
+        falseOperations: [set('MAX_HEALTH_BONUS', 1)],
+      }),
+    ]);
+    assert.deepEqual(packet.store.variables.TRAIT_NAMES.value, ['HOLY (CREATURE)']);
+    assert.equal(packet.store.variables.MAX_HEALTH_BONUS.value, 7);
+  } finally {
+    engine.setFixtures([]);
+  }
+});
+
+test('base class and ancestry traits are included in TRAIT_NAMES', async () => {
+  const rows = await readContentRows([
+    { table: 'class', id: 20 },
+    { table: 'ancestry', id: 4 },
+  ]);
+  const fighter = { ...rows.find(({ table }) => table === 'class').row, operations: [], skill_training_base: 0 };
+  const dwarf = { ...rows.find(({ table }) => table === 'ancestry').row, operations: [] };
+  const sheet = character([], 1);
+  sheet.details = { class: fighter, ancestry: dwarf };
+
+  const packet = await engine._executeCharacterOperations({
+    character: sheet,
+    content: { ...content, classes: [fighter], ancestries: [dwarf] },
+    context: 'CHARACTER-SHEET',
+  });
+  assert.deepEqual(packet.store.variables.TRAIT_NAMES.value, ['FIGHTER', 'DWARF']);
 });
 
 test('a binding chain follows the final source value in either authoring order', async () => {

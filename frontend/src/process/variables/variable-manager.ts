@@ -233,6 +233,7 @@ export const DEFAULT_VARIABLES: Record<string, Variable> = {
   FEAT_NAMES: newVariable('list-str', 'FEAT_NAMES'),
   SPELL_NAMES: newVariable('list-str', 'SPELL_NAMES'),
   LANGUAGE_NAMES: newVariable('list-str', 'LANGUAGE_NAMES'),
+  TRAIT_NAMES: newVariable('list-str', 'TRAIT_NAMES'),
   CLASS_FEATURE_NAMES: newVariable('list-str', 'CLASS_FEATURE_NAMES'),
   PHYSICAL_FEATURE_NAMES: newVariable('list-str', 'PHYSICAL_FEATURE_NAMES'),
   EXTRA_ITEM_NAMES: newVariable('list-str', 'EXTRA_ITEM_NAMES', ['FIST']),
