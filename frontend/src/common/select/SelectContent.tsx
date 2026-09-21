@@ -93,7 +93,7 @@ import {
   VersatileHeritage,
 } from '@schemas/content';
 import { adjustCreature } from '@utils/creature';
-import { intersection, isEqual, isNumber } from 'lodash-es';
+import { intersection, isNumber } from 'lodash-es';
 import { getEntityLevel } from '@utils/entity-utils';
 import { AdvancedSearchModal, FiltersParams } from '@modals/AdvancedSearchModal';
 import {
@@ -122,17 +122,24 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
 }) {
   const [_drawer, openDrawer] = useAtom(drawerState);
   const [selected, setSelected] = useState<T | undefined>();
-  const [debouncedSelected] = useDebouncedValue(selected, 3000);
+  const pendingSelection = useRef<{ previousId: unknown; nextId: unknown } | null>(null);
 
-  // Sync the selected content (only after huge delay)
+  // Keep an optimistic choice until its parent accepts it or sends a different value.
   useEffect(() => {
     (async () => {
+      const pending = pendingSelection.current;
+      if (pending) {
+        if (props.selectedId === pending.nextId) {
+          pendingSelection.current = null;
+        } else if (props.selectedId === pending.previousId) {
+          return;
+        } else {
+          pendingSelection.current = null;
+        }
+      }
+
       // If they're the same, no need to do anything
       if (props.selectedId === selected?.id) {
-        return;
-      }
-      // If it's been a short time since the selected changed, don't do anything
-      if (!isEqual(debouncedSelected, selected)) {
         return;
       }
 
@@ -160,7 +167,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
         }
       }
     })();
-  }, [debouncedSelected, props.selectedId, props.type, props.options?.overrideOptions]);
+  }, [selected?.id, props.selectedId, props.type, props.options?.overrideOptions]);
 
   const typeName = toLabel(props.options?.abilityBlockType || props.type);
 
@@ -170,6 +177,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
     selectContent<T>(
       props.type,
       (option) => {
+        pendingSelection.current = { previousId: props.selectedId, nextId: option.id };
         setSelected(option);
         props.onClick(option);
       },
@@ -250,20 +258,23 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
               <IconTransform size='0.9rem' />
             </Button>
           )}
-          <Button
-            variant='light'
-            size='compact-sm'
-            radius='xl'
-            onClick={() => {
-              setSelected(undefined);
-              props.onClear && props.onClear();
-            }}
-            style={{
-              borderLeft: '1px solid',
-            }}
-          >
-            <IconX size='1rem' />
-          </Button>
+          {props.onClear && (
+            <Button
+              variant='light'
+              size='compact-sm'
+              radius='xl'
+              onClick={() => {
+                pendingSelection.current = { previousId: props.selectedId, nextId: undefined };
+                setSelected(undefined);
+                props.onClear?.();
+              }}
+              style={{
+                borderLeft: '1px solid',
+              }}
+            >
+              <IconX size='1rem' />
+            </Button>
+          )}
         </>
       )}
     </Button.Group>
