@@ -822,6 +822,7 @@ async function executeCharacterOperations(
         class_.name
       );
       addVariable('CHARACTER', 'num', labelToVariable(`TRAIT_CLASS_${class_.name}_IDS`), class_.trait_id, class_.name);
+      adjVariable('CHARACTER', 'TRAIT_NAMES', class_.name.toUpperCase(), class_.name);
 
       // Add class to variables
       adjVariable('CHARACTER', 'CLASS_IDS', `${class_.id}`, undefined);
@@ -855,6 +856,7 @@ async function executeCharacterOperations(
         class_2.trait_id,
         class_2.name
       );
+      adjVariable('CHARACTER', 'TRAIT_NAMES', class_2.name.toUpperCase(), class_2.name);
 
       // Add class to variables
       adjVariable('CHARACTER', 'CLASS_IDS', `${class_2.id}`, undefined);
@@ -888,6 +890,7 @@ async function executeCharacterOperations(
         ancestry.trait_id,
         ancestry.name
       );
+      adjVariable('CHARACTER', 'TRAIT_NAMES', ancestry.name.toUpperCase(), ancestry.name);
 
       // Add ancestry to variables
       adjVariable('CHARACTER', 'ANCESTRY_IDS', `${ancestry.id}`, undefined);
