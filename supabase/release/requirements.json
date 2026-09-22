@@ -7,5 +7,9 @@
   "20260905010000_account_moderation_writes.sql": {
     "check": "account-moderation-writes.sql",
     "order": "after-compatible-functions"
+  },
+  "20260921000000_fix_dominion_epithet.sql": {
+    "check": "dominion-epithet.sql",
+    "order": "before-functions"
   }
 }
