@@ -12,7 +12,7 @@ import { Campaign } from '@schemas/content';
 import { isPhoneSized } from '@utils/mobile-responsive';
 import useRefresh from '@utils/use-refresh';
 import { cloneDeep, truncate } from 'lodash-es';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function NotesPanel(props: {
   panelHeight: number;
@@ -24,16 +24,18 @@ export default function NotesPanel(props: {
   const isPhone = isPhoneSized(props.panelWidth);
   const [displayNotes, refreshNotes] = useRefresh();
 
-  const [debouncedJson, setDebouncedJson] = useDebouncedState<{
-    index: number;
-    json: JSONContent;
-  } | null>(null, 500);
+  // Keep the latest pending edit for every page so switching pages cannot replace
+  // another page's edit before the shared debounce window finishes.
+  const pendingPagesRef = useRef<Map<number, JSONContent>>(new Map());
+  const [flushSignal, setFlushSignal] = useDebouncedState(0, 500);
 
   useDidUpdate(() => {
-    // Saving notes
-    if (!props.campaign || !debouncedJson) return;
+    if (!props.campaign || pendingPagesRef.current.size === 0) return;
     const newPages = cloneDeep(pages);
-    newPages[debouncedJson.index].contents = debouncedJson.json;
+    for (const [index, json] of pendingPagesRef.current) {
+      if (newPages[index]) newPages[index].contents = json;
+    }
+    pendingPagesRef.current.clear();
     props.setCampaign({
       ...props.campaign,
       notes: {
@@ -41,7 +43,7 @@ export default function NotesPanel(props: {
         pages: newPages,
       },
     });
-  }, [debouncedJson]);
+  }, [flushSignal]);
 
   useEffect(() => {
     refreshNotes();
@@ -80,7 +82,8 @@ export default function NotesPanel(props: {
           placeholder='Your notes...'
           value={page.contents}
           onChange={(text, json) => {
-            setDebouncedJson({ index: index, json: json });
+            pendingPagesRef.current.set(index, json);
+            setFlushSignal((signal) => signal + 1);
           }}
           height={props.panelHeight}
           hasColorOptions={true}
