@@ -90,12 +90,15 @@ rejects unknown versions. Absence of a ledger never substitutes for effect check
    manifest, function source, frontend artifact and provider configuration.
    Check CI/E2E and the current remote report. Investigate differences instead of
    treating them as permission to overwrite production.
-2. Apply additive prerequisites before dependent functions. For this release,
-   apply only `20260905000000_edge_work_budget.sql` using the approved database
+2. Apply additive prerequisites before dependent functions. Apply
+   `20260905000000_edge_work_budget.sql` using the approved database
    connection, `ON_ERROR_STOP` and a transaction. Its quota table/RPC is compatible
    with old handlers; new paid-work handlers return 503 if it is missing. The
    read-only requirement verifies the reviewed RPC body and service-role-only
-   access. No historical migration replay is needed.
+   access. Apply `20260921000000_fix_dominion_epithet.sql` in the same phase; it
+   replaces only the duplicated nested identifiers for the Trespasser option. Its
+   read-only requirement verifies both Dominion options and all four nested
+   operation identifiers remain distinct. No historical migration replay is needed.
 3. Deploy the complete cloud inventory from the reviewed checkout. Use
    `node scripts/release.mjs function-names` as the name source. Deploy those names
    explicitly with Supabase CLI and the repository `supabase/config.toml`; do not

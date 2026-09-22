@@ -325,6 +325,7 @@ Add an item to the character’s starting inventory.
 ### `giveTrait`
 
 Add a trait to the character itself. Rare; used when an ancestry or archetype literally makes you have a trait (e.g. _humanoid_).
+Successful grants also add the trait's canonical name to the `TRAIT_NAMES` list variable for conditionals.
 
 ```jsonc
 { "id": "...", "type": "giveTrait", "data": { "traitId": 1542 } }

@@ -37,6 +37,12 @@ class RenderHost {
     const index = this.cursor++;
     return (this.slots[index] ??= { current: value });
   }
+  state(value) {
+    const index = this.cursor++;
+    if (this.searchQuery !== undefined && typeof value === 'string') return [this.searchQuery, () => {}];
+    const slot = (this.slots[index] ??= { value: typeof value === 'function' ? value() : value });
+    return [slot.value, (next) => (slot.value = typeof next === 'function' ? next(slot.value) : next)];
+  }
 }
 globalThis.__selectionHooks = {
   useRef: (value) => host.ref(value),
@@ -44,7 +50,7 @@ globalThis.__selectionHooks = {
   useEffect: (callback) => {
     host.effects.push(callback);
   },
-  useState: (value) => [host.searchQuery ?? (typeof value === 'function' ? value() : value), () => {}],
+  useState: (value) => host.state(value),
   useQuery: () => ({ data: host.data, isFetching: host.data === undefined }),
 };
 const special = {
@@ -60,6 +66,8 @@ const special = {
   useMantineColorScheme: '() => ({colorScheme:"dark"})',
   getDefaultSources: '() => [1]',
   getDefaultSourcesKey: '() => "1"',
+  openContextModal: 'value => { globalThis.__selectionModal = value; }',
+  useDebouncedValue: 'value => [value]',
 };
 const imports = new Map();
 const paths = ['src/common/select/SelectContent.tsx', 'src/modals/ManageSpellsModal.tsx'];
@@ -83,7 +91,7 @@ const output = join(directory, 'selection.mjs');
 await build({
   absWorkingDir: root,
   stdin: {
-    contents: `export {SelectionOptions} from './src/common/select/SelectContent'; export {default as ManageSpellsModal} from './src/modals/ManageSpellsModal';`,
+    contents: `export {SelectContentButton, SelectionOptions} from './src/common/select/SelectContent'; export {default as ManageSpellsModal} from './src/modals/ManageSpellsModal';`,
     resolveDir: root,
   },
   bundle: true,
@@ -130,7 +138,7 @@ await build({
     },
   ],
 });
-const { SelectionOptions, ManageSpellsModal } = await import(pathToFileURL(output).href);
+const { SelectContentButton, SelectionOptions, ManageSpellsModal } = await import(pathToFileURL(output).href);
 const charm = { id: 1, name: 'Charm', rank: 1 };
 const command = { id: 2, name: 'Command', rank: 1 };
 const picker = { type: 'spell', searchQuery: 'Charm', limitSelectedOptions: false };
@@ -150,6 +158,35 @@ test('search never offers an option removed by the current filter or override li
     []
   );
   assert.deepEqual(host.render(SelectionOptions, { ...picker, overrideOptions: [command] }).props.options, []);
+});
+
+test('an optimistic selection does not roll back while its parent value is stale', () => {
+  const host = new RenderHost();
+  const first = { id: 'first', name: 'First option' };
+  const second = { id: 'second', name: 'Second option' };
+  const props = {
+    type: 'item',
+    selectedId: first.id,
+    options: { overrideOptions: [first, second] },
+    onClick: () => {},
+  };
+  const buttons = (node) => {
+    if (!node || typeof node !== 'object') return [];
+    return [node.type === 'Button' ? node : [], ...[node.props?.children].flat(Infinity).flatMap(buttons)].flat();
+  };
+
+  host.render(SelectContentButton, props);
+  let tree = host.render(SelectContentButton, props);
+  buttons(tree)[1].props.onClick();
+  globalThis.__selectionModal.innerProps.onClick(second);
+
+  tree = host.render(SelectContentButton, { ...props, options: { overrideOptions: [first, second] } });
+  assert.equal(buttons(tree)[0].props.children, second.name);
+  tree = host.render(SelectContentButton, { ...props, options: { overrideOptions: [first, second] } });
+  assert.equal(buttons(tree)[0].props.children, second.name);
+
+  tree = host.render(SelectContentButton, { ...props, selectedId: second.id });
+  assert.equal(buttons(tree)[0].props.children, second.name);
 });
 
 function findChild(node, componentName) {

@@ -427,6 +427,7 @@ async function updateVariables(
   if (options && options.doOnlyValueCreation) {
     // Create variables based on the selected option
     if (operation.data.optionType === 'TRAIT') {
+      let isCharacterTrait = false;
       if (selectedOption.meta_data?.class_trait) {
         addVariable(
           varId,
@@ -435,6 +436,7 @@ async function updateVariables(
           selectedOption.id,
           sourceLabel
         );
+        isCharacterTrait = true;
       } else if (selectedOption.meta_data?.archetype_trait) {
         addVariable(
           varId,
@@ -443,6 +445,7 @@ async function updateVariables(
           selectedOption.id,
           sourceLabel
         );
+        isCharacterTrait = true;
       } else if (
         selectedOption.meta_data?.ancestry_trait ||
         selectedOption.meta_data?.creature_trait ||
@@ -455,7 +458,9 @@ async function updateVariables(
           selectedOption.id,
           sourceLabel
         );
+        isCharacterTrait = true;
       }
+      if (isCharacterTrait) adjVariable(varId, 'TRAIT_NAMES', selectedOption.name.toUpperCase(), sourceLabel);
     }
     return;
   }
@@ -923,10 +928,13 @@ async function runGiveTrait(
   }
 
   // Create variables because we run variable creation first
+  let isCharacterTrait = false;
   if (trait.meta_data?.class_trait) {
     addVariable(varId, 'num', labelToVariable(`TRAIT_CLASS_${trait.name}_IDS`), trait.id, sourceLabel);
+    isCharacterTrait = true;
   } else if (trait.meta_data?.archetype_trait) {
     addVariable(varId, 'num', labelToVariable(`TRAIT_ARCHETYPE_${trait.name}_IDS`), trait.id, sourceLabel);
+    isCharacterTrait = true;
   } else if (
     trait.meta_data?.ancestry_trait ||
     trait.meta_data?.creature_trait ||
@@ -934,6 +942,7 @@ async function runGiveTrait(
     trait.meta_data?.companion_type_trait
   ) {
     addVariable(varId, 'num', labelToVariable(`TRAIT_ANCESTRY_${trait.name}_IDS`), trait.id, sourceLabel);
+    isCharacterTrait = true;
   } else {
     console.warn(
       `Trait is not a class, archetype, ancestry, or creature trait so it can't be given to a character: ${trait.name} (${trait.id})`
@@ -942,6 +951,7 @@ async function runGiveTrait(
       `Trait is not a class, archetype, ancestry, or creature trait so it can't be given to a character: ${trait.name} (${trait.id})`
     );
   }
+  if (isCharacterTrait) adjVariable(varId, 'TRAIT_NAMES', trait.name.toUpperCase(), sourceLabel);
 
   return null;
 }
