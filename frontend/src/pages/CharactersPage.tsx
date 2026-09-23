@@ -71,14 +71,15 @@ export function Component() {
   const session = useAtomValue(sessionState);
   const queryClient = useQueryClient();
 
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: [`find-character`],
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
+    queryKey: ['find-character', session?.user.id],
     queryFn: async () => {
-      return await makeRequest<Character[]>('find-character', {
-        user_id: session?.user.id,
+      return await makeRequest<Character[]>('find-character', { user_id: session?.user.id }, true, {
+        throwOnFailure: true,
       });
     },
     enabled: !!session,
+    retry: false,
   });
 
   const [_character, setCharacter] = useAtom(characterState);
@@ -444,7 +445,18 @@ export function Component() {
               </Center>
             )}
 
-            {characters.length > 0 && (
+            {isError && (
+              <Stack py={50} gap={10} align='center'>
+                <Text ta='center' c='dimmed' fs='italic'>
+                  Couldn't load your characters. Your saved characters have not been removed.
+                </Text>
+                <BlurButton loading={isFetching} onClick={() => refetch()}>
+                  Try again
+                </BlurButton>
+              </Stack>
+            )}
+
+            {!isError && characters.length > 0 && (
               <Paginator
                 h={520}
                 records={characters.map((c) => (
@@ -459,7 +471,7 @@ export function Component() {
             )}
 
             {/* Empty state when search yields no results */}
-            {!isLoading && characters.length === 0 && searchQuery.trim() && (
+            {!isLoading && !isError && characters.length === 0 && searchQuery.trim() && (
               <Stack py={50} gap={5}>
                 <Text ta='center' c='dimmed' fs='italic'>
                   No characters match "{searchQuery.trim()}"
@@ -467,7 +479,7 @@ export function Component() {
               </Stack>
             )}
 
-            {!isLoading && (data ?? []).length === 0 && (
+            {!isLoading && !isError && (data ?? []).length === 0 && (
               <Stack py={50} gap={10}>
                 <Text ta='center' c='dimmed' fs='italic'>
                   No characters found, want to create one?

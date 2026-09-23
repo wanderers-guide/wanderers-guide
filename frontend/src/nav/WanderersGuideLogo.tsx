@@ -8,14 +8,16 @@ import { GUIDE_BLUE } from '@constants/data';
 import { getCachedCustomization } from '@content/customization-cache';
 import { useEffect } from 'react';
 import { renderToString } from 'react-dom/server';
+import { resolveThemeColor } from '@utils/theme-color';
 
 export default function WanderersGuideLogo(props: { size: number }) {
   const navigate = useNavigate();
   const { colorScheme } = useMantineColorScheme();
 
   const activeCharacer = useAtomValue(characterState);
-  const color =
-    activeCharacer?.details?.sheet_theme?.color || getCachedCustomization()?.sheet_theme?.color || GUIDE_BLUE;
+  const color = resolveThemeColor(
+    activeCharacer?.details?.sheet_theme?.color || getCachedCustomization()?.sheet_theme?.color || GUIDE_BLUE
+  );
 
   const setFavicon = (svg: string) => {
     let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;

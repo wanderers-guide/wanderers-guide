@@ -2,7 +2,7 @@ import { characterState } from '@atoms/characterAtoms';
 import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { getContentDataFromHref } from '@common/rich_text_input/ContentLinkExtension';
-import { GUIDE_BLUE, IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
+import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 import { getCachedCustomization } from '@content/customization-cache';
 import DrawerBase from '@drawers/DrawerBase';
 import { convertContentLink } from '@drawers/drawer-utils';
@@ -49,8 +49,8 @@ import UpdateEncounterModal from '@modals/UpdateEncounterModal';
 import GenerateEncounterModal from '@modals/GenerateEncounterModal';
 import UpdateApiClientModal from '@modals/UpdateApiClientModal';
 import { getAnchorStyles } from '@utils/anchor';
+import { generateThemeColors } from '@utils/theme-color';
 import BuyItemModal from '@modals/BuyItemModal';
-import { generateColors } from '@mantine/colors-generator';
 import { ImageOption } from '@schemas/index';
 
 // TODO, it would be great to dynamically import these modals, but it with Mantine v7.6.2 it doesn't work
@@ -175,7 +175,7 @@ export default function App() {
   const generateTheme = (theme?: { color?: string }) => {
     return createTheme({
       colors: {
-        guide: generateColors(theme?.color || getCachedCustomization()?.sheet_theme?.color || GUIDE_BLUE),
+        guide: generateThemeColors(theme?.color || getCachedCustomization()?.sheet_theme?.color),
         // Dark scale: near-opaque at [0] → nearly transparent at [9]
         dark: [
           'rgba(193, 194, 197, 0.89)', // [0] lightest text / icons

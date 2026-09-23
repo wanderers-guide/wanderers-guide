@@ -64,6 +64,7 @@ import { supabase } from '../main';
 import { showNotification } from '@mantine/notifications';
 import { DisplayIcon } from '@common/IconDisplay';
 import { PATREON_AUTH_URL } from '@constants/urls';
+import { resolveThemeColor } from '@utils/theme-color';
 
 export function Component() {
   setPageTitle(`Account`);
@@ -136,6 +137,7 @@ function ProfileSection() {
   if (!user) {
     throw new Error('User is not defined');
   }
+  const siteThemeColor = resolveThemeColor(user.site_theme?.color);
 
   const { hovered: hoveredPfp, ref: refPfp } = useHover();
   const { hovered: hoveredBck, ref: refBck } = useHover();
@@ -594,16 +596,12 @@ function ProfileSection() {
                   <SettingRow label='Theme Color' description='Primary accent color for the site'>
                     <Popover position='bottom-end' withArrow shadow='md'>
                       <Popover.Target>
-                        <ColorSwatch
-                          style={{ cursor: 'pointer' }}
-                          color={user.site_theme?.color || GUIDE_BLUE}
-                          size={22}
-                        />
+                        <ColorSwatch style={{ cursor: 'pointer' }} color={siteThemeColor} size={22} />
                       </Popover.Target>
                       <Popover.Dropdown p={5}>
                         <ColorPicker
                           format='hex'
-                          value={user.site_theme?.color || GUIDE_BLUE}
+                          value={siteThemeColor}
                           onChange={(value) => {
                             if (!hasPatreonAccess(user, 1)) {
                               displayPatronOnly();
