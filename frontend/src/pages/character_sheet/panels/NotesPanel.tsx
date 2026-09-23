@@ -15,6 +15,7 @@ import useRefresh from '@utils/use-refresh';
 import { cloneDeep, truncate } from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
 import { SetterOrUpdater } from '@utils/type-fixing';
+import { resolveThemeColor } from '@utils/theme-color';
 
 export default function NotesPanel(props: {
   panelHeight: number;
@@ -58,7 +59,7 @@ export default function NotesPanel(props: {
   const defaultPage = {
     name: 'Notes',
     icon: 'notebook',
-    color: isCharacter(props.entity) ? props.entity?.details?.sheet_theme?.color || GUIDE_BLUE : GUIDE_BLUE,
+    color: isCharacter(props.entity) ? resolveThemeColor(props.entity?.details?.sheet_theme?.color) : GUIDE_BLUE,
     contents: null,
   };
 

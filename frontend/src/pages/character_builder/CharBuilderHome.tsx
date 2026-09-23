@@ -88,6 +88,7 @@ import { cloneDeep, isEqual, uniq } from 'lodash-es';
 import BlurBox from '@common/BlurBox';
 import { DisplayIcon } from '@common/IconDisplay';
 import useCharacter from '@utils/use-character';
+import { resolveThemeColor } from '@utils/theme-color';
 
 export default function CharBuilderHome(props: { characterId: number; pageHeight: number }) {
   const theme = useMantineTheme();
@@ -949,7 +950,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
             size='xs'
             label={<Text fz='sm'>Color Theme</Text>}
             placeholder='Character Color Theme'
-            defaultValue={character?.details?.sheet_theme?.color || GUIDE_BLUE}
+            defaultValue={resolveThemeColor(character?.details?.sheet_theme?.color)}
             swatches={[
               '#25262b',
               '#868e96',
@@ -967,7 +968,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
               '#fd7e14',
             ]}
             swatchesPerRow={7}
-            onChange={(color) => {
+            onChangeEnd={(color) => {
               if (!hasPatreonAccess(getCachedPublicUser(), 1)) {
                 displayPatronOnly();
                 return;
