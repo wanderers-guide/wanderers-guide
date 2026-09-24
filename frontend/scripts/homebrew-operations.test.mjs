@@ -44,6 +44,65 @@ after(async () => {
   await engine?.cleanup();
 });
 
+test('legacy empty proficiency thresholds match the editor’s displayed Untrained default', async () => {
+  const comparisons = {
+    EQUALS: (left, right) => left === right,
+    NOT_EQUALS: (left, right) => left !== right,
+    LESS_THAN: (left, right) => left < right,
+    LESS_THAN_OR_EQUALS: (left, right) => left <= right,
+    GREATER_THAN: (left, right) => left > right,
+    GREATER_THAN_OR_EQUALS: (left, right) => left >= right,
+  };
+  const ranks = ['U', 'T', 'E', 'M', 'L'];
+  for (const [operator, compare] of Object.entries(comparisons)) {
+    for (const rank of ranks) {
+      for (const threshold of ['', ...ranks]) {
+        const packet = await calculate(
+          [
+            set('SKILL_MEDICINE', { value: rank }),
+            op('rank-check', 'conditional', {
+              conditions: [{ id: 'rank', name: 'SKILL_MEDICINE', type: 'prof', operator, value: threshold }],
+              trueOperations: [set('MAX_HEALTH_BONUS', 7)],
+              falseOperations: [set('MAX_HEALTH_BONUS', 1)],
+            }),
+          ],
+          20
+        );
+        assert.equal(
+          packet.store.variables.MAX_HEALTH_BONUS.value,
+          compare(ranks.indexOf(rank), ranks.indexOf(threshold || 'U')) ? 7 : 1,
+          `${rank} ${operator} ${JSON.stringify(threshold)}`
+        );
+      }
+    }
+  }
+});
+
+test('Draconic Acolyte’s published check calculates once Dragon Lore exists', async () => {
+  const [{ row: dedication }] = await readContentRows([{ table: 'ability_block', id: 51259 }]);
+  const check = dedication.operations[0];
+  assert.equal(check.data.conditions[0].name, 'SKILL_LORE_DRAGON');
+  // Keep the real published conditional, including its legacy empty threshold.
+  const packet = await calculate([
+    op('dragon-lore', 'createValue', { variable: 'SKILL_LORE_DRAGON', type: 'prof', value: { value: 'T' } }),
+    check,
+  ]);
+  assert.deepEqual(packet.errors, []);
+  assert.match(JSON.stringify(packet.ors), /Select a Lore/);
+});
+
+test('an unrecognized proficiency threshold still rejects instead of inventing a rank', async () => {
+  await assert.rejects(
+    calculate([
+      op('invalid-rank', 'conditional', {
+        conditions: [{ id: 'rank', name: 'SKILL_MEDICINE', type: 'prof', operator: 'GREATER_THAN', value: 'TYPO' }],
+        trueOperations: [set('MAX_HEALTH_BONUS', 7)],
+      }),
+    ]),
+    /Invalid proficiency type: TYPO/
+  );
+});
+
 test('an active conditional creates its custom counter before its adjustments and final HP binding', async () => {
   const packet = await calculate([
     op('active-branch', 'conditional', {

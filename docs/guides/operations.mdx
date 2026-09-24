@@ -361,6 +361,10 @@ Run nested operations only when conditions match. Conditions check variable stat
 
 Operators: `INCLUDES`, `NOT_INCLUDES`, `EQUALS`, `NOT_EQUALS`, `LESS_THAN`, `GREATER_THAN`, `GREATER_THAN_OR_EQUALS`, `LESS_THAN_OR_EQUALS`. Multiple conditions are AND-ed; nest a second `conditional` inside `trueOperations` for OR semantics.
 
+Proficiency comparisons use `U`, `T`, `E`, `M`, or `L`. The editor saves its initial
+Untrained choice as `U`. Older proficiency checks with an empty string are interpreted
+as that same displayed default; other invalid rank values are not silently converted.
+
 ### `select`
 
 Player-facing choice. Two modes:

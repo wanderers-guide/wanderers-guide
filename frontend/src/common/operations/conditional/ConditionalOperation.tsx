@@ -193,7 +193,9 @@ export function ConditionalCheck(props: {
   const [variableType, setVariableType] = useState<VariableType | undefined>(props.defaultType);
 
   const [operator, setOperator] = useState(props.defaultOperator);
-  const [value, setValue] = useState(props.defaultValue);
+  const [value, setValue] = useState(
+    props.defaultValue === '' && (props.defaultData?.type ?? props.defaultType) === 'prof' ? 'U' : props.defaultValue
+  );
 
   useEffect(() => {
     props.onChange({
@@ -304,7 +306,7 @@ export function ConditionalCheck(props: {
           setVariableData(variable);
           setVariableType(variable?.type);
           setOperator('');
-          setValue('');
+          setValue(variable?.type === 'prof' ? 'U' : '');
         }}
       />
       {!variableData && (
@@ -316,6 +318,7 @@ export function ConditionalCheck(props: {
           onChange={(value) => {
             if (!value) return;
             setVariableType(value as VariableType);
+            if (value === 'prof') setValue('U');
           }}
           data={[
             { value: 'attr', label: 'Attr' },
@@ -394,7 +397,7 @@ function ConditionalValueSelect(props: {
     return (
       <SegmentedControl
         size='xs'
-        value={props.value || undefined}
+        value={props.value || 'U'}
         onChange={props.onChange}
         data={[
           { label: 'U', value: 'U' },
