@@ -11,5 +11,9 @@
   "20260921000000_fix_dominion_epithet.sql": {
     "check": "dominion-epithet.sql",
     "order": "before-functions"
+  },
+  "20260924000000_fix_reclaimant_plea.sql": {
+    "check": "reclaimant-plea.sql",
+    "order": "before-functions"
   }
 }
