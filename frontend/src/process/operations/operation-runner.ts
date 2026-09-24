@@ -1319,18 +1319,21 @@ async function runConditional(
       // fires when the rank is NOT below master). The old maxProficiencyType-based
       // checks returned true on equality for both < and >.
       const rankOf = (prof: ProficiencyType) => getProficiencyTypeValue(prof);
+      // Older condition editors displayed their first rank (U) without persisting
+      // it. Match that displayed default and leave other values unchanged.
+      const threshold = check.value === '' ? 'U' : check.value;
       if (check.operator === 'EQUALS') {
-        return profType === check.value;
+        return profType === threshold;
       } else if (check.operator === 'GREATER_THAN') {
-        return rankOf(profType) > rankOf(check.value as ProficiencyType);
+        return rankOf(profType) > rankOf(threshold as ProficiencyType);
       } else if (check.operator === 'LESS_THAN') {
-        return rankOf(profType) < rankOf(check.value as ProficiencyType);
+        return rankOf(profType) < rankOf(threshold as ProficiencyType);
       } else if (check.operator === 'NOT_EQUALS') {
-        return profType !== check.value;
+        return profType !== threshold;
       } else if (check.operator === 'GREATER_THAN_OR_EQUALS') {
-        return rankOf(profType) >= rankOf(check.value as ProficiencyType);
+        return rankOf(profType) >= rankOf(threshold as ProficiencyType);
       } else if (check.operator === 'LESS_THAN_OR_EQUALS') {
-        return rankOf(profType) <= rankOf(check.value as ProficiencyType);
+        return rankOf(profType) <= rankOf(threshold as ProficiencyType);
       }
     }
     return false;
