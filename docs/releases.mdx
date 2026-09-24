@@ -99,6 +99,11 @@ rejects unknown versions. Absence of a ledger never substitutes for effect check
    replaces only the duplicated nested identifiers for the Trespasser option. Its
    read-only requirement verifies both Dominion options and all four nested
    operation identifiers remain distinct. No historical migration replay is needed.
+   Apply `20260924000000_fix_reclaimant_plea.sql` for the three Reclaimant Plea
+   records. It repairs their boolean heightening switch and third innate spell,
+   preserves saved selection identifiers, and aborts on unexpected content changes
+   or pending curator submissions. Its read-only requirement checks all three
+   records; it does not modify characters or homebrew.
 3. Deploy the complete cloud inventory from the reviewed checkout. Use
    `node scripts/release.mjs function-names` as the name source. Deploy those names
    explicitly with Supabase CLI and the repository `supabase/config.toml`; do not
