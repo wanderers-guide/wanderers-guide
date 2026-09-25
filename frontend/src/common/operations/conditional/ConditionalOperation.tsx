@@ -248,7 +248,7 @@ export function ConditionalCheck(props: {
   }
 
   return (
-    <Group wrap='nowrap' style={{ position: 'relative' }} align='flex-start'>
+    <Group wrap='wrap' style={{ position: 'relative' }} align='flex-start'>
       {props.includeAnd && (
         <>
           <Text
@@ -306,7 +306,7 @@ export function ConditionalCheck(props: {
           setVariableData(variable);
           setVariableType(variable?.type);
           setOperator('');
-          setValue(variable?.type === 'prof' ? 'U' : '');
+          setValue(variable?.type === 'prof' ? 'U' : variable?.type === 'bool' ? 'TRUE' : '');
         }}
       />
       {!variableData && (
@@ -319,6 +319,7 @@ export function ConditionalCheck(props: {
             if (!value) return;
             setVariableType(value as VariableType);
             if (value === 'prof') setValue('U');
+            if (value === 'bool') setValue('TRUE');
           }}
           data={[
             { value: 'attr', label: 'Attr' },
@@ -371,9 +372,9 @@ function ConditionalValueSelect(props: {
     return (
       <SegmentedControl
         size='xs'
-        value={props.value === 'TRUE' ? 'TRUE' : props.value === 'FALSE' ? 'FALSE' : undefined}
+        // Match the engine's existing interpretation without changing saved conditions.
+        value={props.value === 'TRUE' ? 'TRUE' : 'FALSE'}
         onChange={props.onChange}
-        defaultValue='TRUE'
         data={[
           { label: 'True', value: 'TRUE' },
           { label: 'False', value: 'FALSE' },

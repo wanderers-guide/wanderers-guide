@@ -365,6 +365,11 @@ Proficiency comparisons use `U`, `T`, `E`, `M`, or `L`. The editor saves its ini
 Untrained choice as `U`. Older proficiency checks with an empty string are interpreted
 as that same displayed default; other invalid rank values are not silently converted.
 
+Boolean comparisons use the strings `TRUE` and `FALSE`. Selecting a boolean variable
+or value type saves the editor's initial True choice as `TRUE`. Existing empty or
+non-`TRUE` values retain their false comparison and display False; opening the editor
+does not silently change their meaning.
+
 ### `select`
 
 Player-facing choice. Two modes:

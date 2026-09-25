@@ -75,6 +75,7 @@ export function Component() {
     queryKey: ['find-character', session?.user.id],
     queryFn: async () => {
       return await makeRequest<Character[]>('find-character', { user_id: session?.user.id }, true, {
+        expectedActorId: session?.user.id,
         throwOnFailure: true,
       });
     },
