@@ -32,6 +32,10 @@ Browser caches follow the signed-in account and resolved source set, and resets 
 late requests and hydration from the previous cache generation. Content cache cleanup
 preserves unsynced character drafts.
 
+The character list requires the same signed-in account that requested it. If its
+authentication session becomes unavailable or changes, the list shows a load error
+with Retry instead of treating an anonymous response as an empty account.
+
 Optional browser-cache work cannot block authoritative content loading. Homebrew
 invalidation clears the current in-memory generation immediately and queues persistent
 deletion in order with other storage writes. Reading storage has a 2.5-second deadline;

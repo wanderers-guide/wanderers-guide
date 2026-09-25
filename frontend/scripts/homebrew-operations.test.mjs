@@ -44,6 +44,29 @@ after(async () => {
   await engine?.cleanup();
 });
 
+test('boolean condition values retain their existing exact TRUE semantics', async () => {
+  for (const current of [false, true]) {
+    for (const value of ['', 'FALSE', 'TRUE', 'true', '0']) {
+      for (const operator of ['EQUALS', 'NOT_EQUALS']) {
+        const packet = await calculate([
+          set('WEAPON_SPECIALIZATION', current),
+          op('boolean-check', 'conditional', {
+            conditions: [{ id: 'check', name: 'WEAPON_SPECIALIZATION', type: 'bool', operator, value }],
+            trueOperations: [set('MAX_HEALTH_BONUS', 7)],
+            falseOperations: [set('MAX_HEALTH_BONUS', 1)],
+          }),
+        ]);
+        const equals = current === (value === 'TRUE');
+        assert.equal(
+          packet.store.variables.MAX_HEALTH_BONUS.value,
+          (operator === 'EQUALS' ? equals : !equals) ? 7 : 1,
+          `${current} ${operator} ${JSON.stringify(value)}`
+        );
+      }
+    }
+  }
+});
+
 test('legacy empty proficiency thresholds match the editor’s displayed Untrained default', async () => {
   const comparisons = {
     EQUALS: (left, right) => left === right,

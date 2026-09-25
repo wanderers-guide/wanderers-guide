@@ -180,4 +180,97 @@ describe('Calculation recovery', () => {
     });
     cy.screenshot('conditional-editor-untrained-persisted');
   });
+  it('shows the actual False comparison for an existing blank boolean condition', () => {
+    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.request({
+      method: 'POST',
+      url: `${Cypress.env('functions_url')}/find-character`,
+      headers: { Authorization: `Bearer ${token}` },
+      body: { id: characterId },
+      log: false,
+    }).then(({ body }) => {
+      expect(body.status).to.eq('success');
+      cy.request({
+        method: 'POST',
+        url: `${Cypress.env('functions_url')}/update-character`,
+        headers: { Authorization: `Bearer ${token}` },
+        body: {
+          id: characterId,
+          expected_updated_at: body.data.updated_at,
+          options: { custom_operations: true, ignore_bulk_limit: true },
+          custom_operations: [
+            {
+              id: 'legacy-bool-check',
+              type: 'conditional',
+              data: {
+                conditions: [
+                  { id: 'bool-check', name: 'WEAPON_SPECIALIZATION', type: 'bool', operator: 'EQUALS', value: '' },
+                ],
+                trueOperations: [],
+                falseOperations: [],
+              },
+            },
+          ],
+        },
+        log: false,
+      })
+        .its('body.status')
+        .should('eq', 'success');
+    });
+    cy.visit(`/builder/${characterId}`);
+    cy.contains('[role="tab"]', 'Options', { timeout: 30000 }).click();
+    cy.contains('button', 'Open Operations').click();
+    cy.get('.mantine-Modal-body input[value="FALSE"]').should('be.checked');
+    cy.viewport(1280, 900);
+    cy.screenshot('conditional-editor-legacy-false-desktop');
+    cy.get('.mantine-Modal-close').click();
+    cy.get('.mantine-Modal-body').should('not.exist');
+    cy.viewport(390, 844);
+    cy.contains('[role="tab"]', 'Options').click();
+    cy.contains('button', 'Open Operations').click();
+    cy.get('.mantine-Modal-body input[value="FALSE"]').should('be.checked');
+    cy.screenshot('conditional-editor-legacy-false-mobile');
+    cy.get('.mantine-Modal-body input[value="FALSE"]').then(($input) => {
+      const control = $input[0].closest('.mantine-SegmentedControl-root')!;
+      const label = control.querySelector(`label[for="${$input[0].id}"]`)!;
+      expect(label.getBoundingClientRect().right, 'False stays inside the visible control').to.be.at.most(
+        control.getBoundingClientRect().right + 1
+      );
+    });
+    cy.get('.mantine-Modal-close').click();
+    cy.get('.mantine-Modal-body').should('not.exist');
+    cy.viewport(1280, 900);
+    cy.contains('[role="tab"]', 'Options').click();
+    cy.contains('button', 'Open Operations').click();
+
+    // Selecting a known boolean defaults to True and must persist that exact value.
+    cy.intercept('POST', '**/functions/v1/update-character', (req) => {
+      const condition = req.body.custom_operations?.[0]?.data?.conditions?.[0];
+      if (condition?.name === 'WEAPON_SPECIALIZATION' && condition?.value === 'TRUE') req.alias = 'booleanSave';
+    });
+    cy.get('.mantine-Modal-body input[placeholder="Value"]').clear().type('WEAPON_SPECIALIZATION');
+    cy.get('.mantine-Modal-body input[placeholder="Operator"]').click();
+    cy.get('[role="option"]').contains(/^=$/).click();
+    cy.get('.mantine-Modal-body input[value="TRUE"]').should('be.checked');
+    cy.wait('@booleanSave', { timeout: 15000 }).its('response.body.status').should('eq', 'success');
+    cy.request({
+      method: 'POST',
+      url: `${Cypress.env('functions_url')}/find-character`,
+      headers: { Authorization: `Bearer ${token}` },
+      body: { id: characterId },
+      log: false,
+    })
+      .its('body.data.custom_operations.0.data.conditions.0.value')
+      .should('eq', 'TRUE');
+
+    // Manually typed boolean variables use the same explicit default.
+    cy.get('.mantine-Modal-body input[placeholder="Value"]').clear().type('CUSTOM_BOOL_AUDIT');
+    cy.get('.mantine-Modal-body input[placeholder="Value Type"]').click();
+    cy.get('[role="option"]')
+      .contains(/^Bool$/)
+      .click();
+    cy.get('.mantine-Modal-body input[placeholder="Operator"]').click();
+    cy.get('[role="option"]').contains(/^=$/).click();
+    cy.get('.mantine-Modal-body input[value="TRUE"]').should('be.checked');
+  });
 });
