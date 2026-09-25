@@ -43,6 +43,8 @@ export async function readContentRows(targets) {
   const text = await readFile(join(frontend, '../data/data.sql'), 'utf8');
   const arrayColumns = new Set([
     'operations',
+    'abilities_base',
+    'abilities_added',
     'traits',
     'prerequisites',
     'traditions',
@@ -50,7 +52,7 @@ export async function readContentRows(targets) {
     'required_content_sources',
     'keys',
   ]);
-  const numberArrayColumns = new Set(['traits', 'required_content_sources']);
+  const numberArrayColumns = new Set(['traits', 'required_content_sources', 'abilities_added']);
   const numberColumns = new Set([
     'id',
     'level',
@@ -88,7 +90,7 @@ export async function readContentRows(targets) {
           const entries = parseContentArray(value);
           return [
             key,
-            key === 'operations'
+            key === 'operations' || key === 'abilities_base'
               ? entries.map((entry) => (typeof entry === 'string' ? JSON.parse(entry) : entry))
               : numberArrayColumns.has(key)
                 ? entries.map((entry) => (entry === null ? null : Number(entry)))

@@ -104,6 +104,11 @@ rejects unknown versions. Absence of a ledger never substitutes for effect check
    preserves saved selection identifiers, and aborts on unexpected content changes
    or pending curator submissions. Its read-only requirement checks all three
    records; it does not modify characters or homebrew.
+   Apply `20260925000000_fix_rootball_intelligence.sql` for Rootball Chair's
+   Intelligence modifier. It changes only the published template's +4 to -4,
+   preserves operation identifiers and other attributes, and aborts on an
+   unexpected value or pending curator submission. Its read-only requirement
+   verifies the corrected modifier. Existing saved companion copies are untouched.
 3. Deploy the complete cloud inventory from the reviewed checkout. Use
    `node scripts/release.mjs function-names` as the name source. Deploy those names
    explicitly with Supabase CLI and the repository `supabase/config.toml`; do not
