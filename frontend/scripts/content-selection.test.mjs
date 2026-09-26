@@ -37,6 +37,14 @@ class RenderHost {
     const index = this.cursor++;
     return (this.slots[index] ??= { current: value });
   }
+  effect(callback, deps) {
+    const index = this.cursor++;
+    const prior = this.slots[index];
+    if (!prior || !deps || deps.some((value, i) => !Object.is(value, prior.deps?.[i]))) {
+      this.slots[index] = { deps };
+      this.effects.push(callback);
+    }
+  }
   state(value) {
     const index = this.cursor++;
     if (this.searchQuery !== undefined && typeof value === 'string') return [this.searchQuery, () => {}];
@@ -47,11 +55,12 @@ class RenderHost {
 globalThis.__selectionHooks = {
   useRef: (value) => host.ref(value),
   useMemo: (callback, deps) => host.memo(callback, deps),
-  useEffect: (callback) => {
-    host.effects.push(callback);
-  },
+  useEffect: (callback, deps) => host.effect(callback, deps),
   useState: (value) => host.state(value),
-  useQuery: () => ({ data: host.data, isFetching: host.data === undefined }),
+  useQuery: (options) => {
+    host.queryOptions = options;
+    return { data: host.data, isFetching: host.data === undefined };
+  },
 };
 const special = {
   useAtom: '() => [null, () => {}]',
@@ -68,13 +77,28 @@ const special = {
   getDefaultSourcesKey: '() => "1"',
   openContextModal: 'value => { globalThis.__selectionModal = value; }',
   useDebouncedValue: 'value => [value]',
+  getCachedContent: '() => []',
+  getContentFast: '() => []',
+  fetchContent: 'async (...args) => { globalThis.__selectionFetch = args; return []; }',
+  fetchContentSources: 'async () => []',
+  filterByTraitType: '() => []',
+  hashData: 'value => JSON.stringify(value)',
+  toLabel: 'value => String(value)',
+  Accordion: 'Object.assign(() => {}, {Item:"Accordion.Item",Control:"Accordion.Control",Panel:"Accordion.Panel"})',
 };
 const imports = new Map();
-const paths = ['src/common/select/SelectContent.tsx', 'src/modals/ManageSpellsModal.tsx'];
+const paths = [
+  'src/common/select/SelectContent.tsx',
+  'src/modals/ManageSpellsModal.tsx',
+  'src/modals/AddItemsModal.tsx',
+  'src/modals/AdvancedSearchModal.tsx',
+  'src/pages/character_sheet/panels/SpellsPanel.tsx',
+];
 for (const path of paths) {
   const source = await readFile(join(root, path), 'utf8');
   for (const match of source.matchAll(/import\s+([\s\S]*?)\s+from\s+['"]([^'"]+)['"];?/g)) {
-    if (['react', 'js-search', 'lodash-es', '@tanstack/react-query'].includes(match[2])) continue;
+    if (['react', 'js-search', 'lodash-es', '@tanstack/react-query', './AdvancedSearchModal'].includes(match[2]))
+      continue;
     const names = imports.get(match[2]) ?? new Set();
     const inside = match[1].match(/\{([\s\S]*?)\}/)?.[1];
     if (inside)
@@ -91,7 +115,7 @@ const output = join(directory, 'selection.mjs');
 await build({
   absWorkingDir: root,
   stdin: {
-    contents: `export {SelectContentButton, SelectionOptions} from './src/common/select/SelectContent'; export {default as ManageSpellsModal} from './src/modals/ManageSpellsModal';`,
+    contents: `export {SelectContentButton, SelectionOptions} from './src/common/select/SelectContent'; export {default as ManageSpellsModal} from './src/modals/ManageSpellsModal'; export {default as AddItemsModal} from './src/modals/AddItemsModal'; export {AdvancedSearchModal} from './src/modals/AdvancedSearchModal'; export {default as SpellsPanel} from './src/pages/character_sheet/panels/SpellsPanel';`,
     resolveDir: root,
   },
   bundle: true,
@@ -138,7 +162,8 @@ await build({
     },
   ],
 });
-const { SelectContentButton, SelectionOptions, ManageSpellsModal } = await import(pathToFileURL(output).href);
+const { SelectContentButton, SelectionOptions, ManageSpellsModal, AddItemsModal, AdvancedSearchModal, SpellsPanel } =
+  await import(pathToFileURL(output).href);
 const charm = { id: 1, name: 'Charm', rank: 1 };
 const command = { id: 2, name: 'Command', rank: 1 };
 const picker = { type: 'spell', searchQuery: 'Charm', limitSelectedOptions: false };
@@ -191,7 +216,7 @@ test('an optimistic selection does not roll back while its parent value is stale
 
 function findChild(node, componentName) {
   if (!node || typeof node !== 'object') return undefined;
-  if (node.type?.name === componentName) return node;
+  if (node.type?.name === componentName || node.type === componentName) return node;
   for (const child of [node.props?.children].flat(Infinity)) {
     const found = findChild(child, componentName);
     if (found) return found;
@@ -215,4 +240,91 @@ test('manage spells updates an active search when its catalog arrives or a sourc
   assert.deepEqual(list(), [charm]);
   host.data = [command];
   assert.deepEqual(list(), []);
+});
+
+/** Flush the preset effect and inspect the next render, as React does after a state change. */
+function searchTree(host, props) {
+  host.render(AdvancedSearchModal, props);
+  return host.render(AdvancedSearchModal, props);
+}
+
+test('item search keeps user filters through parent rerenders with equivalent presets', () => {
+  const parent = new RenderHost();
+  parent.data = [];
+  const child = new RenderHost();
+  const props = { context: { closeModal() {} }, id: 'items', innerProps: { onAddItem() {} } };
+  const childProps = () => ({
+    ...findChild(parent.render(AddItemsModal, props), AdvancedSearchModal).props,
+    opened: true,
+  });
+  let p = childProps();
+  let tree = searchTree(child, p);
+  findChild(tree, 'RangeSlider').props.onChange([3, 7]);
+  assert.deepEqual(findChild(searchTree(child, p), 'RangeSlider').props.value, [3, 7]);
+  for (let i = 0; i < 3; i++) {
+    const next = childProps();
+    assert.notEqual(next.presetFilters, p.presetFilters);
+    assert.deepEqual(next.presetFilters, p.presetFilters);
+    assert.deepEqual(findChild(searchTree(child, next), 'RangeSlider').props.value, [3, 7]);
+    p = next;
+  }
+});
+
+test('advanced search still resets when preset values or source scope really change', () => {
+  const host = new RenderHost();
+  let props = { opened: true, presetFilters: { type: 'item', content_sources: [1] } };
+  let tree = searchTree(host, props);
+  findChild(tree, 'RangeSlider').props.onChange([3, 7]);
+  props = { ...props, presetFilters: { type: 'item', content_sources: [7], level_min: 2, level_max: 8 } };
+  tree = searchTree(host, props);
+  assert.deepEqual(findChild(tree, 'RangeSlider').props.value, [2, 8]);
+  props = { ...props, presetFilters: { type: 'item', content_sources: [1] } };
+  assert.deepEqual(findChild(searchTree(host, props), 'RangeSlider').props.value, [0, 30]);
+});
+
+const protectorTree = { id: 6759, name: 'Protector Tree', rank: 1 };
+const spellPanelProps = {
+  id: 'CHARACTER',
+  content: { spells: [charm] },
+  entity: { id: 1, spells: { sources: [], list: [], slots: [], focus: [], innate: [{ spell_id: 6759 }] } },
+  setEntity() {},
+  panelHeight: 600,
+  panelWidth: 500,
+};
+
+test('innate spells from other books supplement the loaded catalog without delaying it', async () => {
+  const host = new RenderHost();
+  host.render(SpellsPanel, { ...spellPanelProps, entity: null });
+  const spells = () => findChild(host.render(SpellsPanel, spellPanelProps), 'SpellList').props.allSpells;
+  assert.deepEqual(spells(), [charm]);
+  host.data = [protectorTree];
+  assert.deepEqual(spells(), [charm, protectorTree]);
+  assert.equal(host.queryOptions.enabled, true);
+  await host.queryOptions.queryFn();
+  assert.deepEqual(globalThis.__selectionFetch, ['spell', { id: [6759] }]);
+  // Only currently granted, missing spells belong in the supplement, even if a
+  // previous response contains other spells or a grant has just been removed.
+  host.data = [protectorTree, command, charm];
+  assert.deepEqual(spells(), [charm, protectorTree]);
+  const withoutGrant = {
+    ...spellPanelProps,
+    entity: { ...spellPanelProps.entity, spells: { ...spellPanelProps.entity.spells, innate: [] } },
+  };
+  const removed = host.render(SpellsPanel, withoutGrant);
+  assert.deepEqual(findChild(removed, 'SpellList').props.allSpells, [charm]);
+  assert.equal(host.queryOptions.enabled, false);
+});
+
+test('late innate spell data respects an active search and never replaces source-enabled rows', () => {
+  const host = new RenderHost();
+  let tree = host.render(SpellsPanel, spellPanelProps);
+  findChild(tree, 'TextInput').props.onChange({ target: { value: 'Protector' } });
+  assert.deepEqual(findChild(host.render(SpellsPanel, spellPanelProps), 'SpellList').props.allSpells, []);
+  host.data = [protectorTree];
+  tree = host.render(SpellsPanel, spellPanelProps);
+  assert.deepEqual(findChild(tree, 'SpellList').props.allSpells, [protectorTree]);
+  const enabledTree = { ...protectorTree, name: 'Protector Tree (current)' };
+  const enabled = { ...spellPanelProps, content: { spells: [charm, enabledTree] } };
+  assert.deepEqual(findChild(host.render(SpellsPanel, enabled), 'SpellList').props.allSpells, [enabledTree]);
+  assert.equal(host.queryOptions.enabled, false);
 });

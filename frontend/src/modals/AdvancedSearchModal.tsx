@@ -48,8 +48,8 @@ import { displayError } from '@utils/notifications';
 import { hashData } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { meetsPrerequisites } from '@variables/prereq-detection';
-import { uniq } from 'lodash-es';
-import { useEffect, useMemo, useState } from 'react';
+import { isEqual, uniq } from 'lodash-es';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
 
 export interface FiltersParams {
@@ -133,8 +133,11 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
     ...props.presetFilters,
   });
 
-  // Sync preset filters state
+  const previousPresetFilters = useRef(props.presetFilters);
+  // Parent redraws recreate presets; only a changed scope should discard user filters.
   useEffect(() => {
+    if (isEqual(previousPresetFilters.current, props.presetFilters)) return;
+    previousPresetFilters.current = props.presetFilters;
     setFilters({
       ...props.presetFilters,
     });

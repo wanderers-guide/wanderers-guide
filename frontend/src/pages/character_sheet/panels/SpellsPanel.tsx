@@ -1,7 +1,8 @@
+import { sessionState } from '@atoms/supabaseAtoms';
 import { ActionSymbol } from '@common/Actions';
 import TokenSelect from '@common/TokenSelect';
 import { collectEntitySpellcasting } from '@content/collect-content';
-import { getContentFast } from '@content/content-store';
+import { fetchContent, getContentFast, getDefaultSourcesKey } from '@content/content-store';
 import {
   Accordion,
   ActionIcon,
@@ -48,7 +49,10 @@ import { groupBy } from 'lodash-es';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { useDebouncedValue, useMediaQuery } from '@mantine/hooks';
 import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
+import { useQuery } from '@tanstack/react-query';
+import { useAtomValue } from 'jotai';
 
+/** Renders the entity's spell sections, including explicit innate grants from other accessible books. */
 export default function SpellsPanel(props: {
   id: StoreID;
   content: ContentPackage;
@@ -61,6 +65,7 @@ export default function SpellsPanel(props: {
   const isPhone = useMediaQuery(phoneQuery());
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
+  const actorId = useAtomValue(sessionState)?.user.id ?? null;
   const [searchQuery, setSearchQuery] = useState('');
   const [searchQueryDebounced] = useDebouncedValue(searchQuery, 200);
   const [manageSpells, setManageSpells] = useState<
@@ -76,14 +81,38 @@ export default function SpellsPanel(props: {
     | undefined
   >();
 
-  // The page already loaded this complete catalog before calculating the entity.
-  // A separate query could cache null while the entity was still being restored.
-  const spells = props.content.spells;
-
   const charData = useMemo(() => {
     if (!props.entity) return null;
     return collectEntitySpellcasting(props.id, props.entity);
-  }, [props.entity]);
+  }, [props.id, props.entity]);
+
+  // Keep the page's catalog immediately available. Explicit innate grants can
+  // reference other accessible books without enabling those books for selection.
+  const missingInnateIds = useMemo(() => {
+    const loadedIds = new Set(props.content.spells.map((spell) => spell.id));
+    return [...new Set((charData?.innate ?? []).map((entry) => entry.spell_id))]
+      .filter((id) => id > 0 && !loadedIds.has(id))
+      .sort((a, b) => a - b);
+  }, [props.content.spells, charData]);
+  const { data: innateSpells } = useQuery({
+    queryKey: [
+      'sheet-innate-spells',
+      {
+        actorId,
+        entityId: props.entity?.id,
+        storeId: props.id,
+        infoSources: getDefaultSourcesKey('INFO'),
+        pageSources: getDefaultSourcesKey('PAGE'),
+        ids: missingInnateIds,
+      },
+    ],
+    enabled: missingInnateIds.length > 0,
+    queryFn: () => fetchContent<Spell>('spell', { id: missingInnateIds }),
+  });
+  const spells = useMemo(
+    () => [...props.content.spells, ...(innateSpells ?? []).filter((spell) => missingInnateIds.includes(spell.id))],
+    [props.content.spells, innateSpells, missingInnateIds]
+  );
 
   // Filter spells by action cost
   const [actionTypeFilter, setActionTypeFilter] = useState<ActionCost | 'ALL'>('ALL');
