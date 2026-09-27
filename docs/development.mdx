@@ -151,6 +151,9 @@ Run the character rules and item drawer regressions with `npm --prefix frontend 
 These bundle the actual operation engine and drawer components against explicit local fixtures;
 selected rules content comes from the checked-in sanitized data dump. They need no running
 database or authentication account.
+The content-repair regressions also verify corrected feat grants, narrowly scoped item metadata repairs,
+and Spined Shield attack math and equipment lifecycle. The content-selection checks in
+`test:infra` cover delayed cross-book innate spell display without expanding the selectable catalog.
 
 The broad PF2e matrix is part of `test:rules`: **1,211 comparisons across 469 engine
 calculations**, grouped into 49 named scenarios and a coverage guard. It loads four
