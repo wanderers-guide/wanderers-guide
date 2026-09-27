@@ -528,6 +528,8 @@ async function updateVariables(
     if (
       operation.data.optionsFilters?.type === 'ADJ_VALUE' &&
       operation.data.optionsFilters.addToFamiliarity &&
+      (!operation.data.optionsFilters.familiarityCategories ||
+        operation.data.optionsFilters.familiarityCategories.includes(selectedOption._item_category)) &&
       selectedOption.name
     ) {
       adjVariable(varId, 'WEAPON_FAMILIARITY', selectedOption.name, sourceLabel);

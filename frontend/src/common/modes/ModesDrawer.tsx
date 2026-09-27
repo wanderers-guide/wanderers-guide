@@ -13,6 +13,7 @@ import { getVariable, setVariable } from '@variables/variable-manager';
 import { VariableListStr } from '@schemas/variables';
 import { labelToVariable } from '@variables/variable-utils';
 import { useSwipeGesture } from '@utils/use-swipe-gesture';
+import { toggleActiveMode } from './mode-rules';
 
 export default function ModesDrawer(props: { opened: boolean; onClose: () => void; content: ContentPackage }) {
   const theme = useMantineTheme();
@@ -63,50 +64,44 @@ export default function ModesDrawer(props: { opened: boolean; onClose: () => voi
         transitionProps={{ duration: 200 }}
       >
         <Box onTouchStart={swipeHandlers.onTouchStart} onTouchEnd={swipeHandlers.onTouchEnd} style={{ height: '100%' }}>
-        <Stack justify='space-between' h='100%'>
-          <Box>
-            <Divider color='dark.6' />
-            {modes.map((record, index) => (
-              <ModeSelectionOption
-                key={index}
-                mode={record}
-                showButton={true}
-                buttonTitle={hasModeActive(record) ? 'Disable' : 'Enable'}
-                buttonProps={
-                  hasModeActive(record)
-                    ? {
-                        variant: 'outline',
-                      }
-                    : {}
-                }
-                onClick={(a) => {
-                  const modeName = labelToVariable(a.name);
-                  // Toggle mode
-                  let activeModes = getVariable<VariableListStr>('CHARACTER', 'ACTIVE_MODES')?.value || [];
-                  if (activeModes.includes(modeName)) {
-                    activeModes = activeModes.filter((m) => m !== modeName);
-                  } else {
-                    activeModes = [...activeModes, modeName];
+          <Stack justify='space-between' h='100%'>
+            <Box>
+              <Divider color='dark.6' />
+              {modes.map((record, index) => (
+                <ModeSelectionOption
+                  key={index}
+                  mode={record}
+                  showButton={true}
+                  buttonTitle={hasModeActive(record) ? 'Disable' : 'Enable'}
+                  buttonProps={
+                    hasModeActive(record)
+                      ? {
+                          variant: 'outline',
+                        }
+                      : {}
                   }
-                  setVariable('CHARACTER', 'ACTIVE_MODES', activeModes, 'Selected');
-                  setCharacter((prev) => {
-                    if (!prev) return null;
-                    return {
-                      ...prev,
-                      meta_data: {
-                        ...prev.meta_data,
-                        active_modes: activeModes,
-                      },
-                    };
-                  });
+                  onClick={(a) => {
+                    const currentModes = getVariable<VariableListStr>('CHARACTER', 'ACTIVE_MODES')?.value || [];
+                    const activeModes = toggleActiveMode(props.content.abilityBlocks, currentModes, a);
+                    setVariable('CHARACTER', 'ACTIVE_MODES', activeModes, 'Selected');
+                    setCharacter((prev) => {
+                      if (!prev) return null;
+                      return {
+                        ...prev,
+                        meta_data: {
+                          ...prev.meta_data,
+                          active_modes: activeModes,
+                        },
+                      };
+                    });
 
-                  // Close the drawer
-                  props.onClose();
-                }}
-              />
-            ))}
-          </Box>
-        </Stack>
+                    // Close the drawer
+                    props.onClose();
+                  }}
+                />
+              ))}
+            </Box>
+          </Stack>
         </Box>
       </Drawer>
     </>

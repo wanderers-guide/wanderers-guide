@@ -61,6 +61,7 @@ import { setCalculatedStatsInStore } from '@variables/calculated-stats';
 import { getEntityLevel } from '@utils/entity-utils';
 import { defineDefaultSources, importFromContentPackage } from '@content/content-store';
 import { setEidolonRunesInStore } from '@items/eidolon-runes';
+import { getExecutableModes } from '@common/modes/mode-rules';
 
 let executionQueue: Promise<void> = Promise.resolve();
 
@@ -996,7 +997,8 @@ async function executeCharacterOperations(
 
     let modeResults: { baseSource: AbilityBlock; baseResults: OperationResult[] }[] = [];
     const activeModes = getVariable<VariableListStr>('CHARACTER', 'ACTIVE_MODES')?.value || [];
-    for (const mode of modes.filter((m) => activeModes.includes(labelToVariable(m.name)))) {
+    const grantedModeIds = getVariable<VariableListStr>('CHARACTER', 'MODE_IDS')?.value || [];
+    for (const mode of getExecutableModes(modes, activeModes, grantedModeIds)) {
       const results = await _executeOps(
         'CHARACTER',
         `mode-${mode.id}`,

@@ -40,7 +40,9 @@ export function getWeaponStats(id: StoreID, item: Item) {
   if (dice < minDice) dice = minDice;
 
   //
-  const die = item.meta_data?.damage?.die ?? '';
+  const baseDie = item.meta_data?.damage?.die ?? '';
+  const humbleStrikes = getVariable<VariableBool>(id, 'EXEMPLAR_HUMBLE_STRIKES')?.value ?? false;
+  const die = humbleStrikes && item.meta_data?.category === 'simple' ? increaseDamageDie(baseDie) : baseDie;
   const damageType = convertDamageType(item.meta_data?.damage?.damageType ?? '');
   let extra = (item.meta_data?.damage?.extra ?? '').trim();
 
@@ -99,6 +101,12 @@ export function getWeaponStats(id: StoreID, item: Item) {
       extra: extra,
     },
   };
+}
+
+/** Increase a simple weapon's standard damage die by one step, capped at d12. */
+function increaseDamageDie(die: string): string {
+  const nextDie: Record<string, string> = { d4: 'd6', d6: 'd8', d8: 'd10', d10: 'd12' };
+  return nextDie[die] ?? die;
 }
 
 /** Resolve a weapon attack using only its actual attack attribute and one shared typed-modifier pool. */

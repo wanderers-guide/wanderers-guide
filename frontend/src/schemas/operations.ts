@@ -284,6 +284,14 @@ export const OperationSelectFiltersSpellSchema = z.object({
   // Trait IDs, or legacy trait names — matches the ability-block filter above.
   traits: z.array(z.union([z.string(), z.number()])).optional(),
   traditions: z.array(z.string()).optional(),
+  rarity: RaritySchema.optional(),
+  // Resolve the selected ability block's casting-source tradition before its conditional grants run.
+  traditionFromSelection: z
+    .object({
+      key: z.string(),
+      castingSource: z.string(),
+    })
+    .optional(),
   spellData: SpellMetadataSchema.optional(),
 });
 export type OperationSelectFiltersSpell = z.infer<typeof OperationSelectFiltersSpellSchema>;
@@ -324,6 +332,8 @@ export const OperationSelectFiltersAdjValueSchema = z.object({
   // tracks the character's category scaling. Backs "treat the chosen weapon as a simple weapon
   // for proficiency" feats (Unconventional Weaponry).
   addToFamiliarity: z.boolean().optional(),
+  // Limit familiarity to selected weapon categories when a rule only changes advanced weapons.
+  familiarityCategories: z.array(z.enum(['simple', 'martial', 'advanced', 'unarmed_attack'])).optional(),
 });
 export type OperationSelectFiltersAdjValue = z.infer<typeof OperationSelectFiltersAdjValueSchema>;
 
