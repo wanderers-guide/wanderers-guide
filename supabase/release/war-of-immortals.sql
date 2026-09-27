@@ -125,6 +125,109 @@ select 'war-dreamweb-bolt',
       and "group" = 'GENERAL' and meta_data->>'group' = ''
       and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/Equipment.aspx?ID=3517')
 union all
+select 'war-materials',
+  (select count(*) = 7 from public.item
+    where content_source_id = 400 and uuid in (
+      3457441037387738, 266245674514619, 7704425324252029,
+      3226333068732319, 7804866039237746, 3859786038237066, 1355131405502684
+    ))
+  and not exists (
+    select 1 from (values
+      ('Dreamweb Object (Standard-Grade)', 5, 150, 'GENERAL', '3517', '215', 3457441037387738::bigint),
+      ('Dreamweb Object (High-Grade)', 14, 3000, 'GENERAL', '3517', '215', 266245674514619::bigint),
+      ('Sloughstone', 0, null::integer, 'MATERIAL', '3515', '208', 7704425324252029::bigint),
+      ('Sloughstone Chunk', 0, 500, 'GENERAL', '3515', '208', 3226333068732319::bigint),
+      ('Sloughstone Ingot', 0, 5000, 'GENERAL', '3515', '208', 7804866039237746::bigint),
+      ('Sloughstone Object (Standard-Grade)', 8, 350, 'GENERAL', '3515', '208', 3859786038237066::bigint),
+      ('Sloughstone Object (High-Grade)', 16, 6000, 'GENERAL', '3515', '208', 1355131405502684::bigint)
+    ) expected(name, level, gp, item_group, aon_id, page, uuid)
+    left join public.item actual on actual.uuid = expected.uuid and actual.content_source_id = 400
+    where actual.id is null or actual.name is distinct from expected.name
+      or actual.level is distinct from expected.level
+      or actual.price::jsonb is distinct from case
+        when expected.gp is null then '{}'::jsonb else jsonb_build_object('gp', expected.gp) end
+      or actual.bulk is not null or actual."group" is distinct from expected.item_group
+      or actual.rarity is distinct from 'RARE'
+      or actual.traits is distinct from array[1533]::bigint[]
+      or cardinality(actual.operations) is distinct from 0
+      or actual.meta_data #>> '{source,book}' is distinct from 'War of Immortals'
+      or actual.meta_data #>> '{source,page}' is distinct from expected.page
+      or actual.meta_data #>> '{source,url}' is distinct from
+        'https://2e.aonprd.com/Equipment.aspx?ID=' || expected.aon_id
+  )
+  and (select count(*) = 2 from public.item child
+    where child.content_source_id = 400
+      and child.name in ('Dreamweb Object (Standard-Grade)', 'Dreamweb Object (High-Grade)')
+      and left(child.description, length((select description from public.item where id = 17477)))
+        = (select description from public.item where id = 17477))
+  and (select count(*) = 4 from public.item child
+    where child.content_source_id = 400
+      and child.name in ('Sloughstone Chunk', 'Sloughstone Ingot',
+        'Sloughstone Object (Standard-Grade)', 'Sloughstone Object (High-Grade)')
+      and left(child.description, length((select description from public.item
+        where content_source_id = 400 and name = 'Sloughstone')))
+        = (select description from public.item
+          where content_source_id = 400 and name = 'Sloughstone'))
+union all
+select 'war-apparition-citations',
+  (select count(*) = 11 from (values
+      (39036, 3, '17'), (39037, 4, '18'), (39038, 5, '18'),
+      (39039, 6, '18'), (39040, 7, '19'), (39041, 8, '19'),
+      (39042, 9, '19'), (39043, 10, '20'), (39044, 11, '20'),
+      (39045, 12, '21'), (39046, 13, '21')
+    ) expected(id, aon_id, page)
+    join public.ability_block actual on actual.id = expected.id
+    where actual.type = 'mode' and actual.content_source_id = 400
+      and actual.meta_data #>> '{source,book}' = 'War of Immortals'
+      and actual.meta_data #>> '{source,page}' = expected.page
+      and actual.meta_data #>> '{source,url}' =
+        'https://2e.aonprd.com/Apparitions.aspx?ID=' || expected.aon_id)
+  and exists (select 1 from public.trait
+    where id = 4092 and name = 'Animist Apparition' and content_source_id = 400
+      and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/Traits.aspx?ID=837'
+      and meta_data #>> '{source,book}' = 'War of Immortals'
+      and meta_data #>> '{source,page}' = '216')
+union all
+select 'war-spell-fields',
+  exists (select 1 from public.spell where id = 7314 and name = 'City of Sin'
+    and "cast" = '7 days' and description like 'Secondary Casters 2%')
+  and exists (select 1 from public.spell where id = 7316 and name = 'Curse of Calamity'
+    and "cast" = '3 days' and description like '**Secondary Casters** 3%')
+  and exists (select 1 from public.spell where id = 7323 and name = 'Wild Feast'
+    and description not like '%[plant](link_trait_2445)%'
+    and description like '%[plant](link_trait_1654)%')
+  and exists (select 1 from public.spell where id = 7267 and name = 'Manifest Will'
+    and traits @> array[1899]::bigint[])
+union all
+select 'war-masterful-vindication',
+  exists (select 1 from public.ability_block
+    where id = 43770 and name = 'Masterful Vindication' and type = 'feat'
+      and content_source_id = 400 and meta_data->'unselectable' = 'true'::jsonb)
+  and exists (select 1 from public.ability_block
+    where id = 43769 and name = 'Vindication Edge' and type = 'feat'
+      and content_source_id = 400
+      and operations[2]::jsonb #>> '{data,conditions,0,value}' = '17'
+      and operations[2]::jsonb #>> '{data,trueOperations,0,data,value}' = '2')
+union all
+select 'war-reprint-citations',
+  (select count(*) = 14 from (values
+    (38746, 4997), (38792, 5832), (39146, 4831), (39271, 4701),
+    (39270, 4691), (39277, 8364), (38785, 4783), (39148, 4844),
+    (39145, 4796), (39144, 4864), (39147, 4895), (39158, 6101),
+    (39278, 5949), (39269, 4669)
+  ) expected(id, aon_id)
+  join public.ability_block actual on actual.id = expected.id
+  where actual.type = 'feat' and actual.content_source_id = 400
+    and actual.meta_data->'source' = jsonb_build_object(
+      'url', 'https://2e.aonprd.com/Feats.aspx?ID=' || expected.aon_id))
+union all
+select 'war-bespell-fields',
+  exists (select 1 from public.ability_block
+    where id = 39157 and name = 'Bespell Strikes' and type = 'feat'
+      and content_source_id = 400 and actions = 'FREE-ACTION'
+      and frequency = 'once per turn'
+      and requirements = 'Your most recent action was to cast a non-cantrip spell')
+union all
 select 'war-content-links',
   not exists (
     select 1 from war_records record,
