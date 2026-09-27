@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 
 const sourceIds = [1, 185, 400, 420, 493];
 const tables = {
@@ -35,12 +36,18 @@ before(async () => {
     new URL('../../supabase/migrations/20260927110000_war_of_immortals_seneschal_spells.sql', import.meta.url),
     'utf8'
   );
+  originalFilter = JSON.parse(migration.match(/original_filter constant jsonb := '([^']+)'::jsonb/)[1]);
   correctedFilter = JSON.parse(migration.match(/corrected_filter constant jsonb := '([^']+)'::jsonb/)[1]);
   const replacement = seneschal.feature_adjustments.find((entry) => entry.data?.id === featureId);
   assert.equal(replacement.type, 'REPLACE');
   assert.equal(replacement.prev_id, 21164);
   const selectedSpell = replacement.data.operations.find((entry) => entry.id === spellSelectionId);
-  originalFilter = structuredClone(selectedSpell.data.optionsFilters);
+  assertReviewedTransition(
+    selectedSpell.data.optionsFilters,
+    originalFilter,
+    correctedFilter,
+    'Seneschal spell filter'
+  );
   assert.deepEqual(originalFilter.level, { max: 1 });
   assert.deepEqual(originalFilter.traditions, []);
   assert.equal(originalFilter.spellData.castingSource, 'WITCH');

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { readContentRows } from './operation-test-harness.mjs';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 
 const sql = await readFile(
   new URL('../../supabase/migrations/20260927090000_war_of_immortals_epithet_labels.sql', import.meta.url),
@@ -12,7 +13,7 @@ const patches = JSON.parse(sql.split('$patches$')[1]);
 test('Epithet label corrections retain every selection and option identifier', async () => {
   assert.equal(patches.length, 2);
   assert.equal(new Set(patches.map(({ id }) => id)).size, patches.length);
-  assert.match(sql, /operations\[1\] = jsonb_set\(operation, '\{data,title\}'/);
+  assert.match(sql, /operations\[1\] = jsonb_set\(operation, '\{data,title\}', '"Select an Epithet"'::jsonb/);
   assert.match(sql, /status->>'state' = 'PENDING'/);
 
   const rows = await readContentRows(patches.map(({ id }) => ({ table: 'ability_block', id })));
@@ -28,7 +29,7 @@ test('Epithet label corrections retain every selection and option identifier', a
     assert.equal(original.type, 'select');
     assert.equal(original.data.modeType, 'PREDEFINED');
     assert.equal(original.data.optionType, 'CUSTOM');
-    assert.equal(original.data.title, 'Select an Epither');
+    assertReviewedTransition(original.data.title, 'Select an Epither', 'Select an Epithet', `${row.name} title`);
     assert.equal(original.data.optionsPredefined.length, patch.options);
 
     const updated = structuredClone(original);

@@ -1,3 +1,18 @@
+with war_records as materialized (
+  select id, to_jsonb(row_data) as body from public.ability_block row_data where content_source_id = 400
+  union all select id, to_jsonb(row_data) from public.item row_data where content_source_id = 400
+  union all select id, to_jsonb(row_data) from public.spell row_data where content_source_id = 400
+  union all select id, to_jsonb(row_data) from public.archetype row_data where content_source_id = 400
+  union all select id, to_jsonb(row_data) from public.class row_data where content_source_id = 400
+  union all select id, to_jsonb(row_data) from public.class_archetype row_data where content_source_id = 400
+  union all select id, to_jsonb(row_data) from public.trait row_data where content_source_id = 400
+  union all select id, to_jsonb(row_data) from public.versatile_heritage row_data where content_source_id = 400
+  union all select id, to_jsonb(row_data) from public.creature row_data where content_source_id = 400
+  union all select id, to_jsonb(row_data) from public.ancestry row_data where content_source_id = 400
+  union all select id, to_jsonb(row_data) from public.background row_data where content_source_id = 400
+  union all select id, to_jsonb(row_data) from public.language row_data where content_source_id = 400
+  union all select id, to_jsonb(row_data) from public.content_source row_data where id = 400
+)
 select 'war-citations' as id,
   (select count(*) = 20 from public.ability_block
     where id in (38754, 51663, 51667, 51526, 38748, 39204, 51495, 38765, 38503, 39141,
@@ -102,4 +117,66 @@ select 'war-seneschal-spell',
       and adjustment #>> '{data,operations,2,data,optionsFilters,rarity}' = 'COMMON'
       and adjustment #>> '{data,operations,2,data,optionsFilters,level,min}' = '1'
       and adjustment #>> '{data,operations,2,data,optionsFilters,level,max}' = '1'
-      and adjustment #>> '{data,operations,2,data,optionsFilters,traditionFromSelection,castingSource}' = 'WITCH');
+      and adjustment #>> '{data,operations,2,data,optionsFilters,traditionFromSelection,castingSource}' = 'WITCH')
+union all
+select 'war-dreamweb-bolt',
+  exists (select 1 from public.item
+    where id = 17480 and name = 'Dreamweb Bolt' and content_source_id = 400
+      and "group" = 'GENERAL' and meta_data->>'group' = ''
+      and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/Equipment.aspx?ID=3517')
+union all
+select 'war-content-links',
+  not exists (
+    select 1 from war_records record,
+      lateral regexp_matches(record.body::text, 'link_([a-z-]+)_([0-9]+)', 'g') link
+    where not (
+      (link[1] in ('action', 'class-feature', 'feat', 'heritage', 'sense', 'mode', 'physical-feature', 'ability-block')
+        and exists (select 1 from public.ability_block target
+          where target.id = link[2]::bigint and (link[1] = 'ability-block' or target.type = link[1])))
+      or (link[1] = 'item' and exists (select 1 from public.item target where target.id = link[2]::bigint))
+      or (link[1] = 'spell' and exists (select 1 from public.spell target where target.id = link[2]::bigint))
+      or (link[1] = 'trait' and exists (select 1 from public.trait target where target.id = link[2]::bigint))
+      or (link[1] = 'class' and exists (select 1 from public.class target where target.id = link[2]::bigint))
+      or (link[1] = 'archetype' and exists (select 1 from public.archetype target where target.id = link[2]::bigint))
+      or (link[1] = 'versatile-heritage' and exists
+        (select 1 from public.versatile_heritage target where target.id = link[2]::bigint))
+      or (link[1] = 'class-archetype' and exists
+        (select 1 from public.class_archetype target where target.id = link[2]::bigint))
+      or (link[1] = 'creature' and exists (select 1 from public.creature target where target.id = link[2]::bigint))
+      or (link[1] = 'ancestry' and exists (select 1 from public.ancestry target where target.id = link[2]::bigint))
+      or (link[1] = 'background' and exists (select 1 from public.background target where target.id = link[2]::bigint))
+      or (link[1] = 'language' and exists (select 1 from public.language target where target.id = link[2]::bigint))
+      or (link[1] = 'content-source' and exists
+        (select 1 from public.content_source target where target.id = link[2]::bigint))
+    )
+  )
+union all
+select 'war-operation-references',
+  not exists (
+    with operation_refs as (
+      select 'ability-block' as target_type, (operation->>'abilityBlockId')::bigint as target_id,
+             operation->>'type' as expected_type
+        from war_records record,
+          lateral jsonb_path_query(record.body, '$.** ? (exists (@.abilityBlockId))') operation
+      union all
+      select 'spell', trim(both '"' from target::text)::bigint, null::text
+        from war_records record, lateral jsonb_path_query(record.body, '$.**.spellId') target
+      union all
+      select 'item', trim(both '"' from target::text)::bigint, null::text
+        from war_records record, lateral jsonb_path_query(record.body, '$.**.itemId') target
+      union all
+      select 'trait', trim(both '"' from target::text)::bigint, null::text
+        from war_records record, lateral jsonb_path_query(record.body, '$.**.traitId') target
+    )
+    select 1 from operation_refs ref where not (
+      (ref.target_type = 'ability-block' and exists
+        (select 1 from public.ability_block target
+          where target.id = ref.target_id and target.type = ref.expected_type))
+      or (ref.target_type = 'spell' and exists
+        (select 1 from public.spell target where target.id = ref.target_id))
+      or (ref.target_type = 'item' and exists
+        (select 1 from public.item target where target.id = ref.target_id))
+      or (ref.target_type = 'trait' and exists
+        (select 1 from public.trait target where target.id = ref.target_id))
+    )
+  );

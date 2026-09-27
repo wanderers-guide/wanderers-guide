@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 
 const readPatchArray = async (migration, delimiter) => {
   const sql = await readFile(new URL(`../../supabase/migrations/${migration}`, import.meta.url), 'utf8');
@@ -32,7 +33,7 @@ test('AoN citations target distinct existing War of Immortals records without ov
     assert.ok(row, `${patch.table}:${patch.id}`);
     assert.equal(row.name, patch.name);
     assert.equal(row.content_source_id, 400);
-    assert.equal(row.meta_data?.source, undefined);
+    assertReviewedTransition(row.meta_data?.source, undefined, patch.cite, `${patch.table}:${patch.id} citation`);
     const url = new URL(patch.cite.url);
     assert.equal(url.hostname, '2e.aonprd.com');
     assert.match(url.pathname, /^\/(Feats|Spells|Equipment|Archetypes|HuntersEdge|Instincts|Rackets)\.aspx$/);
@@ -44,7 +45,7 @@ test('AoN citations target distinct existing War of Immortals records without ov
   }
 });
 
-test('class-archetype citations target exact uncited War of Immortals records', async () => {
+test('class-archetype citations target exact War of Immortals records', async () => {
   assert.equal(classArchetypeCitations.length, 4);
   const dump = await readFile(new URL('../../data/data.sql', import.meta.url), 'utf8');
   const section = dump.split('COPY public.class_archetype ')[1].split('\n\\.')[0];
@@ -58,7 +59,13 @@ test('class-archetype citations target exact uncited War of Immortals records', 
     assert.equal(column(cells, 'name'), citation.name);
     assert.equal(Number(column(cells, 'class_id')), citation.class_id);
     assert.equal(Number(column(cells, 'content_source_id')), 400);
-    assert.equal(column(cells, 'meta_data'), '\\N');
+    const metadata = column(cells, 'meta_data');
+    assertReviewedTransition(
+      metadata === '\\N' ? null : JSON.parse(metadata),
+      null,
+      { source: { url: citation.url, book: 'War of Immortals', page: citation.page } },
+      `${citation.name} citation`
+    );
     const url = new URL(citation.url);
     assert.equal(url.hostname, '2e.aonprd.com');
     assert.equal(url.pathname, '/Archetypes.aspx');
@@ -77,11 +84,10 @@ test('Animist prepared spell slots match the published 1–20 progression after 
   const slots = structuredClone(original);
   for (const patch of slotPatches) {
     const existing = slots.filter(({ lvl, rank }) => lvl === patch.lvl && rank === patch.rank);
-    assert.equal(existing.length, patch.before === undefined ? 0 : 1);
-    if (existing.length) {
-      assert.equal(existing[0].amt, patch.before);
-      existing[0].amt = patch.after;
-    } else slots.push({ lvl: patch.lvl, rank: patch.rank, amt: patch.after });
+    assert.ok(existing.length <= 1, `duplicate level ${patch.lvl} rank ${patch.rank}`);
+    assertReviewedTransition(existing[0]?.amt, patch.before, patch.after, `level ${patch.lvl} rank ${patch.rank}`);
+    if (existing.length) existing[0].amt = patch.after;
+    else slots.push({ lvl: patch.lvl, rank: patch.rank, amt: patch.after });
   }
   assert.deepEqual(operation.data.slots, original, 'the checked-in source fixture is not modified');
   const expected = [
@@ -126,7 +132,12 @@ test('Echo of Lost Moments grants the rank-five spell, changing only that grant'
   const original = structuredClone(row);
   const conditional = row.operations.find(({ id }) => id === '2cc5d640-ccd6-4532-a42c-eb00b0de6cb6');
   const grant = conditional.data.trueOperations.find(({ id }) => id === 'e57b1671-6485-4b1a-9d15-bc9eaa8d953f');
-  assert.deepEqual(grant.data, { type: 'NORMAL', castingSource: 'ANIMIST_APPARITION', rank: 1, spellId: 4677 });
+  assertReviewedTransition(
+    grant.data,
+    { type: 'NORMAL', castingSource: 'ANIMIST_APPARITION', rank: 1, spellId: 4677 },
+    { type: 'NORMAL', castingSource: 'ANIMIST_APPARITION', rank: 5, spellId: 4679 },
+    'Echo of Lost Moments grant'
+  );
   grant.data.spellId = 4679;
   grant.data.rank = 5;
   const expected = structuredClone(original);
@@ -160,11 +171,20 @@ test('Apparition Sense grants the in-book sense rather than the playtest version
     currentSight.operations.map(({ type, data }) => ({ type, data })),
     playtestSight.operations.map(({ type, data }) => ({ type, data }))
   );
-  assert.deepEqual(feature.operations[0], {
-    id: '3b0d3ea9-eddf-4c84-8b10-80a25e6f3745',
-    type: 'giveAbilityBlock',
-    data: { type: 'sense', abilityBlockId: 28396 },
-  });
+  assertReviewedTransition(
+    feature.operations[0],
+    {
+      id: '3b0d3ea9-eddf-4c84-8b10-80a25e6f3745',
+      type: 'giveAbilityBlock',
+      data: { type: 'sense', abilityBlockId: 28396 },
+    },
+    {
+      id: '3b0d3ea9-eddf-4c84-8b10-80a25e6f3745',
+      type: 'giveAbilityBlock',
+      data: { type: 'sense', abilityBlockId: 38723 },
+    },
+    'Apparition Sense grant'
+  );
   assert.match(
     apparitionSenseMigration,
     /operations\[1\] = jsonb_set\(operation, '\{data,abilityBlockId\}', '38723'::jsonb/
@@ -180,7 +200,10 @@ test('broken links are repaired at their exact occurrences', async () => {
     assert.equal(row.name, patch.name);
     assert.equal(row.content_source_id, 400);
     const original = patch.field === 'operations' ? JSON.stringify(row.operations) : row.description;
-    assert.equal(original.split(patch.before).length - 1, patch.count, `${row.name}: ${patch.before}`);
+    const beforeCount = original.split(patch.before).length - 1;
+    assert.ok(beforeCount === 0 || beforeCount === patch.count, `${row.name}: ${patch.before}`);
+    if (beforeCount === 0)
+      assert.ok(original.split(patch.after).length - 1 >= patch.count, `${row.name}: ${patch.after}`);
     const replaced = original.replaceAll(patch.before, patch.after);
     assert.ok(replaced.includes(patch.after));
     assert.ok(!replaced.includes(patch.before));
@@ -188,13 +211,18 @@ test('broken links are repaired at their exact occurrences', async () => {
   }
 });
 
-test('printed-book fields differ from their exact old values and leave unrelated data alone', async () => {
+test('printed-book fields reach their reviewed values without changing unrelated data', async () => {
   const rows = await readContentRows(fields.map(({ table, id }) => ({ table, id })));
   for (const patch of fields) {
     const original = rows.find(({ table, row }) => table === patch.table && row.id === patch.id)?.row;
     assert.ok(original);
     assert.equal(original.content_source_id, 400);
-    assert.equal(original[patch.field], patch.before);
+    assertReviewedTransition(
+      original[patch.field],
+      patch.before,
+      patch.after,
+      `${patch.table}:${patch.id} ${patch.field}`
+    );
     if (patch.name) assert.equal(original.name, patch.name);
     const changed = { ...original, [patch.field]: patch.after };
     const expected = structuredClone(original);
@@ -211,9 +239,11 @@ test('published War of Immortals errata and prerequisites change only the stated
     assert.equal(row.name, patch.name);
     assert.equal(row.content_source_id, 400);
     if (patch.replace) {
-      assert.equal(row[patch.field].split(patch.before).length - 1, 1);
-      assert.ok(!row[patch.field].includes(patch.after));
-    } else assert.deepEqual(row[patch.field], patch.before);
+      const beforeCount = row[patch.field].split(patch.before).length - 1;
+      assert.ok(beforeCount === 0 || beforeCount === 1);
+      if (beforeCount === 0) assert.ok(row[patch.field].includes(patch.after));
+      assert.ok(row[patch.field].replace(patch.before, patch.after).includes(patch.after));
+    } else assertReviewedTransition(row[patch.field], patch.before, patch.after, `${row.name} ${patch.field}`);
   }
 });
 
@@ -246,7 +276,7 @@ test('Bloodrager Rage damage follows weapon specialization in the real character
   const bloodrager = content.abilityBlocks.find(({ id }) => id === 51667);
   const operation = bloodrager.operations.find(({ id }) => id === '81b9d86d-939f-4ca1-a5b8-fa75a7d8a4a2');
   assert.equal(operation.data.conditions[1].name, 'WEAPON_SPECIALIZATION_GREATER');
-  assert.equal(operation.data.conditions[1].value, '');
+  assertReviewedTransition(operation.data.conditions[1].value, '', 'TRUE', 'Bloodrager specialization condition');
   operation.data.conditions[1].value = 'TRUE';
   const engine = await createOperationEngine();
   engine.setFixtures(rows);

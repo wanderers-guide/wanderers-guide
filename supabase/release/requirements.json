@@ -79,5 +79,9 @@
   "20260927110000_war_of_immortals_seneschal_spells.sql": {
     "check": "war-of-immortals.sql",
     "order": "before-functions"
+  },
+  "20260927130000_war_of_immortals_dreamweb_bolt.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
   }
 }

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 
 const SELECT_ID = 'c4a75d49-19e5-4983-8757-d5caf473627b';
 const weapons = [
@@ -54,7 +55,12 @@ before(async () => {
   const oldFilter = JSON.parse(migration.match(/old_filter constant jsonb := '([^']+)'::jsonb/)[1]);
   const newFilter = JSON.parse(migration.match(/new_filter constant jsonb := '([^']+)'::jsonb/)[1]);
   const classCitation = JSON.parse(migration.match(/class_citation constant jsonb := '([^']+)'::jsonb/)[1]);
-  assert.equal(originalClassArchetype.meta_data, null);
+  assertReviewedTransition(
+    originalClassArchetype.meta_data,
+    null,
+    { source: classCitation },
+    'Vindicator class archetype citation'
+  );
   assert.deepEqual(classCitation, {
     url: 'https://2e.aonprd.com/Archetypes.aspx?ID=285',
     book: 'War of Immortals',
@@ -62,7 +68,7 @@ before(async () => {
   });
   classArchetype.meta_data = { source: classCitation };
   const selection = classArchetype.operations.find(({ id }) => id === SELECT_ID);
-  assert.deepEqual(selection.data.optionsFilters, oldFilter);
+  assertReviewedTransition(selection.data.optionsFilters, oldFilter, newFilter, 'Vindicator favored-weapon filter');
   selection.data.optionsFilters = newFilter;
   const ranger = rows.find(({ table }) => table === 'class').row;
   content = {
@@ -166,20 +172,47 @@ test('Vindicator reaction keeps its ID and archetype identity while replacing ob
   ]);
   const original = rows.find(({ row }) => row.id === 39273).row;
   const avenger = rows.find(({ row }) => row.id === 39141).row;
-  assert.equal(original.name, 'Disrupt Opposed Magic');
-  assert.equal(original.uuid, '2300543738305504');
-  assert.equal(original.meta_data?.source, undefined);
   assert.equal(avenger.name, 'Silence the Profane');
   assert.deepEqual(original.traits, [4140]);
   assert.deepEqual(avenger.traits, [4090]);
+  const citation = JSON.parse(migration.match(/updated_citation constant jsonb := '([^']+)'::jsonb/)[1]);
+  const afterState = {
+    name: migrationLiteral('updated_name'),
+    uuid: '2351793770437190',
+    trigger: migrationLiteral('updated_trigger'),
+    requirements: migrationLiteral('updated_requirements'),
+    description: migrationLiteral('updated_description'),
+    special: migrationLiteral('updated_special'),
+    source: citation,
+  };
+  assertReviewedTransition(
+    {
+      name: original.name,
+      uuid: original.uuid,
+      trigger: original.trigger,
+      requirements: original.requirements,
+      description: original.description,
+      special: original.special,
+      source: original.meta_data?.source,
+    },
+    {
+      name: 'Disrupt Opposed Magic',
+      uuid: '2300543738305504',
+      trigger:
+        'A creature you can observe within your reach, or within your weapon’s first range increment if you are wielding a ranged weapon, Casts a Spell.',
+      requirements: 'You are wielding your deity’s favored weapon.',
+      description:
+        'Your training included instruction on how to prevent enemy spellcasters from using their prayers against you. Make a [Strike](link_action_19856) with the required weapon against the opponent; if the [Strike](link_action_19856) is successful, the triggering spell is disrupted.',
+      special: '',
+      source: undefined,
+    },
+    afterState,
+    'Vindicator reaction fields'
+  );
   const updated = structuredClone(original);
-  updated.name = migrationLiteral('updated_name');
-  updated.trigger = migrationLiteral('updated_trigger');
-  updated.requirements = migrationLiteral('updated_requirements');
-  updated.description = migrationLiteral('updated_description');
-  updated.special = migrationLiteral('updated_special');
-  updated.uuid = '2351793770437190';
-  updated.meta_data.source = JSON.parse(migration.match(/updated_citation constant jsonb := '([^']+)'::jsonb/)[1]);
+  const { source, ...fields } = afterState;
+  Object.assign(updated, fields);
+  updated.meta_data.source = source;
   assert.equal(updated.name, 'Silence the Profane (Vindicator)');
   assert.notEqual(updated.uuid, avenger.uuid);
   assert.equal(updated.trigger, avenger.trigger);

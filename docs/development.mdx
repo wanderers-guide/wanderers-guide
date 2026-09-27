@@ -126,6 +126,17 @@ environment, then run:
 npm --prefix frontend run audit:content -- --tables item,spell
 ```
 
+To audit one book across all supported content types, pass its positive `content_source.id`:
+
+```bash
+npm --prefix frontend run audit:content -- --source-id 400 --out scripts/reports/war-of-immortals-audit.json
+```
+
+The report records `sourceId`. The scan includes that book's `content_source` row and
+only content rows whose `content_source_id` matches it. An unknown source ID fails
+the scan instead of producing an empty success report. Combine `--source-id` with
+`--tables` to check only selected content types.
+
 Keep the service-role key in your secret manager or ignored environment file; never
 put it in a `VITE_` variable, source file, or report. The CLI does not load environment
 files automatically, discover production credentials, or write to the database.

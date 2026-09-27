@@ -1,4 +1,6 @@
 do $add$
+declare
+  existing_count integer;
 begin
   if not exists (
     select 1 from public.content_source
@@ -14,20 +16,6 @@ begin
     raise exception 'War of Immortals has a pending item submission';
   end if;
 
-  if exists (
-    select 1 from public.item
-    where (content_source_id = 400 and lower(name) in (
-      'rattan armor', 'shard of self-destruction', 'wandering pipe'
-    ))
-      or meta_data->'source'->>'url' in (
-        'https://2e.aonprd.com/Armor.aspx?ID=52',
-        'https://2e.aonprd.com/Equipment.aspx?ID=3516',
-        'https://2e.aonprd.com/Equipment.aspx?ID=3513'
-      )
-  ) then
-    raise exception 'A War of Immortals item was added after this audit';
-  end if;
-
   if not exists (select 1 from public.item where id = 6854 and name = 'Dagger' and "group" = 'WEAPON')
      or not exists (select 1 from public.trait where id = 2879 and name = 'Aquadynamic')
      or not exists (select 1 from public.trait where id = 1558 and name = 'Cursed')
@@ -38,7 +26,10 @@ begin
     raise exception 'A required item base or trait has changed';
   end if;
 
-  insert into public.item (
+  create temp table war_expected_items on commit drop as
+    select * from public.item where false;
+
+  insert into pg_temp.war_expected_items (
     name, bulk, level, rarity, description, "group", hands, size, craft_requirements,
     usage, meta_data, operations, content_source_id, version, uuid, price, traits
   ) values (
@@ -62,7 +53,7 @@ begin
     '{}'::json[], 400, '1.0', 6217033776854047, '{"gp":2}'::json, array[2879]::bigint[]
   );
 
-  insert into public.item (
+  insert into pg_temp.war_expected_items (
     name, bulk, level, rarity, description, "group", hands, size, craft_requirements,
     usage, meta_data, operations, content_source_id, version, uuid, price, traits
   ) values (
@@ -90,7 +81,7 @@ You take a –2 penalty to the flat check to remove this bleed damage. When you 
     '{}'::json[], 400, '1.0', 7611178820435355, '{}'::json, array[1558,1504]::bigint[]
   );
 
-  insert into public.item (
+  insert into pg_temp.war_expected_items (
     name, bulk, level, rarity, description, "group", hands, size, craft_requirements,
     usage, meta_data, operations, content_source_id, version, uuid, price, traits
   ) values (
@@ -135,5 +126,37 @@ When held in one hand, the pipe grants you a +2 circumstance bonus to Deception 
     400, '1.0', 2644622431749501, '{}'::json,
     array[1568,1527,1504,4072]::bigint[]
   );
+
+  select count(*) into existing_count from public.item
+   where (content_source_id = 400 and lower(name) in (
+     'rattan armor', 'shard of self-destruction', 'wandering pipe'
+   ))
+      or meta_data->'source'->>'url' in (
+        'https://2e.aonprd.com/Armor.aspx?ID=52',
+        'https://2e.aonprd.com/Equipment.aspx?ID=3516',
+        'https://2e.aonprd.com/Equipment.aspx?ID=3513'
+      );
+  if existing_count = 3 then
+    if exists (
+      select 1 from pg_temp.war_expected_items expected
+      left join public.item actual on actual.uuid = expected.uuid and actual.content_source_id = 400
+      where actual.id is null
+         or to_jsonb(actual) - '{id,created_at,updated_at,search_tsv}'::text[]
+            is distinct from to_jsonb(expected) - '{id,created_at,updated_at,search_tsv}'::text[]
+    ) then
+      raise exception 'Existing War of Immortals items differ from the reviewed insert';
+    end if;
+    return;
+  elsif existing_count <> 0 then
+    raise exception 'War of Immortals items are only partially present';
+  end if;
+
+  insert into public.item (
+    name, bulk, level, rarity, description, "group", hands, size, craft_requirements,
+    usage, meta_data, operations, content_source_id, version, uuid, price, traits
+  )
+  select name, bulk, level, rarity, description, "group", hands, size, craft_requirements,
+         usage, meta_data, operations, content_source_id, version, uuid, price, traits
+    from pg_temp.war_expected_items;
 end
 $add$;
