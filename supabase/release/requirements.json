@@ -31,5 +31,53 @@
   "20260926020000_restore_spined_shield_attacks.sql": {
     "check": "spined-shield-attacks.sql",
     "order": "before-functions"
+  },
+  "20260927000000_war_of_immortals_provenance.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
+  },
+  "20260927010000_war_of_immortals_class_rules.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
+  },
+  "20260927020000_war_of_immortals_links.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
+  },
+  "20260927030000_war_of_immortals_fields.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
+  },
+  "20260927040000_war_of_immortals_vindicator.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
+  },
+  "20260927050000_war_of_immortals_humble_strikes.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
+  },
+  "20260927060000_war_of_immortals_items.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
+  },
+  "20260927070000_war_of_immortals_errata.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
+  },
+  "20260927080000_war_of_immortals_class_archetype_urls.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
+  },
+  "20260927090000_war_of_immortals_epithet_labels.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
+  },
+  "20260927100000_war_of_immortals_apparition_sense.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
+  },
+  "20260927110000_war_of_immortals_seneschal_spells.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
   }
 }
