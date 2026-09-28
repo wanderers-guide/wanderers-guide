@@ -95,12 +95,40 @@ jobs:
         working-directory: ./data
         run: ./create-db-docker.sh
 
+      - name: Verify and replay War of Immortals and Treasure Vault repairs
+        run: |
+          set -euo pipefail
+          verify_war() {
+            docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -At -f - < supabase/release/war-of-immortals.sql \
+              | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed War of Immortals check: " $1; failed = 1 } END { if (NR == 0) { print "No War of Immortals checks ran"; failed = 1 } exit failed }'
+          }
+          verify_index() {
+            docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - < supabase/release/war-of-immortals-index.sql \
+              | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed War of Immortals index check: " $1; failed = 1 } END { if (NR == 0) { print "No War of Immortals index checks ran"; failed = 1 } exit failed }'
+          }
+          verify_war
+          verify_index
+          for migration in supabase/migrations/20260927*.sql supabase/migrations/20260928*.sql; do
+            docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"
+          done
+          verify_war
+          verify_index
+          { cat supabase/release/war-of-immortals-index.sql; cat supabase/release/war-of-immortals-index-regression.sql; } \
+            | docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - \
+            | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed War of Immortals index regression: " $1; failed = 1 } END { if (NR == 0) { print "No War of Immortals index regressions ran"; failed = 1 } exit failed }'
+
       - name: Database authorization regression tests
         run: npm run test:authorization
 
       - name: Install frontend dependencies
         working-directory: ./frontend
         run: npm ci --legacy-peer-deps --no-audit --no-fund
+
+      - name: Audit War of Immortals content
+        run: |
+          SUPABASE_URL="$PUBLIC_SUPABASE_URL" \
+          SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+          npm --prefix frontend run audit:content -- --source-id 400
 
       # The auth-trigger.sql installed by create-db-docker.sh auto-creates the
       # matching public_user row, so no manual psql INSERT is needed.

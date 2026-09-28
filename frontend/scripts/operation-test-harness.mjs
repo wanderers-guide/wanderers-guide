@@ -43,6 +43,7 @@ export async function readContentRows(targets) {
   const text = await readFile(join(frontend, '../data/data.sql'), 'utf8');
   const arrayColumns = new Set([
     'operations',
+    'feature_adjustments',
     'abilities_base',
     'abilities_added',
     'traits',
@@ -90,7 +91,7 @@ export async function readContentRows(targets) {
           const entries = parseContentArray(value);
           return [
             key,
-            key === 'operations' || key === 'abilities_base'
+            key === 'operations' || key === 'abilities_base' || key === 'feature_adjustments'
               ? entries.map((entry) => (typeof entry === 'string' ? JSON.parse(entry) : entry))
               : numberArrayColumns.has(key)
                 ? entries.map((entry) => (entry === null ? null : Number(entry)))
@@ -150,9 +151,12 @@ export async function createOperationEngine() {
           export { handleDeleteItem, handleUpdateItem, handleMoveItem, addExtraItems } from '@items/inv-handlers';
           export { isItemInvestable, getFlatInvItems, applyEquipmentPenalties, getBestArmor } from '@items/inv-utils';
           export { getListStringInputValue } from '@common/operations/variables/operation-value-defaults';
+          export { toggleActiveMode, getExecutableModes } from '@common/modes/mode-rules';
           export { determineFilteredSelectionList } from '@operations/operation-utils';
+          export { collectEntityAbilityBlocks } from '@content/collect-content';
+          export { isAbilityBlockVisible } from '@content/content-hidden';
           export { hasArchetypeClassFeatTraits, getTraitIdByType } from '@utils/traits';
-          export { setFixtures } from '@content/content-store';
+          export { setFixtures, defineDefaultSources } from '@content/content-store';
           export { getOperationErrorNotifications, clearOperationErrorNotifications } from '@utils/notifications';
         `,
         resolveDir: frontend,

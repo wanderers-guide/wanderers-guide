@@ -30,6 +30,7 @@ import {
   isExtendedProficiencyValue,
   compileExpressions,
   compileProficiencyType,
+  getProficiencyTypeValue,
   isProficiencyTypeGreaterOrEqual,
   nextProficiencyType,
 } from './variable-utils';
@@ -277,6 +278,7 @@ export const DEFAULT_VARIABLES: Record<string, Variable> = {
   // Specializations
   WEAPON_SPECIALIZATION: newVariable('bool', 'WEAPON_SPECIALIZATION'),
   WEAPON_SPECIALIZATION_GREATER: newVariable('bool', 'WEAPON_SPECIALIZATION_GREATER'),
+  EXEMPLAR_HUMBLE_STRIKES: newVariable('bool', 'EXEMPLAR_HUMBLE_STRIKES'),
   ARMOR_SPECIALIZATION_LIGHT: newVariable('bool', 'ARMOR_SPECIALIZATION_LIGHT'),
   ARMOR_SPECIALIZATION_MEDIUM: newVariable('bool', 'ARMOR_SPECIALIZATION_MEDIUM'),
   ARMOR_SPECIALIZATION_HEAVY: newVariable('bool', 'ARMOR_SPECIALIZATION_HEAVY'),
@@ -346,6 +348,14 @@ export const DEFAULT_VARIABLES: Record<string, Variable> = {
   WEAPON_GROUP_SHIELD: newVariable('prof', 'WEAPON_GROUP_SHIELD'),
   WEAPON_GROUP_SLING: newVariable('prof', 'WEAPON_GROUP_SLING'),
   WEAPON_GROUP_SPEAR: newVariable('prof', 'WEAPON_GROUP_SPEAR'),
+  WEAPON_GROUP_SPEAR_SIMPLE: newVariable('prof', 'WEAPON_GROUP_SPEAR_SIMPLE'),
+  WEAPON_GROUP_SPEAR_MARTIAL: newVariable('prof', 'WEAPON_GROUP_SPEAR_MARTIAL'),
+  WEAPON_GROUP_SPEAR_ADVANCED: newVariable('prof', 'WEAPON_GROUP_SPEAR_ADVANCED'),
+  WEAPON_GROUP_SPEAR_UNARMED_ATTACK: newVariable('prof', 'WEAPON_GROUP_SPEAR_UNARMED_ATTACK'),
+  WEAPON_GROUP_POLEARM_SIMPLE: newVariable('prof', 'WEAPON_GROUP_POLEARM_SIMPLE'),
+  WEAPON_GROUP_POLEARM_MARTIAL: newVariable('prof', 'WEAPON_GROUP_POLEARM_MARTIAL'),
+  WEAPON_GROUP_POLEARM_ADVANCED: newVariable('prof', 'WEAPON_GROUP_POLEARM_ADVANCED'),
+  WEAPON_GROUP_POLEARM_UNARMED_ATTACK: newVariable('prof', 'WEAPON_GROUP_POLEARM_UNARMED_ATTACK'),
   WEAPON_GROUP_SWORD: newVariable('prof', 'WEAPON_GROUP_SWORD'),
   WEAPON_GROUP_LASER: newVariable('prof', 'WEAPON_GROUP_LASER'),
   WEAPON_GROUP_PROJECTILE: newVariable('prof', 'WEAPON_GROUP_PROJECTILE'),
@@ -820,6 +830,9 @@ function applyAddVariable(
  * @param name - name of the variable to remove
  */
 function applyRemoveVariable(id: StoreID, name: string) {
+  for (const scopedName of getScopedWeaponGroupNames(id, name)) {
+    delete getVariables(id)[scopedName];
+  }
   delete getVariables(id)[name];
   variableEffects.get(getVariableStore(id))?.skills.delete(name);
 }
@@ -910,6 +923,12 @@ function applySetVariable(
 
   // Add to history
   addVariableHistory(id, variable.name, variable.value, oldValue, source ?? 'Updated');
+
+  // A broad weapon-group assignment also replaces each category-specific rank.
+  // This keeps later assignments (including homebrew) authoritative for the whole group.
+  for (const scopedName of getScopedWeaponGroupNames(id, name)) {
+    applySetVariable(id, scopedName, value, source, context);
+  }
 }
 
 /**
@@ -1040,6 +1059,19 @@ function applyAdjVariable(
 
   // Add to history
   addVariableHistory(id, variable.name, variable.value, oldValue, source ?? 'Adjusted');
+
+  // Broad group grants and numeric rank increases still affect every category.
+  for (const scopedName of getScopedWeaponGroupNames(id, name)) {
+    applyAdjVariable(id, scopedName, amount, source, context);
+  }
+}
+
+/** Propagate broad weapon-group changes to existing category-specific proficiencies. */
+function getScopedWeaponGroupNames(id: StoreID, name: string): string[] {
+  if (!name.startsWith('WEAPON_GROUP_')) return [];
+  return ['SIMPLE', 'MARTIAL', 'ADVANCED', 'UNARMED_ATTACK']
+    .map((category) => `${name}_${category}`)
+    .filter((scopedName) => getVariables(id)[scopedName]?.type === 'prof');
 }
 
 export function getAllSkillVariables(id: StoreID): VariableProf[] {
@@ -1075,9 +1107,15 @@ export function getAllAttributeVariables(id: StoreID): VariableAttr[] {
 export function getAllWeaponGroupVariables(id: StoreID): VariableProf[] {
   const variables = [];
   for (const variable of Object.values(getVariables(id))) {
-    if (variable.name.startsWith('WEAPON_GROUP_') && variable.type === 'prof') {
-      variables.push(variable);
+    if (!variable.name.startsWith('WEAPON_GROUP_') || variable.type !== 'prof') continue;
+    const baseName = variable.name.replace(/_(?:SIMPLE|MARTIAL|ADVANCED|UNARMED_ATTACK)$/, '');
+    const broad = getVariable<VariableProf>(id, baseName);
+    if (baseName !== variable.name && broad) {
+      const scopedRank = getProficiencyTypeValue(compileProficiencyType(variable.value));
+      const broadRank = getProficiencyTypeValue(compileProficiencyType(broad.value));
+      if (scopedRank <= broadRank) continue;
     }
+    variables.push(variable);
   }
   return variables as VariableProf[];
 }

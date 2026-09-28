@@ -10,6 +10,7 @@ type TableReport = { type: string; scanned: number; invalid: number; complete: b
 const report = {
   startedAt: new Date().toISOString(),
   complete: false,
+  sourceId: undefined as number | undefined,
   tables: [] as TableReport[],
   issues: [] as { type: string; id: number; path: string; message: string }[],
   error: undefined as string | undefined,
@@ -17,11 +18,16 @@ const report = {
 
 async function main() {
   const { values } = parseArgs({
-    options: { tables: { type: 'string' }, out: { type: 'string' }, help: { type: 'boolean' } },
+    options: {
+      tables: { type: 'string' },
+      'source-id': { type: 'string' },
+      out: { type: 'string' },
+      help: { type: 'boolean' },
+    },
     allowPositionals: false,
   });
   if (values.help) {
-    console.log('audit:content [--tables item,spell] [--out report.json]');
+    console.log('audit:content [--source-id 400] [--tables item,spell] [--out report.json]');
     console.log('Requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY. GET requests only.');
     console.log(`Types: ${Object.keys(CONTENT_SCHEMAS).join(', ')}, hazard`);
     return;
@@ -30,6 +36,12 @@ async function main() {
   if (!types.length || types.some((type) => type !== 'hazard' && !Object.hasOwn(CONTENT_SCHEMAS, type))) {
     throw new Error('Unknown content type. Run with --help to list supported types.');
   }
+  const rawSourceId = values['source-id'];
+  if (rawSourceId !== undefined && (!/^[1-9]\d*$/.test(rawSourceId) || !Number.isSafeInteger(Number(rawSourceId)))) {
+    throw new Error('Source ID must be a positive safe integer.');
+  }
+  const sourceId = rawSourceId === undefined ? undefined : Number(rawSourceId);
+  report.sourceId = sourceId;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const origin = new URL(process.env.SUPABASE_URL ?? '');
   const local = ['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname);
@@ -59,14 +71,43 @@ async function main() {
     return rows;
   }
 
+  /** Keep every invalid field in the report while continuing the scoped scan. */
+  function validate(type: string, row: Row, summary: TableReport): void {
+    summary.scanned++;
+    const rowType = type === 'creature' && row.type === 'hazard' ? 'hazard' : type;
+    const schema = rowType === 'hazard' ? HazardSchema : CONTENT_SCHEMAS[type];
+    const result = schema.safeParse(row);
+    if (result.success) return;
+    summary.invalid++;
+    for (const issue of result.error.issues) {
+      report.issues.push({ type: rowType, id: row.id, path: issue.path.join('.'), message: issue.message });
+    }
+  }
+
   try {
+    const sourceRows =
+      sourceId === undefined
+        ? undefined
+        : await read('content_source', { select: '*', id: `eq.${sourceId}`, limit: '2' });
+    if (sourceRows && (sourceRows.length !== 1 || sourceRows[0].id !== sourceId)) {
+      throw new Error(`Content source ${sourceId} was not found.`);
+    }
     for (const type of new Set(types)) {
       const table = type === 'hazard' ? 'creature' : type.replaceAll('-', '_');
-      const filter = type === 'hazard' ? { type: 'eq.hazard' } : {};
+      const typeFilter = type === 'hazard' ? { type: 'eq.hazard' } : {};
       const summary: TableReport = { type, scanned: 0, invalid: 0, complete: false };
       report.tables.push(summary);
+      if (sourceRows && table === 'content_source') {
+        validate(type, sourceRows[0], summary);
+        summary.complete = true;
+        console.log(`${type}: ${summary.scanned - summary.invalid}/${summary.scanned} valid`);
+        continue;
+      }
+      const sourceFilter = sourceId === undefined ? {} : { content_source_id: `eq.${sourceId}` };
       // Bound inserts during the scan. This is a live scan, not a transactional snapshot.
-      const upper = (await read(table, { select: 'id', order: 'id.desc', limit: '1', ...filter }))[0]?.id;
+      const upper = (
+        await read(table, { select: 'id', order: 'id.desc', limit: '1', ...typeFilter, ...sourceFilter })
+      )[0]?.id;
       let cursor: number | undefined;
       while (upper !== undefined) {
         const params: Record<string, string> = {
@@ -74,7 +115,8 @@ async function main() {
           order: 'id.asc',
           limit: '1000',
           id: `lte.${upper}`,
-          ...filter,
+          ...typeFilter,
+          ...sourceFilter,
         };
         if (cursor !== undefined) params.and = `(id.gt.${cursor})`;
         const rows = await read(table, params);
@@ -83,16 +125,11 @@ async function main() {
           if ((cursor !== undefined && row.id <= cursor) || row.id > upper) {
             throw new Error(`${table}: pagination did not advance within the requested ID range.`);
           }
-          cursor = row.id;
-          summary.scanned++;
-          const rowType = table === 'creature' && row.type === 'hazard' ? 'hazard' : type;
-          const schema = rowType === 'hazard' ? HazardSchema : CONTENT_SCHEMAS[type];
-          const result = schema.safeParse(row);
-          if (result.success) continue;
-          summary.invalid++;
-          for (const issue of result.error.issues) {
-            report.issues.push({ type: rowType, id: row.id, path: issue.path.join('.'), message: issue.message });
+          if (sourceId !== undefined && row.content_source_id !== sourceId) {
+            throw new Error(`${table}: returned a row outside content source ${sourceId}.`);
           }
+          cursor = row.id;
+          validate(type, row, summary);
         }
         // Keep going even after a short page: the server may cap pages below 1,000 rows.
       }
@@ -115,7 +152,9 @@ async function main() {
   } finally {
     closeSync(file);
   }
-  console.log(`${report.complete ? 'Complete' : 'Incomplete'} report: ${output}`);
+  console.log(
+    `${report.complete ? 'Complete' : 'Incomplete'} report${sourceId === undefined ? '' : ` for source ${sourceId}`}: ${output}`
+  );
 }
 
 main().catch(() => {
