@@ -25,7 +25,7 @@ import {
   IconSwords,
   IconUsers,
 } from '@tabler/icons-react';
-import { AbilityBlockType, Character, ContentSource, ContentType, Creature, Item } from '@schemas/content';
+import { AbilityBlockType, Character, ContentSource, ContentType, Creature, HazardSearchResultSchema, Item } from '@schemas/content';
 import { DrawerType } from '@schemas/index';
 import { isPlayable } from '@utils/character';
 import { determineCompanionType } from '@utils/creature';
@@ -365,26 +365,31 @@ async function queryResults(
     const sources = await fetchSpotlightSources();
 
     // Fetch search results
-    const searchData =
-      (await makeRequest('search-data', {
-        text: query,
-        content_sources: sources.map((s) => s.id),
-      })) ?? {};
+    const searchData = await makeRequest('search-data', {
+      text: query,
+      content_sources: sources.map((s) => s.id),
+    });
+    if (!searchData) return [];
+
+    const parsedHazards = HazardSearchResultSchema.array().safeParse(searchData.hazards ?? []);
+    if (!parsedHazards.success) console.warn('[SEARCH] Invalid hazard result', parsedHazards.error);
 
     // Format results to single array
-    const result: Record<string, any>[] = []
-      .concat(searchData.ability_blocks.map((a: any) => ({ ...a, _type: 'ability-block' })))
-      .concat(searchData.ancestries.map((a: any) => ({ ...a, _type: 'ancestry' })))
-      .concat(searchData.archetypes.map((a: any) => ({ ...a, _type: 'archetype' })))
-      .concat(searchData.backgrounds.map((a: any) => ({ ...a, _type: 'background' })))
-      .concat(searchData.classes.map((a: any) => ({ ...a, _type: 'class' })))
-      .concat(searchData.creatures.map((a: any) => ({ ...a, _type: 'creature' })))
-      .concat(searchData.items.map((a: any) => ({ ...a, _type: 'item' })))
-      .concat(searchData.languages.map((a: any) => ({ ...a, _type: 'language' })))
-      .concat(searchData.spells.map((a: any) => ({ ...a, _type: 'spell' })))
-      .concat(searchData.traits.map((a: any) => ({ ...a, _type: 'trait' })))
-      .concat(searchData.versatile_heritages.map((a: any) => ({ ...a, _type: 'versatile-heritage' })))
-      .concat(searchData.class_archetypes.map((a: any) => ({ ...a, _type: 'class-archetype' })));
+    const result: Record<string, any>[] = [
+      ...searchData.ability_blocks.map((a: any) => ({ ...a, _type: 'ability-block' })),
+      ...searchData.ancestries.map((a: any) => ({ ...a, _type: 'ancestry' })),
+      ...searchData.archetypes.map((a: any) => ({ ...a, _type: 'archetype' })),
+      ...searchData.backgrounds.map((a: any) => ({ ...a, _type: 'background' })),
+      ...searchData.classes.map((a: any) => ({ ...a, _type: 'class' })),
+      ...searchData.creatures.map((a: any) => ({ ...a, _type: 'creature' })),
+      ...(parsedHazards.success ? parsedHazards.data : []).map((a) => ({ ...a, _type: 'hazard' })),
+      ...searchData.items.map((a: any) => ({ ...a, _type: 'item' })),
+      ...searchData.languages.map((a: any) => ({ ...a, _type: 'language' })),
+      ...searchData.spells.map((a: any) => ({ ...a, _type: 'spell' })),
+      ...searchData.traits.map((a: any) => ({ ...a, _type: 'trait' })),
+      ...searchData.versatile_heritages.map((a: any) => ({ ...a, _type: 'versatile-heritage' })),
+      ...searchData.class_archetypes.map((a: any) => ({ ...a, _type: 'class-archetype' })),
+    ];
 
     return result;
     // Filter out results again, just in case
@@ -395,13 +400,14 @@ async function queryResults(
 
   // Format results to spotlight actions
   return result.map((data) => {
-    let description = `${stripMd(`${data.description}`)}`.split('.')[0] + '.';
+    const summary = data._type === 'hazard' ? undefined : data.description;
+    let description = `${stripMd(`${summary}`)}`.split('.')[0] + '.';
 
     const abilityBlockType = data._type === 'ability-block' ? (data.type as AbilityBlockType) : null;
     const companionType = data._type === 'creature' ? determineCompanionType(data as Creature) : null;
     const itemMetaType = data._type === 'item' ? determineItemMetaType(data as Item, false) : null;
 
-    if (data.level && (!abilityBlockType || +data.level > 0)) {
+    if ((data.level || (data._type === 'hazard' && data.level === 0)) && (!abilityBlockType || +data.level > 0)) {
       description = `Lvl. ${data.level} | ` + description;
     } else if (data.rank) {
       description = `Rk. ${data.rank} | ` + description;
@@ -411,7 +417,7 @@ async function queryResults(
     return {
       id: `${data._type}-${data.id}`,
       label: `${data.name}`,
-      description: data.description ? description : undefined,
+      description: data._type === 'hazard' ? `Lvl. ${data.level}` : summary ? description : undefined,
       onClick: () => {
         const type = (abilityBlockType ?? data._type) as DrawerType;
         setQueryParam('open', `link_${type}_${data.id}`);
@@ -429,11 +435,12 @@ async function queryResults(
             data: {
               id: data.id,
               readOnly: true,
+              ...(type === 'hazard' ? { sourceId: data.content_source_id } : {}),
             },
           });
         }
       },
-      leftSection: getIconFromContentType(data._type as ContentType, '1.5rem'),
+      leftSection: getIconFromContentType(data._type as ContentType | 'hazard', '1.5rem'),
       highlightColor: theme.colors[theme.primaryColor][2],
       keywords: ['query', `${data._type}`],
       _type: abilityBlockType ?? companionType ?? itemMetaType ?? data._type,

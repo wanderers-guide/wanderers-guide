@@ -24,7 +24,7 @@ import { pluralize, toLabel } from '@utils/strings';
 import { truncate } from 'lodash-es';
 import { useEffect, useState } from 'react';
 
-const NOTABILITY_MAP: Record<ContentType | AbilityBlockType, number> = {
+const NOTABILITY_MAP: Record<ContentType | AbilityBlockType | 'hazard', number> = {
   trait: 2,
   item: 8,
   spell: 9,
@@ -32,6 +32,7 @@ const NOTABILITY_MAP: Record<ContentType | AbilityBlockType, number> = {
   archetype: 18,
   'versatile-heritage': 17,
   creature: 7,
+  hazard: 7,
   ancestry: 20,
   background: 15,
   language: 3,
@@ -67,14 +68,14 @@ export function ContentSourceInfo(props: { source: ContentSource; nameCutOff?: n
     },
   });
 
-  let noteableStats: { label: string; value: number; notability: number; type: ContentType }[] = [];
+  let noteableStats: { label: string; value: number; notability: number; type: ContentType | 'hazard' }[] = [];
   for (const [key, value] of Object.entries(props.source.meta_data?.counts ?? {})) {
     if (value) {
-      const keyy = key as ContentType | AbilityBlockType;
+      const keyy = key as ContentType | AbilityBlockType | 'hazard';
       noteableStats.push({
         label: pluralize(toLabel(key)),
         value: value,
-        type: convertToContentType(keyy),
+        type: keyy === 'hazard' ? 'hazard' : convertToContentType(keyy),
         notability: NOTABILITY_MAP[keyy] ?? -1,
       });
     }

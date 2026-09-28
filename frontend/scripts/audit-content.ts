@@ -2,6 +2,7 @@
 import { closeSync, fchmodSync, mkdirSync, openSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { parseArgs } from 'node:util';
+import { HazardSchema } from '../src/schemas/content';
 import { CONTENT_SCHEMAS } from './content-schemas';
 
 type Row = Record<string, unknown> & { id: number };
@@ -28,11 +29,11 @@ async function main() {
   if (values.help) {
     console.log('audit:content [--source-id 400] [--tables item,spell] [--out report.json]');
     console.log('Requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY. GET requests only.');
-    console.log(`Types: ${Object.keys(CONTENT_SCHEMAS).join(', ')}`);
+    console.log(`Types: ${Object.keys(CONTENT_SCHEMAS).join(', ')}, hazard`);
     return;
   }
   const types = values.tables?.split(',').map((type) => type.trim()) ?? Object.keys(CONTENT_SCHEMAS);
-  if (!types.length || types.some((type) => !Object.hasOwn(CONTENT_SCHEMAS, type))) {
+  if (!types.length || types.some((type) => type !== 'hazard' && !Object.hasOwn(CONTENT_SCHEMAS, type))) {
     throw new Error('Unknown content type. Run with --help to list supported types.');
   }
   const rawSourceId = values['source-id'];
@@ -73,11 +74,13 @@ async function main() {
   /** Keep every invalid field in the report while continuing the scoped scan. */
   function validate(type: string, row: Row, summary: TableReport): void {
     summary.scanned++;
-    const result = CONTENT_SCHEMAS[type].safeParse(row);
+    const rowType = type === 'creature' && row.type === 'hazard' ? 'hazard' : type;
+    const schema = rowType === 'hazard' ? HazardSchema : CONTENT_SCHEMAS[type];
+    const result = schema.safeParse(row);
     if (result.success) return;
     summary.invalid++;
     for (const issue of result.error.issues) {
-      report.issues.push({ type, id: row.id, path: issue.path.join('.'), message: issue.message });
+      report.issues.push({ type: rowType, id: row.id, path: issue.path.join('.'), message: issue.message });
     }
   }
 
@@ -90,7 +93,8 @@ async function main() {
       throw new Error(`Content source ${sourceId} was not found.`);
     }
     for (const type of new Set(types)) {
-      const table = type.replaceAll('-', '_');
+      const table = type === 'hazard' ? 'creature' : type.replaceAll('-', '_');
+      const typeFilter = type === 'hazard' ? { type: 'eq.hazard' } : {};
       const summary: TableReport = { type, scanned: 0, invalid: 0, complete: false };
       report.tables.push(summary);
       if (sourceRows && table === 'content_source') {
@@ -101,7 +105,9 @@ async function main() {
       }
       const sourceFilter = sourceId === undefined ? {} : { content_source_id: `eq.${sourceId}` };
       // Bound inserts during the scan. This is a live scan, not a transactional snapshot.
-      const upper = (await read(table, { select: 'id', order: 'id.desc', limit: '1', ...sourceFilter }))[0]?.id;
+      const upper = (
+        await read(table, { select: 'id', order: 'id.desc', limit: '1', ...typeFilter, ...sourceFilter })
+      )[0]?.id;
       let cursor: number | undefined;
       while (upper !== undefined) {
         const params: Record<string, string> = {
@@ -109,6 +115,7 @@ async function main() {
           order: 'id.asc',
           limit: '1000',
           id: `lte.${upper}`,
+          ...typeFilter,
           ...sourceFilter,
         };
         if (cursor !== undefined) params.and = `(id.gt.${cursor})`;

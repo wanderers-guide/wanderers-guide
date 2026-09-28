@@ -845,8 +845,8 @@ export async function insertData<T = Record<string, any>>(
       .from(tableName)
       .select(undefined, { count: 'estimated', head: true })
       .eq('content_source_id', data.content_source_id);
-    if (type) {
-      countQuery = countQuery.eq('type', type);
+    if (type || tableName === 'creature') {
+      countQuery = countQuery.eq('type', type ?? 'creature');
     }
     const { count, error: countError } = await countQuery;
     if (countError) throw countError;

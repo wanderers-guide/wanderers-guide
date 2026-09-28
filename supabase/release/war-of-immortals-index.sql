@@ -3,12 +3,13 @@
 -- required stored URL differ only for canonical MythicSpells/MythicRituals links.
 -- Embedded epithets are checked separately.
 -- This is an indexed-entry gate, not a page-by-page or rules-behavior certification.
--- AoN entries outside this passing gate (checked-in snapshot, not a live-data verdict):
+-- AoN entries outside this 461-entry gate (checked-in snapshot, not a live-data verdict):
 -- Class Sample Builds: Celestial Archer (Exemplar): https://2e.aonprd.com/ClassSamples.aspx?ID=77
 -- Class Sample Builds: Creation's Beast (Exemplar): https://2e.aonprd.com/ClassSamples.aspx?ID=78
 -- Class Sample Builds: Medium (Animist): https://2e.aonprd.com/ClassSamples.aspx?ID=75
 -- Class Sample Builds: Seer (Animist): https://2e.aonprd.com/ClassSamples.aspx?ID=74
 -- Class Sample Builds: Sky King Eternal (Exemplar): https://2e.aonprd.com/ClassSamples.aspx?ID=76
+-- The five hazards below are covered by war-of-immortals-hazards.sql.
 -- Hazards: Boneburst: https://2e.aonprd.com/Hazards.aspx?ID=464
 -- Hazards: Lightning's Dance: https://2e.aonprd.com/Hazards.aspx?ID=460
 -- Hazards: Primal Chaos Aura: https://2e.aonprd.com/Hazards.aspx?ID=461
@@ -26,9 +27,9 @@
 -- Monsters: Vulot: https://2e.aonprd.com/Monsters.aspx?ID=3404
 -- Monsters: Weaver Of Webs: https://2e.aonprd.com/Monsters.aspx?ID=3410
 -- Rules: Mythic Rules: https://2e.aonprd.com/Rules.aspx?ID=3320
--- The 11 monsters need a full-fidelity mythic creature representation; the other
--- 11 entries are sample builds, hazards, or a rules hub without corresponding
--- indexed-content tables. Their absence is not counted as passing coverage.
+-- The 11 monsters need a full-fidelity mythic creature representation.
+-- The sample builds and rules hub have no corresponding indexed-content tables.
+-- Their absence is not counted as passing coverage.
 
 create temporary table war_index_expected (
   category text not null,

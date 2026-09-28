@@ -28,12 +28,14 @@ import { StatWeaponDrawerTitle } from './types/StatWeaponDrawer';
 import { ArchetypeDrawerTitle } from './types/ArchetypeDrawer';
 import { VersatileHeritageDrawerTitle } from './types/VersatileHeritageDrawer';
 import { ClassArchetypeDrawerTitle } from './types/ClassArchetypeDrawer';
+import { HazardDrawerTitle } from './types/HazardDrawer';
 
 const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
   const _drawer = useAtomValue(drawerState);
   return (
     <div ref={ref}>
       {_drawer?.type === 'content-source' && <ContentSourceDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'hazard' && <HazardDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'generic' && <GenericDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'condition' && <ConditionDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'feat' && <FeatDrawerTitle data={_drawer.data} />}

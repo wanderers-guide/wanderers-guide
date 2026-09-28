@@ -12,16 +12,18 @@
  */
 
 import { CONTENT_SCHEMAS } from './content-schemas';
+import { HazardSchema } from '../src/schemas/content';
 import { formatZodError } from '../src/schemas/shared';
 import { readFileSync } from 'node:fs';
 
 const type = process.argv[2];
 const file = process.argv[3];
-const schema = Object.hasOwn(CONTENT_SCHEMAS, type) ? CONTENT_SCHEMAS[type] : undefined;
+const schema =
+  type === 'hazard' ? HazardSchema : Object.hasOwn(CONTENT_SCHEMAS, type) ? CONTENT_SCHEMAS[type] : undefined;
 
 if (!schema) {
   console.error('Usage: validate:content <type> [file.json]   (JSON is read from stdin if no file)');
-  console.error(`Types: ${Object.keys(CONTENT_SCHEMAS).join(', ')}`);
+  console.error(`Types: ${Object.keys(CONTENT_SCHEMAS).join(', ')}, hazard`);
   process.exit(2);
 }
 
@@ -47,7 +49,8 @@ let anyInvalid = false;
 
 items.forEach((item, i) => {
   const label = Array.isArray(data) ? `[${i}] ` : '';
-  const result = schema.safeParse(item);
+  const rowSchema = type === 'creature' && item?.type === 'hazard' ? HazardSchema : schema;
+  const result = rowSchema.safeParse(item);
   if (result.success) {
     console.log(`${label}VALID`);
   } else {

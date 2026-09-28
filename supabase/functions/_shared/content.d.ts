@@ -36,6 +36,9 @@ type ContentType =
   | 'background'
   | 'language'
   | 'content-source';
+type CreatureRecordType = 'creature' | 'hazard';
+/** Hazards can be searched without enabling them in content authoring endpoints. */
+type SearchContentType = ContentType | 'hazard';
 
 // All requests follow JSend specification (https://github.com/omniti-labs/jsend) //
 export type JSendResponse<T = NonNullable<any>> =
@@ -369,6 +372,7 @@ interface Creature extends LivingEntity {
   id: number;
   created_at: string;
   updated_at?: string;
+  type: 'creature';
   rarity: Rarity;
   details: {
     image_url?: string;
@@ -382,6 +386,49 @@ interface Creature extends LivingEntity {
   abilities_added?: number[];
   content_source_id: number;
   deprecated?: boolean;
+  version: string;
+}
+
+/** A read-only hazard stat block stored in the creature catalog table. */
+interface Hazard {
+  id: number;
+  created_at: string;
+  updated_at?: string;
+  name: string;
+  level: number;
+  rarity: Rarity;
+  type: 'hazard';
+  details: {
+    complexity: 'SIMPLE' | 'COMPLEX';
+    trait_ids?: number[];
+    trait_labels: string[];
+    stealth: string;
+    description: string;
+    disable: string;
+    defenses?: {
+      ac?: number;
+      fort?: number;
+      ref?: number;
+      hardness?: number;
+      hp?: number;
+      bt?: number;
+      immunities?: string;
+    };
+    activation: {
+      name: string;
+      actions?: ActionCost;
+      traits?: string[];
+      trigger: string;
+      effect: string;
+    };
+    routine?: { actions: number; text: string };
+    reset?: string;
+  };
+  meta_data?: {
+    source?: { book?: string; page?: string; url?: string };
+  } | null;
+  content_source_id: number;
+  uuid: number;
   version: string;
 }
 

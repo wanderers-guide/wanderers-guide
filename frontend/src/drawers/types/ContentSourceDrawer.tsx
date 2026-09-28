@@ -21,6 +21,7 @@ import {
   VersatileHeritageSelectionOption,
 } from '@common/select/SelectContent';
 import { fetchContentPackage, fetchContentSources } from '@content/content-store';
+import { fetchHazards } from '@content/hazards';
 import { defineDefaultSourcesForSource, updateSubscriptions } from '@content/homebrew';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { Title, Text, Loader, Group, Divider, Box, Button, Accordion, Badge, Select, ActionIcon } from '@mantine/core';
@@ -34,6 +35,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAtom } from 'jotai';
 import { DrawerType } from '@schemas/index';
 import { COMMON_CORE_ID, PATHFINDER_CORE_ID, STARFINDER_CORE_ID } from '@constants/data';
+import { HazardSelectionOption } from '@common/select/HazardSelectionOption';
 
 export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: ContentSource } }) {
   const id = props.data.id;
@@ -137,6 +139,7 @@ export function ContentSourceDrawerContent(props: {
   };
 }) {
   const id = props.data.id;
+  const sourceId = id ?? props.data.source?.id;
 
   const missingSelectRef = useRef<HTMLInputElement>(null);
   const [searchValue, setSearchValue] = useState('');
@@ -154,6 +157,11 @@ export function ContentSourceDrawerContent(props: {
       const _id = id ?? source?.id;
       return await fetchContentPackage([_id], { fetchSources: true, fetchCreatures: true });
     },
+  });
+  const hazardQuery = useQuery({
+    queryKey: ['find-source-hazards', sourceId],
+    queryFn: () => fetchHazards([sourceId!]),
+    enabled: !!sourceId,
   });
   const source = props.data.source ?? content?.sources?.find((s) => s.id === id) ?? null;
 
@@ -511,6 +519,40 @@ export function ContentSourceDrawerContent(props: {
                     }}
                   />
                 ))}
+              </Accordion.Panel>
+            </Accordion.Item>
+          )}
+          {(hazardQuery.data?.length || hazardQuery.isError) && (
+            <Accordion.Item value='hazards' w='100%'>
+              <Accordion.Control>
+                <Group wrap='nowrap' justify='space-between' gap={0}>
+                  <Text c='white' fz='sm'>Hazards</Text>
+                  {!!hazardQuery.data?.length && (
+                    <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
+                      <Text c='gray.2' span inherit>{hazardQuery.data.length}</Text>
+                    </Badge>
+                  )}
+                </Group>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Divider color='dark.6' />
+                {hazardQuery.isError ? (
+                  <Button variant='subtle' size='compact-sm' onClick={() => hazardQuery.refetch()}>Retry</Button>
+                ) : (
+                  hazardQuery.data?.map((record) => (
+                    <HazardSelectionOption
+                      key={record.id}
+                      hazard={record}
+                      onClick={(hazard) => {
+                        openDrawer({
+                          type: 'hazard',
+                          data: { id: hazard.id, hazard, sourceId: hazard.content_source_id },
+                          extra: { addToHistory: true },
+                        });
+                      }}
+                    />
+                  ))
+                )}
               </Accordion.Panel>
             </Accordion.Item>
           )}

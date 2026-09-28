@@ -4,6 +4,7 @@ import {
   IconBook2,
   IconCaretLeftRight,
   IconFlare,
+  IconAlertTriangle,
   IconLanguage,
   IconMilitaryRank,
   IconPaw,
@@ -75,7 +76,7 @@ export function isActionCost(value: string | null): value is ActionCost {
   ].includes(value);
 }
 
-export function getIconFromContentType(type: ContentType, size: string) {
+export function getIconFromContentType(type: ContentType | 'hazard', size: string) {
   return {
     trait: <IconTag size={size} />,
     item: <IconBackpack size={size} />,
@@ -83,6 +84,7 @@ export function getIconFromContentType(type: ContentType, size: string) {
     class: <IconVocabulary size={size} />,
     'ability-block': <IconCaretLeftRight size={size} />,
     creature: <IconPaw size={size} />,
+    hazard: <IconAlertTriangle size={size} />,
     ancestry: <IconTree size={size} />,
     background: <IconWindow size={size} />,
     language: <IconLanguage size={size} />,

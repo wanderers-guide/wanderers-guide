@@ -23,6 +23,7 @@ const DrawerTitle = lazy(() => import('./DrawerTitle'));
 // No feedback drawers
 const NO_FEEDBACK_DRAWERS = [
   'generic',
+  'hazard',
   'character',
   'condition',
   'manage-coins',

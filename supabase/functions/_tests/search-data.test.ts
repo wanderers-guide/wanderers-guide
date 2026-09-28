@@ -18,7 +18,7 @@ Deno.test({
     assertEquals(result.status, 200);
     assertEquals(result.body?.status, 'success');
     const data = result.body?.data;
-    // All twelve content buckets must be present, even if empty.
+    // All thirteen content buckets must be present, even if empty.
     for (const key of [
       'ability_blocks',
       'ancestries',
@@ -26,6 +26,7 @@ Deno.test({
       'backgrounds',
       'classes',
       'creatures',
+      'hazards',
       'items',
       'languages',
       'spells',
@@ -89,5 +90,6 @@ Deno.test({
     assertEquals(result.body?.status, 'success');
     assertEquals(result.body?.data?.spells?.length, 0);
     assertEquals(result.body?.data?.creatures?.length, 0);
+    assertEquals(result.body?.data?.hazards?.length, 0);
   },
 });

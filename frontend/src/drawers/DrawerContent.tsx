@@ -29,6 +29,7 @@ import { ArchetypeDrawerContent } from './types/ArchetypeDrawer';
 import { VersatileHeritageDrawerContent } from './types/VersatileHeritageDrawer';
 import { cloneDeep } from 'lodash-es';
 import { ClassArchetypeDrawerContent } from './types/ClassArchetypeDrawer';
+import { HazardDrawerContent } from './types/HazardDrawer';
 
 export default function DrawerContent(props: { onMetadataChange?: (openedDict?: Record<string, string>) => void }) {
   const _drawer = useAtomValue(drawerState);
@@ -44,6 +45,7 @@ export default function DrawerContent(props: { onMetadataChange?: (openedDict?: 
   return (
     <>
       {_drawer?.type === 'content-source' && <ContentSourceDrawerContent data={drawerData} />}
+      {_drawer?.type === 'hazard' && <HazardDrawerContent data={drawerData} />}
       {_drawer?.type === 'generic' && <GenericDrawerContent data={drawerData} />}
       {_drawer?.type === 'condition' && <ConditionDrawerContent data={drawerData} />}
       {_drawer?.type === 'feat' && <FeatDrawerContent data={drawerData} />}

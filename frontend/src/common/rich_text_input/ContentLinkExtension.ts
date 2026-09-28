@@ -504,5 +504,5 @@ export function getContentDataFromHref(href: string) {
 
   // Get content data
   const [link, type, id] = lastPart.split('_');
-  return { type: type as ContentType | AbilityBlockType | 'condition', id: id.replace('~', ' ') };
+  return { type: type as ContentType | AbilityBlockType | 'condition' | 'hazard', id: id.replace('~', ' ') };
 }

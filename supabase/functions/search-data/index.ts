@@ -5,10 +5,11 @@ import type {
   AbilityBlockType,
   ActionCost,
   Availability,
-  ContentType,
+  CreatureRecordType,
   ItemGroup,
   JSendResponseSuccess,
   Rarity,
+  SearchContentType,
   Size,
 } from '../_shared/content';
 import type { PostgrestFilterBuilder } from '@supabase/postgrest-js';
@@ -23,7 +24,7 @@ serve(async (req: Request) => {
 
       // Advanced
       is_advanced?: boolean;
-      type?: ContentType;
+      type?: SearchContentType;
 
       // Shared
       name?: string;
@@ -124,7 +125,7 @@ function parseSimpleSearch(input: string): ParsedSearch {
 async function handleAdvancedSearch(
   client: SupabaseClient<any, 'public', any>,
   filters: {
-    type?: ContentType;
+    type?: SearchContentType;
     name?: string;
     rarity?: Rarity;
     availability?: Availability;
@@ -314,12 +315,12 @@ async function handleAdvancedSearch(
     return data ?? [];
   };
 
-  const searchCreatures = async () => {
+  const searchCreatures = async (type: CreatureRecordType) => {
     // Creatures don't carry top-level `description` or `traits` columns
     // (description lives in `details.description`, traits aren't stored at
     // all on the row), so applyCommonFilters can't be used wholesale. Apply
     // only the safe shared filters.
-    let q = client.from('creature').select();
+    let q = client.from('creature').select().eq('type', type);
 
     if (filters.name) q = applySimpleSearch(q, 'name', filters.name);
     if (filters.rarity) q = q.eq('rarity', filters.rarity);
@@ -348,6 +349,7 @@ async function handleAdvancedSearch(
     backgrounds?: any[];
     classes?: any[];
     creatures?: any[];
+    hazards?: any[];
     items?: any[];
     languages?: any[];
     spells?: any[];
@@ -364,7 +366,9 @@ async function handleAdvancedSearch(
     } else if (filters.type === 'item') {
       results.items = await searchItems();
     } else if (filters.type === 'creature') {
-      results.creatures = await searchCreatures();
+      results.creatures = await searchCreatures('creature');
+    } else if (filters.type === 'hazard') {
+      results.hazards = await searchCreatures('hazard');
     } else if (filters.type === 'ancestry') {
       results.ancestries = await simpleTableSearch('ancestry');
     } else if (filters.type === 'archetype') {
@@ -393,6 +397,7 @@ async function handleAdvancedSearch(
       backgrounds: results.backgrounds ?? [],
       classes: results.classes ?? [],
       creatures: results.creatures ?? [],
+      hazards: results.hazards ?? [],
       items: results.items ?? [],
       languages: results.languages ?? [],
       spells: results.spells ?? [],
@@ -425,6 +430,7 @@ async function handleSimpleSearch(
         backgrounds: [],
         classes: [],
         creatures: [],
+        hazards: [],
         items: [],
         languages: [],
         spells: [],
@@ -446,7 +452,7 @@ async function handleSimpleSearch(
     background: 'id,name,description,content_source_id',
     class: 'id,name,description,content_source_id',
     class_archetype: 'id,name,description,content_source_id',
-    creature: 'id,name,level,content_source_id',
+    creature: 'id,name,level,type,content_source_id',
     item: 'id,name,description,level,traits,"group",hands,content_source_id',
     language: 'id,name,description,content_source_id',
     spell: 'id,name,description,rank,traits,traditions,content_source_id',
@@ -454,8 +460,15 @@ async function handleSimpleSearch(
     versatile_heritage: 'id,name,description,content_source_id',
   };
 
-  const searchTable = async function (tableName: TableName, text: string) {
+  const searchTable = async function (
+    tableName: TableName,
+    text: string,
+    creatureType: CreatureRecordType = 'creature'
+  ) {
     let query = client.from(tableName).select(SEARCH_COLUMNS[tableName]);
+    if (tableName === 'creature') {
+      query = query.eq('type', creatureType);
+    }
     if (content_sources) {
       query = query.in('content_source_id', content_sources);
     }
@@ -485,7 +498,8 @@ async function handleSimpleSearch(
     searchTable('archetype', text),
     searchTable('background', text),
     searchTable('class', text),
-    searchTable('creature', text),
+    searchTable('creature', text, 'creature'),
+    searchTable('creature', text, 'hazard'),
     searchTable('item', text),
     searchTable('language', text),
     searchTable('spell', text),
@@ -503,12 +517,13 @@ async function handleSimpleSearch(
       backgrounds: results[3],
       classes: results[4],
       creatures: results[5],
-      items: results[6],
-      languages: results[7],
-      spells: results[8],
-      traits: results[9],
-      versatile_heritages: results[10],
-      class_archetypes: results[11],
+      hazards: results[6],
+      items: results[7],
+      languages: results[8],
+      spells: results[9],
+      traits: results[10],
+      versatile_heritages: results[11],
+      class_archetypes: results[12],
     },
   };
 }
