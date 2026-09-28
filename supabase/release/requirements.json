@@ -107,5 +107,25 @@
   "20260927200000_war_of_immortals_bespell_fields.sql": {
     "check": "war-of-immortals.sql",
     "order": "before-functions"
+  },
+  "20260927210000_war_of_immortals_embedded_activities.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
+  },
+  "20260927220000_treasure_vault_sankeit_armor.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
+  },
+  "20260927230000_war_of_immortals_warrior_ranks.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
+  },
+  "20260927240000_war_of_immortals_restless_epithet.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
+  },
+  "20260927250000_treasure_vault_dragonprism_links.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
   }
 }

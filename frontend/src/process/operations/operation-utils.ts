@@ -709,7 +709,9 @@ async function getAdjValueList(id: StoreID, operationUUID: string, filters: Oper
     variables = getAllAttributeVariables(id);
   }
   if (filters.group === 'WEAPON-GROUP') {
-    variables = getAllWeaponGroupVariables(id);
+    variables = getAllWeaponGroupVariables(id).filter(
+      (variable) => !/_(?:SIMPLE|MARTIAL|ADVANCED|UNARMED_ATTACK)$/.test(variable.name)
+    );
   }
   if (filters.group === 'ARMOR-GROUP') {
     variables = getAllArmorGroupVariables(id);

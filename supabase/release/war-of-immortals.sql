@@ -12,6 +12,28 @@ with war_records as materialized (
   union all select id, to_jsonb(row_data) from public.background row_data where content_source_id = 400
   union all select id, to_jsonb(row_data) from public.language row_data where content_source_id = 400
   union all select id, to_jsonb(row_data) from public.content_source row_data where id = 400
+), warrior_expected_ops (prev_id, op_id, variable, rank) as (
+  values
+    (20764, '7b2ab962-eb1b-4a4c-adb9-feaf4b76682c', 'WEAPON_GROUP_SPEAR_SIMPLE', 'M'),
+    (20764, 'de0ab549-bff3-478b-a9c9-06c501b157b4', 'WEAPON_GROUP_SPEAR_MARTIAL', 'M'),
+    (20764, '266f14b5-2aba-4895-973a-a2405c124195', 'WEAPON_GROUP_SPEAR_ADVANCED', 'E'),
+    (20764, '64a95f6d-f6ee-44e1-b8cd-46b4909e0edb', 'WEAPON_GROUP_SPEAR_UNARMED_ATTACK', 'M'),
+    (20764, 'af2cd211-b570-4d9c-807b-0b9c37fd3820', 'WEAPON_GROUP_POLEARM_SIMPLE', 'M'),
+    (20764, '7f4c261c-7d6d-4ee4-91ab-18072d73b007', 'WEAPON_GROUP_POLEARM_MARTIAL', 'M'),
+    (20764, 'af3a85f7-eb20-40bd-aaf7-9cd5b45e8f11', 'WEAPON_GROUP_POLEARM_ADVANCED', 'E'),
+    (20764, 'c5da8516-537e-4aff-9150-4d4d658388a1', 'WEAPON_GROUP_POLEARM_UNARMED_ATTACK', 'M'),
+    (19270, '21eb95b6-873e-4202-af91-d2d73debdc50', 'SIMPLE_WEAPONS', 'M'),
+    (19270, '4f6ff374-cfca-4af8-a4bc-45348f4713e1', 'MARTIAL_WEAPONS', 'M'),
+    (19270, 'ea3ddcd5-65d5-4b35-9142-fb58a1460f83', 'UNARMED_ATTACKS', 'M'),
+    (19270, 'ae1447cb-cfbc-464c-a610-e4823af64291', 'ADVANCED_WEAPONS', 'E'),
+    (19270, 'b8860303-4c3b-4a90-889e-3dabb4fdf8cd', 'WEAPON_GROUP_SPEAR_SIMPLE', 'L'),
+    (19270, '77f9c867-7c4f-4578-85b7-342db31a7593', 'WEAPON_GROUP_SPEAR_MARTIAL', 'L'),
+    (19270, '692f70f3-ae7e-43bb-b45d-b451cfeca006', 'WEAPON_GROUP_SPEAR_ADVANCED', 'M'),
+    (19270, 'e623891b-cb03-4337-89fd-50b942b07940', 'WEAPON_GROUP_SPEAR_UNARMED_ATTACK', 'L'),
+    (19270, '975705e5-f08e-4138-b3f6-f273eac03bad', 'WEAPON_GROUP_POLEARM_SIMPLE', 'L'),
+    (19270, 'a0ffc289-01b6-4f4f-8164-8855e5fde6ef', 'WEAPON_GROUP_POLEARM_MARTIAL', 'L'),
+    (19270, '502af567-8937-403e-9587-387f9db67a50', 'WEAPON_GROUP_POLEARM_ADVANCED', 'M'),
+    (19270, '4b479fd2-5ff2-46bd-a909-e26b91f10142', 'WEAPON_GROUP_POLEARM_UNARMED_ATTACK', 'L')
 )
 select 'war-citations' as id,
   (select count(*) = 20 from public.ability_block
@@ -227,6 +249,83 @@ select 'war-bespell-fields',
       and content_source_id = 400 and actions = 'FREE-ACTION'
       and frequency = 'once per turn'
       and requirements = 'Your most recent action was to cast a non-cantrip spell')
+union all
+select 'war-warrior-ranks',
+  exists (select 1 from public.class_archetype
+    where id = 36 and name = 'Warrior of Legend' and class_id = 20 and content_source_id = 400)
+  and (select count(*) = 2 from public.class_archetype c,
+      unnest(c.feature_adjustments) feature,
+      (values (20764, 'Fighter Weapon Mastery', 8),
+              (19270, 'Weapon Legend', 12)) expected(prev_id, name, operation_count)
+    where c.id = 36 and c.content_source_id = 400
+      and feature->>'type' = 'REPLACE'
+      and (feature->>'prev_id')::integer = expected.prev_id
+      and feature #>> '{data,name}' = expected.name
+      and jsonb_array_length(feature::jsonb #> '{data,operations}') = expected.operation_count
+      and not exists (select 1 from jsonb_array_elements(feature::jsonb #> '{data,operations}') op
+        where op #>> '{data,variable}' in ('WEAPON_GROUP_SPEAR', 'WEAPON_GROUP_POLEARM')))
+  and (select count(*) = 20 and count(distinct expected.op_id) = 20
+    from warrior_expected_ops expected
+    join public.class_archetype c on c.id = 36 and c.content_source_id = 400
+    join lateral unnest(c.feature_adjustments) feature
+      on feature->>'type' = 'REPLACE' and (feature->>'prev_id')::integer = expected.prev_id
+    join lateral jsonb_array_elements(feature::jsonb #> '{data,operations}') op
+      on op->>'id' = expected.op_id and op->>'type' = 'adjValue'
+        and op #>> '{data,variable}' = expected.variable
+        and op #>> '{data,value,value}' = expected.rank)
+union all
+select 'war-embedded-activities',
+  (select count(*) = 2 from (values
+    (51428, 'One Among The Masses', 3826661012936875::bigint,
+      51429, 'Overawe Crowd', 6494856751326130::bigint, 'TWO-ACTIONS',
+      '9896af20-5cae-46e5-8b46-2fc953f1aa65'),
+    (51505, 'Legend of Combat', 8312927930720281::bigint,
+      51506, 'Speed of Arms', 45359890581666::bigint, 'REACTION',
+      'b1ecc0b7-c64e-4f27-8562-731f24147a4f')
+  ) expected(parent_id, parent_name, parent_uuid, child_id, child_name, child_uuid, child_actions, grant_id)
+  join public.ability_block parent on parent.id = expected.parent_id
+  join public.ability_block child on child.id = expected.child_id
+  where parent.name = expected.parent_name and parent.uuid = expected.parent_uuid
+    and parent.type = 'feat' and parent.content_source_id = 400
+    and cardinality(parent.operations) = 1
+    and parent.operations[1]::jsonb = jsonb_build_object(
+      'id', expected.grant_id, 'type', 'giveAbilityBlock',
+      'data', jsonb_build_object('type', 'feat', 'abilityBlockId', expected.child_id))
+    and child.name = expected.child_name and child.uuid = expected.child_uuid
+    and child.type = 'feat' and child.content_source_id = 400
+    and child.actions = expected.child_actions and cardinality(child.operations) = 0
+    and child.meta_data = '{"unselectable":true}'::jsonb)
+union all
+select 'treasure-vault-sankeit-armor',
+  exists (select 1 from public.item
+    where id = 12366 and name = 'Sankeit' and content_source_id = 16
+      and uuid = 8906569033590767 and "group" = 'ARMOR'
+      and level = 0 and bulk = '1' and price::jsonb = '{"gp":5}'::jsonb
+      and meta_data #>> '{category}' = 'light'
+      and meta_data #>> '{group}' = 'wood'
+      and meta_data #>> '{ac_bonus}' = '2'
+      and meta_data #>> '{dex_cap}' = '3'
+      and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/Armor.aspx?ID=74')
+union all
+select 'war-restless-epithet',
+  exists (select 1 from public.ability_block
+    where id = 38691 and name = 'Dominion Epithet' and type = 'class-feature'
+      and content_source_id = 400 and cardinality(operations) = 1
+      and operations[1] #>> '{id}' = '0ce089ed-74cb-4051-b24b-eec5a5070614'
+      and operations[1] #>> '{data,optionsPredefined,4,id}' = '18a731d1-6507-461d-9f40-3081ee17e04c'
+      and operations[1] #>> '{data,optionsPredefined,4,title}' = 'Restless as the Tides'
+      and operations[1] #>> '{data,optionsPredefined,4,operations,1,id}' =
+        '6b05ec0d-238b-45b7-bebc-27f25dc460f1'
+      and operations[1] #>> '{data,optionsPredefined,4,operations,1,data,id}' = '38705'
+      and operations[1] #>> '{data,optionsPredefined,4,operations,1,data,text}'
+        like '**Dominion Epithet—Restless as the Tides**%')
+union all
+select 'treasure-vault-dragonprism-links',
+  exists (select 1 from public.item
+    where id = 11940 and name = 'Dragonprism Staff' and content_source_id = 16
+      and uuid = 982148341471611
+      and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/Equipment.aspx?ID=4784'
+      and md5(description) = '8098f54e420d89eadfb852aae690b8c3')
 union all
 select 'war-content-links',
   not exists (

@@ -315,6 +315,8 @@ function getProfTotal(id: StoreID, item: Item) {
 
   const groupVariable = `WEAPON_GROUP_${group.trim().toUpperCase()}`;
   const groupProfTotal = getWeaponProficiencyBase(id, groupVariable);
+  const scopedGroupVariable = `${groupVariable}_${category.toUpperCase()}`;
+  const scopedGroupProfTotal = getWeaponProficiencyBase(id, scopedGroupVariable);
 
   const divisionVariables = determineWeaponDivisions(item);
   let divisionVariable = null;
@@ -336,6 +338,11 @@ function getProfTotal(id: StoreID, item: Item) {
   if (groupProfTotal > maxProfTotal) {
     maxProfTotal = groupProfTotal;
     maxVariable = groupVariable;
+  }
+
+  if (scopedGroupProfTotal > maxProfTotal) {
+    maxProfTotal = scopedGroupProfTotal;
+    maxVariable = scopedGroupVariable;
   }
 
   if (divisionVariable && divisionProfTotal > maxProfTotal) {
@@ -388,7 +395,7 @@ function getProfTotal(id: StoreID, item: Item) {
 
   return {
     total: maxProfTotal,
-    bonusVariables: [categoryVariable, groupVariable, ...divisionVariables, individualVariable],
+    bonusVariables: [categoryVariable, groupVariable, scopedGroupVariable, ...divisionVariables, individualVariable],
     variable: maxVariable,
     prof: compileProficiencyType(getVariable<VariableProf>(id, maxVariable)?.value),
   };

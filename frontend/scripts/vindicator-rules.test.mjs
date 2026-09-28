@@ -15,6 +15,7 @@ let engine;
 let content;
 let classArchetype;
 let migration;
+let oldFilter;
 
 /** Read the class archetype's relevant fields without parsing its unrelated feature adjustments. */
 async function readVindicatorRow() {
@@ -52,7 +53,7 @@ before(async () => {
     new URL('../../supabase/migrations/20260927040000_war_of_immortals_vindicator.sql', import.meta.url),
     'utf8'
   );
-  const oldFilter = JSON.parse(migration.match(/old_filter constant jsonb := '([^']+)'::jsonb/)[1]);
+  oldFilter = JSON.parse(migration.match(/old_filter constant jsonb := '([^']+)'::jsonb/)[1]);
   const newFilter = JSON.parse(migration.match(/new_filter constant jsonb := '([^']+)'::jsonb/)[1]);
   const classCitation = JSON.parse(migration.match(/class_citation constant jsonb := '([^']+)'::jsonb/)[1]);
   assertReviewedTransition(
@@ -157,12 +158,29 @@ test('advanced favored weapon follows martial rank while martial and simple weap
 });
 
 test('unrestricted familiarity selections still accept martial weapons', async () => {
-  const legacyArchetype = structuredClone(classArchetype);
-  const selection = legacyArchetype.operations.find(({ id }) => id === SELECT_ID);
+  const unrestrictedArchetype = structuredClone(classArchetype);
+  unrestrictedArchetype.id = 900030;
+  unrestrictedArchetype.content_source_id = 900000;
+  const selection = unrestrictedArchetype.operations.find(({ id }) => id === SELECT_ID);
   delete selection.data.optionsFilters.familiarityCategories;
   const item = content.items.find(({ id }) => id === 7059);
-  const { store } = await selectedWeapon(item, { archetype: legacyArchetype });
+  const { store } = await selectedWeapon(item, { archetype: unrestrictedArchetype });
   assert.ok(store.variables.WEAPON_FAMILIARITY.value.includes(item.name));
+});
+
+test('saved Vindicator snapshots use the current favored-weapon rules', async () => {
+  const savedArchetype = structuredClone(classArchetype);
+  const selection = savedArchetype.operations.find(({ id }) => id === SELECT_ID);
+  selection.data.optionsFilters = structuredClone(oldFilter);
+
+  const advanced = content.items.find(({ id }) => id === 7002);
+  const { store: advancedStore } = await selectedWeapon(advanced, { archetype: savedArchetype });
+  assert.ok(advancedStore.variables.WEAPON_FAMILIARITY.value.includes(advanced.name));
+
+  const martial = content.items.find(({ id }) => id === 7059);
+  const { store: martialStore } = await selectedWeapon(martial, { archetype: savedArchetype });
+  assert.ok(!martialStore.variables.WEAPON_FAMILIARITY.value.includes(martial.name));
+  assert.deepEqual(selection.data.optionsFilters, oldFilter, 'calculation leaves the saved snapshot unchanged');
 });
 
 test('Vindicator reaction keeps its ID and archetype identity while replacing obsolete rules', async () => {

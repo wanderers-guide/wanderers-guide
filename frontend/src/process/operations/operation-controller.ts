@@ -190,10 +190,15 @@ async function executeCharacterOperations(
   const class_2 = content.classes.find((c) => c.id === character.details?.class_2?.id);
   const background = content.backgrounds.find((b) => b.id === character.details?.background?.id);
   const ancestry = content.ancestries.find((a) => a.id === character.details?.ancestry?.id);
+  /** Calculate from current content while retaining saved archetype snapshots when their source is unavailable. */
+  const resolveClassArchetype = (selected?: ClassArchetype) =>
+    selected ? (content.classArchetypes?.find((archetype) => archetype.id === selected.id) ?? selected) : undefined;
+  const classArchetype = resolveClassArchetype(character.details?.class_archetype);
+  const classArchetype2 = resolveClassArchetype(character.details?.class_archetype_2);
 
   const baseClassTrainings = Math.max(
-    getClassSkillTrainingsNum(class_, character.details?.class_archetype),
-    getClassSkillTrainingsNum(class_2, character.details?.class_archetype_2)
+    getClassSkillTrainingsNum(class_, classArchetype),
+    getClassSkillTrainingsNum(class_2, classArchetype2)
   );
 
   // Handles getting class features for a class (injecting class archetype changes if needed)
@@ -202,18 +207,13 @@ async function executeCharacterOperations(
     let classAbs = cloneDeep(abs.filter((ab) => ab.type === 'class-feature' && ab.traits?.includes(ctId)));
 
     // Get the class archetype based on recordT
-    let classArchetype: ClassArchetype | null = null;
-    if (recordT === '1' && character.details?.class_archetype) {
-      classArchetype = character.details.class_archetype;
-    } else if (recordT === '2' && character.details?.class_archetype_2) {
-      classArchetype = character.details.class_archetype_2;
-    }
+    const selectedArchetype = recordT === '1' ? classArchetype : classArchetype2;
 
-    if (!classArchetype) {
+    if (!selectedArchetype) {
       return classAbs;
     } else {
       // Apply feature adjustments
-      for (const fa of classArchetype.feature_adjustments ?? []) {
+      for (const fa of selectedArchetype.feature_adjustments ?? []) {
         if (fa.type === 'ADD' && fa.data) {
           classAbs.push(fa.data);
         } else if (fa.type === 'REMOVE' && fa.prev_id) {
@@ -818,7 +818,7 @@ async function executeCharacterOperations(
       classResults = await _executeOps(
         'CHARACTER',
         'class',
-        getTotalClassOperations('CHARACTER', class_, character.details?.class_archetype, baseClassTrainings),
+        getTotalClassOperations('CHARACTER', class_, classArchetype, baseClassTrainings),
         options,
         class_.name
       );
@@ -830,14 +830,9 @@ async function executeCharacterOperations(
       adjVariable('CHARACTER', 'CLASS_NAMES', class_.name.toUpperCase(), undefined);
 
       // Add class archetype to variables
-      if (character.details?.class_archetype) {
-        adjVariable('CHARACTER', 'CLASS_ARCHETYPE_IDS', `${character.details.class_archetype.id}`, undefined);
-        adjVariable(
-          'CHARACTER',
-          'CLASS_ARCHETYPE_NAMES',
-          character.details.class_archetype.name.toUpperCase(),
-          undefined
-        );
+      if (classArchetype) {
+        adjVariable('CHARACTER', 'CLASS_ARCHETYPE_IDS', `${classArchetype.id}`, undefined);
+        adjVariable('CHARACTER', 'CLASS_ARCHETYPE_NAMES', classArchetype.name.toUpperCase(), undefined);
       }
     }
 
@@ -846,7 +841,7 @@ async function executeCharacterOperations(
       class2Results = await _executeOps(
         'CHARACTER',
         'class-2',
-        getTotalClassOperations('CHARACTER', class_2, character.details?.class_archetype_2, null),
+        getTotalClassOperations('CHARACTER', class_2, classArchetype2, null),
         options,
         class_2.name
       );
@@ -864,14 +859,9 @@ async function executeCharacterOperations(
       adjVariable('CHARACTER', 'CLASS_NAMES', class_2.name.toUpperCase(), undefined);
 
       // Add class archetype to variables
-      if (character.details?.class_archetype_2) {
-        adjVariable('CHARACTER', 'CLASS_ARCHETYPE_IDS', `${character.details.class_archetype_2.id}`, undefined);
-        adjVariable(
-          'CHARACTER',
-          'CLASS_ARCHETYPE_NAMES',
-          character.details.class_archetype_2.name.toUpperCase(),
-          undefined
-        );
+      if (classArchetype2) {
+        adjVariable('CHARACTER', 'CLASS_ARCHETYPE_IDS', `${classArchetype2.id}`, undefined);
+        adjVariable('CHARACTER', 'CLASS_ARCHETYPE_NAMES', classArchetype2.name.toUpperCase(), undefined);
       }
     }
 
