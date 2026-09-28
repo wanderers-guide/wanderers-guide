@@ -1,11 +1,11 @@
-import { drawerState, feedbackState } from '@atoms/navAtoms';
+import { creatureDrawerState, drawerState, feedbackState } from '@atoms/navAtoms';
 import { convertToContentType, isAbilityBlockType } from '@content/content-utils';
 import { ActionIcon, Box, Divider, Drawer, Group, HoverCard, Loader, ScrollArea, Text, Title } from '@mantine/core';
 import { useDidUpdate, useElementSize, useLocalStorage, useMediaQuery } from '@mantine/hooks';
 import { IconArrowLeft, IconHelpTriangleFilled, IconX } from '@tabler/icons-react';
 import { ContentType } from '@schemas/content';
 import { Suspense, lazy, useRef } from 'react';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { PrevMetadata } from './drawer-utils';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import useRefresh from '@utils/use-refresh';
@@ -71,6 +71,9 @@ export default function DrawerBase() {
   const isWideDesktop = useMediaQuery(wideDesktopQuery());
 
   const [_drawer, openDrawer] = useAtom(drawerState);
+  const creatureDrawer = useAtomValue(creatureDrawerState);
+  const creaturePreviewAbove =
+    !!creatureDrawer && (creatureDrawer.data.previewZIndex ?? 99) > (_drawer?.data.zIndex ?? 1000);
 
   const { ref, height: titleHeight } = useElementSize();
   const [displayTitle, refreshTitle] = useRefresh();
@@ -182,6 +185,7 @@ export default function DrawerBase() {
         withCloseButton={false}
         lockScroll={!isWideDesktop}
         closeOnClickOutside={!isWideDesktop}
+        closeOnEscape={!creaturePreviewAbove && !feedbackData}
         withOverlay={!isWideDesktop}
         position='right'
         zIndex={_drawer?.data.zIndex ?? 1000}
@@ -243,7 +247,7 @@ export default function DrawerBase() {
           )}
         </Box>
       </Drawer>
-      {feedbackData && (
+      {feedbackData && feedbackData.owner !== 'creature' && (
         <ContentFeedbackModal
           opened={true}
           onCancel={() => {

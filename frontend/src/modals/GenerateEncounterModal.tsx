@@ -22,9 +22,10 @@ import {
   UnstyledButton,
   useMantineTheme,
   useMantineColorScheme,
+  getDefaultZIndex,
 } from '@mantine/core';
 import { ContextModalProps, modals } from '@mantine/modals';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SelectIconModalContents } from './SelectIconModal';
 import { Combatant, Encounter } from '@schemas/content';
 import { SelectIcon, stringifyIconValue } from '@common/IconDisplay';
@@ -32,7 +33,7 @@ import { IconBulbFilled, IconSparkles } from '@tabler/icons-react';
 import { generateEncounters } from '@ai/open-ai-handler';
 import { showNotification } from '@mantine/notifications';
 import { set } from 'node_modules/cypress/types/lodash';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import RichText from '@common/RichText';
 import { calculateDifficulty } from '@pages/campaign/panels/EncountersPanel';
@@ -48,6 +49,14 @@ export default function GenerateEncounterModal({
   onComplete: (encounter: Encounter) => void;
 }>) {
   const theme = useMantineTheme();
+  const creatureDrawer = useAtomValue(creatureDrawerState);
+  const creaturePreviewAbove =
+    !!creatureDrawer && (creatureDrawer.data.previewZIndex ?? 99) > getDefaultZIndex('modal') + 1;
+
+  useEffect(() => {
+    context.updateContextModal({ modalId: id, closeOnEscape: !creaturePreviewAbove });
+  }, [context.updateContextModal, creaturePreviewAbove, id]);
+
   const { colorScheme } = useMantineColorScheme();
   const [partySize, setPartySize] = useState(innerProps.partySize);
   const [partyLevel, setPartyLevel] = useState(innerProps.partyLevel);
@@ -212,7 +221,7 @@ function EncounterCard(props: { encounter: Encounter; onClick: () => void }) {
               }}
               onClick={() => {
                 openCreatureDrawer({
-                  data: { id: record.creature?.id },
+                  data: { id: record.creature?.id, previewZIndex: getDefaultZIndex('modal') + 2 },
                 });
               }}
             >

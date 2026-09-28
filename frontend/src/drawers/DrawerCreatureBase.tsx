@@ -2,7 +2,7 @@ import { creatureDrawerState, feedbackState } from '@atoms/navAtoms';
 import { Text, ActionIcon, Box, Divider, Drawer, Group, HoverCard, Loader, ScrollArea, Title } from '@mantine/core';
 import { useDidUpdate, useMediaQuery } from '@mantine/hooks';
 import { IconHelpTriangleFilled, IconX } from '@tabler/icons-react';
-import { Suspense, useRef } from 'react';
+import { Suspense, useLayoutEffect, useRef, useState } from 'react';
 import { useAtom } from 'jotai';
 import useRefresh from '@utils/use-refresh';
 import { useSwipeGesture } from '@utils/use-swipe-gesture';
@@ -17,6 +17,13 @@ export default function DrawerCreatureBase() {
   const isWideDesktop = useMediaQuery(wideDesktopQuery());
 
   const [_drawer, openDrawer] = useAtom(creatureDrawerState);
+  const [lastDrawerZIndex, setLastDrawerZIndex] = useState(99);
+
+  useLayoutEffect(() => {
+    if (_drawer) setLastDrawerZIndex(_drawer.data.previewZIndex ?? 99);
+  }, [_drawer]);
+
+  const drawerZIndex = _drawer?.data.previewZIndex ?? lastDrawerZIndex;
 
   const [displayTitle, refreshTitle] = useRefresh();
   const [feedbackData, setFeedbackData] = useAtom(feedbackState);
@@ -78,9 +85,10 @@ export default function DrawerCreatureBase() {
         withCloseButton={false}
         lockScroll={!isWideDesktop}
         closeOnClickOutside={!isWideDesktop}
+        closeOnEscape={!feedbackData}
         withOverlay={!isWideDesktop}
         position='right'
-        zIndex={99} // Creatures drawer is below other drawers
+        zIndex={drawerZIndex}
         styles={DRAWER_STYLES}
         transitionProps={{ duration: 200 }}
         style={{
@@ -108,6 +116,7 @@ export default function DrawerCreatureBase() {
                   onClick={() => {
                     setFeedbackData({
                       type: 'creature',
+                      owner: 'creature',
                       data: {
                         id: _drawer.data.id,
                       },
@@ -124,7 +133,7 @@ export default function DrawerCreatureBase() {
           )}
         </Box>
       </Drawer>
-      {feedbackData && (
+      {feedbackData?.owner === 'creature' && (
         <ContentFeedbackModal
           opened={true}
           onCancel={() => {
@@ -140,7 +149,7 @@ export default function DrawerCreatureBase() {
           }}
           type={feedbackData.type}
           data={feedbackData.data}
-          zIndex={200}
+          zIndex={Math.max(200, drawerZIndex + 1)}
         />
       )}
     </>

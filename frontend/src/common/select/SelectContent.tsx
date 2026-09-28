@@ -334,6 +334,15 @@ export default function SelectContentModal({
   };
 }>) {
   const theme = useMantineTheme();
+  const creatureDrawer = useAtomValue(creatureDrawerState);
+  const creaturePreviewAbove =
+    !!creatureDrawer && (creatureDrawer.data.previewZIndex ?? 99) > (innerProps.options?.zIndex ?? 499);
+
+  useEffect(() => {
+    if (innerProps.type === 'creature') {
+      context.updateContextModal({ modalId: id, closeOnEscape: !creaturePreviewAbove });
+    }
+  }, [context.updateContextModal, creaturePreviewAbove, id, innerProps.type]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchQueryDebounced] = useDebouncedValue(searchQuery, 200);
@@ -729,6 +738,7 @@ export default function SelectContentModal({
                 includeOptions={innerProps.options?.includeOptions}
                 showButton={innerProps.options?.showButton}
                 limitSelectedOptions={!!innerProps.options?.overrideOptions}
+                creaturePreviewZIndex={(innerProps.options?.zIndex ?? 499) + 1}
               />
             )}
           </Box>
@@ -752,6 +762,7 @@ function SelectionOptions(props: {
   includeOptions?: boolean;
   showButton?: boolean;
   limitSelectedOptions: boolean;
+  creaturePreviewZIndex?: number;
 }) {
   // Read character to honor `auto_detect_prerequisites`. When the user has
   // enabled prereq detection on a feat selector, we sort feats they qualify
@@ -880,6 +891,7 @@ function SelectionOptions(props: {
       selectedId={props.selectedId}
       showButton={props.showButton}
       includeOptions={props.includeOptions}
+      creaturePreviewZIndex={props.creaturePreviewZIndex}
     />
   );
 }
@@ -894,6 +906,7 @@ export function SelectionOptionsInner(props: {
   selectedId?: number;
   includeOptions?: boolean;
   showButton?: boolean;
+  creaturePreviewZIndex?: number;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
   h?: number;
@@ -943,6 +956,7 @@ export function SelectionOptionsInner(props: {
             selectedId={props.selectedId}
             showButton={props.showButton}
             includeOptions={props.includeOptions}
+            creaturePreviewZIndex={props.creaturePreviewZIndex}
             onDelete={props.onDelete}
             onCopy={props.onCopy}
           />
@@ -972,6 +986,7 @@ function SelectionOptionsRoot(props: {
   selectedId?: number;
   includeOptions?: boolean;
   showButton?: boolean;
+  creaturePreviewZIndex?: number;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
@@ -1295,6 +1310,7 @@ function SelectionOptionsRoot(props: {
             selected={props.selectedId === creature.id}
             showButton={props.showButton}
             includeOptions={props.includeOptions}
+            previewZIndex={props.creaturePreviewZIndex}
             onDelete={props.onDelete}
             onCopy={props.onCopy}
           />
@@ -3067,6 +3083,7 @@ export function CreatureSelectionOption(props: {
   selected?: boolean;
   hasSelected?: boolean;
   showButton?: boolean;
+  previewZIndex?: number;
   includeOptions?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
@@ -3158,6 +3175,7 @@ export function CreatureSelectionOption(props: {
           data: {
             id: props.creature.id,
             readOnly: true,
+            previewZIndex: props.previewZIndex,
           },
         })
       }

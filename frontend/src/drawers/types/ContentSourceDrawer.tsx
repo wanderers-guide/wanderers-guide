@@ -509,11 +509,13 @@ export function ContentSourceDrawerContent(props: {
                     key={index}
                     creature={record}
                     showButton={false}
+                    previewZIndex={(_drawer?.data.zIndex ?? 1000) + 1}
                     onClick={(a) => {
                       openCreatureDrawer({
                         data: {
                           id: a.id,
                           readOnly: true,
+                          previewZIndex: (_drawer?.data.zIndex ?? 1000) + 1,
                         },
                       });
                     }}
