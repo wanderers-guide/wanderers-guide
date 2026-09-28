@@ -23,7 +23,7 @@ WG content lives in Postgres, with one table per primary content type:
 
 A second layer, the **frontend cache**, mirrors a subset of these tables in the browser so the character sheet doesn’t hit the database for every lookup. The cache is populated at app start from `find-*` calls and refreshed when the active character’s `content_sources.enabled` list changes.
 
-Hazards use the creature table for source ownership and search, but they are not living entities. Creature queries default to `type='creature'`; hazard queries use `type='hazard'`. A hazard's stat block lives in structured `details` fields for stealth, disable, defenses, activation, routine, and reset. Hazards are read-only; the creature editor cannot modify them, and they are not encounter combatants yet.
+Hazards use the creature table for source ownership and search, but they are not living entities. Creature queries default to `type='creature'`; hazard queries use `type='hazard'`. A hazard's stat block lives in structured `details` fields for stealth, disable, defenses, activation, routine, and reset. Hazards are read-only in the creature editor and are not encounter combatants yet.
 
 ### Loading and saving safely
 
