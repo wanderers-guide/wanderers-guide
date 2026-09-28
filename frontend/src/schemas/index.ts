@@ -19,6 +19,7 @@ export const DrawerTypeSchema = z.union([
   AbilityBlockTypeSchema,
   z.enum([
     'generic',
+    'hazard',
     'condition',
     'character',
     'manage-coins',

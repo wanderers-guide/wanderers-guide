@@ -23,6 +23,18 @@ serve(async (req: Request) => {
       version,
     } = body as Creature;
 
+    if (id && id !== -1) {
+      const { data: existing, error } = await client
+        .from('creature')
+        .select('type')
+        .eq('id', id)
+        .maybeSingle();
+      if (error) throw error;
+      if (existing?.type === 'hazard') {
+        return { status: 'fail', data: { id: 'Hazards are read-only.' } };
+      }
+    }
+
     const { procedure, result } = await upsertData<Creature>(client, 'creature', {
       id,
       name,

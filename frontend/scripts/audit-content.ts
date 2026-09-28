@@ -2,6 +2,7 @@
 import { closeSync, fchmodSync, mkdirSync, openSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { parseArgs } from 'node:util';
+import { HazardSchema } from '../src/schemas/content';
 import { CONTENT_SCHEMAS } from './content-schemas';
 
 type Row = Record<string, unknown> & { id: number };
@@ -22,11 +23,11 @@ async function main() {
   if (values.help) {
     console.log('audit:content [--tables item,spell] [--out report.json]');
     console.log('Requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY. GET requests only.');
-    console.log(`Types: ${Object.keys(CONTENT_SCHEMAS).join(', ')}`);
+    console.log(`Types: ${Object.keys(CONTENT_SCHEMAS).join(', ')}, hazard`);
     return;
   }
   const types = values.tables?.split(',').map((type) => type.trim()) ?? Object.keys(CONTENT_SCHEMAS);
-  if (!types.length || types.some((type) => !Object.hasOwn(CONTENT_SCHEMAS, type))) {
+  if (!types.length || types.some((type) => type !== 'hazard' && !Object.hasOwn(CONTENT_SCHEMAS, type))) {
     throw new Error('Unknown content type. Run with --help to list supported types.');
   }
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -60,14 +61,21 @@ async function main() {
 
   try {
     for (const type of new Set(types)) {
-      const table = type.replaceAll('-', '_');
+      const table = type === 'hazard' ? 'creature' : type.replaceAll('-', '_');
+      const filter = type === 'hazard' ? { type: 'eq.hazard' } : {};
       const summary: TableReport = { type, scanned: 0, invalid: 0, complete: false };
       report.tables.push(summary);
       // Bound inserts during the scan. This is a live scan, not a transactional snapshot.
-      const upper = (await read(table, { select: 'id', order: 'id.desc', limit: '1' }))[0]?.id;
+      const upper = (await read(table, { select: 'id', order: 'id.desc', limit: '1', ...filter }))[0]?.id;
       let cursor: number | undefined;
       while (upper !== undefined) {
-        const params: Record<string, string> = { select: '*', order: 'id.asc', limit: '1000', id: `lte.${upper}` };
+        const params: Record<string, string> = {
+          select: '*',
+          order: 'id.asc',
+          limit: '1000',
+          id: `lte.${upper}`,
+          ...filter,
+        };
         if (cursor !== undefined) params.and = `(id.gt.${cursor})`;
         const rows = await read(table, params);
         if (!rows.length) break;
@@ -77,11 +85,13 @@ async function main() {
           }
           cursor = row.id;
           summary.scanned++;
-          const result = CONTENT_SCHEMAS[type].safeParse(row);
+          const rowType = table === 'creature' && row.type === 'hazard' ? 'hazard' : type;
+          const schema = rowType === 'hazard' ? HazardSchema : CONTENT_SCHEMAS[type];
+          const result = schema.safeParse(row);
           if (result.success) continue;
           summary.invalid++;
           for (const issue of result.error.issues) {
-            report.issues.push({ type, id: row.id, path: issue.path.join('.'), message: issue.message });
+            report.issues.push({ type: rowType, id: row.id, path: issue.path.join('.'), message: issue.message });
           }
         }
         // Keep going even after a short page: the server may cap pages below 1,000 rows.

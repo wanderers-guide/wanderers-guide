@@ -539,6 +539,7 @@
           },
           "name": { "type": "string" },
           "level": { "type": "integer" },
+          "type": { "type": "string", "const": "creature", "description": "Defaults to creature when a new row is created." },
           "rarity": { "$ref": "#/components/schemas/Rarity" },
           "traits": { "type": "array", "items": { "type": "integer" } },
           "details": {
@@ -564,6 +565,74 @@
           },
           "content_source_id": { "type": "integer" },
           "deprecated": { "type": "boolean" },
+          "version": { "type": "string" }
+        }
+      },
+      "Hazard": {
+        "type": "object",
+        "description": "A read-only hazard stat block stored in the creature table. Living-entity fields such as inventory and current HP do not apply.",
+        "required": ["id", "name", "level", "rarity", "type", "details", "content_source_id", "uuid", "version"],
+        "properties": {
+          "id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "name": { "type": "string" },
+          "level": { "type": "integer" },
+          "rarity": { "$ref": "#/components/schemas/Rarity" },
+          "type": { "type": "string", "const": "hazard" },
+          "details": {
+            "type": "object",
+            "required": ["complexity", "trait_labels", "stealth", "description", "disable", "activation"],
+            "properties": {
+              "complexity": { "type": "string", "enum": ["SIMPLE", "COMPLEX"] },
+              "trait_ids": { "type": "array", "items": { "type": "integer" } },
+              "trait_labels": { "type": "array", "items": { "type": "string" } },
+              "stealth": { "type": "string" },
+              "description": { "type": "string" },
+              "disable": { "type": "string" },
+              "defenses": {
+                "type": "object",
+                "properties": {
+                  "ac": { "type": "integer" },
+                  "fort": { "type": "integer" },
+                  "ref": { "type": "integer" },
+                  "hardness": { "type": "integer" },
+                  "hp": { "type": "integer" },
+                  "bt": { "type": "integer" },
+                  "immunities": { "type": "string" }
+                }
+              },
+              "activation": {
+                "type": "object",
+                "required": ["name", "trigger", "effect"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "actions": { "$ref": "#/components/schemas/ActionCost" },
+                  "traits": { "type": "array", "items": { "type": "string" } },
+                  "trigger": { "type": "string" },
+                  "effect": { "type": "string" }
+                }
+              },
+              "routine": {
+                "type": "object",
+                "required": ["actions", "text"],
+                "properties": {
+                  "actions": { "type": "integer" },
+                  "text": { "type": "string" }
+                }
+              },
+              "reset": { "type": "string" }
+            }
+          },
+          "meta_data": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+            }
+          },
+          "content_source_id": { "type": "integer" },
+          "uuid": { "type": "integer" },
           "version": { "type": "string" }
         }
       },
@@ -813,14 +882,43 @@
       },
       "SearchResults": {
         "type": "object",
-        "required": ["ability_blocks", "ancestries", "archetypes", "backgrounds", "classes", "creatures", "items", "languages", "spells", "traits", "versatile_heritages", "class_archetypes"],
+        "required": ["ability_blocks", "ancestries", "archetypes", "backgrounds", "classes", "creatures", "hazards", "items", "languages", "spells", "traits", "versatile_heritages", "class_archetypes"],
         "properties": {
           "ability_blocks": { "type": "array", "items": { "$ref": "#/components/schemas/AbilityBlock" } },
           "ancestries": { "type": "array", "items": { "$ref": "#/components/schemas/Ancestry" } },
           "archetypes": { "type": "array", "items": { "$ref": "#/components/schemas/Archetype" } },
           "backgrounds": { "type": "array", "items": { "$ref": "#/components/schemas/Background" } },
           "classes": { "type": "array", "items": { "$ref": "#/components/schemas/Class" } },
-          "creatures": { "type": "array", "items": { "$ref": "#/components/schemas/Creature" } },
+          "creatures": {
+            "type": "array",
+            "description": "Simple search returns projected fields; advanced search returns complete creature records.",
+            "items": {
+              "type": "object",
+              "required": ["id", "name", "level", "type", "content_source_id"],
+              "properties": {
+                "id": { "type": "integer" },
+                "name": { "type": "string" },
+                "level": { "type": "integer" },
+                "type": { "type": "string", "const": "creature" },
+                "content_source_id": { "type": "integer" }
+              }
+            }
+          },
+          "hazards": {
+            "type": "array",
+            "description": "Simple search returns projected fields; advanced search returns complete hazard records.",
+            "items": {
+              "type": "object",
+              "required": ["id", "name", "level", "type", "content_source_id"],
+              "properties": {
+                "id": { "type": "integer" },
+                "name": { "type": "string" },
+                "level": { "type": "integer" },
+                "type": { "type": "string", "const": "hazard" },
+                "content_source_id": { "type": "integer" }
+              }
+            }
+          },
           "items": { "type": "array", "items": { "$ref": "#/components/schemas/Item" } },
           "languages": { "type": "array", "items": { "$ref": "#/components/schemas/Language" } },
           "spells": { "type": "array", "items": { "$ref": "#/components/schemas/Spell" } },
@@ -1372,7 +1470,8 @@
     "/find-creature": {
       "post": {
         "tags": ["Content"],
-        "summary": "Find creatures",
+        "summary": "Find creatures or hazards",
+        "description": "Defaults to creatures. Set `type` to `hazard` to retrieve read-only hazard stat blocks from the same catalog table.",
         "operationId": "findCreature",
         "requestBody": {
           "required": false,
@@ -1383,6 +1482,7 @@
                 "properties": {
                   "id": { "oneOf": [{ "type": "integer" }, { "type": "array", "items": { "type": "integer" } }] },
                   "name": { "type": "string" },
+                  "type": { "type": "string", "enum": ["creature", "hazard"], "default": "creature" },
                   "content_sources": { "type": "array", "items": { "type": "integer" } }
                 }
               }
@@ -1391,21 +1491,35 @@
         },
         "responses": {
           "200": {
-            "description": "JSend success.",
+            "description": "JSend success or a validation failure for an unsupported type.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": { "type": "string", "enum": ["success"] },
-                    "data": {
-                      "oneOf": [
-                        { "type": "array", "items": { "$ref": "#/components/schemas/Creature" } },
-                        { "$ref": "#/components/schemas/Creature" },
-                        { "type": "null" }
-                      ]
-                    }
-                  }
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": { "type": "string", "enum": ["success"] },
+                        "data": {
+                          "oneOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "oneOf": [
+                                  { "$ref": "#/components/schemas/Creature" },
+                                  { "$ref": "#/components/schemas/Hazard" }
+                                ]
+                              }
+                            },
+                            { "$ref": "#/components/schemas/Creature" },
+                            { "$ref": "#/components/schemas/Hazard" },
+                            { "type": "null" }
+                          ]
+                        }
+                      }
+                    },
+                    { "$ref": "#/components/schemas/JSendFail" }
+                  ]
                 }
               }
             }
@@ -1894,6 +2008,7 @@
       "post": {
         "tags": ["Content"],
         "summary": "Create or update a creature",
+        "description": "Creates creature records only. Hazard records are read-only through this endpoint.",
         "operationId": "createCreature",
         "requestBody": {
           "required": true,
@@ -1903,24 +2018,30 @@
         },
         "responses": {
           "200": {
-            "description": "JSend success.",
+            "description": "JSend success or a read-only hazard edit failure.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": { "type": "string", "enum": ["success"] },
-                    "data": {
-                      "oneOf": [
-                        { "$ref": "#/components/schemas/Creature" },
-                        { "type": "boolean" }
-                      ]
-                    }
-                  }
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": { "type": "string", "enum": ["success"] },
+                        "data": {
+                          "oneOf": [
+                            { "$ref": "#/components/schemas/Creature" },
+                            { "type": "boolean" }
+                          ]
+                        }
+                      }
+                    },
+                    { "$ref": "#/components/schemas/JSendFail" }
+                  ]
                 }
               }
             }
-          }
+          },
+          "default": { "$ref": "#/components/responses/JSendFail" }
         }
       }
     },
@@ -2878,7 +2999,7 @@
       "post": {
         "tags": ["Search"],
         "summary": "Search across all content",
-        "description": "Two modes:\n- **Simple**: set `text` (>= 2 chars). Runs a websearch full-text query against every content table, capped at 20 hits each. Best for spotlight-style search.\n- **Advanced**: set `is_advanced: true` plus a `type` and any of the per-type filters. Returns matching rows in the corresponding bucket only.\n\nAll responses include all twelve content buckets, even if empty.",
+        "description": "Two modes:\n- **Simple**: set `text` (>= 2 chars). Runs a websearch full-text query against every content table, capped at 20 hits per bucket. Best for spotlight-style search.\n- **Advanced**: set `is_advanced: true` plus a `type` and any of the per-type filters. Returns matching rows in the corresponding bucket only. Use `hazard` for hazard stat blocks. Creature and hazard searches support name, rarity, level, and source filters.\n\nAll responses include all thirteen content buckets, even if empty. Hazards and creatures are separate buckets.",
         "operationId": "searchData",
         "requestBody": {
           "required": true,
@@ -2889,7 +3010,7 @@
                 "properties": {
                   "text": { "type": "string", "description": "Simple-mode search text." },
                   "is_advanced": { "type": "boolean" },
-                  "type": { "$ref": "#/components/schemas/ContentType" },
+                  "type": { "oneOf": [{ "$ref": "#/components/schemas/ContentType" }, { "type": "string", "const": "hazard" }] },
                   "content_sources": { "type": "array", "items": { "type": "integer" } },
                   "name": { "type": "string" },
                   "description": { "type": "string" },

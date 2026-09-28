@@ -31,5 +31,13 @@
   "20260926020000_restore_spined_shield_attacks.sql": {
     "check": "spined-shield-attacks.sql",
     "order": "before-functions"
+  },
+  "20260928010000_hazard_type.sql": {
+    "check": "hazard-type.sql",
+    "order": "before-functions"
+  },
+  "20260928020000_war_of_immortals_hazards.sql": {
+    "check": "war-of-immortals-hazards.sql",
+    "order": "before-functions"
   }
 }

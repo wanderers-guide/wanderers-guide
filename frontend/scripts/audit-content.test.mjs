@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 
 // Exercise the real CLI over HTTP, including auth, paging and its process exit status.
-async function audit(t, handle, args = []) {
+async function audit(t, handle, args = [], table = 'trait') {
   const directory = await mkdtemp(join(tmpdir(), 'wg-content-audit-'));
   const requests = [];
   const server = createServer((request, response) => {
@@ -28,25 +28,152 @@ async function audit(t, handle, args = []) {
   const output = join(directory, 'report.json');
   await writeFile(output, 'previous report');
   await chmod(output, 0o644);
-  const child = spawn(process.execPath, ['scripts/.dist/audit.mjs', '--tables', 'trait', '--out', output, ...args], {
-    env: {
-      ...process.env,
-      SUPABASE_URL: `http://127.0.0.1:${server.address().port}`,
-      SUPABASE_SERVICE_ROLE_KEY: 'test-only-key',
-    },
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+  const child = spawn(
+    process.execPath,
+    ['scripts/.dist/audit.mjs', ...(table ? ['--tables', table] : []), '--out', output, ...args],
+    {
+      env: {
+        ...process.env,
+        SUPABASE_URL: `http://127.0.0.1:${server.address().port}`,
+        SUPABASE_SERVICE_ROLE_KEY: 'test-only-key',
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }
+  );
   let logs = '';
   child.stdout.on('data', (data) => (logs += data));
   child.stderr.on('data', (data) => (logs += data));
   const code = await new Promise((resolve) => child.on('close', resolve));
-  const report = await readFile(output, 'utf8').then(JSON.parse).catch(() => undefined);
+  const report = await readFile(output, 'utf8')
+    .then(JSON.parse)
+    .catch(() => undefined);
   if (report) assert.equal((await stat(output)).mode & 0o777, 0o600);
   assert.ok(!logs.includes('test-only-key'));
   return { code, report, requests, logs };
 }
 
-const trait = (id) => ({ id, created_at: '2026-09-04T00:00:00Z', name: 'Test trait', description: '', meta_data: null, content_source_id: 1 });
+const trait = (id) => ({
+  id,
+  created_at: '2026-09-04T00:00:00Z',
+  name: 'Test trait',
+  description: '',
+  meta_data: null,
+  content_source_id: 1,
+});
+
+const creature = (id) => ({
+  id,
+  created_at: '2026-09-28T00:00:00Z',
+  type: 'creature',
+  name: 'Test creature',
+  level: 1,
+  experience: 0,
+  inventory: null,
+  hp_current: 10,
+  hp_temp: 0,
+  stamina_current: 0,
+  resolve_current: 0,
+  details: { description: 'A creature.' },
+  notes: null,
+  roll_history: null,
+  spells: null,
+  operation_data: null,
+  rarity: 'COMMON',
+  operations: null,
+  abilities_base: null,
+  abilities_added: null,
+  content_source_id: 400,
+  deprecated: false,
+  version: '1.0',
+  meta_data: null,
+});
+
+const hazard = (id) => ({
+  id,
+  created_at: '2026-09-28T00:00:00Z',
+  type: 'hazard',
+  name: 'Test hazard',
+  level: 5,
+  rarity: 'RARE',
+  details: {
+    complexity: 'SIMPLE',
+    trait_ids: [],
+    trait_labels: [],
+    stealth: 'DC 25',
+    description: 'A hazard.',
+    disable: 'DC 25 Nature',
+    activation: { name: 'Sudden Gust', actions: 'REACTION', trigger: 'A creature approaches.', effect: 'Wind blows.' },
+  },
+  content_source_id: 400,
+  deprecated: false,
+  version: '1.0',
+  meta_data: { source: { book: 'War of Immortals', page: '191' } },
+});
+
+test('full audit validates creature and hazard rows from their shared table once', async (t) => {
+  const result = await audit(
+    t,
+    (url) => {
+      if (url.pathname !== '/rest/v1/creature') return [200, []];
+      if (url.searchParams.get('select') === 'id') return [200, [{ id: 2 }]];
+      return [200, url.searchParams.has('and') ? [] : [creature(1), hazard(2)]];
+    },
+    [],
+    null
+  );
+  assert.equal(result.code, 0, result.logs);
+  assert.equal(result.report.complete, true);
+  assert.equal(result.report.tables.find((table) => table.type === 'creature').scanned, 2);
+  assert.equal(
+    result.report.tables.some((table) => table.type === 'hazard'),
+    false
+  );
+  assert.deepEqual(result.report.issues, []);
+});
+
+test('full audit identifies invalid hazard rules by hazard type', async (t) => {
+  const invalidHazard = hazard(2);
+  delete invalidHazard.details.disable;
+  const result = await audit(
+    t,
+    (url) => {
+      if (url.pathname !== '/rest/v1/creature') return [200, []];
+      if (url.searchParams.get('select') === 'id') return [200, [{ id: 2 }]];
+      return [200, url.searchParams.has('and') ? [] : [creature(1), invalidHazard]];
+    },
+    [],
+    null
+  );
+  assert.equal(result.code, 1, result.logs);
+  assert.equal(result.report.tables.find((table) => table.type === 'creature').invalid, 1);
+  assert.ok(
+    result.report.issues.some((issue) => issue.type === 'hazard' && issue.id === 2 && issue.path === 'details.disable')
+  );
+});
+
+test('hazard-only audit filters shared storage and reports invalid hazard fields', async (t) => {
+  const result = await audit(
+    t,
+    (url) => {
+      assert.equal(url.pathname, '/rest/v1/creature');
+      assert.equal(url.searchParams.get('type'), 'eq.hazard');
+      if (url.searchParams.get('select') === 'id') return [200, [{ id: 2 }]];
+      return [
+        200,
+        url.searchParams.has('and') ? [] : [{ ...hazard(2), details: { ...hazard(2).details, disable: undefined } }],
+      ];
+    },
+    [],
+    'hazard'
+  );
+  assert.equal(result.code, 1, result.logs);
+  assert.equal(result.report.complete, true);
+  assert.equal(result.report.tables[0].type, 'hazard');
+  assert.equal(result.report.tables[0].invalid, 1);
+  assert.ok(
+    result.report.issues.some((issue) => issue.type === 'hazard' && issue.id === 2 && issue.path === 'details.disable')
+  );
+});
 
 test('continues past server-capped short pages and bounds new inserts', async (t) => {
   const result = await audit(t, (url) => {

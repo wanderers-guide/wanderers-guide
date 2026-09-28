@@ -834,6 +834,66 @@ export const CreatureSchema = LivingEntitySchema.extend({
 });
 export type Creature = z.infer<typeof CreatureSchema>;
 
+// ─── Hazard ───────────────────────────────────────────────────────────────────
+
+/** A hazard shares creature storage but has its own rules and no living-entity state. */
+export const HazardSchema = z.object({
+  id: z.number(),
+  uuid: z.number(),
+  created_at: z.string(),
+  updated_at: z.string().optional(),
+  type: z.literal('hazard'),
+  name: z.string(),
+  level: z.number(),
+  rarity: RaritySchema,
+  details: z.object({
+    complexity: z.enum(['SIMPLE', 'COMPLEX']),
+    trait_ids: z.array(z.number()).optional(),
+    trait_labels: z.array(z.string()),
+    stealth: z.string(),
+    description: z.string(),
+    disable: z.string(),
+    defenses: z
+      .object({
+        ac: z.number().optional(),
+        fort: z.number().optional(),
+        ref: z.number().optional(),
+        hardness: z.number().optional(),
+        hp: z.number().optional(),
+        bt: z.number().optional(),
+        immunities: z.string().optional(),
+      })
+      .optional(),
+    activation: z.object({
+      name: z.string(),
+      actions: ActionCostSchema.optional(),
+      traits: z.array(z.string()).optional(),
+      trigger: z.string(),
+      effect: z.string(),
+    }),
+    routine: z.object({ actions: z.number().int().nonnegative(), text: z.string() }).optional(),
+    reset: z.string().optional(),
+  }),
+  content_source_id: z.number(),
+  deprecated: z.boolean().nullable(),
+  version: z.string(),
+  meta_data: z
+    .object({ source: ContentSourceCiteSchema.optional() })
+    .passthrough()
+    .nullable(),
+});
+export type Hazard = z.infer<typeof HazardSchema>;
+
+/** Lightweight hazard rows returned by global search before opening the full record. */
+export const HazardSearchResultSchema = HazardSchema.pick({
+  id: true,
+  type: true,
+  name: true,
+  level: true,
+  content_source_id: true,
+});
+export type HazardSearchResult = z.infer<typeof HazardSearchResultSchema>;
+
 // ─── Character ────────────────────────────────────────────────────────────────
 
 export const CharacterSchema = LivingEntitySchema.extend({

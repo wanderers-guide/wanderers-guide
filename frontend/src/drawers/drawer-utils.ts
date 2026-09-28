@@ -2,7 +2,7 @@ import { DrawerType } from '@schemas/index';
 import { ContentType, AbilityBlockType } from '@schemas/content';
 import { isAbilityBlockType } from '@content/content-utils';
 
-export function convertContentLink(input: { type: ContentType | AbilityBlockType | 'condition'; id: string }): {
+export function convertContentLink(input: { type: ContentType | AbilityBlockType | 'condition' | 'hazard'; id: string }): {
   type: DrawerType;
   data: any;
 } {
