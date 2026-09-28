@@ -1,7 +1,7 @@
 -- AoN War of Immortals source index (https://2e.aonprd.com/Sources.aspx?ID=232).
--- 458 standalone source-400 entries are pinned below. The indexed URL and
+-- 461 standalone source-400 entries are pinned below. The indexed URL and
 -- required stored URL differ only for canonical MythicSpells/MythicRituals links.
--- Embedded epithets and Treasure Vault armor reprints are checked separately.
+-- Embedded epithets are checked separately.
 -- This is an indexed-entry gate, not a page-by-page or rules-behavior certification.
 -- AoN entries outside this passing gate (checked-in snapshot, not a live-data verdict):
 -- Class Sample Builds: Celestial Archer (Exemplar) — https://2e.aonprd.com/ClassSamples.aspx?ID=77
@@ -72,7 +72,10 @@ values
   ('Archetypes', 'Warrior Of Legend', 'archetype', 293, 1915864615581325, 'Warrior of Legend', 'https://2e.aonprd.com/Archetypes.aspx?ID=286', 'https://2e.aonprd.com/Archetypes.aspx?ID=286'),
   ('Archetypes', 'Wildspell', 'archetype', 428, 6010604297110732, 'Wildspell', 'https://2e.aonprd.com/Archetypes.aspx?ID=295', 'https://2e.aonprd.com/Archetypes.aspx?ID=295'),
   ('Armor', 'Kilted Breastplate', 'item', 17820, 3947457674173933, 'Kilted Breastplate', 'https://2e.aonprd.com/Armor.aspx?ID=51', 'https://2e.aonprd.com/Armor.aspx?ID=51'),
+  ('Armor', 'Lattice Armor', 'item', null, 1142536405766694, 'Lattice Armor', 'https://2e.aonprd.com/Armor.aspx?ID=54', 'https://2e.aonprd.com/Armor.aspx?ID=54'),
+  ('Armor', 'Niyaháat', 'item', null, 5866771262234991, 'Niyaháat', 'https://2e.aonprd.com/Armor.aspx?ID=55', 'https://2e.aonprd.com/Armor.aspx?ID=55'),
   ('Armor', 'Rattan Armor', 'item', null, 6217033776854047, 'Rattan Armor', 'https://2e.aonprd.com/Armor.aspx?ID=52', 'https://2e.aonprd.com/Armor.aspx?ID=52'),
+  ('Armor', 'Sankeit', 'item', null, 3406841990572783, 'Sankeit', 'https://2e.aonprd.com/Armor.aspx?ID=53', 'https://2e.aonprd.com/Armor.aspx?ID=53'),
   ('Classes', 'Animist', 'class', 148, 8231256802453445, 'Animist', 'https://2e.aonprd.com/Classes.aspx?ID=64', 'https://2e.aonprd.com/Classes.aspx?ID=64'),
   ('Classes', 'Exemplar', 'class', 149, 4585827684422311, 'Exemplar', 'https://2e.aonprd.com/Classes.aspx?ID=65', 'https://2e.aonprd.com/Classes.aspx?ID=65'),
   ('Equipment', 'Cursed Immaculate Instrument', 'item', 17479, 46686614015730, 'Cursed Immaculate Instrument', 'https://2e.aonprd.com/Equipment.aspx?ID=3514', 'https://2e.aonprd.com/Equipment.aspx?ID=3514'),
@@ -531,21 +534,6 @@ values
   ('Thief of Moonlight', 'https://2e.aonprd.com/Epithets.aspx?ID=16', 38694, 'ee9995a8-0997-49fc-8fab-ec3fe31d48cb', 'Thief of Moonlight'),
   ('Whose Cry is Thunder', 'https://2e.aonprd.com/Epithets.aspx?ID=12', 38691, '24146140-212d-49ac-b6f9-c1f0974f02e7', 'Whose Cry is Thunder');
 
-create temporary table war_index_tv_armor (
-  index_name text not null,
-  index_url text not null,
-  wg_id bigint not null,
-  wg_name text not null,
-  stored_url text not null
-);
-
-insert into war_index_tv_armor
-  (index_name, index_url, wg_id, wg_name, stored_url)
-values
-  ('Lattice Armor', 'https://2e.aonprd.com/Armor.aspx?ID=54', 12145, 'Lattice Armor', 'https://2e.aonprd.com/Armor.aspx?ID=67'),
-  ('Niyaháat', 'https://2e.aonprd.com/Armor.aspx?ID=55', 12236, 'Niyaháat', 'https://2e.aonprd.com/Armor.aspx?ID=71'),
-  ('Sankeit', 'https://2e.aonprd.com/Armor.aspx?ID=53', 12366, 'Sankeit', 'https://2e.aonprd.com/Armor.aspx?ID=74');
-
 create temporary view war_index_actual as
   select 'ability_block'::text as table_name, id, uuid, name, content_source_id,
     meta_data #>> '{source,book}' as book, meta_data #>> '{source,url}' as url
@@ -571,8 +559,8 @@ create temporary view war_index_actual as
 
 create temporary view war_index_checks as
 select 'war-index-standalone'::text as id,
-  (select count(*) = 458 from war_index_expected)
-  and (select count(distinct (table_name, wg_uuid)) = 458 from war_index_expected)
+  (select count(*) = 461 from war_index_expected)
+  and (select count(distinct (table_name, wg_uuid)) = 461 from war_index_expected)
   and not exists (
     select 1 from war_index_expected expected
     where (select count(*) from war_index_actual actual
@@ -600,20 +588,6 @@ select 'war-index-epithets',
         and choice->>'id' = expected.choice_id
         and choice->>'title' = expected.wg_name
         and nullif(choice->>'description', '') is not null
-    )
-  )
-union all
-select 'war-index-tv-armor-exceptions',
-  (select count(*) = 3 from war_index_tv_armor)
-  and not exists (
-    select 1 from war_index_tv_armor expected
-    where not exists (
-      select 1 from public.item actual
-      where actual.id = expected.wg_id
-        and actual.content_source_id = 16
-        and actual.name = expected.wg_name
-        and actual."group" = 'ARMOR'
-        and actual.meta_data #>> '{source,url}' = expected.stored_url
     )
   );
 

@@ -307,6 +307,44 @@ select 'treasure-vault-sankeit-armor',
       and meta_data #>> '{dex_cap}' = '3'
       and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/Armor.aspx?ID=74')
 union all
+select 'war-armor-reprints',
+  (select count(*) = 3 from public.item
+    where content_source_id = 400
+      and uuid in (1142536405766694, 5866771262234991, 3406841990572783))
+  and not exists (
+    select 1 from (values
+      (1142536405766694, 'Lattice Armor', 'https://2e.aonprd.com/Armor.aspx?ID=54',
+        '5c18ad68c44d03df372627399262aa81', '2', 6, 'medium', 'chain', 4, 1, -2, -5, 3, '{}'::bigint[]),
+      (5866771262234991, 'Niyaháat', 'https://2e.aonprd.com/Armor.aspx?ID=55',
+        'baff9d0c71cdfb04254ee9c8ca068e62', '2', 5, 'medium', 'skeletal', 3, 2, -2, -5, 2, array[2860]::bigint[]),
+      (3406841990572783, 'Sankeit', 'https://2e.aonprd.com/Armor.aspx?ID=53',
+        '80486dabc8d4d955181faac119e1dff2', '1', 5, 'light', 'wood', 2, 3, -1, 0, 1, array[2860]::bigint[])
+    ) expected(war_uuid, name, war_url, description_md5, bulk, price_gp,
+      category, armor_group, ac_bonus, dex_cap, check_penalty, speed_penalty, strength, traits)
+    left join public.item actual on actual.uuid = expected.war_uuid
+      and actual.content_source_id = 400
+    where actual.id is null
+      or actual.name is distinct from expected.name
+      or actual."group" is distinct from 'ARMOR'
+      or actual.level is distinct from 0
+      or actual.rarity is distinct from 'COMMON'
+      or actual.size is distinct from 'MEDIUM'
+      or actual.bulk is distinct from expected.bulk
+      or actual.price::jsonb is distinct from jsonb_build_object('gp', expected.price_gp)
+      or actual.traits is distinct from expected.traits
+      or md5(actual.description) is distinct from expected.description_md5
+      or actual.meta_data->'source' is distinct from jsonb_build_object(
+        'url', expected.war_url, 'book', 'War of Immortals', 'page', '146')
+      or actual.meta_data #>> '{category}' is distinct from expected.category
+      or actual.meta_data #>> '{group}' is distinct from expected.armor_group
+      or (actual.meta_data->>'ac_bonus')::integer is distinct from expected.ac_bonus
+      or (actual.meta_data->>'dex_cap')::integer is distinct from expected.dex_cap
+      or (actual.meta_data->>'check_penalty')::integer is distinct from expected.check_penalty
+      or (actual.meta_data->>'speed_penalty')::integer is distinct from expected.speed_penalty
+      or (actual.meta_data->>'strength')::integer is distinct from expected.strength
+      or actual.operations is not null
+  )
+union all
 select 'war-restless-epithet',
   exists (select 1 from public.ability_block
     where id = 38691 and name = 'Dominion Epithet' and type = 'class-feature'

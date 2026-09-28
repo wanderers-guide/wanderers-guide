@@ -127,5 +127,9 @@
   "20260927250000_treasure_vault_dragonprism_links.sql": {
     "check": "war-of-immortals.sql",
     "order": "before-functions"
+  },
+  "20260928000000_war_of_immortals_armor_reprints.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
   }
 }

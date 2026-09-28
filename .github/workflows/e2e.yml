@@ -108,7 +108,7 @@ jobs:
           }
           verify_war
           verify_index
-          for migration in supabase/migrations/20260927*.sql; do
+          for migration in supabase/migrations/20260927*.sql supabase/migrations/20260928*.sql; do
             docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"
           done
           verify_war
