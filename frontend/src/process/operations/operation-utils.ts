@@ -69,6 +69,7 @@ import { isTruthy } from '@utils/type-fixing';
 import { escapeRegExp, isNumber, intersection } from 'lodash-es';
 import { throwError } from '@utils/error-handling';
 import { GenericData } from '@schemas/index';
+import { getRootSelection, SelectionTreeNode } from './selection-tree';
 
 export function createDefaultOperation<T = Operation>(type: OperationType): T {
   if (type === 'giveAbilityBlock') {
@@ -506,10 +507,42 @@ async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: 
   });
 }
 
+/** Resolve a spell tradition from the patron selected before conditional casting-source grants run. */
+async function getTraditionFromSelection(key: string, castingSource: string): Promise<string | null> {
+  let node: SelectionTreeNode | undefined = getRootSelection();
+  for (const segment of key.split('_')) node = node?.children[segment];
+  const selectedId = Number(node?.value);
+  if (!Number.isSafeInteger(selectedId) || selectedId <= 0) return null;
+  const abilityBlock = await fetchContentById<AbilityBlock>('ability-block', selectedId);
+  if (!abilityBlock) return null;
+
+  const traditions = new Set<string>();
+  const collect = (operations: Operation[]): void => {
+    for (const operation of operations) {
+      if (operation.type === 'defineCastingSource') {
+        if (typeof operation.data.value !== 'string') continue;
+        const [name, , tradition] = operation.data.value.split(':::');
+        if (name === castingSource && ['ARCANE', 'DIVINE', 'OCCULT', 'PRIMAL'].includes(tradition)) {
+          traditions.add(tradition);
+        }
+      } else if (operation.type === 'conditional') {
+        collect(operation.data.trueOperations ?? []);
+        collect(operation.data.falseOperations ?? []);
+      }
+    }
+  };
+  collect(abilityBlock.operations ?? []);
+  return traditions.size === 1 ? [...traditions][0] : null;
+}
+
 async function getSpellList(operationUUID: string, filters: OperationSelectFiltersSpell) {
   let spells = await fetchContentAll<Spell>('spell', getDefaultSources('PAGE'));
 
   spells = spells.filter((spell) => isSpellVisible('CHARACTER', spell));
+
+  if (filters.rarity !== undefined) {
+    spells = spells.filter((spell) => spell.rarity === filters.rarity);
+  }
 
   if (filters.level.min !== undefined) {
     spells = spells.filter((spell) => spell.rank >= filters.level.min!);
@@ -549,6 +582,13 @@ async function getSpellList(operationUUID: string, filters: OperationSelectFilte
       );
       return inter.length === filters.traditions!.length;
     });
+  }
+
+  if (filters.traditionFromSelection !== undefined) {
+    const { key, castingSource } = filters.traditionFromSelection;
+    const tradition = await getTraditionFromSelection(key, castingSource);
+    if (!tradition) return [];
+    spells = spells.filter((spell) => spell.traditions.some((entry) => entry.toUpperCase() === tradition));
   }
 
   return spells.map((spell) => {
@@ -657,6 +697,7 @@ async function getAdjValueList(id: StoreID, operationUUID: string, filters: Oper
   // ("Filcher's Fork" -> "Filchers Fork"), which both mislabels the option and breaks the
   // exact-name match WEAPON_FAMILIARITY does for addToFamiliarity selections.
   const itemNames = new Map<string, string>();
+  const itemCategories = new Map<string, string>();
 
   if (filters.group === 'SKILL') {
     variables = getAllSkillVariables(id);
@@ -668,7 +709,9 @@ async function getAdjValueList(id: StoreID, operationUUID: string, filters: Oper
     variables = getAllAttributeVariables(id);
   }
   if (filters.group === 'WEAPON-GROUP') {
-    variables = getAllWeaponGroupVariables(id);
+    variables = getAllWeaponGroupVariables(id).filter(
+      (variable) => !/_(?:SIMPLE|MARTIAL|ADVANCED|UNARMED_ATTACK)$/.test(variable.name)
+    );
   }
   if (filters.group === 'ARMOR-GROUP') {
     variables = getAllArmorGroupVariables(id);
@@ -682,6 +725,7 @@ async function getAdjValueList(id: StoreID, operationUUID: string, filters: Oper
     variables = weapons.map((w) => {
       const name = `WEAPON_${labelToVariable(w.name)}`;
       itemNames.set(name, w.name);
+      itemCategories.set(name, w.meta_data?.category ?? '');
       return {
         name,
         type: 'prof',
@@ -712,6 +756,7 @@ async function getAdjValueList(id: StoreID, operationUUID: string, filters: Oper
       _content_type: 'ability-block' as ContentType,
       id: `${variable.name}`,
       name: itemNames.get(variable.name) ?? (variable ? variableToLabel(variable) : 'Unknown Value'),
+      _item_category: itemCategories.get(variable.name),
       value: filters.value,
       variable: variable.name,
     };

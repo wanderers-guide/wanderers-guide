@@ -439,6 +439,10 @@ Player-facing choice. Two modes:
 
 The chosen option id is recorded on `character.operation_data.selections`, keyed by the select operation’s id.
 
+For a `SPELL` filter, `rarity` limits the available spells to one rarity. `traditionFromSelection: { key, castingSource }` uses the ability block saved at that selection key to find its unambiguous `defineCastingSource` tradition; if no tradition is found, the filter offers no spells. This lets a spell choice follow a selected patron before conditional casting-source grants run.
+
+For a weapon `ADJ_VALUE` filter, `addToFamiliarity: true` also applies the chosen weapon to `WEAPON_FAMILIARITY`, so a martial weapon uses simple-weapon proficiency or an advanced weapon uses martial-weapon proficiency. Set `familiarityCategories: ["advanced"]` when only advanced weapons should get that adjustment; omitting the category filter retains the existing behavior for every selected weapon.
+
 Ancestry feat filters also admit the existing **All Ancestries** trait, while preserving level, required-trait, and feat-type constraints. Archetype skill feats belong in skill feat choices: ordinary class feat and Free Archetype choices exclude them. A filter that explicitly requests the Skill trait can still select them.
 
 ---
