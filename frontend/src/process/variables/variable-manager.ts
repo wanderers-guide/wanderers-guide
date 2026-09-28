@@ -1066,6 +1066,7 @@ function applyAdjVariable(
   }
 }
 
+/** Propagate broad weapon-group changes to existing category-specific proficiencies. */
 function getScopedWeaponGroupNames(id: StoreID, name: string): string[] {
   if (!name.startsWith('WEAPON_GROUP_')) return [];
   return ['SIMPLE', 'MARTIAL', 'ADVANCED', 'UNARMED_ATTACK']

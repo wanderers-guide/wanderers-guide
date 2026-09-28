@@ -4,28 +4,28 @@
 -- Embedded epithets are checked separately.
 -- This is an indexed-entry gate, not a page-by-page or rules-behavior certification.
 -- AoN entries outside this passing gate (checked-in snapshot, not a live-data verdict):
--- Class Sample Builds: Celestial Archer (Exemplar) — https://2e.aonprd.com/ClassSamples.aspx?ID=77
--- Class Sample Builds: Creation's Beast (Exemplar) — https://2e.aonprd.com/ClassSamples.aspx?ID=78
--- Class Sample Builds: Medium (Animist) — https://2e.aonprd.com/ClassSamples.aspx?ID=75
--- Class Sample Builds: Seer (Animist) — https://2e.aonprd.com/ClassSamples.aspx?ID=74
--- Class Sample Builds: Sky King Eternal (Exemplar) — https://2e.aonprd.com/ClassSamples.aspx?ID=76
--- Hazards: Boneburst — https://2e.aonprd.com/Hazards.aspx?ID=464
--- Hazards: Lightning's Dance — https://2e.aonprd.com/Hazards.aspx?ID=460
--- Hazards: Primal Chaos Aura — https://2e.aonprd.com/Hazards.aspx?ID=461
--- Hazards: Trump of the Oliphaunt — https://2e.aonprd.com/Hazards.aspx?ID=463
--- Hazards: Wind Surge — https://2e.aonprd.com/Hazards.aspx?ID=462
--- Monsters: Agyra — https://2e.aonprd.com/Monsters.aspx?ID=3406
--- Monsters: Immortal Trickster — https://2e.aonprd.com/Monsters.aspx?ID=3405
--- Monsters: Mythic Gogiteth — https://2e.aonprd.com/Monsters.aspx?ID=3400
--- Monsters: Mythic Griffon — https://2e.aonprd.com/Monsters.aspx?ID=3403
--- Monsters: Mythic Lich — https://2e.aonprd.com/Monsters.aspx?ID=3402
--- Monsters: Mythic Ogre Boss — https://2e.aonprd.com/Monsters.aspx?ID=3401
--- Monsters: Oliphaunt of Jandelay — https://2e.aonprd.com/Monsters.aspx?ID=3407
--- Monsters: Sublime Breath — https://2e.aonprd.com/Monsters.aspx?ID=3408
--- Monsters: Verex-That-Was — https://2e.aonprd.com/Monsters.aspx?ID=3409
--- Monsters: Vulot — https://2e.aonprd.com/Monsters.aspx?ID=3404
--- Monsters: Weaver Of Webs — https://2e.aonprd.com/Monsters.aspx?ID=3410
--- Rules: Mythic Rules — https://2e.aonprd.com/Rules.aspx?ID=3320
+-- Class Sample Builds: Celestial Archer (Exemplar): https://2e.aonprd.com/ClassSamples.aspx?ID=77
+-- Class Sample Builds: Creation's Beast (Exemplar): https://2e.aonprd.com/ClassSamples.aspx?ID=78
+-- Class Sample Builds: Medium (Animist): https://2e.aonprd.com/ClassSamples.aspx?ID=75
+-- Class Sample Builds: Seer (Animist): https://2e.aonprd.com/ClassSamples.aspx?ID=74
+-- Class Sample Builds: Sky King Eternal (Exemplar): https://2e.aonprd.com/ClassSamples.aspx?ID=76
+-- Hazards: Boneburst: https://2e.aonprd.com/Hazards.aspx?ID=464
+-- Hazards: Lightning's Dance: https://2e.aonprd.com/Hazards.aspx?ID=460
+-- Hazards: Primal Chaos Aura: https://2e.aonprd.com/Hazards.aspx?ID=461
+-- Hazards: Trump of the Oliphaunt: https://2e.aonprd.com/Hazards.aspx?ID=463
+-- Hazards: Wind Surge: https://2e.aonprd.com/Hazards.aspx?ID=462
+-- Monsters: Agyra: https://2e.aonprd.com/Monsters.aspx?ID=3406
+-- Monsters: Immortal Trickster: https://2e.aonprd.com/Monsters.aspx?ID=3405
+-- Monsters: Mythic Gogiteth: https://2e.aonprd.com/Monsters.aspx?ID=3400
+-- Monsters: Mythic Griffon: https://2e.aonprd.com/Monsters.aspx?ID=3403
+-- Monsters: Mythic Lich: https://2e.aonprd.com/Monsters.aspx?ID=3402
+-- Monsters: Mythic Ogre Boss: https://2e.aonprd.com/Monsters.aspx?ID=3401
+-- Monsters: Oliphaunt of Jandelay: https://2e.aonprd.com/Monsters.aspx?ID=3407
+-- Monsters: Sublime Breath: https://2e.aonprd.com/Monsters.aspx?ID=3408
+-- Monsters: Verex-That-Was: https://2e.aonprd.com/Monsters.aspx?ID=3409
+-- Monsters: Vulot: https://2e.aonprd.com/Monsters.aspx?ID=3404
+-- Monsters: Weaver Of Webs: https://2e.aonprd.com/Monsters.aspx?ID=3410
+-- Rules: Mythic Rules: https://2e.aonprd.com/Rules.aspx?ID=3320
 -- The 11 monsters need a full-fidelity mythic creature representation; the other
 -- 11 entries are sample builds, hazards, or a rules hub without corresponding
 -- indexed-content tables. Their absence is not counted as passing coverage.

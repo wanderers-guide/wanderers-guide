@@ -191,7 +191,7 @@ async function executeCharacterOperations(
   const background = content.backgrounds.find((b) => b.id === character.details?.background?.id);
   const ancestry = content.ancestries.find((a) => a.id === character.details?.ancestry?.id);
   /** Calculate from current content while retaining saved archetype snapshots when their source is unavailable. */
-  const resolveClassArchetype = (selected?: ClassArchetype) =>
+  const resolveClassArchetype = (selected?: ClassArchetype): ClassArchetype | undefined =>
     selected ? (content.classArchetypes?.find((archetype) => archetype.id === selected.id) ?? selected) : undefined;
   const classArchetype = resolveClassArchetype(character.details?.class_archetype);
   const classArchetype2 = resolveClassArchetype(character.details?.class_archetype_2);

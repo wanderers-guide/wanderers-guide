@@ -4,12 +4,16 @@ import { labelToVariable } from '@variables/variable-utils';
 const ANIMIST_APPARITION_TRAIT_ID = 4092;
 
 /** Identify Animist primary-apparition modes without affecting other mode families. */
-function isPrimaryApparitionMode(mode: AbilityBlock) {
-  return mode.type === 'mode' && mode.name.endsWith(' - Primary') && mode.traits?.includes(ANIMIST_APPARITION_TRAIT_ID);
+function isPrimaryApparitionMode(mode: AbilityBlock): boolean {
+  return (
+    mode.type === 'mode' &&
+    mode.name.endsWith(' - Primary') &&
+    (mode.traits?.includes(ANIMIST_APPARITION_TRAIT_ID) ?? false)
+  );
 }
 
 /** Toggle a mode, replacing any other active primary apparition when one is enabled. */
-export function toggleActiveMode(modes: AbilityBlock[], activeModes: string[], mode: AbilityBlock) {
+export function toggleActiveMode(modes: AbilityBlock[], activeModes: string[], mode: AbilityBlock): string[] {
   const name = labelToVariable(mode.name);
   if (activeModes.includes(name)) return activeModes.filter((active) => active !== name);
   if (!isPrimaryApparitionMode(mode)) return [...activeModes, name];
@@ -21,7 +25,11 @@ export function toggleActiveMode(modes: AbilityBlock[], activeModes: string[], m
 }
 
 /** Execute only granted modes, and at most one active primary apparition. */
-export function getExecutableModes(modes: AbilityBlock[], activeModes: string[], grantedModeIds: string[]) {
+export function getExecutableModes(
+  modes: AbilityBlock[],
+  activeModes: string[],
+  grantedModeIds: string[]
+): AbilityBlock[] {
   const granted = new Set(grantedModeIds);
   const primary = activeModes.find((active) =>
     modes.some(
