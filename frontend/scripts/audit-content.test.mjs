@@ -90,6 +90,7 @@ const creature = (id) => ({
 
 const hazard = (id) => ({
   id,
+  uuid: 1465735844144675,
   created_at: '2026-09-28T00:00:00Z',
   type: 'hazard',
   name: 'Test hazard',
