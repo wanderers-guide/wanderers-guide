@@ -57,6 +57,7 @@ const feedbackState = atom(
   null as {
     type: ContentType | AbilityBlockType;
     data: { id?: number; contentSourceId?: number };
+    owner?: 'creature';
   } | null
 );
 
@@ -69,6 +70,7 @@ const creatureDrawerState = atom(
       showOperations?: boolean;
       updateCreature?: (creature: Creature) => void;
       readOnly?: boolean;
+      previewZIndex?: number;
     };
   } | null
 );
