@@ -175,5 +175,9 @@
   "20260929070000_war_of_immortals_artifact_fields.sql": {
     "check": "war-of-immortals.sql",
     "order": "before-functions"
+  },
+  "20260929080000_war_of_immortals_holy_rune.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
   }
 }

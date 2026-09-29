@@ -40,7 +40,7 @@ for (const file of sources) {
 const special = {
   useAtom: '() => [null, () => {}]',
   useAtomValue: '() => null',
-  useQuery: '() => ({data:undefined,isFetching:false,refetch:()=>{}})',
+  useQuery: '() => ({data:globalThis.__wgDrawerQueryItem,isFetching:false,refetch:()=>{}})',
   useMantineTheme: '() => ({colors:{gray:Array(10).fill("gray")}})',
   getVariable:
     '(id,name) => name === "INJECT_TEXT" ? {value:[JSON.stringify({type:"item",id:801,text:id+" RESEARCH FIELD TEXT"})]} : null',
@@ -128,6 +128,27 @@ for (const [name, Component, props, store] of tests) {
     assert.ok(!html.includes(otherStore + ' RESEARCH FIELD TEXT'));
   });
 }
+
+test('embedded rune links prefer current catalog content and fall back to their snapshot', () => {
+  const embedded = { ...item, description: 'EMBEDDED RUNE TEXT' };
+  try {
+    globalThis.__wgDrawerQueryItem = { ...item, description: 'CURRENT RUNE TEXT' };
+    const currentHtml = renderToStaticMarkup(
+      React.createElement(ItemDrawerContent, { data: { id: item.id, item: embedded } })
+    );
+    assert.ok(currentHtml.includes('CURRENT RUNE TEXT'));
+    assert.ok(!currentHtml.includes('EMBEDDED RUNE TEXT'));
+
+    globalThis.__wgDrawerQueryItem = null;
+    const fallbackHtml = renderToStaticMarkup(
+      React.createElement(ItemDrawerContent, { data: { id: item.id, item: embedded } })
+    );
+    assert.ok(fallbackHtml.includes('EMBEDDED RUNE TEXT'));
+    assert.ok(!fallbackHtml.includes('CURRENT RUNE TEXT'));
+  } finally {
+    delete globalThis.__wgDrawerQueryItem;
+  }
+});
 
 // Item metadata and its bulk section are independently optional in the content schema.
 test('item icons render when optional bulk metadata is absent', () => {

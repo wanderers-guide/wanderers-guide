@@ -96,7 +96,7 @@ export function ItemRunesDescription({ item }: { item: Item }) {
                     e.stopPropagation();
                     openDrawer({
                       type: 'item',
-                      data: { id: rune.id },
+                      data: { id: rune.id, item: rune.rune },
                       extra: { addToHistory: true },
                     });
                   }}
