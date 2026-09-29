@@ -316,6 +316,12 @@ select 'war-spell-details',
     and description like '**Primary Check**%'
     and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/Rituals.aspx?ID=187')
 union all
+select 'war-shift-immanence',
+  exists (select 1 from public.ability_block where id = 38584 and name = 'Shift Immanence'
+    and type = 'feat' and content_source_id = 400 and actions = 'ONE-ACTION'
+    and frequency = '' and special like '%free action triggered when you roll initiative%'
+    and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/Actions.aspx?ID=3030')
+union all
 select 'war-masterful-vindication',
   exists (select 1 from public.ability_block
     where id = 43770 and name = 'Masterful Vindication' and type = 'feat'
