@@ -183,5 +183,9 @@
   "20260929090000_war_of_immortals_artifact_destruction.sql": {
     "check": "war-of-immortals.sql",
     "order": "before-functions"
+  },
+  "20260929100000_war_of_immortals_spell_details.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
   }
 }
