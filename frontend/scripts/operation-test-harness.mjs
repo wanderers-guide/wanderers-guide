@@ -149,7 +149,7 @@ export async function createOperationEngine() {
           export { getAcParts } from '@items/armor-handler';
           export * from '@items/eidolon-runes';
           export { handleDeleteItem, handleUpdateItem, handleMoveItem, addExtraItems } from '@items/inv-handlers';
-          export { isItemInvestable, getFlatInvItems, applyEquipmentPenalties, getBestArmor } from '@items/inv-utils';
+          export { isItemInvestable, getFlatInvItems, applyEquipmentPenalties, getBestArmor, compileTraits } from '@items/inv-utils';
           export { getListStringInputValue } from '@common/operations/variables/operation-value-defaults';
           export { toggleActiveMode, getExecutableModes } from '@common/modes/mode-rules';
           export { determineFilteredSelectionList } from '@operations/operation-utils';

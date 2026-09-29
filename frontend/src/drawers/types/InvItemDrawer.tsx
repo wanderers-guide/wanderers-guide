@@ -787,7 +787,7 @@ function InvItemSections(props: {
                   onClick={() => {
                     props.openDrawer({
                       type: 'item',
-                      data: { id: rune.id },
+                      data: { id: rune.id, item: rune.rune },
                       extra: { addToHistory: true },
                     });
                   }}

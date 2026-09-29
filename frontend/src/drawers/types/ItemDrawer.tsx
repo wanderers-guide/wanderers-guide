@@ -90,7 +90,7 @@ export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
     },
     enabled: !!id,
   });
-  const item = props.data.item ?? _item;
+  const item = _item ?? props.data.item;
 
   return (
     <>
@@ -143,7 +143,7 @@ export function ItemDrawerContent(props: {
     enabled: !!id,
   });
 
-  const item = props.data.item ?? _item;
+  const item = _item ?? props.data.item;
 
   if (!item) {
     return (
@@ -529,7 +529,7 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
                   onClick={() => {
                     props.openDrawer({
                       type: 'item',
-                      data: { id: rune.id },
+                      data: { id: rune.id, item: rune.rune },
                       extra: { addToHistory: true },
                     });
                   }}

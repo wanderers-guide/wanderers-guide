@@ -157,6 +157,22 @@ select 'war-artifact-fields',
     or (id = 16930 and name = 'Worldforge' and bulk = '1' and usage = 'held in 1 hand'
       and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/Equipment.aspx?ID=3511')))
 union all
+select 'war-holy-rune',
+  exists (select 1 from public.item where id = 17101 and name = 'Freedom''s Flame'
+    and content_source_id = 400
+    and jsonb_array_length(meta_data::jsonb #> '{runes,property}') = 1
+    and meta_data #>> '{runes,property,0,id}' = '7040'
+    and meta_data #>> '{runes,property,0,name}' = 'Holy'
+    and not (meta_data::jsonb #> '{runes,property,0,rune}' ? 'search_tsv')
+    and meta_data::jsonb #> '{runes,property,0,rune,traits}' = '[1504,1630]'::jsonb
+    and meta_data #>> '{runes,property,0,rune,meta_data,damage,die}' = 'd4'
+    and meta_data #>> '{runes,property,0,rune,meta_data,damage,damageType}' = 'spirit'
+    and meta_data #>> '{runes,property,0,rune,meta_data,source,url}' = 'https://2e.aonprd.com/Equipment.aspx?ID=2842'
+    and meta_data #>> '{runes,property,0,rune,description}' like '%**Holy Healing**%'
+    and meta_data #>> '{runes,property,0,rune,description}' not like '%link_spell_3371%')
+  and exists (select 1 from public.item where id = 7040 and name = 'Holy'
+    and description like '%**Holy Healing**%' and description not like '%link_spell_3371%')
+union all
 select 'war-errata',
   exists (select 1 from public.ability_block where id = 39152
     and special like '%4th rank%' and special like '%7th rank%')
