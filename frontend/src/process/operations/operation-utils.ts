@@ -472,6 +472,16 @@ async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: 
     });
   }
 
+  if (filters.excludedTraits?.length) {
+    const traitRows = await Promise.all(
+      filters.excludedTraits.map((trait) => (isNumber(trait) ? trait : fetchTraitByName(trait)))
+    );
+    const excludedTraitIds = traitRows.map((trait) => (isNumber(trait) ? trait : trait?.id)).filter(isTruthy);
+    abilityBlocks = abilityBlocks.filter(
+      (abilityBlock) => intersection(abilityBlock.traits ?? [], excludedTraitIds).length === 0
+    );
+  }
+
   if (filters.isFromAncestry) {
     const traitIds = getAllAncestryTraitVariables(id).map((v) => v.value);
     abilityBlocks = abilityBlocks.filter((ab) => {

@@ -163,5 +163,9 @@
   "20260929040000_war_of_immortals_monster_count.sql": {
     "check": "war-of-immortals-monsters.sql",
     "order": "before-functions"
+  },
+  "20260929050000_war_of_immortals_archetype_choices.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
   }
 }
