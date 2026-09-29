@@ -138,7 +138,7 @@
   },
   "20260928020000_war_of_immortals_hazards.sql": {
     "check": "war-of-immortals-hazards.sql",
-    "order": "before-functions"
+    "order": "after-compatible-functions"
   },
   "20260929000000_kaiju_trait.sql": {
     "check": "war-of-immortals-monsters.sql",

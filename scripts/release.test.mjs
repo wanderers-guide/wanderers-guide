@@ -244,6 +244,14 @@ test('monster release predicates use one SELECT-only statement', async () => {
   );
 });
 
+test('hazard rows require compatible handlers after the creature type column', async () => {
+  const requirements = JSON.parse(
+    await readFile(new URL('../supabase/release/requirements.json', import.meta.url), 'utf8')
+  );
+  assert.equal(requirements['20260928010000_hazard_type.sql'].order, 'before-functions');
+  assert.equal(requirements['20260928020000_war_of_immortals_hazards.sql'].order, 'after-compatible-functions');
+});
+
 test('missing and duplicate gateway declarations cannot silently default on next deploy', async (t) => {
   const repo = await fixture(t);
   await write(repo, 'supabase/config.toml', '[functions.one]\nenabled = true\n[functions.main]\nenabled = false\n');
