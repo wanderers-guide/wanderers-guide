@@ -266,6 +266,7 @@ export const OperationSelectFiltersAbilityBlockSchema = z.object({
     max: z.union([z.number(), z.string()]).nullable().optional(),
   }),
   traits: z.array(z.union([z.string(), z.number()])).optional(),
+  excludedTraits: z.array(z.union([z.string(), z.number()])).optional(),
   // Only include options associated with this skill — matched against the ability block's
   // `meta_data.skill` tags or its prerequisites (e.g. "trained in Computers").
   // Needed for SF2e Operative specializations ("gain a skill feat tied to your specialization's skill").

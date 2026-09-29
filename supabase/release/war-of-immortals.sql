@@ -87,6 +87,18 @@ select 'war-fields',
   and exists (select 1 from public.item where id = 16929 and usage = 'worn cloak')
   and exists (select 1 from public.item where id = 17391 and rarity = 'UNCOMMON')
 union all
+select 'war-archetype-choices',
+  exists (select 1 from public.ability_block a, unnest(a.operations) op
+    where a.id = 39210 and a.content_source_id = 400
+      and op->>'id' = '3d3b3a73-14f7-4bf0-8be0-f3bfca8e1c37'
+      and op #>> '{data,optionsFilters,level,max}' = '{{LEVEL/2}}'
+      and op::jsonb #> '{data,optionsFilters,excludedTraits}' = '[4076]'::jsonb)
+  and exists (select 1 from public.ability_block a, unnest(a.operations) op
+    where a.id = 39205 and a.content_source_id = 400
+      and op->>'id' = '4c94682e-f4c9-43a2-b35e-27f3672261ed'
+      and op #>> '{data,optionsFilters,level,max}' = '{{LEVEL/2}}'
+      and op::jsonb #> '{data,optionsFilters,excludedTraits}' is null)
+union all
 select 'war-vindicator',
   exists (select 1 from public.class_archetype c, unnest(c.operations) op
     where c.id = 30 and op->>'id' = 'c4a75d49-19e5-4983-8757-d5caf473627b'

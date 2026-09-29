@@ -153,6 +153,7 @@ export async function createOperationEngine() {
           export { getListStringInputValue } from '@common/operations/variables/operation-value-defaults';
           export { toggleActiveMode, getExecutableModes } from '@common/modes/mode-rules';
           export { determineFilteredSelectionList } from '@operations/operation-utils';
+          export { OperationSelectFiltersAbilityBlockSchema } from '@schemas/operations';
           export { collectEntityAbilityBlocks } from '@content/collect-content';
           export { isAbilityBlockVisible } from '@content/content-hidden';
           export { hasArchetypeClassFeatTraits, getTraitIdByType } from '@utils/traits';

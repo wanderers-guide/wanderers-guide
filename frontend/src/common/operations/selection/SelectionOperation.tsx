@@ -296,6 +296,7 @@ function SelectionFilteredAbilityBlock(props: {
       // Only persist a skill filter when one is actually entered
       skill: skill?.trim() ? skill.trim() : undefined,
       traits: traits,
+      excludedTraits: props.filters?.excludedTraits,
       abilityBlockType: type,
       isFromClass: isFromClass,
       isFromAncestry: isFromAncestry,
