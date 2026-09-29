@@ -173,6 +173,21 @@ select 'war-holy-rune',
   and exists (select 1 from public.item where id = 7040 and name = 'Holy'
     and description like '%**Holy Healing**%' and description not like '%link_spell_3371%')
 union all
+select 'war-artifact-destruction',
+  (select count(*) = 5
+    from (values
+      (16928, 'Dragon-Lotus Drum', 'https://2e.aonprd.com/Equipment.aspx?ID=3507', '537d623647bde4b8eb249634fb05dc9a'),
+      (16929, 'Final Scalecloak', 'https://2e.aonprd.com/Equipment.aspx?ID=3508', 'e9e1b106c502d0696773342dbaa521d7'),
+      (16930, 'Worldforge', 'https://2e.aonprd.com/Equipment.aspx?ID=3511', '181e0e536dc405ca394b06deca3480f0'),
+      (17101, 'Freedom''s Flame', 'https://2e.aonprd.com/Equipment.aspx?ID=3509', '01af182622590c0681114bccca90632f'),
+      (17102, 'Shadowpiercer', 'https://2e.aonprd.com/Equipment.aspx?ID=3510', '4500e776b62677b4c41c58a96dad01b2')
+    ) expected(id, name, url, description_hash)
+    join public.item item_row on item_row.id = expected.id
+    where item_row.name = expected.name and item_row.content_source_id = 400
+      and item_row.meta_data #>> '{source,url}' = expected.url
+      and md5(item_row.description) = expected.description_hash
+      and item_row.craft_requirements = '')
+union all
 select 'war-errata',
   exists (select 1 from public.ability_block where id = 39152
     and special like '%4th rank%' and special like '%7th rank%')
