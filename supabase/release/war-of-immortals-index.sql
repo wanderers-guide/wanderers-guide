@@ -1,9 +1,9 @@
 -- AoN War of Immortals source index (https://2e.aonprd.com/Sources.aspx?ID=232).
--- 461 standalone source-400 entries are pinned below. The indexed URL and
+-- 472 standalone source-400 entries are pinned below. The indexed URL and
 -- required stored URL differ only for canonical MythicSpells/MythicRituals links.
 -- Embedded epithets are checked separately.
 -- This is an indexed-entry gate, not a page-by-page or rules-behavior certification.
--- AoN entries outside this 461-entry gate (checked-in snapshot, not a live-data verdict):
+-- AoN entries outside this 472-entry gate (checked-in snapshot, not a live-data verdict):
 -- Class Sample Builds: Celestial Archer (Exemplar): https://2e.aonprd.com/ClassSamples.aspx?ID=77
 -- Class Sample Builds: Creation's Beast (Exemplar): https://2e.aonprd.com/ClassSamples.aspx?ID=78
 -- Class Sample Builds: Medium (Animist): https://2e.aonprd.com/ClassSamples.aspx?ID=75
@@ -15,19 +15,7 @@
 -- Hazards: Primal Chaos Aura: https://2e.aonprd.com/Hazards.aspx?ID=461
 -- Hazards: Trump of the Oliphaunt: https://2e.aonprd.com/Hazards.aspx?ID=463
 -- Hazards: Wind Surge: https://2e.aonprd.com/Hazards.aspx?ID=462
--- Monsters: Agyra: https://2e.aonprd.com/Monsters.aspx?ID=3406
--- Monsters: Immortal Trickster: https://2e.aonprd.com/Monsters.aspx?ID=3405
--- Monsters: Mythic Gogiteth: https://2e.aonprd.com/Monsters.aspx?ID=3400
--- Monsters: Mythic Griffon: https://2e.aonprd.com/Monsters.aspx?ID=3403
--- Monsters: Mythic Lich: https://2e.aonprd.com/Monsters.aspx?ID=3402
--- Monsters: Mythic Ogre Boss: https://2e.aonprd.com/Monsters.aspx?ID=3401
--- Monsters: Oliphaunt of Jandelay: https://2e.aonprd.com/Monsters.aspx?ID=3407
--- Monsters: Sublime Breath: https://2e.aonprd.com/Monsters.aspx?ID=3408
--- Monsters: Verex-That-Was: https://2e.aonprd.com/Monsters.aspx?ID=3409
--- Monsters: Vulot: https://2e.aonprd.com/Monsters.aspx?ID=3404
--- Monsters: Weaver Of Webs: https://2e.aonprd.com/Monsters.aspx?ID=3410
 -- Rules: Mythic Rules: https://2e.aonprd.com/Rules.aspx?ID=3320
--- The 11 monsters need a full-fidelity mythic creature representation.
 -- The sample builds and rules hub have no corresponding indexed-content tables.
 -- Their absence is not counted as passing coverage.
 
@@ -442,6 +430,17 @@ values
   ('Ikons', 'Unfailing Bow', 'ability_block', 38681, 5641644019796994, 'Unfailing Bow', 'https://2e.aonprd.com/Ikons.aspx?ID=20', 'https://2e.aonprd.com/Ikons.aspx?ID=20'),
   ('Ikons', 'Victor''s Wreath', 'ability_block', 38682, 7109140693648124, 'Victor''s Wreath', 'https://2e.aonprd.com/Ikons.aspx?ID=21', 'https://2e.aonprd.com/Ikons.aspx?ID=21'),
   ('Instincts', 'Bloodrager', 'ability_block', 51667, 573905757507748, 'Bloodrager Instinct', 'https://2e.aonprd.com/Instincts.aspx?ID=14', 'https://2e.aonprd.com/Instincts.aspx?ID=14'),
+  ('Monsters', 'Agyra', 'creature', null, 6892231756030293, 'Agyra', 'https://2e.aonprd.com/Monsters.aspx?ID=3406', 'https://2e.aonprd.com/Monsters.aspx?ID=3406'),
+  ('Monsters', 'Immortal Trickster', 'creature', null, 4509376621863460, 'Immortal Trickster', 'https://2e.aonprd.com/Monsters.aspx?ID=3405', 'https://2e.aonprd.com/Monsters.aspx?ID=3405'),
+  ('Monsters', 'Mythic Gogiteth', 'creature', null, 6013160830717984, 'Mythic Gogiteth', 'https://2e.aonprd.com/Monsters.aspx?ID=3400', 'https://2e.aonprd.com/Monsters.aspx?ID=3400'),
+  ('Monsters', 'Mythic Griffon', 'creature', null, 3169015473517639, 'Mythic Griffon', 'https://2e.aonprd.com/Monsters.aspx?ID=3403', 'https://2e.aonprd.com/Monsters.aspx?ID=3403'),
+  ('Monsters', 'Mythic Lich', 'creature', null, 4237591398100435, 'Mythic Lich', 'https://2e.aonprd.com/Monsters.aspx?ID=3402', 'https://2e.aonprd.com/Monsters.aspx?ID=3402'),
+  ('Monsters', 'Mythic Ogre Boss', 'creature', null, 2709413115764620, 'Mythic Ogre Boss', 'https://2e.aonprd.com/Monsters.aspx?ID=3401', 'https://2e.aonprd.com/Monsters.aspx?ID=3401'),
+  ('Monsters', 'Oliphaunt of Jandelay', 'creature', null, 6724325327115429, 'Oliphaunt of Jandelay', 'https://2e.aonprd.com/Monsters.aspx?ID=3407', 'https://2e.aonprd.com/Monsters.aspx?ID=3407'),
+  ('Monsters', 'Sublime Breath', 'creature', null, 8402624232398678, 'Sublime Breath', 'https://2e.aonprd.com/Monsters.aspx?ID=3408', 'https://2e.aonprd.com/Monsters.aspx?ID=3408'),
+  ('Monsters', 'Verex-That-Was', 'creature', null, 8784846156440862, 'Verex-That-Was', 'https://2e.aonprd.com/Monsters.aspx?ID=3409', 'https://2e.aonprd.com/Monsters.aspx?ID=3409'),
+  ('Monsters', 'Vulot', 'creature', null, 4812683280104077, 'Vulot', 'https://2e.aonprd.com/Monsters.aspx?ID=3404', 'https://2e.aonprd.com/Monsters.aspx?ID=3404'),
+  ('Monsters', 'Weaver Of Webs', 'creature', null, 3704851072954059, 'Weaver of Webs', 'https://2e.aonprd.com/Monsters.aspx?ID=3410', 'https://2e.aonprd.com/Monsters.aspx?ID=3410'),
   ('Rackets', 'Avenger', 'ability_block', 51663, 2171171261595063, 'Avenger Racket', 'https://2e.aonprd.com/Rackets.aspx?ID=10', 'https://2e.aonprd.com/Rackets.aspx?ID=10'),
   ('Rituals', 'Awaken Curse', 'spell', 7294, 7363894398419416, 'Awaken Curse', 'https://2e.aonprd.com/Rituals.aspx?ID=188', 'https://2e.aonprd.com/MythicRituals.aspx?ID=188'),
   ('Rituals', 'Band Of Heroes', 'spell', 7295, 4874217441348221, 'Band of Heroes', 'https://2e.aonprd.com/Rituals.aspx?ID=189', 'https://2e.aonprd.com/MythicRituals.aspx?ID=189'),
@@ -548,6 +547,9 @@ create temporary view war_index_actual as
   union all select 'class', id, uuid, name, content_source_id,
     meta_data #>> '{source,book}', meta_data #>> '{source,url}'
   from public.class where content_source_id = 400
+  union all select 'creature', id, uuid, name, content_source_id,
+    meta_data #>> '{source,book}', meta_data #>> '{source,url}'
+  from public.creature where content_source_id = 400 and type = 'creature'
   union all select 'item', id, uuid, name, content_source_id,
     meta_data #>> '{source,book}', meta_data #>> '{source,url}'
   from public.item where content_source_id = 400
@@ -560,8 +562,8 @@ create temporary view war_index_actual as
 
 create temporary view war_index_checks as
 select 'war-index-standalone'::text as id,
-  (select count(*) = 461 from war_index_expected)
-  and (select count(distinct (table_name, wg_uuid)) = 461 from war_index_expected)
+  (select count(*) = 472 from war_index_expected)
+  and (select count(distinct (table_name, wg_uuid)) = 472 from war_index_expected)
   and not exists (
     select 1 from war_index_expected expected
     where (select count(*) from war_index_actual actual

@@ -106,13 +106,30 @@ jobs:
             docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - < supabase/release/war-of-immortals-index.sql \
               | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed War of Immortals index check: " $1; failed = 1 } END { if (NR == 0) { print "No War of Immortals index checks ran"; failed = 1 } exit failed }'
           }
+          verify_hazards() {
+            docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - < supabase/release/war-of-immortals-hazards.sql \
+              | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed War of Immortals hazard check: " $1; failed = 1 } END { if (NR == 0) { print "No War of Immortals hazard checks ran"; failed = 1 } exit failed }'
+          }
+          verify_monsters() {
+            docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - < supabase/release/war-of-immortals-monsters.sql \
+              | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed War of Immortals monster check: " $1; failed = 1 } END { if (NR == 0) { print "No War of Immortals monster checks ran"; failed = 1 } exit failed }'
+            docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - < supabase/release/war-of-immortals-mythic-variants.sql \
+              | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed War of Immortals mythic variant check: " $1; failed = 1 } END { if (NR == 0) { print "No War of Immortals mythic variant checks ran"; failed = 1 } exit failed }'
+          }
           verify_war
-          verify_index
-          for migration in supabase/migrations/20260927*.sql supabase/migrations/20260928*.sql; do
+          for migration in supabase/migrations/20260927*.sql supabase/migrations/20260928*.sql supabase/migrations/20260929*.sql; do
             docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"
           done
           verify_war
           verify_index
+          verify_hazards
+          verify_monsters
+          for migration in supabase/migrations/20260929*.sql; do
+            docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"
+          done
+          verify_index
+          verify_hazards
+          verify_monsters
           { cat supabase/release/war-of-immortals-index.sql; cat supabase/release/war-of-immortals-index-regression.sql; } \
             | docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - \
             | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed War of Immortals index regression: " $1; failed = 1 } END { if (NR == 0) { print "No War of Immortals index regressions ran"; failed = 1 } exit failed }'

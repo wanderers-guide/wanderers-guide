@@ -263,7 +263,16 @@
             "type": "object",
             "additionalProperties": true,
             "properties": {
-              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" },
+              "display_traits": {
+                "type": "array",
+                "description": "Display-only traits for embedded creature attacks when no catalog trait matches.",
+                "items": { "type": "string" }
+              },
+              "inventory_label": {
+                "type": "string",
+                "description": "Display-only inventory name when the stat block differs from the embedded attack name."
+              }
             }
           },
           "operations": { "type": "array", "items": { "$ref": "#/components/schemas/Operation" } },
@@ -560,7 +569,30 @@
             "type": "object",
             "additionalProperties": true,
             "properties": {
-              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" },
+              "stat_block": {
+                "type": "object",
+                "description": "Optional creature stat-block annotations. Absent fields do not change existing displays.",
+                "properties": {
+                  "perception_note": { "type": "string" },
+                  "listed_senses": { "type": "array", "items": { "type": "string" } },
+                  "trait_labels": { "type": "object", "additionalProperties": { "type": "string" } },
+                  "languages_note": { "type": "string" },
+                  "skills_note": { "type": "string" },
+                  "listed_skills": { "type": "array", "items": { "type": "string" } },
+                  "items_note": { "type": "string" },
+                  "defenses_note": { "type": "string" },
+                  "hp_note": { "type": "string" },
+                  "immunities_note": { "type": "string" },
+                  "resistances_note": { "type": "string" },
+                  "recall_knowledge": { "type": "string" },
+                  "omit_innate_attack": { "type": "boolean" },
+                  "innate_spell_frequencies": {
+                    "type": "object",
+                    "additionalProperties": { "type": "string", "enum": ["AT-WILL", "CONSTANT"] }
+                  }
+                }
+              }
             }
           },
           "content_source_id": { "type": "integer" },

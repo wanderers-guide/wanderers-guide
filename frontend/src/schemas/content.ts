@@ -233,6 +233,8 @@ export interface Item {
     cleaning?: {
       updatedAt: string;
     };
+    display_traits?: string[];
+    inventory_label?: string;
     source?: ContentSourceCite;
   } | null;
   operations: Operation[] | null;
@@ -366,6 +368,8 @@ export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
             updatedAt: z.string(),
           })
           .optional(),
+        display_traits: z.array(z.string()).optional(),
+        inventory_label: z.string().optional(),
         source: ContentSourceCiteSchema.optional(),
       })
       .passthrough()
@@ -828,6 +832,24 @@ export const CreatureSchema = LivingEntitySchema.extend({
   version: z.string(),
   meta_data: LivingEntityMetaDataSchema.extend({
     source: ContentSourceCiteSchema.optional(),
+    stat_block: z
+      .object({
+        perception_note: z.string().optional(),
+        listed_senses: z.array(z.string()).optional(),
+        trait_labels: z.record(z.string(), z.string()).optional(),
+        languages_note: z.string().optional(),
+        skills_note: z.string().optional(),
+        listed_skills: z.array(z.string()).optional(),
+        items_note: z.string().optional(),
+        defenses_note: z.string().optional(),
+        hp_note: z.string().optional(),
+        immunities_note: z.string().optional(),
+        resistances_note: z.string().optional(),
+        recall_knowledge: z.string().optional(),
+        omit_innate_attack: z.boolean().optional(),
+        innate_spell_frequencies: z.record(z.string(), z.enum(['AT-WILL', 'CONSTANT'])).optional(),
+      })
+      .optional(),
   })
     .passthrough()
     .nullable(),

@@ -139,5 +139,29 @@
   "20260928020000_war_of_immortals_hazards.sql": {
     "check": "war-of-immortals-hazards.sql",
     "order": "before-functions"
+  },
+  "20260929000000_kaiju_trait.sql": {
+    "check": "war-of-immortals-monsters.sql",
+    "order": "before-functions"
+  },
+  "20260929000001_mythic_creature_trait.sql": {
+    "check": "war-of-immortals-monsters.sql",
+    "order": "before-functions"
+  },
+  "20260929010000_war_of_immortals_mythic_variants.sql": {
+    "check": "war-of-immortals-mythic-variants.sql",
+    "order": "before-functions"
+  },
+  "20260929020000_war_of_immortals_mythic_legends.sql": {
+    "check": "war-of-immortals-monsters.sql",
+    "order": "before-functions"
+  },
+  "20260929030000_war_of_immortals_mythic_entities.sql": {
+    "check": "war-of-immortals-monsters.sql",
+    "order": "before-functions"
+  },
+  "20260929040000_war_of_immortals_monster_count.sql": {
+    "check": "war-of-immortals-monsters.sql",
+    "order": "before-functions"
   }
 }

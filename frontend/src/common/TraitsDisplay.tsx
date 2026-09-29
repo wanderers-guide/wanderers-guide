@@ -37,6 +37,7 @@ export default function TraitsDisplay(props: {
   shoddy?: boolean;
   formula?: boolean;
   displayAll?: boolean;
+  displayNames?: Record<number, string>;
   justify?: 'flex-start' | 'flex-end';
 }) {
   const theme = useMantineTheme();
@@ -49,7 +50,7 @@ export default function TraitsDisplay(props: {
     ],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { traitIds }] = queryKey;
 
       if (traitIds.length === 0) return [];
@@ -120,11 +121,15 @@ export default function TraitsDisplay(props: {
                 }
               }}
             >
-              {trait.name}
+              {props.displayNames?.[trait.id] ?? trait.name}
             </Badge>
           </HoverCard.Target>
           <HoverCard.Dropdown>
-            <TraitOverview name={trait.name} description={trait.description} important={!!trait.meta_data?.important} />
+            <TraitOverview
+              name={props.displayNames?.[trait.id] ?? trait.name}
+              description={trait.description}
+              important={!!trait.meta_data?.important}
+            />
           </HoverCard.Dropdown>
         </HoverCard>
       ))}

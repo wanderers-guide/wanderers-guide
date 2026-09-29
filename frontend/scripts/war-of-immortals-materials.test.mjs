@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import { uniqueId } from '../../supabase/functions/_shared/upload-utils.ts';
+import uploadUtils from '../../supabase/functions/_shared/upload-utils.ts';
 import { readContentRows } from './operation-test-harness.mjs';
+
+const { uniqueId } = uploadUtils;
 
 const sql = await readFile(
   new URL('../../supabase/migrations/20260927140000_war_of_immortals_materials.sql', import.meta.url),
