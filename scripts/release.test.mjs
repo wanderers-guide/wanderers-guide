@@ -4,7 +4,15 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { compareFunctions, compareSchema, createManifest, functionPolicies, sha256 } from './release.mjs';
+import {
+  checkRemoteFunctions,
+  compareFunctions,
+  compareSchema,
+  createManifest,
+  evaluateMigrationChecks,
+  functionPolicies,
+  sha256,
+} from './release.mjs';
 
 async function write(root, name, content) {
   await mkdir(path.dirname(path.join(root, name)), { recursive: true });
@@ -122,6 +130,118 @@ test('matching release passes; shared drift, missing modules, legacy routes and 
   assert.ok(issues.includes('Gateway policy drift: one'));
   assert.ok(issues.includes('Unexpected deployed endpoint: main'));
   assert.ok(issues.includes('Unexpected deployed endpoint: find-characters'));
+});
+
+test('function-only verification compares deployed bytes without querying the database', async (t) => {
+  const repo = await fixture(t);
+  const manifest = await createManifest(repo);
+  manifest.dirty = false;
+  const endpoints = [];
+  let downloadedRoot;
+  const read = async (_project, endpoint) => {
+    endpoints.push(endpoint);
+    return inventory;
+  };
+  const download = async (entry, _project, workdir) => {
+    downloadedRoot = path.dirname(workdir);
+    for (const file of Object.keys(manifest.functions[entry.slug].files))
+      await write(workdir, file, await readFile(path.join(repo, file)));
+  };
+  const result = await checkRemoteFunctions(manifest, 'fdrjqcyjklatdrmjdnys', {
+    read,
+    download,
+  });
+  assert.equal(result.passed, true);
+  assert.deepEqual(result.issues, []);
+  assert.deepEqual(endpoints, ['/functions', '/functions']);
+  await assert.rejects(readFile(path.join(downloadedRoot, 'one/supabase/functions/one/index.ts')));
+});
+
+test('function-only verification reports source drift and a concurrent deployment', async (t) => {
+  const repo = await fixture(t);
+  const manifest = await createManifest(repo);
+  manifest.dirty = false;
+  let inventoryReads = 0;
+  const read = async (_project, endpoint) => {
+    assert.equal(endpoint, '/functions');
+    inventoryReads += 1;
+    return inventoryReads === 1 ? inventory : [{ ...inventory[0], version: 2 }, inventory[1]];
+  };
+  const download = async (entry, _project, workdir) => {
+    for (const file of Object.keys(manifest.functions[entry.slug].files))
+      await write(
+        workdir,
+        file,
+        file.endsWith('helpers.ts') ? 'export const value = 0;' : await readFile(path.join(repo, file))
+      );
+  };
+  const result = await checkRemoteFunctions(manifest, 'fdrjqcyjklatdrmjdnys', {
+    read,
+    download,
+  });
+  assert.equal(result.passed, false);
+  assert.equal(inventoryReads, 2);
+  assert.ok(result.issues.some((issue) => issue.startsWith('Source drift: one/')));
+  assert.ok(result.issues.includes('Deployment changed during audit; retry on a stable release'));
+});
+
+test('function-only verification rejects a different project before making requests', async (t) => {
+  const repo = await fixture(t);
+  const manifest = await createManifest(repo);
+  await assert.rejects(
+    checkRemoteFunctions(manifest, 'different-project-ref', {
+      read: async () => assert.fail('No remote request should run'),
+      download: async () => assert.fail('No function should download'),
+    }),
+    /baseline belongs to a different project/
+  );
+});
+
+test('shared migration SQL is read once and failed predicate IDs are not repeated', async () => {
+  const requirements = {
+    one: { check: 'war.sql' },
+    two: { check: 'war.sql' },
+    three: { check: 'other.sql' },
+  };
+  const calls = [];
+  const { migrationChecks, issues } = await evaluateMigrationChecks(requirements, async (check) => {
+    calls.push(check);
+    return check === 'war.sql'
+      ? [
+          { id: 'war-source', passed: true },
+          { id: 'war-links', passed: false },
+        ]
+      : [{ id: 'other-field', passed: false }];
+  });
+  assert.deepEqual(calls, ['war.sql', 'other.sql']);
+  assert.deepEqual(migrationChecks.one, migrationChecks.two);
+  assert.deepEqual(issues, [
+    'Required migration effect missing: war.sql/war-links',
+    'Required migration effect missing: other.sql/other-field',
+  ]);
+  const empty = await evaluateMigrationChecks(
+    { one: { check: 'empty.sql' }, two: { check: 'empty.sql' } },
+    async () => []
+  );
+  assert.deepEqual(empty.issues, ['Required migration check returned no predicates: empty.sql']);
+});
+
+test('monster release predicates use one SELECT-only statement', async () => {
+  const sql = await readFile(new URL('../supabase/release/war-of-immortals-monsters.sql', import.meta.url), 'utf8');
+  assert.match(sql, /^with war_monster_expected /);
+  assert.equal(sql.split(';').length, 2);
+  assert.doesNotMatch(sql, /\b(create|insert|update|delete|alter|drop|truncate)\b/i);
+  assert.deepEqual(
+    [...sql.matchAll(/select '(war-monsters-[a-z-]+)' as id/g)].map((match) => match[1]),
+    [
+      'war-monsters-source',
+      'war-monsters-stat-blocks',
+      'war-monsters-kaiju',
+      'war-monsters-mythic-trait',
+      'war-monsters-count',
+      'war-monsters-clean-text',
+    ]
+  );
 });
 
 test('missing and duplicate gateway declarations cannot silently default on next deploy', async (t) => {

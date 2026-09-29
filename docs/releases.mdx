@@ -19,6 +19,7 @@ apply migrations, repair migration history, or delete remote functions.
 npm run test:release
 npm run release:check
 npm run release:manifest -- --output /tmp/wg-release-manifest.json
+npm run release:verify:functions -- --project-ref fdrjqcyjklatdrmjdnys --output /tmp/wg-function-verification.json
 npm run release:verify -- --project-ref fdrjqcyjklatdrmjdnys --output /tmp/wg-release-verification.json
 ```
 
@@ -29,6 +30,10 @@ downloads each cloud function into its own temporary directory, compares all
 runtime source files, reads schema metadata through Supabase's read-only SQL API,
 and removes the temporary downloads. It checks function inventory again afterward
 to reject a snapshot collected during another deployment.
+The function-only check reports deployed source and gateway drift without querying
+the database, so it can run before a pending schema migration. The full check
+evaluates each distinct migration requirement query once and identifies failed
+predicates by check name and predicate ID.
 
 The manifest records the commit, dirty-worktree state, every cloud entry point,
 explicit gateway policy, shared runtime dependencies, declarations, import map,
