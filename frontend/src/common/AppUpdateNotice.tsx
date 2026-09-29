@@ -12,6 +12,7 @@ export function AppUpdateNotice(): null {
     let requestedReload = false;
     let hadController = !!navigator.serviceWorker.controller;
     let lastCheck = 0;
+    let dismissedWorker: ServiceWorker | undefined;
     const workers = new Set<ServiceWorker>();
     const noticeId = 'app-update-available';
 
@@ -26,11 +27,16 @@ export function AppUpdateNotice(): null {
       else window.location.reload();
     };
     const showUpdate = () => {
-      if (disposed) return;
+      const worker = registration?.waiting ?? navigator.serviceWorker.controller ?? undefined;
+      // Dismissing one update does not hide a later service worker update.
+      if (disposed || (worker && worker === dismissedWorker)) return;
       showNotification({
         id: noticeId,
         title: 'An app update is ready',
         autoClose: false,
+        onClose: () => {
+          dismissedWorker = worker;
+        },
         message: (
           <>
             <Text size='sm'>Finish editing before reloading.</Text>

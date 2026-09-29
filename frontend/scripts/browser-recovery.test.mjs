@@ -12,15 +12,18 @@ after(() => rm(directory, { recursive: true, force: true }));
 let cleanup;
 let notice;
 let hidden;
+let shown = 0;
 globalThis.__recovery = {
   effect: (fn) => {
     cleanup = fn();
   },
   show: (value) => {
     notice = value;
+    shown++;
   },
   hide: (id) => {
     hidden = id;
+    notice?.onClose?.();
   },
 };
 const outfile = join(directory, 'recovery.mjs');
@@ -72,6 +75,7 @@ const buttons = (node) =>
       : [node.props?.children].flat().flatMap(buttons);
 
 test('updates activated in another tab never force reload; user reload flushes before activation', async () => {
+  shown = 0;
   const order = [];
   const registration = Object.assign(new EventTarget(), {
     waiting: { postMessage: () => order.push('activate') },
@@ -99,8 +103,20 @@ test('updates activated in another tab never force reload; user reload flushes b
     .props.onClick();
   assert.equal(hidden, 'app-update-available');
   assert.deepEqual(order, []);
+  window.dispatchEvent(new Event('focus'));
+  window.dispatchEvent(new Event('focus'));
+  assert.equal(shown, 1, 'Later suppresses the same waiting update on focus');
+  worker.controller = registration.waiting;
+  registration.waiting = null;
   worker.dispatchEvent(new Event('controllerchange'));
   assert.deepEqual(order, [], 'activation elsewhere cannot discard this tab input');
+  assert.equal(shown, 1, 'activation of the dismissed update does not show it again');
+  registration.waiting = { postMessage: () => order.push('activate') };
+  window.dispatchEvent(new Event('focus'));
+  assert.equal(shown, 2, 'a new waiting update can notify again');
+  notice.onClose();
+  window.dispatchEvent(new Event('focus'));
+  assert.equal(shown, 2, 'closing the notice also suppresses that update');
   buttons(notice.message)
     .find((button) => button.props.children === 'Reload app')
     .props.onClick();
