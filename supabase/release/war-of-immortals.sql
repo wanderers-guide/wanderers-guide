@@ -301,6 +301,21 @@ select 'war-spell-fields',
   and exists (select 1 from public.spell where id = 7267 and name = 'Manifest Will'
     and traits @> array[1899]::bigint[])
 union all
+select 'war-spell-details',
+  exists (select 1 from public.spell where id = 7288 and name = 'Rainbow''s End'
+    and content_source_id = 400 and area = '10-foot emanation'
+    and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/MythicSpells.aspx?ID=2160')
+  and exists (select 1 from public.spell where id = 7293 and name = 'Trickster''s Feathers'
+    and content_source_id = 400 and traits = array[1432,1447,1433,4072]::bigint[]
+    and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/MythicSpells.aspx?ID=2165')
+  and exists (select 1 from public.spell where id = 7311 and name = 'Spellsurge'
+    and content_source_id = 400 and traits = array[1439,1432,4072]::bigint[]
+    and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/MythicSpells.aspx?ID=2150')
+  and exists (select 1 from public.spell where id = 7313 and name = 'Embodied Font'
+    and content_source_id = 400 and cost = 'magic items with a value of at least 2,000 gp'
+    and description like '**Primary Check**%'
+    and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/Rituals.aspx?ID=187')
+union all
 select 'war-masterful-vindication',
   exists (select 1 from public.ability_block
     where id = 43770 and name = 'Masterful Vindication' and type = 'feat'
