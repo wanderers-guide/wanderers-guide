@@ -49,6 +49,7 @@ import {
   UnstyledButton,
   useMantineTheme,
   useMantineColorScheme,
+  VisuallyHidden,
 } from '@mantine/core';
 import { modals, openContextModal } from '@mantine/modals';
 import { CreateItemModal } from '@modals/CreateItemModal';
@@ -80,6 +81,13 @@ export default function InventoryPanel(props: {
   const [_drawer, openDrawer] = useAtom(drawerState);
 
   const [creatingCustomItem, setCreatingCustomItem] = useState(false);
+  const [inventoryAnnouncement, setInventoryAnnouncement] = useState('');
+
+  const addItemToInventory = async (item: Item, isFormula: boolean): Promise<void> => {
+    setInventoryAnnouncement('');
+    await handleAddItem(props.setEntity, item, isFormula);
+    setInventoryAnnouncement(`Added ${item.name} to inventory.`);
+  };
 
   /** Uses one investment update for both ordinary equipment and the eidolon weapon. */
   const onInvestItem = (invItem: InventoryItem): void => {
@@ -209,7 +217,7 @@ export default function InventoryPanel(props: {
                 item: item,
                 onConfirm: async (coins: { cp: number; sp: number; gp: number; pp: number }) => {
                   if (!props.entity) return;
-                  await handleAddItem(props.setEntity, item, false);
+                  await addItemToInventory(item, false);
 
                   // Update coins
                   props.setEntity((prev) => {
@@ -240,7 +248,7 @@ export default function InventoryPanel(props: {
               zIndex: 1000,
             });
           } else {
-            await handleAddItem(props.setEntity, item, type === 'FORMULA');
+            await addItemToInventory(item, type === 'FORMULA');
 
             // Close to fix a bug with currency not updating properly
             setTimeout(() => {
@@ -290,6 +298,9 @@ export default function InventoryPanel(props: {
 
   return (
     <Box h='100%'>
+      <VisuallyHidden role='status' aria-live='polite'>
+        {inventoryAnnouncement}
+      </VisuallyHidden>
       <Stack gap={5}>
         {props.entity?.inventory?.items.some((entry) => canInvestEidolonWeapon(props.id, entry.item)) && (
           <Text size='xs' c='dimmed'>
@@ -499,7 +510,7 @@ export default function InventoryPanel(props: {
         <CreateItemModal
           opened={creatingCustomItem}
           onComplete={async (item) => {
-            handleAddItem(props.setEntity, item, false);
+            await addItemToInventory(item, false);
             setCreatingCustomItem(false);
           }}
           onCancel={() => {

@@ -1,6 +1,4 @@
-import { ItemIcon } from '@common/ItemIcon';
 import { getConditionByName } from '@conditions/condition-handler';
-import { showNotification } from '@mantine/notifications';
 import { InventoryItem, Item, LivingEntity } from '@schemas/content';
 import { StoreID, VariableListStr } from '@schemas/variables';
 import { isCharacter } from '@utils/type-fixing';
@@ -66,12 +64,6 @@ export const handleAddItem = async (
         items: newItems,
       },
     };
-  });
-  showNotification({
-    title: 'Added to Inventory',
-    message: `Added ${item.name}.`,
-    icon: <ItemIcon item={item} size='1.0rem' color='#f8f9fa' useDefaultIcon />,
-    autoClose: 1000,
   });
 };
 
