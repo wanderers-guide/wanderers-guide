@@ -7,6 +7,8 @@ import {
   ContentPackage,
   ContentSource,
   Creature,
+  Inventory,
+  InventoryItem,
   Item,
   LivingEntity,
   OperationCharacterResultPackage,
@@ -64,6 +66,26 @@ import { setEidolonRunesInStore } from '@items/eidolon-runes';
 import { getExecutableModes } from '@common/modes/mode-rules';
 
 let executionQueue: Promise<void> = Promise.resolve();
+
+/** Keep worn and held gear in a container from applying effects while preserving explicitly stowable items. */
+function getItemsEligibleForOperations(inventory: Inventory | null | undefined): InventoryItem[] {
+  if (!inventory) return [];
+
+  const topLevelIds = new Set(inventory.items.map((entry) => entry.id));
+  return getFlatInvItems(inventory).filter((entry) => {
+    if (topLevelIds.has(entry.id)) return true;
+
+    const usage = entry.item.usage?.trim().toLowerCase() ?? '';
+    if (/\bstowed\b/.test(usage)) return true;
+
+    const requiresWearingOrHolding =
+      isItemEquippable(entry.item) ||
+      /^(worn|held(?:\s+in|-in))/.test(usage) ||
+      // Saved Final Scalecloak copies can retain the old usage typo.
+      (entry.item.id === 16929 && entry.item.content_source_id === 400 && usage === 'work cloak');
+    return !requiresWearingOrHolding;
+  });
+}
 
 /** Keep the module's variable, selection and deferred-operation context exclusive. */
 function withOperationStore<T>(execute: () => Promise<T>): Promise<T> {
@@ -953,7 +975,7 @@ async function executeCharacterOperations(
     }
 
     let itemResults: { baseSource: Item; baseResults: OperationResult[] }[] = [];
-    for (const invItem of character.inventory ? getFlatInvItems(character.inventory) : []) {
+    for (const invItem of getItemsEligibleForOperations(character.inventory)) {
       // If item can be invested, only run operations if it is
       if (isItemInvestable(invItem.item) && !invItem.is_invested) {
         continue;
@@ -1176,7 +1198,7 @@ async function executeCreatureOperations(
     }
 
     let itemResults: { baseSource: Item; baseResults: OperationResult[] }[] = [];
-    for (const invItem of creature.inventory ? getFlatInvItems(creature.inventory) : []) {
+    for (const invItem of getItemsEligibleForOperations(creature.inventory)) {
       // If item can be invested, only run operations if it is
       if (isItemInvestable(invItem.item) && !invItem.is_invested) {
         continue;
