@@ -99,6 +99,34 @@ select 'war-archetype-choices',
       and op #>> '{data,optionsFilters,level,max}' = '{{LEVEL/2}}'
       and op::jsonb #> '{data,optionsFilters,excludedTraits}' is null)
 union all
+select 'war-archetype-proficiencies',
+  (select count(*) = 2 from public.ability_block a, unnest(a.operations) op
+    where a.id = 39021 and a.content_source_id = 400
+      and ((op->>'id' = '06815cbe-d9e0-4cad-ae94-c44dc6f7623e'
+          and op #>> '{data,variable}' = 'SPELL_ATTACK')
+        or (op->>'id' = '202d6a68-5900-4f7a-8e21-090947f634a4'
+          and op #>> '{data,variable}' = 'SPELL_DC'))
+      and op #>> '{data,value,value}' = 'T')
+  and exists (select 1 from public.ability_block a, unnest(a.operations) op
+    where a.id = 39022 and a.content_source_id = 400
+      and op->>'id' = 'd411e382-85fb-491d-9c2a-76cd68f17b3a'
+      and op #>> '{data,variable}' = 'MARTIAL_WEAPONS'
+      and op #>> '{data,value,value}' = 'T')
+  and exists (select 1 from public.ability_block a
+    where a.id = 39206 and a.content_source_id = 400
+      and cardinality(a.operations) = 1
+      and a.operations[1]->>'id' = '09844148-da84-45f6-9e96-6777501ebc53'
+      and a.operations[1] #>> '{data,conditions,0,value}' = 'exemplar resiliency'
+      and a.operations[1] #>> '{data,conditions,1,value}' = '8'
+      and a.operations[1] #>> '{data,trueOperations,0,data,value}' = '3')
+  and (select count(*) = 2 from public.ability_block a, unnest(a.operations) op
+    where a.id = 39213 and a.content_source_id = 400
+      and ((op->>'id' = 'd90cc16a-9da0-4d1e-94c9-62ba6b9735f6'
+          and op #>> '{data,variable}' = 'SPELL_ATTACK')
+        or (op->>'id' = 'c7ecb9c2-394c-4e12-b736-ac59f680de0b'
+          and op #>> '{data,variable}' = 'SPELL_DC'))
+      and op #>> '{data,value,value}' = 'M')
+union all
 select 'war-vindicator',
   exists (select 1 from public.class_archetype c, unnest(c.operations) op
     where c.id = 30 and op->>'id' = 'c4a75d49-19e5-4983-8757-d5caf473627b'
