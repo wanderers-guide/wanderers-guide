@@ -31,6 +31,7 @@ import { phoneQuery } from '@utils/mobile-responsive';
 import { getEntityLevel } from '@utils/entity-utils';
 import { compiledConditions } from '@conditions/condition-handler';
 import { StoreID } from '@schemas/variables';
+import { getInnateStatBlockGroups } from '@spells/innate-stat-block';
 
 export default function StatBlockSection(props: {
   storeId?: StoreID;
@@ -104,7 +105,31 @@ export default function StatBlockSection(props: {
     return <LoadingOverlay visible />;
   }
 
-  //
+  const statBlock = isCreature(entity) ? entity.meta_data?.stat_block : undefined;
+  const visibleInventory = data.inventory_flat.filter((item) => item.item.meta_data?.unselectable !== true);
+  const sourceSenses = statBlock?.listed_senses
+    ?.map((name) => {
+      const sense = [...data.senses.precise, ...data.senses.imprecise, ...data.senses.vague].find(
+        (value) => value.senseName.toLowerCase() === name.toLowerCase()
+      );
+      if (!sense) return name;
+      const acuity = sense.type === 'imprecise' ? ' (imprecise)' : '';
+      const range = sense.range.trim() ? ` ${sense.range.trim()} feet` : '';
+      return `${linkContent(sense.senseName.toLowerCase(), 'sense', sense.sense)}${acuity}${range}`;
+    })
+    .join(', ');
+  const perceptionDetails = statBlock?.listed_senses
+    ? [sourceSenses, statBlock.perception_note].filter(isTruthy).join(', ')
+    : [stringifySenses(data.senses), statBlock?.perception_note].filter(isTruthy).join('; ');
+  const languagesDetails = [data.languages.map((language) => toLabel(language)).join(', '), statBlock?.languages_note]
+    .filter(isTruthy)
+    .join('; ');
+  const skillNames = Object.keys(data.proficiencies).filter(
+    (name) =>
+      name.startsWith('SKILL_') &&
+      name !== 'SKILL_LORE____' &&
+      (!statBlock?.listed_skills || statBlock.listed_skills.includes(name))
+  );
 
   const ATTR = Object.keys(data.attributes).map((l) => (
     <Text fz='xs' span>
@@ -141,10 +166,19 @@ export default function StatBlockSection(props: {
     );
   };
 
-  const getResistWeaksDisplay = (rw: { resists: string[]; weaks: string[]; immunes: string[] }) => {
+  const getResistWeaksDisplay = (
+    rw: { resists: string[]; weaks: string[]; immunes: string[] },
+    notes?: { immunities_note?: string; resistances_note?: string }
+  ) => {
+    const immunes = notes?.immunities_note
+      ? [...rw.immunes, notes.immunities_note].sort((a, b) => a.localeCompare(b))
+      : rw.immunes;
+    const resists = notes?.resistances_note
+      ? [...rw.resists, notes.resistances_note].sort((a, b) => a.localeCompare(b))
+      : rw.resists;
     const str = [
-      rw.immunes.length > 0 ? `**Immunities** ${rw.immunes.join(', ').toLowerCase()}` : undefined,
-      rw.resists.length > 0 ? `**Resistances** ${rw.resists.join(', ').toLowerCase()}` : undefined,
+      immunes.length > 0 ? `**Immunities** ${immunes.join(', ').toLowerCase()}` : undefined,
+      resists.length > 0 ? `**Resistances** ${resists.join(', ').toLowerCase()}` : undefined,
       rw.weaks.length > 0 ? `**Weaknesses** ${rw.weaks.join(', ').toLowerCase()}` : undefined,
     ]
       .filter(isTruthy)
@@ -202,6 +236,7 @@ export default function StatBlockSection(props: {
       .map((id) => data.all_traits.find((t) => id === t.id))
       .filter(isTruthy)
       .map((t) => linkContent(t.name.toLowerCase(), 'trait', t));
+    traits.push(...(weapon.item.meta_data?.display_traits ?? []));
 
     // Add range and reload to be displayed with traits
     if (isItemRangedWeapon(weapon.item)) {
@@ -237,22 +272,29 @@ export default function StatBlockSection(props: {
 
     const spellsDict = groupBy(data.innate_spells, (s) => s.tradition);
     return Object.entries(spellsDict).map(([tradition, spells]) => {
-      const spellsRankDict = groupBy(spells, (s) => s.rank);
+      const groups = getInnateStatBlockGroups(spells, getEntityLevel(entity), statBlock?.innate_spell_frequencies);
 
       return (
         <RichText ta='justify' fz='xs' span>
-          **{toLabel(tradition)} Innate Spells** DC {spellDc}, attack {sign(spellAttack)};{' '}
-          {Object.entries(spellsRankDict)
-            .sort(([ar, as], [br, bs]) => {
-              return parseInt(br) - parseInt(ar);
-            })
+          **{toLabel(tradition)} Innate Spells** DC {spellDc}
+          {statBlock?.omit_innate_attack ? '' : `, attack ${sign(spellAttack)}`};{' '}
+          {groups
             .map(
-              ([rank, spells]) =>
-                `**${rankNumber(parseInt(rank), `Cantrips (${rankNumber(Math.ceil(getEntityLevel(entity) / 2))})`)}** ${spells
+              ({ kind, rank, spells }) =>
+                `**${kind === 'cantrip' ? `Cantrips (${rankNumber(rank)})` : kind === 'constant' ? `Constant (${rankNumber(rank)})` : rankNumber(rank)}** ${spells
                   .map((s) => {
                     const spellLink = linkContent(s.spell.name.toLowerCase(), 'spell', s.spell);
+                    const frequency = statBlock?.innate_spell_frequencies?.[`${s.rank}:${s.spell.name.toLowerCase()}`];
+                    if (frequency === 'AT-WILL') {
+                      return `${spellLink} (at will)`;
+                    }
+                    if (frequency === 'CONSTANT') {
+                      return spellLink;
+                    }
                     if (s.casts_max > 1) {
-                      return `${spellLink} (${s.casts_current}/${s.casts_max})`;
+                      return statBlock
+                        ? `${spellLink} (×${s.casts_max})`
+                        : `${spellLink} (${s.casts_current}/${s.casts_max})`;
                     } else {
                       return spellLink;
                     }
@@ -433,6 +475,7 @@ export default function StatBlockSection(props: {
             justify='flex-start'
             size='sm'
             traitIds={data.character_traits.map((trait) => trait.id)}
+            displayNames={statBlock?.trait_labels}
             rarity={isCreature(entity) ? entity.rarity : undefined}
             pfSize={convertToSize(data.size)}
             interactable
@@ -456,16 +499,17 @@ export default function StatBlockSection(props: {
           Perception
         </Text>{' '}
         <RichText ta='justify' fz='xs' span>
-          {data.proficiencies['PERCEPTION'].total}; {stringifySenses(data.senses)}
+          {data.proficiencies['PERCEPTION'].total}
+          {perceptionDetails ? `; ${perceptionDetails}` : ''}
         </RichText>
       </IndentedText>
-      {data.languages.length > 0 && (
+      {languagesDetails && (
         <IndentedText ta='justify' fz='xs' pr={IMAGE_SIZE} span>
           <Text fz='xs' fw={600} c='gray.4' span>
             Languages
           </Text>{' '}
           <RichText ta='justify' fz='xs' span>
-            {data.languages.map((l) => toLabel(l)).join(', ')}
+            {languagesDetails}
           </RichText>
         </IndentedText>
       )}
@@ -474,26 +518,26 @@ export default function StatBlockSection(props: {
           Skills
         </Text>{' '}
         <RichText ta='justify' fz='xs' span>
-          {Object.keys(data.proficiencies)
-            .filter((name) => name.startsWith('SKILL_') && name !== 'SKILL_LORE____')
-            //.sort((a, b) => data.proficiencies[b].total - data.proficiencies[a].total)
-            .map((l) => `${toLabel(l)} ${data.proficiencies[l].total}`)
-            .join(', ')}
+          {skillNames.map((name) => `${toLabel(name)} ${data.proficiencies[name].total}`).join(', ')}
+          {statBlock?.skills_note ? `; ${statBlock.skills_note}` : ''}
         </RichText>
       </IndentedText>
       <IndentedText ta='justify' fz='xs' span>
         {ATTR.flatMap((node, index) => (index < ATTR.length - 1 ? [node, ', '] : [node]))}
       </IndentedText>
-      {data.inventory_flat.filter((i) => i.item.meta_data?.unselectable !== true).length > 0 && (
+      {(visibleInventory.length > 0 || statBlock?.items_note) && (
         <IndentedText ta='justify' fz='xs' span>
           <Text fz='xs' fw={600} c='gray.4' span>
             Items
           </Text>{' '}
           <RichText ta='justify' fz='xs' span>
-            {data.inventory_flat
-              .filter((i) => i.item.meta_data?.unselectable !== true)
+            {visibleInventory
               .map((i) => {
-                const nameStr = linkContent(i.item.name.toLowerCase(), 'item', i.item);
+                const nameStr = linkContent(
+                  i.item.meta_data?.inventory_label ?? i.item.name.toLowerCase(),
+                  'item',
+                  i.item
+                );
                 if (i.item.meta_data?.quantity && i.item.meta_data?.quantity > 1) {
                   return `${nameStr} (${i.item.meta_data?.quantity})`;
                 } else {
@@ -501,6 +545,7 @@ export default function StatBlockSection(props: {
                 }
               })
               .join(', ')}
+            {statBlock?.items_note ? `${visibleInventory.length > 0 ? '; ' : ''}${statBlock.items_note}` : ''}
           </RichText>
         </IndentedText>
       )}
@@ -531,12 +576,18 @@ export default function StatBlockSection(props: {
         <Text ta='justify' fz='xs' span>
           {data.proficiencies['SAVE_WILL'].total}
         </Text>
+        {statBlock?.defenses_note && (
+          <RichText ta='justify' fz='xs' span>
+            {`; ${statBlock.defenses_note}`}
+          </RichText>
+        )}
       </IndentedText>
       {!props.options?.hideHealth && (
         <RichText ta='justify' fz='xs' span>
           **HP** {entity.hp_current ?? data.max_hp} / {data.max_hp}
           {entity.hp_temp ? ` (${entity.hp_temp} temp)` : ''}
-          {getResistWeaksDisplay(data.resist_weaks)}
+          {statBlock?.hp_note ? `; ${statBlock.hp_note}` : ''}
+          {getResistWeaksDisplay(data.resist_weaks, statBlock)}
         </RichText>
       )}
       {entity.details?.conditions && entity.details.conditions.length > 0 && (

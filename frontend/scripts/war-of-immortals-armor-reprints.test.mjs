@@ -2,9 +2,11 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import { uniqueId } from '../../supabase/functions/_shared/upload-utils.ts';
+import uploadUtils from '../../supabase/functions/_shared/upload-utils.ts';
 import { readContentRows } from './operation-test-harness.mjs';
 import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
+
+const { uniqueId } = uploadUtils;
 
 const migration = await readFile(
   new URL('../../supabase/migrations/20260928000000_war_of_immortals_armor_reprints.sql', import.meta.url),
@@ -91,7 +93,7 @@ test('armor insert rejects drift and pending edits, and does not modify saved it
   assert.match(migration, /data->>'name' in \(select name from pg_temp\.war_armor_reprint_spec\)/);
   assert.match(migration, /insert into public\.item/);
   assert.doesNotMatch(migration, /update public\.(item|character|creature)/);
-  assert.match(index, /count\(\*\) = 461 from war_index_expected/);
+  assert.match(index, /count\(\*\) = 472 from war_index_expected/);
   assert.doesNotMatch(index, /war-index-tv-armor-exceptions/);
   assert.match(release, /select 'war-armor-reprints'/);
   assert.match(release, /md5\(actual\.description\) is distinct from expected\.description_md5/);

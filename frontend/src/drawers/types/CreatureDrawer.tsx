@@ -1,5 +1,6 @@
 import { creatureDrawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
+import RichText from '@common/RichText';
 import { glassStyle } from '@utils/colors';
 import { DisplayIcon } from '@common/IconDisplay';
 import StatBlockSection from '@common/StatBlockSection';
@@ -747,6 +748,20 @@ function RecallKnowledgeSection(props: { entity: Creature; traits: Trait[] }) {
 }
 
 export function RecallKnowledgeText(props: { entity: Creature; traits: Trait[] }) {
+  const sourceText = props.entity.meta_data?.stat_block?.recall_knowledge;
+  if (sourceText) {
+    return (
+      <Text fz='xs' span>
+        <Text fz='xs' fw={600} c='gray.4' span>
+          Recall Knowledge
+        </Text>{' '}
+        <RichText fz='xs' span>
+          {sourceText}
+        </RichText>
+      </Text>
+    );
+  }
+
   const traits = findCreatureTraits(props.entity)
     .map((id) => props.traits.find((t) => t.id === id))
     .filter(isTruthy);
