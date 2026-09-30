@@ -101,17 +101,40 @@ test('legacy empty proficiency thresholds match the editor’s displayed Untrain
   }
 });
 
-test('Draconic Acolyte’s published check calculates once Dragon Lore exists', async () => {
+test('Draconic Acolyte’s published check handles existing Dragon Lore without relying on operation order', async () => {
   const [{ row: dedication }] = await readContentRows([{ table: 'ability_block', id: 51259 }]);
-  const check = dedication.operations[0];
-  assert.equal(check.data.conditions[0].name, 'SKILL_LORE_DRAGON');
+  assert.equal(dedication.name, 'Draconic Acolyte Dedication');
+  assert.equal(dedication.content_source_id, 730);
+  const checks = dedication.operations.filter(
+    (operation) =>
+      operation.type === 'conditional' && operation.data.conditions.some(({ name }) => name === 'SKILL_LORE_DRAGON')
+  );
+  assert.equal(checks.length, 1, 'the published feat has one Dragon Lore proficiency check');
+  const [check] = checks;
+  assert.deepEqual(
+    check.data.conditions.map(({ name, type, operator, value }) => ({ name, type, operator, value })),
+    [{ name: 'SKILL_LORE_DRAGON', type: 'prof', operator: 'GREATER_THAN', value: '' }]
+  );
+  assert.equal(check.data.trueOperations.length, 1);
+  assert.equal(check.data.trueOperations[0].type, 'select');
+  assert.equal(check.data.trueOperations[0].data.title, 'Select a Lore');
+  assert.equal(check.data.trueOperations[0].data.optionsFilters.group, 'ADD-LORE');
+  assert.equal(check.data.falseOperations.length, 1);
+  assert.equal(check.data.falseOperations[0].type, 'adjValue');
+  assert.deepEqual(check.data.falseOperations[0].data, { variable: 'SKILL_LORE_DRAGON', value: { value: 'T' } });
+  const saved = structuredClone(dedication);
   // Keep the real published conditional, including its legacy empty threshold.
-  const packet = await calculate([
-    op('dragon-lore', 'createValue', { variable: 'SKILL_LORE_DRAGON', type: 'prof', value: { value: 'T' } }),
-    check,
-  ]);
-  assert.deepEqual(packet.errors, []);
-  assert.match(JSON.stringify(packet.ors), /Select a Lore/);
+  for (const rank of ['U', 'T', 'E']) {
+    const packet = await calculate([
+      op('dragon-lore', 'createValue', { variable: 'SKILL_LORE_DRAGON', type: 'prof', value: { value: rank } }),
+      check,
+    ]);
+    assert.deepEqual(packet.errors, []);
+    assert.equal(packet.store.variables.SKILL_LORE_DRAGON.value.value, rank === 'U' ? 'T' : rank);
+    if (rank === 'U') assert.doesNotMatch(JSON.stringify(packet.ors), /Select a Lore/);
+    else assert.match(JSON.stringify(packet.ors), /Select a Lore/);
+  }
+  assert.deepEqual(dedication, saved, 'calculation leaves authored operations unchanged');
 });
 
 test('an unrecognized proficiency threshold still rejects instead of inventing a rank', async () => {
