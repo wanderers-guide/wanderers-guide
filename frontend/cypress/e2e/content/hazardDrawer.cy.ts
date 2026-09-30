@@ -44,6 +44,14 @@ const referenceNames = [
   'unholy',
 ];
 
+const hazards = [
+  { name: 'Boneburst', link: 'Fly', target: 'Fly' },
+  { name: "Lightning's Dance", link: 'Strike', target: 'Strike' },
+  { name: 'Primal Chaos Aura', link: 'gust of wind', target: 'Gust of Wind' },
+  { name: 'Trump of the Oliphaunt', link: 'sonic', target: 'Sonic' },
+  { name: 'Wind Surge', link: 'Air', target: 'Air' },
+];
+
 function assertNoHorizontalOverflow() {
   cy.document().then((doc) => {
     expect(doc.documentElement.scrollWidth, 'page width').to.be.at.most(doc.documentElement.clientWidth);
@@ -109,7 +117,7 @@ describe('Official hazard drawer', () => {
     ['desktop', 1280, 720],
     ['mobile', 390, 740],
   ] as const) {
-    for (const name of ['Boneburst', 'Primal Chaos Aura']) {
+    for (const { name, link, target } of hazards) {
       it(`renders ${name} and its reference navigation on ${screen}`, () => {
         const hazard = fixtures.find((fixture) => fixture.table === 'creature' && fixture.row.name === name)!.row;
         const details = hazard.details;
@@ -119,19 +127,78 @@ describe('Official hazard drawer', () => {
         cy.wait('@hazardRead');
         cy.get('html').should('have.attr', 'data-mantine-color-scheme', 'dark');
         cy.get('.mantine-Drawer-content').should('have.length', 1).and('be.visible');
+        cy.get('.mantine-Drawer-content')
+          .contains('.mantine-Badge-label', new RegExp(`^${hazard.rarity}$`, 'i'), { timeout: 30000 })
+          .should('exist');
+        cy.get('.mantine-Drawer-content').then(($content) => {
+          const header = $content[0].querySelector('.mantine-Drawer-header')!;
+          const body = $content[0].querySelector('.mantine-Drawer-body')!;
+          const level = [...header.querySelectorAll('p')].find(
+            (element) => element.textContent === `Hazard ${hazard.level}`
+          )!;
+          const rarity = [...body.querySelectorAll('.mantine-Badge-label')].find(
+            (element) => element.textContent?.toUpperCase() === hazard.rarity
+          )!;
+          const shrink = header.ownerDocument.defaultView!.getComputedStyle(header).flexShrink;
+          cy.writeFile(
+            `cypress/screenshots/hazardDrawer.cy.ts/${screenshotName}-header-${shrink === '0' ? 'fixed' : 'before'}.json`,
+            {
+              viewport: { width, height },
+              header: header.getBoundingClientRect().toJSON(),
+              body: body.getBoundingClientRect().toJSON(),
+              level: level.getBoundingClientRect().toJSON(),
+              rarity: rarity.getBoundingClientRect().toJSON(),
+              headerFlexShrink: shrink,
+            },
+            { log: false }
+          );
+        });
+        cy.get('.mantine-Drawer-content', { timeout: 30000 }).should(($content) => {
+          const level = [...$content[0].querySelectorAll('.mantine-Drawer-header p')].find(
+            (element) => element.textContent === `Hazard ${hazard.level}`
+          );
+          const rarity = [...$content[0].querySelectorAll('.mantine-Badge-label')].find(
+            (element) => element.textContent?.toUpperCase() === hazard.rarity
+          );
+          expect(level, 'hazard level').to.exist;
+          expect(rarity, 'rarity badge').to.exist;
+          expect(rarity!.getBoundingClientRect().top, 'rarity starts below hazard level').to.be.at.least(
+            level!.getBoundingClientRect().bottom - 1
+          );
+        });
         cy.get('.mantine-Drawer-content').within(() => {
           cy.contains('h3', name).should('be.visible');
           cy.contains(`Hazard ${hazard.level}`).should('be.visible');
-          cy.contains('Rare', { timeout: 30000 }).should('be.visible');
-          cy.contains('Complex').should('be.visible');
-          cy.contains('Magical').should('be.visible');
+          cy.get('.mantine-Badge-label', { timeout: 30000 })
+            .contains(new RegExp(`^${hazard.rarity}$`, 'i'))
+            .should('be.visible');
+          cy.get('.mantine-Badge-label')
+            .contains(new RegExp(`^${details.complexity}$`, 'i'))
+            .should('be.visible');
+          const traitNames = details.trait_ids.map(
+            (id: number) => fixtures.find((fixture) => fixture.table === 'trait' && fixture.row.id === id)!.row.name
+          );
+          for (const traitName of [...traitNames, ...details.trait_labels]) {
+            cy.get('.mantine-Badge-label')
+              .contains(new RegExp(`^${traitName}$`, 'i'))
+              .should('be.visible');
+          }
           cy.contains('Stealth').should('be.visible');
+          cy.contains(details.description).should('exist');
+          cy.contains(details.disable).should('exist');
           cy.contains('Disable').should('exist');
           cy.contains(details.activation.name).should('exist');
           cy.contains('Trigger').should('exist');
           cy.contains('Effect').should('exist');
-          cy.contains(`Routine (${details.routine.actions} actions)`).should('exist');
-          cy.contains('Reset').should('exist');
+          if (details.routine) {
+            cy.contains(
+              `Routine (${details.routine.actions} ${details.routine.actions === 1 ? 'action' : 'actions'})`
+            ).should('exist');
+          } else {
+            cy.contains(/^Routine \(/).should('not.exist');
+          }
+          if (details.reset) cy.contains('Reset').should('exist');
+          else cy.contains(/^Reset$/).should('not.exist');
           cy.get('input, textarea, [contenteditable="true"]').should('not.exist');
           cy.contains('button', /edit creature|save creature/i).should('not.exist');
           cy.contains('Perception').should('not.exist');
@@ -165,8 +232,16 @@ describe('Official hazard drawer', () => {
             .should('have.length', 2)
             .and('not.have.attr', 'href');
         }
+        if (name === "Lightning's Dance") {
+          cy.get('.mantine-Drawer-content a')
+            .filter((_, element) => /^(Strike|Strikes)$/.test(element.textContent ?? ''))
+            .should('have.length', 2)
+            .and('not.have.attr', 'href');
+          cy.get('abbr.action-symbol').should('have.text', '1');
+        }
         cy.get('.mantine-Drawer-content .mantine-ScrollArea-viewport').scrollTo('bottom');
-        cy.get('.mantine-Drawer-content').contains('Reset').should('be.visible');
+        cy.get('.mantine-Drawer-content .mantine-ScrollArea-viewport').find('p').last().should('be.visible');
+        if (details.reset) cy.get('.mantine-Drawer-content').contains('Reset').should('be.visible');
         cy.get('.mantine-Drawer-header').should(($header) => {
           expect(
             $header[0].getBoundingClientRect().top,
@@ -176,16 +251,15 @@ describe('Official hazard drawer', () => {
         assertNoHorizontalOverflow();
         cy.screenshot(`${screenshotName}-routine`, { capture: 'viewport' });
 
-        const linkName = name === 'Boneburst' ? 'Fly' : 'gust of wind';
-        const targetTitle = name === 'Boneburst' ? 'Fly' : 'Gust of Wind';
         cy.get('.mantine-Drawer-content')
-          .contains('a', new RegExp(`^${linkName}$`, 'i'))
+          .contains('a', new RegExp(`^${link}$`, 'i'))
           .scrollIntoView()
           .click();
-        cy.get('.mantine-Drawer-content').contains('h3', targetTitle).should('be.visible');
+        cy.get('.mantine-Drawer-content').contains('h3', target).should('be.visible');
         cy.get('button[aria-label="Go back to previous drawer"]').should('be.visible').click();
         cy.get('.mantine-Drawer-content').contains('h3', name).should('be.visible');
-        cy.get('.mantine-Drawer-content').contains('Reset').scrollIntoView().should('be.visible');
+        cy.get('.mantine-Drawer-content .mantine-ScrollArea-viewport').scrollTo('bottom');
+        cy.get('.mantine-Drawer-content .mantine-ScrollArea-viewport').find('p').last().should('be.visible');
         assertNoHorizontalOverflow();
         cy.get('button[aria-label="Close drawer"]').click();
         cy.get('.mantine-Drawer-content').should('not.exist');
