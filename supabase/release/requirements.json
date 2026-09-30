@@ -191,5 +191,9 @@
   "20260929110000_war_of_immortals_shift_frequency.sql": {
     "check": "war-of-immortals.sql",
     "order": "before-functions"
+  },
+  "20260930030000_war_of_immortals_spell_reference_links.sql": {
+    "check": "war-of-immortals-spell-reference-links.sql",
+    "order": "before-functions"
   }
 }
