@@ -195,5 +195,9 @@
   "20260929120000_war_of_immortals_rune_activation_labels.sql": {
     "check": "war-of-immortals-rune-activation-labels.sql",
     "order": "before-functions"
+  },
+  "20260930010000_war_of_immortals_item_traits.sql": {
+    "check": "war-of-immortals-item-traits.sql",
+    "order": "before-functions"
   }
 }
