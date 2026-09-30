@@ -191,5 +191,9 @@
   "20260929110000_war_of_immortals_shift_frequency.sql": {
     "check": "war-of-immortals.sql",
     "order": "before-functions"
+  },
+  "20260930020000_war_of_immortals_bloodrager_progression.sql": {
+    "check": "war-of-immortals-bloodrager.sql",
+    "order": "before-functions"
   }
 }
