@@ -191,5 +191,9 @@
   "20260929110000_war_of_immortals_shift_frequency.sql": {
     "check": "war-of-immortals.sql",
     "order": "before-functions"
+  },
+  "20260930010000_war_of_immortals_item_traits.sql": {
+    "check": "war-of-immortals-item-traits.sql",
+    "order": "before-functions"
   }
 }

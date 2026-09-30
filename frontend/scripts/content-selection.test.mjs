@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
+import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(`${root}/package.json`);
 const { build } = require('esbuild');
@@ -84,6 +85,7 @@ const special = {
   filterByTraitType: '() => []',
   hashData: 'value => JSON.stringify(value)',
   toLabel: 'value => String(value)',
+  labelToVariable: 'value => globalThis.__selectionLabels(value)',
   Accordion: 'Object.assign(() => {}, {Item:"Accordion.Item",Control:"Accordion.Control",Panel:"Accordion.Panel"})',
 };
 const imports = new Map();
@@ -327,4 +329,93 @@ test('late innate spell data respects an active search and never replaces source
   const enabled = { ...spellPanelProps, content: { spells: [charm, enabledTree] } };
   assert.deepEqual(findChild(host.render(SpellsPanel, enabled), 'SpellList').props.allSpells, [enabledTree]);
   assert.equal(host.queryOptions.enabled, false);
+});
+
+test('War item selections retain intrinsic traits with the parent book disabled and preserve saved copies', async (t) => {
+  const migration = await readFile(
+    new URL('../../supabase/migrations/20260930010000_war_of_immortals_item_traits.sql', import.meta.url),
+    'utf8'
+  );
+  const patches = JSON.parse(migration.split('$patches$')[1]);
+  assert.deepEqual(
+    patches.map(({ id, before, after }) => ({ id, before, after })),
+    [
+      { id: 17481, before: [1504, 4072], after: [1504, 4072, 1706, 1537] },
+      { id: 17480, before: [], after: [1533] },
+    ]
+  );
+  const fixtures = await readContentRows([
+    ...[17481, 17480, 16297].map((id) => ({ table: 'item', id })),
+    ...[1504, 4072, 1706, 1537, 1533].map((id) => ({ table: 'trait', id })),
+  ]);
+  const originals = structuredClone(fixtures);
+  const engine = await createOperationEngine();
+  t.after(() => engine.cleanup());
+  engine.setFixtures(fixtures);
+  globalThis.__selectionLabels = engine.labelToVariable;
+  t.after(() => delete globalThis.__selectionLabels);
+  const ogreHook = fixtures.find(({ table, row }) => table === 'item' && row.id === 16297).row;
+  assert.equal(ogreHook.content_source_id, 318);
+  assert.deepEqual(ogreHook.traits, [1706, 1537]);
+
+  for (const patch of patches) {
+    const original = fixtures.find(({ table, row }) => table === 'item' && row.id === patch.id).row;
+    assert.equal(original.name, patch.name);
+    assert.equal(original.content_source_id, 400);
+    assert.equal(original.meta_data.source.url, patch.url);
+    assert.ok(
+      JSON.stringify(original.traits) === JSON.stringify(patch.before) ||
+        JSON.stringify(original.traits) === JSON.stringify(patch.after),
+      `${patch.name} must be the reviewed before or after state`
+    );
+    const corrected = { ...structuredClone(original), traits: [...patch.after] };
+    assert.deepEqual({ ...corrected, traits: original.traits }, original);
+    const saved = { ...structuredClone(original), traits: [...patch.before] };
+    delete saved.meta_data.base_item_content;
+    const savedEntry = {
+      id: `saved-${original.id}`,
+      item: saved,
+      is_formula: false,
+      is_equipped: true,
+      is_invested: false,
+      container_contents: [],
+    };
+    const beforeSaved = structuredClone(savedEntry);
+
+    for (const enableMonsterCore of [false, true]) {
+      const host = new RenderHost();
+      host.data = [corrected, ...(enableMonsterCore ? [ogreHook] : [])];
+      let selected;
+      const props = {
+        context: { closeModal() {} },
+        id: 'items',
+        innerProps: { onAddItem: (item) => (selected = item) },
+      };
+      const tree = host.render(AddItemsModal, props);
+      if (enableMonsterCore) {
+        findChild(tree, AdvancedSearchModal).props.onSelect(corrected);
+      } else {
+        findChild(tree, 'ItemsList').props.onClick(corrected, 'GIVE');
+      }
+      assert.ok(selected);
+      assert.equal(
+        selected.meta_data.base_item_content?.id,
+        patch.id === 17481 && enableMonsterCore ? ogreHook.id : undefined
+      );
+      assert.deepEqual(engine.compileTraits(selected), patch.after);
+      assert.equal(new Set(engine.compileTraits(selected)).size, patch.after.length);
+      let entity = { id: 1, inventory: { items: [savedEntry], coins: { gp: 0 } } };
+      await engine.handleAddItem((update) => (entity = update(entity)), selected, false);
+      assert.deepEqual(
+        entity.inventory.items.find(({ id }) => id === savedEntry.id),
+        beforeSaved
+      );
+      const added = entity.inventory.items.find(({ id }) => id !== savedEntry.id).item;
+      assert.deepEqual(engine.compileTraits(added), patch.after);
+      assert.deepEqual(savedEntry, beforeSaved, 'the old saved item is never repaired implicitly');
+    }
+  }
+  assert.deepEqual(fixtures, originals, 'catalog selection never rewrites the original rows');
+  assert.match(migration, /to_jsonb\(entry\.traits\) is distinct from patch->'before'/);
+  assert.match(migration, /type = 'item' and ref_id = entry\.id and status->>'state' = 'PENDING'/);
 });
