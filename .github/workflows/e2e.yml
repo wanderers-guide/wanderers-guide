@@ -127,6 +127,7 @@ jobs:
           for migration in supabase/migrations/20260929*.sql; do
             docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"
           done
+          verify_war
           verify_index
           verify_hazards
           verify_monsters

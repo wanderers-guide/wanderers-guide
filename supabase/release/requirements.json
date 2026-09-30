@@ -176,6 +176,10 @@
     "check": "war-of-immortals.sql",
     "order": "before-functions"
   },
+  "20260929070001_war_of_immortals_worldforge_preservation.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
+  },
   "20260929080000_war_of_immortals_holy_rune.sql": {
     "check": "war-of-immortals.sql",
     "order": "before-functions"
