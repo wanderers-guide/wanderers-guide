@@ -1,6 +1,8 @@
 /** Node-only, localhost-only integration fixtures. No service credential enters the browser. */
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';
+import assert from 'node:assert/strict';
+import type { Hazard } from '../../src/schemas/content';
 
 type Fixture = {
   key: string;
@@ -150,6 +152,44 @@ export function registerCampaignFixtures(on: Cypress.PluginEvents, config: Cypre
         await cleanup(fixture);
         throw error;
       }
+    },
+    async 'campaignFixture:hazardRoundTrip'({ key, hazards }: { key: string; hazards: Hazard[] }) {
+      const fixture = fixtureFor(key);
+      assert.equal(hazards.length, 5);
+      assert.ok(hazards.every((hazard) => hazard.type === 'hazard' && hazard.content_source_id === 400));
+      const readEncounter = async () => {
+        const rows = await call(fixture.gm!.token, 'find-encounter', { id: fixture.encounterId });
+        assert.equal(rows.length, 1);
+        assert.equal(rows[0].user_id, fixture.users[0].id);
+        return rows[0];
+      };
+      const original = await readEncounter();
+      const snapshots = [...hazards, hazards.find((hazard) => hazard.name === 'Boneburst')!];
+      const instances = snapshots.map((hazard, index) => ({
+        _id: randomUUID(),
+        type: 'HAZARD',
+        ally: false,
+        hazard,
+        ...(hazard.details.complexity === 'COMPLEX' ? { initiative: 21 + index } : {}),
+        hazard_state: {
+          ...(hazard.details.defenses?.hp === undefined
+            ? {}
+            : { hp_current: index === 0 ? 45 : hazard.details.defenses.hp }),
+          disabled: index === 0,
+        },
+      }));
+      const list = [...original.combatants.list, ...instances];
+      await call(fixture.gm!.token, 'create-encounter', { ...original, combatants: { list } });
+      const saved = await readEncounter();
+      assert.deepEqual(saved.combatants.list, list);
+      assert.deepEqual(saved.meta_data, original.meta_data);
+      const remaining = list.filter((entry) => entry._id !== instances[0]._id);
+      await call(fixture.gm!.token, 'create-encounter', { ...saved, combatants: { list: remaining } });
+      const reloaded = await readEncounter();
+      assert.deepEqual(reloaded.combatants.list, remaining);
+      assert.deepEqual(reloaded.combatants.list[0], original.combatants.list[0]);
+      assert.deepEqual(reloaded.meta_data, original.meta_data);
+      return { hazardsSaved: instances.length, hazardsRemaining: instances.length - 1, characterPreserved: true };
     },
     async 'campaignFixture:playerUpdate'({ key, appearance, hp }: { key: string; appearance?: string; hp?: number }) {
       const fixture = fixtureFor(key);

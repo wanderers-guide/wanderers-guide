@@ -60,11 +60,16 @@ globalThis.__selectionHooks = {
   useState: (value) => host.state(value),
   useQuery: (options) => {
     host.queryOptions = options;
-    return { data: host.data, isFetching: host.data === undefined };
+    return {
+      data: host.data,
+      isFetching: host.data === undefined && !host.error,
+      isError: !!host.error,
+      refetch: () => (host.retried = true),
+    };
   },
 };
 const special = {
-  useAtom: '() => [null, () => {}]',
+  useAtom: '() => [null, value => { globalThis.__selectionDrawer = value; }]',
   useAtomValue: '() => null',
   collectEntitySpellcasting: '(id, entity) => entity.spells',
   isSpellVisible: '() => true',
@@ -81,6 +86,8 @@ const special = {
   getCachedContent: '() => []',
   getContentFast: '() => []',
   fetchContent: 'async (...args) => { globalThis.__selectionFetch = args; return []; }',
+  fetchContentAll: 'async (...args) => { globalThis.__selectionFetchAll = args; return []; }',
+  fetchHazards: 'async (...args) => { globalThis.__selectionHazards = args; return []; }',
   fetchContentSources: 'async () => []',
   filterByTraitType: '() => []',
   hashData: 'value => JSON.stringify(value)',
@@ -117,7 +124,7 @@ const output = join(directory, 'selection.mjs');
 await build({
   absWorkingDir: root,
   stdin: {
-    contents: `export {SelectContentButton, SelectionOptions} from './src/common/select/SelectContent'; export {default as ManageSpellsModal} from './src/modals/ManageSpellsModal'; export {default as AddItemsModal} from './src/modals/AddItemsModal'; export {AdvancedSearchModal} from './src/modals/AdvancedSearchModal'; export {default as SpellsPanel} from './src/pages/character_sheet/panels/SpellsPanel';`,
+    contents: `export {SelectContentButton, selectContent, SelectionOptions, HazardSelectionOption} from './src/common/select/SelectContent'; export {default as ManageSpellsModal} from './src/modals/ManageSpellsModal'; export {default as AddItemsModal} from './src/modals/AddItemsModal'; export {AdvancedSearchModal} from './src/modals/AdvancedSearchModal'; export {default as SpellsPanel} from './src/pages/character_sheet/panels/SpellsPanel';`,
     resolveDir: root,
   },
   bundle: true,
@@ -164,8 +171,16 @@ await build({
     },
   ],
 });
-const { SelectContentButton, SelectionOptions, ManageSpellsModal, AddItemsModal, AdvancedSearchModal, SpellsPanel } =
-  await import(pathToFileURL(output).href);
+const {
+  SelectContentButton,
+  selectContent,
+  SelectionOptions,
+  HazardSelectionOption,
+  ManageSpellsModal,
+  AddItemsModal,
+  AdvancedSearchModal,
+  SpellsPanel,
+} = await import(pathToFileURL(output).href);
 const charm = { id: 1, name: 'Charm', rank: 1 };
 const command = { id: 2, name: 'Command', rank: 1 };
 const picker = { type: 'spell', searchQuery: 'Charm', limitSelectedOptions: false };
@@ -185,6 +200,95 @@ test('search never offers an option removed by the current filter or override li
     []
   );
   assert.deepEqual(host.render(SelectionOptions, { ...picker, overrideOptions: [command] }).props.options, []);
+});
+
+test('hazard selections use their source-scoped reader without entering the creature cache', async () => {
+  const host = new RenderHost();
+  const hazard = { id: 11, name: 'Boneburst', level: 14, content_source_id: 400 };
+  const windSurge = { id: 12, name: 'Wind Surge', level: 7, content_source_id: 401 };
+  globalThis.__selectionFetchAll = undefined;
+  globalThis.__selectionHazards = undefined;
+  host.render(SelectionOptions, { type: 'hazard', searchQuery: 'Bone', limitSelectedOptions: false });
+  await host.queryOptions.queryFn();
+  assert.deepEqual(globalThis.__selectionHazards, [[1]]);
+  assert.equal(globalThis.__selectionFetchAll, undefined);
+  assert.equal(host.queryOptions.queryKey[0], 'select-content-options-hazard');
+  host.data = [hazard, windSurge];
+  assert.deepEqual(
+    host.render(SelectionOptions, { type: 'hazard', searchQuery: 'Bone', limitSelectedOptions: false }).props.options,
+    [hazard]
+  );
+  const result = host.render(SelectionOptions, {
+    type: 'hazard',
+    sourceId: 401,
+    searchQuery: '',
+    limitSelectedOptions: false,
+  });
+  assert.deepEqual(result.props.options, [windSurge]);
+  await host.queryOptions.queryFn();
+  assert.deepEqual(globalThis.__selectionHazards, [[401]]);
+});
+
+test('creature selections retain their ordinary source-scoped reader', async () => {
+  const host = new RenderHost();
+  globalThis.__selectionHazards = undefined;
+  host.render(SelectionOptions, { type: 'creature', sourceId: 400, searchQuery: '', limitSelectedOptions: false });
+  await host.queryOptions.queryFn();
+  assert.deepEqual(globalThis.__selectionFetchAll, ['creature', [400]]);
+  assert.equal(globalThis.__selectionHazards, undefined);
+});
+
+test('a failed hazard catalog offers retry instead of claiming the book contains no hazards', () => {
+  const host = new RenderHost();
+  host.error = new Error('Hazard catalog unavailable');
+  const tree = host.render(SelectionOptions, { type: 'hazard', searchQuery: '', limitSelectedOptions: false });
+  const retry = findChild(tree, 'Button');
+  assert.equal(retry.props.children, 'Retry');
+  assert.equal(retry.props.loading, false);
+  retry.props.onClick();
+  assert.equal(host.retried, true);
+});
+
+test('hazard rows preview their exact snapshot above the picker and select without creature adjustments', () => {
+  const host = new RenderHost();
+  const hazard = {
+    id: 11,
+    name: 'Boneburst',
+    level: 14,
+    deprecated: false,
+    details: { complexity: 'COMPLEX' },
+  };
+  let selected;
+  const tree = host.render(HazardSelectionOption, {
+    hazard,
+    previewZIndex: 751,
+    onClick: (option) => (selected = option),
+  });
+  assert.equal(tree.props.level, 14);
+  tree.props.onClick();
+  assert.deepEqual(globalThis.__selectionDrawer, {
+    type: 'hazard',
+    data: { hazard, zIndex: 751 },
+    extra: { addToHistory: true },
+  });
+  assert.equal(tree.props.buttonOverride.type, 'Button');
+  assert.equal(tree.props.buttonOverride.props.children, 'Select');
+  assert.equal(tree.props.includeOptions, undefined);
+  let propagationStopped = false;
+  tree.props.buttonOverride.props.onClick({ stopPropagation: () => (propagationStopped = true) });
+  assert.equal(propagationStopped, true);
+  assert.equal(selected, hazard);
+  assert.equal(host.render(HazardSelectionOption, { hazard: { ...hazard, deprecated: true }, onClick() {} }), null);
+});
+
+test('the shared picker preserves hazard modal options and selection callbacks', () => {
+  const hazard = { id: 11, name: 'Boneburst' };
+  let selected;
+  selectContent('hazard', (option) => (selected = option), { zIndex: 750 });
+  assert.equal(globalThis.__selectionModal.innerProps.type, 'hazard');
+  assert.equal(globalThis.__selectionModal.zIndex, 750);
+  globalThis.__selectionModal.innerProps.onClick(hazard);
+  assert.equal(selected, hazard);
 });
 
 test('an optimistic selection does not roll back while its parent value is stale', () => {

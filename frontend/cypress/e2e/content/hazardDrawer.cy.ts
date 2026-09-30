@@ -52,16 +52,18 @@ const hazards = [
   { name: 'Wind Surge', link: 'Air', target: 'Air' },
 ];
 
+/** Retry the same geometry bounds while the drawer's enter transition settles. */
 function assertNoHorizontalOverflow() {
-  cy.document().then((doc) => {
+  cy.document().should((doc) => {
     expect(doc.documentElement.scrollWidth, 'page width').to.be.at.most(doc.documentElement.clientWidth);
   });
-  cy.get('.mantine-Drawer-content, .mantine-Drawer-content .mantine-ScrollArea-viewport').each(($element) => {
-    const element = $element[0];
-    expect(element.scrollWidth, `${element.className} width`).to.be.at.most(element.clientWidth + 1);
-    expect(element.getBoundingClientRect().right, 'drawer inside viewport').to.be.at.most(
-      element.ownerDocument.defaultView!.innerWidth + 1
-    );
+  cy.get('.mantine-Drawer-content, .mantine-Drawer-content .mantine-ScrollArea-viewport').should(($elements) => {
+    $elements.each((_, element) => {
+      expect(element.scrollWidth, `${element.className} width`).to.be.at.most(element.clientWidth + 1);
+      expect(element.getBoundingClientRect().right, 'drawer inside viewport').to.be.at.most(
+        element.ownerDocument.defaultView!.innerWidth + 1
+      );
+    });
   });
 }
 

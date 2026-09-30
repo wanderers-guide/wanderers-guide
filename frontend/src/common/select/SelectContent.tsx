@@ -5,6 +5,7 @@ import { ActionSymbol } from '@common/Actions';
 import { BuyItemButton } from '@common/BuyItemButton';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { fetchContentAll, fetchContentById, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
+import { fetchHazards } from '@content/hazards';
 import { isActionCost } from '@content/content-utils';
 import { isItemArchaic } from '@items/inv-utils';
 import {
@@ -86,6 +87,7 @@ import {
   ClassArchetype,
   ContentType,
   Creature,
+  Hazard,
   Item,
   Language,
   Spell,
@@ -102,6 +104,9 @@ import {
   IMPRINT_BG_COLOR_HOVER_2,
   IMPRINT_BORDER_COLOR,
 } from '@constants/data';
+
+/** Picker-only kinds can share a content table without sharing its living-entity schema. */
+export type SelectContentType = ContentType | 'hazard';
 
 export function SelectContentButton<T extends Record<string, any> = Record<string, any>>(props: {
   type: ContentType;
@@ -281,8 +286,9 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
   );
 }
 
+/** Open the shared content picker, including read-only hazards stored in the creature table. */
 export function selectContent<T = Record<string, any>>(
-  type: ContentType,
+  type: SelectContentType,
   onClick?: (option: T) => void,
   options?: {
     overrideOptions?: Record<string, any>[];
@@ -318,7 +324,7 @@ export default function SelectContentModal({
   id,
   innerProps,
 }: ContextModalProps<{
-  type: ContentType;
+  type: SelectContentType;
   onClick?: (option: Record<string, any>) => void;
   options?: {
     overrideOptions?: Record<string, any>[];
@@ -335,14 +341,22 @@ export default function SelectContentModal({
 }>) {
   const theme = useMantineTheme();
   const creatureDrawer = useAtomValue(creatureDrawerState);
+  const contentDrawer = useAtomValue(drawerState);
   const creaturePreviewAbove =
     !!creatureDrawer && (creatureDrawer.data.previewZIndex ?? 99) > (innerProps.options?.zIndex ?? 499);
+  const hazardPreviewAbove =
+    innerProps.type === 'hazard' &&
+    !!contentDrawer &&
+    (contentDrawer.data.zIndex ?? 1000) > (innerProps.options?.zIndex ?? 499);
 
   useEffect(() => {
     if (innerProps.type === 'creature') {
       context.updateContextModal({ modalId: id, closeOnEscape: !creaturePreviewAbove });
+    } else if (innerProps.type === 'hazard') {
+      // A preview and its linked drawers own Escape and focus until they are closed.
+      context.updateContextModal({ modalId: id, closeOnEscape: !hazardPreviewAbove, trapFocus: !hazardPreviewAbove });
     }
-  }, [context.updateContextModal, creaturePreviewAbove, id, innerProps.type]);
+  }, [context.updateContextModal, creaturePreviewAbove, hazardPreviewAbove, id, innerProps.type]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchQueryDebounced] = useDebouncedValue(searchQuery, 200);
@@ -363,7 +377,7 @@ export default function SelectContentModal({
     return (
       <Stack gap={10}>
         <Group wrap='nowrap'>
-          <FocusTrap active={true}>
+          <FocusTrap active={!hazardPreviewAbove}>
             <TextInput
               data-autofocus
               style={{ flex: 1 }}
@@ -750,7 +764,7 @@ export default function SelectContentModal({
 
 function SelectionOptions(props: {
   searchQuery: string;
-  type: ContentType;
+  type: SelectContentType;
   skillAdjustment?: ExtendedProficiencyType;
   abilityBlockType?: AbilityBlockType;
   sourceId?: number | 'all';
@@ -770,7 +784,7 @@ function SelectionOptions(props: {
   const character = useAtomValue(characterState);
   const sortByPrereqs = props.abilityBlockType === 'feat' && (character?.options?.auto_detect_prerequisites ?? false);
 
-  const { data, isFetching } = useQuery({
+  const { data, isFetching, isError, refetch } = useQuery({
     queryKey: [
       `select-content-options-${props.type}`,
       {
@@ -779,18 +793,15 @@ function SelectionOptions(props: {
         sources: props.sourceId === 'all' || !props.sourceId ? getDefaultSourcesKey('PAGE') : null,
       },
     ],
-    queryFn: async ({ queryKey }) => {
-      // @ts-ignore
-      const [_key, { sourceId }] = queryKey;
-      return (
-        (await fetchContentAll(props.type, sourceId === 'all' || !sourceId ? getDefaultSources('PAGE') : [sourceId])) ??
-        null
-      );
+    queryFn: async () => {
+      const sources = props.sourceId === 'all' || !props.sourceId ? getDefaultSources('PAGE') : [props.sourceId];
+      // Hazard records never enter the creature cache or its living-entity validation.
+      return props.type === 'hazard' ? fetchHazards(sources) : ((await fetchContentAll(props.type, sources)) ?? null);
     },
     refetchOnMount: true,
     //enabled: !props.overrideOptions, Run even for override options to update JsSearch
   });
-  let options = useMemo(() => (data ? [...data.values()] : []), [data]);
+  let options = useMemo<Record<string, any>[]>(() => (data ? [...data.values()] : []), [data]);
   if (props.overrideOptions) options = props.overrideOptions;
   options = options.filter((d) => d).filter(props.filterFn ? props.filterFn : () => true);
 
@@ -880,6 +891,19 @@ function SelectionOptions(props: {
     return (a.name ?? '').localeCompare(b.name ?? '');
   });
 
+  if (props.type === 'hazard' && isError && !props.overrideOptions) {
+    return (
+      <Stack align='center' gap='xs' pt='lg'>
+        <Text size='sm' c='dimmed'>
+          Unable to load hazards.
+        </Text>
+        <Button size='xs' variant='light' loading={isFetching} onClick={() => refetch()}>
+          Retry
+        </Button>
+      </Stack>
+    );
+  }
+
   return (
     <SelectionOptionsInner
       options={filteredOptions}
@@ -898,7 +922,7 @@ function SelectionOptions(props: {
 
 export function SelectionOptionsInner(props: {
   options: Record<string, any>[];
-  type: ContentType;
+  type: SelectContentType;
   skillAdjustment?: ExtendedProficiencyType;
   abilityBlockType?: AbilityBlockType;
   isLoading: boolean;
@@ -979,7 +1003,7 @@ export function SelectionOptionsInner(props: {
 
 function SelectionOptionsRoot(props: {
   options: Record<string, any>[];
-  type: ContentType;
+  type: SelectContentType;
   skillAdjustment?: ExtendedProficiencyType;
   abilityBlockType?: AbilityBlockType;
   onClick: (option: Record<string, any>) => void;
@@ -1313,6 +1337,22 @@ function SelectionOptionsRoot(props: {
             previewZIndex={props.creaturePreviewZIndex}
             onDelete={props.onDelete}
             onCopy={props.onCopy}
+          />
+        ))}
+      </>
+    );
+  }
+  if (props.type === 'hazard') {
+    return (
+      <>
+        {props.options.map((hazard) => (
+          <HazardSelectionOption
+            key={'hazard-' + hazard.id}
+            hazard={hazard as Hazard}
+            onClick={props.onClick}
+            selected={props.selectedId === hazard.id}
+            showButton={props.showButton}
+            previewZIndex={props.creaturePreviewZIndex}
           />
         ))}
       </>
@@ -3240,6 +3280,59 @@ export function CreatureSelectionOption(props: {
       includeOptions={props.includeOptions}
       onOptionsDelete={() => props.onDelete?.(props.creature.id)}
       onOptionsCopy={() => props.onCopy?.(props.creature.id)}
+    />
+  );
+}
+
+/** Select a catalog hazard without creature adjustments or authoring controls. */
+export function HazardSelectionOption(props: {
+  hazard: Hazard;
+  onClick: (hazard: Hazard) => void;
+  selected?: boolean;
+  showButton?: boolean;
+  previewZIndex?: number;
+}) {
+  const [, openDrawer] = useAtom(drawerState);
+
+  if (props.hazard.deprecated && !props.selected) return null;
+
+  return (
+    <BaseSelectionOption
+      leftSection={
+        <Stack gap={0} pl='xs'>
+          <Text size='sm' fw={500} c='gray.2'>
+            {props.hazard.name}
+          </Text>
+          <Text size='xs' c='dimmed'>
+            {toLabel(props.hazard.details.complexity.toLowerCase())} hazard
+          </Text>
+        </Stack>
+      }
+      level={props.hazard.level}
+      selected={props.selected}
+      showButton={props.showButton}
+      onClick={() =>
+        openDrawer({
+          type: 'hazard',
+          data: { hazard: props.hazard, zIndex: props.previewZIndex },
+          extra: { addToHistory: true },
+        })
+      }
+      buttonOverride={
+        <Button
+          aria-label={`Select ${props.hazard.name}`}
+          size='compact-xs'
+          variant='filled'
+          disabled={props.selected}
+          onClick={(event) => {
+            event.stopPropagation();
+            props.onClick(props.hazard);
+          }}
+        >
+          Select
+        </Button>
+      }
+      onButtonClick={() => props.onClick(props.hazard)}
     />
   );
 }
