@@ -199,5 +199,9 @@
   "20260930010000_war_of_immortals_item_traits.sql": {
     "check": "war-of-immortals-item-traits.sql",
     "order": "before-functions"
+  },
+  "20260930020000_war_of_immortals_bloodrager_progression.sql": {
+    "check": "war-of-immortals-bloodrager.sql",
+    "order": "before-functions"
   }
 }
