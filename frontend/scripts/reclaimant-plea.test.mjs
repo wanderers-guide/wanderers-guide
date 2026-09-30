@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
+import { isDeepStrictEqual } from 'node:util';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
 
 const featIds = [28549, 29011, 29012];
@@ -9,16 +10,21 @@ let engine;
 let feats;
 let content;
 let originalFeats;
+let repairs;
 
-/** Apply the migration's exact guarded leaf changes to the sanitized content fixture. */
-function repairFixture(row, repair) {
+/** Normalize only reviewed pre/post leaves, independent of PostgreSQL's JSON object key order. */
+function repairFixture(row, repair, state = 'after') {
+  assert.ok(['before', 'after'].includes(state));
+  assert.equal(row.id, repair.id);
   const result = structuredClone(row);
   for (const change of repair.changes) {
     const parent = change.path.slice(0, -1).reduce((value, key) => value[key], result);
     const key = change.path.at(-1);
-    if (JSON.stringify(parent[key]) === JSON.stringify(change.after)) continue;
-    assert.deepEqual(parent[key], change.before, `published feat ${row.id}: ${change.path.join('.')}`);
-    parent[key] = structuredClone(change.after);
+    assert.ok(
+      isDeepStrictEqual(parent[key], change.before) || isDeepStrictEqual(parent[key], change.after),
+      `published feat ${row.id}: unexpected value at ${change.path.join('.')}`
+    );
+    parent[key] = structuredClone(change[state]);
   }
   return result;
 }
@@ -36,7 +42,7 @@ before(async () => {
     new URL('../../supabase/migrations/20260924000000_fix_reclaimant_plea.sql', import.meta.url),
     'utf8'
   );
-  const repairs = JSON.parse(migration.split('$patches$')[1]);
+  repairs = JSON.parse(migration.split('$patches$')[1]);
   feats = originalFeats.map((row) =>
     repairFixture(
       row,
@@ -111,6 +117,40 @@ test('Reclaimant Plea preserves every operation, option, spell and saved choice 
     const { operations: before, ...original } = originalFeats[index];
     const { operations: after, ...repaired } = feat;
     assert.deepEqual(repaired, original);
+  }
+});
+
+test('Reclaimant fixtures accept both reviewed states regardless of JSON object key order', () => {
+  const reorderKeys = (value) =>
+    JSON.parse(JSON.stringify(value), (_, entry) =>
+      entry && typeof entry === 'object' && !Array.isArray(entry)
+        ? Object.fromEntries(Object.entries(entry).reverse())
+        : entry
+    );
+  for (const row of originalFeats) {
+    const repair = repairs.find(({ id }) => id === row.id);
+    const before = repairFixture(row, repair, 'before');
+    const after = repairFixture(row, repair);
+    const saved = structuredClone(row);
+    for (const fixture of [before, after, reorderKeys(before), reorderKeys(after)]) {
+      assert.deepEqual(repairFixture(fixture, repair), after);
+      assert.deepEqual(repairFixture(fixture, repair, 'before'), before);
+    }
+    assert.deepEqual(repairFixture(after, repair), after, 'repaired fixture replay is idempotent');
+    assert.deepEqual(row, saved, 'normalization never changes the sanitized snapshot');
+  }
+});
+
+test('Reclaimant fixture normalization rejects every unreviewed leaf value', () => {
+  for (const row of originalFeats) {
+    const repair = repairs.find(({ id }) => id === row.id);
+    for (const change of repair.changes) {
+      const unexpected = structuredClone(row);
+      const parent = change.path.slice(0, -1).reduce((value, key) => value[key], unexpected);
+      parent[change.path.at(-1)] = { unreviewed: true };
+      assert.throws(() => repairFixture(unexpected, repair), /unexpected value at/);
+      assert.throws(() => repairFixture(unexpected, repair, 'before'), /unexpected value at/);
+    }
   }
 });
 
