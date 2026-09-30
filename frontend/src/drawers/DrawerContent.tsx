@@ -25,16 +25,24 @@ import { ContentSourceDrawerContent } from './types/ContentSourceDrawer';
 import { ManageCoinsDrawerContent } from './types/ManageCoinsDrawer';
 import { StatWeaponDrawerContent } from './types/StatWeaponDrawer';
 import { getCachedCustomization } from '@content/customization-cache';
+import { getCachedContent } from '@content/content-store';
+import { Creature } from '@schemas/content';
 import { ArchetypeDrawerContent } from './types/ArchetypeDrawer';
 import { VersatileHeritageDrawerContent } from './types/VersatileHeritageDrawer';
 import { cloneDeep } from 'lodash-es';
 import { ClassArchetypeDrawerContent } from './types/ClassArchetypeDrawer';
 import { HazardDrawerContent } from './types/HazardDrawer';
+import { CreatureDrawerContent } from './types/CreatureDrawer';
 
 export default function DrawerContent(props: { onMetadataChange?: (openedDict?: Record<string, string>) => void }) {
   const _drawer = useAtomValue(drawerState);
 
   let drawerData = cloneDeep(_drawer?.data ?? {});
+  if (_drawer?.type === 'creature' && !drawerData.creature) {
+    drawerData.creature = cloneDeep(
+      getCachedContent<Creature>('creature').find((creature) => creature.id === drawerData.id)
+    );
+  }
   if (_drawer && getCachedCustomization()?.sheet_theme?.view_operations) {
     drawerData = {
       ...drawerData,
@@ -46,6 +54,13 @@ export default function DrawerContent(props: { onMetadataChange?: (openedDict?: 
     <>
       {_drawer?.type === 'content-source' && <ContentSourceDrawerContent data={drawerData} />}
       {_drawer?.type === 'hazard' && <HazardDrawerContent data={drawerData} />}
+      {_drawer?.type === 'creature' && (
+        <CreatureDrawerContent
+          key={drawerData.id ?? drawerData.creature?.id}
+          data={{ ...drawerData, readOnly: true }}
+          onMetadataChange={props.onMetadataChange}
+        />
+      )}
       {_drawer?.type === 'generic' && <GenericDrawerContent data={drawerData} />}
       {_drawer?.type === 'condition' && <ConditionDrawerContent data={drawerData} />}
       {_drawer?.type === 'feat' && <FeatDrawerContent data={drawerData} />}

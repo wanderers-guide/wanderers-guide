@@ -14,7 +14,7 @@ const fixtureScript = `
   const traitIds = new Set([
     ...entries.flatMap(entry => entry.details.trait_ids),
     ...rows.flatMap(({ row }) => row.traits ?? []),
-    1476, 1524, 1576, 1484, 1584, 1478, 1846, 1542,
+    1476, 1524, 1576, 1484, 1584, 1478, 1846, 1542, 1556,
   ]);
   rows.push(...await readContentRows([...traitIds].map(id => ({ table: "trait", id }))));
   rows.push(...entries.map((entry, index) => ({ table: "creature", row: {
@@ -22,6 +22,20 @@ const fixtureScript = `
     type: "hazard", name: entry.name, level: entry.level, rarity: "RARE",
     details: entry.details, content_source_id: 400, deprecated: false, version: "1.0",
     meta_data: { source: { book: "War of Immortals", page: entry.page, url: entry.url } },
+  } })));
+  // Canonical monster identities are sufficient for reference resolution, not creature calculation tests.
+  const legends = JSON.parse((await readFile("../supabase/migrations/20260929020000_war_of_immortals_mythic_legends.sql", "utf8")).split("$entries$")[1]);
+  const entities = JSON.parse((await readFile("../supabase/migrations/20260929030000_war_of_immortals_mythic_entities.sql", "utf8")).split("$entries$")[1]);
+  rows.push(...[...legends, ...entities].filter(entry => ["Agyra", "Verex-That-Was", "Oliphaunt of Jandelay"].includes(entry.name)).map(entry => ({ table: "creature", row: {
+    id: entry.uuid, uuid: entry.uuid, created_at: "2026-09-29T00:00:00Z", type: "creature", name: entry.name,
+    level: entry.level, experience: 0, rarity: "UNIQUE", inventory: null, hp_current: entry.hp, hp_temp: 0,
+    stamina_current: 0, resolve_current: 0, details: {
+      description: entry.name + " reference fixture. [Agyra](link_creature_6892231756030293)",
+    }, notes: null, roll_history: null, spells: null,
+    operation_data: null, operations: [], abilities_base: [], abilities_added: null, content_source_id: 400,
+    deprecated: false, version: "1.0", meta_data: { source: {
+      book: "War of Immortals", page: entry.page, url: entry.url ?? "https://2e.aonprd.com/Monsters.aspx?ID=" + entry.aon_id,
+    } },
   } })));
   console.log(JSON.stringify(rows));
 `;
@@ -38,18 +52,22 @@ const referenceNames = [
   'fire',
   'poison',
   'sonic',
+  'spirit',
   'water',
   'primal',
   'vitality',
   'unholy',
+  'agyra',
+  'verex-that-was',
+  'oliphaunt of jandelay',
 ];
 
 const hazards = [
-  { name: 'Boneburst', link: 'Fly', target: 'Fly' },
-  { name: "Lightning's Dance", link: 'Strike', target: 'Strike' },
-  { name: 'Primal Chaos Aura', link: 'gust of wind', target: 'Gust of Wind' },
-  { name: 'Trump of the Oliphaunt', link: 'sonic', target: 'Sonic' },
-  { name: 'Wind Surge', link: 'Air', target: 'Air' },
+  { name: 'Boneburst', link: 'Spirit', target: 'Spirit', creature: 'Verex-That-Was' },
+  { name: "Lightning's Dance", link: 'Strike', target: 'Strike', creature: 'Agyra' },
+  { name: 'Primal Chaos Aura', link: 'gust of wind', target: 'Gust of Wind', creature: 'Agyra' },
+  { name: 'Trump of the Oliphaunt', link: 'sonic', target: 'Sonic', creature: 'Oliphaunt of Jandelay' },
+  { name: 'Wind Surge', link: 'Air', target: 'Air', creature: 'Agyra' },
 ];
 
 /** Retry the same geometry bounds while the drawer's enter transition settles. */
@@ -88,13 +106,7 @@ describe('Official hazard drawer', () => {
         req.reply({ body: { status: 'success', data: [] } });
         return;
       }
-      const table = {
-        'find-content-source': 'content_source',
-        'find-creature': 'creature',
-        'find-trait': 'trait',
-        'find-spell': 'spell',
-        'find-ability-block': 'ability_block',
-      }[endpoint];
+      const table = endpoint.startsWith('find-') ? endpoint.slice(5).replaceAll('-', '_') : undefined;
       expect(table, `read-only fixture endpoint ${endpoint}`).to.be.a('string');
       let rows = fixtures.filter((fixture) => fixture.table === table).map(({ row }) => row);
       if (body.id !== undefined) {
@@ -106,12 +118,16 @@ describe('Official hazard drawer', () => {
         rows = rows.filter((row) => body.content_sources.includes(row.content_source_id));
       }
       if (endpoint === 'find-creature') {
-        expect(body.type).to.eq('hazard');
-        expect(body.content_sources).to.include(400);
-        expect(rows).to.have.length(1);
-        req.alias = 'hazardRead';
+        rows = rows.filter((row) => row.type === (body.type ?? 'creature'));
+        if (body.type === 'hazard') {
+          expect(body.content_sources).to.include(400);
+          expect(rows).to.have.length(1);
+          req.alias = 'hazardRead';
+        }
       }
-      req.reply({ body: { status: 'success', data: endpoint === 'find-creature' ? rows[0] : rows } });
+      req.reply({
+        body: { status: 'success', data: endpoint === 'find-creature' && typeof body.id === 'number' ? rows[0] : rows },
+      });
     });
   });
 
@@ -119,7 +135,7 @@ describe('Official hazard drawer', () => {
     ['desktop', 1280, 720],
     ['mobile', 390, 740],
   ] as const) {
-    for (const { name, link, target } of hazards) {
+    for (const { name, link, target, creature } of hazards) {
       it(`renders ${name} and its reference navigation on ${screen}`, () => {
         const hazard = fixtures.find((fixture) => fixture.table === 'creature' && fixture.row.name === name)!.row;
         const details = hazard.details;
@@ -234,6 +250,12 @@ describe('Official hazard drawer', () => {
             .should('have.length', 2)
             .and('not.have.attr', 'href');
         }
+        if (name === 'Trump of the Oliphaunt') {
+          cy.get('.mantine-Drawer-content a')
+            .filter((_, element) => element.textContent === 'Oliphaunt')
+            .should('have.length', 1)
+            .and('not.have.attr', 'href');
+        }
         if (name === "Lightning's Dance") {
           cy.get('.mantine-Drawer-content a')
             .filter((_, element) => /^(Strike|Strikes)$/.test(element.textContent ?? ''))
@@ -260,6 +282,35 @@ describe('Official hazard drawer', () => {
         cy.get('.mantine-Drawer-content').contains('h3', target).should('be.visible');
         cy.get('button[aria-label="Go back to previous drawer"]').should('be.visible').click();
         cy.get('.mantine-Drawer-content').contains('h3', name).should('be.visible');
+        for (const visit of [1, 2]) {
+          cy.get('.mantine-Drawer-content').contains('a', creature).first().scrollIntoView();
+          cy.get('.mantine-Drawer-content').contains('a', creature).first().click();
+          cy.get('.mantine-Drawer-header')
+            .contains('h3', new RegExp(`^${creature}$`, 'i'))
+            .should('be.visible');
+          cy.get('.mantine-Drawer-body').contains(/^AC$/, { timeout: 30000 }).should('be.visible');
+          cy.get('.mantine-Drawer-body').contains(`${creature} reference fixture.`).should('exist');
+          cy.get('[aria-label="Edit Creature"]').should('not.exist');
+          assertNoHorizontalOverflow();
+          cy.screenshot(`${screenshotName}-creature-reference-${visit}`, { capture: 'viewport' });
+          if (name === 'Boneburst') {
+            cy.get('.mantine-Drawer-body').contains('a', 'Agyra').scrollIntoView();
+            cy.get('.mantine-Drawer-body').contains('a', 'Agyra').click();
+            cy.get('.mantine-Drawer-header').contains('h3', 'Agyra').should('be.visible');
+            cy.get('.mantine-Drawer-body').contains('Agyra reference fixture.', { timeout: 30000 }).should('exist');
+            cy.get('.mantine-Drawer-body').contains(`${creature} reference fixture.`).should('not.exist');
+            cy.get('button[aria-label="Go back to previous drawer"]').click();
+            cy.get('.mantine-Drawer-header')
+              .contains('h3', new RegExp(`^${creature}$`, 'i'))
+              .should('be.visible');
+            cy.get('.mantine-Drawer-body')
+              .contains(`${creature} reference fixture.`, { timeout: 30000 })
+              .should('exist');
+            cy.get('.mantine-Drawer-body').contains('Agyra reference fixture.').should('not.exist');
+          }
+          cy.get('button[aria-label="Go back to previous drawer"]').should('be.visible').click();
+          cy.get('.mantine-Drawer-content').contains('h3', name).should('be.visible');
+        }
         cy.get('.mantine-Drawer-content .mantine-ScrollArea-viewport').scrollTo('bottom');
         cy.get('.mantine-Drawer-content .mantine-ScrollArea-viewport').find('p').last().should('be.visible');
         assertNoHorizontalOverflow();

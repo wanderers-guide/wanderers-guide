@@ -105,9 +105,11 @@ describe('Hazard encounter controls', () => {
     cy.visit('/encounters', {
       onBeforeLoad(win) {
         // A synthetic session for this intercepted browser fixture, never a real account or token.
+        const authHost = new URL(Cypress.env('functions_url')).hostname.split('.')[0];
+        const storageKey = `sb-${authHost}-auth-token`;
         const token = `${win.btoa('{}')}.${win.btoa(JSON.stringify({ sub: actor, exp: 4102444800 }))}.fixture`;
         win.localStorage.setItem(
-          'sb-127-auth-token',
+          storageKey,
           JSON.stringify({
             access_token: token,
             refresh_token: 'fixture',
