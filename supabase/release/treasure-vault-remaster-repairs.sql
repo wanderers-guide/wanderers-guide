@@ -1,0 +1,63 @@
+with reviewed_text(id,uuid,source,level,name,path,after_md5) as (values
+  (11726,3907058889255350,16,12,'Autumn''s Embrace',array['meta_data','runes','property','0','rune','description']::text[],'158effecebd19a5f581682e0a37fc8a5'),
+  (11792,6175930232896427,16,12,'Boreal Staff (Greater)',array['description']::text[],'f9c2513927de51e404fd9cc8a2e4e13a'),
+  (11793,4506258948304121,16,17,'Boreal Staff (Major)',array['description']::text[],'c2d4f43ab199f912ffd3dc4f1312cca0'),
+  (11794,5491540430241772,16,8,'Boreal Staff',array['description']::text[],'22342d7f0064fc6dd3de842d528d394e'),
+  (11813,7176713891897482,16,11,'Brightbloom Posy (Greater)',array['description']::text[],'af0697ad2c4f208ddadbfd7fc66ef0c5'),
+  (11814,4345449524746383,16,19,'Brightbloom Posy (Major)',array['description']::text[],'a91aebf48b743a57e7b97459e651433b'),
+  (11832,2628574946957144,16,17,'Celestial Staff',array['meta_data','runes','property','0','rune','description']::text[],'b5ab4f39f567f484fbe6c9f89cf79caf'),
+  (12029,7778701163006202,16,4,'Fury Cocktail (Lesser)',array['description']::text[],'85757a654e1fc86a7ee9f8835676ef11'),
+  (12030,8693870649637461,16,12,'Fury Cocktail (Moderate)',array['description']::text[],'cd50822094cdfb406dcb09792ee029ff'),
+  (7052,1312161067029585,7,8,'Invisibility',array['description']::text[],'158effecebd19a5f581682e0a37fc8a5')
+), reviewed_fields(id,uuid,source,level,name,path,after_value) as (values
+  (11925,4024487092735678,16,6,'Devil''s Bargain',array['traits']::text[],'[1527,1504,1846]'::jsonb),
+  (12410,8304668112940097,16,3,'Skinsaw Mask',array['traits']::text[],'[1475,1846,1527]'::jsonb),
+  (12000,7955748466843685,16,13,'Faerie Queen''s Bower',array['traits']::text[],'[1475,1630,1613,2860,1527]'::jsonb),
+  (12000,7955748466843685,16,13,'Faerie Queen''s Bower',array['group']::text[],'"ARMOR"'::jsonb),
+  (12605,4359396407182879,16,8,'Wand of Dazzling Rays (3rd-level)',array['traits']::text[],'[1542,1630,1517,1504,1665]'::jsonb),
+  (12606,8159873792877881,16,10,'Wand of Dazzling Rays (4th-level)',array['traits']::text[],'[1542,1630,1517,1504,1665]'::jsonb),
+  (12607,4782914278264481,16,12,'Wand of Dazzling Rays (5th-level)',array['traits']::text[],'[1542,1630,1517,1504,1665]'::jsonb),
+  (12608,3471522184663324,16,14,'Wand of Dazzling Rays (6th-level)',array['traits']::text[],'[1542,1630,1517,1504,1665]'::jsonb),
+  (12609,7118490375639855,16,16,'Wand of Dazzling Rays (7th-level)',array['traits']::text[],'[1542,1630,1517,1504,1665]'::jsonb),
+  (12610,5538114626025655,16,18,'Wand of Dazzling Rays (8th-level)',array['traits']::text[],'[1542,1630,1517,1504,1665]'::jsonb),
+  (12611,4716862529480946,16,20,'Wand of Dazzling Rays (9th-level)',array['traits']::text[],'[1542,1630,1517,1504,1665]'::jsonb),
+  (12147,693254247930899,16,0,'Leaf Weave',array['group']::text[],'"ARMOR"'::jsonb),
+  (12175,6903624769179576,16,5,'Living Leaf Weave',array['group']::text[],'"ARMOR"'::jsonb),
+  (12399,1582869616288572,16,14,'Shared-Pain Sankeit',array['group']::text[],'"ARMOR"'::jsonb),
+  (12399,1582869616288572,16,14,'Shared-Pain Sankeit',array['meta_data','runes','potency']::text[],'2'::jsonb),
+  (12732,6932044382521709,16,0,'Wooden Breastplate',array['group']::text[],'"ARMOR"'::jsonb)
+)
+select 'treasure-vault-item-references'::text as id,
+  (select count(*) = 10 and bool_and((
+    i.uuid=r.uuid and i.content_source_id=r.source and i.level=r.level and i.name=r.name
+    and md5(to_jsonb(i)#>>r.path)=r.after_md5) is true)
+    from reviewed_text r join public.item i on i.id=r.id)
+  and exists (select 1 from public.spell where id=8867 and name='Elemental Absorption'
+    and uuid=5013391004281276 and rank=3 and content_source_id=842
+    and to_jsonb(traditions)='["arcane","primal"]'::jsonb
+    and meta_data->'source'='{"book":"Impossible Magic","page":"135","url":"https://2e.aonprd.com/Spells.aspx?ID=2688"}'::jsonb)
+  and exists (select 1 from public.spell where id=8999 and name='Petal Storm'
+    and uuid=6425751270917234 and rank=4 and content_source_id=842
+    and to_jsonb(traditions)='["primal"]'::jsonb
+    and meta_data->'source'='{"book":"Impossible Magic","page":"156","url":"https://2e.aonprd.com/Spells.aspx?ID=2786"}'::jsonb)
+  and exists (select 1 from public.item where id=11726
+    and meta_data #> '{runes,property,0,id}'='7052'::jsonb
+    and meta_data #> '{runes,property,0,name}'='"Invisibility"'::jsonb
+    and meta_data #> '{runes,property,0,rune,id}'='7052'::jsonb
+    and meta_data #> '{runes,property,0,rune,name}'='"Invisibility"'::jsonb
+    and meta_data #> '{runes,property,0,rune,content_source_id}'='7'::jsonb
+    and meta_data #> '{runes,property,0,rune,level}'='8'::jsonb
+    and meta_data #> '{runes,property,0,rune,uuid}'='1312161067029585'::jsonb)
+  and exists (select 1 from public.item where id=11832
+    and meta_data #> '{runes,property,0,id}'='7040'::jsonb
+    and meta_data #> '{runes,property,0,name}'='"Holy"'::jsonb
+    and meta_data #> '{runes,property,0,rune,id}'='7040'::jsonb
+    and meta_data #> '{runes,property,0,rune,name}'='"Holy"'::jsonb
+    and meta_data #> '{runes,property,0,rune,content_source_id}'='7'::jsonb
+    and meta_data #> '{runes,property,0,rune,level}'='11'::jsonb) as passed
+union all
+select 'treasure-vault-equipment-fields'::text as id,
+  (select count(*) = 16 and bool_and((
+    i.uuid=r.uuid and i.content_source_id=r.source and i.level=r.level and i.name=r.name
+    and to_jsonb(i)#>r.path=r.after_value) is true)
+    from reviewed_fields r join public.item i on i.id=r.id) as passed;
