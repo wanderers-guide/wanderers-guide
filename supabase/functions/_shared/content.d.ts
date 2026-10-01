@@ -569,6 +569,18 @@ interface Campaign {
   };
 }
 
+/** Saved encounter rows share storage but hazards do not carry living-entity state. */
+interface Combatant {
+  _id: string;
+  type: 'CREATURE' | 'CHARACTER' | 'HAZARD';
+  ally: boolean;
+  initiative?: number;
+  creature?: Creature;
+  character?: number;
+  hazard?: Hazard;
+  hazard_state?: { hp_current?: number; disabled?: boolean };
+}
+
 interface Encounter {
   id: number;
   created_at: string;

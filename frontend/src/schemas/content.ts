@@ -1038,15 +1038,29 @@ export type CampaignNPC = z.infer<typeof CampaignNPCSchema>;
 
 // ─── Encounter & Combatant ────────────────────────────────────────────────────
 
-export const CombatantSchema = z.object({
-  _id: z.string(),
-  type: z.enum(['CREATURE', 'CHARACTER']),
-  ally: z.boolean(),
-  initiative: z.number().optional(),
-  creature: CreatureSchema.optional(),
-  character: z.number().optional(),
-  data: LivingEntitySchema.optional(),
+/** Encounter-local state for hazards, separate from their immutable content snapshot. */
+export const HazardCombatantStateSchema = z.object({
+  hp_current: z.number().nonnegative().optional(),
+  disabled: z.boolean().optional(),
 });
+export type HazardCombatantState = z.infer<typeof HazardCombatantStateSchema>;
+
+export const CombatantSchema = z
+  .object({
+    _id: z.string(),
+    type: z.enum(['CREATURE', 'CHARACTER', 'HAZARD']),
+    ally: z.boolean(),
+    initiative: z.number().optional(),
+    creature: CreatureSchema.optional(),
+    character: z.number().optional(),
+    data: LivingEntitySchema.optional(),
+    hazard: HazardSchema.optional(),
+    hazard_state: HazardCombatantStateSchema.optional(),
+  })
+  .refine((combatant) => combatant.type !== 'HAZARD' || combatant.hazard !== undefined, {
+    path: ['hazard'],
+    message: 'A hazard combatant requires its hazard stat block.',
+  });
 export type Combatant = z.infer<typeof CombatantSchema>;
 
 export const EncounterSchema = z.object({

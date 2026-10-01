@@ -23,7 +23,24 @@ WG content lives in Postgres, with one table per primary content type:
 
 A second layer, the **frontend cache**, mirrors a subset of these tables in the browser so the character sheet doesn’t hit the database for every lookup. The cache is populated at app start from `find-*` calls and refreshed when the active character’s `content_sources.enabled` list changes.
 
-Hazards use the creature table for source ownership and search, but they are not living entities. Creature queries default to `type='creature'`; hazard queries use `type='hazard'`. A hazard's stat block lives in structured `details` fields for stealth, disable, defenses, activation, routine, and reset. Hazards are read-only in the creature editor and are not encounter combatants yet.
+Hazards use the creature table for source ownership and search, but they are not living entities. Creature queries default to `type='creature'`; hazard queries use `type='hazard'`. A hazard's stat block lives in structured `details` fields for stealth, disable, defenses, activation, routine, and reset. Hazards remain read-only in the creature editor.
+
+Encounters offer separate **Add Creature** and **Add Hazard** selections. A hazard
+combatant stores `type='HAZARD'` and a `hazard` stat-block snapshot alongside optional
+`hazard_state.hp_current` and `hazard_state.disabled` values. Each instance has its
+own `_id`, so damage or disabling one instance never edits the catalog or another
+instance. HP controls appear only when HP is listed. Disabling is manual; reaching
+zero HP or a Broken Threshold does not automatically resolve a hazard's special rules.
+Complex hazards roll their explicitly listed Stealth modifier for initiative; simple
+hazards do not roll initiative. Existing assigned initiative is skipped unless selected
+again. Simple hazards contribute one fifth of creature XP at the same level, while
+complex hazards contribute full XP. Neither counts toward party size or party level.
+Hazards do not use creature adjustments, condition controls, or character calculations.
+The character sheet's Extras tab is unchanged.
+
+Hazard prose links each named spell, action, energy trait, and source creature
+reference. Creature references use the existing read-only stat-block view and
+drawer history; returning to the hazard preserves the encounter instance.
 
 Creature rows can carry optional `meta_data.stat_block` annotations for source-specific stat lines, including listed senses and skills, trait labels, conditional defense and HP notes, and innate spell frequencies. `immunities_note` and `resistances_note` display conditional effects in their stat-block lists without treating them as unconditional mechanics. These annotations only affect display. Embedded attack items can use `meta_data.display_traits` for trait text that has no matching trait record and `meta_data.inventory_label` when an inventory label differs from the attack name. The underlying creature operations and abilities still hold the actual mechanics.
 
