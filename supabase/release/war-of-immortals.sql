@@ -438,7 +438,11 @@ select 'war-armor-reprints',
       or actual.rarity is distinct from 'COMMON'
       or actual.size is distinct from 'MEDIUM'
       or actual.bulk is distinct from expected.bulk
-      or actual.price::jsonb is distinct from jsonb_build_object('gp', expected.price_gp)
+      -- The newer Lattice price repair requires 9 gp; this bootstrap/replay gate recognizes only 6/9.
+      or case when expected.war_uuid = 1142536405766694 then
+        actual.price::jsonb is distinct from '{"gp":6}'::jsonb
+          and actual.price::jsonb is distinct from '{"gp":9}'::jsonb
+        else actual.price::jsonb is distinct from jsonb_build_object('gp', expected.price_gp) end
       or actual.traits is distinct from expected.traits
       or md5(actual.description) is distinct from expected.description_md5
       or actual.meta_data->'source' is distinct from jsonb_build_object(

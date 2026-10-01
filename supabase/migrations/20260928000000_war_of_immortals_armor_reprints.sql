@@ -4,6 +4,7 @@ declare
   tv_entry public.item%rowtype;
   existing_count integer;
 begin
+  lock table public.content_update in share mode;
   if not exists (
     select 1 from public.content_source
     where id = 400 and name = 'War of Immortals' and is_published
@@ -42,6 +43,19 @@ begin
       'https://2e.aonprd.com/Armor.aspx?ID=74', 'https://2e.aonprd.com/Armor.aspx?ID=53',
       '80486dabc8d4d955181faac119e1dff2', '1', 5, 'light', 'wood', 2, 3, -1, 0, 1, array[2860]::bigint[]);
 
+  if exists (
+    select 1 from public.content_update
+    where type = 'item' and status->>'state' = 'PENDING'
+      and (ref_id in (select tv_id from pg_temp.war_armor_reprint_spec)
+        or (content_source_id = 400 and (
+          ref_id in (select id from public.item
+            where uuid in (select war_uuid from pg_temp.war_armor_reprint_spec))
+          or data->>'name' in (select name from pg_temp.war_armor_reprint_spec))))
+  ) then
+    raise exception 'A reviewed armor or War of Immortals item has a pending submission';
+  end if;
+
+  -- 20261001080000 corrects Lattice to 9 gp; replay accepts only its reviewed 6/9 gp states.
   select count(*) into existing_count from public.item actual
   where actual.uuid in (select war_uuid from pg_temp.war_armor_reprint_spec)
      or (actual.content_source_id = 400
@@ -61,7 +75,10 @@ begin
          or actual.rarity is distinct from 'COMMON'
          or actual.size is distinct from 'MEDIUM'
          or actual.bulk is distinct from expected.bulk
-         or actual.price::jsonb is distinct from jsonb_build_object('gp', expected.price_gp)
+         or (case when expected.tv_id = 12145 then
+           actual.price::jsonb is distinct from '{"gp":6}'::jsonb
+             and actual.price::jsonb is distinct from '{"gp":9}'::jsonb
+           else actual.price::jsonb is distinct from jsonb_build_object('gp', expected.price_gp) end)
          or actual.traits is distinct from expected.traits
          or md5(actual.description) is distinct from expected.description_md5
          or actual.meta_data->'source' is distinct from jsonb_build_object(
@@ -100,7 +117,10 @@ begin
        or tv_entry.rarity is distinct from 'COMMON'
        or tv_entry.size is distinct from 'MEDIUM'
        or tv_entry.bulk is distinct from expected_armor.bulk
-       or tv_entry.price::jsonb is distinct from jsonb_build_object('gp', expected_armor.price_gp)
+       or (case when expected_armor.tv_id = 12145 then
+         tv_entry.price::jsonb is distinct from '{"gp":6}'::jsonb
+           and tv_entry.price::jsonb is distinct from '{"gp":9}'::jsonb
+         else tv_entry.price::jsonb is distinct from jsonb_build_object('gp', expected_armor.price_gp) end)
        or tv_entry.traits is distinct from expected_armor.traits
        or md5(tv_entry.description) is distinct from expected_armor.description_md5
        or tv_entry.meta_data #>> '{source,url}' is distinct from expected_armor.tv_url
@@ -116,18 +136,6 @@ begin
       raise exception 'Treasure Vault armor % differs from the reviewed record', expected_armor.name;
     end if;
   end loop;
-
-  if exists (
-    select 1 from public.content_update
-    where type = 'item' and status->>'state' = 'PENDING'
-      and (ref_id in (select tv_id from pg_temp.war_armor_reprint_spec)
-        or (content_source_id = 400 and (
-          ref_id in (select id from public.item
-            where uuid in (select war_uuid from pg_temp.war_armor_reprint_spec))
-          or data->>'name' in (select name from pg_temp.war_armor_reprint_spec))))
-  ) then
-    raise exception 'A reviewed armor or War of Immortals item has a pending submission';
-  end if;
 
   create temporary table war_expected_armor on commit drop as
     select * from public.item where false;

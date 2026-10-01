@@ -215,5 +215,21 @@
   "20261001000000_war_of_immortals_spell_emphasis.sql": {
     "check": "war-of-immortals-spell-emphasis.sql",
     "order": "before-functions"
+  },
+  "20261001050000_treasure_vault_passive_bonuses.sql": {
+    "check": "treasure-vault-passive-bonuses.sql",
+    "order": "before-functions"
+  },
+  "20261001060000_treasure_vault_structured_fields.sql": {
+    "check": "treasure-vault-structured-fields.sql",
+    "order": "before-functions"
+  },
+  "20261001070000_treasure_vault_ursine_feats.sql": {
+    "check": "treasure-vault-ursine-feats.sql",
+    "order": "before-functions"
+  },
+  "20261001080000_treasure_vault_lattice_price.sql": {
+    "check": "treasure-vault-lattice-price.sql",
+    "order": "before-functions"
   }
 }
