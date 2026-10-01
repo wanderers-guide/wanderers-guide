@@ -4,6 +4,7 @@ import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { defineDefaultSources, fetchContent, fetchContentSources } from '@content/content-store';
 import { findContentUpdate } from '@content/content-update';
+import { fetchHazardById } from '@content/hazards';
 import { mapToDrawerData } from '@drawers/drawer-utils';
 import {
   Center,
@@ -22,7 +23,7 @@ import {
 } from '@mantine/core';
 import { IconArrowBigRightLine, IconThumbUp, IconThumbDown } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Creature } from '@schemas/content';
+import { Creature, Hazard, HazardSchema } from '@schemas/content';
 import { setPageTitle } from '@utils/document-change';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
@@ -54,18 +55,29 @@ export function Component() {
         return null;
       }
 
-      const originalContent = contentUpdate.ref_id
-        ? await fetchContent(contentUpdate.type, {
+      const isHazardUpdate = contentUpdate.type === 'creature' && contentUpdate.data?.type === 'hazard';
+      const proposedHazardResult = isHazardUpdate ? HazardSchema.safeParse(contentUpdate.data) : null;
+      const proposedHazard = proposedHazardResult?.success ? proposedHazardResult.data : null;
+      let originalContent: Hazard | Record<string, any> | null = null;
+      if (contentUpdate.ref_id) {
+        if (isHazardUpdate) {
+          originalContent = await fetchHazardById(contentUpdate.ref_id, [contentUpdate.content_source_id]);
+        } else {
+          const originalResults = await fetchContent(contentUpdate.type, {
             id: contentUpdate.ref_id,
             content_sources: sources.map((s) => s.id),
-          })
-        : [];
+          });
+          originalContent = originalResults[0] ?? null;
+        }
+      }
 
       return {
         contentUpdate,
         user,
         source: sources.find((s) => s.id === contentUpdate.content_source_id)!,
-        originalContent: originalContent.length > 0 ? originalContent[0] : null,
+        originalContent,
+        isHazardUpdate,
+        proposedHazard,
       };
     },
     refetchInterval: 1000,
@@ -74,7 +86,7 @@ export function Component() {
   const changedFields = useMemo(() => {
     if (!data || !data.originalContent) return [];
     console.log(data);
-    const original = data.originalContent;
+    const original = data.originalContent as Record<string, any>;
     const updated = data.contentUpdate.data ?? {};
 
     // Compare all fields in the original and updated content, and check all fields in meta_data if it exists
@@ -156,7 +168,11 @@ export function Component() {
                             if (!data.contentUpdate.ref_id) return;
 
                             const type = data.contentUpdate.data?.type ?? data.contentUpdate.type;
-                            if (type === 'creature') {
+                            if (data.isHazardUpdate) {
+                              openDrawer(
+                                mapToDrawerData('hazard', data.contentUpdate.ref_id, { sourceId: data.source.id })
+                              );
+                            } else if (type === 'creature') {
                               openCreatureDrawer({
                                 data: {
                                   id: data.contentUpdate.ref_id,
@@ -202,8 +218,16 @@ export function Component() {
                         <BlurButton
                           size='compact-md'
                           fw={500}
+                          disabled={data.isHazardUpdate && !data.proposedHazard}
                           onClick={() => {
-                            if (data.contentUpdate.type === 'creature') {
+                            if (data.isHazardUpdate) {
+                              if (!data.proposedHazard) return;
+                              openDrawer(
+                                mapToDrawerData('hazard', data.proposedHazard, {
+                                  noFeedback: true,
+                                })
+                              );
+                            } else if (data.contentUpdate.type === 'creature') {
                               openCreatureDrawer({
                                 data: {
                                   creature: data.contentUpdate.data as Creature | undefined,
@@ -266,8 +290,16 @@ export function Component() {
                         <BlurButton
                           size='compact-md'
                           fw={500}
+                          disabled={data.isHazardUpdate && !data.proposedHazard}
                           onClick={() => {
-                            if (data.contentUpdate.type === 'creature') {
+                            if (data.isHazardUpdate) {
+                              if (!data.proposedHazard) return;
+                              openDrawer(
+                                mapToDrawerData('hazard', data.proposedHazard, {
+                                  noFeedback: true,
+                                })
+                              );
+                            } else if (data.contentUpdate.type === 'creature') {
                               openCreatureDrawer({
                                 data: {
                                   creature: data.contentUpdate.data as Creature | undefined,

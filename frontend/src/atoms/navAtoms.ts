@@ -55,8 +55,8 @@ const drawerState = atom(
 
 const feedbackState = atom(
   null as {
-    type: ContentType | AbilityBlockType;
-    data: { id?: number; contentSourceId?: number };
+    type: ContentType | AbilityBlockType | 'hazard';
+    data: { id?: number; contentSourceId?: number; zIndex?: number };
     owner?: 'creature';
   } | null
 );

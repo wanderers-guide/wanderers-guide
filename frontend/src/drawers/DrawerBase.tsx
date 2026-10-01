@@ -23,7 +23,6 @@ const DrawerTitle = lazy(() => import('./DrawerTitle'));
 // No feedback drawers
 const NO_FEEDBACK_DRAWERS = [
   'generic',
-  'hazard',
   'character',
   'condition',
   'manage-coins',
@@ -130,6 +129,8 @@ export default function DrawerBase() {
   const swipeHandlers = useSwipeGesture({ onSwipeRight: handleDrawerGoBack });
 
   const opened = !!_drawer;
+  const hazardId = _drawer?.data.hazard?.id ?? _drawer?.data.id;
+  const hazardFeedbackAvailable = _drawer?.type !== 'hazard' || (Number.isInteger(hazardId) && hazardId > 0);
   return (
     <>
       <Drawer
@@ -209,43 +210,62 @@ export default function DrawerBase() {
             )}
           </ScrollArea>
 
-          {_drawer && !NO_FEEDBACK_DRAWERS.includes(_drawer.type) && _drawer.data?.noFeedback !== true && (
-            <>
-              <HoverCard shadow='md' openDelay={500} zIndex={1000} withArrow withinPortal>
-                <HoverCard.Target>
-                  <ActionIcon
-                    variant='subtle'
-                    aria-label='Help and Feedback'
-                    radius='xl'
-                    color='dark.3'
-                    style={getAnchorStyles({ r: 5, b: 5 })}
-                    onClick={() => {
-                      const type = isAbilityBlockType(_drawer.type)
-                        ? _drawer.type
-                        : convertToContentType(_drawer.type as ContentType);
-                      const data = cloneDeep(_drawer.data);
+          {_drawer &&
+            hazardFeedbackAvailable &&
+            !NO_FEEDBACK_DRAWERS.includes(_drawer.type) &&
+            _drawer.data?.noFeedback !== true && (
+              <>
+                <HoverCard
+                  shadow='md'
+                  openDelay={500}
+                  zIndex={_drawer.type === 'hazard' ? (_drawer.data.zIndex ?? 1000) + 1 : 1000}
+                  withArrow
+                  withinPortal
+                >
+                  <HoverCard.Target>
+                    <ActionIcon
+                      variant='subtle'
+                      aria-label='Help and Feedback'
+                      radius='xl'
+                      color='dark.3'
+                      style={getAnchorStyles({ r: 5, b: 5 })}
+                      onClick={() => {
+                        const type =
+                          _drawer.type === 'hazard'
+                            ? 'hazard'
+                            : isAbilityBlockType(_drawer.type)
+                              ? _drawer.type
+                              : convertToContentType(_drawer.type as ContentType);
+                        const data = cloneDeep(_drawer.data);
 
-                      // Use creature id from .creature to allow edited creatures to get content updates on original
-                      if (type === 'creature' && data.creature?.id) {
-                        data.id = data.creature.id;
-                        data.content_source_id = data.creature.content_source_id;
-                      }
+                        // Use creature id from .creature to allow edited creatures to get content updates on original
+                        if (type === 'creature' && data.creature?.id) {
+                          data.id = data.creature.id;
+                          data.content_source_id = data.creature.content_source_id;
+                        }
 
-                      setFeedbackData({
-                        type: type,
-                        data: data,
-                      });
-                    }}
-                  >
-                    <IconHelpTriangleFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
-                  </ActionIcon>
-                </HoverCard.Target>
-                <HoverCard.Dropdown py={0} px={10}>
-                  <Text size='sm'>Something wrong?</Text>
-                </HoverCard.Dropdown>
-              </HoverCard>
-            </>
-          )}
+                        // Encounter snapshots refer back to the catalog, never the instance ID.
+                        if (type === 'hazard') {
+                          data.id = data.hazard?.id ?? data.id;
+                          data.contentSourceId = data.hazard?.content_source_id ?? data.sourceId;
+                          data.zIndex = _drawer.data.zIndex ?? 1000;
+                        }
+
+                        setFeedbackData({
+                          type: type,
+                          data: data,
+                        });
+                      }}
+                    >
+                      <IconHelpTriangleFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                    </ActionIcon>
+                  </HoverCard.Target>
+                  <HoverCard.Dropdown py={0} px={10}>
+                    <Text size='sm'>Something wrong?</Text>
+                  </HoverCard.Dropdown>
+                </HoverCard>
+              </>
+            )}
         </Box>
       </Drawer>
       {feedbackData && feedbackData.owner !== 'creature' && (
@@ -264,6 +284,7 @@ export default function DrawerBase() {
           }}
           type={feedbackData.type}
           data={feedbackData.data}
+          zIndex={feedbackData.type === 'hazard' ? (feedbackData.data.zIndex ?? 1000) + 1 : undefined}
         />
       )}
       <DrawerCreatureBase />

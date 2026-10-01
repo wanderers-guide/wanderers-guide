@@ -1,5 +1,5 @@
 import { Text, Stack, Button, Group, Loader, Avatar, Modal, Title, Box, useMantineTheme, Anchor } from '@mantine/core';
-import { AbilityBlockType, ContentSource, ContentType, Item } from '@schemas/content';
+import { AbilityBlockType, ContentSource, ContentType, HazardSchema, Item } from '@schemas/content';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { IconBook2, IconExternalLink, IconHash } from '@tabler/icons-react';
@@ -34,13 +34,15 @@ import { CreateClassArchetypeModal } from './CreateClassArchetypeModal';
 import { userState } from '@atoms/userAtoms';
 import { useAtomValue } from 'jotai';
 import { cleanContent, openCleaningPage } from '@ai/cleaning/cleaning-manager';
+import { fetchHazardById } from '@content/hazards';
+import { EditHazardModal } from './EditHazardModal';
 
 export default function ContentFeedbackModal(props: {
   opened: boolean;
   onCancel: () => void;
   onStartFeedback: () => void;
   onCompleteFeedback: () => void;
-  type: ContentType | AbilityBlockType;
+  type: ContentType | AbilityBlockType | 'hazard';
   data: { id?: number; contentSourceId?: number };
   zIndex?: number;
 }) {
@@ -139,7 +141,7 @@ export default function ContentFeedbackModal(props: {
       >
         <Box style={{ position: 'relative', minHeight: 150 }}>
           <ContentFeedbackSection
-            type={convertToContentType(props.type)}
+            type={props.type === 'hazard' ? 'hazard' : convertToContentType(props.type)}
             data={props.data}
             onSubmitUpdate={(id, content) => {
               props.onStartFeedback();
@@ -150,6 +152,17 @@ export default function ContentFeedbackModal(props: {
       </Modal>
       {submitUpdate && (
         <Box>
+          {props.type === 'hazard' && (
+            <EditHazardModal
+              opened={true}
+              hazard={HazardSchema.parse(submitUpdate.content)}
+              zIndex={props.zIndex}
+              onComplete={async (hazard) => {
+                await handleComplete(hazard.id, hazard.content_source_id, hazard);
+              }}
+              onCancel={() => handleReset()}
+            />
+          )}
           {convertToContentType(props.type) === 'ability-block' && (
             <CreateAbilityBlockModal
               opened={true}
@@ -362,8 +375,8 @@ export default function ContentFeedbackModal(props: {
 }
 
 function ContentFeedbackSection(props: {
-  type: ContentType;
-  data: { id?: number };
+  type: ContentType | 'hazard';
+  data: { id?: number; contentSourceId?: number };
   onSubmitUpdate: (id: number, content: any) => void;
 }) {
   const theme = useMantineTheme();
@@ -372,9 +385,12 @@ function ContentFeedbackSection(props: {
   const user = useAtomValue(userState);
 
   const { data, isFetching } = useQuery({
-    queryKey: [`find-content-${props.type}-${contentId}`],
+    queryKey: [`find-content-${props.type}-${contentId}`, props.data.contentSourceId],
     queryFn: async () => {
-      const content = await fetchContentById(props.type, contentId!);
+      const content =
+        props.type === 'hazard'
+          ? await fetchHazardById(contentId!, props.data.contentSourceId ? [props.data.contentSourceId] : undefined)
+          : await fetchContentById(props.type, contentId!);
       const source = content
         ? await fetchContentById<ContentSource>('content-source', content.content_source_id ?? contentId)
         : null;
@@ -410,8 +426,10 @@ function ContentFeedbackSection(props: {
   // Repeat the book only when the cite points at a different printing than the row is
   // filed under; otherwise the book is already on the line above.
   const sourceCiteLabel = sourceCite
-    ? [sourceCite.book && sourceCite.book !== data.source.name ? sourceCite.book : null,
-       sourceCite.page ? `pg. ${sourceCite.page}` : null]
+    ? [
+        sourceCite.book && sourceCite.book !== data.source.name ? sourceCite.book : null,
+        sourceCite.page ? `pg. ${sourceCite.page}` : null,
+      ]
         .filter(Boolean)
         .join(' ') || 'View source'
     : '';
@@ -438,11 +456,7 @@ function ContentFeedbackSection(props: {
               <Text fz='xs' c='dimmed'>
                 {data.source.name}
                 <Text span fz='xs' c='dimmed' opacity={0.6} ml={6}>
-                  <IconHash
-                    stroke={1.5}
-                    size='0.7rem'
-                    style={{ verticalAlign: '-0.05rem', marginRight: 1 }}
-                  />
+                  <IconHash stroke={1.5} size='0.7rem' style={{ verticalAlign: '-0.05rem', marginRight: 1 }} />
                   {data.content.id}
                 </Text>
               </Text>
