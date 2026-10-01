@@ -30,12 +30,14 @@ export function getMetadataOpenedDict() {
 }
 
 export function mapToDrawerData(
-  type: ContentType,
+  type: ContentType | 'hazard',
   data: Record<string, any> | number,
   dataInject?: Record<string, any>
 ): { type: DrawerType; data: any } {
   let drawerType: DrawerType = type;
-  if (data instanceof Object && isAbilityBlockType(data.type)) {
+  if (type === 'creature' && data instanceof Object && data.type === 'hazard') {
+    drawerType = 'hazard';
+  } else if (data instanceof Object && isAbilityBlockType(data.type)) {
     drawerType = data.type;
   }
 
@@ -59,6 +61,7 @@ export function mapToDrawerData(
     if (drawerType === 'class-archetype') key = 'classArchetype';
     if (drawerType === 'content-source') key = 'source';
     if (drawerType === 'creature') key = 'creature';
+    if (drawerType === 'hazard') key = 'hazard';
     drawerData = {
       [key]: data,
       ...(dataInject ?? {}),
