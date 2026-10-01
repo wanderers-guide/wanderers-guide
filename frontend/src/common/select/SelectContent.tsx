@@ -265,6 +265,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
           )}
           {props.onClear && (
             <Button
+              aria-label={`Clear ${typeName.toLowerCase()} selection`}
               variant='light'
               size='compact-sm'
               radius='xl'

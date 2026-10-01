@@ -39,20 +39,28 @@ const spell = (attribute = 'ATTRIBUTE_INT', range = '30 feet') =>
 const speed = (character) => engine.getSpeedValue('CHARACTER', engine.getVariable('CHARACTER', 'SPEED'), character);
 const sumParts = (result) => [...result.parts.values()].reduce((total, value) => total + value, 0);
 
-async function calculate({ attributes = {}, operations = [], items = [] } = {}) {
+async function calculate({
+  attributes = {},
+  operations = [],
+  items = [],
+  level = 5,
+  variants = {},
+  selections = {},
+} = {}) {
   const character = {
     id: 990000,
-    level: 5,
+    level,
     hp_current: 40,
     details: { conditions: [] },
     inventory: { items },
-    operation_data: { selections: {} },
+    operation_data: { selections },
+    variants,
     content_sources: { enabled: [] },
     meta_data: { reset_hp: false },
     options: { custom_operations: true, ignore_bulk_limit: true },
     custom_operations: [
       ...Object.entries({ STR: 3, DEX: 4, CON: 2, INT: 4, WIS: 1, CHA: 0, ...attributes }).map(([name, value]) =>
-        set(`ATTRIBUTE_${name}`, { value })
+        set(`ATTRIBUTE_${name}`, typeof value === 'number' ? { value } : value)
       ),
       ...['MARTIAL_WEAPONS', 'MEDIUM_ARMOR', 'UNARMORED_DEFENSE', 'SPELL_ATTACK', 'SPELL_DC'].map((name) =>
         set(name, { value: 'T' })
@@ -90,6 +98,40 @@ before(async () => {
   engine = await createOperationEngine();
 });
 after(async () => engine?.cleanup());
+
+test('ABP Apex grants a full modifier increase through existing saved choices and retains partial boosts', async () => {
+  // Keep these saved selection IDs compatible with characters created before the repair.
+  const key = 'class-feature-7773279303158362_7be7c32a-5d54-4d20-8cda-3e4c7a0a0ba6-18';
+  const names = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
+  for (const [index, name] of names.entries()) {
+    for (const value of [0, 3, 4, 5, 6]) {
+      for (const partial of [false, true]) {
+        await calculate({
+          level: 17,
+          variants: { automatic_bonus_progression: true },
+          attributes: { [name]: { value, partial } },
+          selections: { [key]: `bd558680-9f89-460f-9505-b9decd61ebf4-${index}` },
+        });
+        assert.deepEqual(engine.getVariable('CHARACTER', `ATTRIBUTE_${name}`).value, {
+          value: Math.max(4, value + 1),
+          partial: value >= 4 && partial,
+        });
+      }
+    }
+  }
+  await calculate({
+    level: 16,
+    variants: { automatic_bonus_progression: true },
+    selections: { [key]: 'bd558680-9f89-460f-9505-b9decd61ebf4-0' },
+    attributes: { STR: { value: 4, partial: true } },
+  });
+  assert.deepEqual(engine.getVariable('CHARACTER', 'ATTRIBUTE_STR').value, { value: 4, partial: true });
+  await calculate({
+    attributes: { STR: 4 },
+    operations: [{ id: 'ordinary-boost', type: 'adjValue', data: { variable: 'ATTRIBUTE_STR', value: { value: 1 } } }],
+  });
+  assert.deepEqual(engine.getVariable('CHARACTER', 'ATTRIBUTE_STR').value, { value: 4, partial: true });
+});
 
 test('typed bonus and penalty limits span categories while numeric baselines and untyped adjustments add', async () => {
   await calculate({ operations: [set('ATTACK_ROLLS_BONUS', 1), set('NON_SPELL_ATTACK_ROLLS_BONUS', 2)] });
