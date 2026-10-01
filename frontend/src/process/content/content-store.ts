@@ -677,69 +677,84 @@ export function resetContentStore(resetSources = true, clearPersisted = false) {
 export async function fetchContentSources(sources: SourceValue, bypassWorkerPackage = false) {
   const workerContent = getWorkerContentReader();
   if (workerContent && !bypassWorkerPackage) return workerContent.sources(sources);
-  const fetchSources = (data: Record<string, unknown>) =>
-    fetchContent<ContentSource>('content-source', data, bypassWorkerPackage, bypassWorkerPackage);
-  let results: ContentSource[] = [];
+  await ensureCacheActor();
+  const generation = cacheGeneration;
+  const resolveSources = async (): Promise<ContentSource[]> => {
+    const fetchSources = (data: Record<string, unknown>) =>
+      fetchContent<ContentSource>('content-source', data, bypassWorkerPackage, bypassWorkerPackage);
+    let results: ContentSource[] = [];
 
-  if (Array.isArray(sources)) {
-    // Fetch by ids
-    results = await fetchSources({
-      id: sources,
-    });
-  } else if (sources === 'ALL-OFFICIAL-PUBLIC') {
-    // This gives us everything public that is not homebrew
-    results = await fetchSources({
-      homebrew: false,
-      published: true,
-    });
-  } else if (sources === 'ALL-HOMEBREW-PUBLIC') {
-    // This gives us everything public, including homebrew
-    const r = await fetchSources({
-      homebrew: true,
-      published: true,
-    });
-    // So we now need to filter out the official content
-    results = r.filter((source) => source.user_id !== null);
-    //
-  } else if (sources === 'ALL-PUBLIC') {
-    // This gives us everything public, including homebrew
-    results = await fetchSources({
-      homebrew: true,
-      published: true,
-    });
-  } else if (sources === 'ALL-USER-ACCESSIBLE') {
-    // This gives us everything public that is not homebrew
-    const pr = await fetchSources({
-      homebrew: false,
-      published: true,
-    });
+    if (Array.isArray(sources)) {
+      // Fetch by ids
+      results = await fetchSources({
+        id: sources,
+      });
+    } else if (sources === 'ALL-OFFICIAL-PUBLIC') {
+      // This gives us everything public that is not homebrew
+      results = await fetchSources({
+        homebrew: false,
+        published: true,
+      });
+    } else if (sources === 'ALL-HOMEBREW-PUBLIC') {
+      // This gives us everything public, including homebrew
+      const r = await fetchSources({
+        homebrew: true,
+        published: true,
+      });
+      // So we now need to filter out the official content
+      results = r.filter((source) => source.user_id !== null);
+      //
+    } else if (sources === 'ALL-PUBLIC') {
+      // This gives us everything public, including homebrew
+      results = await fetchSources({
+        homebrew: true,
+        published: true,
+      });
+    } else if (sources === 'ALL-USER-ACCESSIBLE') {
+      // This gives us everything public that is not homebrew
+      const pr = await fetchSources({
+        homebrew: false,
+        published: true,
+      });
 
-    const user = await getPublicUser(undefined, { throwOnFailure: true });
-    // Now fetch all the other sources the user has subscribed to
-    const ur = await fetchSources({
-      id: user?.subscribed_content_sources?.map((s) => s.source_id) ?? [],
-    });
+      assertCurrentGeneration(generation);
+      const user = await getPublicUser(undefined, { throwOnFailure: true, sharedReadScope: generation });
+      assertCurrentGeneration(generation);
+      // Now fetch all the other sources the user has subscribed to
+      const ur = await fetchSources({
+        id: user?.subscribed_content_sources?.map((s) => s.source_id) ?? [],
+      });
 
-    results = uniqBy([...pr, ...ur], (source) => source.id);
-  } else if (sources === 'ALL-HOMEBREW-ACCESSIBLE') {
-    // This gives everything with homebrew (that the user can access)
-    const pr = await fetchSources({
-      id: undefined,
-      homebrew: true,
-    });
+      results = uniqBy([...pr, ...ur], (source) => source.id);
+    } else if (sources === 'ALL-HOMEBREW-ACCESSIBLE') {
+      // This gives everything with homebrew (that the user can access)
+      const pr = await fetchSources({
+        id: undefined,
+        homebrew: true,
+      });
 
-    const user = await getPublicUser(undefined, { throwOnFailure: true });
-    // Filter out the homebrew
-    results = pr.filter(
-      (c) =>
-        // The user owns the homebrew OR
-        (c.user_id && c.user_id === user?.user_id) ||
-        // The user has subscribed to the homebrew
-        user?.subscribed_content_sources?.find((src) => src.source_id === c.id)
-    );
-  }
+      assertCurrentGeneration(generation);
+      const user = await getPublicUser(undefined, { throwOnFailure: true, sharedReadScope: generation });
+      assertCurrentGeneration(generation);
+      // Filter out the homebrew
+      results = pr.filter(
+        (c) =>
+          // The user owns the homebrew OR
+          (c.user_id && c.user_id === user?.user_id) ||
+          // The user has subscribed to the homebrew
+          user?.subscribed_content_sources?.find((src) => src.source_id === c.id)
+      );
+    }
 
-  return results.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
+    assertCurrentGeneration(generation);
+    return results.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
+  };
+  const results =
+    workerContent && bypassWorkerPackage
+      ? cloneDeep(await workerContent.fallbackSources(sources, generation, resolveSources))
+      : await resolveSources();
+  assertCurrentGeneration(generation);
+  return results;
 }
 
 export async function fetchContentPackage(

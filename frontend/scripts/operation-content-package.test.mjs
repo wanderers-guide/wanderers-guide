@@ -45,7 +45,7 @@ const boundaries = {
 await build({
   absWorkingDir: root,
   stdin: {
-    contents: `import './src/process/operations/operations.worker'; export * from './src/process/operations/operation-content-package'; export {fetchContent, getCachedContent} from './src/process/content/content-store';`,
+    contents: `import './src/process/operations/operations.worker'; export * from './src/process/operations/operation-content-package'; export {defineDefaultSources, fetchContent, fetchContentSources, getCachedContent} from './src/process/content/content-store';`,
     resolveDir: root,
   },
   outfile: join(directory, 'worker.mjs'),
@@ -338,6 +338,70 @@ test('implicit INFO name queries keep all server matches while explicit PAGE lis
   assert.deepEqual(api.getCachedContent('language'), []);
 });
 
+test('one worker job resolves identical fallback source scopes once without caching content results', async () => {
+  allowCrossBookLookup([
+    { id: 101, name: 'Auran', content_source_id: 1 },
+    { id: 201, name: 'Auran', content_source_id: 9 },
+  ]);
+  api.defineDefaultSources('INFO', 'ALL-USER-ACCESSIBLE');
+  api.defineDefaultSources('PAGE', [1]);
+  await api.withWorkerContentPackage(packet(), async () => {
+    for (let index = 0; index < 3; index++) {
+      const matches = await api.fetchContent('language', { name: 'Auran' });
+      assert.deepEqual(
+        matches.map((row) => row.id),
+        [101, 201]
+      );
+    }
+  });
+  assert.equal(requests.filter(({ type }) => type === 'find-content-source').length, 3);
+  assert.equal(requests.filter(({ type }) => type === 'find-language').length, 3);
+  assert.equal(api.getWorkerContentReader(), undefined);
+});
+
+test('first source resolution survives an anonymous-to-signed-in cache generation change', async () => {
+  allowCrossBookLookup();
+  globalThis.__workerPackageTest.session = async () => ({ data: { session: { user: { id: 'new-actor' } } } });
+  await api.withWorkerContentPackage(packet(), async () => {
+    const sources = await api.fetchContentSources('ALL-USER-ACCESSIBLE', true);
+    assert.deepEqual(
+      sources.map((row) => row.id),
+      [1, 3, 9]
+    );
+  });
+  assert.equal(api.getWorkerContentReader(), undefined);
+});
+
+test('failed fallback source resolution is retried and a new job cannot reuse the prior scope', async () => {
+  allowCrossBookLookup();
+  api.defineDefaultSources('INFO', 'ALL-USER-ACCESSIBLE');
+  api.defineDefaultSources('PAGE', [1]);
+  const request = globalThis.__workerPackageTest.request;
+  let failNextSource = true;
+  globalThis.__workerPackageTest.request = async (type, body) => {
+    if (type === 'find-content-source' && failNextSource) {
+      failNextSource = false;
+      networkCalls += 1;
+      requests.push({ type, body });
+      throw new Error('Source lookup unavailable');
+    }
+    return request(type, body);
+  };
+  await api.withWorkerContentPackage(packet(), async () => {
+    await assert.rejects(api.fetchContent('language', { name: 'Auran' }), /Source lookup unavailable/);
+    assert.equal((await api.fetchContent('language', { name: 'Auran' }))[0].id, 101);
+  });
+  const firstJobSourceCalls = requests.filter(({ type }) => type === 'find-content-source').length;
+  assert.equal(firstJobSourceCalls, 4);
+  api.defineDefaultSources('PAGE', [8]);
+  await api.withWorkerContentPackage(packet('Different private language', 8), async () => {
+    assert.equal((await api.fetchContent('language', { name: 'Auran' }))[0].id, 101);
+  });
+  assert.equal(requests.filter(({ type }) => type === 'find-content-source').length, firstJobSourceCalls + 3);
+  assert.deepEqual(requests.at(-2).body.id, [3, 8]);
+  assert.equal(api.getWorkerContentReader(), undefined);
+});
+
 test('the dedicated worker override cannot hijack a main-thread direct calculation or UI fetch', async () => {
   globalThis.document = {};
   try {
@@ -391,7 +455,8 @@ test('older packets without trait metadata retain the original implicit lookup f
   assert.equal(api.getWorkerContentReader(), undefined);
 });
 
-test('a real core Wizard resolves its complete selection catalog without another network request', async () => {
+/** Load the same official Wizard content and character used by the sheet integration test. */
+async function coreWizardFixture() {
   const tables = {
     ability_block: 'abilityBlocks',
     ancestry: 'ancestries',
@@ -430,10 +495,38 @@ test('a real core Wizard resolves its complete selection catalog without another
     details: { class: content.classes.find((row) => row.id === 26) },
   };
   assert.equal(wizard.details.class?.name, 'Wizard');
+  return { content, wizard };
+}
+
+test('a real core Wizard resolves its complete selection catalog without another network request', async () => {
+  const { content, wizard } = await coreWizardFixture();
   await self.onmessage({
     data: { id: 1, execution: { type: 'CHARACTER', data: { character: wizard, content, context: 'CHARACTER-SHEET' } } },
   });
   const result = messages.pop();
   assert.equal(result.status, 'success', result.message);
   assert.equal(networkCalls, 0, JSON.stringify(requests));
+});
+
+test('a real core Wizard with optional trait metadata missing reuses source resolution across fallback names', async () => {
+  const { content, wizard } = await coreWizardFixture();
+  delete content.lookupTraits;
+  globalThis.__workerPackageTest.session = async () => ({ data: { session: null } });
+  globalThis.__workerPackageTest.user = async () => null;
+  globalThis.__workerPackageTest.request = async (type, body) => {
+    networkCalls += 1;
+    requests.push({ type, body });
+    if (type === 'find-content-source')
+      return Array.isArray(body.id) ? content.sources.filter((row) => body.id.includes(row.id)) : content.sources;
+    assert.equal(type, 'find-trait');
+    return content.traits.find((row) => row.name.toLowerCase() === body.name?.trim().toLowerCase()) ?? null;
+  };
+  await self.onmessage({
+    data: { id: 1, execution: { type: 'CHARACTER', data: { character: wizard, content, context: 'CHARACTER-SHEET' } } },
+  });
+  const result = messages.pop();
+  assert.equal(result.status, 'success', result.message);
+  assert.ok(requests.filter(({ type }) => type === 'find-trait').length >= 3);
+  assert.equal(requests.filter(({ type }) => type === 'find-content-source').length, 1);
+  assert.equal(api.getWorkerContentReader(), undefined);
 });

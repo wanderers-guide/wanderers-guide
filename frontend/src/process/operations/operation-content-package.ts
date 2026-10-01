@@ -51,6 +51,7 @@ export function createOperationContentReader(content: ContentPackage) {
   const enabled = Array.isArray(page) ? new Set([COMMON_CORE_ID, ...page]) : null;
   const scopedTables = new Map<ContentType, PackageRow[]>();
   const indexedTables = new Map<ContentType, Map<number, PackageRow>>();
+  const fallbackSourceLookups = new Map<string, Promise<ContentSource[]>>();
   const lookupTraits = content.lookupTraits
     ? [...content.lookupTraits].sort((left, right) => left.id - right.id)
     : undefined;
@@ -86,6 +87,24 @@ export function createOperationContentReader(content: ContentPackage) {
   };
   return {
     sources,
+    /** Share identical source resolution only for this worker job; failures remain retryable. */
+    async fallbackSources(
+      scope: SourceValue,
+      generation: number,
+      fetch: () => Promise<ContentSource[]>
+    ): Promise<ContentSource[]> {
+      const key = JSON.stringify([generation, scope]);
+      const active = fallbackSourceLookups.get(key);
+      if (active) return active;
+      const request = fetch();
+      fallbackSourceLookups.set(key, request);
+      try {
+        return await request;
+      } catch (error) {
+        if (fallbackSourceLookups.get(key) === request) fallbackSourceLookups.delete(key);
+        throw error;
+      }
+    },
     /** Match find-trait's implicit scope, ID precedence, trimming and first-row behavior. */
     lookupTrait(data: Record<string, unknown>): Trait[] | undefined {
       if (!lookupTraits) return undefined;
