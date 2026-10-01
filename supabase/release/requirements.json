@@ -215,5 +215,21 @@
   "20261001000000_war_of_immortals_spell_emphasis.sql": {
     "check": "war-of-immortals-spell-emphasis.sql",
     "order": "before-functions"
+  },
+  "20261001010000_treasure_vault_reference_repairs.sql": {
+    "check": "treasure-vault-remaster-repairs.sql",
+    "order": "before-functions"
+  },
+  "20261001020000_treasure_vault_equipment_fields.sql": {
+    "check": "treasure-vault-remaster-repairs.sql",
+    "order": "before-functions"
+  },
+  "20261001030000_treasure_vault_wand_fields.sql": {
+    "check": "treasure-vault-wand-fields.sql",
+    "order": "before-functions"
+  },
+  "20261001040000_treasure_vault_staff_price.sql": {
+    "check": "treasure-vault-staff-price.sql",
+    "order": "before-functions"
   }
 }
