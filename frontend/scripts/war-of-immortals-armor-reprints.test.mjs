@@ -71,7 +71,11 @@ test('War armor copies use source-specific identities and leave Treasure Vault r
     } else {
       assert.equal(row.group, 'ARMOR');
     }
-    assert.equal(row.price.gp, armor.price);
+    if (armor.id === 12145) {
+      assertReviewedTransition(row.price, { gp: 6 }, { gp: 9 }, 'Lattice Armor price');
+    } else {
+      assert.equal(row.price.gp, armor.price);
+    }
     assert.equal(row.meta_data.source.url, armor.tvUrl);
     assert.equal(createHash('md5').update(row.description).digest('hex'), armor.descriptionMd5);
     assert.equal(uniqueId(row.name, 'item', row.level, 400), armor.warUuid);
