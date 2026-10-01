@@ -84,15 +84,20 @@ describe('Treasure Vault item spell references', () => {
     expand('Spellhearts');
     expand('Wands');
   };
-  const spellheartButton = (tier: 'Greater' | 'Major') =>
-    cy
-      .contains('button', new RegExp(`Brightbloom Posy \\(${tier}\\)[\\s\\S]*Petal Storm`), { timeout: 30000 })
-      .scrollIntoView();
-  const elementalButton = () => cy.contains('button', 'Elemental Absorption', { timeout: 30000 }).scrollIntoView();
-  const wandButton = () =>
-    cy
-      .contains('button', /Wand of Refracting Rays \(6th-level\)[\s\S]*Chromatic Ray/, { timeout: 30000 })
-      .scrollIntoView();
+  const spellheartButton = (tier: 'Greater' | 'Major') => {
+    const label = new RegExp(`Brightbloom Posy \\(${tier}\\)[\\s\\S]*Petal Storm`);
+    cy.contains('button', label, { timeout: 30000 }).scrollIntoView();
+    return cy.contains('button', label, { timeout: 30000 });
+  };
+  const elementalButton = () => {
+    cy.contains('button', 'Elemental Absorption', { timeout: 30000 }).scrollIntoView();
+    return cy.contains('button', 'Elemental Absorption', { timeout: 30000 });
+  };
+  const wandButton = () => {
+    const label = /Wand of Refracting Rays \(6th-level\)[\s\S]*Chromatic Ray/;
+    cy.contains('button', label, { timeout: 30000 }).scrollIntoView();
+    return cy.contains('button', label, { timeout: 30000 });
+  };
   const expectCastingRank = (open: () => void, name: string, rank: number) => {
     open();
     cy.contains('.mantine-Drawer-root', name, { timeout: 30000 }).within(() => {
@@ -101,6 +106,7 @@ describe('Treasure Vault item spell references', () => {
         .and('not.be.disabled');
       cy.get('button[aria-label="Close drawer"]').click();
     });
+    cy.get('.mantine-Drawer-content, .mantine-Drawer-overlay').should('not.exist');
   };
   const normalPicker = () => {
     cy.get('[data-wg-name="prepared-druid"]', { timeout: 30000 }).contains('button', 'Manage').scrollIntoView().click();
@@ -308,6 +314,7 @@ describe('Treasure Vault item spell references', () => {
         .contains('button', /^Cast Spell 4$/)
         .should('be.visible');
       cy.get('button[aria-label="Close drawer"]').click();
+      cy.get('.mantine-Drawer-content, .mantine-Drawer-overlay').should('not.exist');
       showItemSections();
       expectCastingRank(() => spellheartButton('Major').click(), 'Petal Storm', 6);
       expectCastingRank(() => spellheartButton('Greater').click(), 'Petal Storm', 4);
