@@ -1,6 +1,7 @@
 import { Button, Divider, Group, ScrollArea, Select, Stack, Text } from '@mantine/core';
 import { ContextModalProps } from '@mantine/modals';
-import { getCombatantStoreID, PopulatedCombatant } from '@pages/campaign/panels/EncountersPanel';
+import { getCombatantStoreID, EncounterCombatant } from '@pages/campaign/panels/EncountersPanel';
+import { getHazardInitiativeModifier, isHazardCombatant } from '@utils/encounter-hazard';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { isCharacter, isCreature, isTruthy } from '@utils/type-fixing';
@@ -14,12 +15,12 @@ export default function InitiativeRollModal({
   id,
   innerProps,
 }: ContextModalProps<{
-  combatants: PopulatedCombatant[];
+  combatants: EncounterCombatant[];
   onConfirm: (rollBonuses: Map<string, number | null>) => void;
 }>) {
   const [rollBonuses, setRollBonuses] = useState(new Map<string, number | null>());
 
-  const onChangeOption = (combatant: PopulatedCombatant, value: string | null) => {
+  const onChangeOption = (combatant: EncounterCombatant, value: string | null) => {
     if (value === null || value === undefined) {
       setRollBonuses(new Map(rollBonuses.set(combatant._id, null)));
     } else {
@@ -29,7 +30,7 @@ export default function InitiativeRollModal({
     }
   };
 
-  const isEmptyInitiative = (combatant: PopulatedCombatant) => {
+  const isEmptyInitiative = (combatant: EncounterCombatant) => {
     return combatant.initiative === undefined || isNaN(combatant.initiative) || combatant.initiative === null;
   };
 
@@ -37,13 +38,16 @@ export default function InitiativeRollModal({
   useEffect(() => {
     for (const combatant of innerProps.combatants) {
       if (isEmptyInitiative(combatant)) {
-        onChangeOption(combatant, 'PERCEPTION');
+        onChangeOption(combatant, isHazardCombatant(combatant) ? 'STEALTH' : 'PERCEPTION');
       }
     }
   }, []);
 
-  const getOptions = (combatant: PopulatedCombatant) => {
-    if (combatant.type === 'CHARACTER' && isCharacter(combatant.data)) {
+  const getOptions = (combatant: EncounterCombatant) => {
+    if (isHazardCombatant(combatant)) {
+      const modifier = getHazardInitiativeModifier(combatant.hazard);
+      return modifier === undefined ? [] : [{ value: 'STEALTH', label: `Stealth, ${sign(modifier)}`, num: modifier }];
+    } else if (combatant.type === 'CHARACTER' && isCharacter(combatant.data)) {
       const profTotals = combatant.data.meta_data?.calculated_stats?.profs;
       if (profTotals === undefined) return [];
 
@@ -108,10 +112,12 @@ export default function InitiativeRollModal({
           {innerProps.combatants.map((combatant, index) => (
             <Select
               key={index}
-              label={combatant.data.name}
+              label={isHazardCombatant(combatant) ? combatant.hazard.name : combatant.data.name}
               placeholder='Skip'
               data={getOptions(combatant)}
-              defaultValue={isEmptyInitiative(combatant) ? 'PERCEPTION' : null}
+              defaultValue={
+                isEmptyInitiative(combatant) ? (isHazardCombatant(combatant) ? 'STEALTH' : 'PERCEPTION') : null
+              }
               allowDeselect
               clearable
               onChange={(value) => onChangeOption(combatant, value)}

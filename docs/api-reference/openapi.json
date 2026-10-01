@@ -741,6 +741,28 @@
           "meta_data": { "type": "object", "additionalProperties": true }
         }
       },
+      "Combatant": {
+        "type": "object",
+        "required": ["_id", "type", "ally"],
+        "description": "Encounter-local combatant. HAZARD rows include a hazard snapshot; their optional tracked HP and disabled state do not change the catalog. Existing creature and character rows retain their existing shape.",
+        "properties": {
+          "_id": { "type": "string" },
+          "type": { "type": "string", "enum": ["CREATURE", "CHARACTER", "HAZARD"] },
+          "ally": { "type": "boolean" },
+          "initiative": { "type": "number" },
+          "creature": { "$ref": "#/components/schemas/Creature" },
+          "character": { "type": "integer", "description": "Character ID, resolved from the campaign's players." },
+          "hazard": { "$ref": "#/components/schemas/Hazard" },
+          "hazard_state": {
+            "type": "object",
+            "properties": {
+              "hp_current": { "type": "number", "minimum": 0, "description": "Only used when the hazard lists HP." },
+              "disabled": { "type": "boolean", "description": "Manually tracked; neither zero HP nor the Broken Threshold sets it automatically." }
+            }
+          }
+        },
+        "additionalProperties": true
+      },
       "Encounter": {
         "type": "object",
         "required": ["name"],
@@ -755,7 +777,7 @@
           "combatants": {
             "type": "object",
             "properties": {
-              "list": { "type": "array", "items": { "type": "object", "additionalProperties": true } }
+              "list": { "type": "array", "items": { "$ref": "#/components/schemas/Combatant" } }
             }
           },
           "meta_data": {

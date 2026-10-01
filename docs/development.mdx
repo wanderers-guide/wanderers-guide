@@ -405,7 +405,8 @@ Run `npm run test:release` and `npm run release:check` from the repository root
 after installing frontend dependencies. CI runs these checks and archives the
 function/schema manifest. The production content snapshot refreshes weekly or by
 manual dispatch, independently of code pushes. See [Release and recovery](/releases)
-for the read-only production gate, migration baseline and rollout order.
+for the read-only production gate, including `release:verify:functions` before
+schema changes, migration baseline and rollout order.
 
 ## Troubleshooting
 

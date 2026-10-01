@@ -281,6 +281,24 @@ export function compareSchema(baseline, state) {
   return issues;
 }
 
+/** Evaluate each shared SQL check once while preserving the per-migration report. */
+export async function evaluateMigrationChecks(requirements, readCheck) {
+  const byCheck = new Map();
+  const migrationChecks = {};
+  const issues = [];
+  for (const [name, requirement] of Object.entries(requirements)) {
+    if (!byCheck.has(requirement.check)) {
+      const rows = z.array(z.object({ id: z.string(), passed: z.boolean() })).parse(await readCheck(requirement.check));
+      byCheck.set(requirement.check, rows);
+      if (!rows.length) issues.push(`Required migration check returned no predicates: ${requirement.check}`);
+      for (const row of rows.filter((entry) => !entry.passed))
+        issues.push(`Required migration effect missing: ${requirement.check}/${row.id}`);
+    }
+    migrationChecks[name] = byCheck.get(requirement.check);
+  }
+  return { migrationChecks, issues };
+}
+
 /** Use the existing Supabase credential only for the official management API. */
 async function accessToken() {
   if (process.env.SUPABASE_ACCESS_TOKEN) return process.env.SUPABASE_ACCESS_TOKEN;
@@ -318,11 +336,22 @@ async function managementRead(project, endpoint, query) {
   return response.json();
 }
 
+/** Download one deployed function without exposing its source or CLI credentials. */
+async function downloadRemoteFunction(entry, project, workdir) {
+  try {
+    await run(
+      'supabase',
+      ['functions', 'download', entry.slug, '--project-ref', project, '--use-api', '--workdir', workdir],
+      { timeout: 120000, maxBuffer: 2 * 1024 * 1024 }
+    );
+  } catch {
+    throw new Error(`Could not download deployed function: ${entry.slug}`);
+  }
+}
+
 /** Capture fresh deployed bytes in isolated directories; never overwrite the checkout. */
-async function checkRemote(manifest, project) {
-  const baseline = await jsonFile(path.join(root, 'supabase/release/baseline.json'), baselineSchema);
-  if (project !== baseline.project_ref) throw new Error('This schema baseline belongs to a different project');
-  const inventory = inventorySchema.parse(await managementRead(project, '/functions'));
+async function captureRemoteFunctions(manifest, project, read = managementRead, download = downloadRemoteFunction) {
+  const inventory = inventorySchema.parse(await read(project, '/functions'));
   const directory = await mkdtemp(path.join(tmpdir(), 'wg-release-'));
   try {
     // Two downloads at a time bounds provider load and keeps the snapshot easy to inspect.
@@ -333,106 +362,130 @@ async function checkRemote(manifest, project) {
           const entry = queue.shift();
           const workdir = path.join(directory, entry.slug);
           await mkdir(workdir, { recursive: true });
-          try {
-            await run(
-              'supabase',
-              ['functions', 'download', entry.slug, '--project-ref', project, '--use-api', '--workdir', workdir],
-              { timeout: 120000, maxBuffer: 2 * 1024 * 1024 }
-            );
-          } catch {
-            throw new Error(`Could not download deployed function: ${entry.slug}`);
-          }
+          await download(entry, project, workdir);
         }
       })
     );
     const failed = downloads.find((download) => download.status === 'rejected');
     if (failed) throw failed.reason;
     const issues = await compareFunctions(manifest, inventory, directory);
-    const state = stateSchema.parse(
+    return { inventory, issues };
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+}
+
+/** Reject function snapshots collected across a deployment. */
+async function checkInventoryStability(project, inventory, read = managementRead) {
+  const after = inventorySchema.parse(await read(project, '/functions'));
+  const fingerprint = (items) => JSON.stringify([...items].sort((a, b) => a.slug.localeCompare(b.slug)));
+  return fingerprint(inventory) === fingerprint(after)
+    ? []
+    : ['Deployment changed during audit; retry on a stable release'];
+}
+
+/** Diagnose deployed function drift independently of database schema state. */
+export async function checkRemoteFunctions(
+  manifest,
+  project,
+  { read = managementRead, download = downloadRemoteFunction } = {}
+) {
+  const baseline = await jsonFile(path.join(root, 'supabase/release/baseline.json'), baselineSchema);
+  if (project !== baseline.project_ref) throw new Error('This schema baseline belongs to a different project');
+  const { inventory, issues } = await captureRemoteFunctions(manifest, project, read, download);
+  issues.push(...(await checkInventoryStability(project, inventory, read)));
+  if (manifest.dirty) issues.push('Working tree is dirty; a releasable artifact must identify one committed revision');
+  return {
+    checked_at: new Date().toISOString(),
+    project_ref: project,
+    commit: manifest.commit,
+    manifest_sha256: sha256(JSON.stringify(manifest)),
+    passed: issues.length === 0,
+    issues,
+    functions: inventory,
+  };
+}
+
+/** Verify functions and migration effects for a complete release. */
+async function checkRemote(manifest, project) {
+  const baseline = await jsonFile(path.join(root, 'supabase/release/baseline.json'), baselineSchema);
+  if (project !== baseline.project_ref) throw new Error('This schema baseline belongs to a different project');
+  const { inventory, issues } = await captureRemoteFunctions(manifest, project);
+  const state = stateSchema.parse(
+    await managementRead(
+      project,
+      '/database/query/read-only',
+      await readFile(path.join(root, 'supabase/release/schema-state.sql'), 'utf8')
+    )
+  );
+  issues.push(...compareSchema(baseline, state));
+  const ledgerState = z
+    .array(z.object({ present: z.boolean() }))
+    .parse(
       await managementRead(
         project,
         '/database/query/read-only',
-        await readFile(path.join(root, 'supabase/release/schema-state.sql'), 'utf8')
+        "select to_regclass('supabase_migrations.schema_migrations') is not null as present"
       )
     );
-    issues.push(...compareSchema(baseline, state));
-    const ledgerState = z
-      .array(z.object({ present: z.boolean() }))
+  const ledgerPresent = ledgerState[0]?.present;
+  let ledger = [];
+  if (ledgerPresent) {
+    ledger = z
+      .array(z.object({ version: z.string() }))
       .parse(
         await managementRead(
           project,
           '/database/query/read-only',
-          "select to_regclass('supabase_migrations.schema_migrations') is not null as present"
+          'select version from supabase_migrations.schema_migrations order by version'
         )
       );
-    const ledgerPresent = ledgerState[0]?.present;
-    let ledger = [];
-    if (ledgerPresent) {
-      ledger = z
-        .array(z.object({ version: z.string() }))
-        .parse(
-          await managementRead(
-            project,
-            '/database/query/read-only',
-            'select version from supabase_migrations.schema_migrations order by version'
-          )
-        );
-      const known = new Set(Object.keys(manifest.migrations).map((name) => name.split('_')[0]));
-      for (const row of ledger) if (!known.has(row.version)) issues.push(`Unknown remote migration: ${row.version}`);
-    }
-    const migrationChecks = {};
-    for (const [name, requirement] of Object.entries(manifest.requirements)) {
-      const result = z
-        .array(z.object({ id: z.string(), passed: z.boolean() }))
-        .parse(
-          await managementRead(
-            project,
-            '/database/query/read-only',
-            await readFile(path.join(root, 'supabase/release', requirement.check), 'utf8')
-          )
-        );
-      migrationChecks[name] = result;
-      if (requirement.function_signature) {
-        const functionState = z
-          .array(z.object({ body: z.string() }))
-          .parse(
-            await managementRead(
-              project,
-              '/database/query/read-only',
-              `select prosrc as body from pg_proc where oid = to_regprocedure('${requirement.function_signature}')`
-            )
-          );
-        if (functionState.length !== 1 || sha256(functionState[0].body) !== requirement.function_body_sha256) {
-          issues.push(`Required RPC body differs from reviewed migration: ${name}`);
-        }
-      }
-      if (!result.length || result.some((row) => !row.passed))
-        issues.push(`Required migration effects missing: ${name}`);
-      if (ledgerPresent && !ledger.some((row) => row.version === name.split('_')[0]))
-        issues.push(`Required migration not recorded: ${name}`);
-    }
-    // A deployment during the download window would otherwise produce a mixed release snapshot.
-    const after = inventorySchema.parse(await managementRead(project, '/functions'));
-    const fingerprint = (items) => JSON.stringify([...items].sort((a, b) => a.slug.localeCompare(b.slug)));
-    if (fingerprint(inventory) !== fingerprint(after))
-      issues.push('Deployment changed during audit; retry on a stable release');
-    if (manifest.dirty)
-      issues.push('Working tree is dirty; a releasable artifact must identify one committed revision');
-    return {
-      checked_at: new Date().toISOString(),
-      project_ref: project,
-      commit: manifest.commit,
-      manifest_sha256: sha256(JSON.stringify(manifest)),
-      passed: issues.length === 0,
-      issues,
-      functions: inventory,
-      schema_objects_checked: state.length,
-      migration_ledger: ledgerPresent ? ledger : 'absent; verified effects only',
-      migration_checks: migrationChecks,
-    };
-  } finally {
-    await rm(directory, { recursive: true, force: true });
+    const known = new Set(Object.keys(manifest.migrations).map((name) => name.split('_')[0]));
+    for (const row of ledger) if (!known.has(row.version)) issues.push(`Unknown remote migration: ${row.version}`);
   }
+  const { migrationChecks, issues: migrationIssues } = await evaluateMigrationChecks(
+    manifest.requirements,
+    async (check) =>
+      managementRead(
+        project,
+        '/database/query/read-only',
+        await readFile(path.join(root, 'supabase/release', check), 'utf8')
+      )
+  );
+  issues.push(...migrationIssues);
+  for (const [name, requirement] of Object.entries(manifest.requirements)) {
+    if (requirement.function_signature) {
+      const functionState = z
+        .array(z.object({ body: z.string() }))
+        .parse(
+          await managementRead(
+            project,
+            '/database/query/read-only',
+            `select prosrc as body from pg_proc where oid = to_regprocedure('${requirement.function_signature}')`
+          )
+        );
+      if (functionState.length !== 1 || sha256(functionState[0].body) !== requirement.function_body_sha256) {
+        issues.push(`Required RPC body differs from reviewed migration: ${name}`);
+      }
+    }
+    if (ledgerPresent && !ledger.some((row) => row.version === name.split('_')[0]))
+      issues.push(`Required migration not recorded: ${name}`);
+  }
+  // A deployment during the download window would otherwise produce a mixed release snapshot.
+  issues.push(...(await checkInventoryStability(project, inventory)));
+  if (manifest.dirty) issues.push('Working tree is dirty; a releasable artifact must identify one committed revision');
+  return {
+    checked_at: new Date().toISOString(),
+    project_ref: project,
+    commit: manifest.commit,
+    manifest_sha256: sha256(JSON.stringify(manifest)),
+    passed: issues.length === 0,
+    issues,
+    functions: inventory,
+    schema_objects_checked: state.length,
+    migration_ledger: ledgerPresent ? ledger : 'absent; verified effects only',
+    migration_checks: migrationChecks,
+  };
 }
 
 async function main() {
@@ -444,9 +497,9 @@ async function main() {
     },
   });
   const command = positionals[0];
-  if (!['check-local', 'manifest', 'check-remote', 'function-names'].includes(command)) {
+  if (!['check-local', 'manifest', 'check-remote', 'check-remote-functions', 'function-names'].includes(command)) {
     throw new Error(
-      'Usage: release.mjs check-local|manifest|function-names|check-remote [--project-ref REF] [--output FILE]'
+      'Usage: release.mjs check-local|manifest|function-names|check-remote|check-remote-functions [--project-ref REF] [--output FILE]'
     );
   }
   const manifest = await createManifest();
@@ -463,8 +516,11 @@ async function main() {
       migrations: Object.keys(manifest.migrations).length,
     };
   else {
-    if (!values['project-ref']) throw new Error('check-remote requires --project-ref');
-    result = await checkRemote(manifest, values['project-ref']);
+    if (!values['project-ref']) throw new Error(`${command} requires --project-ref`);
+    result =
+      command === 'check-remote-functions'
+        ? await checkRemoteFunctions(manifest, values['project-ref'])
+        : await checkRemote(manifest, values['project-ref']);
     if (!result.passed) process.exitCode = 1;
   }
   const output = JSON.stringify(result, null, 2) + '\n';

@@ -138,7 +138,7 @@
   },
   "20260928020000_war_of_immortals_hazards.sql": {
     "check": "war-of-immortals-hazards.sql",
-    "order": "before-functions"
+    "order": "after-compatible-functions"
   },
   "20260929000000_kaiju_trait.sql": {
     "check": "war-of-immortals-monsters.sql",
@@ -176,6 +176,10 @@
     "check": "war-of-immortals.sql",
     "order": "before-functions"
   },
+  "20260929070001_war_of_immortals_worldforge_preservation.sql": {
+    "check": "war-of-immortals.sql",
+    "order": "before-functions"
+  },
   "20260929080000_war_of_immortals_holy_rune.sql": {
     "check": "war-of-immortals.sql",
     "order": "before-functions"
@@ -190,6 +194,22 @@
   },
   "20260929110000_war_of_immortals_shift_frequency.sql": {
     "check": "war-of-immortals.sql",
+    "order": "before-functions"
+  },
+  "20260929120000_war_of_immortals_rune_activation_labels.sql": {
+    "check": "war-of-immortals-rune-activation-labels.sql",
+    "order": "before-functions"
+  },
+  "20260930010000_war_of_immortals_item_traits.sql": {
+    "check": "war-of-immortals-item-traits.sql",
+    "order": "before-functions"
+  },
+  "20260930020000_war_of_immortals_bloodrager_progression.sql": {
+    "check": "war-of-immortals-bloodrager.sql",
+    "order": "before-functions"
+  },
+  "20260930030000_war_of_immortals_spell_reference_links.sql": {
+    "check": "war-of-immortals-spell-reference-links.sql",
     "order": "before-functions"
   }
 }

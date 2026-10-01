@@ -1,9 +1,9 @@
-import { fetchAbilityBlockByName, fetchSpellByName, fetchTraitByName } from './content-store';
+import { fetchAbilityBlockByName, fetchCreatureByName, fetchSpellByName, fetchTraitByName } from './content-store';
 import { convertToHardcodedLink } from './hardcoded-links';
 import { Hazard } from '@schemas/content';
 
 type HazardReference = {
-  type: 'spell' | 'action' | 'trait';
+  type: 'spell' | 'action' | 'trait' | 'creature';
   name: string;
   pattern: RegExp;
 };
@@ -17,11 +17,15 @@ const HAZARD_REFERENCES: HazardReference[] = [
   { type: 'spell', name: 'hydraulic push', pattern: /\bhydraulic push\b/gi },
   { type: 'action', name: 'Strike', pattern: /\bStrikes?\b/g },
   { type: 'action', name: 'Fly', pattern: /\b(?:Fly|Flies)\b/g },
+  { type: 'creature', name: 'Agyra', pattern: /\bAgyra\b/g },
+  { type: 'creature', name: 'Verex-That-Was', pattern: /\bVerex-That-Was\b/g },
+  { type: 'creature', name: 'Oliphaunt of Jandelay', pattern: /\bOliphaunt(?: of Jandelay)?\b/g },
   { type: 'trait', name: 'air', pattern: /\bair\b/gi },
   { type: 'trait', name: 'electricity', pattern: /\belectricity\b/gi },
   { type: 'trait', name: 'fire', pattern: /\bfire\b/gi },
   { type: 'trait', name: 'poison', pattern: /\bpoison\b/gi },
   { type: 'trait', name: 'sonic', pattern: /\bsonic\b/gi },
+  { type: 'trait', name: 'spirit', pattern: /\bspirit\b/gi },
   { type: 'trait', name: 'water', pattern: /\bwater\b/gi },
   { type: 'trait', name: 'primal', pattern: /\bprimal\b/gi },
   { type: 'trait', name: 'vitality', pattern: /\bvitality\b/gi },
@@ -53,6 +57,7 @@ export async function preloadHazardReferences(hazard: Hazard): Promise<boolean> 
     missing.map(({ type, name }) => {
       if (type === 'spell') return fetchSpellByName(name, 'ALL-OFFICIAL-PUBLIC');
       if (type === 'action') return fetchAbilityBlockByName(name, 'ALL-OFFICIAL-PUBLIC');
+      if (type === 'creature') return fetchCreatureByName(name, 'ALL-OFFICIAL-PUBLIC');
       return fetchTraitByName(name, 'ALL-OFFICIAL-PUBLIC');
     })
   );

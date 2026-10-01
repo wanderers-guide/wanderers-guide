@@ -149,13 +149,20 @@ select 'war-items',
       or (name = 'Wandering Pipe' and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/Equipment.aspx?ID=3513')))
 union all
 select 'war-artifact-fields',
-  (select count(*) = 3 from public.item where content_source_id = 400
+  (select count(*) = 2 from public.item where content_source_id = 400
     and ((id = 16929 and name = 'Final Scalecloak' and bulk = '1'
       and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/Equipment.aspx?ID=3508')
     or (id = 17101 and name = 'Freedom''s Flame' and bulk = '0.1'
-      and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/Equipment.aspx?ID=3509')
-    or (id = 16930 and name = 'Worldforge' and bulk = '1' and usage = 'held in 1 hand'
-      and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/Equipment.aspx?ID=3511')))
+      and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/Equipment.aspx?ID=3509')))
+union all
+select 'war-worldforge-preservation',
+  exists (select 1 from public.item
+    where id = 16930 and name = 'Worldforge' and uuid = 5574690037466395
+      and content_source_id = 400 and level = 25
+      and bulk = '15' and usage = ''
+      and meta_data #>> '{source,url}' = 'https://2e.aonprd.com/Equipment.aspx?ID=3511'
+      and meta_data #>> '{source,book}' = 'War of Immortals'
+      and meta_data #>> '{source,page}' = '152')
 union all
 select 'war-holy-rune',
   exists (select 1 from public.item where id = 17101 and name = 'Freedom''s Flame'

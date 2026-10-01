@@ -52,6 +52,7 @@ export const DRAWER_STYLES = {
   },
   header: {
     paddingBottom: 0,
+    flexShrink: 0,
   },
   body: {
     flex: '1 1 auto',

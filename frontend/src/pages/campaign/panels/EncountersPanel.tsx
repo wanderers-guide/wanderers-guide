@@ -28,7 +28,6 @@ import {
   NumberInput,
   TextInput,
   Badge,
-  MantineColor,
   LoadingOverlay,
 } from '@mantine/core';
 import { getHotkeyHandler, useHover, useMediaQuery } from '@mantine/hooks';
@@ -40,6 +39,7 @@ import { ConditionPills, selectCondition } from '@pages/character_sheet/sections
 import { makeRequest } from '@requests/request-manager';
 import {
   IconBat,
+  IconAlertTriangle,
   IconCheck,
   IconCylinder,
   IconExternalLink,
@@ -51,7 +51,7 @@ import {
   IconX,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Campaign, Character, Combatant, Creature, Encounter, LivingEntity } from '@schemas/content';
+import { Campaign, Character, Combatant, Creature, Encounter, Hazard, LivingEntity } from '@schemas/content';
 import { getEntityLevel } from '@utils/entity-utils';
 import { isPhoneSized, phoneQuery } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';
@@ -67,6 +67,14 @@ import { useAtom, useAtomValue } from 'jotai';
 import BlurBox from '@common/BlurBox';
 import ImprintButton from '@common/ImprintButton';
 import { createEncounterCharacterWriter } from '@utils/encounter-character-writer';
+import { createHazardCombatant, isHazardCombatant, type HazardCombatant } from '@utils/encounter-hazard';
+import { calculateDifficulty as calculateEncounterDifficulty } from '@utils/encounter-difficulty';
+import { HazardCombatantCard } from '@pages/campaign/panels/HazardCombatantCard';
+
+/** Keep the shared entity-level resolver for existing generator and encounter callers. */
+export function calculateDifficulty(encounter: Encounter, combatants: Combatant[]) {
+  return calculateEncounterDifficulty(encounter, combatants, getEntityLevel);
+}
 
 export default function EncountersPanel(props: {
   panelHeight: number;
@@ -460,6 +468,7 @@ export default function EncountersPanel(props: {
 }
 
 export type PopulatedCombatant = Omit<Combatant, 'data'> & Required<Pick<Combatant, 'data'>>;
+export type EncounterCombatant = PopulatedCombatant | HazardCombatant;
 
 function EncounterView(props: {
   characterWriter?: ReturnType<typeof createEncounterCharacterWriter>;
@@ -478,9 +487,13 @@ function EncounterView(props: {
    * @returns - The updated encounter
    */
   const changeCombatants = (
-    change: { type: 'ADD'; data: LivingEntity; ally: boolean } | { type: 'REMOVE'; data: Combatant }
+    change:
+      | { type: 'ADD'; data: LivingEntity; ally: boolean }
+      | { type: 'ADD_HAZARD'; data: Hazard }
+      | { type: 'REMOVE'; data: Combatant }
   ) => {
-    const newEncounter = cloneDeep(props.encounter);
+    const currentProps = latestPropsRef.current;
+    const newEncounter = cloneDeep(currentProps.encounter);
 
     if (change.type === 'ADD') {
       newEncounter.combatants.list.push({
@@ -492,6 +505,8 @@ function EncounterView(props: {
         character: isCharacter(change.data) ? change.data.id : undefined,
         data: undefined,
       });
+    } else if (change.type === 'ADD_HAZARD') {
+      newEncounter.combatants.list.push(createHazardCombatant(change.data, crypto.randomUUID()));
     } else if (change.type === 'REMOVE') {
       newEncounter.combatants.list = newEncounter.combatants.list.filter((c) => {
         return c._id !== change.data._id;
@@ -503,13 +518,19 @@ function EncounterView(props: {
     const partyLevel = mean(alliesInEncounter.map((p) => getEntityLevel(p.data)));
     const partySize = alliesInEncounter.length;
 
-    newEncounter.meta_data = {
-      ...newEncounter.meta_data,
-      party_level: partyLevel,
-      party_size: partySize,
-    };
+    // Only an ally change recalculates the party, not adding or removing an enemy.
+    if (
+      (change.type === 'ADD' && change.ally) ||
+      (change.type === 'REMOVE' && change.data.type !== 'HAZARD' && change.data.ally)
+    )
+      newEncounter.meta_data = {
+        ...newEncounter.meta_data,
+        party_level: partySize > 0 ? partyLevel : undefined,
+        party_size: partySize,
+      };
 
-    props.setEncounter(newEncounter);
+    latestPropsRef.current = { ...currentProps, encounter: newEncounter };
+    currentProps.setEncounter(newEncounter);
 
     return newEncounter;
   };
@@ -520,13 +541,15 @@ function EncounterView(props: {
    * @returns - The updated encounter
    */
   const updateCombatant = (combatant: Combatant) => {
-    const newEncounter = cloneDeep(props.encounter);
+    const currentProps = latestPropsRef.current;
+    const newEncounter = cloneDeep(currentProps.encounter);
     const index = newEncounter.combatants.list.findIndex((c) => c._id === combatant._id);
     if (index === -1) return;
 
     newEncounter.combatants.list[index] = combatant;
 
-    props.setEncounter(newEncounter);
+    latestPropsRef.current = { ...currentProps, encounter: newEncounter };
+    currentProps.setEncounter(newEncounter);
 
     return newEncounter;
   };
@@ -573,7 +596,10 @@ function EncounterView(props: {
   const displayDifficulty = (combatants: Combatant[]): boolean => {
     if (combatants.length === 0) return false;
     // Display difficulty if there are both allies and enemies
-    return combatants.some((c) => c.ally) && combatants.some((c) => !c.ally);
+    return (
+      (combatants.some((c) => c.type !== 'HAZARD' && c.ally) || (props.encounter.meta_data.party_size ?? 0) > 0) &&
+      combatants.some((c) => c.type === 'HAZARD' || !c.ally)
+    );
   };
 
   /**
@@ -586,7 +612,7 @@ function EncounterView(props: {
       if (combatant.type === 'CHARACTER') {
         const player = props.players?.find((p) => p.id === combatant.character);
         return player ? (props.characterWriter?.display(player) ?? player) : undefined;
-      } else {
+      } else if (combatant.type === 'CREATURE') {
         return combatant.creature;
       }
     };
@@ -599,7 +625,11 @@ function EncounterView(props: {
   };
 
   // Get the combatants from the encounter
-  const combatants = populateCombatants(props.encounter.combatants.list);
+  const livingCombatants = populateCombatants(props.encounter.combatants.list);
+  const combatants: EncounterCombatant[] = [
+    ...livingCombatants,
+    ...props.encounter.combatants.list.filter(isHazardCombatant),
+  ];
 
   // The players that can still be added to the encounter
   const playersToAdd = useMemo(() => {
@@ -623,16 +653,16 @@ function EncounterView(props: {
     queryKey: [
       `computed-combatants`,
       {
-        combatants: combatants,
+        combatants: livingCombatants,
         // computeCombatants fetches content scoped by the default PAGE sources
         sources: getDefaultSourcesKey('PAGE'),
       },
     ],
     queryFn: async () => {
-      if (combatants.length === 0) return [];
-      return await computeCombatants(combatants);
+      if (livingCombatants.length === 0) return [];
+      return await computeCombatants(livingCombatants);
     },
-    enabled: combatants.length > 0,
+    enabled: livingCombatants.length > 0,
   });
 
   const getComputedData = (combatant: Combatant) => {
@@ -653,7 +683,7 @@ function EncounterView(props: {
     <Box style={{}}>
       <Stack gap={0}>
         <Box p={8}>
-          <Group justify='space-between' mr={40} wrap='nowrap' align='flex-start'>
+          <Group justify='space-between' mr={40} wrap='wrap' align='flex-start'>
             <Group gap={10}>
               <Button
                 variant='gradient'
@@ -670,9 +700,13 @@ function EncounterView(props: {
                     modal: 'initiativeRoll',
                     title: <Title order={3}>Assign Initiative Skills</Title>,
                     innerProps: {
-                      combatants: combatants,
+                      combatants: combatants.filter(
+                        (combatant) =>
+                          !isHazardCombatant(combatant) || combatant.hazard.details.complexity === 'COMPLEX'
+                      ),
                       onConfirm: (rollBonuses: Map<string, number | null>) => {
-                        const newEncounter = cloneDeep(props.encounter);
+                        const currentProps = latestPropsRef.current;
+                        const newEncounter = cloneDeep(currentProps.encounter);
 
                         // Roll initiative for each combatant
                         for (const [_id, bonus] of rollBonuses) {
@@ -689,7 +723,8 @@ function EncounterView(props: {
                           });
                         }
 
-                        props.setEncounter(newEncounter);
+                        latestPropsRef.current = { ...currentProps, encounter: newEncounter };
+                        currentProps.setEncounter(newEncounter);
                       },
                     },
                   });
@@ -760,6 +795,19 @@ function EncounterView(props: {
               <ImprintButton
                 noBorder
                 size='xs'
+                rightSection={<IconAlertTriangle size={14} />}
+                onClick={() =>
+                  selectContent<Hazard>('hazard', (hazard) => changeCombatants({ type: 'ADD_HAZARD', data: hazard }), {
+                    showButton: true,
+                    zIndex: 400,
+                  })
+                }
+              >
+                Add Hazard
+              </ImprintButton>
+              <ImprintButton
+                noBorder
+                size='xs'
                 rightSection={<IconCylinder size={14} />}
                 color={props.encounter.color}
                 onClick={() => {
@@ -802,6 +850,7 @@ function EncounterView(props: {
                 if (aI === undefined || isNaN(aI)) aI = undefined;
                 if (bI === undefined || isNaN(bI)) bI = undefined;
 
+                if (aI === undefined && bI === undefined) return 0;
                 if (aI === undefined) return -1;
                 if (bI === undefined) return 1;
 
@@ -818,29 +867,43 @@ function EncounterView(props: {
                   return bI - aI;
                 }
               })
-              .map((combatant) => (
-                <CombatantCard
-                  key={combatant._id}
-                  combatant={combatant}
-                  computed={getComputedData(combatant)}
-                  // Returning updated populated entity data, will trigger update of the combatant
-                  updateEntity={(input) => updateCombatantEntity(combatant._id, input, combatant.data)}
-                  // Update the initiative
-                  updateInitiative={(init) => {
-                    updateCombatant({
-                      ...combatant,
-                      initiative: init,
-                    });
-                  }}
-                  // Remove the combatant
-                  onRemove={() =>
-                    changeCombatants({
-                      type: 'REMOVE',
-                      data: combatant,
-                    })
-                  }
-                />
-              ))}
+              .map((combatant) =>
+                isHazardCombatant(combatant) ? (
+                  <HazardCombatantCard
+                    key={combatant._id}
+                    combatant={combatant}
+                    onUpdate={(update) => {
+                      const current = latestPropsRef.current.encounter.combatants.list.find(
+                        (entry) => entry._id === combatant._id
+                      );
+                      if (current && isHazardCombatant(current)) updateCombatant(update(current));
+                    }}
+                    onRemove={() => changeCombatants({ type: 'REMOVE', data: combatant })}
+                  />
+                ) : (
+                  <CombatantCard
+                    key={combatant._id}
+                    combatant={combatant}
+                    computed={getComputedData(combatant)}
+                    // Returning updated populated entity data, will trigger update of the combatant
+                    updateEntity={(input) => updateCombatantEntity(combatant._id, input, combatant.data)}
+                    // Update the initiative
+                    updateInitiative={(init) => {
+                      updateCombatant({
+                        ...combatant,
+                        initiative: init,
+                      });
+                    }}
+                    // Remove the combatant
+                    onRemove={() =>
+                      changeCombatants({
+                        type: 'REMOVE',
+                        data: combatant,
+                      })
+                    }
+                  />
+                )
+              )}
             {combatants.length === 0 && (
               <Stack mt={40} gap={10}>
                 <Text ta='center' c='gray.6' fz='sm' fs='italic'>
@@ -1240,93 +1303,6 @@ async function computeCombatants(combatants: PopulatedCombatant[]) {
   }
 
   return await Promise.all(combatants.map(computeCombatant));
-}
-
-export function calculateDifficulty(encounter: Encounter, combatants: PopulatedCombatant[]) {
-  const alliesInEncounter = combatants.filter((c) => c.ally);
-  const partyLevel = encounter.meta_data.party_level ?? mean(alliesInEncounter.map((p) => getEntityLevel(p.data)));
-  const partySize = encounter.meta_data.party_size ?? alliesInEncounter.length;
-
-  let xpBudget = 0;
-  for (const entity of combatants) {
-    if (entity.ally) {
-      continue;
-    }
-    switch (getEntityLevel(entity.data) - partyLevel) {
-      case -4:
-        xpBudget += 10;
-        break;
-      case -3:
-        xpBudget += 15;
-        break;
-      case -2:
-        xpBudget += 20;
-        break;
-      case -1:
-        xpBudget += 30;
-        break;
-      case 0:
-        xpBudget += 40;
-        break;
-      case 1:
-        xpBudget += 60;
-        break;
-      case 2:
-        xpBudget += 80;
-        break;
-      case 3:
-        xpBudget += 120;
-        break;
-      case 4:
-        xpBudget += 160;
-        break;
-      default:
-        if (getEntityLevel(entity.data) > partyLevel) {
-          // greater than +4
-          xpBudget += (getEntityLevel(entity.data) - partyLevel) * 40;
-        } else if (getEntityLevel(entity.data) < partyLevel) {
-          // less than -4
-          xpBudget += 0;
-        }
-        break;
-    }
-  }
-
-  let partySizeDiff = partySize - 4;
-
-  let difficulty;
-  let color: MantineColor = 'gray';
-  if (xpBudget >= 200 + partySizeDiff * 40) {
-    // 200+ is impossible
-    difficulty = 'IMPOSSIBLE';
-    color = 'dark';
-  } else if (xpBudget >= 140 + partySizeDiff * 40) {
-    // 140-199 is extreme
-    difficulty = 'Extreme';
-    color = 'red';
-  } else if (xpBudget >= 100 + partySizeDiff * 30) {
-    // 100-139 is severe
-    difficulty = 'Severe';
-    color = 'orange';
-  } else if (xpBudget >= 70 + partySizeDiff * 20) {
-    // 70-99 is moderate
-    difficulty = 'Moderate';
-    color = 'yellow';
-  } else if (xpBudget >= 50 + partySizeDiff * 15) {
-    // 50-69 is low
-    difficulty = 'Low';
-    color = 'green';
-  } else {
-    // 0-50 is trivial
-    difficulty = 'Trivial';
-    color = 'blue';
-  }
-
-  return {
-    status: difficulty,
-    color: color,
-    xp: Math.floor(xpBudget),
-  };
 }
 
 export function getCombatantStoreID(combatant: Combatant) {

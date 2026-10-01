@@ -19,6 +19,7 @@ apply migrations, repair migration history, or delete remote functions.
 npm run test:release
 npm run release:check
 npm run release:manifest -- --output /tmp/wg-release-manifest.json
+npm run release:verify:functions -- --project-ref fdrjqcyjklatdrmjdnys --output /tmp/wg-function-verification.json
 npm run release:verify -- --project-ref fdrjqcyjklatdrmjdnys --output /tmp/wg-release-verification.json
 ```
 
@@ -29,6 +30,10 @@ downloads each cloud function into its own temporary directory, compares all
 runtime source files, reads schema metadata through Supabase's read-only SQL API,
 and removes the temporary downloads. It checks function inventory again afterward
 to reject a snapshot collected during another deployment.
+The function-only check reports deployed source and gateway drift without querying
+the database, so it can run before a pending schema migration. The full check
+evaluates each distinct migration requirement query once and identifies failed
+predicates by check name and predicate ID.
 
 The manifest records the commit, dirty-worktree state, every cloud entry point,
 explicit gateway policy, shared runtime dependencies, declarations, import map,
@@ -141,6 +146,14 @@ rejects unknown versions. Absence of a ledger never substitutes for effect check
    for permission, auth, worker and paid-work failures. Archive the final manifest
    and successful report. Provider telemetry and semantic checks remain necessary
    even when hashes agree.
+
+For War of Immortals hazards, first apply `20260928010000_hazard_type.sql`.
+Then deploy `create-creature`, `find-creature`, and `search-data` with the current
+shared helper; deploy the full cloud inventory to satisfy the release gate.
+Smoke-test ordinary creature reads, search, and an authorized test create before
+applying `20260928020000_war_of_immortals_hazards.sql`. Afterward, confirm the
+five hazards appear only in hazard results and that hazard edits are rejected.
+Old find and search handlers do not distinguish hazards from creatures.
 
 ## Rollback
 

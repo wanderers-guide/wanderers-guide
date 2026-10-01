@@ -46,7 +46,8 @@ await build({
                  };
                  export const fetchSpellByName = fetch('spell');
                  export const fetchAbilityBlockByName = fetch('action');
-                 export const fetchTraitByName = fetch('trait');`,
+                 export const fetchTraitByName = fetch('trait');
+                 export const fetchCreatureByName = fetch('creature');`,
         }));
       },
     },
@@ -125,4 +126,33 @@ test('unavailable references remain readable prose', async () => {
     details: { stealth: '', description: text, disable: '', activation: { name: '', trigger: '', effect: '' } },
   });
   assert.equal(linkHazardReferences(text), text);
+});
+
+test('spirit damage links every occurrence without linking physical damage', async () => {
+  globalThis.hazardLinkTest.available.set('trait:spirit', 1556);
+  const text = '1d10 spirit damage, then Spirit damage and slashing damage.';
+  await preloadHazardReferences({
+    details: { stealth: '', description: text, disable: '', activation: { name: '', trigger: '', effect: '' } },
+  });
+  const linked = linkHazardReferences(text);
+  assert.equal((linked.match(/link_trait_1556/g) ?? []).length, 2);
+  assert.match(linked, /slashing damage/);
+  assert.ok(globalThis.hazardLinkTest.calls.every(({ sources }) => sources === 'ALL-OFFICIAL-PUBLIC'));
+});
+
+test('named source creatures link repeated and possessive references through their canonical names', async () => {
+  for (const [index, name] of ['Agyra', 'Verex-That-Was', 'Oliphaunt of Jandelay'].entries()) {
+    globalThis.hazardLinkTest.available.set(`creature:${name}`, 800 + index);
+  }
+  const text =
+    "Agyra flies. Agyra rests. Verex-That-Was's power and the Oliphaunt's trumpet connect to the Oliphaunt of Jandelay.";
+  await preloadHazardReferences({
+    details: { stealth: '', description: text, disable: '', activation: { name: '', trigger: '', effect: '' } },
+  });
+  const linked = linkHazardReferences(text);
+  assert.equal((linked.match(/link_creature_800/g) ?? []).length, 2);
+  assert.match(linked, /\[Verex-That-Was\]\(link_creature_801\)'s power/);
+  assert.match(linked, /\[Oliphaunt\]\(link_creature_802\)'s trumpet/);
+  assert.match(linked, /\[Oliphaunt of Jandelay\]\(link_creature_802\)/);
+  assert.equal(globalThis.hazardLinkTest.calls.filter(({ type }) => type === 'creature').length, 3);
 });

@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
+import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(`${root}/package.json`);
 const { build } = require('esbuild');
@@ -59,11 +60,16 @@ globalThis.__selectionHooks = {
   useState: (value) => host.state(value),
   useQuery: (options) => {
     host.queryOptions = options;
-    return { data: host.data, isFetching: host.data === undefined };
+    return {
+      data: host.data,
+      isFetching: host.data === undefined && !host.error,
+      isError: !!host.error,
+      refetch: () => (host.retried = true),
+    };
   },
 };
 const special = {
-  useAtom: '() => [null, () => {}]',
+  useAtom: '() => [null, value => { globalThis.__selectionDrawer = value; }]',
   useAtomValue: '() => null',
   collectEntitySpellcasting: '(id, entity) => entity.spells',
   isSpellVisible: '() => true',
@@ -80,10 +86,13 @@ const special = {
   getCachedContent: '() => []',
   getContentFast: '() => []',
   fetchContent: 'async (...args) => { globalThis.__selectionFetch = args; return []; }',
+  fetchContentAll: 'async (...args) => { globalThis.__selectionFetchAll = args; return []; }',
+  fetchHazards: 'async (...args) => { globalThis.__selectionHazards = args; return []; }',
   fetchContentSources: 'async () => []',
   filterByTraitType: '() => []',
   hashData: 'value => JSON.stringify(value)',
   toLabel: 'value => String(value)',
+  labelToVariable: 'value => globalThis.__selectionLabels(value)',
   Accordion: 'Object.assign(() => {}, {Item:"Accordion.Item",Control:"Accordion.Control",Panel:"Accordion.Panel"})',
 };
 const imports = new Map();
@@ -115,7 +124,7 @@ const output = join(directory, 'selection.mjs');
 await build({
   absWorkingDir: root,
   stdin: {
-    contents: `export {SelectContentButton, SelectionOptions} from './src/common/select/SelectContent'; export {default as ManageSpellsModal} from './src/modals/ManageSpellsModal'; export {default as AddItemsModal} from './src/modals/AddItemsModal'; export {AdvancedSearchModal} from './src/modals/AdvancedSearchModal'; export {default as SpellsPanel} from './src/pages/character_sheet/panels/SpellsPanel';`,
+    contents: `export {SelectContentButton, selectContent, SelectionOptions, HazardSelectionOption} from './src/common/select/SelectContent'; export {default as ManageSpellsModal} from './src/modals/ManageSpellsModal'; export {default as AddItemsModal} from './src/modals/AddItemsModal'; export {AdvancedSearchModal} from './src/modals/AdvancedSearchModal'; export {default as SpellsPanel} from './src/pages/character_sheet/panels/SpellsPanel';`,
     resolveDir: root,
   },
   bundle: true,
@@ -162,8 +171,16 @@ await build({
     },
   ],
 });
-const { SelectContentButton, SelectionOptions, ManageSpellsModal, AddItemsModal, AdvancedSearchModal, SpellsPanel } =
-  await import(pathToFileURL(output).href);
+const {
+  SelectContentButton,
+  selectContent,
+  SelectionOptions,
+  HazardSelectionOption,
+  ManageSpellsModal,
+  AddItemsModal,
+  AdvancedSearchModal,
+  SpellsPanel,
+} = await import(pathToFileURL(output).href);
 const charm = { id: 1, name: 'Charm', rank: 1 };
 const command = { id: 2, name: 'Command', rank: 1 };
 const picker = { type: 'spell', searchQuery: 'Charm', limitSelectedOptions: false };
@@ -183,6 +200,95 @@ test('search never offers an option removed by the current filter or override li
     []
   );
   assert.deepEqual(host.render(SelectionOptions, { ...picker, overrideOptions: [command] }).props.options, []);
+});
+
+test('hazard selections use their source-scoped reader without entering the creature cache', async () => {
+  const host = new RenderHost();
+  const hazard = { id: 11, name: 'Boneburst', level: 14, content_source_id: 400 };
+  const windSurge = { id: 12, name: 'Wind Surge', level: 7, content_source_id: 401 };
+  globalThis.__selectionFetchAll = undefined;
+  globalThis.__selectionHazards = undefined;
+  host.render(SelectionOptions, { type: 'hazard', searchQuery: 'Bone', limitSelectedOptions: false });
+  await host.queryOptions.queryFn();
+  assert.deepEqual(globalThis.__selectionHazards, [[1]]);
+  assert.equal(globalThis.__selectionFetchAll, undefined);
+  assert.equal(host.queryOptions.queryKey[0], 'select-content-options-hazard');
+  host.data = [hazard, windSurge];
+  assert.deepEqual(
+    host.render(SelectionOptions, { type: 'hazard', searchQuery: 'Bone', limitSelectedOptions: false }).props.options,
+    [hazard]
+  );
+  const result = host.render(SelectionOptions, {
+    type: 'hazard',
+    sourceId: 401,
+    searchQuery: '',
+    limitSelectedOptions: false,
+  });
+  assert.deepEqual(result.props.options, [windSurge]);
+  await host.queryOptions.queryFn();
+  assert.deepEqual(globalThis.__selectionHazards, [[401]]);
+});
+
+test('creature selections retain their ordinary source-scoped reader', async () => {
+  const host = new RenderHost();
+  globalThis.__selectionHazards = undefined;
+  host.render(SelectionOptions, { type: 'creature', sourceId: 400, searchQuery: '', limitSelectedOptions: false });
+  await host.queryOptions.queryFn();
+  assert.deepEqual(globalThis.__selectionFetchAll, ['creature', [400]]);
+  assert.equal(globalThis.__selectionHazards, undefined);
+});
+
+test('a failed hazard catalog offers retry instead of claiming the book contains no hazards', () => {
+  const host = new RenderHost();
+  host.error = new Error('Hazard catalog unavailable');
+  const tree = host.render(SelectionOptions, { type: 'hazard', searchQuery: '', limitSelectedOptions: false });
+  const retry = findChild(tree, 'Button');
+  assert.equal(retry.props.children, 'Retry');
+  assert.equal(retry.props.loading, false);
+  retry.props.onClick();
+  assert.equal(host.retried, true);
+});
+
+test('hazard rows preview their exact snapshot above the picker and select without creature adjustments', () => {
+  const host = new RenderHost();
+  const hazard = {
+    id: 11,
+    name: 'Boneburst',
+    level: 14,
+    deprecated: false,
+    details: { complexity: 'COMPLEX' },
+  };
+  let selected;
+  const tree = host.render(HazardSelectionOption, {
+    hazard,
+    previewZIndex: 751,
+    onClick: (option) => (selected = option),
+  });
+  assert.equal(tree.props.level, 14);
+  tree.props.onClick();
+  assert.deepEqual(globalThis.__selectionDrawer, {
+    type: 'hazard',
+    data: { hazard, zIndex: 751 },
+    extra: { addToHistory: true },
+  });
+  assert.equal(tree.props.buttonOverride.type, 'Button');
+  assert.equal(tree.props.buttonOverride.props.children, 'Select');
+  assert.equal(tree.props.includeOptions, undefined);
+  let propagationStopped = false;
+  tree.props.buttonOverride.props.onClick({ stopPropagation: () => (propagationStopped = true) });
+  assert.equal(propagationStopped, true);
+  assert.equal(selected, hazard);
+  assert.equal(host.render(HazardSelectionOption, { hazard: { ...hazard, deprecated: true }, onClick() {} }), null);
+});
+
+test('the shared picker preserves hazard modal options and selection callbacks', () => {
+  const hazard = { id: 11, name: 'Boneburst' };
+  let selected;
+  selectContent('hazard', (option) => (selected = option), { zIndex: 750 });
+  assert.equal(globalThis.__selectionModal.innerProps.type, 'hazard');
+  assert.equal(globalThis.__selectionModal.zIndex, 750);
+  globalThis.__selectionModal.innerProps.onClick(hazard);
+  assert.equal(selected, hazard);
 });
 
 test('an optimistic selection does not roll back while its parent value is stale', () => {
@@ -327,4 +433,93 @@ test('late innate spell data respects an active search and never replaces source
   const enabled = { ...spellPanelProps, content: { spells: [charm, enabledTree] } };
   assert.deepEqual(findChild(host.render(SpellsPanel, enabled), 'SpellList').props.allSpells, [enabledTree]);
   assert.equal(host.queryOptions.enabled, false);
+});
+
+test('War item selections retain intrinsic traits with the parent book disabled and preserve saved copies', async (t) => {
+  const migration = await readFile(
+    new URL('../../supabase/migrations/20260930010000_war_of_immortals_item_traits.sql', import.meta.url),
+    'utf8'
+  );
+  const patches = JSON.parse(migration.split('$patches$')[1]);
+  assert.deepEqual(
+    patches.map(({ id, before, after }) => ({ id, before, after })),
+    [
+      { id: 17481, before: [1504, 4072], after: [1504, 4072, 1706, 1537] },
+      { id: 17480, before: [], after: [1533] },
+    ]
+  );
+  const fixtures = await readContentRows([
+    ...[17481, 17480, 16297].map((id) => ({ table: 'item', id })),
+    ...[1504, 4072, 1706, 1537, 1533].map((id) => ({ table: 'trait', id })),
+  ]);
+  const originals = structuredClone(fixtures);
+  const engine = await createOperationEngine();
+  t.after(() => engine.cleanup());
+  engine.setFixtures(fixtures);
+  globalThis.__selectionLabels = engine.labelToVariable;
+  t.after(() => delete globalThis.__selectionLabels);
+  const ogreHook = fixtures.find(({ table, row }) => table === 'item' && row.id === 16297).row;
+  assert.equal(ogreHook.content_source_id, 318);
+  assert.deepEqual(ogreHook.traits, [1706, 1537]);
+
+  for (const patch of patches) {
+    const original = fixtures.find(({ table, row }) => table === 'item' && row.id === patch.id).row;
+    assert.equal(original.name, patch.name);
+    assert.equal(original.content_source_id, 400);
+    assert.equal(original.meta_data.source.url, patch.url);
+    assert.ok(
+      JSON.stringify(original.traits) === JSON.stringify(patch.before) ||
+        JSON.stringify(original.traits) === JSON.stringify(patch.after),
+      `${patch.name} must be the reviewed before or after state`
+    );
+    const corrected = { ...structuredClone(original), traits: [...patch.after] };
+    assert.deepEqual({ ...corrected, traits: original.traits }, original);
+    const saved = { ...structuredClone(original), traits: [...patch.before] };
+    delete saved.meta_data.base_item_content;
+    const savedEntry = {
+      id: `saved-${original.id}`,
+      item: saved,
+      is_formula: false,
+      is_equipped: true,
+      is_invested: false,
+      container_contents: [],
+    };
+    const beforeSaved = structuredClone(savedEntry);
+
+    for (const enableMonsterCore of [false, true]) {
+      const host = new RenderHost();
+      host.data = [corrected, ...(enableMonsterCore ? [ogreHook] : [])];
+      let selected;
+      const props = {
+        context: { closeModal() {} },
+        id: 'items',
+        innerProps: { onAddItem: (item) => (selected = item) },
+      };
+      const tree = host.render(AddItemsModal, props);
+      if (enableMonsterCore) {
+        findChild(tree, AdvancedSearchModal).props.onSelect(corrected);
+      } else {
+        findChild(tree, 'ItemsList').props.onClick(corrected, 'GIVE');
+      }
+      assert.ok(selected);
+      assert.equal(
+        selected.meta_data.base_item_content?.id,
+        patch.id === 17481 && enableMonsterCore ? ogreHook.id : undefined
+      );
+      assert.deepEqual(engine.compileTraits(selected), patch.after);
+      assert.equal(new Set(engine.compileTraits(selected)).size, patch.after.length);
+      let entity = { id: 1, inventory: { items: [savedEntry], coins: { gp: 0 } } };
+      await engine.handleAddItem((update) => (entity = update(entity)), selected, false);
+      assert.deepEqual(
+        entity.inventory.items.find(({ id }) => id === savedEntry.id),
+        beforeSaved
+      );
+      const added = entity.inventory.items.find(({ id }) => id !== savedEntry.id).item;
+      assert.deepEqual(engine.compileTraits(added), patch.after);
+      assert.deepEqual(savedEntry, beforeSaved, 'the old saved item is never repaired implicitly');
+    }
+  }
+  assert.deepEqual(fixtures, originals, 'catalog selection never rewrites the original rows');
+  assert.match(migration, /to_jsonb\(entry\.traits\) is distinct from patch->'before'/);
+  assert.match(migration, /type = 'item' and ref_id = entry\.id and status->>'state' = 'PENDING'/);
 });
