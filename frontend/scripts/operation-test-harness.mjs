@@ -63,6 +63,7 @@ export async function readContentRows(targets) {
     'skill_training_base',
     'class_id',
     'archetype_id',
+    'dedication_feat_id',
     'override_skill_training_base',
   ]);
   const booleanColumns = new Set(['deprecated', 'override_class_operations', 'require_key', 'is_published']);
@@ -130,7 +131,7 @@ export function importFromContentPackage() {}
 `;
 
 /** Bundle the workspace's actual engine with a local content boundary; register cleanup with test.after(). */
-export async function createOperationEngine({ renderRichText = false, renderPerceptionDrawer = false } = {}) {
+export async function createOperationEngine({ renderRichText = false, renderPerceptionDrawer = false, resolveArchetypeFixtures = false } = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'wg-operation-tests-'));
   try {
     const result = await build({
@@ -182,6 +183,7 @@ export async function createOperationEngine({ renderRichText = false, renderPerc
           export { detectSpells } from '@spells/spell-utils';
           export { getInventorySpellIds, getMissingSpellIds, mergeSpellDependencies, filterSpellCatalog } from '@spells/item-spell-dependencies';
           export { filterByTraitType } from '@items/inv-utils';
+          export { meetsPrerequisites } from '@variables/prereq-detection';
           export { applyConditions, compiledConditions, getConditionByName } from '@conditions/condition-handler';
           export { getSpellStats } from '@spells/spell-handler';
           export { changeEntityConditions, confirmHealth, handleRest } from '@pages/character_sheet/entity-handler';
@@ -235,7 +237,12 @@ export async function createOperationEngine({ renderRichText = false, renderPerc
               namespace: 'fixture',
             }));
             pluginBuild.onLoad({ filter: /.*/, namespace: 'fixture' }, () => ({
-              contents: fixtureContent,
+              contents: resolveArchetypeFixtures
+                ? fixtureContent.replace(
+                    'export async function fetchArchetypeByDedicationFeat() { return null; }',
+                    "export async function fetchArchetypeByDedicationFeat(id) { return getCachedContent('archetype').find(row => row.dedication_feat_id === id) || null; }"
+                  )
+                : fixtureContent,
               loader: 'ts',
             }));
           },
