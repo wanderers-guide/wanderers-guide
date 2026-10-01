@@ -597,8 +597,8 @@ begin
     end if;
     update public.item set usage = patch #>> '{after,usage}',
       meta_data = case when patch->'after' ? 'reload'
-        then jsonb_set(original.meta_data::jsonb, '{reload}', patch #> '{after,reload}')::json
-        else original.meta_data end
+        then jsonb_set(original.meta_data::jsonb, '{reload}', patch #> '{after,reload}')
+        else original.meta_data::jsonb end
       where id = original.id;
   end loop;
 end
