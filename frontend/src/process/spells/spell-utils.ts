@@ -97,7 +97,13 @@ export function detectSpells(text: string, allSpells: Spell[], simpleDetect = fa
 
       const spell = allSpells.find((s) => s.id === spellId);
       if (spell) {
-        detectedSpells.push({ spell: cloneDeep(spell), rank: spell.rank });
+        // Only a qualifier immediately before this linked spell sets its rank.
+        // Other numbers and other activation lines must not heighten this spell.
+        const rankMatch = text
+          .slice(0, linkMatch.index)
+          .match(/(?:^|\W)([1-9]|10)(?:st|nd|rd|th)-(?:rank|level)\s*[*_]*\[[^\]]+\]$/i);
+        const rank = rankMatch ? Number(rankMatch[1]) : spell.rank;
+        detectedSpells.push({ spell: { ...cloneDeep(spell), rank }, rank });
       }
     }
 
@@ -124,6 +130,38 @@ export function detectSpells(text: string, allSpells: Spell[], simpleDetect = fa
     }
   }
 
+  return detectedSpells;
+}
+
+/** Read casting activations, retaining first-link compatibility for headerless spellhearts. */
+export function detectSpellheartSpells(text: string, allSpells: Spell[]): { spell: Spell; rank: number }[] {
+  const activations = text.split(/(?:^|\n)\s*(?:\*\*|__)?Activate(?:\*\*|__)?(?=\s|:)/gi).slice(1);
+  // Older and homebrew descriptions may omit activation headers entirely.
+  if (activations.length === 0) return detectSpells(text, allSpells, true).slice(0, 1);
+  const qualifier = String.raw`(?:[1-9]|10)(?:st|nd|rd|th)-(?:rank|level)`;
+  const reference = String.raw`(?:a\s+)?(?:${qualifier}\s+)?[*_]*\[[^\]]+\]\(link_spell_\d+\)[*_]*`;
+  const castClause = new RegExp(String.raw`\byou\s+cast\s+(${reference}(?:\s*(?:,|or|and)\s*${reference})*)`, 'gi');
+  const linkedSpell = new RegExp(reference, 'gi');
+  const detectedSpells: { spell: Spell; rank: number }[] = [];
+  const seen = new Set<string>();
+
+  for (const activation of activations) {
+    for (const clause of activation.matchAll(castClause)) {
+      let castRank: number | undefined;
+      for (const match of clause[1].matchAll(linkedSpell)) {
+        const rankMatch = match[0].match(/([1-9]|10)(?:st|nd|rd|th)-(?:rank|level)/i);
+        if (rankMatch) castRank = Number(rankMatch[1]);
+        for (const detected of detectSpells(match[0], allSpells, true)) {
+          // A qualifier can apply to alternatives, such as 4th-rank harm or heal.
+          const rank = castRank ?? detected.rank;
+          const key = `${detected.spell.id}-${rank}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          detectedSpells.push({ spell: { ...detected.spell, rank }, rank });
+        }
+      }
+    }
+  }
   return detectedSpells;
 }
 
