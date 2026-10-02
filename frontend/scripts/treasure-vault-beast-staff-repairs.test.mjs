@@ -301,10 +301,9 @@ test('real character/creature controllers keep the bonus conditional, equipment-
         { text: '+2 circumstance bonus to checks using Animal Empathy', source: row.name },
       ]);
       assert.deepEqual(entry, saved);
-      // Existing controller eligibility is based on equipment, not is_formula. Preserve
-      // that behavior; even an equipped formula never receives an unconditional bonus.
+      // Formula knowledge does not grant the physical staff's conditional benefit.
       await calculate([inventoryItem(row, { is_equipped: true, is_formula: true })], kind);
-      assert.deepEqual(conditional(store).conditionals, value.conditionals);
+      assert.deepEqual(conditional(store).conditionals, []);
       assert.equal(conditional(store).bonusValue, baseline.bonusValue);
       for (const inactive of [
         [inventoryItem(row)],

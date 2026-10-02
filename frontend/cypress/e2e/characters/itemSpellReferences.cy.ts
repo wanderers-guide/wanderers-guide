@@ -1,4 +1,4 @@
-import type { Character, Class as CharacterClass, InventoryItem, Item } from '../../../src/schemas/content';
+import type { Character, Class as CharacterClass, Condition, InventoryItem, Item } from '../../../src/schemas/content';
 
 type ItemSpellFixture = { key: string; gm: { email: string; password: string } };
 
@@ -240,6 +240,176 @@ describe('Treasure Vault item spell references', () => {
         request<Character[]>('find-character', { id: [characterId] }).should('deep.equal', [])
       );
     if (fixture) cy.task('campaignFixture:cleanup', fixture.key, { log: false });
+  });
+
+  it('keeps formulas as knowledge without physical crafting bonuses, weapon attacks or rest charge resets', () => {
+    cy.viewport(1280, 900);
+    let toolkit: InventoryItem;
+    const fatigued: Condition = {
+      name: 'Fatigued',
+      description: `You’re tired and can’t summon much energy. You take a –1 status penalty to AC and saving throws. You can’t use exploration activities performed while traveling, such as those on pages 438–439.
+    You recover from fatigue after a full night’s rest.`,
+      for_creature: true,
+      for_object: false,
+    };
+    expect(fatigued.name).to.eq('Fatigued');
+    expect(fatigued.description).to.be.a('string').and.not.be.empty;
+    expect(fatigued.for_creature).to.eq(true);
+    expect(fatigued.for_object).to.eq(false);
+    const skillsPanel = () => {
+      cy.get('body').then(($body) => {
+        const tab = $body
+          .find('[role="tab"]')
+          .filter((_, element) => element.textContent?.trim() === 'Skills & Actions');
+        if (tab.length) cy.wrap(tab.first()).click();
+        else {
+          cy.get('button[aria-label="Tab Options"]').trigger('mouseover');
+          cy.contains('[role="menuitem"]', /^Skills & Actions$/).click();
+        }
+      });
+      cy.get('input[placeholder="Search skills"]', { timeout: 30000 }).should('be.visible');
+    };
+    const craftingTimeline = (physical: boolean) => {
+      cy.get('input[placeholder="Search skills"]').clear().type('Crafting');
+      cy.contains('button', /^Crafting\b/, { timeout: 30000 })
+        .scrollIntoView()
+        .click();
+      cy.contains('.mantine-Drawer-root', 'Crafting', { timeout: 30000 }).within(() => {
+        cy.contains('button.mantine-Accordion-control', /^Timeline$/).click();
+        if (physical) {
+          cy.contains("From Artisan's Toolkit (Sterling)").should('be.visible');
+          cy.contains('+1 item bonus to Craft items.').should('be.visible');
+        } else {
+          cy.contains("From Artisan's Toolkit (Sterling)").should('not.exist');
+          cy.contains('+1 item bonus to Craft items.').should('not.exist');
+        }
+        cy.get('button[aria-label="Close drawer"]').click();
+      });
+      cy.get('.mantine-Drawer-content, .mantine-Drawer-overlay').should('not.exist');
+    };
+    const rest = (alias: string) => {
+      let awaitingRest = true;
+      // A normal autosave retains the seeded Fatigued condition. Alias only the actual
+      // rest write that removes it, so an earlier calculated-stat save cannot satisfy this wait.
+      cy.intercept('POST', '**/functions/v1/update-character', (request) => {
+        const conditions = request.body.details?.conditions;
+        if (
+          awaitingRest &&
+          request.body.id === characterId &&
+          Array.isArray(conditions) &&
+          !conditions.some((condition: { name: string }) => condition.name === 'Fatigued')
+        ) {
+          request.alias = alias;
+          awaitingRest = false;
+        }
+      });
+      cy.contains('button', /^Rest$/).click();
+      cy.contains('.mantine-Modal-content', 'Are you sure you want to rest?').within(() => {
+        cy.contains('button', /^Rest$/).click();
+      });
+      cy.wait(`@${alias}`, { timeout: 30000 }).its('response.body.status').should('eq', 'success');
+    };
+
+    cy.then(() => request<Item[]>('find-item', { id: [6724] }))
+      .then((items) => {
+        expect(items).to.have.length(1);
+        expect(items[0].name).to.eq("Artisan's Toolkit (Sterling)");
+        expect(items[0].group).to.eq('GENERAL');
+        toolkit = {
+          id: crypto.randomUUID(),
+          item: items[0],
+          is_formula: true,
+          is_equipped: false,
+          is_invested: false,
+          is_implanted: false,
+          container_contents: [],
+        };
+        return readCharacter();
+      })
+      .then((saved) =>
+        request('update-character', {
+          id: characterId,
+          expected_updated_at: saved.updated_at,
+          details: { ...saved.details, conditions: [structuredClone(fatigued)] },
+          inventory: {
+            ...saved.inventory,
+            items: [
+              ...saved.inventory!.items.map((entry) =>
+                entry.item.id === 11794
+                  ? {
+                      ...entry,
+                      is_formula: true,
+                      is_equipped: true,
+                      item: {
+                        ...entry.item,
+                        meta_data: {
+                          ...entry.item.meta_data,
+                          bulk: entry.item.meta_data?.bulk ?? {},
+                          charges: { max: 9, current: 4 },
+                        },
+                      },
+                    }
+                  : entry
+              ),
+              toolkit,
+            ],
+          },
+        })
+      );
+    cy.then(() => cy.visit(`/sheet/${characterId}`));
+    sheetLoaded();
+    skillsPanel();
+    craftingTimeline(false);
+    // Boreal Staff is both a real published weapon and a spell-bearing staff.
+    // Its formula remains in the spell view but must not enter the physical attacks section.
+    cy.get('input[placeholder="Search actions & activities"]').type('Boreal Staff');
+    cy.contains('button.mantine-Accordion-control', 'Weapon Attacks').should('not.exist');
+    spellPanel(false);
+    expand('Boreal Staff');
+    elementalButton().should('be.visible');
+    rest('formulaRest');
+    readCharacter().then((saved) => {
+      const staff = saved.inventory!.items.find((entry) => entry.item.id === 11794)!;
+      expect(staff.is_formula).to.eq(true);
+      expect(staff.is_equipped).to.eq(true);
+      expect(staff.item.meta_data?.charges).to.deep.eq({ max: 9, current: 4 });
+      expect(saved.inventory!.items.find((entry) => entry.id === toolkit.id)?.is_formula).to.eq(true);
+      expect(saved.details?.conditions?.some((condition) => condition.name === 'Fatigued')).to.eq(false);
+    });
+
+    // A separately saved physical control must still grant the printed conditional bonus and attack.
+    cy.visit('/characters');
+    readCharacter().then((saved) =>
+      request('update-character', {
+        id: characterId,
+        expected_updated_at: saved.updated_at,
+        details: { ...saved.details, conditions: [structuredClone(fatigued)] },
+        inventory: {
+          ...saved.inventory,
+          items: saved.inventory!.items.map((entry) =>
+            entry.id === toolkit.id || entry.item.id === 11794 ? { ...entry, is_formula: false } : entry
+          ),
+        },
+      })
+    );
+    cy.then(() => cy.visit(`/sheet/${characterId}`));
+    sheetLoaded();
+    skillsPanel();
+    craftingTimeline(true);
+    cy.get('input[placeholder="Search actions & activities"]').type('Boreal Staff');
+    cy.contains('button.mantine-Accordion-control', 'Weapon Attacks')
+      .should('be.visible')
+      .then(($control) => {
+        if ($control.attr('aria-expanded') !== 'true') cy.wrap($control).contains('p', 'Weapon Attacks').click();
+      });
+    cy.contains('button', 'Boreal Staff').should('be.visible');
+    rest('physicalRest');
+    readCharacter().then((saved) => {
+      const staff = saved.inventory!.items.find((entry) => entry.item.id === 11794)!;
+      expect(staff.is_formula).to.eq(false);
+      expect(staff.item.meta_data?.charges).to.deep.eq({ max: 6, current: 0 });
+      expect(saved.details?.conditions?.some((condition) => condition.name === 'Fatigued')).to.eq(false);
+    });
   });
 
   for (const { phone, width, height } of [

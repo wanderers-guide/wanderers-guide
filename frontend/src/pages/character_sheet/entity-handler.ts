@@ -1,6 +1,6 @@
 import { compiledConditions, getConditionByName } from '@conditions/condition-handler';
 import { collectEntitySpellcasting, getFocusPoints } from '@content/collect-content';
-import { filterByTraitType } from '@items/inv-utils';
+import { filterByTraitType, isItemFormula } from '@items/inv-utils';
 import { Condition, LivingEntity } from '@schemas/content';
 import { StoreID, VariableAttr, VariableNum } from '@schemas/variables';
 import {
@@ -271,7 +271,9 @@ export function handleRest(id: StoreID, entity: LivingEntity, setEntity?: Setter
   };
 
   // Reset Staff Charges
-  const staves = filterByTraitType(newEntity?.inventory?.items ?? [], 'STAFF').filter((invItem) => invItem.is_equipped);
+  const staves = filterByTraitType(newEntity?.inventory?.items ?? [], 'STAFF').filter(
+    (invItem) => !isItemFormula(invItem) && invItem.is_equipped
+  );
   let greatestSlotRank = 0;
   for (const slot of spellData.slots) {
     if (slot.rank > greatestSlotRank) {
@@ -313,7 +315,9 @@ export function handleRest(id: StoreID, entity: LivingEntity, setEntity?: Setter
   }
 
   // Reset Wands
-  const wands = filterByTraitType(newEntity?.inventory?.items ?? [], 'WAND');
+  const wands = filterByTraitType(newEntity?.inventory?.items ?? [], 'WAND').filter(
+    (invItem) => !isItemFormula(invItem)
+  );
   for (const wand of wands) {
     newEntity.inventory = {
       ...(newEntity.inventory ?? {
