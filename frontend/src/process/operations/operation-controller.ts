@@ -51,6 +51,7 @@ import {
   getFlatInvItems,
   getItemOperations,
   isItemEquippable,
+  isItemFormula,
   isItemImplantable,
   isItemInvestable,
 } from '@items/inv-utils';
@@ -73,6 +74,7 @@ function getItemsEligibleForOperations(inventory: Inventory | null | undefined):
 
   const topLevelIds = new Set(inventory.items.map((entry) => entry.id));
   return getFlatInvItems(inventory).filter((entry) => {
+    if (isItemFormula(entry)) return false;
     if (topLevelIds.has(entry.id)) return true;
 
     const usage = entry.item.usage?.trim().toLowerCase() ?? '';
