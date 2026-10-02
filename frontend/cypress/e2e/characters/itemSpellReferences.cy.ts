@@ -72,13 +72,30 @@ describe('Treasure Vault item spell references', () => {
     }
     cy.get('[data-wg-name="spells-accordion"]', { timeout: 30000 }).should('be.visible');
   };
-  const expand = (label: string) =>
+  const expand = (label: string) => {
     cy.contains('button.mantine-Accordion-control', label, { timeout: 30000 }).then(($button) => {
       if ($button.attr('aria-expanded') !== 'true') {
         // The staff control also contains Add Charges. Click its label, not that nested button.
         cy.wrap($button).contains('p', label).scrollIntoView().click();
       }
     });
+    return cy
+      .contains('button.mantine-Accordion-control', label, { timeout: 30000 })
+      .should('have.attr', 'aria-expanded', 'true')
+      .then(($control) => {
+        const regionId = $control.attr('aria-controls');
+        expect(regionId, 'expanded accordion region').to.be.a('string').and.not.be.empty;
+        /** Expanded aria state precedes Mantine's height transition and safe scrolling. */
+        return cy
+          .get(`[id="${regionId}"]`, { timeout: 30000 })
+          .should('exist')
+          .and('not.have.attr', 'aria-hidden', 'true')
+          .should(($region) => {
+            expect($region[0].style.height, 'accordion height transition settled').to.eq('');
+            expect($region[0].style.overflow, 'accordion overflow transition settled').to.eq('');
+          });
+      });
+  };
   const showItemSections = () => {
     expand('Boreal Staff');
     expand('Spellhearts');
