@@ -165,6 +165,11 @@ Run the character rules and item drawer regressions with `npm --prefix frontend 
 These bundle the actual operation engine and drawer components against explicit local fixtures;
 selected rules content comes from the checked-in sanitized data dump. They need no running
 database or authentication account.
+Run `npm --prefix frontend run test:contribution:authoring` for the actual Mantine
+conditional editor's source-qualified check controls. It mounts synthetic local
+content and runs Cypress Electron without a database, account or save endpoint.
+On headless Linux, use `xvfb-run -a` before the command. The E2E workflow runs this
+separately from the Node-only rules suite.
 The content-repair regressions also verify corrected feat grants, narrowly scoped item metadata repairs,
 and Spined Shield attack math and equipment lifecycle. The content-selection checks in
 `test:infra` cover delayed cross-book innate spell display without expanding the selectable catalog.

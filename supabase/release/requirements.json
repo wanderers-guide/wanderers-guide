@@ -283,5 +283,9 @@
   "20261001210000_treasure_vault_equipment_headers.sql": {
     "check": "treasure-vault-equipment-headers.sql",
     "order": "before-functions"
+  },
+  "20261001220000_treasure_vault_winter_resistance.sql": {
+    "check": "treasure-vault-winter-resistance.sql",
+    "order": "before-functions"
   }
 }
