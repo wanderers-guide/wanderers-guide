@@ -251,5 +251,17 @@
   "20261001130000_treasure_vault_condition_references.sql": {
     "check": "treasure-vault-condition-references.sql",
     "order": "before-functions"
+  },
+  "20261001140000_treasure_vault_library_staff_repairs.sql": {
+    "check": "treasure-vault-library-staff-repairs.sql",
+    "order": "before-functions"
+  },
+  "20261001150000_treasure_vault_staff_spell_citations.sql": {
+    "check": "treasure-vault-staff-spell-citations.sql",
+    "order": "before-functions"
+  },
+  "20261001160000_treasure_vault_library_spell_rules.sql": {
+    "check": "treasure-vault-library-spell-rules.sql",
+    "order": "before-functions"
   }
 }
