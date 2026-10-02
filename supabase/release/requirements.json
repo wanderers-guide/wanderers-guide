@@ -279,5 +279,9 @@
   "20261001200000_treasure_vault_noisome_wand_repairs.sql": {
     "check": "treasure-vault-noisome-wand-repairs.sql",
     "order": "before-functions"
+  },
+  "20261001210000_treasure_vault_equipment_headers.sql": {
+    "check": "treasure-vault-equipment-headers.sql",
+    "order": "before-functions"
   }
 }
