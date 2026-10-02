@@ -247,5 +247,9 @@
   "20261001120000_treasure_vault_remaining_wand_repairs.sql": {
     "check": "treasure-vault-remaining-wand-repairs.sql",
     "order": "before-functions"
+  },
+  "20261001130000_treasure_vault_condition_references.sql": {
+    "check": "treasure-vault-condition-references.sql",
+    "order": "before-functions"
   }
 }
