@@ -23,11 +23,14 @@ const predecessor = JSON.parse(
   ).split('$patches$')[1]
 );
 const spec = JSON.parse(migration.split('$headers$')[1]);
+const prose = JSON.parse(migration.split('$prose$')[1]);
 const rows = await readContentRows([
   ...spec.items.map(({ id }) => ({ table: 'item', id })),
   ...spec.dependencies.map(({ id }) => ({ table: 'trait', id })),
   ...spec.sources.map(({ id }) => ({ table: 'content_source', id })),
   ...[1504, 1531, 1476, 1532, 1469, 1479, 2868, 1584].map((id) => ({ table: 'trait', id })),
+  ...prose.dependencies.map(({ table, id }) => ({ table, id })),
+  ...prose.sources.map(({ id }) => ({ table: 'content_source', id })),
 ]);
 const get = (table, id) => {
   const row = rows.find((r) => r.table === table && r.row.id === id)?.row;
@@ -44,6 +47,81 @@ const equal = (a, b) => {
     return false;
   }
 };
+
+// Separate approved 024 successor tuple; original historical content literals stay immutable.
+const proseTuple = (row) => ({
+  traits: row.traits,
+  usage: row.usage,
+  description: row.description,
+  craft_requirements: row.craft_requirements,
+  source: row.meta_data?.source,
+});
+function proseFields(row, expected) {
+  assert.ok(row);
+  for (const [key, value] of Object.entries(expected))
+    assert.deepEqual(key === 'uuid' ? String(row[key]) : row[key], value);
+}
+function proseMetadata(row, expected, absent) {
+  assert.ok(row.meta_data !== null && typeof row.meta_data === 'object' && !Array.isArray(row.meta_data));
+  for (const [key, value] of Object.entries(expected)) assert.deepEqual(row.meta_data[key], value);
+  for (const key of absent) assert.equal(Object.hasOwn(row.meta_data, key), false);
+}
+function proseValidate(row, p) {
+  proseFields(row, p.expected);
+  proseMetadata(row, p.metadata, p.metadata_absent);
+  assert.ok(
+    [p.after, ...p.legacy_states].some((s) => equal(proseTuple(row), s)),
+    'complete historical or B tuple'
+  );
+  return equal(proseTuple(row), p.after);
+}
+function proseRelevant(u) {
+  if (['APPROVED', 'REJECTED'].includes(u.status?.state)) return false;
+  if (u.type === 'content-source')
+    return prose.sources.some(
+      (s) => u.ref_id === s.id || String(u.data?.id) === String(s.id) || u.data?.name === s.name
+    );
+  return [
+    ...prose.items.map((p) => ({ ...p.expected, type: 'item' })),
+    ...prose.dependencies.map((d) => ({ ...d.expected, type: d.type })),
+  ].some(
+    (d) =>
+      u.type === d.type &&
+      (u.ref_id === d.id ||
+        String(u.data?.id) === String(d.id) ||
+        String(u.data?.uuid) === d.uuid ||
+        ((u.content_source_id === d.content_source_id ||
+          String(u.data?.content_source_id) === String(d.content_source_id)) &&
+          u.data?.name === d.name))
+  );
+}
+const proseSources = prose.sources.map((s) => get('content_source', s.id));
+const proseDependencies = prose.dependencies.map((d) => get(d.table, d.id));
+function proseGates(pending = [], sourceRows = proseSources, deps = proseDependencies) {
+  assert.equal(sourceRows.length, 3);
+  assert.equal(deps.length, 23);
+  assert.ok(!pending.some(proseRelevant));
+  for (const s of prose.sources)
+    proseFields(
+      sourceRows.find((r) => r.id === s.id),
+      s
+    );
+  for (const d of prose.dependencies) {
+    const row = deps.find((r) => r.id === d.id && String(r.uuid) === d.expected.uuid);
+    proseFields(row, d.expected);
+    proseMetadata(row, d.metadata, d.metadata_absent);
+  }
+}
+function proseRaw(row, p) {
+  const result = structuredClone(row);
+  if (proseValidate(result, p)) {
+    const { source, ...leaves } = structuredClone(p.raw);
+    Object.assign(result, leaves);
+    result.meta_data.source = source;
+  }
+  return result;
+}
+
 function fields(row, expected) {
   assert.ok(row);
   for (const [key, value] of Object.entries(expected))
@@ -59,6 +137,8 @@ function projection(row, p) {
   return { ...Object.fromEntries(Object.keys(p.before).map((k) => [k, row[k]])), description: row.description };
 }
 function validate(row, p, terminal = false) {
+  const successor = prose.items.find((s) => s.id === p.id);
+  if (successor && proseValidate(row, successor)) return 'successor';
   fields(row, p.expected);
   metadata(row, p.metadata, p.metadata_absent);
   const value = projection(row, p);
@@ -67,7 +147,8 @@ function validate(row, p, terminal = false) {
   assert.fail('Unreviewed complete equipment header state');
 }
 function cloneAt(p, state = 'before', descriptionIndex = 0) {
-  const row = structuredClone(get('item', p.id));
+  const successor = prose.items.find((s) => s.id === p.id);
+  const row = successor ? proseRaw(get('item', p.id), successor) : structuredClone(get('item', p.id));
   Object.assign(row, structuredClone(p[state]), { description: p.descriptions[descriptionIndex].text });
   validate(row, p);
   ItemSchema.parse(row);
@@ -99,6 +180,7 @@ function relevant(u) {
   );
 }
 function gates(sourceRows = sources, deps = dependencies, pending = []) {
+  proseGates(pending);
   assert.equal(sourceRows.length, 2);
   assert.equal(deps.length, 9);
   assert.ok(!pending.some(relevant));
@@ -125,7 +207,9 @@ function apply(input, sourceRows = sources, deps = dependencies, pending = [], f
     );
   return input.map((row) => {
     const p = spec.items.find((p) => p.id === row.id);
-    if (validate(row, p) !== 'after') assert.notEqual(row.id, failedCas);
+    const state = validate(row, p);
+    if (state === 'successor') return structuredClone(row);
+    if (state !== 'after') assert.notEqual(row.id, failedCas);
     return { ...structuredClone(row), ...structuredClone(p.after) };
   });
 }
@@ -501,5 +585,98 @@ test('SQL locks all gates before captured writes, rejects narrow drift, preserve
     query,
     /query = query\.contains\('traits', filters\.traits\)/,
     'advanced item search uses stored all-of traits; actual PostgreSQL containment proof is separate'
+  );
+});
+
+test('024 four exact B successors remain captured unchanged, rejecting hybrid tuples and preserving old8-owner literal scope', () => {
+  assert.deepEqual(prose, JSON.parse(release.split('$prose$')[1]));
+  assert.equal(
+    createHash('sha256').update(migration.split('$headers$')[1]).digest('hex'),
+    '8180f1711048a98c6ff90882769321de62fa1acb876b6fe34fc797db6d091114'
+  );
+  const equalTuple = (row, state) => equal(proseTuple(row), state);
+  const replace = (row) => proposed.map((r) => (r.id === row.id ? row : structuredClone(r)));
+  for (const p of prose.items) {
+    const patch = spec.items.find((patch) => patch.id === p.id);
+    const next = {
+      ...structuredClone(get('item', p.id)),
+      ...structuredClone(p.expected),
+      ...structuredClone(p.after),
+      uuid: Number(p.expected.uuid),
+      meta_data: {
+        ...structuredClone(get('item', p.id).meta_data),
+        source: structuredClone(p.after.source),
+        future_key: { keep: [null, 42] },
+      },
+    };
+    delete next.source;
+    ItemSchema.parse(next);
+    const input = replace(next),
+      frozen = structuredClone(input);
+    assert.deepEqual(apply(input), input);
+    assert.deepEqual(apply(apply(input)), input);
+    assert.ok(terminal(input));
+    assert.deepEqual(input, frozen);
+    assert.equal(validate(next, patch), 'successor');
+    assert.deepEqual(proseTuple(proseRaw(next, p)), p.raw);
+    for (let mask = 1; mask < 31; mask++) {
+      const mixed = structuredClone(next);
+      for (const [bit, key] of ['traits', 'usage', 'description', 'craft_requirements', 'source'].entries()) {
+        const value = structuredClone((mask & (1 << bit) ? p.after : p.before_states.at(-1))[key]);
+        if (key === 'source') mixed.meta_data.source = value;
+        else mixed[key] = value;
+      }
+      if (equalTuple(mixed, p.after) || equalTuple(mixed, p.before_states.at(-1))) continue;
+      assert.throws(() => apply(replace(mixed)));
+      assert.throws(() => proseRaw(mixed, p));
+    }
+    for (const changes of [
+      { operations: [] },
+      { hands: '1' },
+      { level: 0 },
+      { usage: null },
+      { usage: ' ' },
+      { traits: null },
+      { description: null },
+      { meta_data: { ...next.meta_data, source: { ...p.after.source, extra: 'drift' } } },
+    ])
+      assert.throws(() => apply(replace({ ...next, ...changes })));
+    for (const key of p.metadata_absent) {
+      const drift = structuredClone(next);
+      drift.meta_data[key] = null;
+      assert.throws(() => apply(replace(drift)));
+    }
+
+    for (const status of [null, {}, { state: 'UNKNOWN' }])
+      assert.throws(() =>
+        apply(input, sources, dependencies, [
+          {
+            type: 'item',
+            ref_id: null,
+            content_source_id: 999,
+            data: { name: next.name, content_source_id: 16 },
+            status,
+          },
+        ])
+      );
+  }
+  for (const d of prose.dependencies)
+    assert.throws(() =>
+      apply(proposed, sources, dependencies, [
+        { type: d.type, ref_id: null, data: { uuid: d.expected.uuid }, status: null },
+      ])
+    );
+  const prelock = migration.indexOf('This pure initial pass');
+  const parent = migration.indexOf('into prose_source_row from public.content_source');
+  for (const table of ['item', 'trait', 'ability_block']) {
+    const lock = migration.indexOf(`perform 1 from public.${table}`);
+    assert.ok(prelock < lock && lock < parent);
+  }
+  assert.ok(
+    migration.indexOf('Invalid equipment header description hash') < migration.indexOf('if prose_current=prose_patch')
+  );
+  assert.match(
+    migration,
+    /expected_terminal:=jsonb_set\(expected_terminal,array\[patch->>'id'\],captured_rows->\(patch->>'id'\),true\)/
   );
 });

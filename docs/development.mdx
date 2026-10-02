@@ -174,6 +174,11 @@ The content-repair regressions also verify corrected feat grants, narrowly scope
 and Spined Shield attack math and equipment lifecycle. The content-selection checks in
 `test:infra` cover delayed cross-book innate spell display without expanding the selectable catalog.
 
+The Treasure Vault equipment-prose cases in `test:rules` validate four exact remaster
+catalog tuples, repeated content links, formula suppression, and preservation of
+existing saved inventory snapshots. These local fixture comparisons are not a
+whole-book rules audit or a production database check.
+
 The broad PF2e matrix is part of `test:rules`: **1,211 comparisons across 469 engine
 calculations**, grouped into 49 named scenarios and a coverage guard. It loads four
 official sources from the checked-in dump, uses fixed content identities, and freezes

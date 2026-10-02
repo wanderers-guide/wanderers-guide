@@ -15,6 +15,7 @@ const release = await readFile(
 );
 const patches = JSON.parse(migration.split('$patches$')[1]);
 const noisome = JSON.parse(migration.split('$noisome$')[1]);
+const prose = JSON.parse(migration.split('$prose$')[1]);
 const releaseExpected = JSON.parse(release.split('$expected$')[1]);
 const expectedIds = [
   11727, 11772, 11774, 11775, 11796, 11797, 11824, 11831, 11859, 11860, 11889, 11899, 11901, 11926, 11951, 11963, 11967,
@@ -75,6 +76,8 @@ const coveredIds = [...Array.from({ length: 14 }, (_, index) => 12605 + index), 
 const rows = await readContentRows([
   ...[...expectedIds, ...deferredIds, ...coveredIds].map((id) => ({ table: 'item', id })),
   { table: 'content_source', id: 16 },
+  ...prose.dependencies.map(({ table, id }) => ({ table, id })),
+  ...prose.sources.map(({ id }) => ({ table: 'content_source', id })),
 ]);
 const get = (table, id) => {
   const row = rows.find((entry) => entry.table === table && entry.row.id === id)?.row;
@@ -97,6 +100,81 @@ const same = (a, b) => {
     return false;
   }
 };
+
+// Separate approved 024 successor tuple; original historical content literals stay immutable.
+const proseTuple = (row) => ({
+  traits: row.traits,
+  usage: row.usage,
+  description: row.description,
+  craft_requirements: row.craft_requirements,
+  source: row.meta_data?.source,
+});
+function proseFields(row, expected) {
+  assert.ok(row);
+  for (const [key, value] of Object.entries(expected))
+    assert.deepEqual(key === 'uuid' ? String(row[key]) : row[key], value);
+}
+function proseMetadata(row, expected, absent) {
+  assert.ok(row.meta_data !== null && typeof row.meta_data === 'object' && !Array.isArray(row.meta_data));
+  for (const [key, value] of Object.entries(expected)) assert.deepEqual(row.meta_data[key], value);
+  for (const key of absent) assert.equal(Object.hasOwn(row.meta_data, key), false);
+}
+function proseValidate(row, p) {
+  proseFields(row, p.expected);
+  proseMetadata(row, p.metadata, p.metadata_absent);
+  assert.ok(
+    [p.after, ...p.legacy_states].some((s) => same(proseTuple(row), s)),
+    'complete historical or B tuple'
+  );
+  return same(proseTuple(row), p.after);
+}
+function proseRelevant(u) {
+  if (['APPROVED', 'REJECTED'].includes(u.status?.state)) return false;
+  if (u.type === 'content-source')
+    return prose.sources.some(
+      (s) => u.ref_id === s.id || String(u.data?.id) === String(s.id) || u.data?.name === s.name
+    );
+  return [
+    ...prose.items.map((p) => ({ ...p.expected, type: 'item' })),
+    ...prose.dependencies.map((d) => ({ ...d.expected, type: d.type })),
+  ].some(
+    (d) =>
+      u.type === d.type &&
+      (u.ref_id === d.id ||
+        String(u.data?.id) === String(d.id) ||
+        String(u.data?.uuid) === d.uuid ||
+        ((u.content_source_id === d.content_source_id ||
+          String(u.data?.content_source_id) === String(d.content_source_id)) &&
+          u.data?.name === d.name))
+  );
+}
+const proseSources = prose.sources.map((s) => get('content_source', s.id));
+const proseDependencies = prose.dependencies.map((d) => get(d.table, d.id));
+function proseGates(pending = [], sourceRows = proseSources, deps = proseDependencies) {
+  assert.equal(sourceRows.length, 3);
+  assert.equal(deps.length, 23);
+  assert.ok(!pending.some(proseRelevant));
+  for (const s of prose.sources)
+    proseFields(
+      sourceRows.find((r) => r.id === s.id),
+      s
+    );
+  for (const d of prose.dependencies) {
+    const row = deps.find((r) => r.id === d.id && String(r.uuid) === d.expected.uuid);
+    proseFields(row, d.expected);
+    proseMetadata(row, d.metadata, d.metadata_absent);
+  }
+}
+function proseRaw(row, p) {
+  const result = structuredClone(row);
+  if (proseValidate(result, p)) {
+    const { source, ...leaves } = structuredClone(p.raw);
+    Object.assign(result, leaves);
+    result.meta_data.source = source;
+  }
+  return result;
+}
+
 function completeSuccessor(row, successor) {
   if (!same(noisomeTuple(row), successor.after)) return false;
   for (const [key, value] of Object.entries(successor.expected))
@@ -109,7 +187,8 @@ function completeSuccessor(row, successor) {
 
 /** Normalize only the already-reviewed paired 003 identity; never invert repeated plain conditions. */
 function reviewedBefore(stored, patch) {
-  const row = structuredClone(stored);
+  const p = prose.items.find((p) => p.id === stored.id);
+  const row = p ? proseRaw(stored, p) : structuredClone(stored);
   const successor = noisome.find((p) => p.id === row.id);
   if (successor && completeSuccessor(row, successor)) {
     row.description = successor.raw.description;
@@ -139,6 +218,7 @@ function reviewedBefore(stored, patch) {
 
 /** Model the narrow SQL gates and exact leaf CAS without changing any other field. */
 function repaired(stored, patch, pending = [], currentSource = source) {
+  proseGates(pending);
   assert.deepEqual(
     [currentSource.id, currentSource.name, currentSource.user_id, currentSource.is_published],
     [16, 'Treasure Vault', null, true]
@@ -164,6 +244,8 @@ function repaired(stored, patch, pending = [], currentSource = source) {
     afterText = afterText.replaceAll(replacement.from, replacement.to);
   }
   assert.equal(md5(afterText), patch.description.after);
+  const prosePatch = prose.items.find((p) => p.id === row.id);
+  if (prosePatch && proseValidate(row, prosePatch)) return row;
   const successor = noisome.find((p) => p.id === row.id);
   if (successor) {
     if (completeSuccessor(row, successor)) return row;
@@ -178,6 +260,14 @@ function repaired(stored, patch, pending = [], currentSource = source) {
   return row;
 }
 
+// Model strict release: a valid repair input is not terminal unless it already remains unchanged.
+const conditionTerminal = (row, patch) => {
+  try {
+    return same(repaired(row, patch), row);
+  } catch {
+    return false;
+  }
+};
 const originals = patches.map((patch) => reviewedBefore(get('item', patch.id), patch));
 const proposed = patches.map((patch, index) => repaired(originals[index], patch));
 let engine;
@@ -457,4 +547,120 @@ test('020 four complete successors no-op without downgrade; hybrids and original
         repaired({ ...next, name: 'Wand of Noisome Acid (4nd-Level Spell)', uuid: 7778569537178750 }, patch)
       );
   }
+});
+
+test('024 Curare/Freeze complete B successors preserve entire rows and immutable literals; no hybrid, pending or dependency bypass', () => {
+  assert.deepEqual(prose, JSON.parse(release.split('$prose$')[1]));
+  assert.equal(
+    createHash('sha256').update(migration.split('$patches$')[1]).digest('hex'),
+    '5a39d35511dac3eae2b2c5c1d4b90253514113d2fa569c23a3bbb221784e6ba9'
+  );
+  const intersected = prose.items.filter((p) => patches.some((patch) => patch.id === p.id)).map((p) => p.id);
+  assert.deepEqual(intersected, [11901, 12024]);
+  assert.ok(release.includes("patch->>'id' not in ('11901','12024')"));
+  assert.ok(release.includes("exists(select 1 from prose_legacy_complete where id=patch->>'id')"));
+  const equalTuple = (row, state) => same(proseTuple(row), state);
+  for (const p of prose.items.filter((p) => [11901, 12024].includes(p.id))) {
+    const patch = patches.find((patch) => patch.id === p.id);
+    const next = {
+      ...structuredClone(get('item', p.id)),
+      ...structuredClone(p.expected),
+      ...structuredClone(p.after),
+      uuid: Number(p.expected.uuid),
+      meta_data: {
+        ...structuredClone(get('item', p.id).meta_data),
+        source: structuredClone(p.after.source),
+        future_key: { keep: [null, 42] },
+      },
+    };
+    delete next.source;
+    ItemSchema.parse(next);
+    assert.deepEqual(repaired(next, patch), next);
+    assert.ok(conditionTerminal(next, patch));
+    for (const legacy of p.legacy_states) {
+      const row = structuredClone(next);
+      const { source, ...values } = structuredClone(legacy);
+      Object.assign(row, values);
+      row.meta_data.source = source;
+      assert.equal(conditionTerminal(row, patch), md5(row.description) === patch.description.after);
+    }
+    assert.deepEqual(repaired(repaired(next, patch), patch), next);
+    const normalized = reviewedBefore(next, patch);
+    assert.equal(normalized.description, patch.description.before_text);
+    assert.deepEqual(proseTuple(normalized), p.raw);
+    for (let mask = 1; mask < 31; mask++) {
+      const mixed = structuredClone(next);
+      for (const [bit, key] of ['traits', 'usage', 'description', 'craft_requirements', 'source'].entries()) {
+        const value = structuredClone((mask & (1 << bit) ? p.after : p.before_states.at(-1))[key]);
+        if (key === 'source') mixed.meta_data.source = value;
+        else mixed[key] = value;
+      }
+      if (equalTuple(mixed, p.after) || equalTuple(mixed, p.before_states.at(-1))) continue;
+      assert.throws(() => repaired(mixed, patch));
+      assert.equal(conditionTerminal(mixed, patch), false, 'strict release rejects every partial B tuple');
+      assert.throws(() => reviewedBefore(mixed, patch));
+    }
+    for (const changes of [
+      { operations: [] },
+      { hands: '1' },
+      { level: 0 },
+      { usage: null },
+      { usage: ' ' },
+      { traits: null },
+      { description: null },
+      { meta_data: { ...next.meta_data, source: { ...p.after.source, extra: 'drift' } } },
+    ])
+      assert.throws(() => repaired({ ...next, ...changes }, patch));
+    for (const key of p.metadata_absent) {
+      const drift = structuredClone(next);
+      drift.meta_data[key] = null;
+      assert.throws(() => repaired(drift, patch));
+    }
+
+    for (const pending of [
+      {
+        type: 'item',
+        ref_id: null,
+        content_source_id: 999,
+        data: { name: next.name, content_source_id: 16 },
+        status: null,
+      },
+      { type: 'item', ref_id: null, data: { uuid: p.expected.uuid }, status: {} },
+      { type: 'item', ref_id: next.id, data: {}, status: { state: 'UNKNOWN' } },
+    ])
+      assert.throws(() => repaired(next, patch, [pending]));
+  }
+  for (const [index, d] of prose.dependencies.entries()) {
+    const deps = structuredClone(proseDependencies);
+    deps[index].name += ' drift';
+    assert.throws(() => proseGates([], proseSources, deps));
+    assert.throws(() =>
+      proseGates([
+        { type: d.type, ref_id: null, content_source_id: 999, data: { uuid: d.expected.uuid }, status: null },
+      ])
+    );
+  }
+  for (const [index, s] of prose.sources.entries()) {
+    const rows = structuredClone(proseSources);
+    rows[index].is_published = false;
+    assert.throws(() => proseGates([], rows));
+  }
+  const prelock = migration.indexOf('This pure initial pass');
+  const parent = migration.indexOf('into prose_source_row from public.content_source');
+  for (const table of ['item', 'trait', 'ability_block']) {
+    const lock = migration.indexOf(`perform 1 from public.${table}`);
+    assert.ok(prelock < lock && lock < parent);
+  }
+  assert.ok(migration.indexOf('Invalid condition after text/hash') < migration.indexOf('if prose_current=prose_patch'));
+  const initialSnapshot = migration.indexOf('Snapshot the two shared prose owners before any historical write');
+  assert.ok(initialSnapshot < migration.lastIndexOf('for patch in select value from jsonb_array_elements(patches)'));
+  assert.ok(initialSnapshot < migration.indexOf('update public.item set description'));
+  assert.ok(migration.includes("prose_captured,array[patch->>'id'],prose_initial_captured->(patch->>'id'),true"));
+  const initialBGuard = migration.indexOf('Protect an initially complete B row even if an earlier write downgraded');
+  assert.ok(migration.indexOf('Invalid condition after text/hash') < initialBGuard);
+  assert.ok(initialBGuard < migration.indexOf("if prose_current=prose_patch->'after'"));
+  assert.ok(migration.includes("'source',prose_saved#>'{meta_data,source}')=prose_patch->'after'"));
+  assert.match(migration, /Historical prose successor initial captured baseline drift/);
+  assert.match(migration, /Historical prose successor final captured readback drift/);
+  assert.match(release, /exists\(select 1 from prose_complete where id=patch->>'id'\)/);
 });
