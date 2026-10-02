@@ -123,20 +123,21 @@ export async function fetchContentAll(type, requestedSources) { return getCached
 export async function fetchTraitByName(name) { return getCachedContent('trait').find(row => row.name.toLowerCase() === name.toLowerCase()) || null; }
 export async function fetchArchetypeByDedicationFeat() { return null; }
 export function getDefaultSources(view) { return sources[view]; }
+export function getDefaultSourcesKey(view) { const scope = getDefaultSources(view); return Array.isArray(scope) ? [...scope].sort((a,b) => a-b).join(',') : scope; }
 export function getContentFast(type, ids) { return getCachedContent(type).filter(row => ids.includes(row.id)); }
 export function defineDefaultSources(view, values) { sources[view] = values; }
 export function importFromContentPackage() {}
 `;
 
 /** Bundle the workspace's actual engine with a local content boundary; register cleanup with test.after(). */
-export async function createOperationEngine({ renderRichText = false } = {}) {
+export async function createOperationEngine({ renderRichText = false, renderPerceptionDrawer = false } = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'wg-operation-tests-'));
   try {
     const result = await build({
       absWorkingDir: frontend,
       stdin: {
         contents: `${
-          renderRichText
+          renderRichText || renderPerceptionDrawer
             ? `
           import React from 'react';
           import { renderToStaticMarkup } from 'react-dom/server';
@@ -146,6 +147,25 @@ export async function createOperationEngine({ renderRichText = false } = {}) {
             return renderToStaticMarkup(React.createElement(MantineProvider,
               { theme: { colors: { guide: DEFAULT_THEME.colors.blue } } },
               React.createElement(RichText, { conditionBlacklist, children: text })));
+          }
+          ${
+            renderPerceptionDrawer
+              ? `
+          import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+          import { StatPerceptionDrawerContent } from '@drawers/types/StatPerceptionDrawer';
+          import { getDefaultSourcesKey } from '@content/content-store';
+          export function renderPerceptionDrawer(id, blocks = []) {
+            const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
+            client.setQueryData(['find-ability-blocks', { sources: getDefaultSourcesKey('PAGE') }], blocks);
+            try {
+              return renderToStaticMarkup(React.createElement(MantineProvider,
+                { theme: { colors: { guide: DEFAULT_THEME.colors.blue } } },
+                React.createElement(QueryClientProvider, { client },
+                  React.createElement(StatPerceptionDrawerContent, { data: { id } }))));
+            } finally { client.clear(); }
+          }
+          `
+              : ''
           }
         `
             : ''
@@ -175,7 +195,8 @@ export async function createOperationEngine({ renderRichText = false } = {}) {
           export { toggleActiveMode, getExecutableModes } from '@common/modes/mode-rules';
           export { determineFilteredSelectionList } from '@operations/operation-utils';
           export { OperationSelectFiltersAbilityBlockSchema } from '@schemas/operations';
-          export { collectEntityAbilityBlocks } from '@content/collect-content';
+          export { collectEntityAbilityBlocks, collectEntitySenses } from '@content/collect-content';
+          export { displaySense } from '@utils/senses';
           export { isAbilityBlockVisible } from '@content/content-hidden';
           export { hasArchetypeClassFeatTraits, getTraitIdByType } from '@utils/traits';
           export { setFixtures, defineDefaultSources } from '@content/content-store';
@@ -189,7 +210,7 @@ export async function createOperationEngine({ renderRichText = false } = {}) {
       write: false,
       platform: 'node',
       format: 'esm',
-      ...(renderRichText
+      ...(renderRichText || renderPerceptionDrawer
         ? {
             banner: {
               js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
