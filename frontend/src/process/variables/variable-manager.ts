@@ -436,19 +436,19 @@ export function addVariable(
 ): Variable {
   const value = cloneDeep(defaultValue);
   const context = getSkillEffectContext(id);
-  return mutateVariable(id, () => applyAddVariable(id, type, name, value, source, context));
+  return mutateVariable(id, () => applyAddVariable(id, type, name, value, source, context), { type: 'create', name });
 }
 
 /** Delete a variable through the same replayable write path. */
 export function removeVariable(id: StoreID, name: string): void {
-  mutateVariable(id, () => applyRemoveVariable(id, name));
+  mutateVariable(id, () => applyRemoveVariable(id, name), { type: 'delete', name });
 }
 
 /** Record assignment intent, including assignments that are currently hidden by a higher value. */
 export function setVariable(id: StoreID, name: string, value: VariableValue, source?: string): void {
   const input = cloneDeep(value);
   const context = getSkillEffectContext(id);
-  mutateVariable(id, () => applySetVariable(id, name, input, source, context));
+  mutateVariable(id, () => applySetVariable(id, name, input, source, context), { type: 'assign', name });
 }
 
 /** Record adjustments, including currently redundant rank and list grants. */
@@ -460,20 +460,40 @@ export function adjVariable(
 ): void {
   const input = cloneDeep(amount);
   const context = getSkillEffectContext(id);
-  mutateVariable(id, () => applyAdjVariable(id, name, input, source, context));
+  mutateVariable(
+    id,
+    () => applyAdjVariable(id, name, input, source, context),
+    typeof input === 'string' ? { type: 'append', name, value: input } : undefined
+  );
 }
 
 /** Record removal as a filter, so replay never restores another removed grant from an old list snapshot. */
 export function filterVariableList(id: StoreID, name: string, keep: (value: string) => boolean, source?: string): void {
-  mutateVariable(id, () => {
-    const values = getVariable<VariableListStr>(id, name)?.value ?? [];
-    applySetVariable(id, name, values.filter(keep), source);
-  });
+  mutateVariable(
+    id,
+    () => {
+      const values = getVariable<VariableListStr>(id, name)?.value ?? [];
+      applySetVariable(id, name, values.filter(keep), source);
+    },
+    { type: 'filter', name }
+  );
 }
 
 /** A particular grant occurrence, retained by deferred writes until execution finishes. */
-export type VariableEffectScope = { key: string; content: string; revoked: boolean; revision: number };
-type VariableIntent = { scopes: VariableEffectScope[]; apply: () => unknown };
+export type VariableContentOrigin = { type: string; traits: number[] | null };
+export type VariableEffectScope = {
+  key: string;
+  content: string;
+  revoked: boolean;
+  revision: number;
+  origin?: VariableContentOrigin;
+};
+type ListIntent =
+  | { type: 'append'; name: string; value: string }
+  | { type: 'assign' | 'filter' | 'create' | 'delete'; name: string };
+type VariableIntent = { scopes: VariableEffectScope[]; apply: () => unknown; list?: ListIntent };
+export type ListContribution = { value: string; content?: string; origin?: VariableContentOrigin };
+type OwnedListContribution = { value: string; owner?: VariableEffectScope };
 type VariableEffects = {
   baseline: VariableStore;
   intents: VariableIntent[];
@@ -483,6 +503,7 @@ type VariableEffects = {
   replayWork: number;
   active: VariableEffectScope[];
   applying: boolean;
+  contributions: Map<string, OwnedListContribution[]>;
   skillContext?: SkillEffectContext;
   skillContexts: Map<string, SkillEffectContext>;
   skills: Map<string, { baseline: ProficiencyValue; adjustments: SkillAdjustment[] }>;
@@ -502,6 +523,7 @@ export function beginVariableEffects(id: StoreID): void {
       replayWork: 0,
       active: [],
       applying: false,
+      contributions: baselineListContributions(store),
       skillContexts: new Map(),
       skills: new Map(),
     });
@@ -585,15 +607,73 @@ function applySkillAdjustment(
 }
 
 /** Retain every write intention, including grants that currently lose to a higher rank or duplicate value. */
-function mutateVariable<T>(id: StoreID, apply: () => T): T {
+function baselineListContributions(store: VariableStore): Map<string, OwnedListContribution[]> {
+  return new Map(
+    Object.values(store.variables)
+      .filter((variable) => variable.type === 'list-str')
+      .map((variable) => [variable.name, listContributionValues(variable.value).map((value) => ({ value }))])
+  );
+}
+
+function listContributionValues(value: unknown): string[] {
+  if (!isListStr(value)) return [];
+  return typeof value === 'string' ? JSON.parse(value) : value;
+}
+
+/** A defensive execution-only view; saved stores contain no provenance. */
+export function getListContributions(id: StoreID, name: string): ListContribution[] {
+  return cloneDeep(
+    (variableEffects.get(getVariableStore(id))?.contributions.get(name) ?? []).map(({ value, owner }) => ({
+      value,
+      content: owner?.content,
+      origin: owner?.origin,
+    }))
+  );
+}
+
+function applyListIntent(id: StoreID, effects: VariableEffects, intent: VariableIntent): unknown {
+  const prior = intent.list ? getVariables(id)[intent.list.name] : undefined;
+  const existed = !!prior;
+  const priorWasString = typeof prior?.value === 'string';
+  const result = intent.apply();
+  if (!intent.list) return result;
+  const { name, type } = intent.list;
+  const variable = getVariables(id)[name];
+  if (!variable || variable.type !== 'list-str') {
+    effects.contributions.delete(name);
+    return result;
+  }
+  const values = listContributionValues(variable.value);
+  const owner = intent.scopes.at(-1);
+  if (type === 'append' && prior?.type === 'list-str') {
+    const entries = effects.contributions.get(name) ?? [];
+    const surviving = priorWasString ? entries.filter(({ value }) => values.includes(value)) : entries;
+    surviving.push({ value: intent.list.value, owner });
+    effects.contributions.set(name, surviving);
+  } else if (type === 'assign' || (type === 'create' && !existed)) {
+    effects.contributions.set(
+      name,
+      values.map((value) => ({ value, owner }))
+    );
+  } else if (type === 'filter') {
+    effects.contributions.set(
+      name,
+      (effects.contributions.get(name) ?? []).filter(({ value }) => values.includes(value))
+    );
+  }
+  return result;
+}
+
+function mutateVariable<T>(id: StoreID, apply: () => T, list?: ListIntent): T {
   const effects = variableEffects.get(getVariableStore(id));
   if (!effects || effects.applying) return apply();
   if (effects.intents.length >= 200_000)
     throw new Error('Content operations exceed the variable effect limit (200000).');
-  effects.intents.push({ scopes: [...effects.active], apply });
+  const intent = { scopes: [...effects.active], apply, list };
+  effects.intents.push(intent);
   effects.applying = true;
   try {
-    return apply();
+    return applyListIntent(id, effects, intent) as T;
   } finally {
     effects.applying = false;
   }
@@ -633,13 +713,14 @@ export async function withVariableEffectScope<T>(
   key: string,
   content: string,
   allowRegrant: boolean,
-  run: () => Promise<T>
+  run: () => Promise<T>,
+  origin?: VariableContentOrigin
 ): Promise<T | undefined> {
   beginVariableEffects(id);
   const effects = variableEffects.get(getVariableStore(id))!;
   let scope = effects.scopes.get(key);
   if (!scope || (scope.revoked && allowRegrant)) {
-    scope = { key, content, revoked: false, revision: effects.allScopes.size };
+    scope = { key, content, revoked: false, revision: effects.allScopes.size, origin: cloneDeep(origin) };
     effects.scopes.set(key, scope);
     effects.allScopes.add(scope);
   }
@@ -681,11 +762,12 @@ export function removeVariableEffects(id: StoreID, content: string): void {
   store.bonuses = baseline.bonuses;
   store.history = baseline.history;
   effects.skills.clear();
+  effects.contributions = baselineListContributions(effects.baseline);
   effects.applying = true;
   try {
     for (const intent of effects.intents) {
       boundVariableReplay(effects);
-      if (areVariableEffectScopesActive(intent.scopes)) intent.apply();
+      if (areVariableEffectScopesActive(intent.scopes)) applyListIntent(id, effects, intent);
     }
   } finally {
     effects.applying = false;

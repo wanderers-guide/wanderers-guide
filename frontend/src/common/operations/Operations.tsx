@@ -584,13 +584,17 @@ export function OperationDisplay(props: {
       return (
         <ConditionalOperation
           conditions={opConditional.data.conditions}
+          contributionChecks={opConditional.data.contributionChecks}
           trueOperations={opConditional.data.trueOperations}
           falseOperations={opConditional.data.falseOperations}
-          onChange={(conditions, trueOperations, falseOperations) => {
-            opConditional.data.conditions = conditions;
-            opConditional.data.trueOperations = trueOperations;
-            opConditional.data.falseOperations = falseOperations;
-            props.onChange(cloneDeep(opConditional));
+          onChange={(conditions, trueOperations, falseOperations, contributionChecks) => {
+            const nextOperation = cloneDeep(opConditional);
+            nextOperation.data.conditions = conditions;
+            nextOperation.data.trueOperations = trueOperations;
+            nextOperation.data.falseOperations = falseOperations;
+            if (contributionChecks) nextOperation.data.contributionChecks = contributionChecks;
+            else delete nextOperation.data.contributionChecks;
+            props.onChange(nextOperation);
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />

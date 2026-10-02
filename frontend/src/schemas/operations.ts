@@ -99,6 +99,42 @@ export const ConditionCheckDataSchema = z.object({
 });
 export type ConditionCheckData = z.infer<typeof ConditionCheckDataSchema>;
 
+export const ContributionCheckSchema = z
+  .object({
+    categories: z.array(z.enum(['heritage', 'ancestry-feat', 'class-feat', 'archetype-feat'])).min(1),
+    excludeCurrentContent: z.literal(true),
+    match: z.literal('typed-amount'),
+  })
+  .strict();
+export type ContributionCheck = z.infer<typeof ContributionCheckSchema>;
+export const ContributionChecksSchema = z
+  .unknown()
+  // Reject this authored key before the record parser's prototype protection silently discards it.
+  .refine((value) => typeof value !== 'object' || value === null || !Object.hasOwn(value, '__proto__'), {
+    message: 'Reserved contribution check key __proto__.',
+  })
+  .pipe(z.record(z.string(), ContributionCheckSchema));
+
+/** Look up only an authored own qualifier, never an inherited object property. */
+export function getContributionCheck(
+  checks: Record<string, ContributionCheck> | undefined,
+  id: string
+): ContributionCheck | undefined {
+  return checks && Object.hasOwn(checks, id) ? checks[id] : undefined;
+}
+
+/** Opt-in checks must remain attached to an explicit, supported authored check. */
+export function validateContributionChecks(data: OperationConditional['data']): void {
+  if (data.contributionChecks === undefined) return;
+  ContributionChecksSchema.parse(data.contributionChecks);
+  for (const id of Object.keys(data.contributionChecks)) {
+    const checks = (data.conditions ?? []).filter((check) => check.id === id);
+    if (checks.length !== 1 || checks[0].type !== 'list-str' || checks[0].operator !== 'INCLUDES') {
+      throw new Error(`Unsupported contribution check ${id}: requires one list-str INCLUDES check.`);
+    }
+  }
+}
+
 // ─── Operation Options ────────────────────────────────────────────────────────
 
 export const OperationOptionsSchema = z.object({
@@ -417,6 +453,7 @@ export type OperationConditional = {
   type: 'conditional';
   data: {
     conditions?: ConditionCheckData[];
+    contributionChecks?: Record<string, ContributionCheck>;
     trueOperations?: Operation[];
     falseOperations?: Operation[];
   };
@@ -485,11 +522,20 @@ export const OperationSchema: z.ZodType<Operation> = z.lazy(() =>
     z.object({
       id: z.string(),
       type: z.literal('conditional'),
-      data: z.object({
-        conditions: z.array(ConditionCheckDataSchema).optional(),
-        trueOperations: z.array(z.lazy(() => OperationSchema)).optional(),
-        falseOperations: z.array(z.lazy(() => OperationSchema)).optional(),
-      }),
+      data: z
+        .object({
+          conditions: z.array(ConditionCheckDataSchema).optional(),
+          contributionChecks: ContributionChecksSchema.optional(),
+          trueOperations: z.array(z.lazy(() => OperationSchema)).optional(),
+          falseOperations: z.array(z.lazy(() => OperationSchema)).optional(),
+        })
+        .superRefine((data, context) => {
+          try {
+            validateContributionChecks(data);
+          } catch (error) {
+            context.addIssue({ code: 'custom', message: error instanceof Error ? error.message : String(error) });
+          }
+        }),
     }),
     z.object({
       id: z.string(),

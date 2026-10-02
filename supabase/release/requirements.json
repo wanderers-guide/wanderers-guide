@@ -300,6 +300,10 @@
     "check": "treasure-vault-equipment-headers.sql",
     "order": "before-functions"
   },
+  "20261001220000_treasure_vault_winter_resistance.sql": {
+    "check": "treasure-vault-winter-resistance.sql",
+    "order": "before-functions"
+  },
   "20261001230000_treasure_vault_missing_equipment.sql": {
     "check": "treasure-vault-missing-equipment.sql",
     "order": "before-functions"
