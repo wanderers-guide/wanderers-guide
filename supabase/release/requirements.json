@@ -263,5 +263,9 @@
   "20261001160000_treasure_vault_library_spell_rules.sql": {
     "check": "treasure-vault-library-spell-rules.sql",
     "order": "before-functions"
+  },
+  "20261001170000_treasure_vault_wand_family_repairs.sql": {
+    "check": "treasure-vault-wand-family-repairs.sql",
+    "order": "before-functions"
   }
 }
