@@ -219,5 +219,9 @@
   "20261001010000_repair_weapon_stat_fields.sql": {
     "check": "weapon-stat-fields.sql",
     "order": "before-functions"
+  },
+  "20261001000000_war_of_immortals_spell_emphasis.sql": {
+    "check": "war-of-immortals-spell-emphasis.sql",
+    "order": "before-functions"
   }
 }

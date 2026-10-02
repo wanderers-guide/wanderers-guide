@@ -45,7 +45,9 @@ export function toText(html: any) {
   return text.replace(/’/g, "'").trim();
 }
 
-export function convertToContentType(type: ContentType | AbilityBlockType): ContentType {
+export function convertToContentType(type: ContentType | AbilityBlockType | 'hazard'): ContentType {
+  // Hazard corrections use the creature table while retaining their hazard row type.
+  if (type === 'hazard') return 'creature';
   // Handle special cases for DrawerTypes
   // @ts-ignore
   if (type === 'cast-spell' || type === 'add-spell') return 'spell';
