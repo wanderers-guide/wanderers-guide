@@ -1,0 +1,278 @@
+-- Only three confirmed shared-spell rule projections; no global spellcasting or saved-copy rewrites.
+do $repair$
+declare
+  spec constant jsonb:=$rules${
+  "spells": [
+    {
+      "id": 5449,
+      "expected": {
+        "id": 5449,
+        "name": "Shift Blame",
+        "rank": 3,
+        "traditions": [
+          "arcane",
+          "occult"
+        ],
+        "rarity": "COMMON",
+        "cast": "REACTION",
+        "traits": [
+          1432,
+          1448
+        ],
+        "cost": "",
+        "trigger": "You or another creature attacks a creature or fails at a Deception, Diplomacy, or Intimidation check.",
+        "requirements": null,
+        "range": "30 feet",
+        "area": null,
+        "targets": "the target of the triggering attack or skill check",
+        "content_source_id": 13,
+        "version": "1.0",
+        "uuid": "1343332467418914",
+        "heightened": {
+          "text": [],
+          "data": {}
+        },
+        "availability": "LIMITED"
+      },
+      "citation": {
+        "source": {
+          "url": "https://2e.aonprd.com/Spells.aspx?ID=997",
+          "book": "Secrets of Magic",
+          "page": "129"
+        }
+      },
+      "before": {
+        "defense": null,
+        "duration": "",
+        "description": "You alter the target's memories of the triggering event as they form. You choose another creature (which can be you) with the capacity to make the triggering attack or skill check, and you alter the target's memories to recall the creature you chose as responsible for the triggering attack or skill check. The target must attempt a Will save and is then temporarily immune for 24 hours.\n\n**Critical Success** The target knows you attempted to alter its memories.\n\n**Success** The target doesn't realize you attempted to alter its memories, though it knows you cast a spell.\n\n**Failure** You successfully alter the target's memory. It isn't forced to react to the new memories in a particular way, and it's likely to question them if they contradict other information it knows or are implausible for the situation."
+      },
+      "after": {
+        "defense": "Will",
+        "duration": "",
+        "description": "You alter the target's memories of the triggering event as they form. You choose another creature (which can be you) with the capacity to make the triggering attack or skill check, and you alter the target's memories to recall the creature you chose as responsible for the triggering attack or skill check. The target must attempt a Will save and is then temporarily immune for 24 hours.\n\n**Critical Success** The target knows you attempted to alter its memories.\n\n**Success** The target doesn't realize you attempted to alter its memories, though it knows you cast a spell.\n\n**Failure** You successfully alter the target's memory. It isn't forced to react to the new memories in a particular way, and it's likely to question them if they contradict other information it knows or are implausible for the situation."
+      },
+      "description": {
+        "before_md5": "55804230986060c3475fc11ca55f0d48",
+        "after_md5": "55804230986060c3475fc11ca55f0d48",
+        "replacements": []
+      }
+    },
+    {
+      "id": 4865,
+      "expected": {
+        "id": 4865,
+        "name": "Suggestion",
+        "rank": 4,
+        "traditions": [
+          "arcane",
+          "occult"
+        ],
+        "rarity": "COMMON",
+        "cast": "TWO-ACTIONS",
+        "traits": [
+          1432,
+          1481,
+          1458,
+          1433,
+          1448,
+          1899
+        ],
+        "cost": "",
+        "trigger": null,
+        "requirements": null,
+        "range": "30 feet",
+        "area": null,
+        "targets": "1 creature",
+        "content_source_id": 3,
+        "version": "1.0",
+        "uuid": "8196158280494249",
+        "heightened": {
+          "text": [
+            {
+              "amount": "(8th)",
+              "text": "You can target up to 10 creatures."
+            }
+          ],
+          "data": {
+            "levels": {
+              "8": {
+                "target": {
+                  "value": "10 creatures"
+                }
+              }
+            },
+            "type": "fixed"
+          }
+        },
+        "availability": null
+      },
+      "citation": {
+        "source": {
+          "url": "https://2e.aonprd.com/Spells.aspx?ID=1693",
+          "book": "Player Core",
+          "page": "360"
+        }
+      },
+      "before": {
+        "defense": null,
+        "duration": "varies",
+        "description": "Your honeyed words are difficult for creatures to resist. You suggest a course of action to the target, which must be phrased in such a way as to seem like a logical course of action to the target and can't be self-destructive or obviously against the target's self-interest. The target must attempt a Will save.\n\n**Critical Success** The target is unaffected and knows you tried to control it.\n\n**Success** The target is unaffected.\n\n**Failure** The target immediately follows your suggestion. The spell has a duration of 1 minute, or until the target has completed a finite suggestion or the suggestion becomes self-destructive or has other obvious negative effects.\n\n**Critical Failure** As failure, but the base duration is 1 hour."
+      },
+      "after": {
+        "defense": "Will",
+        "duration": "varies",
+        "description": "Your honeyed words are difficult for creatures to resist. You suggest a course of action to the target, which must be phrased in such a way as to seem like a logical course of action to the target and can't be self-destructive or obviously against the target's self-interest. The target must attempt a Will save.\n\n**Critical Success** The target is unaffected and knows you tried to control it.\n\n**Success** The target is unaffected.\n\n**Failure** The target immediately follows your suggestion. The spell has a duration of 1 minute, or until the target has completed a finite suggestion or the suggestion becomes self-destructive or has other obvious negative effects.\n\n**Critical Failure** As failure, but the base duration is 1 hour."
+      },
+      "description": {
+        "before_md5": "c991023fe274e5dce4a9e35cc1cc23eb",
+        "after_md5": "c991023fe274e5dce4a9e35cc1cc23eb",
+        "replacements": []
+      }
+    },
+    {
+      "id": 5367,
+      "expected": {
+        "id": 5367,
+        "name": "Glimmer of Charm",
+        "rank": 5,
+        "traditions": [
+          "arcane",
+          "occult",
+          "primal"
+        ],
+        "rarity": "COMMON",
+        "cast": "TWO-ACTIONS",
+        "traits": [
+          1492,
+          1432,
+          1486,
+          1481,
+          1433,
+          1448
+        ],
+        "cost": "",
+        "trigger": null,
+        "requirements": null,
+        "range": "",
+        "area": "20-foot emanation",
+        "targets": "",
+        "content_source_id": 13,
+        "version": "1.0",
+        "uuid": "1581120155200585",
+        "heightened": {},
+        "availability": null
+      },
+      "citation": {
+        "source": {
+          "url": "https://2e.aonprd.com/Spells.aspx?ID=919",
+          "book": "Secrets of Magic",
+          "page": "108"
+        }
+      },
+      "before": {
+        "defense": null,
+        "duration": "1 minute",
+        "description": "You're bathed in a smooth, almost glittering aura that improves the attitude of those near you. Any creature that ends its turn in the aura must attempt a Will saving throw with the following effects. No matter the result, it's then temporarily immune for 24 hours. The effect lasts until the spell ends, even after the creature leaves the aura.\n\n**Critical Success** The creature is unaffected and is aware of the aura.\n\n**Success** The creature's attitude toward you improves by one step. If that improves its attitude to at least \\[\\[Indifferent\\]\\], it can't take hostile actions against you, though the effect ends as soon as you take a hostile action against the creature or its allies.\n\n**Failure** The creature's attitude toward you improves by two steps. It can't take hostile actions against you, though the effect ends as soon as you take a hostile action against the creature or its allies.\n\n**Critical Failure** The creature's attitude becomes \\[\\[Helpful\\]\\] to you, though the effect ends as soon as you take a hostile action against the creature or its allies. While the creature is helpful, it can't take hostile actions against you."
+      },
+      "after": {
+        "defense": "Will",
+        "duration": "sustained up to 1 minute",
+        "description": "You're bathed in a smooth, almost glittering aura that improves the attitude of those near you. Any creature that ends its turn in the aura must attempt a Will saving throw with the following effects. No matter the result, it's then temporarily immune for 24 hours. The effect lasts until the spell ends, even after the creature leaves the aura.\n\n**Critical Success** The creature is unaffected and is aware of the aura.\n\n**Success** The creature's attitude toward you improves by one step. If that improves its attitude to at least indifferent, it can't take hostile actions against you, though the effect ends as soon as you take a hostile action against the creature or its allies.\n\n**Failure** The creature's attitude toward you improves by two steps. It can't take hostile actions against you, though the effect ends as soon as you take a hostile action against the creature or its allies.\n\n**Critical Failure** The creature's attitude becomes helpful to you, though the effect ends as soon as you take a hostile action against the creature or its allies. While the creature is helpful, it can't take hostile actions against you."
+      },
+      "description": {
+        "before_md5": "0d635957d52f6c8cf7c28be06685c1c4",
+        "after_md5": "bd52b95c11102e0edd400f1fc5ccc0fa",
+        "replacements": [
+          {
+            "from": "\\[\\[Indifferent\\]\\]",
+            "to": "indifferent",
+            "count": 1
+          },
+          {
+            "from": "\\[\\[Helpful\\]\\]",
+            "to": "helpful",
+            "count": 1
+          }
+        ]
+      }
+    }
+  ],
+  "sources": [
+    {
+      "id": 3,
+      "name": "Common Core",
+      "user_id": null,
+      "is_published": true,
+      "require_key": false,
+      "group": "common-core",
+      "required_content_sources": []
+    },
+    {
+      "id": 13,
+      "name": "Secrets of Magic (in progress)",
+      "user_id": null,
+      "is_published": true,
+      "require_key": false,
+      "group": "legacy",
+      "required_content_sources": [
+        11
+      ]
+    }
+  ]
+}$rules$::jsonb;
+  source_spec jsonb; source_row jsonb; patch jsonb; replacement jsonb; spell_row public.spell%rowtype;
+  current_pair jsonb; current_citation jsonb; next_text text; actual_count integer; changed_rows integer;
+begin
+
+  lock table public.content_update in share mode;
+  for source_spec in select value from jsonb_array_elements(spec->'sources') order by (value->>'id')::bigint loop
+    select to_jsonb(s) into source_row from public.content_source s where s.id=(source_spec->>'id')::bigint for update;
+    if not found or exists(select 1 from jsonb_each(source_spec) e where source_row->e.key is distinct from e.value) then
+      raise exception 'Missing or changed official library source: %',source_spec->>'id';
+    end if;
+    if exists(select 1 from public.content_update u where coalesce(u.status->>'state','PENDING') not in ('APPROVED','REJECTED') and u.type='content-source'
+      and (u.ref_id=(source_spec->>'id')::bigint or u.data->>'id'=source_spec->>'id'
+        or (u.ref_id is null and u.data->>'name'=source_spec->>'name'))) then
+      raise exception 'Library source has a pending curator submission: %',source_spec->>'id';
+    end if;
+  end loop;
+
+  if jsonb_array_length(spec->'spells')<>3 then raise exception 'Invalid reviewed library spell rules scope'; end if;
+  for patch in select value from jsonb_array_elements(spec->'spells') order by (value->>'id')::bigint loop
+    select * into spell_row from public.spell where id=(patch->>'id')::bigint for update;
+    if not found or exists(select 1 from jsonb_each(patch->'expected') e
+      where (to_jsonb(spell_row)||jsonb_build_object('uuid',spell_row.uuid::text))->e.key is distinct from e.value)
+      or jsonb_typeof(spell_row.meta_data) is distinct from 'object' then
+      raise exception 'Library shared spell identity/mechanics differ: %',patch->>'id';
+    end if;
+    current_citation:=case when spell_row.meta_data?'source'
+      then jsonb_build_object('source',spell_row.meta_data->'source') else '{}'::jsonb end;
+    if current_citation is distinct from patch->'citation' then raise exception 'Library shared spell citation drift'; end if;
+    if exists(select 1 from public.content_update u where coalesce(u.status->>'state','PENDING') not in ('APPROVED','REJECTED') and u.type='spell'
+      and (u.ref_id=spell_row.id or (u.ref_id is null
+        and (u.content_source_id=spell_row.content_source_id or u.data->>'content_source_id'=spell_row.content_source_id::text)
+        and u.data->>'name'=spell_row.name))) then
+      raise exception 'Library shared spell has a pending curator submission: %',patch->>'id';
+    end if;
+    next_text:=patch#>>'{before,description}';
+    if md5(next_text) is distinct from patch#>>'{description,before_md5}' then raise exception 'Invalid library shared spell before hash'; end if;
+    for replacement in select value from jsonb_array_elements(patch#>'{description,replacements}') loop
+      if coalesce(length(replacement->>'from'),0)=0 or (replacement->>'count')::integer<=0 then raise exception 'Invalid library shared spell replacement'; end if;
+      actual_count:=(length(next_text)-length(replace(next_text,replacement->>'from','')))/length(replacement->>'from');
+      if actual_count is distinct from (replacement->>'count')::integer then raise exception 'Library shared spell literal count drift'; end if;
+      next_text:=replace(next_text,replacement->>'from',replacement->>'to');
+    end loop;
+    if next_text is distinct from patch#>>'{after,description}' or md5(next_text) is distinct from patch#>>'{description,after_md5}' then raise exception 'Invalid library shared spell after hash'; end if;
+    current_pair:=jsonb_build_object('defense',spell_row.defense,'duration',spell_row.duration,'description',spell_row.description);
+    if current_pair=patch->'after' then continue; end if;
+    if current_pair is distinct from patch->'before' then raise exception 'Library shared spell has an unreviewed complete rule state: %',patch->>'id'; end if;
+    update public.spell set defense=patch#>>'{after,defense}',duration=patch#>>'{after,duration}',description=next_text
+      where id=spell_row.id and defense is not distinct from spell_row.defense
+        and duration is not distinct from spell_row.duration and description is not distinct from spell_row.description;
+    get diagnostics changed_rows=row_count;
+    if changed_rows<>1 then
+      raise exception 'Library shared spell CAS failed: %',patch->>'id';
+    end if;
+  end loop;
+end
+$repair$;
