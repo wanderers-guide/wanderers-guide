@@ -7,6 +7,7 @@ import {
 import { defineDefaultSources, fetchContentPackage } from '@content/content-store';
 import {
   isItemWeapon,
+  getEquippedWeapons,
   getFlatInvItems,
   getBestArmor,
   getBestShield,
@@ -136,13 +137,10 @@ async function fillPDF(form: PDFForm, character: Character) {
 
   const senseData = collectEntitySenses(STORE_ID, content.abilityBlocks);
 
-  const weapons = character.inventory?.items
-    .filter((invItem) => invItem.is_equipped && isItemWeapon(invItem.item))
-    .sort((a, b) => a.item.name.localeCompare(b.item.name))
-    .map((invItem) => ({
-      item: invItem.item,
-      stats: getWeaponStats(STORE_ID, invItem.item),
-    }));
+  const weapons = getEquippedWeapons(character.inventory?.items)?.map((invItem) => ({
+    item: invItem.item,
+    stats: getWeaponStats(STORE_ID, invItem.item),
+  }));
 
   const items = character.inventory ? getFlatInvItems(character.inventory) : [];
 
@@ -467,7 +465,10 @@ async function fillPDF(form: PDFForm, character: Character) {
   form.getTextField('ANCESTRY FEAT').setText(featData.ancestryFeats.find((f) => f.level === 1)?.name ?? '');
   form
     .getTextField('BACKGROUND SKILL FEAT')
-    .setText(featData.generalAndSkillFeats.find((f) => f.level === 1 && hasTraitType('SKILL', f.traits ?? undefined))?.name ?? '');
+    .setText(
+      featData.generalAndSkillFeats.find((f) => f.level === 1 && hasTraitType('SKILL', f.traits ?? undefined))?.name ??
+        ''
+    );
   form.getTextField('CLASS FEATS & FEATURES').setText(
     featData.classFeatures
       .filter((f) => f.level === 1)
@@ -521,7 +522,9 @@ async function fillPDF(form: PDFForm, character: Character) {
         form
           .getTextField(`CONSUMABLES ${consumableIndex}`)
           .setText(`${invItem.item.name} x${invItem.item.meta_data?.quantity ?? 1}`);
-        form.getTextField(`CONSUMABLES BULK ${consumableIndex}`).setText(labelizeBulk(invItem.item.bulk ?? undefined, false));
+        form
+          .getTextField(`CONSUMABLES BULK ${consumableIndex}`)
+          .setText(labelizeBulk(invItem.item.bulk ?? undefined, false));
       } else if ((invItem.is_equipped && !isItemWeapon(invItem.item)) || invItem.is_invested) {
         wornIndex++;
         form.getTextField(`WORN ${wornIndex}`).setText(invItem.item.name);

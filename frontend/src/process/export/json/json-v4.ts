@@ -1,7 +1,14 @@
 import { collectEntityAbilityBlocks, collectEntitySenses, collectEntitySpellcasting } from '@content/collect-content';
 import { defineDefaultSources, fetchContentPackage } from '@content/content-store';
 import { downloadObjectAsJson } from '@export/export-to-json';
-import { isItemWeapon, getFlatInvItems, getBestArmor, getBestShield, getInvBulk, labelizeBulk } from '@items/inv-utils';
+import {
+  getEquippedWeapons,
+  getFlatInvItems,
+  getBestArmor,
+  getBestShield,
+  getInvBulk,
+  labelizeBulk,
+} from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
 import { executeOperations } from '@operations/operations.main';
 import { getSpellStats } from '@spells/spell-handler';
@@ -100,13 +107,10 @@ export async function getJsonV4Content(entity: LivingEntity, inputStoreID?: Stor
 
   const senseData = collectEntitySenses(STORE_ID, content.abilityBlocks);
 
-  const weapons = entity.inventory?.items
-    .filter((invItem) => invItem.is_equipped && isItemWeapon(invItem.item))
-    .sort((a, b) => a.item.name.localeCompare(b.item.name))
-    .map((invItem) => ({
-      item: invItem.item,
-      stats: getWeaponStats(STORE_ID, invItem.item),
-    }));
+  const weapons = getEquippedWeapons(entity.inventory?.items)?.map((invItem) => ({
+    item: invItem.item,
+    stats: getWeaponStats(STORE_ID, invItem.item),
+  }));
 
   const flatItems = entity.inventory ? getFlatInvItems(entity.inventory) : [];
   const totalBulk = entity.inventory ? labelizeBulk(getInvBulk(entity.inventory), true) : null;

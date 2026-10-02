@@ -211,7 +211,7 @@ export function getBestArmor(id: StoreID, inv?: Inventory | null) {
   let bestAc = 0;
   let bestArmor: InventoryItem | null = null;
   for (const invItem of inv.items) {
-    if (invItem.is_equipped && isItemArmor(invItem.item)) {
+    if (!isItemFormula(invItem) && invItem.is_equipped && isItemArmor(invItem.item)) {
       const acValue = getFinalAcValue(id, invItem.item);
       if (acValue > bestAc) {
         bestAc = acValue;
@@ -235,7 +235,7 @@ export function getBestShield(id: StoreID, inv?: Inventory) {
   let bestBonus = 0;
   let bestShield: InventoryItem | null = null;
   for (const invItem of inv.items) {
-    if (invItem.is_equipped && isItemShield(invItem.item)) {
+    if (!isItemFormula(invItem) && invItem.is_equipped && isItemShield(invItem.item)) {
       const shieldBonus = invItem.item.meta_data?.ac_bonus ?? 0;
       if (shieldBonus > bestBonus) {
         bestBonus = shieldBonus;
@@ -441,6 +441,13 @@ export function isItemContainer(item: Item) {
  */
 export function isItemFormula(invItem: InventoryItem) {
   return invItem.is_formula;
+}
+
+/** Select physical equipped weapons in display order, preserving absent inventory as undefined. */
+export function getEquippedWeapons(items: InventoryItem[] | undefined): InventoryItem[] | undefined {
+  return items
+    ?.filter((entry) => !isItemFormula(entry) && entry.is_equipped && isItemWeapon(entry.item))
+    .sort((a, b) => a.item.name.localeCompare(b.item.name));
 }
 
 /**
@@ -778,7 +785,7 @@ export function reachedInvestedLimit(id: StoreID, inv?: Inventory) {
     return false;
   }
   const invItems = getFlatInvItems(inv);
-  const investedItems = invItems.filter((item) => item.is_invested);
+  const investedItems = invItems.filter((item) => !isItemFormula(item) && item.is_invested);
   return investedItems.length >= getInvestedLimit(id);
 }
 
@@ -791,7 +798,7 @@ export function reachedImplantLimit(id: StoreID, inv?: Inventory) {
     return false;
   }
   const invItems = getFlatInvItems(inv);
-  const implantedItems = invItems.filter((item) => item.is_implanted);
+  const implantedItems = invItems.filter((item) => !isItemFormula(item) && item.is_implanted);
   return implantedItems.length >= getImplantLimit(id);
 }
 

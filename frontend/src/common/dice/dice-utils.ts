@@ -25,7 +25,7 @@ import { StoreID } from '@schemas/variables';
 import { getAllSaveVariables, getAllSkillVariables } from '@variables/variable-manager';
 import { DICE_THEMES } from './dice-tray';
 import { getFinalProfValue } from '@variables/variable-helpers';
-import { isItemWeapon } from '@items/inv-utils';
+import { getEquippedWeapons } from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
 import { parseDiceRoll, toLabel } from '@utils/strings';
 
@@ -77,9 +77,7 @@ export function findDefaultPresets(id: StoreID, character: Character | null) {
   // }
 
   // Weapons
-  const weapons = character?.inventory?.items
-    .filter((invItem) => invItem.is_equipped && isItemWeapon(invItem.item))
-    .sort((a, b) => a.item.name.localeCompare(b.item.name));
+  const weapons = getEquippedWeapons(character?.inventory?.items);
   for (const weapon of weapons ?? []) {
     const weaponStats = getWeaponStats(id, weapon.item);
     presets.push({
