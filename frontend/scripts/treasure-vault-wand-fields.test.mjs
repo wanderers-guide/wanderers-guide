@@ -17,9 +17,32 @@ const predicate = await readFile(
   'utf8'
 );
 const patches = JSON.parse(migration.split('$patches$')[1]);
+const noisome = JSON.parse(migration.split('$noisome$')[1]);
 const rows = await readContentRows([...patches.map(({ id }) => ({ table: 'item', id })), { table: 'spell', id: 5322 }]);
 const row = (table, id) => rows.find((entry) => entry.table === table && entry.row.id === id).row;
 const md5 = (value) => createHash('md5').update(value).digest('hex');
+const noisomeTuple = (row) => ({
+  description: row.description,
+  craft_requirements: row.craft_requirements,
+  source: row.meta_data?.source,
+});
+const same = (a, b) => {
+  try {
+    assert.deepEqual(a, b);
+    return true;
+  } catch {
+    return false;
+  }
+};
+function isNoisomeSuccessor(row) {
+  if (!same(noisomeTuple(row), noisome.after)) return false;
+  for (const [key, value] of Object.entries(noisome.expected))
+    assert.deepEqual(key === 'uuid' ? String(row[key]) : row[key], value);
+  for (const key of noisome.metadata_absent) assert.equal(Object.hasOwn(row.meta_data, key), false);
+  assert.equal(md5(noisome.after.description), noisome.hashes.description.after);
+  assert.equal(md5(noisome.after.craft_requirements), noisome.hashes.craft_requirements.after);
+  return true;
+}
 
 /** Rehearse only the guarded item leaves, preserving all other parsed content fields. */
 function applyPatch(original, patch) {
@@ -39,6 +62,13 @@ function applyPatch(original, patch) {
   );
   assert.equal(md5(patch.before_name), patch.before_name_md5);
   assert.equal(md5(patch.after_name), patch.after_name_md5);
+  if (original.id === 12659) {
+    if (isNoisomeSuccessor(original)) return proposed;
+    assert.ok(
+      [noisome.raw, noisome.before].some((state) => same(noisomeTuple(original), state)),
+      'Noisome legacy complete tuple differs'
+    );
+  }
   proposed.name = patch.after_name;
   proposed.uuid = patch.after_uuid;
   if (patch.add_citation) {
@@ -205,5 +235,51 @@ test('migration checks pending curator edits before replay and release fails clo
         patches.find(({ id }) => id === 12676)
       ),
     /name and UUID identity differ/
+  );
+});
+
+test('020 complete successor replays unchanged; only fully validated S may reconstruct original R/H bootstrap tuples', () => {
+  const patch = patches.find((p) => p.id === 12659),
+    stored = row('item', 12659);
+  const successor = {
+    ...structuredClone(stored),
+    ...structuredClone(noisome.expected),
+    uuid: Number(noisome.expected.uuid),
+    description: noisome.after.description,
+    craft_requirements: noisome.after.craft_requirements,
+    meta_data: { ...stored.meta_data, source: structuredClone(noisome.after.source), future_key: { keep: true } },
+  };
+  assert.ok(isNoisomeSuccessor(successor));
+  assert.deepEqual(applyPatch(successor, patch), successor);
+  ItemSchema.parse(successor);
+  for (const legacy of [noisome.raw, noisome.before]) {
+    assert.ok(isNoisomeSuccessor(successor));
+    const restored = {
+      ...structuredClone(successor),
+      name: patch.before_name,
+      uuid: Number(patch.before_uuid),
+      description: legacy.description,
+      craft_requirements: legacy.craft_requirements,
+      meta_data: { ...successor.meta_data, source: structuredClone(legacy.source) },
+    };
+    const repaired = applyPatch(restored, patch);
+    assert.equal(repaired.name, patch.after_name);
+    assert.equal(String(repaired.uuid), patch.after_uuid);
+    assert.deepEqual(noisomeTuple(repaired), legacy);
+  }
+  for (let mask = 1; mask < 7; mask++) {
+    const mixed = structuredClone(successor);
+    for (const [bit, leaf] of ['description', 'craft_requirements', 'source'].entries()) {
+      const value = (mask & (1 << bit) ? noisome.after : noisome.before)[leaf];
+      if (leaf === 'source') mixed.meta_data.source = value;
+      else mixed[leaf] = value;
+    }
+    assert.throws(() => applyPatch(mixed, patch));
+  }
+  assert.throws(() => applyPatch({ ...successor, name: patch.before_name, uuid: Number(patch.before_uuid) }, patch));
+  assert.throws(() => applyPatch({ ...successor, bulk: '2' }, patch));
+  assert.match(migration, /Explicit 020 successor/);
+  assert.ok(
+    migration.indexOf('Wand has a pending curator submission') < migration.indexOf("if current_state=noisome->'after'")
   );
 });

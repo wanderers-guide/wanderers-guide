@@ -14,6 +14,7 @@ const release = await readFile(
   'utf8'
 );
 const patches = JSON.parse(migration.split('$patches$')[1]);
+const noisome = JSON.parse(migration.split('$noisome$')[1]);
 const releaseExpected = JSON.parse(release.split('$expected$')[1]);
 const expectedIds = [
   11727, 11772, 11774, 11775, 11796, 11797, 11824, 11831, 11859, 11860, 11889, 11899, 11901, 11926, 11951, 11963, 11967,
@@ -83,10 +84,43 @@ const get = (table, id) => {
 const source = get('content_source', 16);
 const md5 = (value) => createHash('md5').update(value).digest('hex');
 const exactCount = (value, literal) => value.split(literal).length - 1;
+const noisomeTuple = (row) => ({
+  description: row.description,
+  craft_requirements: row.craft_requirements,
+  source: row.meta_data?.source,
+});
+const same = (a, b) => {
+  try {
+    assert.deepEqual(a, b);
+    return true;
+  } catch {
+    return false;
+  }
+};
+function completeSuccessor(row, successor) {
+  if (!same(noisomeTuple(row), successor.after)) return false;
+  for (const [key, value] of Object.entries(successor.expected))
+    assert.deepEqual(key === 'uuid' ? String(row[key]) : row[key], value);
+  for (const key of successor.metadata_absent) assert.equal(Object.hasOwn(row.meta_data, key), false);
+  assert.equal(md5(successor.after.description), successor.hashes.description.after);
+  assert.equal(md5(successor.after.craft_requirements), successor.hashes.craft_requirements.after);
+  return true;
+}
 
 /** Normalize only the already-reviewed paired 003 identity; never invert repeated plain conditions. */
 function reviewedBefore(stored, patch) {
   const row = structuredClone(stored);
+  const successor = noisome.find((p) => p.id === row.id);
+  if (successor && completeSuccessor(row, successor)) {
+    row.description = successor.raw.description;
+    row.craft_requirements = successor.raw.craft_requirements;
+    row.meta_data.source = structuredClone(successor.raw.source);
+  }
+  if (successor)
+    assert.ok(
+      [successor.raw, successor.before].some((state) => same(noisomeTuple(row), state)),
+      'complete historical tuple before reconstruction'
+    );
   if (row.id === 12659) {
     assert.ok(
       (row.name === 'Wand of Noisome Acid (4nd-Level Spell)' && String(row.uuid) === '7778569537178750') ||
@@ -123,7 +157,6 @@ function repaired(stored, patch, pending = [], currentSource = source) {
     [patch.id, patch.name, patch.uuid, patch.source, patch.level]
   );
   assert.ok(row.meta_data && typeof row.meta_data === 'object' && !Array.isArray(row.meta_data));
-  assert.deepEqual(row.meta_data.source, patch.citation);
   let afterText = patch.description.before_text;
   assert.equal(md5(afterText), patch.description.before);
   for (const replacement of patch.description.replacements) {
@@ -131,6 +164,15 @@ function repaired(stored, patch, pending = [], currentSource = source) {
     afterText = afterText.replaceAll(replacement.from, replacement.to);
   }
   assert.equal(md5(afterText), patch.description.after);
+  const successor = noisome.find((p) => p.id === row.id);
+  if (successor) {
+    if (completeSuccessor(row, successor)) return row;
+    assert.ok(
+      [successor.raw, successor.before].some((state) => same(noisomeTuple(row), state)),
+      'Noisome complete legacy tuple'
+    );
+  }
+  assert.deepEqual(row.meta_data.source, patch.citation);
   assert.ok(row.description === patch.description.before_text || row.description === afterText);
   row.description = afterText;
   return row;
@@ -375,4 +417,44 @@ test('SQL owns only one leaf update, checks the frozen queue before replay, and 
   assert.match(release, /md5\(i\.description\) = patch->>'description_md5'/);
   assert.match(release, /u\.ref_id in \(select \(patch->>'id'\)::bigint from expected\)/);
   assert.match(release, /u\.type = 'content-source' and u\.ref_id = 16/);
+});
+
+test('020 four complete successors no-op without downgrade; hybrids and original 003 identity fail, pending remains checked first', () => {
+  assert.deepEqual(noisome, JSON.parse(release.split('$noisome$')[1]));
+  for (const successor of noisome) {
+    const patch = patches.find((p) => p.id === successor.id),
+      original = originals[patches.indexOf(patch)];
+    assert.equal(successor.raw.description, patch.description.before_text);
+    assert.equal(successor.hashes.description.before, patch.description.after);
+    const next = {
+      ...structuredClone(original),
+      description: successor.after.description,
+      craft_requirements: successor.after.craft_requirements,
+      meta_data: { ...original.meta_data, source: structuredClone(successor.after.source), future_key: { keep: true } },
+    };
+    assert.deepEqual(repaired(next, patch), next);
+    assert.deepEqual(reviewedBefore(next, patch), {
+      ...structuredClone(original),
+      meta_data: { ...original.meta_data, future_key: { keep: true } },
+    });
+    ItemSchema.parse(next);
+    assert.throws(() =>
+      repaired(next, patch, [{ type: 'item', ref_id: next.id, data: {}, status: { state: 'PENDING' } }])
+    );
+    for (let mask = 1; mask < 7; mask++) {
+      const mixed = structuredClone(next);
+      for (const [bit, leaf] of ['description', 'craft_requirements', 'source'].entries()) {
+        const value = (mask & (1 << bit) ? successor.after : successor.before)[leaf];
+        if (leaf === 'source') mixed.meta_data.source = value;
+        else mixed[leaf] = value;
+      }
+      assert.throws(() => repaired(mixed, patch));
+      assert.throws(() => reviewedBefore(mixed, patch));
+    }
+    assert.throws(() => repaired({ ...next, bulk: '2' }, patch));
+    if (next.id === 12659)
+      assert.throws(() =>
+        repaired({ ...next, name: 'Wand of Noisome Acid (4nd-Level Spell)', uuid: 7778569537178750 }, patch)
+      );
+  }
 });

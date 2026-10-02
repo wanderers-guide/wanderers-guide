@@ -1,4 +1,302 @@
-with expected as (
+with noisome as (select value as successor from jsonb_array_elements($noisome$[
+  {
+    "id": 12658,
+    "rank": 2,
+    "expected": {
+      "id": 12658,
+      "name": "Wand of Noisome Acid (2nd-Level Spell)",
+      "uuid": "8183994509694895",
+      "content_source_id": 16,
+      "level": 6,
+      "price": {
+        "gp": 250
+      },
+      "bulk": "0.1",
+      "usage": "held-in-one-hand",
+      "group": "GENERAL",
+      "rarity": "UNCOMMON",
+      "size": "MEDIUM",
+      "hands": null,
+      "traits": [
+        1528,
+        1504,
+        1665
+      ],
+      "availability": null,
+      "operations": null,
+      "version": "1.0"
+    },
+    "metadata_absent": [
+      "deprecated",
+      "unselectable",
+      "focus",
+      "type",
+      "ritual"
+    ],
+    "raw": {
+      "description": "This greasy stick emits a stomach-churning scent when held in a hand.\n\n**Activate** \\[\\[Cast a Spell\\]\\]\n\n**Effect** You cast \\[\\[Acid Arrow\\]\\] at 2nd rank. A creature that takes initial acid damage from this spell become \\[\\[Sickened\\]\\]{Sickened 1}. Use your spell DC if the creatures attempts to recover from this sickness. This is an olfactory effect.",
+      "craft_requirements": "Supply a casting of Acid Arrow at 2nd level",
+      "source": {
+        "url": "https://2e.aonprd.com/Equipment.aspx?ID=4818",
+        "book": "Treasure Vault",
+        "page": "141"
+      }
+    },
+    "before": {
+      "description": "This greasy stick emits a stomach-churning scent when held in a hand.\n\n**Activate** \\[\\[Cast a Spell\\]\\]\n\n**Effect** You cast \\[\\[Acid Arrow\\]\\] at 2nd rank. A creature that takes initial acid damage from this spell become sickened 1. Use your spell DC if the creatures attempts to recover from this sickness. This is an olfactory effect.",
+      "craft_requirements": "Supply a casting of Acid Arrow at 2nd level",
+      "source": {
+        "url": "https://2e.aonprd.com/Equipment.aspx?ID=4818",
+        "book": "Treasure Vault",
+        "page": "141"
+      }
+    },
+    "after": {
+      "description": "This greasy stick emits a stomach-churning scent when held in a hand.\n\n**Activate** [Cast a Spell](link_action_19611); **Frequency** once per day, plus overcharge\n\n**Effect** You cast 2nd-rank *[acid grip](link_spell_4389)*. A creature that takes initial [acid](link_trait_1528) damage from this spell become sickened 1. Use your spell DC if the creature attempts to recover from this sickness. This is an [olfactory](link_trait_2131) effect.",
+      "craft_requirements": "Supply a casting of *[acid grip](link_spell_4389)* of the appropriate rank.",
+      "source": {
+        "url": "https://2e.aonprd.com/Equipment.aspx?ID=2284",
+        "book": "Treasure Vault (Remastered)",
+        "page": "141"
+      }
+    },
+    "hashes": {
+      "description": {
+        "raw": "d3c12d3dacc877275d6bf6c0e4b9949d",
+        "before": "86bc95d48109bb1832c7f73672465553",
+        "after": "94f3ac70dad23d4ec65d7ae65f47764a"
+      },
+      "craft_requirements": {
+        "raw": "e96e30c364af6926b851c4694ead2da4",
+        "before": "e96e30c364af6926b851c4694ead2da4",
+        "after": "ac1308c588ba266aa09b4ef3f6c8dc22"
+      }
+    }
+  },
+  {
+    "id": 12659,
+    "rank": 4,
+    "expected": {
+      "id": 12659,
+      "name": "Wand of Noisome Acid (4th-Level Spell)",
+      "uuid": "7611411327409832",
+      "content_source_id": 16,
+      "level": 10,
+      "price": {
+        "gp": 1000
+      },
+      "bulk": "0.1",
+      "usage": "held-in-one-hand",
+      "group": "GENERAL",
+      "rarity": "UNCOMMON",
+      "size": "MEDIUM",
+      "hands": null,
+      "traits": [
+        1528,
+        1504,
+        1665
+      ],
+      "availability": null,
+      "operations": null,
+      "version": "1.0"
+    },
+    "metadata_absent": [
+      "deprecated",
+      "unselectable",
+      "focus",
+      "type",
+      "ritual"
+    ],
+    "raw": {
+      "description": "This greasy stick emits a stomach-churning scent when held in a hand.\n\n**Activate** \\[\\[Cast a Spell\\]\\]\n\n**Effect** You cast \\[\\[Acid Arrow\\]\\] at 4th rank.A creature that takes initial acid damage from this spell become \\[\\[Sickened\\]\\]{Sickened 1}. Use your spell DC if the creatures attempts to recover from this sickness. This is an olfactory effect.",
+      "craft_requirements": "Supply a casting of Acid Arrow at 4th rank.",
+      "source": {
+        "url": "https://2e.aonprd.com/Equipment.aspx?ID=4818",
+        "book": "Treasure Vault",
+        "page": "141"
+      }
+    },
+    "before": {
+      "description": "This greasy stick emits a stomach-churning scent when held in a hand.\n\n**Activate** \\[\\[Cast a Spell\\]\\]\n\n**Effect** You cast \\[\\[Acid Arrow\\]\\] at 4th rank.A creature that takes initial acid damage from this spell become sickened 1. Use your spell DC if the creatures attempts to recover from this sickness. This is an olfactory effect.",
+      "craft_requirements": "Supply a casting of Acid Arrow at 4th rank.",
+      "source": {
+        "url": "https://2e.aonprd.com/Equipment.aspx?ID=4818",
+        "book": "Treasure Vault",
+        "page": "141"
+      }
+    },
+    "after": {
+      "description": "This greasy stick emits a stomach-churning scent when held in a hand.\n\n**Activate** [Cast a Spell](link_action_19611); **Frequency** once per day, plus overcharge\n\n**Effect** You cast 4th-rank *[acid grip](link_spell_4389)*. A creature that takes initial [acid](link_trait_1528) damage from this spell become sickened 1. Use your spell DC if the creature attempts to recover from this sickness. This is an [olfactory](link_trait_2131) effect.",
+      "craft_requirements": "Supply a casting of *[acid grip](link_spell_4389)* of the appropriate rank.",
+      "source": {
+        "url": "https://2e.aonprd.com/Equipment.aspx?ID=2284",
+        "book": "Treasure Vault (Remastered)",
+        "page": "141"
+      }
+    },
+    "hashes": {
+      "description": {
+        "raw": "2e81ce88d96bae4f45fc2b1bde9c3055",
+        "before": "5fa726a9ae0630c282adb21fb7cd94cf",
+        "after": "1f256d29afabfb68e3d56ed478c5c61d"
+      },
+      "craft_requirements": {
+        "raw": "2d7cb96abe09ffe43144a8d4f159f25d",
+        "before": "2d7cb96abe09ffe43144a8d4f159f25d",
+        "after": "ac1308c588ba266aa09b4ef3f6c8dc22"
+      }
+    }
+  },
+  {
+    "id": 12660,
+    "rank": 6,
+    "expected": {
+      "id": 12660,
+      "name": "Wand of Noisome Acid (6th-Level Spell)",
+      "uuid": "2253459097543392",
+      "content_source_id": 16,
+      "level": 14,
+      "price": {
+        "gp": 4500
+      },
+      "bulk": "0.1",
+      "usage": "held-in-one-hand",
+      "group": "GENERAL",
+      "rarity": "UNCOMMON",
+      "size": "MEDIUM",
+      "hands": null,
+      "traits": [
+        1528,
+        1504,
+        1665
+      ],
+      "availability": null,
+      "operations": null,
+      "version": "1.0"
+    },
+    "metadata_absent": [
+      "deprecated",
+      "unselectable",
+      "focus",
+      "type",
+      "ritual"
+    ],
+    "raw": {
+      "description": "This greasy stick emits a stomach-churning scent when held in a hand.\n\n**Activate** \\[\\[Cast a Spell\\]\\]\n\n**Effect** You cast \\[\\[Acid Arrow\\]\\] at 6th rank. A creature that takes initial acid damage from this spell become \\[\\[Sickened\\]\\]{Sickened 1}. Use your spell DC if the creatures attempts to recover from this sickness. This is an olfactory effect.",
+      "craft_requirements": "Supply a casting of Acid Arrow at 6th rank.",
+      "source": {
+        "url": "https://2e.aonprd.com/Equipment.aspx?ID=4818",
+        "book": "Treasure Vault",
+        "page": "141"
+      }
+    },
+    "before": {
+      "description": "This greasy stick emits a stomach-churning scent when held in a hand.\n\n**Activate** \\[\\[Cast a Spell\\]\\]\n\n**Effect** You cast \\[\\[Acid Arrow\\]\\] at 6th rank. A creature that takes initial acid damage from this spell become sickened 1. Use your spell DC if the creatures attempts to recover from this sickness. This is an olfactory effect.",
+      "craft_requirements": "Supply a casting of Acid Arrow at 6th rank.",
+      "source": {
+        "url": "https://2e.aonprd.com/Equipment.aspx?ID=4818",
+        "book": "Treasure Vault",
+        "page": "141"
+      }
+    },
+    "after": {
+      "description": "This greasy stick emits a stomach-churning scent when held in a hand.\n\n**Activate** [Cast a Spell](link_action_19611); **Frequency** once per day, plus overcharge\n\n**Effect** You cast 6th-rank *[acid grip](link_spell_4389)*. A creature that takes initial [acid](link_trait_1528) damage from this spell become sickened 1. Use your spell DC if the creature attempts to recover from this sickness. This is an [olfactory](link_trait_2131) effect.",
+      "craft_requirements": "Supply a casting of *[acid grip](link_spell_4389)* of the appropriate rank.",
+      "source": {
+        "url": "https://2e.aonprd.com/Equipment.aspx?ID=2284",
+        "book": "Treasure Vault (Remastered)",
+        "page": "141"
+      }
+    },
+    "hashes": {
+      "description": {
+        "raw": "c6335f66af29440f5e906b4166efefa8",
+        "before": "617bc9ff1110fc6e669cf3a965756a2d",
+        "after": "13afb9991ed5c5f5d739c7de4678360e"
+      },
+      "craft_requirements": {
+        "raw": "b7f866c038686e172ddfb08a564ce53b",
+        "before": "b7f866c038686e172ddfb08a564ce53b",
+        "after": "ac1308c588ba266aa09b4ef3f6c8dc22"
+      }
+    }
+  },
+  {
+    "id": 12661,
+    "rank": 8,
+    "expected": {
+      "id": 12661,
+      "name": "Wand of Noisome Acid (8th-Level Spell)",
+      "uuid": "4314531124729452",
+      "content_source_id": 16,
+      "level": 18,
+      "price": {
+        "gp": 24000
+      },
+      "bulk": "0.1",
+      "usage": "held-in-one-hand",
+      "group": "GENERAL",
+      "rarity": "UNCOMMON",
+      "size": "MEDIUM",
+      "hands": null,
+      "traits": [
+        1528,
+        1504,
+        1665
+      ],
+      "availability": null,
+      "operations": null,
+      "version": "1.0"
+    },
+    "metadata_absent": [
+      "deprecated",
+      "unselectable",
+      "focus",
+      "type",
+      "ritual"
+    ],
+    "raw": {
+      "description": "This greasy stick emits a stomach-churning scent when held in a hand.\n\n**Activate** \\[\\[Cast a Spell\\]\\]\n\n**Effect** You cast \\[\\[Acid Arrow\\]\\] at 8th rank. A creature that takes initial acid damage from this spell become \\[\\[Sickened\\]\\]{Sickened 1}. Use your spell DC if the creatures attempts to recover from this sickness. This is an olfactory effect.",
+      "craft_requirements": "Supply a casting of Acid Arrow at 8th rank.",
+      "source": {
+        "url": "https://2e.aonprd.com/Equipment.aspx?ID=4818",
+        "book": "Treasure Vault",
+        "page": "141"
+      }
+    },
+    "before": {
+      "description": "This greasy stick emits a stomach-churning scent when held in a hand.\n\n**Activate** \\[\\[Cast a Spell\\]\\]\n\n**Effect** You cast \\[\\[Acid Arrow\\]\\] at 8th rank. A creature that takes initial acid damage from this spell become sickened 1. Use your spell DC if the creatures attempts to recover from this sickness. This is an olfactory effect.",
+      "craft_requirements": "Supply a casting of Acid Arrow at 8th rank.",
+      "source": {
+        "url": "https://2e.aonprd.com/Equipment.aspx?ID=4818",
+        "book": "Treasure Vault",
+        "page": "141"
+      }
+    },
+    "after": {
+      "description": "This greasy stick emits a stomach-churning scent when held in a hand.\n\n**Activate** [Cast a Spell](link_action_19611); **Frequency** once per day, plus overcharge\n\n**Effect** You cast 8th-rank *[acid grip](link_spell_4389)*. A creature that takes initial [acid](link_trait_1528) damage from this spell become sickened 1. Use your spell DC if the creature attempts to recover from this sickness. This is an [olfactory](link_trait_2131) effect.",
+      "craft_requirements": "Supply a casting of *[acid grip](link_spell_4389)* of the appropriate rank.",
+      "source": {
+        "url": "https://2e.aonprd.com/Equipment.aspx?ID=2284",
+        "book": "Treasure Vault (Remastered)",
+        "page": "141"
+      }
+    },
+    "hashes": {
+      "description": {
+        "raw": "ce87ac205541aa396d22d536e5c212dd",
+        "before": "764eb75dc0ebc61850b9011c4d6dca93",
+        "after": "f5b82ce94b5478494583331d3dc5f7ff"
+      },
+      "craft_requirements": {
+        "raw": "7d92bacbdb3349ccad578b41aee33220",
+        "before": "7d92bacbdb3349ccad578b41aee33220",
+        "after": "ac1308c588ba266aa09b4ef3f6c8dc22"
+      }
+    }
+  }
+]$noisome$::jsonb)),
+expected as (
   select value as patch from jsonb_array_elements($expected$
 [
   {
@@ -1451,8 +1749,8 @@ select 'treasure-vault-condition-references'::text as id,
   coalesce((select count(*) = 111 and count(distinct patch->>'id') = 111 and bool_and((
     i.id is not null and i.name = patch->>'name' and i.uuid = (patch->>'uuid')::bigint
     and i.content_source_id = (patch->>'source')::bigint and i.level = (patch->>'level')::integer
-    and jsonb_typeof(i.meta_data) = 'object' and i.meta_data->'source' = patch->'citation'
-    and md5(i.description) = patch->>'description_md5') is true)
+    and jsonb_typeof(i.meta_data) = 'object' and (case when patch->>'id' in ('12658','12659','12660','12661') then exists(select 1 from noisome where successor->>'id'=patch->>'id' and ((jsonb_typeof(i.meta_data)='object' and jsonb_build_object('description',i.description,'craft_requirements',i.craft_requirements,'source',i.meta_data->'source')=successor->'before') or (jsonb_typeof(i.meta_data)='object' and jsonb_build_object('description',i.description,'craft_requirements',i.craft_requirements,'source',i.meta_data->'source')=successor->'after' and not exists(select 1 from jsonb_each(successor->'expected') f where (to_jsonb(i)||jsonb_build_object('uuid',i.uuid::text))->f.key is distinct from f.value) and not exists(select 1 from jsonb_array_elements_text(successor->'metadata_absent') k(key) where i.meta_data?k.key)))) else i.meta_data->'source' = patch->'citation' end)
+    and (md5(i.description) = patch->>'description_md5' or exists(select 1 from noisome where successor->>'id'=patch->>'id' and jsonb_typeof(i.meta_data)='object' and jsonb_build_object('description',i.description,'craft_requirements',i.craft_requirements,'source',i.meta_data->'source')=successor->'after' and not exists(select 1 from jsonb_each(successor->'expected') f where (to_jsonb(i)||jsonb_build_object('uuid',i.uuid::text))->f.key is distinct from f.value) and not exists(select 1 from jsonb_array_elements_text(successor->'metadata_absent') k(key) where i.meta_data?k.key)))) is true)
     from expected left join public.item i on i.id = (patch->>'id')::bigint),false)
   and exists (select 1 from public.content_source where id = 16 and name = 'Treasure Vault'
     and user_id is null and is_published is true)
