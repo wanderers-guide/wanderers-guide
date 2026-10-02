@@ -2,6 +2,8 @@ import { fetchContentById, getCachedContent } from '@content/content-store';
 import { AbilityBlock, Item, Language, Spell, Trait } from '@schemas/content';
 import {
   ConditionCheckData,
+  getContributionCheck,
+  validateContributionChecks,
   GiveSpellData,
   Operation,
   OperationAddBonusToValue,
@@ -35,6 +37,8 @@ import {
   getLevelCappedProficiencyType,
   getVariable,
   getVariables,
+  getListContributions,
+  exportVariableStore,
   setVariable,
   beginVariableEffects,
   getVariableEffectScopes,
@@ -46,9 +50,11 @@ import {
   removeVariableEffects,
   filterVariableList,
   VariableEffectScope,
+  VariableContentOrigin,
 } from '@variables/variable-manager';
 import {
   compileProficiencyType,
+  compileExpressions,
   getProficiencyTypeValue,
   isProficiencyType,
   labelToVariable,
@@ -62,6 +68,12 @@ import {
 } from './operation-utils';
 import { SelectionTrack } from './selection-tree';
 import { isEqual } from 'lodash-es';
+import {
+  getContributionCategories,
+  getContributionDependencies,
+  parseContributionAmount,
+} from './contribution-matching';
+export { getContributionCategories, parseContributionAmount } from './contribution-matching';
 import { throwError } from '@utils/error-handling';
 import {
   grantLanguage,
@@ -115,7 +127,8 @@ export async function withContentGrant<T>(
   key: string,
   content: string,
   options: OperationOptions | undefined,
-  run: () => Promise<T>
+  run: () => Promise<T>,
+  origin?: VariableContentOrigin
 ): Promise<T | undefined> {
   const ancestors = getVariableEffectScopes(varId);
   if (ancestors.some((scope) => scope.content === content)) {
@@ -127,7 +140,8 @@ export async function withContentGrant<T>(
     occurrence,
     content,
     !options?.doOnlyValueCreation && !options?.doOnlyConditionals,
-    run
+    run,
+    origin
   );
 }
 
@@ -382,7 +396,10 @@ async function runSelect(
           `${selectionTrack.path}/${operation.id}/${option.id}`,
           `${operation.data.optionType === 'SPELL' ? 'spell' : 'ability-block'}:${option.id}`,
           options,
-          runSelected
+          runSelected,
+          operation.data.optionType === 'ABILITY_BLOCK'
+            ? { type: option.type ?? '', traits: option.traits ?? null }
+            : undefined
         );
       } else {
         await runSelected();
@@ -726,6 +743,256 @@ async function resolveBindings(pending: DeferredOperation[]): Promise<void> {
 /** Drops deferred writes from a previous (possibly aborted) execution. */
 export function clearDeferredOperations(): void {
   deferredOperations = [];
+  qualifiedOperations = [];
+  qualifiedResults.clear();
+  qualifiedSequence = 0;
+}
+
+const qualifiedResultKey = Symbol('qualified-operation-occurrence');
+type QualifiedOperation = {
+  key: number;
+  varId: StoreID;
+  scopes: VariableEffectScope[];
+  selectionTrack: SelectionTrack;
+  operation: OperationConditional;
+  options?: OperationOptions;
+  sourceLabel?: string;
+  ordinaryVerdict: boolean;
+  skillContext: ReturnType<typeof getSkillEffectContext>;
+};
+let qualifiedOperations: QualifiedOperation[] = [];
+let qualifiedSequence = 0;
+const qualifiedResults = new Map<number, OperationResult>();
+
+/** Reconcile against the real controller tree after limitBoostOptions cloned its placeholders. */
+export function reconcileQualifiedResults(tree: unknown): void {
+  const visit = (value: unknown): void => {
+    if (!value || typeof value !== 'object') return;
+    const tagged = value as { [qualifiedResultKey]?: number; result?: NonNullable<OperationResult>['result'] };
+    const key = tagged[qualifiedResultKey];
+    if (key !== undefined) {
+      tagged.result = qualifiedResults.get(key)?.result;
+      delete tagged[qualifiedResultKey];
+    }
+    for (const child of Object.values(value)) visit(child);
+  };
+  visit(tree);
+  qualifiedResults.clear();
+}
+
+/** Inspect both authored outcomes before applying qualified work. Unsupported discovery fails closed. */
+type QualifiedWrite = { name: string; replacement: boolean; content?: string };
+async function qualifiedBranchWrites(
+  varId: StoreID,
+  operations: Operation[],
+  content?: string,
+  ancestors: string[] = [],
+  depth = 0,
+  work = { count: 0 }
+): Promise<QualifiedWrite[]> {
+  if (depth >= MAX_OPERATION_DEPTH) throw new Error('Qualified branches exceed the execution depth limit (64).');
+  const writes: QualifiedWrite[] = [];
+  const addNested = async (nested: Operation[]) => {
+    for (const write of await qualifiedBranchWrites(varId, nested, content, ancestors, depth + 1, work))
+      writes.push(write);
+  };
+  for (const operation of operations) {
+    if (++work.count > MAX_OPERATION_WORK)
+      throw new Error('Qualified branches exceed the execution work limit (100000).');
+    if (['adjValue', 'setValue', 'createValue', 'addBonusToValue', 'bindValue'].includes(operation.type)) {
+      const name = (operation as OperationAdjValue).data.variable;
+      if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name))
+        throw new Error('Unsupported contribution dependency: qualified write requires an identifier variable name.');
+      if ((operation as OperationAdjValue).data.variable === 'INJECT_SELECT_OPTIONS')
+        throw new Error('Unsupported contribution dependency: qualified writes cannot change selection discovery.');
+      if (
+        operation.type === 'setValue' &&
+        (operation.data.variable === 'LANGUAGE_IDS' || operation.data.variable === 'LANGUAGE_NAMES')
+      )
+        throw new Error('Unsupported contribution dependency: qualified language overrides replace paired lists.');
+      if (
+        operation.type === 'adjValue' &&
+        operation.data.variable.includes('SKILL_') &&
+        (operation.data.value === 'T' ||
+          (typeof operation.data.value === 'object' &&
+            operation.data.value !== null &&
+            'value' in operation.data.value &&
+            operation.data.value.value === 'T'))
+      )
+        throw new Error(
+          'Unsupported contribution dependency: qualified skill training can discover a replacement selection.'
+        );
+      writes.push({
+        name: name.toUpperCase(),
+        replacement: operation.type !== 'adjValue',
+        content,
+      });
+    } else if (
+      operation.type === 'removeAbilityBlock' ||
+      operation.type === 'removeSpell' ||
+      operation.type === 'removeLanguage'
+    ) {
+      throw new Error('Unsupported contribution dependency: qualified branches cannot remove content.');
+    } else if (operation.type === 'conditional') {
+      validateContributionChecks(operation.data);
+      throw new Error('Unsupported contribution dependency: nested conditional branch reads are not isolated.');
+    } else if (operation.type === 'giveAbilityBlock') {
+      const type = 'ability-block';
+      const id = operation.data.abilityBlockId;
+      if (id === -1) continue;
+      const key = `${type}:${id}`;
+      if (ancestors.includes(key) || ancestors.length >= MAX_OPERATION_DEPTH)
+        throw new Error('Unsupported contribution dependency: cyclic qualified grant.');
+      const row = await fetchContentById<AbilityBlock>(type, id);
+      if (!row) throw new Error(`Unresolved qualified branch content ${key}.`);
+      for (const prefix of ['FEAT', 'CLASS_FEATURE', 'HERITAGE', 'SENSE', 'PHYSICAL_FEATURE', 'MODE']) {
+        writes.push(
+          { name: `${prefix}_IDS`, replacement: false, content: key },
+          { name: `${prefix}_NAMES`, replacement: false, content: key }
+        );
+      }
+      for (const write of await qualifiedBranchWrites(
+        varId,
+        await extendOperations(row, row.operations ?? undefined),
+        key,
+        [...ancestors, key],
+        depth + 1,
+        work
+      ))
+        writes.push(write);
+    } else if (operation.type === 'select') {
+      if (operation.data.modeType !== 'PREDEFINED' || operation.data.optionType !== 'CUSTOM')
+        throw new Error('Unsupported contribution dependency: qualified selection requires explicit CUSTOM options.');
+      const options = await determinePredefinedSelectionList(
+        varId,
+        operation.id,
+        'CUSTOM',
+        operation.data.optionsPredefined ?? []
+      );
+      for (const option of options) {
+        if (++work.count > MAX_OPERATION_WORK)
+          throw new Error('Qualified branches exceed the execution work limit (100000).');
+        await addNested(option.operations ?? []);
+      }
+    } else {
+      throw new Error(`Unsupported contribution dependency: qualified operation ${operation.type}.`);
+    }
+  }
+  return writes;
+}
+
+/** Evaluate one immutable ordinary-final batch; this is not a fixed-point solver. */
+export async function resolveQualifiedOperations(): Promise<string[]> {
+  const pending = qualifiedOperations.filter((entry) => areVariableEffectScopesActive(entry.scopes));
+  qualifiedOperations = [];
+  const prepared = [];
+  const work = { count: 0 };
+  const categoriesByOrigin = new Map<string, Awaited<ReturnType<typeof getContributionCategories>>>();
+  const ordinaryStores = new Map<StoreID, ReturnType<typeof exportVariableStore>>();
+  const ordinaryStore = (id: StoreID) => {
+    let store = ordinaryStores.get(id);
+    if (!store) {
+      store = exportVariableStore(id);
+      ordinaryStores.set(id, store);
+    }
+    return store;
+  };
+  const countWork = (amount = 1) => {
+    work.count += amount;
+    if (work.count > MAX_OPERATION_WORK)
+      throw new Error('Qualified dependencies exceed the execution work limit (100000).');
+  };
+  for (const entry of pending) {
+    countWork();
+    const content = entry.scopes.at(-1)?.content;
+    const reads = new Set<string>();
+    const expressionReads = new Set<string>();
+    let verdict = entry.ordinaryVerdict;
+    for (const check of entry.operation.data.conditions ?? []) {
+      const qualifier = getContributionCheck(entry.operation.data.contributionChecks, check.id);
+      if (!qualifier) continue;
+      const variable = getVariable(entry.varId, check.name);
+      if (variable?.type !== 'list-str')
+        throw new Error(`Unsupported contribution check variable ${check.name}: requires list-str.`);
+      if (!content) throw new Error('Unsupported contribution check: no current content identity.');
+      const contributions = getListContributions(entry.varId, check.name);
+      countWork(contributions.length + 1);
+      const values = [String(check.value), ...contributions.map(({ value }) => value)];
+      reads.add(check.name.toUpperCase());
+      for (const input of getContributionDependencies(values, ordinaryStore(entry.varId))) {
+        reads.add(input);
+        expressionReads.add(input);
+      }
+      const needle = parseContributionAmount(compileExpressions(entry.varId, String(check.value), true));
+      if (!needle) throw new Error(`Malformed typed-amount contribution check ${check.id}.`);
+      let matched = false;
+      for (const contribution of contributions) {
+        if (contribution.content === content) continue;
+        const amount = parseContributionAmount(compileExpressions(entry.varId, contribution.value, true));
+        if (amount?.type !== needle.type || amount.amount !== needle.amount) continue;
+        const originKey = JSON.stringify([contribution.content, contribution.origin]);
+        let categories = categoriesByOrigin.get(originKey);
+        if (!categories) {
+          countWork(contribution.origin?.traits?.length ?? 0);
+          categories = await getContributionCategories(contribution.origin);
+          categoriesByOrigin.set(originKey, categories);
+        }
+        if (!categories.some((category) => qualifier.categories.includes(category))) continue;
+        matched = true;
+      }
+      verdict &&= matched;
+    }
+    const writes = await qualifiedBranchWrites(
+      entry.varId,
+      [...(entry.operation.data.trueOperations ?? []), ...(entry.operation.data.falseOperations ?? [])],
+      content,
+      [],
+      0,
+      work
+    );
+    prepared.push({ entry, content, reads, expressionReads, writes, verdict });
+  }
+  for (const writer of prepared) {
+    if (!writer.writes.length) continue;
+    for (const reader of prepared) {
+      if (writer.entry.varId !== reader.entry.varId) continue;
+      countWork();
+      for (const { name, replacement, content } of writer.writes) {
+        countWork();
+        if (
+          reader.reads.has(name) ||
+          (name.startsWith('WEAPON_GROUP_') && [...reader.reads].some((input) => input.startsWith('WEAPON_')))
+        ) {
+          const ownExcludedList =
+            !replacement &&
+            !reader.expressionReads.has(name) &&
+            content === reader.content &&
+            (reader.entry.operation.data.conditions ?? []).some(
+              (check) =>
+                check.name.toUpperCase() === name &&
+                getContributionCheck(reader.entry.operation.data.contributionChecks, check.id)
+            );
+          if (!ownExcludedList)
+            throw new Error(
+              `Unsupported contribution dependency: qualified write to ${name} changes a qualification input.`
+            );
+        }
+      }
+    }
+  }
+  for (const { entry, verdict } of prepared) {
+    const execute = () =>
+      runConditional(entry.varId, entry.selectionTrack, entry.operation, entry.options, entry.sourceLabel, verdict);
+    const result = await withVariableEffectScopes(entry.varId, entry.scopes, () =>
+      entry.skillContext
+        ? withSkillEffectContext(entry.varId, entry.skillContext.key, entry.skillContext.level, execute)
+        : execute()
+    );
+    qualifiedResults.set(entry.key, result ?? null);
+  }
+  if (qualifiedOperations.length)
+    throw new Error('Unsupported contribution dependency: newly discovered qualified work.');
+  return resolveDeferredOperations();
 }
 
 /** Apply explicit language replacements after grants, then bindings against their resolved final source values. */
@@ -879,7 +1146,8 @@ async function runGiveAbilityBlock(
             results,
           },
         };
-      }
+      },
+      { type: abilityBlock.type, traits: abilityBlock.traits }
     )) ?? null
   );
 }
@@ -1200,7 +1468,8 @@ async function runConditional(
   selectionTrack: SelectionTrack,
   operation: OperationConditional,
   options?: OperationOptions,
-  sourceLabel?: string
+  sourceLabel?: string,
+  qualifiedVerdict?: boolean
 ): Promise<OperationResult> {
   // Proficiency variables this conditional would GRANT a rank letter to, in either branch.
   // A condition checking one of these is a self-guard ("if not yet expert, become expert"):
@@ -1341,11 +1610,28 @@ async function runConditional(
     return false;
   };
 
-  let isTrue = true;
-  for (const check of operation.data.conditions ?? []) {
-    if (!makeCheck(check)) {
+  validateContributionChecks(operation.data);
+  let isTrue = qualifiedVerdict ?? true;
+  for (const check of qualifiedVerdict === undefined ? (operation.data.conditions ?? []) : []) {
+    if (!getContributionCheck(operation.data.contributionChecks, check.id) && !makeCheck(check)) {
       isTrue = false;
     }
+  }
+
+  if (qualifiedVerdict === undefined && Object.keys(operation.data.contributionChecks ?? {}).length) {
+    const key = qualifiedSequence++;
+    qualifiedOperations.push({
+      key,
+      varId,
+      scopes: getVariableEffectScopes(varId),
+      selectionTrack,
+      operation,
+      options,
+      sourceLabel,
+      ordinaryVerdict: isTrue,
+      skillContext: getSkillEffectContext(varId),
+    });
+    return { [qualifiedResultKey]: key, result: { results: [] } } as NonNullable<OperationResult>;
   }
 
   // A level-gated root/class/ancestry operation is earned when its gate opens, not at the root's level 1.

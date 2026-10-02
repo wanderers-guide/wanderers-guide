@@ -3,6 +3,7 @@ import {
   Group,
   Autocomplete,
   Select,
+  MultiSelect,
   ScrollArea,
   NumberInput,
   SegmentedControl,
@@ -15,18 +16,44 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { Variable, VariableType } from '@schemas/variables';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { OperationSection, OperationWrapper } from '../Operations';
 import VariableSelect from '@common/VariableSelect';
-import { cloneDeep } from 'lodash-es';
 import { IconCaretRightFilled, IconCircleMinus, IconCirclePlus } from '@tabler/icons-react';
-import { ConditionCheckData, ConditionOperator, Operation } from '@schemas/operations';
+import {
+  ConditionCheckData,
+  ConditionOperator,
+  ContributionCheck,
+  getContributionCheck,
+  Operation,
+} from '@schemas/operations';
 
+const CONTRIBUTION_CATEGORY_OPTIONS: { value: ContributionCheck['categories'][number]; label: string }[] = [
+  { value: 'heritage', label: 'Heritage' },
+  { value: 'ancestry-feat', label: 'Ancestry feat' },
+  { value: 'class-feat', label: 'Class feat' },
+  { value: 'archetype-feat', label: 'Archetype feat' },
+];
+
+type ConditionalEditorData = {
+  checks: ConditionCheckData[];
+  trueOperations: Operation[];
+  falseOperations: Operation[];
+  contributionChecks?: Record<string, ContributionCheck>;
+};
+
+/** Edit ordinary checks and optional source-qualified matches without changing check identities. */
 export default function ConditionalOperation(props: {
   conditions?: ConditionCheckData[];
+  contributionChecks?: Record<string, ContributionCheck>;
   trueOperations?: Operation[];
   falseOperations?: Operation[];
-  onChange: (conditions: ConditionCheckData[], trueOperations: Operation[], falseOperations: Operation[]) => void;
+  onChange: (
+    conditions: ConditionCheckData[],
+    trueOperations: Operation[],
+    falseOperations: Operation[],
+    contributionChecks?: Record<string, ContributionCheck>
+  ) => void;
   onRemove: () => void;
 }) {
   const getDefaultCondition = (): ConditionCheckData => {
@@ -39,14 +66,34 @@ export default function ConditionalOperation(props: {
     } satisfies ConditionCheckData;
   };
 
-  const checks = props.conditions && props.conditions.length > 0 ? props.conditions : [getDefaultCondition()];
+  const [fallbackCheck] = useState(getDefaultCondition);
+  const checks = props.conditions && props.conditions.length > 0 ? props.conditions : [fallbackCheck];
+  const latestData = useRef<ConditionalEditorData>({ checks, trueOperations: [], falseOperations: [] });
+  latestData.current = {
+    checks,
+    trueOperations: props.trueOperations ?? [],
+    falseOperations: props.falseOperations ?? [],
+    contributionChecks: props.contributionChecks,
+  };
 
-  const routeChange = (data: {
-    checks?: ConditionCheckData[];
-    trueOperations?: Operation[];
-    falseOperations?: Operation[];
-  }) => {
-    props.onChange(data.checks ?? [], data.trueOperations ?? [], data.falseOperations ?? []);
+  const routeChange = (data: Partial<ConditionalEditorData>) => {
+    // Sibling mount effects share this draft, so later callbacks cannot restore stale checks or qualifiers.
+    const nextData = { ...latestData.current, ...data };
+    const contributionChecks = Object.fromEntries(
+      Object.entries(nextData.contributionChecks ?? {}).filter(([id, qualifier]) => {
+        const attachedChecks = nextData.checks.filter((check) => check.id === id);
+        return (
+          id !== '__proto__' &&
+          attachedChecks.length === 1 &&
+          attachedChecks[0].type === 'list-str' &&
+          attachedChecks[0].operator === 'INCLUDES' &&
+          qualifier.categories.length > 0
+        );
+      })
+    );
+    nextData.contributionChecks = Object.keys(contributionChecks).length > 0 ? contributionChecks : undefined;
+    latestData.current = nextData;
+    props.onChange(nextData.checks, nextData.trueOperations, nextData.falseOperations, nextData.contributionChecks);
   };
 
   return (
@@ -55,37 +102,40 @@ export default function ConditionalOperation(props: {
         <>
           {checks.map((check, index) => (
             <ConditionalCheck
-              key={index}
+              key={check.id}
               id={check.id}
               defaultName={check.name}
               defaultData={check.data}
               defaultType={check.type}
               defaultOperator={check.operator}
               defaultValue={String(check.value ?? '')}
+              contributionCheck={getContributionCheck(props.contributionChecks, check.id)}
+              onContributionChange={(qualifier) => {
+                const contributionChecks = {
+                  ...latestData.current.contributionChecks,
+                  ...(qualifier ? { [check.id]: qualifier } : {}),
+                };
+                if (!qualifier) delete contributionChecks[check.id];
+                routeChange({ contributionChecks });
+              }}
               onChange={(data) => {
-                let newChecks = cloneDeep(checks);
-                newChecks[index] = data;
-                console.log(newChecks);
                 routeChange({
-                  checks: newChecks,
-                  trueOperations: props.trueOperations,
-                  falseOperations: props.falseOperations,
+                  // Retain the existing single-row edit behavior even for legacy duplicate IDs.
+                  checks: latestData.current.checks.map((existingCheck, checkIndex) =>
+                    checkIndex === index ? data : existingCheck
+                  ),
                 });
               }}
               includeAnd={index !== 0}
               includeAdd={index === checks.length - 1}
               onAdd={() => {
                 routeChange({
-                  checks: [...checks, getDefaultCondition()],
-                  trueOperations: props.trueOperations,
-                  falseOperations: props.falseOperations,
+                  checks: [...latestData.current.checks, getDefaultCondition()],
                 });
               }}
               onRemove={(id) => {
                 routeChange({
-                  checks: checks.filter((p_op) => p_op.id !== id),
-                  trueOperations: props.trueOperations,
-                  falseOperations: props.falseOperations,
+                  checks: latestData.current.checks.filter((existingCheck) => existingCheck.id !== id),
                 });
               }}
             />
@@ -121,9 +171,7 @@ export default function ConditionalOperation(props: {
                   operations={props.trueOperations ?? []}
                   onChange={(operations) => {
                     routeChange({
-                      checks: props.conditions,
                       trueOperations: operations,
-                      falseOperations: props.falseOperations,
                     });
                   }}
                   /* Don't allow nested conditionals and allowing creating new variables 
@@ -156,8 +204,6 @@ export default function ConditionalOperation(props: {
                   operations={props.falseOperations ?? []}
                   onChange={(operations) => {
                     routeChange({
-                      checks: props.conditions,
-                      trueOperations: props.trueOperations,
                       falseOperations: operations,
                     });
                   }}
@@ -175,6 +221,7 @@ export default function ConditionalOperation(props: {
   );
 }
 
+/** Preserve ordinary check inputs while exposing controlled qualifiers only for list inclusion checks. */
 export function ConditionalCheck(props: {
   id: string;
   defaultName: string;
@@ -182,6 +229,8 @@ export function ConditionalCheck(props: {
   defaultType?: VariableType;
   defaultOperator: ConditionOperator;
   defaultValue: string;
+  contributionCheck?: ContributionCheck;
+  onContributionChange?: (qualifier?: ContributionCheck) => void;
   onChange: (data: ConditionCheckData) => void;
   includeAnd?: boolean;
   includeAdd?: boolean;
@@ -347,6 +396,49 @@ export function ConditionalCheck(props: {
       )}
       {variableName && operator && varType && (
         <ConditionalValueSelect variableType={varType} operationType={operator} value={value} onChange={setValue} />
+      )}
+      {variableType === 'list-str' && operator === 'INCLUDES' && props.id !== '__proto__' && (
+        <Group w='100%' gap='xs' align='flex-start' wrap='wrap'>
+          <Select
+            size='xs'
+            label='Match'
+            w={150}
+            allowDeselect={false}
+            value={props.contributionCheck ? 'typed-amount' : 'text'}
+            data={[
+              { value: 'text', label: 'Text' },
+              { value: 'typed-amount', label: 'Type and amount' },
+            ]}
+            onChange={(match) => {
+              if (match === 'text') props.onContributionChange?.(undefined);
+              else if (match === 'typed-amount' && !props.contributionCheck) {
+                props.onContributionChange?.({
+                  categories: CONTRIBUTION_CATEGORY_OPTIONS.map((option) => option.value),
+                  match: 'typed-amount',
+                  excludeCurrentContent: true,
+                });
+              }
+            }}
+          />
+          {props.contributionCheck && (
+            <MultiSelect
+              size='xs'
+              label='Source categories'
+              flex={1}
+              miw={190}
+              data={CONTRIBUTION_CATEGORY_OPTIONS}
+              value={props.contributionCheck.categories}
+              onChange={(values) => {
+                const categories = CONTRIBUTION_CATEGORY_OPTIONS.filter((option) => values.includes(option.value)).map(
+                  (option) => option.value
+                );
+                // Keep the last category selected instead of emitting a schema-invalid empty qualifier.
+                if (categories.length === 0) return;
+                props.onContributionChange?.({ categories, match: 'typed-amount', excludeCurrentContent: true });
+              }}
+            />
+          )}
+        </Group>
       )}
     </Group>
   );

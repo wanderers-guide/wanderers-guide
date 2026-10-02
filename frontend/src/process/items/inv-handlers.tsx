@@ -28,7 +28,7 @@ export const handleAddItem = async (
   item: Item,
   is_formula: boolean
 ) => {
-  const container_contents = await getDefaultContainerContents(item);
+  const container_contents = is_formula ? [] : await getDefaultContainerContents(item);
   setEntity((prev) => {
     if (!prev) return prev;
 

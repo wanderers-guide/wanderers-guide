@@ -63,6 +63,7 @@ export async function readContentRows(targets) {
     'skill_training_base',
     'class_id',
     'archetype_id',
+    'dedication_feat_id',
     'override_skill_training_base',
   ]);
   const booleanColumns = new Set(['deprecated', 'override_class_operations', 'require_key', 'is_published']);
@@ -118,23 +119,58 @@ let sources = { PAGE: [], INFO: [] };
 export function setFixtures(rows) { fixtures = rows; }
 export function getCachedContent(type) { return fixtures.filter(x => x.table === type.replaceAll('-', '_')).map(x => x.row); }
 export async function fetchContentById(type, id) { return getCachedContent(type).find(row => row.id === id) || null; }
+export async function fetchContent(type, data) { return getCachedContent(type).filter(row => (data.id === undefined || (Array.isArray(data.id) ? data.id : [data.id]).includes(row.id)) && (!Array.isArray(data.content_sources) || data.content_sources.includes(row.content_source_id))); }
 export async function fetchContentAll(type, requestedSources) { return getCachedContent(type).filter(row => !Array.isArray(requestedSources) || requestedSources.length === 0 || requestedSources.includes(row.content_source_id)); }
 export async function fetchTraitByName(name) { return getCachedContent('trait').find(row => row.name.toLowerCase() === name.toLowerCase()) || null; }
 export async function fetchArchetypeByDedicationFeat() { return null; }
 export function getDefaultSources(view) { return sources[view]; }
+export function getDefaultSourcesKey(view) { const scope = getDefaultSources(view); return Array.isArray(scope) ? [...scope].sort((a,b) => a-b).join(',') : scope; }
 export function getContentFast(type, ids) { return getCachedContent(type).filter(row => ids.includes(row.id)); }
 export function defineDefaultSources(view, values) { sources[view] = values; }
 export function importFromContentPackage() {}
 `;
 
 /** Bundle the workspace's actual engine with a local content boundary; register cleanup with test.after(). */
-export async function createOperationEngine() {
+export async function createOperationEngine({ renderRichText = false, renderPerceptionDrawer = false, resolveArchetypeFixtures = false } = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'wg-operation-tests-'));
   try {
     const result = await build({
       absWorkingDir: frontend,
       stdin: {
-        contents: `
+        contents: `${
+          renderRichText || renderPerceptionDrawer
+            ? `
+          import React from 'react';
+          import { renderToStaticMarkup } from 'react-dom/server';
+          import { MantineProvider, DEFAULT_THEME } from '@mantine/core';
+          import RichText from '@common/RichText';
+          export function renderRichText(text, conditionBlacklist = []) {
+            return renderToStaticMarkup(React.createElement(MantineProvider,
+              { theme: { colors: { guide: DEFAULT_THEME.colors.blue } } },
+              React.createElement(RichText, { conditionBlacklist, children: text })));
+          }
+          ${
+            renderPerceptionDrawer
+              ? `
+          import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+          import { StatPerceptionDrawerContent } from '@drawers/types/StatPerceptionDrawer';
+          import { getDefaultSourcesKey } from '@content/content-store';
+          export function renderPerceptionDrawer(id, blocks = []) {
+            const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
+            client.setQueryData(['find-ability-blocks', { sources: getDefaultSourcesKey('PAGE') }], blocks);
+            try {
+              return renderToStaticMarkup(React.createElement(MantineProvider,
+                { theme: { colors: { guide: DEFAULT_THEME.colors.blue } } },
+                React.createElement(QueryClientProvider, { client },
+                  React.createElement(StatPerceptionDrawerContent, { data: { id } }))));
+            } finally { client.clear(); }
+          }
+          `
+              : ''
+          }
+        `
+            : ''
+        }
           export * from '@operations/operation-runner';
           export * from '@operations/operation-controller';
           export { executeOperations } from '@operations/operations.main';
@@ -142,19 +178,27 @@ export async function createOperationEngine() {
           export * from '@variables/variable-manager';
           export * from '@variables/variable-utils';
           export * from '@variables/variable-helpers';
+          export { saveCalculatedStats } from '@variables/calculated-stats';
+          export { convertToHardcodedLink, buildHrefFromContentData } from '@content/hardcoded-links';
+          export { detectSpells } from '@spells/spell-utils';
+          export { getInventorySpellIds, getMissingSpellIds, mergeSpellDependencies, filterSpellCatalog } from '@spells/item-spell-dependencies';
+          export { filterByTraitType } from '@items/inv-utils';
+          export { meetsPrerequisites } from '@variables/prereq-detection';
           export { applyConditions, compiledConditions, getConditionByName } from '@conditions/condition-handler';
           export { getSpellStats } from '@spells/spell-handler';
-          export { changeEntityConditions, confirmHealth } from '@pages/character_sheet/entity-handler';
+          export { changeEntityConditions, confirmHealth, handleRest } from '@pages/character_sheet/entity-handler';
+          export { findDefaultPresets } from '@common/dice/dice-utils';
           export { getWeaponStats } from '@items/weapon-handler';
           export { getAcParts } from '@items/armor-handler';
           export * from '@items/eidolon-runes';
           export { handleAddItem, handleDeleteItem, handleUpdateItem, handleMoveItem, addExtraItems } from '@items/inv-handlers';
-          export { isItemInvestable, getFlatInvItems, applyEquipmentPenalties, getBestArmor, compileTraits } from '@items/inv-utils';
+          export { isItemInvestable, getFlatInvItems, getItemBulk, getInvBulk, applyEquipmentPenalties, getBestArmor, getBestShield, getEquippedWeapons, reachedInvestedLimit, reachedImplantLimit, compileTraits } from '@items/inv-utils';
           export { getListStringInputValue } from '@common/operations/variables/operation-value-defaults';
           export { toggleActiveMode, getExecutableModes } from '@common/modes/mode-rules';
           export { determineFilteredSelectionList } from '@operations/operation-utils';
           export { OperationSelectFiltersAbilityBlockSchema } from '@schemas/operations';
-          export { collectEntityAbilityBlocks } from '@content/collect-content';
+          export { collectEntityAbilityBlocks, collectEntitySenses } from '@content/collect-content';
+          export { displaySense } from '@utils/senses';
           export { isAbilityBlockVisible } from '@content/content-hidden';
           export { hasArchetypeClassFeatTraits, getTraitIdByType } from '@utils/traits';
           export { setFixtures, defineDefaultSources } from '@content/content-store';
@@ -168,6 +212,13 @@ export async function createOperationEngine() {
       write: false,
       platform: 'node',
       format: 'esm',
+      ...(renderRichText || renderPerceptionDrawer
+        ? {
+            banner: {
+              js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+            },
+          }
+        : {}),
       define: { 'import.meta.env': JSON.stringify({ VITE_ENV: 'production' }) },
       plugins: [
         {
@@ -186,7 +237,12 @@ export async function createOperationEngine() {
               namespace: 'fixture',
             }));
             pluginBuild.onLoad({ filter: /.*/, namespace: 'fixture' }, () => ({
-              contents: fixtureContent,
+              contents: resolveArchetypeFixtures
+                ? fixtureContent.replace(
+                    'export async function fetchArchetypeByDedicationFeat() { return null; }',
+                    "export async function fetchArchetypeByDedicationFeat(id) { return getCachedContent('archetype').find(row => row.dedication_feat_id === id) || null; }"
+                  )
+                : fixtureContent,
               loader: 'ts',
             }));
           },

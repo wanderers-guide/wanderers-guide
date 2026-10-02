@@ -237,7 +237,7 @@ const boundaries = {
   '@conditions/condition-handler':
     'export const applyConditions = () => {}; export const compiledConditions = values => values; export const getConditionByName = name => ({name,value:1});',
   '@items/inv-utils':
-    'export const applyEquipmentPenalties = () => {}; export const filterByTraitType = () => []; export const getBestArmor = () => undefined;',
+    'export const applyEquipmentPenalties = () => {}; export const filterByTraitType = () => []; export const getBestArmor = () => undefined; export const isItemFormula = item => item.is_formula;',
   '@content/collect-content':
     'export const collectEntitySpellcasting = () => ({}); export const getFocusPoints = () => ({max:0});',
   '@pages/character_sheet/entity-handler': 'export const confirmHealth = globalThis.__saveHooks.confirmHealth;',

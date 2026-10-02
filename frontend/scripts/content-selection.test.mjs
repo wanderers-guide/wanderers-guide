@@ -102,11 +102,21 @@ const paths = [
   'src/modals/AddItemsModal.tsx',
   'src/modals/AdvancedSearchModal.tsx',
   'src/pages/character_sheet/panels/SpellsPanel.tsx',
+  'src/process/spells/item-spell-dependencies.ts',
 ];
 for (const path of paths) {
   const source = await readFile(join(root, path), 'utf8');
   for (const match of source.matchAll(/import\s+([\s\S]*?)\s+from\s+['"]([^'"]+)['"];?/g)) {
-    if (['react', 'js-search', 'lodash-es', '@tanstack/react-query', './AdvancedSearchModal'].includes(match[2]))
+    if (
+      [
+        'react',
+        'js-search',
+        'lodash-es',
+        '@tanstack/react-query',
+        './AdvancedSearchModal',
+        '@spells/item-spell-dependencies',
+      ].includes(match[2])
+    )
       continue;
     const names = imports.get(match[2]) ?? new Set();
     const inside = match[1].match(/\{([\s\S]*?)\}/)?.[1];

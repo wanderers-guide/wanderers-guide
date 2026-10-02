@@ -370,6 +370,49 @@ or value type saves the editor's initial True choice as `TRUE`. Existing empty o
 non-`TRUE` values retain their false comparison and display False; opening the editor
 does not silently change their meaning.
 
+#### Source-qualified list checks
+
+A `list-str` `INCLUDES` check can optionally match a typed amount from specified
+content categories instead of searching the aggregate text. The editor's **Match**
+control defaults to **Text**. **Type and amount** enables **Source categories**.
+The qualifier uses the existing condition ID:
+
+```jsonc
+"contributionChecks": {
+  "<condition-uuid>": {
+    "categories": ["heritage", "ancestry-feat", "class-feat", "archetype-feat"],
+    "excludeCurrentContent": true,
+    "match": "typed-amount"
+  }
+}
+```
+
+Each entry must reference exactly one existing `list-str` `INCLUDES` check and
+include at least one category.
+The reserved `__proto__` ID cannot carry a qualifier; ordinary unqualified checks
+with that ID retain their existing behavior.
+
+A value such as `fire, {{level/2}}` matches the same
+damage type and numeric amount after the normal expression rounding. The nearest
+real content row owns the contribution; nested custom options keep that owner.
+Another granted row has its own owner. Duplicate contributions retain their
+independent sources, and the checked content cannot qualify itself. Contributions
+without a known content owner do not qualify.
+
+Qualified checks run after ordinary operations, language replacements and bindings
+settle. Ordinary checks in the same conditional keep their original evaluation
+timing. The engine evaluates all qualified checks before applying their branches.
+Unqualified conditions retain their existing behavior, and contribution ownership
+is execution-only, not saved character data.
+
+Qualified branches support isolated primitive writes, resolved ability grants and
+predefined custom selections. Nested conditionals, content removals, implicit
+casting/language/item/trait grants, filtered selections, skill-training discovery
+and paired language replacements are not supported in these branches. They also
+cannot change another qualifier's inputs or discover additional qualified work.
+Unsupported or unresolved dependencies fail the calculation without replacing the
+last successful result. This mode is not a solver for mutually dependent rules.
+
 ### `select`
 
 Player-facing choice. Two modes:

@@ -19,6 +19,8 @@ import { Operation, OperationOptions, OperationResult, OperationSelect } from '@
 import {
   clearDeferredOperations,
   resolveDeferredOperations,
+  resolveQualifiedOperations,
+  reconcileQualifiedResults,
   runOperations,
   withContentGrant,
 } from './operation-runner';
@@ -51,6 +53,7 @@ import {
   getFlatInvItems,
   getItemOperations,
   isItemEquippable,
+  isItemFormula,
   isItemImplantable,
   isItemInvestable,
 } from '@items/inv-utils';
@@ -73,6 +76,7 @@ function getItemsEligibleForOperations(inventory: Inventory | null | undefined):
 
   const topLevelIds = new Set(inventory.items.map((entry) => entry.id));
   return getFlatInvItems(inventory).filter((entry) => {
+    if (isItemFormula(entry)) return false;
     if (topLevelIds.has(entry.id)) return true;
 
     const usage = entry.item.usage?.trim().toLowerCase() ?? '';
@@ -130,7 +134,7 @@ async function _executeOps(
   operations: Operation[],
   options?: OperationOptions,
   sourceLabel?: string,
-  grantedContent?: { id: number; name: string; prefix?: string },
+  grantedContent?: Pick<AbilityBlock, 'id' | 'name' | 'type' | 'traits'> & { prefix?: string },
   sourceLevel = 1
 ) {
   const execute = async (): Promise<OperationResult[]> => {
@@ -150,7 +154,10 @@ async function _executeOps(
     return results;
   };
   return grantedContent
-    ? ((await withContentGrant(varId, primarySource, `ability-block:${grantedContent.id}`, options, execute)) ?? [])
+    ? ((await withContentGrant(varId, primarySource, `ability-block:${grantedContent.id}`, options, execute, {
+        type: grantedContent.type,
+        traits: grantedContent.traits,
+      })) ?? [])
     : execute();
 }
 
@@ -975,7 +982,7 @@ async function executeCharacterOperations(
           feature.operations ?? [],
           options,
           `${feature.name} (Lvl. ${feature.level})`,
-          { id: feature.id, name: feature.name, prefix: 'CLASS_FEATURE' },
+          { ...feature, prefix: 'CLASS_FEATURE' },
           feature.level ?? 1
         );
 
@@ -1029,7 +1036,7 @@ async function executeCharacterOperations(
         mode.operations ?? [],
         options,
         `${mode.name} Mode`,
-        { id: mode.id, name: mode.name },
+        mode,
         character.level
       );
 
@@ -1084,6 +1091,8 @@ async function executeCharacterOperations(
 
   // Apply explicit language overrides and variable bindings after every grant has run.
   const errors = await resolveDeferredOperations();
+  errors.push(...(await resolveQualifiedOperations()));
+  reconcileQualifiedResults(conditionalResults);
 
   // Set calculated stats
   setEidolonRunesInStore(character);
@@ -1199,7 +1208,7 @@ async function executeCreatureOperations(
         ability.operations ?? [],
         options,
         ability.name,
-        { id: ability.id, name: ability.name, prefix: 'FEAT' },
+        { ...ability, prefix: 'FEAT' },
         getEntityLevel(creature)
       );
 
@@ -1274,6 +1283,8 @@ async function executeCreatureOperations(
 
   // Apply explicit language overrides and variable bindings after every grant has run.
   const errors = await resolveDeferredOperations();
+  errors.push(...(await resolveQualifiedOperations()));
+  reconcileQualifiedResults(conditionalResults);
 
   // Set calculated stats
   setCalculatedStatsInStore(id, creature);
