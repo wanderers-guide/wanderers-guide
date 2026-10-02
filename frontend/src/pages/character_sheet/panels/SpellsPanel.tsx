@@ -2,7 +2,7 @@ import { sessionState } from '@atoms/supabaseAtoms';
 import { ActionSymbol } from '@common/Actions';
 import TokenSelect from '@common/TokenSelect';
 import { collectEntitySpellcasting } from '@content/collect-content';
-import { fetchContent, getContentFast, getDefaultSourcesKey } from '@content/content-store';
+import { getContentFast, getDefaultSourcesKey } from '@content/content-store';
 import {
   Accordion,
   ActionIcon,
@@ -18,6 +18,13 @@ import {
 } from '@mantine/core';
 import ManageSpellsModal from '@modals/ManageSpellsModal';
 import { isCantrip } from '@spells/spell-utils';
+import {
+  filterSpellCatalog,
+  getExplicitSpellQueryOptions,
+  getInventorySpellIds,
+  getMissingSpellIds,
+  mergeSpellDependencies,
+} from '@spells/item-spell-dependencies';
 import { IconSearch, IconSquareRounded, IconSquareRoundedFilled, IconX } from '@tabler/icons-react';
 import {
   ActionCost,
@@ -52,7 +59,7 @@ import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 import { useQuery } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 
-/** Renders the entity's spell sections, including explicit innate grants from other accessible books. */
+/** Renders spell sections with scoped innate and item references from other accessible books. */
 export default function SpellsPanel(props: {
   id: StoreID;
   content: ContentPackage;
@@ -86,72 +93,47 @@ export default function SpellsPanel(props: {
     return collectEntitySpellcasting(props.id, props.entity);
   }, [props.id, props.entity]);
 
-  // Keep the page's catalog immediately available. Explicit innate grants can
-  // reference other accessible books without enabling those books for selection.
+  // Explicit innate and inventory references do not enable their books for selection.
   const missingInnateIds = useMemo(() => {
-    const loadedIds = new Set(props.content.spells.map((spell) => spell.id));
-    return [...new Set((charData?.innate ?? []).map((entry) => entry.spell_id))]
-      .filter((id) => id > 0 && !loadedIds.has(id))
-      .sort((a, b) => a - b);
+    return getMissingSpellIds(
+      props.content.spells,
+      (charData?.innate ?? []).map((entry) => entry.spell_id)
+    );
   }, [props.content.spells, charData]);
-  const { data: innateSpells } = useQuery({
-    queryKey: [
-      'sheet-innate-spells',
-      {
-        actorId,
-        entityId: props.entity?.id,
-        storeId: props.id,
-        infoSources: getDefaultSourcesKey('INFO'),
-        pageSources: getDefaultSourcesKey('PAGE'),
-        ids: missingInnateIds,
-      },
-    ],
-    enabled: missingInnateIds.length > 0,
-    queryFn: () => fetchContent<Spell>('spell', { id: missingInnateIds }),
-  });
-  const spells = useMemo(
-    () => [...props.content.spells, ...(innateSpells ?? []).filter((spell) => missingInnateIds.includes(spell.id))],
-    [props.content.spells, innateSpells, missingInnateIds]
+  const missingItemIds = useMemo(() => {
+    return getMissingSpellIds(props.content.spells, getInventorySpellIds(props.entity?.inventory?.items ?? []));
+  }, [props.content.spells, props.entity?.inventory]);
+  const missingIds = useMemo(
+    () => [...new Set([...missingInnateIds, ...missingItemIds])].sort((a, b) => a - b),
+    [missingInnateIds, missingItemIds]
   );
+  const { data: explicitSpells } = useQuery(
+    getExplicitSpellQueryOptions({
+      actorId,
+      entityId: props.entity?.id,
+      storeId: props.id,
+      infoSources: getDefaultSourcesKey('INFO'),
+      pageSources: getDefaultSourcesKey('PAGE'),
+      ids: missingIds,
+    })
+  );
+  const spells = useMemo(() => {
+    return mergeSpellDependencies(props.content.spells, explicitSpells, missingInnateIds);
+  }, [props.content.spells, explicitSpells, missingInnateIds]);
 
-  // Filter spells by action cost
   const [actionTypeFilter, setActionTypeFilter] = useState<ActionCost | 'ALL'>('ALL');
-
-  const searchSpells = useMemo(() => {
-    // Filter spells
-    return searchQueryDebounced.trim() || actionTypeFilter !== 'ALL'
-      ? (spells ?? []).filter((s) => {
-          // Custom search, alt could be to use JsSearch here
-          const query = searchQueryDebounced.trim().toLowerCase();
-
-          const checkSpell = (spell: Spell) => {
-            if (actionTypeFilter !== 'ALL') return false;
-
-            const searchStr = JSON.stringify({
-              _: spell.name,
-              __: spell.duration,
-              ___: spell.targets,
-              ____: spell.area,
-              _____: spell.range,
-              ______: spell.requirements,
-              _______: spell.trigger,
-              ________: spell.cost,
-              _________: spell.defense,
-              __________: spell.cast,
-              ___________: spell.rarity,
-              _____________: getContentFast<Trait>('trait', spell.traits ?? []).map((t) => t.name),
-            }).toLowerCase();
-
-            return searchStr.includes(query);
-          };
-
-          if (checkSpell(s)) return true;
-          return false;
-        })
-      : (spells ?? []);
-  }, [spells, actionTypeFilter, searchQueryDebounced]);
-
-  const allSpells = searchSpells.filter((spell) => spell.cast === actionTypeFilter || actionTypeFilter === 'ALL');
+  const allSpells = useMemo(() => {
+    return filterSpellCatalog(spells, searchQueryDebounced, actionTypeFilter, (ids) =>
+      getContentFast<Trait>('trait', ids).map((trait) => trait.name)
+    );
+  }, [spells, searchQueryDebounced, actionTypeFilter]);
+  // Item-only supplements stay out of normal casting and the selection catalog.
+  const allItemSpells = useMemo(() => {
+    const filtered = filterSpellCatalog(explicitSpells ?? [], searchQueryDebounced, actionTypeFilter, (ids) =>
+      getContentFast<Trait>('trait', ids).map((trait) => trait.name)
+    );
+    return mergeSpellDependencies(allSpells, filtered, missingItemIds);
+  }, [allSpells, explicitSpells, missingItemIds, searchQueryDebounced, actionTypeFilter]);
   const hasFilters = searchQuery.trim().length > 0 || actionTypeFilter !== 'ALL';
 
   return (
@@ -322,7 +304,7 @@ export default function SpellsPanel(props: {
                   //
                   index={'staff'}
                   spellIds={[]}
-                  allSpells={allSpells}
+                  allSpells={allItemSpells}
                   type='STAFF'
                   hasFilters={hasFilters}
                   extra={{ charData: charData }}
@@ -336,7 +318,7 @@ export default function SpellsPanel(props: {
                   //
                   index={'wand'}
                   spellIds={[]}
-                  allSpells={allSpells}
+                  allSpells={allItemSpells}
                   type='WAND'
                   hasFilters={hasFilters}
                   extra={{ charData: charData }}
@@ -350,7 +332,7 @@ export default function SpellsPanel(props: {
                   //
                   index={'spellheart'}
                   spellIds={[]}
-                  allSpells={allSpells}
+                  allSpells={allItemSpells}
                   type='SPELLHEART'
                   hasFilters={hasFilters}
                   extra={{ charData: charData }}
@@ -407,7 +389,7 @@ function ActionFilter(props: {
         color='dark'
         radius='xl'
         size='lg'
-        aria-label='Filter One Action'
+        aria-label='Filter All Actions'
         style={{
           backgroundColor: actionTypeFilter === 'ALL' ? IMPRINT_BG_COLOR : undefined,
           borderColor: actionTypeFilter === 'ALL' ? IMPRINT_BORDER_COLOR : undefined,

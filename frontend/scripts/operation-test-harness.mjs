@@ -118,6 +118,7 @@ let sources = { PAGE: [], INFO: [] };
 export function setFixtures(rows) { fixtures = rows; }
 export function getCachedContent(type) { return fixtures.filter(x => x.table === type.replaceAll('-', '_')).map(x => x.row); }
 export async function fetchContentById(type, id) { return getCachedContent(type).find(row => row.id === id) || null; }
+export async function fetchContent(type, data) { return getCachedContent(type).filter(row => (data.id === undefined || (Array.isArray(data.id) ? data.id : [data.id]).includes(row.id)) && (!Array.isArray(data.content_sources) || data.content_sources.includes(row.content_source_id))); }
 export async function fetchContentAll(type, requestedSources) { return getCachedContent(type).filter(row => !Array.isArray(requestedSources) || requestedSources.length === 0 || requestedSources.includes(row.content_source_id)); }
 export async function fetchTraitByName(name) { return getCachedContent('trait').find(row => row.name.toLowerCase() === name.toLowerCase()) || null; }
 export async function fetchArchetypeByDedicationFeat() { return null; }
@@ -128,13 +129,27 @@ export function importFromContentPackage() {}
 `;
 
 /** Bundle the workspace's actual engine with a local content boundary; register cleanup with test.after(). */
-export async function createOperationEngine() {
+export async function createOperationEngine({ renderRichText = false } = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'wg-operation-tests-'));
   try {
     const result = await build({
       absWorkingDir: frontend,
       stdin: {
-        contents: `
+        contents: `${
+          renderRichText
+            ? `
+          import React from 'react';
+          import { renderToStaticMarkup } from 'react-dom/server';
+          import { MantineProvider, DEFAULT_THEME } from '@mantine/core';
+          import RichText from '@common/RichText';
+          export function renderRichText(text, conditionBlacklist = []) {
+            return renderToStaticMarkup(React.createElement(MantineProvider,
+              { theme: { colors: { guide: DEFAULT_THEME.colors.blue } } },
+              React.createElement(RichText, { conditionBlacklist, children: text })));
+          }
+        `
+            : ''
+        }
           export * from '@operations/operation-runner';
           export * from '@operations/operation-controller';
           export { executeOperations } from '@operations/operations.main';
@@ -142,6 +157,10 @@ export async function createOperationEngine() {
           export * from '@variables/variable-manager';
           export * from '@variables/variable-utils';
           export * from '@variables/variable-helpers';
+          export { convertToHardcodedLink, buildHrefFromContentData } from '@content/hardcoded-links';
+          export { detectSpells } from '@spells/spell-utils';
+          export { getInventorySpellIds, getMissingSpellIds, mergeSpellDependencies, filterSpellCatalog } from '@spells/item-spell-dependencies';
+          export { filterByTraitType } from '@items/inv-utils';
           export { applyConditions, compiledConditions, getConditionByName } from '@conditions/condition-handler';
           export { getSpellStats } from '@spells/spell-handler';
           export { changeEntityConditions, confirmHealth } from '@pages/character_sheet/entity-handler';
@@ -149,7 +168,7 @@ export async function createOperationEngine() {
           export { getAcParts } from '@items/armor-handler';
           export * from '@items/eidolon-runes';
           export { handleAddItem, handleDeleteItem, handleUpdateItem, handleMoveItem, addExtraItems } from '@items/inv-handlers';
-          export { isItemInvestable, getFlatInvItems, applyEquipmentPenalties, getBestArmor, compileTraits } from '@items/inv-utils';
+          export { isItemInvestable, getFlatInvItems, getItemBulk, getInvBulk, applyEquipmentPenalties, getBestArmor, compileTraits } from '@items/inv-utils';
           export { getListStringInputValue } from '@common/operations/variables/operation-value-defaults';
           export { toggleActiveMode, getExecutableModes } from '@common/modes/mode-rules';
           export { determineFilteredSelectionList } from '@operations/operation-utils';
@@ -168,6 +187,13 @@ export async function createOperationEngine() {
       write: false,
       platform: 'node',
       format: 'esm',
+      ...(renderRichText
+        ? {
+            banner: {
+              js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+            },
+          }
+        : {}),
       define: { 'import.meta.env': JSON.stringify({ VITE_ENV: 'production' }) },
       plugins: [
         {
