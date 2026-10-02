@@ -7,7 +7,7 @@ import { collectEntityAbilityBlocks } from '@content/collect-content';
 import { isAbilityBlockVisible } from '@content/content-hidden';
 import { getContentFast } from '@content/content-store';
 import { handleDeleteItem, handleMoveItem, handleUpdateItem } from '@items/inv-handlers';
-import { isItemWeapon } from '@items/inv-utils';
+import { getEquippedWeapons } from '@items/inv-utils';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import {
   useMantineTheme,
@@ -160,10 +160,7 @@ export default function SkillsActionsPanel(props: {
   }, [props.content.abilityBlocks, actionTypeFilter, searchQueryDebounced, props.id, props.entity]);
 
   const weapons = useMemo(() => {
-    const weapons =
-      props.entity?.inventory?.items
-        .filter((invItem) => invItem.is_equipped && isItemWeapon(invItem.item))
-        .sort((a, b) => a.item.name.localeCompare(b.item.name)) ?? [];
+    const weapons = getEquippedWeapons(props.entity?.inventory?.items) ?? [];
 
     // Filter weapons
     return searchQueryDebounced.trim() || actionTypeFilter !== 'ALL'

@@ -9,6 +9,7 @@ import { getCachedPublicUser } from '@auth/user-manager';
 import { getAcParts } from '@items/armor-handler';
 import {
   isItemWeapon,
+  getEquippedWeapons,
   getFlatInvItems,
   getBestArmor,
   getBestShield,
@@ -218,13 +219,10 @@ async function fillPDF(form: PDFForm, character: Character) {
 
   const senseData = collectEntitySenses(STORE_ID, content.abilityBlocks);
 
-  const weapons = character.inventory?.items
-    .filter((invItem) => invItem.is_equipped && isItemWeapon(invItem.item))
-    .sort((a, b) => a.item.name.localeCompare(b.item.name))
-    .map((invItem) => ({
-      item: invItem.item,
-      stats: getWeaponStats(STORE_ID, invItem.item),
-    }));
+  const weapons = getEquippedWeapons(character.inventory?.items)?.map((invItem) => ({
+    item: invItem.item,
+    stats: getWeaponStats(STORE_ID, invItem.item),
+  }));
 
   const items = character.inventory ? getFlatInvItems(character.inventory) : [];
 
@@ -509,7 +507,9 @@ async function fillPDF(form: PDFForm, character: Character) {
   // Skills that overflowed the two generic rows are written out with their totals
   for (const variableName of genericRowOverflow) {
     const overflowProfType = compileProficiencyType(getVariable<VariableProf>(STORE_ID, variableName)?.value);
-    skillNotes.push(`${genericRowLabel(variableName)} ${getFinalProfValue(STORE_ID, variableName)} (${overflowProfType})`);
+    skillNotes.push(
+      `${genericRowLabel(variableName)} ${getFinalProfValue(STORE_ID, variableName)} (${overflowProfType})`
+    );
   }
   const skillNoteVariables = [...getAllSkillVariables(STORE_ID), getVariable<VariableProf>(STORE_ID, 'PERCEPTION')];
   for (const skillVariable of skillNoteVariables.filter(isTruthy)) {
@@ -817,7 +817,12 @@ async function fillPDF(form: PDFForm, character: Character) {
   // Campaign notes: the character's actual note pages, as plain text
   const notePages = character.notes?.pages ?? [];
   const notesTexts = notePages
-    .map((page) => ({ name: page.name, text: tiptapToPlainText(page.contents).replace(/\n{3,}/g, '\n\n').trim() }))
+    .map((page) => ({
+      name: page.name,
+      text: tiptapToPlainText(page.contents)
+        .replace(/\n{3,}/g, '\n\n')
+        .trim(),
+    }))
     .filter((page) => page.text.length > 0)
     .map((page) => (notePages.length > 1 ? `${page.name}:\n${page.text}` : page.text));
   let notesText = notesTexts.join('\n\n');
