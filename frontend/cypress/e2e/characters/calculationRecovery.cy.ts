@@ -136,6 +136,7 @@ describe('Calculation recovery', () => {
   });
 
   it('keeps the builder editable after a persistent worker failure without a retry screen', () => {
+    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
     let attempts = 0;
     let saves = 0;
     cy.intercept('POST', '**/functions/v1/update-character', (request) => {
