@@ -11,7 +11,7 @@ import {
 import { SetterOrUpdater } from '@utils/type-fixing';
 import SpellListEntrySection from './SpellListEntrySection';
 import { useMemo } from 'react';
-import { detectSpells } from '@spells/spell-utils';
+import { detectSpellheartSpells } from '@spells/spell-utils';
 import { isItemBroken } from '@items/inv-utils';
 import { StoreID } from '@schemas/variables';
 
@@ -41,7 +41,7 @@ export default function SpellheartSpellsList(props: {
   const processedSpellhearts = useMemo(() => {
     const processed = [];
     for (const spellheart of props.spellhearts) {
-      const detectedSpells = detectSpells(spellheart.item.description, props.allSpells, true);
+      const detectedSpells = detectSpellheartSpells(spellheart.item.description, props.allSpells);
       if (detectedSpells.length === 0) {
         continue;
       }
@@ -58,11 +58,9 @@ export default function SpellheartSpellsList(props: {
         }
       }
 
-      processed.push({
-        item: spellheart,
-        spell: detectedSpells[0],
-        detectedSpells: detectedSpells,
-      });
+      for (const spell of detectedSpells) {
+        processed.push({ item: spellheart, spell });
+      }
     }
 
     return processed;
@@ -120,9 +118,9 @@ export default function SpellheartSpellsList(props: {
               },
             }}
           >
-            {processedSpellhearts.map((spellheart, index) => (
+            {processedSpellhearts.map((spellheart) => (
               <SpellListEntrySection
-                key={index}
+                key={`${spellheart.item.id}-${spellheart.spell.spell.id}-${spellheart.spell.rank}`}
                 id={props.id}
                 entity={props.entity}
                 spell={spellheart.spell.spell}
