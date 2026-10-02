@@ -402,37 +402,40 @@ export default function InventoryPanel(props: {
         </Group>
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
           {invItems.length !== 0 && (
-            <Grid w={'100%'}>
-              <Grid.Col span='auto'>
-                <Text ta='left' fz='xs' pl={5}>
-                  Name
-                </Text>
-              </Grid.Col>
-              {!isPhone && (
-                <Grid.Col span={3}>
-                  <Grid>
-                    <Grid.Col span={2}>
-                      <Text ta='center' fz='xs'>
-                        Qty
-                      </Text>
-                    </Grid.Col>
-                    <Grid.Col span={3}>
-                      <Text ta='center' fz='xs'>
-                        Bulk
-                      </Text>
-                    </Grid.Col>
-                    <Grid.Col span={7}>
-                      <Text ta='left' fz='xs'>
-                        Price
-                      </Text>
-                    </Grid.Col>
-                  </Grid>
+            // Match the item cards' inset and column widths, including the reserved action column.
+            <Box px='sm' style={{ border: '1px solid transparent' }}>
+              <Grid w='100%' overflow='hidden' styles={{ inner: { flexWrap: 'nowrap' } }}>
+                <Grid.Col span='auto'>
+                  <Text ta='left' fz='xs' pl={5}>
+                    Name
+                  </Text>
                 </Grid.Col>
-              )}
-              <Grid.Col span={2} offset={1}>
-                <Group justify='flex-end' wrap='nowrap' align='center' h={'100%'} gap={10}></Group>
-              </Grid.Col>
-            </Grid>
+                {!isPhone && (
+                  <Grid.Col span={3}>
+                    <Grid>
+                      <Grid.Col span={2}>
+                        <Text ta='center' fz='xs'>
+                          Qty
+                        </Text>
+                      </Grid.Col>
+                      <Grid.Col span={3}>
+                        <Text ta='center' fz='xs'>
+                          Bulk
+                        </Text>
+                      </Grid.Col>
+                      <Grid.Col span={7}>
+                        <Text ta='left' fz='xs'>
+                          Price
+                        </Text>
+                      </Grid.Col>
+                    </Grid>
+                  </Grid.Col>
+                )}
+                <Grid.Col span={isPhone ? 'content' : 3}>
+                  <Box w={isPhone ? '6rem' : undefined} />
+                </Grid.Col>
+              </Grid>
+            </Box>
           )}
           <Accordion
             variant='separated'
@@ -646,6 +649,7 @@ function InvItemOption(props: {
   return (
     <Grid
       w={'100%'}
+      align='center'
       overflow='hidden'
       styles={{
         inner: {
@@ -715,8 +719,9 @@ function InvItemOption(props: {
           </Grid>
         </Grid.Col>
       )}
-      <Grid.Col span='content'>
-        <Group justify='flex-end' wrap='wrap' align='center' h='100%' gap='xs' w={props.isPhone ? '6rem' : undefined}>
+      {/* Reserve the same action width on every desktop row, even when an item has no buttons. */}
+      <Grid.Col span={props.isPhone ? 'content' : 3}>
+        <Group justify='flex-end' wrap='wrap' align='center' h='100%' gap='xs' w={props.isPhone ? '6rem' : '100%'}>
           {props.hideSections && (
             <Button size='compact-xs' variant='light' w='6rem' onClick={() => props.onViewItem?.(props.invItem)}>
               View Item

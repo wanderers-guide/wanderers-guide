@@ -4,7 +4,6 @@ import { characterState } from '@atoms/characterAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import { CharacterInfo } from '@common/CharacterInfo';
-import { OperationError } from '@common/OperationError';
 import RichText from '@common/RichText';
 import ResultWrapper from '@common/operations/results/ResultWrapper';
 import { SelectContentButton, selectContent } from '@common/select/SelectContent';
@@ -196,20 +195,17 @@ export function CharBuilderCreationInner(props: {
 
   const [levelItemValue, setLevelItemValue] = useState<string | null>(null);
 
-  const { character, setCharacter, results, operationError, isCalculating, retryOperations, loadError, retryLoad } =
-    useCharacter(props.characterId, {
-      type: 'EXECUTE_OPS',
-      data: {
-        content: props.content,
-        context: 'CHARACTER-BUILDER',
-        onFinishLoading: props.onFinishLoading,
-        onSourcesChange: props.onSourcesChange,
-      },
-    });
+  const { character, setCharacter, results, loadError, retryLoad } = useCharacter(props.characterId, {
+    type: 'EXECUTE_OPS',
+    data: {
+      content: props.content,
+      context: 'CHARACTER-BUILDER',
+      onFinishLoading: props.onFinishLoading,
+      onSourcesChange: props.onSourcesChange,
+    },
+  });
 
   if (loadError) return <CharacterLoadError onRetry={retryLoad} />;
-
-  if (operationError) return <OperationError loading={isCalculating} onRetry={retryOperations} />;
 
   const levelItems = Array.from({ length: (character?.level ?? 0) + 1 }, (_, i) => i).map((level) => {
     return (

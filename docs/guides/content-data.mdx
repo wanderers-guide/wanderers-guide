@@ -23,6 +23,31 @@ WG content lives in Postgres, with one table per primary content type:
 
 A second layer, the **frontend cache**, mirrors a subset of these tables in the browser so the character sheet doesn’t hit the database for every lookup. The cache is populated at app start from `find-*` calls and refreshed when the active character’s `content_sources.enabled` list changes.
 
+Weapon `hands` is a top-level field holding the printed value, such as `1`, `2`, or
+`1+`. `usage` is separate: leave it empty when the source lists Hands without a Usage
+line. Magical equipment can have a real Usage line, which should be preserved.
+Weapon reload is stored in `meta_data.reload`; the thrown-weapon placeholder is `—`.
+
+Automatic Bonus Progression's level-17 Ability Apex increases the selected attribute
+modifier by 1 or raises it to +4, whichever is higher. This is a full increase even
+above +4, and preserves any existing half-boost. Ordinary attribute boosts retain
+their usual half-boost behavior above +4.
+
+The legacy Heal Companion feat grants the current Heal Companion focus spell through
+the Ranger casting source, with Wisdom, trained spell proficiency, and the Spells tab.
+It is deprecated and hidden from new feat choices. Its original feat ID and grants
+remain valid for saved characters that already selected it.
+
+Character calculation failures stay in background diagnostics. The sheet and builder
+remain editable, and retain the last successful calculation during the current session.
+A transient failure gets one automatic retry. Persistent failures wait for changed
+inputs; raw edits remain buffered locally, and incomplete derived stats never save.
+
+Predefined ability, spell, and language choices in the operation editor have an X
+to remove that choice. Other choices retain their existing IDs and values, including
+when the removed choice was first in the list. Clearing the only choice leaves an
+empty picker ready for a replacement.
+
 Hazards use the creature table for source ownership and search, but they are not living entities. Creature queries default to `type='creature'`; hazard queries use `type='hazard'`. A hazard's stat block lives in structured `details` fields for stealth, disable, defenses, activation, routine, and reset. Official hazard corrections can be submitted from the hazard drawer for moderator review as content updates. They use a hazard-specific editor and remain separate from the creature editor.
 
 Encounters offer separate **Add Creature** and **Add Hazard** selections. A hazard

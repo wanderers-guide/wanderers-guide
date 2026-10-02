@@ -379,7 +379,7 @@ describe('Condition math and recovery through the real sheet', () => {
       releaseContent?.();
     });
     cy.wait('@homebrewSave', { timeout: 30000 });
-    cy.contains('Hit Points', { timeout: 30000 }).parent().find('a').should('have.text', '53');
+    cy.contains('Hit Points', { timeout: 30000 }).parent().find('a', { timeout: 30000 }).should('have.text', '53');
     savedMaximum(53);
     cy.screenshot('homebrew-conditional-bindings-mobile');
     for (const [level, maximum] of [
@@ -391,14 +391,17 @@ describe('Condition math and recovery through the real sheet', () => {
       );
       cy.reload();
       cy.wait('@homebrewSave', { timeout: 30000 });
-      cy.contains('Hit Points', { timeout: 30000 }).parent().find('a').should('have.text', String(maximum));
+      cy.contains('Hit Points', { timeout: 30000 })
+        .parent()
+        .find('a', { timeout: 30000 })
+        .should('have.text', String(maximum));
       savedMaximum(maximum);
     }
     cy.reload();
-    cy.contains('Hit Points', { timeout: 30000 }).parent().find('a').should('have.text', '53');
+    cy.contains('Hit Points', { timeout: 30000 }).parent().find('a', { timeout: 30000 }).should('have.text', '53');
   });
 
-  it('shows a cyclic homebrew calculation error without saving partial math and recovers after correction', () => {
+  it('keeps a cyclic homebrew failure silent without saving partial math and recovers after correction', () => {
     cy.intercept('POST', '**/functions/v1/update-character').as('baselineHomebrewSave');
     cy.visit(`/sheet/${characterId}`);
     cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
@@ -432,11 +435,13 @@ describe('Condition math and recovery through the real sheet', () => {
     });
     cy.viewport(390, 844);
     cy.reload();
-    cy.contains("Couldn't calculate this character", { timeout: 30000 }).should('be.visible');
-    cy.contains('button', 'Retry calculation').should('be.enabled');
+    cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
+    cy.contains("Couldn't calculate this character").should('not.exist');
+    cy.contains('button', 'Retry calculation').should('not.exist');
+    cy.wait(2500);
     cy.then(() => expect(saves, 'failed homebrew cannot save derived state').to.eq(0));
     read().its('meta_data.calculated_stats.hp_max').should('eq', 48);
-    cy.screenshot('homebrew-cycle-paused-mobile');
+    cy.screenshot('homebrew-cycle-silent-mobile');
     read().then((base) =>
       request('update-character', {
         id: characterId,

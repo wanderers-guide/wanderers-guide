@@ -13,7 +13,6 @@ import {
   getDefaultSourcesKey,
 } from '@content/content-store';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
-import { displayError } from '@utils/notifications';
 import { addExtraItems, checkBulkLimit } from '@items/inv-handlers';
 import { applyEquipmentPenalties } from '@items/inv-utils';
 import { isEidolon } from '@items/eidolon-runes';
@@ -269,9 +268,8 @@ export function CreatureDrawerContent(props: {
         // catch `loading` stayed true forever while `isFetching` was false, so the drawer
         // rendered "Couldn't load this content" — a connection error for what is really bad
         // content data, with no way out short of editing the record in the database.
-        // Settle instead: render what the record does have and surface the real reason.
+        // Settle and render the available record; calculation diagnostics stay in the background.
         console.error(`Error: Failed to execute operations for creature ${creature.id}`, error);
-        displayError(`Couldn't compute "${creature.name}": ${error?.message ?? error}`);
 
         setLoading(false);
         refreshStatBlock();

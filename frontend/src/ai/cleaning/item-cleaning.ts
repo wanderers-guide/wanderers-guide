@@ -440,7 +440,7 @@ Many existing WG items have incorrect usage values that this cleaning process ex
 
 Follow exactly what the AoN page says — nothing else:
 - If AoN shows a **"Usage"** line (e.g. "worn gloves", "held in one hand"), set the usage field to that exact value. Normalize it: replace hyphens with spaces.
-- If AoN shows only a **"Hands"** entry with no separate "Usage" line, set usage to an empty string ("") and only set the "hands" field in meta_data. **Do NOT set usage to "held in one hand" or any other value — leave it empty.**
+- If AoN shows only a **"Hands"** entry with no separate "Usage" line, set usage to an empty string ("") and set the top-level "hands" field to the printed value (e.g. "1", "2", or "1+"). Hands is not a meta_data field. **Do NOT derive usage from Hands — leave usage empty.**
 - If AoN shows neither Usage nor Hands, set usage to an empty string (""). Do not guess based on what the item "seems like".
 
 ### 4. Fix meta_data

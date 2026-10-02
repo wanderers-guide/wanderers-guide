@@ -475,8 +475,19 @@ async function executeCharacterOperations(
                           },
                         ],
                         trueOperations: [
+                          // Two half boosts grant the full apex increase and retain an existing partial boost.
                           {
                             id: `97cba452-8931-4173-b9b4-22f7b7cf230f-${index}`,
+                            type: 'adjValue',
+                            data: {
+                              variable: a.var,
+                              value: {
+                                value: 1,
+                              },
+                            },
+                          },
+                          {
+                            id: `97cba452-8931-4173-b9b4-22f7b7cf230f-${index}-full-apex`,
                             type: 'adjValue',
                             data: {
                               variable: a.var,
@@ -494,6 +505,7 @@ async function executeCharacterOperations(
                               variable: a.var,
                               value: {
                                 value: 4,
+                                partial: false,
                               },
                             },
                           },
@@ -509,7 +521,7 @@ async function executeCharacterOperations(
           actions: null,
           level: level,
           rarity: 'COMMON',
-          description: `Choose one attribute to either boost or increase to +4 (whichever grants the higher value).`,
+          description: `Choose one attribute modifier to either increase by 1 or increase to +4 (whichever grants the higher modifier).`,
           type: 'class-feature',
           content_source_id: -1,
         };

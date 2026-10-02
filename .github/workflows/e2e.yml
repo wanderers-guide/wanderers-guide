@@ -135,6 +135,19 @@ jobs:
             | docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - \
             | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed War of Immortals index regression: " $1; failed = 1 } END { if (NR == 0) { print "No War of Immortals index regressions ran"; failed = 1 } exit failed }'
 
+      - name: Verify and replay Discord content repairs
+        run: |
+          set -euo pipefail
+          for pass in 1 2; do
+            for migration in supabase/migrations/20261001000000_repair_heal_companion.sql supabase/migrations/20261001010000_repair_weapon_stat_fields.sql; do
+              docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"
+            done
+            for check in supabase/release/heal-companion.sql supabase/release/weapon-stat-fields.sql; do
+              docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - < "$check" \
+                | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed Discord content repair: " $1; failed = 1 } END { if (NR == 0) { print "No Discord content repair checks ran"; failed = 1 } exit failed }'
+            done
+          done
+
       - name: Database authorization regression tests
         run: npm run test:authorization
 

@@ -10,7 +10,6 @@ import {
 import { StoreID, VariableStore } from '@schemas/variables';
 import { exportVariableStore, importVariableStore, normalizeProficiencies } from '@variables/variable-manager';
 import { _executeCharacterOperations, _executeCreatureOperations } from './operation-controller';
-import { displayError } from '@utils/notifications';
 import { z } from 'zod';
 
 // The controller synthesizes display sources such as "Elf Feat". They are not
@@ -305,7 +304,7 @@ export async function executeOperations<T = OperationCharacterResultPackage | Op
         committedCharacterVersion = characterVersion;
         notifySnapshotWaiters();
       }
-      result.errors?.forEach((error) => displayError(error));
+      result.errors?.forEach((error) => console.error('Calculation diagnostic:', error));
       return result.ors as T;
     } catch (error) {
       if (

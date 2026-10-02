@@ -4,7 +4,6 @@ import { useAtomValue } from 'jotai';
 import D20Loader from '@assets/images/D20Loader';
 import { glassStyle } from '@utils/colors';
 import BlurBox from '@common/BlurBox';
-import { OperationError } from '@common/OperationError';
 import { defineDefaultSources, fetchContentPackage, fetchContentSources } from '@content/content-store';
 
 import {
@@ -234,16 +233,15 @@ function CharacterSheetInner(props: {
 
   // EXECUTE_OPS triggers the character's operation pipeline and calls
   // onFinishLoading when it completes, which dismisses the loading screen.
-  const { character, setCharacter, isLoading, operationError, isCalculating, retryOperations, loadError, retryLoad } =
-    useCharacter(props.characterId, {
-      type: 'EXECUTE_OPS',
-      data: {
-        content: props.content,
-        context: 'CHARACTER-SHEET',
-        onFinishLoading: props.onFinishLoading,
-        onSourcesChange: props.onSourcesChange,
-      },
-    });
+  const { character, setCharacter, isLoading, loadError, retryLoad } = useCharacter(props.characterId, {
+    type: 'EXECUTE_OPS',
+    data: {
+      content: props.content,
+      context: 'CHARACTER-SHEET',
+      onFinishLoading: props.onFinishLoading,
+      onSourcesChange: props.onSourcesChange,
+    },
+  });
 
   setPageTitle(character && character.name.trim() ? character.name : 'Sheet');
 
@@ -266,8 +264,6 @@ function CharacterSheetInner(props: {
   }, [character, isLoading, props.content]);
 
   if (loadError) return <CharacterLoadError onRetry={retryLoad} />;
-
-  if (operationError) return <OperationError loading={isCalculating} onRetry={retryOperations} />;
 
   return (
     <Center>

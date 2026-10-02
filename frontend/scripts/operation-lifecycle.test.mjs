@@ -101,6 +101,14 @@ test('abort and late completion preserve the last committed store', async () => 
   assert.equal(level(), 1);
 });
 
+test('current calculation diagnostics do not create error toasts', async () => {
+  const current = engine.executeOperations(execution(9));
+  workers[0].reply({ ...results[1], errors: ['Malformed optional operation'] });
+  await current;
+  assert.equal(level(), 9);
+  assert.deepEqual(engine.getOperationErrorNotifications(), []);
+});
+
 for (const failure of ['bootstrap', 'post', 'runtime', 'decode', 'malformed', 'controller']) {
   test(`${failure} failure releases the request and permits the identical calculation to retry`, async () => {
     failConstructor = failure === 'bootstrap';

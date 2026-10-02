@@ -243,7 +243,7 @@ const boundaries = {
   '@pages/character_sheet/entity-handler': 'export const confirmHealth = globalThis.__saveHooks.confirmHealth;',
   '@variables/calculated-stats': 'export const saveCalculatedStats = globalThis.__saveHooks.saveCalculatedStats;',
   '@variables/variable-manager':
-    'export const setVariable = () => {}; export const getVariable = () => undefined; export const getVariables = () => ({}); export const addVariable = () => {};',
+    'export const resetVariables = () => {}; export const setVariable = () => {}; export const getVariable = () => undefined; export const getVariables = () => ({}); export const addVariable = () => {};',
   './variable-manager':
     'export const getVariable = () => undefined; export const getVariables = () => ({}); export const addVariable = () => {};',
   './variable-helpers':
@@ -473,10 +473,90 @@ test('pending and failed calculations retain inputs locally without writing deri
   assert.equal(getBufferedCharacterSave(1, 'owner').draft.requiresCalculation, true);
   assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Edit during calculation');
   assert.equal(harness.requests.filter((value) => value.type === 'update-character').length, 0);
-  assert.ok(harness.value.operationError);
+  assert.equal(harness.value.isLoading, false);
+  assert.equal('operationError' in harness.value, false);
+  assert.equal('retryOperations' in harness.value, false);
   events.get('focus')();
   await harness.flush();
-  assert.equal(harness.notices.length, 0, 'the existing calculation error handles retry without a download flow');
+  assert.equal(harness.notices.length, 0, 'calculation failures stay silent');
+  harness.unmount();
+});
+
+test('calculation failures retry once in the background and changed inputs can recover', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  harness.options = {
+    type: 'EXECUTE_OPS',
+    data: { content: {}, context: 'CHARACTER-SHEET', onFinishLoading: () => {} },
+  };
+  let attempts = 0;
+  harness.calculate = async () => {
+    attempts++;
+    throw new Error('worker crashed');
+  };
+  harness.render();
+  await harness.flush();
+  assert.equal(attempts, 1);
+  t.mock.timers.tick(2000);
+  await harness.flush();
+  assert.equal(attempts, 2);
+  t.mock.timers.tick(60000);
+  await harness.flush();
+  assert.equal(attempts, 2, 'a persistent failure does not loop');
+  assert.equal(harness.notices.length, 0);
+  assert.equal(harness.value.isLoading, false);
+  assert.equal(harness.requests.filter((value) => value.type === 'update-character').length, 0);
+  harness.calculate = async () => ({ marker: 'recovered' });
+  harness.edit({ level: 2 });
+  await harness.flush();
+  assert.deepEqual(harness.value.results, { marker: 'recovered' });
+  assert.equal(harness.requests.filter((value) => value.type === 'update-character').length, 1);
+  harness.unmount();
+});
+
+test('navigation cancels a scheduled calculation retry', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  harness.options = {
+    type: 'EXECUTE_OPS',
+    data: { content: {}, context: 'CHARACTER-SHEET', onFinishLoading: () => {} },
+  };
+  let attempts = 0;
+  harness.calculate = async () => {
+    attempts++;
+    throw new Error('worker crashed');
+  };
+  harness.render();
+  await harness.flush();
+  harness.unmount();
+  t.mock.timers.tick(60000);
+  await harness.flush();
+  assert.equal(attempts, 1);
+});
+
+test('a failed edit retains this character results but navigation does not reuse them', async () => {
+  harness.options = {
+    type: 'EXECUTE_OPS',
+    data: { content: {}, context: 'CHARACTER-SHEET', onFinishLoading: () => {} },
+  };
+  const successfulResults = { marker: 'character-1' };
+  harness.calculate = async () => successfulResults;
+  harness.render();
+  await harness.flush();
+  assert.equal(harness.value.results, successfulResults);
+  const priorSaves = harness.requests.filter((value) => value.type === 'update-character').length;
+  harness.calculate = async () => {
+    throw new Error('bad level-up');
+  };
+  harness.edit({ level: 2 });
+  await harness.flush();
+  assert.equal(harness.value.results, successfulResults);
+  assert.equal(harness.value.character.level, 2);
+  assert.equal(harness.requests.filter((value) => value.type === 'update-character').length, priorSaves);
+  assert.equal(harness.notices.length, 0);
+  harness.characterId = 2;
+  harness.render();
+  await harness.flush();
+  assert.equal(harness.value.results, null);
+  assert.equal(harness.value.character.id, 2);
   harness.unmount();
 });
 

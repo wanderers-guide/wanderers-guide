@@ -875,7 +875,7 @@ function SelectionPredefinedAbilityBlock(props: {
   return (
     <Stack gap={10}>
       {optionsForUI.map((option, index) => (
-        <Group key={index} wrap='nowrap' style={{ position: 'relative' }}>
+        <Group key={option.id} wrap='nowrap' style={{ position: 'relative' }}>
           <SelectContentButton<AbilityBlock>
             type='ability-block'
             onClick={(selected) => {
@@ -896,6 +896,7 @@ function SelectionPredefinedAbilityBlock(props: {
               });
             }}
             selectedId={option.operation.data.abilityBlockId}
+            onClear={() => setOptions((prev) => prev.filter((entry) => entry.id !== option.id))}
             options={{
               abilityBlockType: props.type,
               showButton: false,
@@ -1117,7 +1118,7 @@ function SelectionPredefinedSpell(props: {
       <Divider label={<Text fz='sm'>List Options</Text>} labelPosition='left' />
 
       {optionsForUI.map((option, index) => (
-        <Group key={index} wrap='nowrap' style={{ position: 'relative' }}>
+        <Group key={option.id} wrap='nowrap' style={{ position: 'relative' }}>
           <SelectContentButton<Spell>
             type='spell'
             onClick={(selected) => {
@@ -1138,6 +1139,7 @@ function SelectionPredefinedSpell(props: {
               });
             }}
             selectedId={option.operation.data.spellId}
+            onClear={() => setOptions((prev) => prev.filter((entry) => entry.id !== option.id))}
             options={{
               showButton: false,
             }}
@@ -1233,7 +1235,7 @@ function SelectionPredefinedLanguage(props: {
   return (
     <Stack gap={10}>
       {optionsForUI.map((option, index) => (
-        <Group key={index} wrap='nowrap' style={{ position: 'relative' }}>
+        <Group key={option.id} wrap='nowrap' style={{ position: 'relative' }}>
           <SelectContentButton<Language>
             type='language'
             onClick={(selected) => {
@@ -1254,6 +1256,7 @@ function SelectionPredefinedLanguage(props: {
               });
             }}
             selectedId={option.operation.data.languageId}
+            onClear={() => setOptions((prev) => prev.filter((entry) => entry.id !== option.id))}
             options={{
               showButton: false,
             }}
