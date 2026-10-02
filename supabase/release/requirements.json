@@ -215,5 +215,69 @@
   "20261001000000_war_of_immortals_spell_emphasis.sql": {
     "check": "war-of-immortals-spell-emphasis.sql",
     "order": "before-functions"
+  },
+  "20261001010000_treasure_vault_reference_repairs.sql": {
+    "check": "treasure-vault-remaster-repairs.sql",
+    "order": "before-functions"
+  },
+  "20261001020000_treasure_vault_equipment_fields.sql": {
+    "check": "treasure-vault-remaster-repairs.sql",
+    "order": "before-functions"
+  },
+  "20261001030000_treasure_vault_wand_fields.sql": {
+    "check": "treasure-vault-wand-fields.sql",
+    "order": "before-functions"
+  },
+  "20261001040000_treasure_vault_staff_price.sql": {
+    "check": "treasure-vault-staff-price.sql",
+    "order": "before-functions"
+  },
+  "20261001090000_treasure_vault_harnessed_trait.sql": {
+    "check": "treasure-vault-harnessed-trait.sql",
+    "order": "before-functions"
+  },
+  "20261001100000_treasure_vault_wand_spell_links.sql": {
+    "check": "treasure-vault-wand-spell-links.sql",
+    "order": "before-functions"
+  },
+  "20261001110000_treasure_vault_beast_staff_repairs.sql": {
+    "check": "treasure-vault-beast-staff-repairs.sql",
+    "order": "before-functions"
+  },
+  "20261001120000_treasure_vault_remaining_wand_repairs.sql": {
+    "check": "treasure-vault-remaining-wand-repairs.sql",
+    "order": "before-functions"
+  },
+  "20261001130000_treasure_vault_condition_references.sql": {
+    "check": "treasure-vault-condition-references.sql",
+    "order": "before-functions"
+  },
+  "20261001140000_treasure_vault_library_staff_repairs.sql": {
+    "check": "treasure-vault-library-staff-repairs.sql",
+    "order": "before-functions"
+  },
+  "20261001150000_treasure_vault_staff_spell_citations.sql": {
+    "check": "treasure-vault-staff-spell-citations.sql",
+    "order": "before-functions"
+  },
+  "20261001160000_treasure_vault_library_spell_rules.sql": {
+    "check": "treasure-vault-library-spell-rules.sql",
+    "order": "before-functions"
+  },
+  "20261001170000_treasure_vault_wand_family_repairs.sql": {
+    "check": "treasure-vault-wand-family-repairs.sql",
+    "order": "before-functions"
+  },
+  "20261001180000_treasure_vault_intelligent_item_repairs.sql": {
+    "check": "treasure-vault-intelligent-item-repairs.sql",
+    "order": "before-functions"
+  },
+  "20261001190000_treasure_vault_safe_passage_duration.sql": {
+    "check": "treasure-vault-safe-passage-duration.sql",
+    "order": "before-functions"
+  },
+  "20261001200000_treasure_vault_noisome_wand_repairs.sql": {
+    "check": "treasure-vault-noisome-wand-repairs.sql",
+    "order": "before-functions"
   }
 }
