@@ -33,6 +33,7 @@ before(async () => {
   const legacyFields = { operations: legacyFeat.operations, description: legacyFeat.description };
   assert.ok([healCompanion.before, healCompanion.after].some((fields) => isDeepStrictEqual(legacyFields, fields)));
   Object.assign(legacyFeat, structuredClone(healCompanion.after));
+  legacyFeat.meta_data = { ...legacyFeat.meta_data, deprecated: true };
   for (const patch of grants) {
     const feat = rows.find(({ table, row }) => table === 'ability_block' && row.id === patch.id).row;
     assert.equal(feat.name, patch.name);
@@ -147,7 +148,11 @@ test('item cleanup changes only the three malformed leaves', () => {
 test('legacy Heal Companion grants its ranger focus spell, training, and spell tab without replacing the feat', async () => {
   const feat = content.abilityBlocks.find(({ id }) => id === healCompanion.id);
   const original = originals.find(({ table, row }) => table === 'ability_block' && row.id === healCompanion.id).row;
-  assert.deepEqual(feat, { ...original, ...healCompanion.after });
+  assert.deepEqual(feat, {
+    ...original,
+    ...healCompanion.after,
+    meta_data: { ...original.meta_data, deprecated: true },
+  });
   assert.equal(feat.content_source_id, 14);
   assert.match(feat.description, /\[Heal Companion\]\(link_spell_4977\)/);
   const { store, errors } = await engine._executeCharacterOperations({

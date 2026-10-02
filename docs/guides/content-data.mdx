@@ -35,7 +35,13 @@ their usual half-boost behavior above +4.
 
 The legacy Heal Companion feat grants the current Heal Companion focus spell through
 the Ranger casting source, with Wisdom, trained spell proficiency, and the Spells tab.
-Its original feat ID remains valid for saved characters.
+It is deprecated and hidden from new feat choices. Its original feat ID and grants
+remain valid for saved characters that already selected it.
+
+Character calculation failures stay in background diagnostics. The sheet and builder
+remain editable, and retain the last successful calculation during the current session.
+A transient failure gets one automatic retry. Persistent failures wait for changed
+inputs; raw edits remain buffered locally, and incomplete derived stats never save.
 
 Predefined ability, spell, and language choices in the operation editor have an X
 to remove that choice. Other choices retain their existing IDs and values, including

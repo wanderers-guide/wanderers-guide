@@ -195,7 +195,9 @@ test('a bad replacement does not prevent a later valid override', async () => {
   assert.deepEqual(languageState(), { ids: ['84'], names: ['ELVEN'] });
 });
 
-test('the execution boundary surfaces invalid overrides and resolves results for the loading lifecycle', async () => {
+test('the execution boundary keeps invalid overrides silent and resolves results for the loading lifecycle', async (t) => {
+  const diagnostics = [];
+  t.mock.method(console, 'error', (...args) => diagnostics.push(args.join(' ')));
   const result = await engine.executeOperations(
     {
       type: 'CHARACTER',
@@ -204,8 +206,8 @@ test('the execution boundary surfaces invalid overrides and resolves results for
     { directExecution: true }
   );
   assert.ok(result.ancestryResults);
-  assert.equal(engine.getOperationErrorNotifications().length, 1);
-  assert.match(engine.getOperationErrorNotifications()[0], /Language override.*was not applied/);
+  assert.deepEqual(engine.getOperationErrorNotifications(), []);
+  assert.match(diagnostics.join('\n'), /Language override.*was not applied/);
   assert.deepEqual(languageState(), { ids: ['81', '84'], names: ['COMMON', 'ELVEN'] });
 });
 

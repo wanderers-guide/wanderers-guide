@@ -31,7 +31,7 @@ import { RequestRejectedError } from '@requests/request-rejection';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Character, CharacterSchema, ContentPackage, OperationCharacterResultPackage } from '@schemas/content';
 import { saveCalculatedStats } from '@variables/calculated-stats';
-import { setVariable } from '@variables/variable-manager';
+import { resetVariables, setVariable } from '@variables/variable-manager';
 import { isEqual, isArray, cloneDeep } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
@@ -88,9 +88,6 @@ export default function useCharacter(
   //
   isLoading: boolean;
   results: OperationCharacterResultPackage | null;
-  operationError: string | null;
-  isCalculating: boolean;
-  retryOperations: () => void;
   saveState: CharacterSaveState;
   draftStored: boolean;
   retrySave: () => void;
@@ -352,9 +349,19 @@ export default function useCharacter(
   // Execute operations
   const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
   const executingOperations = useRef<number | null>(null);
-  const [operationError, setOperationError] = useState<string | null>(null);
+  const [calculationFailed, setCalculationFailed] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
   const [operationAttempt, setOperationAttempt] = useState(0);
+  const retriedOperationsHash = useRef<number | null>(null);
+
+  useEffect(() => {
+    // A failed calculation may retain this character's results, never another
+    // character's or account's results after navigation.
+    setOperationResults(undefined);
+    setCalculationFailed(false);
+    retriedOperationsHash.current = null;
+    if (options.type === 'EXECUTE_OPS') resetVariables('CHARACTER');
+  }, [characterId, sessionActorId, options.type]);
 
   const [debouncedCharacter] = useDebouncedValue(character, 800);
 
@@ -421,6 +428,7 @@ export default function useCharacter(
     // Invalidate as soon as an edit arrives, then wait for its debounced input.
     if (currentOperationsHash !== debouncedOperationsHash) return;
     const controller = new AbortController();
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
     executingOperations.current = debouncedOperationsHash;
     setIsCalculating(true);
     executeOperations<OperationCharacterResultPackage>(
@@ -433,20 +441,30 @@ export default function useCharacter(
       .then((results) => {
         if (controller.signal.aborted) return;
         handleOperationResults(results, controller.signal);
-        setOperationError(null);
+        setCalculationFailed(false);
+        retriedOperationsHash.current = null;
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted || isOperationCancelled(error)) return;
         console.error('Character calculation failed:', error);
-        setOperationError('Your last successful calculation is preserved.');
+        setCalculationFailed(true);
         options.data.onFinishLoading();
+        // A transient worker failure gets one quiet retry. Changed inputs start a
+        // fresh calculation; persistent failures never loop or publish partial math.
+        if (retriedOperationsHash.current !== debouncedOperationsHash) {
+          retriedOperationsHash.current = debouncedOperationsHash;
+          retryTimer = setTimeout(() => setOperationAttempt((attempt) => attempt + 1), 2000);
+        }
       })
       .finally(() => {
         if (controller.signal.aborted) return;
         executingOperations.current = null;
         setIsCalculating(false);
       });
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      clearTimeout(retryTimer);
+    };
   }, [
     characterId,
     currentOperationsHash,
@@ -549,7 +567,7 @@ export default function useCharacter(
       : !isCalculating &&
         contentSourcesMatch &&
         executingOperations.current === null &&
-        !operationError &&
+        !calculationFailed &&
         !!operationResults &&
         getUpdateHash(characterRef.current) === debouncedOperationsHash &&
         !!options.data.content);
@@ -574,9 +592,9 @@ export default function useCharacter(
   );
 
   useEffect(() => {
-    if (!operationError || !loadedActorRef.current) return;
+    if (!calculationFailed || !loadedActorRef.current) return;
     reportClientFailure('calculation_failed');
-  }, [operationError, characterId]);
+  }, [calculationFailed, characterId]);
 
   const isCurrentSave = (save: QueuedCharacterSave) =>
     save.scope === saveScopeRef.current &&
@@ -641,7 +659,7 @@ export default function useCharacter(
     )
       return;
     if (characterRef.current) mutateCharacter(characterRef.current);
-  }, [debouncedCharacter, isCalculating, operationError, operationResults, sessionActorId]);
+  }, [debouncedCharacter, isCalculating, calculationFailed, operationResults, sessionActorId]);
   const { mutate: mutateCharacterRaw } = useMutation({
     mutationFn: async (save: QueuedCharacterSave) => {
       if (!isCurrentSave(save)) throw new Error('Character save scope changed');
@@ -978,16 +996,13 @@ export default function useCharacter(
   return {
     character,
     setCharacter,
-    isLoading: !isFinished && !operationError && !loadError,
+    isLoading: !isFinished && !calculationFailed && !loadError,
     saveState,
     draftStored,
     retrySave: () => retrySaveRef.current(),
     loadError,
     retryLoad: () => setLoadAttempt((attempt) => attempt + 1),
     results: operationResults ?? null,
-    operationError,
-    isCalculating,
-    retryOperations: () => setOperationAttempt((attempt) => attempt + 1),
   };
 }
 

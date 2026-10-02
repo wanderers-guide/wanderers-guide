@@ -124,7 +124,7 @@ const output = join(directory, 'selection.mjs');
 await build({
   absWorkingDir: root,
   stdin: {
-    contents: `export {SelectContentButton, selectContent, SelectionOptions, HazardSelectionOption} from './src/common/select/SelectContent'; export {default as ManageSpellsModal} from './src/modals/ManageSpellsModal'; export {default as AddItemsModal} from './src/modals/AddItemsModal'; export {AdvancedSearchModal} from './src/modals/AdvancedSearchModal'; export {default as SpellsPanel} from './src/pages/character_sheet/panels/SpellsPanel';`,
+    contents: `export {SelectContentButton, selectContent, SelectionOptions, HazardSelectionOption, FeatSelectionOption} from './src/common/select/SelectContent'; export {default as ManageSpellsModal} from './src/modals/ManageSpellsModal'; export {default as AddItemsModal} from './src/modals/AddItemsModal'; export {AdvancedSearchModal} from './src/modals/AdvancedSearchModal'; export {default as SpellsPanel} from './src/pages/character_sheet/panels/SpellsPanel';`,
     resolveDir: root,
   },
   bundle: true,
@@ -176,6 +176,7 @@ const {
   selectContent,
   SelectionOptions,
   HazardSelectionOption,
+  FeatSelectionOption,
   ManageSpellsModal,
   AddItemsModal,
   AdvancedSearchModal,
@@ -184,6 +185,13 @@ const {
 const charm = { id: 1, name: 'Charm', rank: 1 };
 const command = { id: 2, name: 'Command', rank: 1 };
 const picker = { type: 'spell', searchQuery: 'Charm', limitSelectedOptions: false };
+test('deprecated legacy feats stay visible for saved selections and disappear from new choices', () => {
+  const host = new RenderHost();
+  const feat = { id: 22108, name: 'Heal Companion', type: 'feat', meta_data: { deprecated: true } };
+  assert.equal(host.render(FeatSelectionOption, { feat, onClick: () => {} }), null);
+  assert.ok(host.render(FeatSelectionOption, { feat, selected: true, onClick: () => {} }));
+  assert.ok(host.render(FeatSelectionOption, { feat: { ...feat, meta_data: {} }, onClick: () => {} }));
+});
 test('an already typed search displays content in the same render that its delayed query resolves', () => {
   const host = new RenderHost();
   assert.deepEqual(host.render(SelectionOptions, picker).props.options, []);

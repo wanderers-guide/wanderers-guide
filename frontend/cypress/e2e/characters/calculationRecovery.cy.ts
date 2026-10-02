@@ -33,8 +33,10 @@ describe('Calculation recovery', () => {
       .should('eq', 'success');
   });
 
-  it('retries the same sheet after worker failure without saving a failed calculation', () => {
+  it('keeps a worker failure silent and retries in the background without saving partial stats', () => {
     let saves = 0;
+    let attempts = 0;
+    let allowWorker = false;
     cy.intercept('POST', '**/functions/v1/update-character', (request) => {
       saves++;
       request.continue();
@@ -43,29 +45,31 @@ describe('Calculation recovery', () => {
       onBeforeLoad(win) {
         const Worker = win.Worker;
         win.Worker = new Proxy(Worker, {
-          construct() {
+          construct(target, args) {
+            attempts++;
+            if (allowWorker) return Reflect.construct(target, args);
             throw new Error('Simulated calculation bootstrap failure');
           },
         });
         restoreWorker = () => {
-          win.Worker = Worker;
+          allowWorker = true;
         };
       },
     });
-    cy.contains("Couldn't calculate this character", { timeout: 30000 }).should('be.visible');
-    cy.contains('button', 'Retry calculation').should('be.enabled');
-    cy.viewport(1280, 900);
-    cy.screenshot('calculation-error-desktop');
-    cy.viewport(390, 844);
-    cy.screenshot('calculation-error-mobile');
+    cy.wrap(null, { timeout: 30000 }).should(() => expect(attempts).to.be.greaterThan(0));
+    cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
+    cy.contains("Couldn't calculate this character").should('not.exist');
+    cy.contains('button', 'Retry calculation').should('not.exist');
     cy.document().then((doc) => {
       expect(doc.documentElement.scrollWidth).to.be.at.most(doc.documentElement.clientWidth);
       expect(saves).to.eq(0);
       restoreWorker();
     });
-    cy.contains('button', 'Retry calculation').click();
-    cy.contains("Couldn't calculate this character", { timeout: 30000 }).should('not.exist');
+    cy.wrap(null, { timeout: 30000 }).should(() => expect(attempts).to.eq(2));
+    cy.contains('[role="alert"]', 'calculation').should('not.exist');
+    cy.wrap(null, { timeout: 30000 }).should(() => expect(saves).to.be.greaterThan(0));
     cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
+    cy.viewport(390, 844);
     cy.screenshot('calculation-recovered-mobile');
     cy.viewport(1280, 900);
     cy.screenshot('calculation-recovered-desktop');
@@ -129,6 +133,36 @@ describe('Calculation recovery', () => {
       });
     }
     cy.screenshot('published-feat-calculation-recovered');
+  });
+
+  it('keeps the builder editable after a persistent worker failure without a retry screen', () => {
+    let attempts = 0;
+    let saves = 0;
+    cy.intercept('POST', '**/functions/v1/update-character', (request) => {
+      saves++;
+      request.continue();
+    });
+    cy.visit(`/builder/${characterId}`, {
+      onBeforeLoad(win) {
+        win.Worker = new Proxy(win.Worker, {
+          construct() {
+            attempts++;
+            throw new Error('Simulated persistent calculation failure');
+          },
+        });
+      },
+    });
+    cy.contains('button', 'Builder', { timeout: 30000 }).click();
+    cy.wrap(null, { timeout: 30000 }).should(() => expect(attempts).to.eq(2));
+    cy.contains('button', 'Select Ancestry', { timeout: 30000 }).should('be.visible').and('be.enabled');
+    cy.contains("Couldn't calculate this character").should('not.exist');
+    cy.contains('button', 'Retry calculation').should('not.exist');
+    cy.contains('[role="alert"]', 'calculation').should('not.exist');
+    cy.then(() => expect(saves).to.eq(0));
+    cy.viewport(390, 844);
+    cy.screenshot('calculation-silent-builder-mobile');
+    cy.viewport(1280, 900);
+    cy.screenshot('calculation-silent-builder-desktop');
   });
 
   it('persists the displayed Untrained value when opening a legacy condition in the editor', () => {
@@ -226,7 +260,8 @@ describe('Calculation recovery', () => {
     cy.get('.mantine-Modal-close').click();
     cy.get('.mantine-Modal-body').should('not.exist');
     cy.viewport(390, 844);
-    cy.contains('[role="tab"]', 'Options').click();
+    cy.wait(300); // Let the responsive home layout settle before clicking its new tabs.
+    cy.contains('[role="tab"]', 'Options').should('be.visible').click();
     cy.contains('button', 'Open Operations').click();
     cy.get('.mantine-Modal-body input[value="FALSE"]').should('be.checked');
     cy.screenshot('conditional-editor-legacy-false-mobile');
