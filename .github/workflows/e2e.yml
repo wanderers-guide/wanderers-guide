@@ -116,21 +116,29 @@ jobs:
             docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - < supabase/release/war-of-immortals-mythic-variants.sql \
               | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed War of Immortals mythic variant check: " $1; failed = 1 } END { if (NR == 0) { print "No War of Immortals mythic variant checks ran"; failed = 1 } exit failed }'
           }
+          verify_treasure_vault() {
+            for check in supabase/release/treasure-vault-remaster-repairs.sql supabase/release/treasure-vault-wand-fields.sql supabase/release/treasure-vault-staff-price.sql supabase/release/treasure-vault-harnessed-trait.sql supabase/release/treasure-vault-wand-spell-links.sql supabase/release/treasure-vault-beast-staff-repairs.sql supabase/release/treasure-vault-remaining-wand-repairs.sql supabase/release/treasure-vault-condition-references.sql supabase/release/treasure-vault-library-staff-repairs.sql supabase/release/treasure-vault-staff-spell-citations.sql supabase/release/treasure-vault-library-spell-rules.sql supabase/release/treasure-vault-wand-family-repairs.sql supabase/release/treasure-vault-intelligent-item-repairs.sql supabase/release/treasure-vault-safe-passage-duration.sql supabase/release/treasure-vault-noisome-wand-repairs.sql supabase/release/treasure-vault-equipment-headers.sql supabase/release/treasure-vault-winter-resistance.sql; do
+              docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - < "$check" \
+                | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed Treasure Vault repair check: " $1; failed = 1 } END { if (NR == 0) { print "No Treasure Vault repair checks ran"; failed = 1 } exit failed }'
+            done
+          }
           verify_war
-          for migration in supabase/migrations/20260927*.sql supabase/migrations/20260928*.sql supabase/migrations/20260929*.sql; do
+          for migration in supabase/migrations/20260927*.sql supabase/migrations/20260928*.sql supabase/migrations/20260929*.sql supabase/migrations/20261001*.sql; do
             docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"
           done
           verify_war
           verify_index
           verify_hazards
           verify_monsters
-          for migration in supabase/migrations/20260929*.sql; do
+          verify_treasure_vault
+          for migration in supabase/migrations/20260929*.sql supabase/migrations/20261001*.sql; do
             docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"
           done
           verify_war
           verify_index
           verify_hazards
           verify_monsters
+          verify_treasure_vault
           { cat supabase/release/war-of-immortals-index.sql; cat supabase/release/war-of-immortals-index-regression.sql; } \
             | docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - \
             | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed War of Immortals index regression: " $1; failed = 1 } END { if (NR == 0) { print "No War of Immortals index regressions ran"; failed = 1 } exit failed }'
@@ -141,6 +149,21 @@ jobs:
       - name: Install frontend dependencies
         working-directory: ./frontend
         run: npm ci --legacy-peer-deps --no-audit --no-fund
+
+      - name: Conditional authoring browser regression tests
+        working-directory: ./frontend
+        run: |
+          command -v xvfb-run
+          npx cypress verify
+          xvfb-run -a npm run test:contribution:authoring -- --screenshots-dir "$RUNNER_TEMP/contribution-authoring"
+
+      - name: Upload conditional authoring screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contribution-authoring-screenshots
+          path: ${{ runner.temp }}/contribution-authoring
+          if-no-files-found: ignore
 
       - name: Audit War of Immortals content
         run: |
