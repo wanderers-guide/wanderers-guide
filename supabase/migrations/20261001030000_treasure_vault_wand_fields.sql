@@ -8,6 +8,81 @@ declare
     {"id":12702,"before_uuid":"5289744487411251","after_uuid":"7838296050281525","source":16,"level":18,"price":{"gp":24000},"before_name":"Wand of Wearing Dance","after_name":"Wand of Wearying Dance","before_name_md5":"1c1f21fbbc2063da21964a70bd2ef8e8","after_name_md5":"340dc82d2b3694105e04b9834912daef","citation":{"url":"https://2e.aonprd.com/Equipment.aspx?ID=4832","book":"Treasure Vault","page":"143"},"add_citation":true}
   ]
   $patches$::jsonb;
+  noisome constant jsonb := $noisome${
+  "id": 12659,
+  "rank": 4,
+  "expected": {
+    "id": 12659,
+    "name": "Wand of Noisome Acid (4th-Level Spell)",
+    "uuid": "7611411327409832",
+    "content_source_id": 16,
+    "level": 10,
+    "price": {
+      "gp": 1000
+    },
+    "bulk": "0.1",
+    "usage": "held-in-one-hand",
+    "group": "GENERAL",
+    "rarity": "UNCOMMON",
+    "size": "MEDIUM",
+    "hands": null,
+    "traits": [
+      1528,
+      1504,
+      1665
+    ],
+    "availability": null,
+    "operations": null,
+    "version": "1.0"
+  },
+  "metadata_absent": [
+    "deprecated",
+    "unselectable",
+    "focus",
+    "type",
+    "ritual"
+  ],
+  "raw": {
+    "description": "This greasy stick emits a stomach-churning scent when held in a hand.\n\n**Activate** \\[\\[Cast a Spell\\]\\]\n\n**Effect** You cast \\[\\[Acid Arrow\\]\\] at 4th rank.A creature that takes initial acid damage from this spell become \\[\\[Sickened\\]\\]{Sickened 1}. Use your spell DC if the creatures attempts to recover from this sickness. This is an olfactory effect.",
+    "craft_requirements": "Supply a casting of Acid Arrow at 4th rank.",
+    "source": {
+      "url": "https://2e.aonprd.com/Equipment.aspx?ID=4818",
+      "book": "Treasure Vault",
+      "page": "141"
+    }
+  },
+  "before": {
+    "description": "This greasy stick emits a stomach-churning scent when held in a hand.\n\n**Activate** \\[\\[Cast a Spell\\]\\]\n\n**Effect** You cast \\[\\[Acid Arrow\\]\\] at 4th rank.A creature that takes initial acid damage from this spell become sickened 1. Use your spell DC if the creatures attempts to recover from this sickness. This is an olfactory effect.",
+    "craft_requirements": "Supply a casting of Acid Arrow at 4th rank.",
+    "source": {
+      "url": "https://2e.aonprd.com/Equipment.aspx?ID=4818",
+      "book": "Treasure Vault",
+      "page": "141"
+    }
+  },
+  "after": {
+    "description": "This greasy stick emits a stomach-churning scent when held in a hand.\n\n**Activate** [Cast a Spell](link_action_19611); **Frequency** once per day, plus overcharge\n\n**Effect** You cast 4th-rank *[acid grip](link_spell_4389)*. A creature that takes initial [acid](link_trait_1528) damage from this spell become sickened 1. Use your spell DC if the creature attempts to recover from this sickness. This is an [olfactory](link_trait_2131) effect.",
+    "craft_requirements": "Supply a casting of *[acid grip](link_spell_4389)* of the appropriate rank.",
+    "source": {
+      "url": "https://2e.aonprd.com/Equipment.aspx?ID=2284",
+      "book": "Treasure Vault (Remastered)",
+      "page": "141"
+    }
+  },
+  "hashes": {
+    "description": {
+      "raw": "2e81ce88d96bae4f45fc2b1bde9c3055",
+      "before": "5fa726a9ae0630c282adb21fb7cd94cf",
+      "after": "1f256d29afabfb68e3d56ed478c5c61d"
+    },
+    "craft_requirements": {
+      "raw": "2d7cb96abe09ffe43144a8d4f159f25d",
+      "before": "2d7cb96abe09ffe43144a8d4f159f25d",
+      "after": "ac1308c588ba266aa09b4ef3f6c8dc22"
+    }
+  }
+}$noisome$::jsonb;
+  current_state jsonb;
   patch jsonb;
   replacement jsonb;
   item_row public.item%rowtype;
@@ -62,6 +137,17 @@ begin
     if exists (select 1 from public.item where uuid = (patch->>'after_uuid')::bigint
       and id <> item_row.id) then
       raise exception 'Corrected wand UUID collides with another item: %', patch->>'id';
+    end if;
+    -- Explicit 020 successor permits post-baseline dump replay without downgrading any leaf.
+    if item_row.id=12659 then
+      if md5(noisome#>>'{after,description}') is distinct from noisome#>>'{hashes,description,after}' or md5(noisome#>>'{after,craft_requirements}') is distinct from noisome#>>'{hashes,craft_requirements,after}' then raise exception 'Invalid Noisome successor specification'; end if;
+      current_state:=jsonb_build_object('description',item_row.description,'craft_requirements',item_row.craft_requirements,'source',item_row.meta_data->'source');
+      if current_state=noisome->'after' then
+        if exists(select 1 from jsonb_each(noisome->'expected') e where (to_jsonb(item_row)||jsonb_build_object('uuid',item_row.uuid::text))->e.key is distinct from e.value)
+          or exists(select 1 from jsonb_array_elements_text(noisome->'metadata_absent') k(key) where item_row.meta_data?k.key) then raise exception 'Noisome successor identity differs from reviewed entry'; end if;
+        continue;
+      end if;
+      if current_state is distinct from noisome->'raw' and current_state is distinct from noisome->'before' then raise exception 'Unreviewed Noisome legacy coupled state'; end if;
     end if;
     if patch ? 'add_citation' then
       if (item_row.meta_data ? 'source') and

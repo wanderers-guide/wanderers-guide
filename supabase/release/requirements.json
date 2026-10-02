@@ -275,5 +275,9 @@
   "20261001190000_treasure_vault_safe_passage_duration.sql": {
     "check": "treasure-vault-safe-passage-duration.sql",
     "order": "before-functions"
+  },
+  "20261001200000_treasure_vault_noisome_wand_repairs.sql": {
+    "check": "treasure-vault-noisome-wand-repairs.sql",
+    "order": "before-functions"
   }
 }
