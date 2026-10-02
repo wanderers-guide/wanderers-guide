@@ -288,8 +288,18 @@ describe('Treasure Vault item spell references', () => {
     };
     const craftingTimeline = (physical: boolean) => {
       cy.get('input[placeholder="Search skills"]').clear().type('Crafting');
+      // The debounced filter replaces index-keyed skill buttons. Wait for its list,
+      // then requery after scrolling so the click never keeps a detached subject.
+      cy.get('input[placeholder="Search skills"]')
+        .closest('.mantine-Stack-root')
+        .find('.mantine-ScrollArea-viewport button')
+        .should(($buttons) => {
+          expect($buttons).to.have.length(1);
+          expect($buttons[0].textContent).to.match(/^Crafting\b/);
+        });
+      cy.contains('button', /^Crafting\b/, { timeout: 30000 }).scrollIntoView();
       cy.contains('button', /^Crafting\b/, { timeout: 30000 })
-        .scrollIntoView()
+        .should('be.visible')
         .click();
       cy.contains('.mantine-Drawer-root', 'Crafting', { timeout: 30000 }).within(() => {
         cy.contains('button.mantine-Accordion-control', /^Timeline$/).click();
