@@ -1,0 +1,145 @@
+with spec as (select $duration$
+{
+  "spells": [
+    {
+      "id": 4814,
+      "expected": {
+        "id": 4814,
+        "name": "Safe Passage",
+        "rank": 3,
+        "traditions": [
+          "arcane",
+          "divine",
+          "primal"
+        ],
+        "rarity": "COMMON",
+        "cast": "THREE-ACTIONS",
+        "traits": [
+          1432,
+          1433
+        ],
+        "defense": null,
+        "cost": "",
+        "trigger": null,
+        "requirements": null,
+        "range": "touch",
+        "area": "10-foot-wide, 10-foot-tall, 60-foot-long section of terrain",
+        "targets": "",
+        "description": "You make passage through the area safe for a brief amount of time. Anyone passing through the area gains the following benefits against harmful effects of the terrain and environment, including environmental damage, hazardous terrain, and hazards in the area. The spell grants a +2 status bonus to AC and saves against such effects, and resistance 5 to all damage from such effects. Furthermore, the spell prevents anything in the area that's prone to collapse, such as a rickety bridge or an unstable ceiling, from collapsing, except under extreme strain that would collapse a normal structure of its type.\n\n_Safe passage_ protects only against harm, not inconvenience, and it doesn't reduce difficult terrain, remove the concealed condition caused by precipitation, or the like, nor does it protect against creatures within the spell's area.",
+        "content_source_id": 1,
+        "version": "1.0",
+        "uuid": "6425681134899699",
+        "heightened": {
+          "text": [
+            {
+              "amount": "(5th)",
+              "text": "The granted resistance increases to 10, and the area can be 120 feet long."
+            },
+            {
+              "amount": "(8th)",
+              "text": "The granted resistance increases to 15, and the area can be 500 feet long."
+            }
+          ],
+          "data": {}
+        },
+        "availability": null
+      },
+      "metadata": {
+        "damage": [],
+        "source": {
+          "url": "https://2e.aonprd.com/Spells.aspx?ID=1659",
+          "book": "Player Core",
+          "page": "355"
+        },
+        "foundry": {
+          "rules": [],
+          "is_focus": false
+        }
+      },
+      "description_md5": "56b0844109450c6b4d14a4d2a6cb751c",
+      "duration": {
+        "before": "1 minute",
+        "after": "sustained up to 1 minute",
+        "before_md5": "f77eb9f1b917ba78f6eb2ce8ede0a0e4",
+        "after_md5": "50333c8c6ec3bcb5d26d25117a3e61ac"
+      },
+      "metadata_absent": [
+        "focus",
+        "type",
+        "ritual",
+        "unselectable",
+        "deprecated"
+      ]
+    }
+  ],
+  "source": {
+    "expected": {
+      "id": 1,
+      "name": "Player Core",
+      "user_id": null,
+      "is_published": true,
+      "require_key": false,
+      "deprecated": null,
+      "group": "pathfinder-core",
+      "required_content_sources": []
+    }
+  }
+}
+$duration$::jsonb value)
+select 'treasure-vault-safe-passage-duration'::text id,
+coalesce((
+  select jsonb_array_length(spec.value->'spells')=1
+    and spec.value#>>'{spells,0,id}'='4814'
+    and spec.value#>>'{source,expected,id}'='1'
+    and not exists (
+      select 1 from public.content_source s
+      right join (select spec.value#>'{source,expected}' expected) c
+        on s.id=(c.expected->>'id')::bigint
+      where s.id is null or exists (
+        select 1 from jsonb_each(c.expected) e where to_jsonb(s)->e.key is distinct from e.value
+      )
+    )
+    and not exists (
+      select 1 from jsonb_array_elements(spec.value->'spells') p
+      left join public.spell s on s.id=(p->>'id')::bigint
+      where s.id is null or exists (
+        select 1 from jsonb_each(p->'expected') e
+        where (to_jsonb(s)||jsonb_build_object('uuid',s.uuid::text))->e.key is distinct from e.value
+      ) or jsonb_typeof(s.meta_data::jsonb) is distinct from 'object'
+        or exists (
+          select 1 from jsonb_each(p->'metadata') e
+          where (s.meta_data::jsonb)->e.key is distinct from e.value
+        ) or exists (
+          select 1 from jsonb_array_elements_text(p->'metadata_absent') k(key)
+          where s.meta_data::jsonb ? k.key
+        ) or md5(s.description) is distinct from p->>'description_md5'
+        or s.duration is distinct from p#>>'{duration,after}'
+        or p#>>'{duration,before}' is distinct from '1 minute'
+        or p#>>'{duration,after}' is distinct from 'sustained up to 1 minute'
+        or md5(p#>>'{duration,before}') is distinct from p#>>'{duration,before_md5}'
+        or md5(p#>>'{duration,after}') is distinct from p#>>'{duration,after_md5}'
+    )
+    and not exists (
+      select 1 from public.content_update u
+      where coalesce(u.status->>'state','PENDING') not in ('APPROVED','REJECTED') and (
+        (u.type='content-source' and (
+      u.ref_id=(spec.value#>>'{source,expected,id}')::bigint
+      or u.data->>'id'=spec.value#>>'{source,expected,id}'
+      or (u.ref_id is null and u.data->>'name'=spec.value#>>'{source,expected,name}')
+    ))
+        or exists (
+          select 1 from jsonb_array_elements(spec.value->'spells') p
+          where u.type='spell' and (
+      u.ref_id=(p->>'id')::bigint
+      or (u.ref_id is null and (
+        u.data->>'id'=p->>'id'
+        or ((u.content_source_id=(p#>>'{expected,content_source_id}')::bigint
+          or u.data->>'content_source_id'=p#>>'{expected,content_source_id}')
+          and u.data->>'name'=p#>>'{expected,name}')
+      ))
+    )
+        )
+      )
+    )
+  from spec
+),false) passed;

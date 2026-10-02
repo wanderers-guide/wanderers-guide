@@ -148,6 +148,9 @@ describe('Official hazard drawer', () => {
         cy.get('.mantine-Drawer-content')
           .contains('.mantine-Badge-label', new RegExp(`^${hazard.rarity}$`, 'i'), { timeout: 30000 })
           .should('exist');
+        cy.get('.mantine-Drawer-header')
+          .contains('p', new RegExp(`^Hazard ${hazard.level}$`), { timeout: 30000 })
+          .should('be.visible');
         cy.get('.mantine-Drawer-content').then(($content) => {
           const header = $content[0].querySelector('.mantine-Drawer-header')!;
           const body = $content[0].querySelector('.mantine-Drawer-body')!;
