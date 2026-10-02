@@ -267,5 +267,13 @@
   "20261001170000_treasure_vault_wand_family_repairs.sql": {
     "check": "treasure-vault-wand-family-repairs.sql",
     "order": "before-functions"
+  },
+  "20261001180000_treasure_vault_intelligent_item_repairs.sql": {
+    "check": "treasure-vault-intelligent-item-repairs.sql",
+    "order": "before-functions"
+  },
+  "20261001190000_treasure_vault_safe_passage_duration.sql": {
+    "check": "treasure-vault-safe-passage-duration.sql",
+    "order": "before-functions"
   }
 }
