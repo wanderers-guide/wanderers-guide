@@ -263,6 +263,17 @@ test('actual catalog after-state excludes the published relic and keeps eligible
 });
 
 test('SQL pins complete state, locks before no-op, uses full CAS/readback and requires the strict terminal release', () => {
+  const childPrelockStart = migration.indexOf('-- Acquire reviewed content rows before source cache locks.');
+  const childPrelockEnd = migration.indexOf('-- End reviewed content row prelocks.');
+  assert.ok(migration.indexOf('lock table public.content_update') < childPrelockStart);
+  assert.ok(
+    childPrelockStart < childPrelockEnd &&
+      childPrelockEnd < migration.indexOf('from public.content_source', migration.indexOf('\nbegin\n'))
+  );
+  const childPrelocks = migration.slice(childPrelockStart, childPrelockEnd);
+  assert.doesNotMatch(childPrelocks, /\b(?:update|insert|delete)\s+public\.|\b(?:continue|return)\b/i);
+  assert.match(childPrelocks, /public\.ability_block where id=\(spec#>>'\{owner,expected,id\}'\)::bigint for update;/);
+  assert.match(childPrelocks, /public\.trait where id=\(spec#>>'\{dependency,expected,id\}'\)::bigint for share;/);
   const body = migration.split('$winter$')[2];
   assert.match(body, /lock table public\.content_update in share mode/);
   assert.ok(body.indexOf('pending or malformed') < body.indexOf('then return'));

@@ -141,6 +141,32 @@ test('migrations reject identity or curator drift before replay and release chec
   );
   for (const [index, sql] of migrations.entries()) {
     assert.match(sql, /lock table public\.content_update in share mode/);
+    // The complete child pass must precede parent locks and cache-trigger writes.
+    const queueLock = sql.indexOf('lock table public.content_update in share mode;');
+    const sourceLock = sql.indexOf('perform id from public.content_source');
+    assert.ok(sourceLock > queueLock);
+    assert.ok(sql.search(/\n\s+update public\./) > sourceLock);
+    const childLocks = sql.slice(queueLock, sourceLock);
+    assert.deepEqual(
+      [...childLocks.matchAll(/perform (?:[a-z]\.)?id from public\.(\w+)/g)].map((match) => match[1]),
+      index === 0 ? ['item', 'spell'] : ['item', 'trait']
+    );
+    assert.match(
+      childLocks,
+      /perform i\.id from public\.item i where i\.id in \(\s*select \(value->>'id'\)::bigint from jsonb_array_elements\(patches\)\s*\) order by i\.id for update;/
+    );
+    if (index === 0) {
+      assert.deepEqual(
+        spellTargets.map(({ id }) => id).toSorted((a, b) => a - b),
+        [8867, 8999]
+      );
+      assert.match(childLocks, /perform id from public\.spell where id in \(8867,8999\) order by id for update;/);
+    } else {
+      assert.match(
+        childLocks,
+        /perform t\.id from public\.trait t\s+where t\.id in \(1475,1504,1517,1527,1542,1613,1630,1665,1846,2860\)\s+order by t\.id for share;/
+      );
+    }
     assert.match(sql, /item_row\.uuid is distinct from/);
     assert.match(sql, /item_row\.content_source_id is distinct from/);
     assert.match(sql, /item_row\.level is distinct from/);

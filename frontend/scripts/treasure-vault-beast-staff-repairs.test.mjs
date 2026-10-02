@@ -449,6 +449,23 @@ test('complete reviewed before/after pairs reject partial, NULL and unknown owne
 test('SQL predicates share exact specs, fail closed, check pending before replay, lock dependencies and use only leaf CAS writes', () => {
   assert.deepEqual(JSON.parse(release.split('$beast$')[1]), spec);
   assert.match(migration, /lock table public\.content_update in share mode/);
+  // Preserve strongest modes while completing every child lock before parents.
+  const queueLock = migration.indexOf('lock table public.content_update in share mode;');
+  const sourceLock = migration.indexOf('perform id from public.content_source');
+  assert.ok(sourceLock > queueLock);
+  assert.ok(migration.search(/\n\s+update public\./) > sourceLock);
+  const childLocks = migration.slice(queueLock, sourceLock);
+  assert.deepEqual(
+    [...childLocks.matchAll(/perform (?:[a-z]\.)?id from public\.(\w+)/g)].map((match) => match[1]),
+    ['ability_block', 'item', 'spell', 'trait']
+  );
+  assert.match(childLocks, /perform id from public\.ability_block where id in \(19611,19908\) order by id for share;/);
+  assert.match(childLocks, /perform id from public\.item where id in \(11744,11745\) order by id for update;/);
+  assert.match(
+    childLocks,
+    /perform id from public\.spell where id in \(4396,4550,4601,4645,4685,4731,4759,4812,4847,6717\) order by id for update;/
+  );
+  assert.match(childLocks, /perform id from public\.trait where id=1546 for share;/);
   assert.match(migration, /user_id is null and s\.is_published is true/);
   assert.ok(migration.indexOf("u.status->>'state' = 'PENDING'") < migration.indexOf('then continue;'));
   for (const sql of [migration, release]) {

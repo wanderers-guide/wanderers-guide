@@ -1250,6 +1250,23 @@ declare
   citation jsonb; patch jsonb; item_row public.item%rowtype; current_state jsonb; affected integer;
 begin
   lock table public.content_update in share mode;
+  -- Acquire reviewed content rows before source cache locks.
+  perform a.id from public.ability_block a where a.id in (
+    select (d->>'id')::bigint from jsonb_array_elements(spec->'dependencies') d
+    where d->>'table' = 'ability-block'
+  ) order by a.id for share;
+  perform i.id from public.item i where i.id in (
+    select (p->>'id')::bigint from jsonb_array_elements(spec->'items') p
+  ) order by i.id for update;
+  perform s.id from public.spell s where s.id in (
+    select (d->>'id')::bigint from jsonb_array_elements(spec->'dependencies') d
+    where d->>'table' = 'spell'
+  ) order by s.id for share;
+  perform t.id from public.trait t where t.id in (
+    select (d->>'id')::bigint from jsonb_array_elements(spec->'dependencies') d
+    where d->>'table' = 'trait'
+  ) order by t.id for share;
+  -- End reviewed content row prelocks.
   if jsonb_array_length(spec->'items')<>13 or jsonb_array_length(spec->'dependencies')<>12
       or jsonb_array_length(spec->'sources')<>4 then raise exception 'Invalid reviewed wand family scope'; end if;
   for source_spec in select value from jsonb_array_elements(spec->'sources') order by (value->>'id')::bigint loop

@@ -398,6 +398,31 @@ test('paired owner/rule drift and NULLs fail closed; saved inventories remain un
   assert.deepEqual(inventory, saved);
 });
 test('SQL retains json[] operations, exact pairs, stable queue/source/dependency checks before replay, and strict terminal release', () => {
+  const childPrelockStart = migration.indexOf('-- Acquire reviewed content rows before source cache locks.');
+  const childPrelockEnd = migration.indexOf('-- End reviewed content row prelocks.');
+  assert.ok(migration.indexOf('lock table public.content_update') < childPrelockStart);
+  assert.ok(
+    childPrelockStart < childPrelockEnd &&
+      childPrelockEnd < migration.indexOf('from public.content_source', migration.indexOf('\nbegin\n'))
+  );
+  const childPrelocks = migration.slice(childPrelockStart, childPrelockEnd);
+  assert.doesNotMatch(childPrelocks, /\b(?:update|insert|delete)\s+public\.|\b(?:continue|return)\b/i);
+  assert.match(
+    childPrelocks,
+    /public\.item i[\s\S]*?jsonb_array_elements\(spec->'items'\)[\s\S]*?order by i\.id for update/
+  );
+  for (const [table, type, alias] of [
+    ['ability_block', 'ability-block', 'a'],
+    ['spell', 'spell', 's'],
+    ['trait', 'trait', 't'],
+  ]) {
+    assert.match(
+      childPrelocks,
+      new RegExp(
+        `public\\.${table} ${alias}[\\s\\S]*?jsonb_array_elements\\(spec->'dependencies'\\)[\\s\\S]*?where d->>'table' = '${type}'[\\s\\S]*?order by ${alias}\\.id for share;`
+      )
+    );
+  }
   assert.match(migration, /lock table public\.content_update in share mode/);
   assert.match(migration, /array\(select value::json from jsonb_array_elements/);
   assert.ok(

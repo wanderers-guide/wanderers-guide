@@ -97,6 +97,11 @@ $duration$::jsonb;
   changed_rows integer;
 begin
   lock table public.content_update in share mode;
+  -- Acquire reviewed content rows before source cache locks.
+  perform s.id from public.spell s where s.id in (
+    select (p->>'id')::bigint from jsonb_array_elements(spec->'spells') p
+  ) order by s.id for update;
+  -- End reviewed content row prelocks.
 
   select to_jsonb(s) into source_row from public.content_source s
     where s.id=(spec#>>'{source,expected,id}')::bigint for update;

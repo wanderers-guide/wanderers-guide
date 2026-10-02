@@ -500,6 +500,23 @@ declare
   captured_rows jsonb := '{}'::jsonb; expected_terminal jsonb := '{}'::jsonb;
 begin
   lock table public.content_update in share mode;
+  -- Acquire reviewed content rows before source cache locks.
+  perform a.id from public.ability_block a where a.id in (
+    select (d->>'id')::bigint from jsonb_array_elements(spec->'dependencies') d
+    where d->>'table' = 'ability-block'
+  ) order by a.id for share;
+  perform i.id from public.item i where i.id in (
+    select (p->>'id')::bigint from jsonb_array_elements(spec->'items') p
+  ) order by i.id for update;
+  perform s.id from public.spell s where s.id in (
+    select (d->>'id')::bigint from jsonb_array_elements(spec->'dependencies') d
+    where d->>'table' = 'spell'
+  ) order by s.id for share;
+  perform t.id from public.trait t where t.id in (
+    select (d->>'id')::bigint from jsonb_array_elements(spec->'dependencies') d
+    where d->>'table' = 'trait'
+  ) order by t.id for share;
+  -- End reviewed content row prelocks.
   if jsonb_array_length(spec->'items')<>4 or jsonb_array_length(spec->'dependencies')<>4
     or jsonb_array_length(spec->'sources')<>2
     or (select count(distinct value->>'id') from jsonb_array_elements(spec->'items'))<>4 then raise exception 'Invalid reviewed Noisome scope'; end if;

@@ -638,6 +638,31 @@ test('actual wand eligibility and explicit dependency supplementation stay top-l
 });
 
 test('SQL uses sorted locks, pending before replay, row_count=1 full-state leaf CAS and fail-closed terminal release only', () => {
+  const childPrelockStart = migration.indexOf('-- Acquire reviewed content rows before source cache locks.');
+  const childPrelockEnd = migration.indexOf('-- End reviewed content row prelocks.');
+  assert.ok(migration.indexOf('lock table public.content_update') < childPrelockStart);
+  assert.ok(
+    childPrelockStart < childPrelockEnd &&
+      childPrelockEnd < migration.indexOf('from public.content_source', migration.indexOf('\nbegin\n'))
+  );
+  const childPrelocks = migration.slice(childPrelockStart, childPrelockEnd);
+  assert.doesNotMatch(childPrelocks, /\b(?:update|insert|delete)\s+public\.|\b(?:continue|return)\b/i);
+  assert.match(
+    childPrelocks,
+    /public\.item i[\s\S]*?jsonb_array_elements\(spec->'items'\)[\s\S]*?order by i\.id for update/
+  );
+  for (const [table, type, alias] of [
+    ['ability_block', 'ability-block', 'a'],
+    ['spell', 'spell', 's'],
+    ['trait', 'trait', 't'],
+  ]) {
+    assert.match(
+      childPrelocks,
+      new RegExp(
+        `public\\.${table} ${alias}[\\s\\S]*?jsonb_array_elements\\(spec->'dependencies'\\)[\\s\\S]*?where d->>'table' = '${type}'[\\s\\S]*?order by ${alias}\\.id for share;`
+      )
+    );
+  }
   const body = migration.split('$wandfamilies$')[2],
     predicate = release.split('$wandfamilies$')[2];
   assert.match(body, /lock table public\.content_update in share mode/);

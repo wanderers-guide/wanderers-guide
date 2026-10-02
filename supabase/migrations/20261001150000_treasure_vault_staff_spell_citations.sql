@@ -272,6 +272,11 @@ $staffcite$::jsonb;
   affected integer;
 begin
   lock table public.content_update in share mode;
+  -- Acquire reviewed content rows before source cache locks.
+  perform s.id from public.spell s where s.id in (
+    select (p->>'id')::bigint from jsonb_array_elements(spec->'spells') p
+  ) order by s.id for update;
+  -- End reviewed content row prelocks.
   perform id from public.content_source where id=842 order by id for share;
   select to_jsonb(s) into actual from public.content_source s where s.id=842;
   if actual is null or exists (

@@ -64,6 +64,16 @@ declare
   affected integer;
 begin
   lock table public.content_update in share mode;
+  -- Acquire every reviewed child before source locks or cache-trigger writes.
+  perform a.id from public.ability_block a where a.id in (
+    select (value->>'id')::bigint from jsonb_array_elements(spec->'dependencies')
+      where value->>'table' = 'ability-block'
+  ) order by a.id for share;
+  perform t.id from public.trait t where t.id in (
+    select (value->>'id')::bigint from jsonb_array_elements(spec->'dependencies')
+      where value->>'table' = 'trait'
+  ) order by t.id for share;
+  perform id from public.trait where id = (spec->>'id')::bigint for update;
   perform id from public.content_source where id in (3,16)
     and user_id is null and is_published is true
     and (id <> 16 or name = 'Treasure Vault')

@@ -53,6 +53,44 @@ begin
   -- Freeze curator proposals and catalog identity checks for this atomic import.
   lock table public.content_update in share mode;
   lock table public.ability_block in share row exclusive mode;
+  -- Acquire reviewed content rows before source cache locks.
+  for entry in
+    select jsonb_build_object('id', a.id, 'write',
+      a.id in (select (r->>'id')::bigint from jsonb_array_elements(repairs) r)
+      or exists (select 1 from jsonb_array_elements(feats) f
+        where a.uuid = (f->'row'->>'uuid')::bigint
+          and a.content_source_id = (f->'row'->>'content_source_id')::bigint))
+    from public.ability_block a
+    where a.id in (select (r->>'id')::bigint from jsonb_array_elements(repairs) r)
+      or exists (select 1 from jsonb_array_elements(feats) f
+        where a.uuid = (f->'row'->>'uuid')::bigint
+          and a.content_source_id = (f->'row'->>'content_source_id')::bigint)
+      or a.id in (select (d->>'id')::bigint from jsonb_array_elements(dependencies) d
+        where d->>'table' = 'ability-block')
+    order by a.id loop
+    if (entry->>'write')::boolean then
+      perform id from public.ability_block where id = (entry->>'id')::bigint for update;
+    else
+      perform id from public.ability_block where id = (entry->>'id')::bigint for share;
+    end if;
+  end loop;
+  perform a.id from public.archetype a where a.id in (
+    select (d->>'id')::bigint from jsonb_array_elements(dependencies) d
+    where d->>'table' = 'archetype'
+  ) order by a.id for share;
+  perform i.id from public.item i where i.id in (
+    select (d->>'id')::bigint from jsonb_array_elements(dependencies) d
+    where d->>'table' = 'item'
+  ) order by i.id for share;
+  perform s.id from public.spell s where s.id in (
+    select (d->>'id')::bigint from jsonb_array_elements(dependencies) d
+    where d->>'table' = 'spell'
+  ) order by s.id for share;
+  perform t.id from public.trait t where t.id in (
+    select (d->>'id')::bigint from jsonb_array_elements(dependencies) d
+    where d->>'table' = 'trait'
+  ) order by t.id for share;
+  -- End reviewed content row prelocks.
   perform id from public.content_source where id in (3,16)
     and user_id is null and is_published is true
     and (id <> 16 or name = 'Treasure Vault')

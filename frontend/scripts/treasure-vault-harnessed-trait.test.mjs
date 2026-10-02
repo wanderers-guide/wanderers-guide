@@ -222,6 +222,25 @@ test('only the complete reviewed before/after pair is accepted, not mixed or unk
 
 test('SQL guards pending refs before replay and changes only the two reviewed leaves with exact dependency/source checks', () => {
   assert.match(migration, /lock table public\.content_update in share mode/);
+  // Keep mixed trait modes and every dependency ahead of cache-parent locks.
+  const queueLock = migration.indexOf('lock table public.content_update in share mode;');
+  const sourceLock = migration.indexOf('perform id from public.content_source');
+  assert.ok(sourceLock > queueLock);
+  assert.ok(migration.search(/\n\s+update public\./) > sourceLock);
+  const childLocks = migration.slice(queueLock, sourceLock);
+  assert.deepEqual(
+    [...childLocks.matchAll(/perform (?:[a-z]\.)?id from public\.(\w+)/g)].map((match) => match[1]),
+    ['ability_block', 'trait', 'trait']
+  );
+  assert.match(
+    childLocks,
+    /perform a\.id from public\.ability_block a where a\.id in \(\s*select \(value->>'id'\)::bigint from jsonb_array_elements\(spec->'dependencies'\)\s*where value->>'table' = 'ability-block'\s*\) order by a\.id for share;/
+  );
+  assert.match(
+    childLocks,
+    /perform t\.id from public\.trait t where t\.id in \(\s*select \(value->>'id'\)::bigint from jsonb_array_elements\(spec->'dependencies'\)\s*where value->>'table' = 'trait'\s*\) order by t\.id for share;/
+  );
+  assert.match(childLocks, /perform id from public\.trait where id = \(spec->>'id'\)::bigint for update;/);
   assert.match(migration, /user_id is null and is_published is true/);
   assert.match(migration, /id <> 16 or name = 'Treasure Vault'/);
   assert.match(migration, /u\.type = 'trait' and u\.ref_id in \(2886,2748\)/);

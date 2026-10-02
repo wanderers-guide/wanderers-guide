@@ -195,6 +195,21 @@ test('canonical title and citation repairs are constrained to the original Treas
 
 test('migration checks pending curator edits before replay and release fails closed on missing rows', () => {
   assert.match(migration, /lock table public\.content_update in share mode/);
+  // Lock every owner and dependency before any parent lock or child write.
+  const queueLock = migration.indexOf('lock table public.content_update in share mode;');
+  const sourceLock = migration.indexOf('perform id from public.content_source');
+  assert.ok(sourceLock > queueLock);
+  assert.ok(migration.search(/\n\s+update public\./) > sourceLock);
+  const childLocks = migration.slice(queueLock, sourceLock);
+  assert.deepEqual(
+    [...childLocks.matchAll(/perform (?:[a-z]\.)?id from public\.(\w+)/g)].map((match) => match[1]),
+    ['item', 'spell']
+  );
+  assert.match(
+    childLocks,
+    /perform i\.id from public\.item i where i\.id in \(\s*select \(value->>'id'\)::bigint from jsonb_array_elements\(patches\)\s*\) order by i\.id for update;/
+  );
+  assert.match(childLocks, /perform id from public\.spell where id = 5322 for update;/);
   assert.match(migration, /item_row\.uuid = \(patch->>'before_uuid'\)::bigint/);
   assert.match(migration, /item_row\.uuid = \(patch->>'after_uuid'\)::bigint/);
   assert.match(migration, /\) is not true then/);

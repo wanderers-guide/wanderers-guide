@@ -476,6 +476,21 @@ test('the two prose replacements preserve all other wording and explicit modifie
 });
 
 test('database repair checks pending edits before replay, retains json[] and the release evaluator fails closed', () => {
+  const childPrelockStart = migration.indexOf('-- Acquire reviewed content rows before source cache locks.');
+  const childPrelockEnd = migration.indexOf('-- End reviewed content row prelocks.');
+  assert.ok(migration.indexOf('lock table public.content_update') < childPrelockStart);
+  assert.ok(
+    childPrelockStart < childPrelockEnd &&
+      childPrelockEnd < migration.indexOf('from public.content_source', migration.indexOf('\nbegin\n'))
+  );
+  const childPrelocks = migration.slice(childPrelockStart, childPrelockEnd);
+  assert.doesNotMatch(childPrelocks, /\b(?:update|insert|delete)\s+public\.|\b(?:continue|return)\b/i);
+  assert.match(
+    childPrelocks,
+    /public\.ability_block a[\s\S]*?dependencies[\s\S]*?'ability-block'[\s\S]*?order by a\.id for share/
+  );
+  assert.match(childPrelocks, /public\.item i[\s\S]*?jsonb_array_elements\(patches\)[\s\S]*?order by i\.id for update/);
+  assert.match(childPrelocks, /public\.trait t[\s\S]*?dependencies[\s\S]*?'trait'[\s\S]*?order by t\.id for share/);
   assert.match(migration, /lock table public\.content_update in share mode/);
   assert.match(migration, /order by id for update/);
   assert.match(migration, /for share of t/);

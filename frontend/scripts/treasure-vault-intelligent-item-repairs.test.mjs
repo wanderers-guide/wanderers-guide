@@ -419,6 +419,40 @@ test('pending identity guards cover first apply/replay, payload source, refnull 
 });
 
 test('migration keeps leaf-only CAS1/readback checks and release fails closed on missing or NULL states', () => {
+  const childPrelockStart = migration.indexOf('-- Acquire reviewed content rows before source cache locks.');
+  const childPrelockEnd = migration.indexOf('-- End reviewed content row prelocks.');
+  assert.ok(migration.indexOf('lock table public.content_update') < childPrelockStart);
+  assert.ok(
+    childPrelockStart < childPrelockEnd &&
+      childPrelockEnd < migration.indexOf('from public.content_source', migration.indexOf('\nbegin\n'))
+  );
+  const childPrelocks = migration.slice(childPrelockStart, childPrelockEnd);
+  assert.doesNotMatch(childPrelocks, /\b(?:update|insert|delete)\s+public\.|\b(?:continue|return)\b/i);
+  assert.match(
+    childPrelocks,
+    /jsonb_build_object\('id', i\.id, 'write', i\.id in \([\s\S]*?jsonb_array_elements\(spec->'items'\)/
+  );
+  assert.match(
+    childPrelocks,
+    /public\.item i[\s\S]*?union[\s\S]*?where d->>'table' = 'item'[\s\S]*?order by i\.id loop/
+  );
+  assert.match(
+    childPrelocks,
+    /if \(dependency->>'write'\)::boolean then[\s\S]*?public\.item[^;]*for update;[\s\S]*?else[\s\S]*?public\.item[^;]*for share;/
+  );
+  for (const [table, type, alias] of [
+    ['ability_block', 'ability-block', 'a'],
+    ['language', 'language', 'l'],
+    ['spell', 'spell', 's'],
+    ['trait', 'trait', 't'],
+  ]) {
+    assert.match(
+      childPrelocks,
+      new RegExp(
+        `public\\.${table} ${alias}[\\s\\S]*?jsonb_array_elements\\(spec->'dependencies'\\)[\\s\\S]*?where d->>'table' = '${type}'[\\s\\S]*?order by ${alias}\\.id for share;`
+      )
+    );
+  }
   assert.match(migration, /lock table public\.content_update in share mode/);
   assert.match(migration, /get diagnostics changed_rows=row_count;\s*if changed_rows<>1/);
   assert.match(migration, /saved_after is distinct from expected_after/);

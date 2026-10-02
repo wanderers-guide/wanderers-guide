@@ -214,6 +214,10 @@ $winter$::jsonb;
   changed integer;
 begin
   lock table public.content_update in share mode;
+  -- Acquire reviewed content rows before source cache locks.
+  perform id from public.ability_block where id=(spec#>>'{owner,expected,id}')::bigint for update;
+  perform id from public.trait where id=(spec#>>'{dependency,expected,id}')::bigint for share;
+  -- End reviewed content row prelocks.
   if spec#>>'{owner,expected,id}' is distinct from '51111'
     or spec#>>'{owner,expected,uuid}' is distinct from '2502113980657498'
     or spec#>>'{owner,expected,content_source_id}' is distinct from '16'

@@ -4,6 +4,8 @@ declare
   changed_rows integer;
 begin
   lock table public.content_update in share mode;
+  -- Acquire the reviewed child before source locks or cache-trigger writes.
+  perform id from public.item where id = 12183 for update;
   perform id from public.content_source where id = 16
     and user_id is null and is_published is true for update;
   if not found then raise exception 'Missing official Treasure Vault source'; end if;

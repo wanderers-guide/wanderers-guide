@@ -57,6 +57,14 @@ declare
 begin
   -- Prevent a curator submission from appearing between the guard and the repair.
   lock table public.content_update in share mode;
+  -- Acquire reviewed content rows before source cache locks.
+  perform i.id from public.item i where i.id in (
+    select (p->>'id')::bigint from jsonb_array_elements(patches) p
+  ) order by i.id for update;
+  perform t.id from public.trait t where t.id in (
+    select (d->>'id')::bigint from jsonb_array_elements(dependencies) d
+  ) order by t.id for share;
+  -- End reviewed content row prelocks.
   perform id from public.content_source
     where (id = 3 and name = 'Common Core' or id = 16 and name = 'Treasure Vault')
       and user_id is null and is_published is true order by id for update;

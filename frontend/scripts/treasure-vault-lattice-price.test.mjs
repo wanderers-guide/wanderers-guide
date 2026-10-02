@@ -434,6 +434,20 @@ test('new migration and strict release reject missing rows, NULL identities, cit
 });
 
 test('SQL preserves bounded old guards and uses locks, pending-before-replay, and price-only CAS', () => {
+  const childPrelockStart = migration.indexOf('-- Acquire reviewed content rows before source cache locks.');
+  const childPrelockEnd = migration.indexOf('-- End reviewed content row prelocks.');
+  assert.ok(migration.indexOf('lock table public.content_update') < childPrelockStart);
+  assert.ok(
+    childPrelockStart < childPrelockEnd &&
+      childPrelockEnd < migration.indexOf('from public.content_source', migration.indexOf('\nbegin\n'))
+  );
+  const childPrelocks = migration.slice(childPrelockStart, childPrelockEnd);
+  assert.doesNotMatch(childPrelocks, /\b(?:update|insert|delete)\s+public\.|\b(?:continue|return)\b/i);
+  assert.match(childPrelocks, /jsonb_array_elements\(patches\) p/);
+  assert.match(childPrelocks, /i\.uuid = \(p->>'uuid'\)::bigint and i\.content_source_id = \(p->>'source'\)::bigint/);
+  assert.match(childPrelocks, /not \(p \? 'id'\) or i\.id = \(p->>'id'\)::bigint/);
+  assert.match(childPrelocks, /order by i\.id for update;/);
+  assert.doesNotMatch(childPrelocks, /\b\d{3,}\b/);
   assert.match(oldMigration, /20261001080000 corrects Lattice to 9 gp/);
   assert.match(oldMigration, /lock table public\.content_update in share mode/);
   assert.ok(oldMigration.indexOf("where type = 'item'") < oldMigration.indexOf('if existing_count = 3 then'));

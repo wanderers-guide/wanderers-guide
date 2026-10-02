@@ -97,6 +97,11 @@ declare
   changed_rows integer;
 begin
   lock table public.content_update in share mode;
+  -- Acquire every reviewed child before source locks or cache-trigger writes.
+  perform i.id from public.item i where i.id in (
+    select (value->>'id')::bigint from jsonb_array_elements(patches)
+  ) order by i.id for update;
+  perform id from public.spell where id = 5322 for update;
   perform id from public.content_source where id in (13, 16)
     and user_id is null and is_published is true order by id for update;
   get diagnostics changed_rows = row_count;

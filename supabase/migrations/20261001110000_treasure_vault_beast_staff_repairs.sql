@@ -921,6 +921,11 @@ declare
   affected integer;
 begin
   lock table public.content_update in share mode;
+  -- Acquire every reviewed child before source locks or cache-trigger writes.
+  perform id from public.ability_block where id in (19611,19908) order by id for share;
+  perform id from public.item where id in (11744,11745) order by id for update;
+  perform id from public.spell where id in (4396,4550,4601,4645,4685,4731,4759,4812,4847,6717) order by id for update;
+  perform id from public.trait where id=1546 for share;
   perform id from public.content_source where id in (1,3,16,256) order by id for share;
   if (select count(*) from public.content_source s join jsonb_array_elements(spec->'sources') x on s.id=(x->>'id')::bigint
       where s.name=x->>'name' and s.user_id is null and s.is_published is true) <> 4 then
@@ -936,11 +941,6 @@ begin
     )) then
     raise exception 'Beast Staff repair has a pending owner/dependency/source submission';
   end if;
-  perform id from public.item where id in (11744,11745) order by id for update;
-  perform id from public.spell where id in (4396,4550,4601,4645,4685,4731,4759,4812,4847,6717) order by id for update;
-  perform id from public.ability_block where id in (19611,19908) order by id for share;
-  perform id from public.trait where id=1546 for share;
-
   for dependency in select value from jsonb_array_elements(spec->'dependencies') loop
     actual := null;
     case dependency->>'table'

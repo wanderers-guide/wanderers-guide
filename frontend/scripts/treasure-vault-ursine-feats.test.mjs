@@ -374,6 +374,38 @@ test('manual later feats neither replace Form attacks nor mutate customized save
 });
 
 test('migration gates pending proposals, replay, collisions and drift before writes, without reserving IDs or rewriting scaffolds', async () => {
+  const childPrelockStart = migration.indexOf('-- Acquire reviewed content rows before source cache locks.');
+  const childPrelockEnd = migration.indexOf('-- End reviewed content row prelocks.');
+  assert.ok(migration.indexOf('lock table public.content_update') < childPrelockStart);
+  assert.ok(migration.indexOf('lock table public.ability_block in share row exclusive mode;') < childPrelockStart);
+  assert.ok(
+    childPrelockStart < childPrelockEnd &&
+      childPrelockEnd < migration.indexOf('from public.content_source', migration.indexOf('\nbegin\n'))
+  );
+  const childPrelocks = migration.slice(childPrelockStart, childPrelockEnd);
+  assert.doesNotMatch(childPrelocks, /\b(?:update|insert|delete)\s+public\.|\b(?:continue|return)\b/i);
+  assert.match(childPrelocks, /jsonb_array_elements\(repairs\)/);
+  assert.match(
+    childPrelocks,
+    /a\.uuid = \(f->'row'->>'uuid'\)::bigint\s+and a\.content_source_id = \(f->'row'->>'content_source_id'\)::bigint/
+  );
+  assert.match(
+    childPrelocks,
+    /order by a\.id loop[\s\S]*?if \(entry->>'write'\)::boolean then[\s\S]*?public\.ability_block[^;]*for update;[\s\S]*?else[\s\S]*?public\.ability_block[^;]*for share;/
+  );
+  for (const [table, alias] of [
+    ['archetype', 'a'],
+    ['item', 'i'],
+    ['spell', 's'],
+    ['trait', 't'],
+  ]) {
+    assert.match(
+      childPrelocks,
+      new RegExp(
+        `public\\.${table} ${alias}[\\s\\S]*?where d->>'table' = '${table}'[\\s\\S]*?order by ${alias}\\.id for share;`
+      )
+    );
+  }
   assert.match(migration, /lock table public\.content_update in share mode/);
   assert.match(migration, /lock table public\.ability_block in share row exclusive mode/);
   assert.match(migration, /user_id is null and is_published is true/);

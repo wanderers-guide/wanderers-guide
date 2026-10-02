@@ -12,6 +12,13 @@ declare
   changed_rows integer;
 begin
   lock table public.content_update in share mode;
+  -- Acquire reviewed content rows before source cache locks.
+  perform i.id from public.item i where exists (
+    select 1 from jsonb_array_elements(patches) p
+    where i.uuid = (p->>'uuid')::bigint and i.content_source_id = (p->>'source')::bigint
+      and (not (p ? 'id') or i.id = (p->>'id')::bigint)
+  ) order by i.id for update;
+  -- End reviewed content row prelocks.
   perform id from public.content_source
     where (id = 16 and name = 'Treasure Vault' or id = 400 and name = 'War of Immortals')
       and user_id is null and is_published is true order by id for update;

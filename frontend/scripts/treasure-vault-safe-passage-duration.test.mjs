@@ -330,6 +330,19 @@ test('saved full inventory and spell snapshots remain unchanged while repaired c
 });
 
 test('SQL checks the complete source/content/queue before replay, updates only duration with strict CAS and verifies preservation', () => {
+  const childPrelockStart = migration.indexOf('-- Acquire reviewed content rows before source cache locks.');
+  const childPrelockEnd = migration.indexOf('-- End reviewed content row prelocks.');
+  assert.ok(migration.indexOf('lock table public.content_update') < childPrelockStart);
+  assert.ok(
+    childPrelockStart < childPrelockEnd &&
+      childPrelockEnd < migration.indexOf('from public.content_source', migration.indexOf('\nbegin\n'))
+  );
+  const childPrelocks = migration.slice(childPrelockStart, childPrelockEnd);
+  assert.doesNotMatch(childPrelocks, /\b(?:update|insert|delete)\s+public\.|\b(?:continue|return)\b/i);
+  assert.match(
+    childPrelocks,
+    /public\.spell s[\s\S]*?jsonb_array_elements\(spec->'spells'\)[\s\S]*?order by s\.id for update/
+  );
   assert.match(migration, /lock table public\.content_update in share mode/);
   assert.match(migration, /jsonb_each\(patch->'expected'\)/);
   assert.match(migration, /jsonb_each\(patch->'metadata'\)/);

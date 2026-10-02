@@ -51,6 +51,17 @@ test('unreviewed and NULL price values are rejected without a fallback', () => {
 
 test('database repair and release predicate pin the original source and fail closed', () => {
   assert.match(migration, /lock table public\.content_update in share mode/);
+  // The child lock must precede the cache-parent lock and price mutation.
+  const queueLock = migration.indexOf('lock table public.content_update in share mode;');
+  const sourceLock = migration.indexOf('perform id from public.content_source');
+  assert.ok(sourceLock > queueLock);
+  assert.ok(migration.search(/\n\s+update public\./) > sourceLock);
+  const childLocks = migration.slice(queueLock, sourceLock);
+  assert.deepEqual(
+    [...childLocks.matchAll(/perform (?:[a-z]\.)?id from public\.(\w+)/g)].map((match) => match[1]),
+    ['item']
+  );
+  assert.match(childLocks, /perform id from public\.item where id = 12183 for update;/);
   assert.match(migration, /item_row\.name is distinct from 'Lyrakien Staff'/);
   assert.match(migration, /item_row\.uuid is distinct from 2395682957455828/);
   assert.match(migration, /item_row\.price::jsonb = '\{"gp":255\}'::jsonb/);

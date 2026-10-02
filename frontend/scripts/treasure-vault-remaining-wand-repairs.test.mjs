@@ -261,6 +261,32 @@ test('literal eligibility and item-only supplements preserve ordinary source sel
 test('nullable-safe leaf guards, canonical action pending type, row locks, and release terminal states are pinned', () => {
   assert.deepEqual(JSON.parse(release.split('$dependencies$')[1]), dependencies);
   assert.match(migration, /lock table public\.content_update in share mode/);
+  // Preserve both spell UPDATE locks and complete the child pass before parents.
+  const queueLock = migration.indexOf('lock table public.content_update in share mode;');
+  const sourceLock = migration.indexOf('perform id from public.content_source');
+  assert.ok(sourceLock > queueLock);
+  assert.ok(migration.search(/\n\s+update public\./) > sourceLock);
+  const childLocks = migration.slice(queueLock, sourceLock);
+  assert.deepEqual(
+    [...childLocks.matchAll(/perform (?:[a-z]\.)?id from public\.(\w+)/g)].map((match) => match[1]),
+    ['ability_block', 'item', 'spell', 'trait']
+  );
+  assert.match(
+    childLocks,
+    /perform a\.id from public\.ability_block a where a\.id in \(\s*select \(value->>'id'\)::bigint from jsonb_array_elements\(dependencies\)\s*where value->>'table' = 'ability-block'\s*\) order by a\.id for share;/
+  );
+  assert.match(
+    childLocks,
+    /perform i\.id from public\.item i where i\.id in \(\s*select \(value->>'id'\)::bigint from jsonb_array_elements\(patches\)\s*\) order by i\.id for update;/
+  );
+  assert.match(
+    childLocks,
+    /perform s\.id from public\.spell s where s\.id in \(\s*select \(value->>'id'\)::bigint from jsonb_array_elements\(dependencies\)\s*where value->>'table' = 'spell'\s*\) order by s\.id for update;/
+  );
+  assert.match(
+    childLocks,
+    /perform t\.id from public\.trait t where t\.id in \(\s*select \(value->>'id'\)::bigint from jsonb_array_elements\(dependencies\)\s*where value->>'table' = 'trait'\s*\) order by t\.id for share;/
+  );
   assert.match(migration, /for update of s/);
   assert.match(migration, /for share of a/);
   assert.match(migration, /for share of t/);

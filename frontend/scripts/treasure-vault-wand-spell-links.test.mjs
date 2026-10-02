@@ -338,6 +338,28 @@ test('source16-only item dependencies stay separate from ordinary selection and 
 
 test('SQL guards are nullable-safe, pending before replay, leaf-only, and use the release evaluator contract', () => {
   assert.match(migration, /lock table public\.content_update in share mode/);
+  // The whole exact child set, not merely the first owner, precedes parents.
+  const queueLock = migration.indexOf('lock table public.content_update in share mode;');
+  const sourceLock = migration.indexOf('perform id from public.content_source');
+  assert.ok(sourceLock > queueLock);
+  assert.ok(migration.search(/\n\s+update public\./) > sourceLock);
+  const childLocks = migration.slice(queueLock, sourceLock);
+  assert.deepEqual(
+    [...childLocks.matchAll(/perform (?:[a-z]\.)?id from public\.(\w+)/g)].map((match) => match[1]),
+    ['item', 'spell', 'trait']
+  );
+  assert.match(
+    childLocks,
+    /perform i\.id from public\.item i where i\.id in \(\s*select \(value->>'id'\)::bigint from jsonb_array_elements\(patches\)\s*\) order by i\.id for update;/
+  );
+  assert.match(
+    childLocks,
+    /perform s\.id from public\.spell s where s\.id in \(\s*select \(value->>'id'\)::bigint from jsonb_array_elements\(dependencies\)\s*where value->>'table' = 'spell'\s*\) order by s\.id for share;/
+  );
+  assert.match(
+    childLocks,
+    /perform t\.id from public\.trait t where t\.id in \(\s*select \(value->>'id'\)::bigint from jsonb_array_elements\(dependencies\)\s*where value->>'table' = 'trait'\s*\) order by t\.id for share;/
+  );
   assert.match(migration, /order by id for update/);
   assert.match(migration, /for share of s/);
   assert.match(migration, /for share of t/);

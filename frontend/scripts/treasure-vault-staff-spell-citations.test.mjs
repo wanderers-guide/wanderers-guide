@@ -312,6 +312,19 @@ test('pending UPDATE/DELETE empty data, CREATE identities and malformed status b
 });
 
 test('migration and release enforce exact source projection, guarded locks, pending before replay and leaf-only CAS', () => {
+  const childPrelockStart = migration.indexOf('-- Acquire reviewed content rows before source cache locks.');
+  const childPrelockEnd = migration.indexOf('-- End reviewed content row prelocks.');
+  assert.ok(migration.indexOf('lock table public.content_update') < childPrelockStart);
+  assert.ok(
+    childPrelockStart < childPrelockEnd &&
+      childPrelockEnd < migration.indexOf('from public.content_source', migration.indexOf('\nbegin\n'))
+  );
+  const childPrelocks = migration.slice(childPrelockStart, childPrelockEnd);
+  assert.doesNotMatch(childPrelocks, /\b(?:update|insert|delete)\s+public\.|\b(?:continue|return)\b/i);
+  assert.match(
+    childPrelocks,
+    /public\.spell s[\s\S]*?jsonb_array_elements\(spec->'spells'\)[\s\S]*?order by s\.id for update/
+  );
   const body = migration.split('$staffcite$')[2];
   assert.match(body, /lock table public\.content_update in share mode/);
   assert.match(body, /content_source where id=842 order by id for share/);
