@@ -192,13 +192,33 @@ export default function useCharacter(
   );
 
   const saveConflictRef = useRef(false);
+  const [hasSaveConflict, setHasSaveConflict] = useState(false);
+  const pendingConflictRef = useRef<{
+    remote: Character;
+    submitted?: Record<string, unknown>;
+    repeatedInput?: Character;
+  } | null>(null);
 
-  /** Retain conflicting drafts and their original base; never overwrite either version automatically. */
-  const pauseConflictingSave = useCallback(() => {
-    saveConflictRef.current = true;
-    clearSaveRetry();
-    setSavePhase('idle');
-  }, []);
+  /** Keep the original local intent while reads and ordinary edits can resolve a conflict. */
+  const pauseConflictingSave = useCallback(
+    (remote: Character, submitted?: Record<string, unknown>, repeatedConflict = false) => {
+      const current = characterRef.current;
+      pendingConflictRef.current = {
+        remote,
+        // A later deliberate reversion still needs the uncertain attempt as an ancestor.
+        ...(submitted &&
+        SAVED_CHARACTER_FIELDS.some((field) => !characterSaveValuesEqual(submitted[field], current?.[field]))
+          ? { submitted }
+          : {}),
+        ...(repeatedConflict && current ? { repeatedInput: cloneDeep(current) } : {}),
+      };
+      saveConflictRef.current = true;
+      setHasSaveConflict(true);
+      clearSaveRetry();
+      setSavePhase('idle');
+    },
+    []
+  );
 
   // Restore drafts into the editor. This path never writes around its save queue.
   useEffect(() => {
@@ -218,6 +238,8 @@ export default function useCharacter(
     lastSyncedRef.current = null;
     readOnlyRef.current = false;
     saveConflictRef.current = false;
+    pendingConflictRef.current = null;
+    setHasSaveConflict(false);
     conflictStreakRef.current = 0;
     savingRef.current = false;
     pendingSaveRef.current = null;
@@ -249,13 +271,26 @@ export default function useCharacter(
           recoveredDraftsRef.current.push(record);
         }
       } else if (restored?.status === 'unavailable') setDraftStored(false);
-      handleFetchedCharacter(dbCharacter, displayed);
       if (conflicts.length) {
-        // Retain original records and their base while conflicting writes remain paused.
+        // Do not project unrelated remote values into the retained local input: a
+        // later read would mistake those values for edits against the original base.
         const firstBase = recoveredDraftsRef.current[0]?.draft.base;
-        if (firstBase) lastSyncedRef.current = { ...dbCharacter, ...firstBase };
-        pauseConflictingSave();
-      } else if (sessionActorId) {
+        const localBase = { ...dbCharacter, ...firstBase };
+        let local = localBase;
+        let submitted: Character | undefined;
+        for (const { draft } of recoveredDraftsRef.current) {
+          if (draft.submission)
+            submitted = mergeCharacterSave(draft.base!, draft.submission.body, submitted ?? local).character;
+          local = mergeCharacterSave(draft.base!, draft.body, local, draft.submission?.body).character;
+        }
+        handleFetchedCharacter(dbCharacter, local);
+        characterRef.current = local;
+        lastSyncedRef.current = localBase;
+        pauseConflictingSave(dbCharacter, submitted);
+      } else {
+        handleFetchedCharacter(dbCharacter, displayed);
+      }
+      if (!conflicts.length && sessionActorId) {
         if (recoveredDraftsRef.current.length) {
           const reconciled = reconcileBufferedCharacterSave(displayed, sessionActorId, dbCharacter, {
             requiresCalculation: needsCalculationRef.current,
@@ -487,6 +522,16 @@ export default function useCharacter(
   // The server guard handles concurrent writers on other devices.
   const savingRef = useRef(false);
   const pendingSaveRef = useRef<QueuedCharacterSave | null>(null);
+  const hasSettledCalculation = () =>
+    options.type !== 'EXECUTE_OPS'
+      ? !needsCalculationRef.current
+      : !isCalculating &&
+        contentSourcesMatch &&
+        executingOperations.current === null &&
+        !calculationFailed &&
+        !!operationResults &&
+        getUpdateHash(characterRef.current) === debouncedOperationsHash &&
+        !!options.data.content;
   const canPersist = () =>
     hasLoadedCharacter &&
     !readOnlyRef.current &&
@@ -495,15 +540,7 @@ export default function useCharacter(
     lastSyncedRef.current?.id === characterId &&
     !!loadedActorRef.current &&
     loadedActorRef.current === sessionActorId &&
-    (options.type !== 'EXECUTE_OPS'
-      ? !needsCalculationRef.current
-      : !isCalculating &&
-        contentSourcesMatch &&
-        executingOperations.current === null &&
-        !calculationFailed &&
-        !!operationResults &&
-        getUpdateHash(characterRef.current) === debouncedOperationsHash &&
-        !!options.data.content);
+    hasSettledCalculation();
 
   const canPersistRef = useRef(canPersist);
   canPersistRef.current = canPersist;
@@ -518,8 +555,9 @@ export default function useCharacter(
       // is waiting or failed. The flag prevents automatic server replay.
       canBuffer: !readOnlyRef.current && loadedActorRef.current === sessionActorId,
       forceBuffer: savingRef.current || !!uncertainSaveRef.current,
-      requiresCalculation:
-        saveConflictRef.current || (!canPersist() && (needsCalculationRef.current || options.type === 'EXECUTE_OPS')),
+      // A conflict is rechecked against its ancestor after reload, not a pending
+      // calculation. Conflating the two would permanently block Builder Home saves.
+      requiresCalculation: !hasSettledCalculation(),
     }),
     setDraftStored
   );
@@ -538,17 +576,31 @@ export default function useCharacter(
   /** Incoming reads and rejected saves share one merge and draft-retention path. */
   const receiveRemoteCharacter = (remote: Character, submitted?: Record<string, unknown>, repeatedConflict = false) => {
     const base = lastSyncedRef.current;
+    const pending = pendingConflictRef.current;
+    if (
+      pending?.repeatedInput &&
+      remote.updated_at === pending.remote.updated_at &&
+      SAVED_CHARACTER_FIELDS.every((field) =>
+        characterSaveValuesEqual(characterRef.current?.[field], pending.repeatedInput?.[field])
+      )
+    )
+      return null;
+    const attempt = submitted ?? pending?.submitted;
     const merge =
       readOnlyRef.current || !loadedActorRef.current
         ? { character: cloneDeep(remote), conflicts: [] }
-        : mergeCharacterSave(base, characterRef.current, remote, submitted);
+        : mergeCharacterSave(base, characterRef.current, remote, attempt);
     const merged = merge.character;
     pendingSaveRef.current = null;
     if (merge.conflicts.length || repeatedConflict) {
-      characterRef.current = merged;
-      setCharacter(merged);
-      pauseConflictingSave();
+      pauseConflictingSave(remote, attempt, repeatedConflict);
       return null;
+    }
+    if (saveConflictRef.current) {
+      saveConflictRef.current = false;
+      pendingConflictRef.current = null;
+      conflictStreakRef.current = 0;
+      setHasSaveConflict(false);
     }
     const changed = SAVED_CHARACTER_FIELDS.some(
       (field) => !characterSaveValuesEqual(merged[field], characterRef.current?.[field])
@@ -561,9 +613,8 @@ export default function useCharacter(
     if (actor && !readOnlyRef.current) {
       const reconciled = reconcileBufferedCharacterSave(merged, actor, remote, {
         requiresCalculation:
-          needsCalculationRef.current ||
-          (options.type === 'EXECUTE_OPS' &&
-            (!canPersistRef.current() || getUpdateHash(merged) !== debouncedOperationsHash)),
+          !hasSettledCalculation() ||
+          (options.type === 'EXECUTE_OPS' && getUpdateHash(merged) !== debouncedOperationsHash),
       });
       setDraftStored(reconciled.status !== 'unavailable');
     }
@@ -579,6 +630,13 @@ export default function useCharacter(
   const receiveRemoteRef = useRef(receiveRemoteCharacter);
   receiveRemoteRef.current = receiveRemoteCharacter;
 
+  // A normal edit can make the latest remote version compatible without a special control.
+  useEffect(() => {
+    const pending = pendingConflictRef.current;
+    if (!hasLoadedCharacter || !pending || savingRef.current || uncertainSaveRef.current) return;
+    receiveRemoteRef.current(pending.remote);
+  }, [character, hasLoadedCharacter]);
+
   // A successful calculation can release an edit that was waiting for derived values.
   useDidUpdate(() => {
     if (!debouncedCharacter || !canPersist()) return;
@@ -591,7 +649,7 @@ export default function useCharacter(
     )
       return;
     if (characterRef.current) mutateCharacter(characterRef.current);
-  }, [debouncedCharacter, isCalculating, calculationFailed, operationResults, sessionActorId]);
+  }, [debouncedCharacter, isCalculating, calculationFailed, operationResults, sessionActorId, hasSaveConflict]);
   const { mutate: mutateCharacterRaw } = useMutation({
     mutationFn: async (save: QueuedCharacterSave) => {
       if (!isCurrentSave(save)) throw new Error('Character save scope changed');
@@ -794,7 +852,7 @@ export default function useCharacter(
       }
       return { ...context, character: remote };
     },
-    enabled: hasLoadedCharacter && isOnline && !loadError && !saveConflictRef.current,
+    enabled: hasLoadedCharacter && isOnline && !loadError,
     refetchInterval: REMOTE_CHARACTER_INTERVAL,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: 'always',
@@ -812,8 +870,7 @@ export default function useCharacter(
       remoteSnapshot.baseVersion !== lastSyncedRef.current?.updated_at ||
       remoteSnapshot.writeRevision !== writeRevisionRef.current ||
       savingRef.current ||
-      uncertainSaveRef.current ||
-      saveConflictRef.current
+      uncertainSaveRef.current
     )
       return;
     const remote = remoteSnapshot.character;

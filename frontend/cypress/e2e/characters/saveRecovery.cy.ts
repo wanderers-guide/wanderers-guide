@@ -88,11 +88,12 @@ describe('Buffered character recovery', () => {
       .should('eq', 'Saved remote name');
   });
 
-  it('silently retains both versions of a same-field conflict through reload', () => {
+  it('retains conflicting input through reload and automatically saves when the versions become compatible', () => {
     cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
     cy.visit(`/builder/${characterId}`);
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', 'Saved remote name');
     let saves = 0;
+    let originalName: string;
     let releaseSave: (() => void) | undefined;
     cy.intercept('POST', '**/functions/v1/update-character', (req) => {
       // Slow typing may legitimately save the cleared name or an intermediate value.
@@ -135,7 +136,8 @@ describe('Buffered character recovery', () => {
       );
       const draft = JSON.parse(win.localStorage.getItem(key ?? '') ?? '{}');
       expect(draft.body?.name).to.eq('My conflicting edit');
-      expect(draft.requiresCalculation).to.eq(true);
+      originalName = draft.base.name;
+      expect(draft.requiresCalculation).to.eq(false);
     });
     cy.contains('Conflicting character edits').should('not.exist');
     cy.contains('Keep my edits').should('not.exist');
@@ -163,5 +165,42 @@ describe('Buffered character recovery', () => {
       .its('body.data.name')
       .should('eq', 'Changed on another device');
     cy.then(() => expect(saves).to.eq(1));
+    // The other device removes the collision. A background read must resume the
+    // retained edit without a recovery button, a toast, or additional typing.
+    cy.then(() =>
+      cy.request({
+        method: 'POST',
+        url: `${Cypress.env('functions_url')}/update-character`,
+        headers: { Authorization: `Bearer ${token}` },
+        body: { id: characterId, name: originalName },
+        log: false,
+      })
+    )
+      .its('body.status')
+      .should('eq', 'success');
+    cy.wait('@conflictingSave', { timeout: 20000 }).then(({ request, response }) => {
+      expect(request.body.name).to.eq('My conflicting edit');
+      expect(request.body.expected_updated_at).to.be.a('string');
+      expect(response?.body.data[0].name).to.eq('My conflicting edit');
+    });
+    cy.then(() => expect(saves).to.eq(2));
+    cy.get('input[placeholder="Unknown Wanderer"]').should('have.value', 'My conflicting edit');
+    cy.get('.mantine-Notification-root').should('not.exist');
+    cy.window().should((win) => {
+      const drafts = Object.keys(win.localStorage)
+        .filter((key) => key.startsWith(`autosave-character-${characterId}-${actorId}:writer:`))
+        .map((key) => JSON.parse(win.localStorage.getItem(key) ?? '{}'));
+      expect(drafts.filter((draft) => draft.body?.name === 'My conflicting edit')).to.have.length(0);
+    });
+    cy.request({
+      method: 'POST',
+      url: `${Cypress.env('functions_url')}/find-character`,
+      headers: { Authorization: `Bearer ${token}` },
+      body: { id: characterId },
+      log: false,
+    })
+      .its('body.data.name')
+      .should('eq', 'My conflicting edit');
+    cy.screenshot('save-conflict-recovered-without-ui');
   });
 });

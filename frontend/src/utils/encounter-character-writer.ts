@@ -24,6 +24,7 @@ type Entry = EncounterCharacterSave & {
   running: boolean;
   uncertain?: Character;
   rejected?: Character;
+  repeatedConflict?: { version: string; input: Character };
   retries: number;
   timer?: ReturnType<typeof setTimeout>;
 };
@@ -73,7 +74,7 @@ export function createEncounterCharacterWriter(options: { actorId: string; reque
 
   /** Re-read before retries, including an ambiguous write whose response was lost. */
   const run = async (entry: Entry): Promise<void> => {
-    if (disposed || entry.running || entry.phase === 'conflict' || entry.phase === 'forbidden') return;
+    if (disposed || entry.running || entry.phase === 'forbidden') return;
     if (entry.phase === 'rejected' && (!entry.rejected || same(entry.character, entry.rejected))) return;
     if (entry.timer) clearTimeout(entry.timer);
     entry.timer = undefined;
@@ -86,12 +87,21 @@ export function createEncounterCharacterWriter(options: { actorId: string; reque
       let conflicts = 0;
       while (!disposed) {
         const merge = mergeCharacterSave(entry.base, entry.character, remote, entry.uncertain);
-        if (merge.conflicts.length || conflicts >= 3) {
+        const repeated = entry.repeatedConflict;
+        if (
+          merge.conflicts.length ||
+          conflicts >= 3 ||
+          (repeated && repeated.version === remote.updated_at && same(entry.character, repeated.input))
+        ) {
+          if (conflicts >= 3)
+            entry.repeatedConflict = { version: remote.updated_at!, input: cloneDeep(entry.character) };
           entry.phase = 'conflict';
           entry.conflicts = merge.conflicts.length ? merge.conflicts : ['Repeated remote changes'];
           retain(entry);
           break;
         }
+        entry.repeatedConflict = undefined;
+        entry.conflicts = [];
         entry.character = merge.character;
         reconcile(entry, remote);
         if (same(entry.character, remote)) {
@@ -133,15 +143,19 @@ export function createEncounterCharacterWriter(options: { actorId: string; reque
         // Later local edits have the submitted body as their ancestor, not the old
         // database row. A deliberate return to the original HP must survive this ACK.
         const latest = mergeCharacterSave(submitted, entry.character, remote);
-        entry.character = latest.character;
-        reconcile(entry, remote);
         entry.retries = 0;
         if (latest.conflicts.length) {
+          // The ACK differs from the attempt and a later local edit. Keep that
+          // common ancestor until a fresh read can reconcile all three safely.
+          entry.base = submitted;
+          entry.uncertain = undefined;
           entry.phase = 'conflict';
           entry.conflicts = latest.conflicts;
           retain(entry);
           break;
         }
+        entry.character = latest.character;
+        reconcile(entry, remote);
       }
     } catch (error) {
       if (disposed) return;
@@ -158,6 +172,8 @@ export function createEncounterCharacterWriter(options: { actorId: string; reque
     } finally {
       entry.running = false;
       publish();
+      // Conflicts need fresh reads too. Keep both versions and retry only a safe merge.
+      if (!disposed && entry.phase === 'conflict') entry.timer = setTimeout(() => void run(entry), 5000);
       // A newer edit queued while the rejected request was in flight still saves.
       if (entry.phase === 'rejected' && entry.rejected && !same(entry.character, entry.rejected)) void run(entry);
     }
@@ -168,7 +184,8 @@ export function createEncounterCharacterWriter(options: { actorId: string; reque
     activate(): void {
       disposed = false;
       for (const entry of entries.values())
-        if (!entry.running && (entry.phase === 'saving' || entry.phase === 'failed')) void run(entry);
+        if (!entry.running && (entry.phase === 'saving' || entry.phase === 'failed' || entry.phase === 'conflict'))
+          void run(entry);
     },
     /** Accept only the HP/condition fields edited by the encounter controls. */
     update(base: Character, edited: Character): void {
@@ -222,7 +239,8 @@ export function createEncounterCharacterWriter(options: { actorId: string; reque
     },
     retry(id?: number): void {
       for (const [characterId, entry] of entries) {
-        if ((id === undefined || id === characterId) && entry.phase === 'failed') void run(entry);
+        if ((id === undefined || id === characterId) && (entry.phase === 'failed' || entry.phase === 'conflict'))
+          void run(entry);
       }
     },
     /** Unmount/account switches stop retries; versioned drafts remain for sheet recovery. */

@@ -447,3 +447,93 @@ test('legacy partial inventory and extension JSON do not block a safe HP update'
   assert.equal('inventory' in body, false);
   assert.equal('spells' in body, false);
 });
+
+test('conflicting encounter input rechecks quietly and resumes when the remote value is compatible', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const settle = async () => {
+    for (let i = 0; i < 30; i++) await Promise.resolve();
+  };
+  const original = row();
+  const state = setup(t);
+  state.server = { ...original, hp_current: 12, updated_at: '2026-09-06T12:00:00.100Z' };
+  state.writer.update(original, { ...original, hp_current: 15 });
+  await settle();
+  assert.equal(state.writer.status(1).phase, 'conflict');
+  t.mock.timers.tick(5000);
+  await settle();
+  assert.equal(state.requests.filter((r) => r.type === 'find-character').length, 2);
+  assert.equal(state.requests.filter((r) => r.type === 'update-character').length, 0);
+  state.server = {
+    ...original,
+    details: { ...original.details, info: { appearance: 'New remote appearance' } },
+    updated_at: '2026-09-06T12:00:00.200Z',
+  };
+  t.mock.timers.tick(5000);
+  await settle();
+  assert.equal(state.writer.status(1).phase, 'saved');
+  assert.equal(state.server.hp_current, 15);
+  assert.equal(state.server.details.info.appearance, 'New remote appearance');
+  assert.equal(state.requests.filter((r) => r.type === 'update-character').length, 1);
+  assert.equal(storage.size, 0);
+  const requests = state.requests.length;
+  t.mock.timers.tick(30000);
+  await settle();
+  assert.equal(state.requests.length, requests, 'a resolved conflict must not keep a retry timer');
+});
+
+test('ordinary encounter editing clears a conflict without overwriting a competing value', async (t) => {
+  const original = row();
+  const state = setup(t);
+  state.server = { ...original, hp_current: 12, updated_at: '2026-09-06T12:00:00.100Z' };
+  state.writer.update(original, { ...original, hp_current: 15 });
+  await until(() => state.writer.status(1)?.phase === 'conflict');
+  const displayed = state.writer.display(state.server);
+  state.writer.update(displayed, { ...displayed, hp_current: 12 });
+  await until(() => state.writer.status(1)?.phase === 'saved');
+  assert.equal(state.server.hp_current, 12);
+  assert.equal(state.requests.filter((r) => r.type === 'update-character').length, 0);
+  assert.equal(storage.size, 0);
+});
+
+test('disposing a conflicting encounter writer cancels its quiet reads', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const settle = async () => {
+    for (let i = 0; i < 30; i++) await Promise.resolve();
+  };
+  const original = row();
+  const state = setup(t, { ...original, hp_current: 12 });
+  state.writer.update(original, { ...original, hp_current: 15 });
+  await settle();
+  assert.equal(state.writer.status(1).phase, 'conflict');
+  state.writer.dispose();
+  t.mock.timers.tick(30000);
+  await settle();
+  assert.equal(state.requests.length, 1);
+  assert.equal(JSON.parse([...storage.values()][0]).body.hp_current, 15);
+});
+
+test('rechecking an ACK conflict retains its original ancestor and never overwrites the accepted version', async (t) => {
+  const waiting = deferred();
+  let writes = 0;
+  const state = setup(t, row(), async (request) => {
+    if (request.type === 'find-character') return structuredClone(request.server);
+    writes++;
+    request.commit(request.body);
+    request.server = { ...request.server, hp_current: 14 };
+    await waiting.promise;
+    return [structuredClone(request.server)];
+  });
+  const original = row();
+  state.writer.update(original, { ...original, hp_current: 15 });
+  await until(() => writes === 1);
+  const displayed = state.writer.display(original);
+  state.writer.update(displayed, { ...displayed, hp_current: 12 });
+  waiting.resolve();
+  await until(() => state.writer.status(1)?.phase === 'conflict');
+  state.writer.retry();
+  await until(() => state.writer.status(1)?.phase === 'conflict');
+  assert.equal(writes, 1);
+  assert.equal(state.server.hp_current, 14);
+  assert.equal(state.writer.status(1).character.hp_current, 12);
+  assert.equal(JSON.parse([...storage.values()][0]).base.hp_current, 15);
+});

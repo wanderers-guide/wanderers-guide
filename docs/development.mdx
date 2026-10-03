@@ -351,7 +351,10 @@ simulate flaky transport, constrained CPU and page lifecycle boundaries, not iOS
 process eviction or a measured physical-device performance profile. The save-hook regressions also cover uncertain writes,
 intentional reversions, separate-tab drafts, storage exhaustion, and account changes.
 Save failures and session expiry stay quiet, including conflicting edits. Conflict
-cases verify retained local input and the unchanged competing server version through reload.
+cases verify retained local input and the unchanged competing server version through reload,
+then automatic guarded saving after a background read finds a compatible version.
+Hook regressions also cover ordinary edits resolving a conflict, remote fields changing
+while saving is paused, uncertain-write reversions, and repeated-conflict loop guards.
 
 The `characters/contentRecovery.cy.ts` cases verify automatic content recovery
 without technical error screens or partial saves. Already loaded views keep their
@@ -393,8 +396,11 @@ use the runtime cache. The complete icon library is not fetched on an idle timer
 The encounter writer regressions run in `test:infra`. They exercise GM/player races,
 serialized HP edits, lost acknowledgements, narrow guarded writes, retained drafts,
 and failure/conflict responses. The encounter keeps unsynced edits visible and retries
-transport failures quietly. Conflicting, forbidden, and rejected writes pause without
-recovery messages or conflict-choice controls. Navigating away preserves the
+transport failures quietly. Conflicting writes recheck the remote row every five seconds
+and resume only when merging is safe; normal GM edits also recheck a paused conflict.
+Disposing the writer cancels those reads. Forbidden and rejected writes retain their
+existing guards. All remain silent without recovery messages or conflict-choice controls.
+Navigating away preserves the
 versioned local draft when browser storage is available; the campaign
 does not automatically restore old drafts into encounter controls on a new visit.
 

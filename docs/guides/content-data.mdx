@@ -129,8 +129,11 @@ repeatedly loading the server's older sources would otherwise create a reload lo
 
 Concurrent character edits merge at nested fields and stable entry IDs. Independent
 changes survive. When both writers change the same value, saving pauses quietly.
-The local input and its original base remain buffered across navigation and reload;
-the competing server version is not overwritten. Recovery never displays toasts,
+Background reads continue, and ordinary edits recheck the latest competing version.
+Saving resumes automatically once the versions merge safely. While a conflict remains,
+the editor retains its local input and original base instead of treating unrelated
+remote fields as local changes. Both survive navigation and reload when draft storage
+is available; the competing server version is not overwritten. Recovery never displays toasts,
 reload prompts, or conflict-choice buttons. Session expiry, revoked write access,
 rejected saves, and unavailable draft storage also remain quiet. Pending input is
 retained in the editor; available local storage preserves its account-scoped draft.

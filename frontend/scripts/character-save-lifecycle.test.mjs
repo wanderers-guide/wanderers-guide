@@ -758,7 +758,7 @@ test('same-value conflict silently pauses saves and retains subsequent edits wit
   harness.value.retrySave();
   await harness.flush();
   const draft = getBufferedCharacterSave(1, 'owner').draft;
-  assert.equal(draft.requiresCalculation, true, 'pagehide replay cannot bypass a paused conflict');
+  assert.equal(draft.requiresCalculation, false, 'a conflict must not masquerade as unfinished math');
   assert.equal(draft.body.name, 'My name');
   assert.deepEqual(draft.body.notes, { text: 'Later input must survive too' });
   assert.equal(draft.base.name, row().name);
@@ -1457,5 +1457,192 @@ test('a public viewer receives remote changes without turning calculated local v
   assert.equal(harness.value.saveState, 'saved');
   assert.equal(harness.notices.length, 0);
   assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
+  harness.unmount();
+});
+
+test('conflict polls keep local intent separate from remote changes and resume a safe save automatically', async () => {
+  let remote = row();
+  harness.request = async (type, body) => {
+    if (type === 'find-character') return structuredClone(remote);
+    assert.equal(body.expected_updated_at, remote.updated_at);
+    remote = { ...remote, ...body, updated_at: 'version-5' };
+    return [structuredClone(remote)];
+  };
+  harness.render();
+  await harness.flush();
+  harness.debouncedCharacter = harness.character;
+  harness.edit({ name: 'My pending name', notes: { text: 'Keep my note' } });
+  await harness.flush();
+  remote = { ...remote, name: 'Other name', details: { appearance: 'First remote edit' }, updated_at: 'version-2' };
+  await harness.poll();
+  remote = { ...remote, details: { appearance: 'Latest remote edit' }, updated_at: 'version-3' };
+  await harness.poll();
+  await harness.poll();
+  assert.equal(harness.value.saveState, 'conflict');
+  assert.equal(harness.character.name, 'My pending name');
+  assert.deepEqual(harness.character.details, {}, 'remote projections must not become false local intent');
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
+  remote = { ...remote, name: row().name, updated_at: 'version-4' };
+  await harness.poll();
+  assert.equal(harness.value.saveState, 'saved');
+  assert.equal(remote.name, 'My pending name');
+  assert.equal(remote.notes.text, 'Keep my note');
+  assert.equal(remote.details.appearance, 'Latest remote edit');
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 1);
+  assert.equal(getBufferedCharacterSave(1, 'owner').status, 'none');
+  assert.equal(harness.notices.length, 0);
+  harness.unmount();
+});
+
+test('ordinary editing can clear a paused conflict and save independent pending input quietly', async () => {
+  let remote = row();
+  harness.request = async (type, body) => {
+    if (type === 'find-character') return structuredClone(remote);
+    assert.equal(body.expected_updated_at, remote.updated_at);
+    remote = { ...remote, ...body, updated_at: 'version-3' };
+    return [structuredClone(remote)];
+  };
+  harness.render();
+  await harness.flush();
+  harness.debouncedCharacter = harness.character;
+  harness.edit({ name: 'My pending name', notes: { text: 'Still pending' } });
+  await harness.flush();
+  remote = { ...remote, name: 'Other name', updated_at: 'version-2' };
+  await harness.poll();
+  assert.equal(harness.value.saveState, 'conflict');
+  harness.edit({ name: remote.name });
+  await harness.flush();
+  assert.equal(harness.value.saveState, 'saved');
+  assert.equal(remote.name, 'Other name');
+  assert.equal(remote.notes.text, 'Still pending');
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 1);
+  assert.equal(harness.notices.length, 0);
+  harness.unmount();
+});
+
+test('a restored conflict preserves raw input across newer remote fields and resumes after calculation', async () => {
+  const original = row();
+  bufferCharacterSave({ ...original, name: 'Recovered name' }, 'owner', original.updated_at, {
+    base: original,
+    requiresCalculation: true,
+  });
+  let remote = {
+    ...original,
+    name: 'Other name',
+    details: { appearance: 'First remote edit' },
+    updated_at: 'version-2',
+  };
+  harness.options = {
+    type: 'EXECUTE_OPS',
+    data: { content: { items: [] }, context: 'CHARACTER-SHEET', onFinishLoading() {} },
+  };
+  harness.calculate = async () => ({ current: true });
+  harness.request = async (type, body) => {
+    if (type === 'find-character') return structuredClone(remote);
+    assert.equal(body.expected_updated_at, remote.updated_at);
+    remote = { ...remote, ...body, updated_at: 'version-5' };
+    return [structuredClone(remote)];
+  };
+  harness.render();
+  await harness.flush();
+  assert.equal(harness.value.saveState, 'conflict');
+  assert.deepEqual(harness.character.details, {});
+  remote = { ...remote, details: { appearance: 'Latest remote edit' }, updated_at: 'version-3' };
+  await harness.poll();
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
+  remote = { ...remote, name: original.name, updated_at: 'version-4' };
+  await harness.poll();
+  assert.equal(remote.name, 'Recovered name');
+  assert.equal(remote.details.appearance, 'Latest remote edit');
+  assert.equal(harness.value.saveState, 'saved');
+  assert.equal(getBufferedCharacterSave(1, 'owner').status, 'none');
+  assert.equal(harness.notices.length, 0);
+  harness.unmount();
+});
+
+test('a quiet conflict recheck preserves an intentional reversion after a lost acknowledgement', async () => {
+  let remote = row();
+  let writes = 0;
+  const response = deferred();
+  harness.request = async (type, body) => {
+    if (type === 'find-character') return structuredClone(remote);
+    writes++;
+    remote = { ...remote, ...body, updated_at: `version-${writes + 1}` };
+    return writes === 1 ? response.promise : [structuredClone(remote)];
+  };
+  harness.render();
+  await harness.flush();
+  harness.edit({ name: 'Committed attempt' });
+  await harness.flush();
+  harness.edit({ name: row().name, notes: { text: 'Later local note' } });
+  await harness.flush();
+  remote = { ...remote, notes: { text: 'Competing note' }, updated_at: 'version-3' };
+  response.resolve(null);
+  await harness.flush();
+  harness.value.retrySave();
+  await harness.flush();
+  assert.equal(harness.value.saveState, 'conflict');
+  await harness.poll();
+  assert.equal(writes, 1);
+  remote = { ...remote, notes: undefined, updated_at: 'version-4' };
+  await harness.poll();
+  assert.equal(writes, 2);
+  assert.equal(remote.name, row().name, 'the deliberate return to the original value must still save');
+  assert.equal(remote.notes.text, 'Later local note');
+  assert.equal(harness.value.saveState, 'saved');
+  assert.equal(harness.notices.length, 0);
+  harness.unmount();
+});
+
+test('rechecking a repeated-conflict stop never restarts the same rejected write loop', async () => {
+  let remote = row();
+  let writes = 0;
+  harness.request = async (type) => {
+    if (type === 'find-character') return structuredClone(remote);
+    writes++;
+    remote = { ...remote, updated_at: `version-${writes + 1}` };
+    return { __conflict: true, character: structuredClone(remote) };
+  };
+  harness.render();
+  await harness.flush();
+  harness.edit({ name: 'Pending name' });
+  await harness.flush();
+  assert.equal(writes, 3);
+  assert.equal(harness.value.saveState, 'conflict');
+  for (let i = 0; i < 4; i++) await harness.poll();
+  assert.equal(writes, 3);
+  assert.equal(harness.notices.length, 0);
+  harness.unmount();
+});
+
+test('a restored Builder Home conflict resumes safely without requiring a calculation it never needed', async () => {
+  let remote = row();
+  harness.request = async (type) =>
+    type === 'find-character' ? structuredClone(remote) : { __conflict: true, character: structuredClone(remote) };
+  harness.render();
+  await harness.flush();
+  remote = { ...remote, name: 'Competing name', updated_at: 'version-2' };
+  harness.edit({ name: 'Retained Builder name' });
+  await harness.flush();
+  assert.equal(harness.value.saveState, 'conflict');
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.requiresCalculation, false);
+  harness.unmount();
+  harness = new HookHost();
+  harness.request = async (type, body) => {
+    if (type === 'find-character') return structuredClone(remote);
+    assert.equal(body.expected_updated_at, remote.updated_at);
+    remote = { ...remote, ...body, updated_at: 'version-4' };
+    return [structuredClone(remote)];
+  };
+  harness.render();
+  await harness.flush();
+  assert.equal(harness.value.saveState, 'conflict');
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
+  remote = { ...remote, name: row().name, updated_at: 'version-3' };
+  await harness.poll();
+  assert.equal(remote.name, 'Retained Builder name');
+  assert.equal(harness.value.saveState, 'saved');
+  assert.equal(getBufferedCharacterSave(1, 'owner').status, 'none');
+  assert.equal(harness.notices.length, 0);
   harness.unmount();
 });
