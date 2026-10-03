@@ -305,6 +305,7 @@ const row = (id = 1) => ({
   updated_at: 'version-1',
 });
 beforeEach(() => {
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { onLine: true } });
   globalThis.localStorage = new Storage();
   events.clear();
   const listeners = new Map();

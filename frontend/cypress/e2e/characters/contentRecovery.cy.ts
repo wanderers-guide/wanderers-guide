@@ -19,6 +19,15 @@ describe('Incomplete content recovery', () => {
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('be.visible');
   });
 
+  afterEach(() => {
+    cy.then(() =>
+      Cypress.automation('remote:debugger:protocol', {
+        command: 'Network.setBypassServiceWorker',
+        params: { bypass: false },
+      })
+    );
+  });
+
   after(() => {
     if (!characterId || !token) return;
     cy.request({
@@ -75,8 +84,22 @@ describe('Incomplete content recovery', () => {
     });
   }
   it('keeps fatal route diagnostics private and offers a simple path home', () => {
-    cy.intercept('GET', '**/assets/CharacterSheetPage-*.js', { statusCode: 500, body: 'Private fixture diagnostic' });
+    login();
+    // CI serves immutable assets; bypass both browser and worker caches so the failure is real.
+    cy.then(() => Cypress.automation('remote:debugger:protocol', { command: 'Network.clearBrowserCache' }));
+    cy.then(() =>
+      Cypress.automation('remote:debugger:protocol', {
+        command: 'Network.setBypassServiceWorker',
+        params: { bypass: true },
+      })
+    );
+    cy.intercept('GET', '**/assets/CharacterSheetPage-*.js', {
+      statusCode: 500,
+      body: 'Private fixture diagnostic',
+      headers: { 'cache-control': 'no-store' },
+    }).as('brokenRoute');
     cy.visit(`/sheet/${characterId}`);
+    cy.wait('@brokenRoute').its('response.statusCode').should('eq', 500);
     cy.contains('Unable to open this page', { timeout: 30000 }).should('be.visible');
     cy.contains('Reload app').should('not.exist');
     cy.contains('GitHub Issues').should('not.exist');
