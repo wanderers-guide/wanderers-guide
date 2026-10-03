@@ -1,4 +1,5 @@
 import { fetchContentById, getCachedContent } from '@content/content-store';
+import { getModeKey } from '@common/modes/mode-rules';
 import { AbilityBlock, Item, Language, Spell, Trait } from '@schemas/content';
 import {
   ConditionCheckData,
@@ -1388,7 +1389,7 @@ async function runRemoveAbilityBlock(
 
   removeVariableEffects(varId, `ability-block:${abilityBlock.id}`);
   if (operation.data.type === 'mode') {
-    filterVariableList(varId, 'ACTIVE_MODES', (mode) => mode !== labelToVariable(abilityBlock.name), sourceLabel);
+    filterVariableList(varId, 'ACTIVE_MODES', (mode) => mode !== getModeKey(abilityBlock), sourceLabel);
   }
 
   const prefix: Record<string, string> = {
@@ -1484,6 +1485,23 @@ async function runConditional(
   const makeCheck = (check: ConditionCheckData) => {
     let variable = getVariable(varId, check.name);
 
+    // The parent character is already calculated. Companion checks can read its
+    // pending binding now while final copies retain their existing execution order.
+    if (variable && varId !== 'CHARACTER') {
+      const binding = [...deferredOperations]
+        .reverse()
+        .find(
+          (entry) =>
+            entry.type === 'bind' &&
+            entry.varId === varId &&
+            entry.variable === check.name &&
+            areVariableEffectScopesActive(entry.scopes)
+        );
+      if (binding?.type === 'bind' && binding.value.storeId === 'CHARACTER') {
+        variable = getVariable('CHARACTER', binding.value.variable) ?? variable;
+      }
+    }
+
     if (!variable) {
       // if (!check.type) {
       //   return false;
@@ -1559,6 +1577,8 @@ async function runConditional(
         }
       } catch (e) {}
       let checkValue: string[] = [];
+      const normalize = (value: string): string =>
+        labelToVariable(value, true, { preserveNumbers: variable.name === 'ACTIVE_MODES' });
       try {
         if (typeof check.value === 'string') {
           checkValue = JSON.parse(check.value.toUpperCase());
@@ -1569,9 +1589,9 @@ async function runConditional(
       } else if (check.operator === 'NOT_EQUALS') {
         return !isEqual(varValue, checkValue);
       } else if (check.operator === 'INCLUDES') {
-        return varValue.map((v) => labelToVariable(v)).includes(labelToVariable(`${check.value}`));
+        return varValue.map(normalize).includes(normalize(`${check.value}`));
       } else if (check.operator === 'NOT_INCLUDES') {
-        return !varValue.map((v) => labelToVariable(v)).includes(labelToVariable(`${check.value}`));
+        return !varValue.map(normalize).includes(normalize(`${check.value}`));
       }
     } else if (variable.type === 'prof') {
       // Level-capped compile: conditionals execute before normalizeProficiencies

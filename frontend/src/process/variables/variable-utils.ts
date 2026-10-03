@@ -80,14 +80,15 @@ export function variableToLabel(variable: Variable) {
   return toLabel(variable.name);
 }
 
-export function labelToVariable(label: string, trim = true) {
+/** Normalize authored labels, optionally retaining digits for identities such as numbered modes. */
+export function labelToVariable(label: string, trim = true, options?: { preserveNumbers?: boolean }): string {
   if (trim) {
     label = label.trim();
   }
   let cleanedString = label
     .toUpperCase()
     .replace(/-/g, '_')
-    .replace(/[^a-zA-Z_\s]/g, '');
+    .replace(options?.preserveNumbers ? /[^a-zA-Z0-9_\s]/g : /[^a-zA-Z_\s]/g, '');
   cleanedString = cleanedString.replace(/\s+/g, '_');
   return cleanedString;
 }

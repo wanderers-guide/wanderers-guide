@@ -175,6 +175,20 @@ source runs first. For example, a Human's 25-foot base speed and a custom +5 adj
 produce 30 feet in both the builder and character sheet. Removing a grant recalculates
 the remaining base and adjustments.
 
+Mode keys retain numbers: `Cursebound 2` and `Cursebound 3` toggle independently, and
+`ACTIVE_MODES` conditions distinguish them. Existing shared keys from numbered modes
+retain the effects that were active before the update until those modes are toggled
+individually.
+
+Companion `bindValue` operations keep their saved source store and variable visible
+when reopened, including custom destination values created only in the companion.
+Companion conditions can read bindings from the already calculated parent character.
+Binding to the character's `FEAT_NAMES` lets companion conditionals inspect those feats.
+
+Known spells use the saved ranks for their own casting source. A spell learned from
+two sources appears once per rank in each source; distinct heightened versions remain
+available within that source.
+
 The `operations` column on each content row is what makes WG content actually *do* something to a character. See **[Operations](/guides/operations)** for the full catalog of types and their JSON shapes.
 
 When you `POST` a content row to a `create-*` endpoint, you’re sending operations in raw JSON. The API treats them as opaque (the OpenAPI schema uses `additionalProperties: true`); validation happens at character-build time on the frontend.

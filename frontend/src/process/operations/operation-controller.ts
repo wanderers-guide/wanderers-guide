@@ -66,7 +66,7 @@ import { setCalculatedStatsInStore } from '@variables/calculated-stats';
 import { getEntityLevel } from '@utils/entity-utils';
 import { defineDefaultSources, importFromContentPackage } from '@content/content-store';
 import { setEidolonRunesInStore } from '@items/eidolon-runes';
-import { getExecutableModes } from '@common/modes/mode-rules';
+import { getExecutableModes, resolveActiveModeKeys } from '@common/modes/mode-rules';
 
 let executionQueue: Promise<void> = Promise.resolve();
 
@@ -212,8 +212,13 @@ async function executeCharacterOperations(
 
   setVariable('CHARACTER', 'LEVEL', character.level);
 
-  setVariable('CHARACTER', 'ACTIVE_MODES', character.meta_data?.active_modes ?? [], 'Loaded');
   const modes = content.abilityBlocks.filter((block) => block.type === 'mode');
+  setVariable(
+    'CHARACTER',
+    'ACTIVE_MODES',
+    resolveActiveModeKeys(modes, character.meta_data?.active_modes ?? []),
+    'Loaded'
+  );
 
   const class_ = content.classes.find((c) => c.id === character.details?.class?.id);
   const class_2 = content.classes.find((c) => c.id === character.details?.class_2?.id);
