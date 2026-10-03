@@ -7,14 +7,10 @@ import { supabase } from '../supabase-client';
 import { RequestRejectedError } from './request-rejection';
 
 const MAX_TRANSIENT_RETRIES = 1;
-// A lost response can follow a committed write. Only explicitly read-only handlers
-// may be retried after an ambiguous network or gateway failure.
-const RETRYABLE_READS = new Set<RequestType>([
+// Complete catalogs can exceed 10 MB. Their transfer and JSON parsing need a
+// larger budget than a record lookup, especially when several books load together.
+const CONTENT_DOWNLOAD_READS = new Set<RequestType>([
   'search-data',
-  'gm-users-in-group',
-  'get-user',
-  'get-content-source-stats',
-  'get-content-versions',
   'find-content-source',
   'find-trait',
   'find-ability-block',
@@ -28,12 +24,22 @@ const RETRYABLE_READS = new Set<RequestType>([
   'find-language',
   'find-creature',
   'find-spell',
+]);
+// A lost response can follow a committed write. Only explicitly read-only handlers
+// may be retried after an ambiguous network or gateway failure.
+const RETRYABLE_READS = new Set<RequestType>([
+  ...CONTENT_DOWNLOAD_READS,
+  'gm-users-in-group',
+  'get-user',
+  'get-content-source-stats',
+  'get-content-versions',
   'find-character',
   'find-content-update',
   'find-encounter',
   'find-campaign',
 ]);
 const DEFAULT_TIMEOUT_MS = 30000;
+const CONTENT_DOWNLOAD_TIMEOUT_MS = 120000;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 let notifiedSessionExpired = false;
 let refreshingSession: Promise<Session | null> | null = null;
@@ -130,7 +136,11 @@ export async function makeRequest<T = Record<string, any>>(
   if (options?.expectedActorId && requestSession?.user.id !== options.expectedActorId) return failure();
 
   while (true) {
-    const { data, error } = await invokeWithTimeout(type, body, DEFAULT_TIMEOUT_MS, requestSession?.access_token);
+    const timeout =
+      CONTENT_DOWNLOAD_READS.has(type) && (body.id === undefined || Array.isArray(body.id))
+        ? CONTENT_DOWNLOAD_TIMEOUT_MS
+        : DEFAULT_TIMEOUT_MS;
+    const { data, error } = await invokeWithTimeout(type, body, timeout, requestSession?.access_token);
     if (!error) {
       if (!data) return failure();
       const response = data as JSendResponse;
@@ -221,14 +231,22 @@ async function invokeWithTimeout(
 ): Promise<{ data: any; error: any }> {
   return new Promise((resolve) => {
     let settled = false;
+    const controller = new AbortController();
     const timer = setTimeout(() => {
       if (settled) return;
       settled = true;
+      // Stop expired reads before React Query or the user starts another transfer.
+      // Writes retain their existing uncertain-outcome handling and are never replayed here.
+      if (RETRYABLE_READS.has(type)) controller.abort();
       resolve({ data: null, error: new Error('Timeout') });
     }, timeout);
 
     supabase.functions
-      .invoke(type, { body, headers: { Authorization: `Bearer ${accessToken ?? import.meta.env.VITE_SUPABASE_KEY}` } })
+      .invoke(type, {
+        body,
+        signal: controller.signal,
+        headers: { Authorization: `Bearer ${accessToken ?? import.meta.env.VITE_SUPABASE_KEY}` },
+      })
       .then((res) => {
         if (settled) return;
         settled = true;

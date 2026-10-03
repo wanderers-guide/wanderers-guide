@@ -5,7 +5,7 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { FeatSelectionOption } from '@common/select/SelectContent';
 import { isAbilityBlockVisible } from '@content/content-hidden';
-import { fetchContentAll, fetchContentById, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
+import { fetchContent, fetchContentById, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
 import {
@@ -59,11 +59,15 @@ export function ClassDrawerTitle(props: { data: { id?: number; class_?: Class; o
 
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const { data: _class_, isFetching, refetch } = useQuery({
+  const {
+    data: _class_,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-class-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       return await fetchContentById<Class>('class', id);
     },
@@ -109,16 +113,15 @@ export function ClassDrawerContent(props: {
 
   const { data, isFetching, refetch } = useQuery({
     queryKey: [`find-class-details-${id}`, { id, sources: getDefaultSourcesKey('INFO') }],
-    queryFn: async ({ queryKey }) => {
-      // @ts-ignore
-       
-      const [_key, { id }] = queryKey;
-      const class_ = await fetchContentById<Class>('class', id);
-      const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('INFO'));
-      return {
-        class_: props.data.class_ ?? class_,
-        abilityBlocks,
-      };
+    queryFn: async () => {
+      const sources = getDefaultSources('INFO');
+      const class_ = props.data.class_ ?? (id === undefined ? null : await fetchContentById<Class>('class', id));
+      // The drawer displays only this class's features and feats. Keep the same
+      // source scope while filtering on the server instead of downloading every class.
+      const abilityBlocks = class_
+        ? await fetchContent<AbilityBlock>('ability-block', { content_sources: sources, traits: [class_.trait_id] })
+        : [];
+      return { class_, abilityBlocks };
     },
   });
 
@@ -184,9 +187,7 @@ export function ClassDrawerContent(props: {
   ));
 
   if (!data || !data.class_ || !data.abilityBlocks) {
-    return (
-      <DrawerLoadState loading={isFetching} onRetry={refetch} />
-    );
+    return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
   }
 
   return (
