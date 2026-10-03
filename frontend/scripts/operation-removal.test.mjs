@@ -93,6 +93,20 @@ test('ability removal replays independent adjustments and assignments without ar
   assert.deepEqual(value('FEAT_IDS'), ['2']);
 });
 
+test('removing speed grants rebuilds the remaining base and adjustments without accumulating replayed deltas', async () => {
+  fixtures([feat(1, [adj('speed-increase', 'SPEED', 5)]), feat(2, [set('higher-speed', 'SPEED', 30)])]);
+  await run([set('ancestry-speed', 'SPEED', 25), give(1), give(2)]);
+  assert.equal(value('SPEED'), 35);
+  await run([remove(2)]);
+  assert.equal(value('SPEED'), 30);
+  await run([remove(1)]);
+  assert.equal(value('SPEED'), 25);
+  await run([give(1, 'regrant-adjustment')]);
+  assert.equal(value('SPEED'), 30);
+  await run([remove(1)]);
+  assert.equal(value('SPEED'), 25);
+});
+
 test('independent redundant ranks, bonuses, list entries and partial attribute boosts survive removal', async () => {
   engine.setVariable('CHARACTER', 'ATTRIBUTE_STR', { value: 4, partial: false });
   const effects = (rank) => [
