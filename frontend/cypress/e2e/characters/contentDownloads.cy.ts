@@ -4,7 +4,8 @@ describe('Slow content downloads', () => {
   let fixture: DownloadFixture;
   let characterId: number;
   let token: string;
-  const characterName = 'Slow Download Check';
+  const downloadKey = Date.now();
+  const characterName = `Slow Download Check ${downloadKey}`;
   const loginFixture = () =>
     cy.session(fixture.key, () => {
       cy.intercept('POST', '**/auth/v1/token*').as('signIn');
@@ -29,7 +30,12 @@ describe('Slow content downloads', () => {
       saves++;
     });
     cy.intercept('POST', '**/functions/v1/find-ability-block', (req) => {
+      if (req.body.id !== undefined) {
+        req.continue();
+        return;
+      }
       requests++;
+      req.responseTimeout = 120000;
       req.continue((res) => {
         res.setDelay(31000);
       });
@@ -58,7 +64,7 @@ describe('Slow content downloads', () => {
             level: 1,
             hp_current: 10,
             details: { conditions: [] },
-            inventory: { items: [] },
+            inventory: { items: [], coins: { cp: 0, sp: 0, gp: 0, pp: 0 } },
             content_sources: { enabled: [1, 3] },
             meta_data: { reset_hp: false },
           },
@@ -130,7 +136,7 @@ describe('Slow content downloads', () => {
         .click();
       cy.contains(`Export to ${format}`).click();
       waitForCatalog();
-      const path = `${Cypress.config('downloadsFolder')}/slow-download-check.${format.toLowerCase()}`;
+      const path = `${Cypress.config('downloadsFolder')}/slow-download-check-${downloadKey}.${format.toLowerCase()}`;
       if (format === 'JSON') cy.readFile(path, { timeout: 30000 }).its('character.name').should('eq', characterName);
       else cy.readFile(path, 'binary', { timeout: 30000 }).should('match', /^%PDF-/);
       cy.then(() => expect(counts.requests()).to.eq(1));
