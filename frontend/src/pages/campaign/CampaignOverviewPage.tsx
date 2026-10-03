@@ -41,7 +41,7 @@ import { Campaign, Character, Encounter } from '@schemas/content';
 import { setPageTitle } from '@utils/document-change';
 import { isPhoneSized, tabletQuery } from '@utils/mobile-responsive';
 import { cloneDeep, truncate } from 'lodash-es';
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { GiRollingDices } from '@common/game-icons-inline';
 import { useLoaderData } from 'react-router-dom';
 import classes from '@css/UserInfoIcons.module.css';
@@ -49,7 +49,7 @@ import { getDefaultCampaignBackgroundImage } from '@utils/background-images';
 import NotesPanel from './panels/NotesPanel';
 import InspirationPanel from './panels/InspirationPanel';
 import SettingsPanel from './panels/SettingsPanel';
-import { hideNotification, showNotification } from '@mantine/notifications';
+import { showNotification } from '@mantine/notifications';
 import EncountersPanel from './panels/EncountersPanel';
 import ShopsPanel from './panels/ShopsPanel';
 import { sessionState } from '@atoms/supabaseAtoms';
@@ -396,8 +396,8 @@ function SectionPanels(props: {
   panelWidth: number;
 }) {
   const session = useAtomValue(sessionState);
-  const [saveRevision, refreshCharacterSaves] = useState(0);
-  const saveNoticesRef = useRef(new Map<number, string>());
+  // Writer changes refresh the encounter controls, including unsynced HP, without recovery messages.
+  const [, refreshCharacterSaves] = useState(0);
   const characterWriter = useMemo(
     () =>
       session?.user.id && props.campaign?.id
@@ -413,64 +413,13 @@ function SectionPanels(props: {
         : undefined,
     [session?.user.id, props.campaign?.id]
   );
-  /** Report actionable failures once per incident; safe queued retries stay quiet. */
   useEffect(() => {
-    for (const player of props.players) {
-      const save = characterWriter?.status(player.id);
-      if (!save) continue;
-      const noticeId = `encounter-character-save-${player.id}`;
-      const problem =
-        save.phase === 'conflict' || save.phase === 'forbidden' || save.phase === 'rejected'
-          ? save.phase
-          : save.phase !== 'saved' && !save.stored
-            ? 'storage'
-            : null;
-      if (!problem) {
-        if (saveNoticesRef.current.delete(player.id)) hideNotification(noticeId);
-        continue;
-      }
-      if (saveNoticesRef.current.get(player.id) === problem) continue;
-      saveNoticesRef.current.set(player.id, problem);
-      const conflict = problem === 'conflict';
-      // Mantine ignores show calls for an existing ID. Replace the previous failure
-      // when a retry discovers a conflict or revoked access, including dismissed notices.
-      hideNotification(noticeId);
-      showNotification({
-        id: noticeId,
-        title: conflict ? 'Conflicting character edits' : 'Changes not saved',
-        message: (
-          <>
-            <Text size='sm'>
-              {conflict
-                ? `${player.name} was changed elsewhere. Open the character to resolve the conflicting edits.`
-                : problem === 'forbidden'
-                  ? `You no longer have permission to edit ${player.name}.`
-                  : problem === 'rejected'
-                    ? 'These changes could not be saved.'
-                    : 'Keep this page open until saving completes.'}
-            </Text>
-            {conflict && (
-              <Button component='a' href={`/sheet/${player.id}`} variant='light' size='compact-xs' mt='xs'>
-                Open character
-              </Button>
-            )}
-          </>
-        ),
-        color: 'yellow',
-        autoClose: false,
-      });
-    }
-  }, [characterWriter, props.players, saveRevision]);
-  useEffect(() => {
-    const saveNotices = saveNoticesRef.current;
     characterWriter?.activate();
     const retry = () => characterWriter?.retry();
     window.addEventListener('online', retry);
     return () => {
       window.removeEventListener('online', retry);
       characterWriter?.dispose();
-      for (const id of saveNotices.keys()) hideNotification(`encounter-character-save-${id}`);
-      saveNotices.clear();
     };
   }, [characterWriter]);
   const theme = useMantineTheme();

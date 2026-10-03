@@ -350,6 +350,8 @@ through the API as well as the UI. It uses only its own test characters. These s
 simulate flaky transport, constrained CPU and page lifecycle boundaries, not iOS/Android
 process eviction or a measured physical-device performance profile. The save-hook regressions also cover uncertain writes,
 intentional reversions, separate-tab drafts, storage exhaustion, and account changes.
+Save failures and session expiry stay quiet, including conflicting edits. Conflict
+cases verify retained local input and the unchanged competing server version through reload.
 
 The `characters/contentRecovery.cy.ts` cases verify automatic content recovery
 without technical error screens or partial saves. Already loaded views keep their
@@ -391,8 +393,9 @@ use the runtime cache. The complete icon library is not fetched on an idle timer
 The encounter writer regressions run in `test:infra`. They exercise GM/player races,
 serialized HP edits, lost acknowledgements, narrow guarded writes, retained drafts,
 and failure/conflict responses. The encounter keeps unsynced edits visible and retries
-transport failures. Conflicting edits offer **Open character**, which opens the sheet's
-existing conflict resolution flow. Navigating away preserves its versioned local draft; the campaign
+transport failures quietly. Conflicting, forbidden, and rejected writes pause without
+recovery messages or conflict-choice controls. Navigating away preserves the
+versioned local draft when browser storage is available; the campaign
 does not automatically restore old drafts into encounter controls on a new visit.
 
 `campaigns/encounterSync.cy.ts` creates two confirmed synthetic accounts, joins a real

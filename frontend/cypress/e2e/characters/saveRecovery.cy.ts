@@ -88,7 +88,7 @@ describe('Buffered character recovery', () => {
       .should('eq', 'Saved remote name');
   });
 
-  it('pauses a same-field conflict and lets the user keep the saved version', () => {
+  it('silently retains both versions of a same-field conflict through reload', () => {
     cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
     cy.visit(`/builder/${characterId}`);
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', 'Saved remote name');
@@ -102,6 +102,7 @@ describe('Buffered character recovery', () => {
         return;
       }
       saves++;
+      req.alias = 'conflictingSave';
       if (saves === 1) {
         expect(req.body.name).to.eq('My conflicting edit');
         return new Promise<void>((resolve) => {
@@ -127,7 +128,18 @@ describe('Buffered character recovery', () => {
       .its('body.status')
       .should('eq', 'success')
       .then(() => releaseSave!());
-    cy.contains('Conflicting character edits', { timeout: 30000 }).should('be.visible');
+    cy.wait('@conflictingSave').its('response.body.data.__conflict').should('eq', true);
+    cy.window().should((win) => {
+      const key = Object.keys(win.localStorage).find((key) =>
+        key.startsWith(`autosave-character-${characterId}-${actorId}:writer:`)
+      );
+      const draft = JSON.parse(win.localStorage.getItem(key ?? '') ?? '{}');
+      expect(draft.body?.name).to.eq('My conflicting edit');
+      expect(draft.requiresCalculation).to.eq(true);
+    });
+    cy.contains('Conflicting character edits').should('not.exist');
+    cy.contains('Keep my edits').should('not.exist');
+    cy.contains('Use saved version').should('not.exist');
     cy.viewport(1280, 900);
     cy.screenshot('save-conflict-desktop');
     cy.viewport(390, 844);
@@ -136,16 +148,20 @@ describe('Buffered character recovery', () => {
       expect(saves).to.eq(1);
       expect(doc.documentElement.scrollWidth).to.be.at.most(doc.documentElement.clientWidth);
     });
-    cy.contains('button', 'Use saved version').click();
-    cy.contains('Conflicting character edits').should('not.exist');
-    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should(
-      'have.value',
-      'Changed on another device'
-    );
+    cy.get('input[placeholder="Unknown Wanderer"]').should('have.value', 'My conflicting edit');
     cy.reload();
-    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should(
-      'have.value',
-      'Changed on another device'
-    );
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', 'My conflicting edit');
+    cy.contains('Conflicting character edits').should('not.exist');
+    cy.contains('Changes not saved').should('not.exist');
+    cy.request({
+      method: 'POST',
+      url: `${Cypress.env('functions_url')}/find-character`,
+      headers: { Authorization: `Bearer ${token}` },
+      body: { id: characterId },
+      log: false,
+    })
+      .its('body.data.name')
+      .should('eq', 'Changed on another device');
+    cy.then(() => expect(saves).to.eq(1));
   });
 });

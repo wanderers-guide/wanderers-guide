@@ -140,7 +140,7 @@ beforeEach(() => {
     session = signedIn('fresh-token');
     return { data: { session }, error: null };
   };
-  api.resetSessionExpiredNotice();
+  api.resetSessionExpired();
   hides = 0;
 });
 
@@ -171,27 +171,30 @@ test('many concurrent rejected requests share one refresh', async () => {
   assert.ok(results.every((result) => result?.[0]?.id === 1));
 });
 
-test('one rejected auth retry stops and shows a persistent, resettable notice', async () => {
+test('one rejected auth retry pauses silently and keeps the pending draft through session recovery', async () => {
+  api.bufferCharacterSave(character(), 'owner', 'version-1', { base: character('Saved name') });
   localStorage.setItem('user-data', '{"id":"owner"}');
   invoke = async () => expired();
   assert.equal(await api.makeRequest('update-character', { id: 1 }), null);
   assert.equal(refreshes, 1);
   assert.equal(calls.length, 2);
-  assert.equal(notices, 1);
-  assert.equal(api.hasSessionExpiredNotice(), true);
-  api.resetSessionExpiredNotice();
-  assert.equal(api.hasSessionExpiredNotice(), false);
-  assert.ok(hides > 0);
+  assert.equal(notices, 0);
+  assert.equal(api.hasSessionExpired(), true);
+  assert.equal(savedDraft().draft.body.name, 'Local draft');
+  assert.equal(localStorage.getItem('user-data'), null);
+  api.resetSessionExpired();
+  assert.equal(api.hasSessionExpired(), false);
+  assert.equal(hides, 0);
 });
 
-test('expired saved session with no refreshable session surfaces the auth notice', async () => {
+test('expired saved session with no refreshable session stays quiet', async () => {
   session = null;
   localStorage.setItem('user-data', '{"id":"owner"}');
   invoke = async () => expired();
   assert.equal(await api.makeRequest('update-character', { id: 1 }), null);
   assert.equal(refreshes, 0);
   assert.equal(calls.length, 1);
-  assert.equal(notices, 1);
+  assert.equal(notices, 0);
 });
 
 test('permission, API-key, and application failures never trigger auth retries', async () => {
@@ -251,7 +254,7 @@ test('rejection-aware writes preserve JWT recovery and never classify ambiguous 
   }
 });
 
-test('a changed account cannot inherit an old request or receive its expired-session notice', async () => {
+test('a changed account cannot inherit an old request or its expired-session state', async () => {
   invoke = async () => {
     session = signedIn('other-token', 'other');
     return expired();

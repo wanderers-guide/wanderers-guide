@@ -2,7 +2,6 @@ import { reportClientFailure } from '@utils/client-errors';
 import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError, type Session } from '@supabase/supabase-js';
 import { JSendResponse, RequestType } from '@schemas/requests';
 import { logError, throwError } from '@utils/error-handling';
-import { hideNotification, showNotification } from '@mantine/notifications';
 import { supabase } from '../supabase-client';
 import { RequestRejectedError } from './request-rejection';
 
@@ -41,28 +40,20 @@ const RETRYABLE_READS = new Set<RequestType>([
 const DEFAULT_TIMEOUT_MS = 30000;
 const CONTENT_DOWNLOAD_TIMEOUT_MS = 120000;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-let notifiedSessionExpired = false;
+let sessionExpired = false;
 let refreshingSession: Promise<Session | null> | null = null;
 
-/** Share the persistent notice between auth events and failed requests without dropping drafts. */
-export function notifySessionExpired(): void {
-  if (notifiedSessionExpired) return;
-  notifiedSessionExpired = true;
+/** Pause authenticated saving after confirmed expiry without displaying recovery UI or dropping drafts. */
+export function markSessionExpired(): void {
+  if (sessionExpired) return;
+  sessionExpired = true;
   reportClientFailure('auth_failed');
   localStorage.removeItem('user-data');
-  showNotification({
-    id: 'session-expired',
-    title: 'Session expired',
-    message: 'Please sign in again to save your changes.',
-    color: 'yellow',
-    autoClose: false,
-  });
 }
 
 /** A recovered or newly authenticated session can save again. */
-export function resetSessionExpiredNotice(): void {
-  notifiedSessionExpired = false;
-  hideNotification('session-expired');
+export function resetSessionExpired(): void {
+  sessionExpired = false;
 }
 
 /** Read authentication without allowing a storage/refresh failure to discard the pending request. */
@@ -170,17 +161,17 @@ export async function makeRequest<T = Record<string, any>>(
           const recovered = await recoverSession(requestSession);
           if (recovered) {
             requestSession = recovered;
-            resetSessionExpiredNotice();
+            resetSessionExpired();
             continue;
           }
         }
         const current = await getSession();
-        // A request from a previous account must not sign out or warn the new account.
+        // A request from a previous account must not change the new account's authentication state.
         if (
           (!current || current.user.id === requestSession?.user.id) &&
           (requestSession || localStorage.getItem('user-data'))
         )
-          notifySessionExpired();
+          markSessionExpired();
         break;
       }
       // JWT-related 400 responses above retain their existing auth recovery. Only
@@ -217,9 +208,9 @@ export async function makeRequest<T = Record<string, any>>(
   return failure();
 }
 
-/** Suppress redundant save-error notices while authentication recovery requires user action. */
-export function hasSessionExpiredNotice(): boolean {
-  return notifiedSessionExpired;
+/** Keep failed saves paused until the original account has an authenticated session again. */
+export function hasSessionExpired(): boolean {
+  return sessionExpired;
 }
 
 /** Stop waiting on a slow request without duplicating its possibly committed write. */
