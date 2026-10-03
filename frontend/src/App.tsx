@@ -18,9 +18,9 @@ import {
 } from '@mantine/core';
 import { useMediaQuery, usePrevious } from '@mantine/hooks';
 import { ModalsProvider } from '@mantine/modals';
-import { AppUpdateNotice } from '@common/AppUpdateNotice';
+import { AppUpdates } from '@common/AppUpdates';
 import { Notifications } from '@mantine/notifications';
-import { notifySessionExpired, resetSessionExpiredNotice } from '@requests/request-manager';
+import { markSessionExpired, resetSessionExpired } from '@requests/request-manager';
 import { clearUserData, getCachedPublicUser } from '@auth/user-manager';
 import SearchSpotlight from '@nav/SearchSpotlight';
 import { IconBrush } from '@tabler/icons-react';
@@ -109,13 +109,7 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setContentCacheActor(session?.user.id ?? null);
       setSession(session);
-      // Cold load with a dead session (expired from inactivity while the tab was
-      // closed): supabase-js clears its stored session without a SIGNED_OUT event,
-      // so catch the "cached user but no session" mismatch here too. Clear silently,
-      // with no toast: the page renders signed-out from the very first paint, so
-      // announcing "you've been signed out" on arrival is just noise. (The mid-visit
-      // expiry paths below still notify, because there the user may be mid-edit with
-      // unsaved work at stake.)
+      // Clear stale account chrome quietly; character drafts remain account-scoped.
       if (!session && getCachedPublicUser()) {
         clearUserData();
       }
@@ -126,19 +120,14 @@ export default function App() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       setContentCacheActor(session?.user.id ?? null);
       setSession(session);
-      if (session) resetSessionExpiredNotice();
+      if (session) resetSessionExpired();
 
       if (event === 'SIGNED_OUT') {
-        // The session ended. If the cached user data is still present, this was NOT an
-        // intentional logout (that path runs localStorage.clear() first) — the session
-        // expired or was revoked while the user was browsing. Guarded routes redirect to
-        // login on their own, but public pages (sheet, builder, home) kept rendering a
-        // logged-in-looking UI whose every write silently failed. Clear the stale cache
-        // and tell the user, so "logged out but the site never says so" can't happen.
+        // Unexpected expiry pauses saves quietly. Intentional logout already cleared the user cache.
         const hadUser = !!getCachedPublicUser();
         clearUserData();
         if (hadUser && !window.location.pathname.startsWith('/login')) {
-          notifySessionExpired();
+          markSessionExpired();
         }
       }
     });
@@ -378,7 +367,7 @@ export default function App() {
         )}
         <SearchSpotlight />
         <Notifications position='top-right' zIndex={9400} containerWidth={350} />
-        <AppUpdateNotice />
+        <AppUpdates />
         <DrawerBase />
         <Box style={{ zoom: getCachedCustomization()?.sheet_theme?.zoom ?? 1 }}>
           <Layout>

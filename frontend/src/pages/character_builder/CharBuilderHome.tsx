@@ -1,4 +1,4 @@
-import { CharacterLoadError } from '@common/CharacterLoadError';
+import { CharacterLoader } from '@common/CharacterLoader';
 import { generateNames } from '@ai/fantasygen-dev/name-controller';
 import { GroupLinkSwitch, LinkSwitch, LinksGroup } from '@common/LinksGroup';
 import {
@@ -100,7 +100,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
   const queryClient = useQueryClient();
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const { character, setCharacter, isLoading, loadError, retryLoad } = useCharacter(props.characterId, {
+  const { character, setCharacter, isLoading, loadError } = useCharacter(props.characterId, {
     type: 'SIMPLE',
   });
 
@@ -1308,7 +1308,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
 
   // The route's cached character may render before the save hook finishes loading
   // its authoritative version. Keep inputs closed until that save context is ready.
-  if (loadError) return <CharacterLoadError onRetry={retryLoad} />;
+  if (loadError) return <CharacterLoader />;
 
   if (isLoading)
     return (

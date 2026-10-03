@@ -220,10 +220,9 @@ workflow failure notifications enabled. GitHub schedules can be delayed and are 
 an availability guarantee. Controlled authenticated save checks remain a release
 step, not a recurring mutation of a real user's character.
 
-The update notice lets each tab choose when to reload. It flushes character drafts
-before activation; finish edits in other forms before choosing **Reload app**.
-An update activated in another tab shows a prompt instead of forcing this tab to
-reload. The error page also offers an explicit reload for missing old assets.
+App updates are checked quietly and activate after existing tabs close. They never
+show a reload toast or interrupt an open editor. Fatal page errors keep technical
+details in logs and offer a simple link home.
 
 ## Quiet character saving
 
@@ -237,8 +236,8 @@ explicitly rejects the change. An explicitly rejected payload stays buffered and
 not repeatedly submitted; a corrected edit can save again. Storage warnings clear
 after local retention or server confirmation succeeds. Conflicting edits that cannot be safely
 merged ask which version to keep. An encounter conflict links to the character to
-resolve it. Authentication and calculation failures retain their existing recovery
-paths. There is no download or discard workflow for save history.
+resolve it. Authentication still prompts when signing in is required. Calculation failures
+retry quietly without publishing partial math. There is no download or discard workflow for save history.
 
 Retained drafts stay on the device under the same character ID. They do not create
 additional server characters. Versioned drafts with a known common ancestor can be

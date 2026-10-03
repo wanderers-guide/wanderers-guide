@@ -2,19 +2,14 @@ import { reportClientFailure } from '@utils/client-errors';
 import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError, type Session } from '@supabase/supabase-js';
 import { JSendResponse, RequestType } from '@schemas/requests';
 import { logError, throwError } from '@utils/error-handling';
-import { hideNotification, showNotification } from '@mantine/notifications';
 import { supabase } from '../supabase-client';
 import { RequestRejectedError } from './request-rejection';
 
 const MAX_TRANSIENT_RETRIES = 1;
-// A lost response can follow a committed write. Only explicitly read-only handlers
-// may be retried after an ambiguous network or gateway failure.
-const RETRYABLE_READS = new Set<RequestType>([
+// Complete catalogs can exceed 10 MB. Their transfer and JSON parsing need a
+// larger budget than a record lookup, especially when several books load together.
+const CONTENT_DOWNLOAD_READS = new Set<RequestType>([
   'search-data',
-  'gm-users-in-group',
-  'get-user',
-  'get-content-source-stats',
-  'get-content-versions',
   'find-content-source',
   'find-trait',
   'find-ability-block',
@@ -28,35 +23,37 @@ const RETRYABLE_READS = new Set<RequestType>([
   'find-language',
   'find-creature',
   'find-spell',
+]);
+// A lost response can follow a committed write. Only explicitly read-only handlers
+// may be retried after an ambiguous network or gateway failure.
+const RETRYABLE_READS = new Set<RequestType>([
+  ...CONTENT_DOWNLOAD_READS,
+  'gm-users-in-group',
+  'get-user',
+  'get-content-source-stats',
+  'get-content-versions',
   'find-character',
   'find-content-update',
   'find-encounter',
   'find-campaign',
 ]);
 const DEFAULT_TIMEOUT_MS = 30000;
+const CONTENT_DOWNLOAD_TIMEOUT_MS = 120000;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-let notifiedSessionExpired = false;
+let sessionExpired = false;
 let refreshingSession: Promise<Session | null> | null = null;
 
-/** Share the persistent notice between auth events and failed requests without dropping drafts. */
-export function notifySessionExpired(): void {
-  if (notifiedSessionExpired) return;
-  notifiedSessionExpired = true;
+/** Pause authenticated saving after confirmed expiry without displaying recovery UI or dropping drafts. */
+export function markSessionExpired(): void {
+  if (sessionExpired) return;
+  sessionExpired = true;
   reportClientFailure('auth_failed');
   localStorage.removeItem('user-data');
-  showNotification({
-    id: 'session-expired',
-    title: 'Session expired',
-    message: 'Please sign in again to save your changes.',
-    color: 'yellow',
-    autoClose: false,
-  });
 }
 
 /** A recovered or newly authenticated session can save again. */
-export function resetSessionExpiredNotice(): void {
-  notifiedSessionExpired = false;
-  hideNotification('session-expired');
+export function resetSessionExpired(): void {
+  sessionExpired = false;
 }
 
 /** Read authentication without allowing a storage/refresh failure to discard the pending request. */
@@ -130,7 +127,11 @@ export async function makeRequest<T = Record<string, any>>(
   if (options?.expectedActorId && requestSession?.user.id !== options.expectedActorId) return failure();
 
   while (true) {
-    const { data, error } = await invokeWithTimeout(type, body, DEFAULT_TIMEOUT_MS, requestSession?.access_token);
+    const timeout =
+      CONTENT_DOWNLOAD_READS.has(type) && (body.id === undefined || Array.isArray(body.id))
+        ? CONTENT_DOWNLOAD_TIMEOUT_MS
+        : DEFAULT_TIMEOUT_MS;
+    const { data, error } = await invokeWithTimeout(type, body, timeout, requestSession?.access_token);
     if (!error) {
       if (!data) return failure();
       const response = data as JSendResponse;
@@ -160,17 +161,17 @@ export async function makeRequest<T = Record<string, any>>(
           const recovered = await recoverSession(requestSession);
           if (recovered) {
             requestSession = recovered;
-            resetSessionExpiredNotice();
+            resetSessionExpired();
             continue;
           }
         }
         const current = await getSession();
-        // A request from a previous account must not sign out or warn the new account.
+        // A request from a previous account must not change the new account's authentication state.
         if (
           (!current || current.user.id === requestSession?.user.id) &&
           (requestSession || localStorage.getItem('user-data'))
         )
-          notifySessionExpired();
+          markSessionExpired();
         break;
       }
       // JWT-related 400 responses above retain their existing auth recovery. Only
@@ -207,9 +208,9 @@ export async function makeRequest<T = Record<string, any>>(
   return failure();
 }
 
-/** Suppress redundant save-error notices while authentication recovery requires user action. */
-export function hasSessionExpiredNotice(): boolean {
-  return notifiedSessionExpired;
+/** Keep failed saves paused until the original account has an authenticated session again. */
+export function hasSessionExpired(): boolean {
+  return sessionExpired;
 }
 
 /** Stop waiting on a slow request without duplicating its possibly committed write. */
@@ -221,14 +222,22 @@ async function invokeWithTimeout(
 ): Promise<{ data: any; error: any }> {
   return new Promise((resolve) => {
     let settled = false;
+    const controller = new AbortController();
     const timer = setTimeout(() => {
       if (settled) return;
       settled = true;
+      // Stop expired reads before React Query or the user starts another transfer.
+      // Writes retain their existing uncertain-outcome handling and are never replayed here.
+      if (RETRYABLE_READS.has(type)) controller.abort();
       resolve({ data: null, error: new Error('Timeout') });
     }, timeout);
 
     supabase.functions
-      .invoke(type, { body, headers: { Authorization: `Bearer ${accessToken ?? import.meta.env.VITE_SUPABASE_KEY}` } })
+      .invoke(type, {
+        body,
+        signal: controller.signal,
+        headers: { Authorization: `Bearer ${accessToken ?? import.meta.env.VITE_SUPABASE_KEY}` },
+      })
       .then((res) => {
         if (settled) return;
         settled = true;

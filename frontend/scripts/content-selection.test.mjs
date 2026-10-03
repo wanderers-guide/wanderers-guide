@@ -58,6 +58,9 @@ globalThis.__selectionHooks = {
   useMemo: (callback, deps) => host.memo(callback, deps),
   useEffect: (callback, deps) => host.effect(callback, deps),
   useState: (value) => host.state(value),
+  useQuietRetry: (enabled, retry) => {
+    host.quietRetry = enabled ? retry : null;
+  },
   useQuery: (options) => {
     host.queryOptions = options;
     return {
@@ -69,6 +72,7 @@ globalThis.__selectionHooks = {
   },
 };
 const special = {
+  useQuietRetry: '(...args) => globalThis.__selectionHooks.useQuietRetry(...args)',
   useAtom: '() => [null, value => { globalThis.__selectionDrawer = value; }]',
   useAtomValue: '() => null',
   collectEntitySpellcasting: '(id, entity) => entity.spells',
@@ -256,15 +260,25 @@ test('creature selections retain their ordinary source-scoped reader', async () 
   assert.equal(globalThis.__selectionHazards, undefined);
 });
 
-test('a failed hazard catalog offers retry instead of claiming the book contains no hazards', () => {
+test('a failed hazard catalog stays in normal loading and enables a quiet retry', () => {
   const host = new RenderHost();
   host.error = new Error('Hazard catalog unavailable');
   const tree = host.render(SelectionOptions, { type: 'hazard', searchQuery: '', limitSelectedOptions: false });
-  const retry = findChild(tree, 'Button');
-  assert.equal(retry.props.children, 'Retry');
-  assert.equal(retry.props.loading, false);
-  retry.props.onClick();
+  assert.equal(tree.props.isLoading, true);
+  assert.equal(typeof host.quietRetry, 'function');
+  host.quietRetry();
   assert.equal(host.retried, true);
+});
+
+test('cached selector choices stay visible while a background catalog read fails', () => {
+  const host = new RenderHost();
+  const hazard = { id: 11, name: 'Cached hazard', level: 1, content_source_id: 1, deprecated: false };
+  host.data = new Map([[hazard.id, hazard]]);
+  host.error = new Error('Temporary catalog outage');
+  const tree = host.render(SelectionOptions, { type: 'hazard', searchQuery: '', limitSelectedOptions: false });
+  assert.equal(tree.props.isLoading, false);
+  assert.deepEqual(tree.props.options, [hazard]);
+  assert.equal(typeof host.quietRetry, 'function');
 });
 
 test('hazard rows preview their exact snapshot above the picker and select without creature adjustments', () => {

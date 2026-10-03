@@ -18,7 +18,7 @@ function releaseRevision(): string {
 
 const manifestForPlugin: Partial<VitePWAOptions> = {
   registerType: 'prompt',
-  // Native registration lets each tab choose when to reload and preserve its edits.
+  // Native registration leaves updates waiting until existing tabs close.
   injectRegister: false,
   includeAssets: ['apple-icon-180.png', 'maskable_icon.png'],
   workbox: {
