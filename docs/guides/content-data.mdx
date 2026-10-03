@@ -169,6 +169,12 @@ Every entity that lives in a content source carries a generated `uuid` (a hash o
 
 ## Operations
 
+Speed assignments establish a base speed; when several sources grant one, the highest
+base applies. Speed adjustments add to or subtract from that base, regardless of which
+source runs first. For example, a Human's 25-foot base speed and a custom +5 adjustment
+produce 30 feet in both the builder and character sheet. Removing a grant recalculates
+the remaining base and adjustments.
+
 The `operations` column on each content row is what makes WG content actually *do* something to a character. See **[Operations](/guides/operations)** for the full catalog of types and their JSON shapes.
 
 When you `POST` a content row to a `create-*` endpoint, you’re sending operations in raw JSON. The API treats them as opaque (the OpenAPI schema uses `additionalProperties: true`); validation happens at character-build time on the frontend.

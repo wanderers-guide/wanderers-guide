@@ -507,6 +507,8 @@ type VariableEffects = {
   skillContext?: SkillEffectContext;
   skillContexts: Map<string, SkillEffectContext>;
   skills: Map<string, { baseline: ProficiencyValue; adjustments: SkillAdjustment[] }>;
+  /** Speed deltas belong to this execution's replay journal, independently of base-speed grants. */
+  speedAdjustments: Map<string, number>;
 };
 const variableEffects = new WeakMap<VariableStore, VariableEffects>();
 
@@ -526,6 +528,7 @@ export function beginVariableEffects(id: StoreID): void {
       contributions: baselineListContributions(store),
       skillContexts: new Map(),
       skills: new Map(),
+      speedAdjustments: new Map(),
     });
   }
 }
@@ -762,6 +765,7 @@ export function removeVariableEffects(id: StoreID, content: string): void {
   store.bonuses = baseline.bonuses;
   store.history = baseline.history;
   effects.skills.clear();
+  effects.speedAdjustments.clear();
   effects.contributions = baselineListContributions(effects.baseline);
   effects.applying = true;
   try {
@@ -917,6 +921,7 @@ function applyRemoveVariable(id: StoreID, name: string) {
   }
   delete getVariables(id)[name];
   variableEffects.get(getVariableStore(id))?.skills.delete(name);
+  variableEffects.get(getVariableStore(id))?.speedAdjustments.delete(name);
 }
 
 /**
@@ -974,7 +979,9 @@ function applySetVariable(
     const SPECIAL_TAKE_HIGHER_VARS = ['MAX_HEALTH_CLASS_PER_LEVEL', ...getAllSpeedVariables(id).map((v) => v.name)];
     //
     if (SPECIAL_TAKE_HIGHER_VARS.includes(name)) {
-      variable.value = Math.max(variable.value, parseInt(`${value}`));
+      // Compare base speeds without discarding adjustments authored before this grant.
+      const adjustment = variableEffects.get(getVariableStore(id))?.speedAdjustments.get(name) ?? 0;
+      variable.value = Math.max(variable.value - adjustment, parseInt(`${value}`)) + adjustment;
     } else {
       variable.value = parseInt(`${value}`);
     }
@@ -1128,7 +1135,12 @@ function applyAdjVariable(
       variable.value.partial = amount.partial;
     }
   } else if (isVariableNum(variable) && isNumber(+amount)) {
-    variable.value += parseInt(`${amount}`);
+    const adjustment = parseInt(`${amount}`);
+    const effects = variableEffects.get(getVariableStore(id));
+    if (effects && getAllSpeedVariables(id).some((speed) => speed.name === name)) {
+      effects.speedAdjustments.set(name, (effects.speedAdjustments.get(name) ?? 0) + adjustment);
+    }
+    variable.value += adjustment;
   } else if (isVariableStr(variable) && isString(amount)) {
     variable.value += amount;
   } else if (isVariableBool(variable) && isBoolean(amount)) {
