@@ -351,6 +351,13 @@ simulate flaky transport, constrained CPU and page lifecycle boundaries, not iOS
 process eviction or a measured physical-device performance profile. The save-hook regressions also cover uncertain writes,
 intentional reversions, separate-tab drafts, storage exhaustion, and account changes.
 
+The `characters/contentDownloads.cy.ts` regressions delay real feat-catalog responses
+by 31 seconds and verify class details, sheets, Builder, and PDF/JSON file downloads.
+They use a private local test account and disable persisted content caching for each
+visit. Bulk catalog reads allow up to two minutes for transfer and JSON parsing;
+single-record reads and writes retain their 30-second deadline. Expired reads abort
+before later retries, while uncertain writes retain their existing recovery behavior.
+
 The `characters/mobileLoading.cy.ts` scenario applies 150 ms latency, 192 KiB/s
 download throughput, 96 KiB/s upload throughput, and 4x CPU throttling before visiting
 the app. It creates a fresh account scope, loads a sheet, waits for the actual content

@@ -108,7 +108,7 @@ const api = await import(pathToFileURL(join(directory, 'session.mjs')).href);
 const originalError = console.error;
 const originalTimer = globalThis.setTimeout;
 console.error = () => {}; // Expected failures are asserted below, not emitted as noisy logs.
-globalThis.setTimeout = (callback, delay, ...args) => originalTimer(callback, delay === 30000 ? delay : 0, ...args);
+globalThis.setTimeout = (callback, delay, ...args) => originalTimer(callback, delay >= 30000 ? delay : 0, ...args);
 after(async () => {
   console.error = originalError;
   globalThis.setTimeout = originalTimer;
@@ -272,7 +272,7 @@ test('a timeout never sends a replacement write', async () => {
     assert.equal(calls.length, 1);
     assert.equal(refreshes, 0);
   } finally {
-    globalThis.setTimeout = (callback, delay, ...args) => originalTimer(callback, delay === 30000 ? delay : 0, ...args);
+    globalThis.setTimeout = (callback, delay, ...args) => originalTimer(callback, delay >= 30000 ? delay : 0, ...args);
   }
 });
 
@@ -625,4 +625,112 @@ test('reconciliation retires an already accepted copy only after required calcul
     'removed'
   );
   assert.deepEqual(savedDraft(), { status: 'none' });
+});
+
+/** Advance the actual request deadline without waiting minutes for slow-transfer cases. */
+async function withRequestClock(run) {
+  const previousTimer = globalThis.setTimeout;
+  const previousClear = globalThis.clearTimeout;
+  const timers = new Map();
+  let nextTimer = 0;
+  let now = 0;
+  globalThis.setTimeout = (callback, delay) => {
+    const id = ++nextTimer;
+    timers.set(id, { callback, due: now + delay });
+    return id;
+  };
+  globalThis.clearTimeout = (id) => timers.delete(id);
+  const advance = async (ms) => {
+    now += ms;
+    for (const [id, timer] of timers) {
+      if (timer.due <= now) {
+        timers.delete(id);
+        timer.callback();
+      }
+    }
+    await new Promise((resolve) => setImmediate(resolve));
+  };
+  try {
+    await run({ advance, timers });
+  } finally {
+    globalThis.setTimeout = previousTimer;
+    globalThis.clearTimeout = previousClear;
+  }
+}
+
+test('successful catalog downloads can finish after 30 seconds without duplicate requests', async () => {
+  for (const [type, body] of [
+    ['find-ability-block', { content_sources: [3] }],
+    ['find-item', { content_sources: [3] }],
+    ['find-spell', { content_sources: [3] }],
+    ['find-ability-block', { id: [1, 2] }],
+    ['search-data', {}],
+  ]) {
+    await withRequestClock(async ({ advance, timers }) => {
+      calls = [];
+      let finish;
+      invoke = () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        });
+      let outcome = 'pending';
+      const downloading = api.makeRequest(type, body, false).then((result) => {
+        outcome = result;
+      });
+      await advance(0);
+      await advance(30000);
+      assert.equal(outcome, 'pending', `${type}: valid content still transferring must not be discarded at 30s`);
+      await advance(15000);
+      finish(ok([{ id: 1, name: 'Oracle feat' }]));
+      await downloading;
+      assert.deepEqual(outcome, [{ id: 1, name: 'Oracle feat' }]);
+      assert.equal(calls.length, 1, 'slow reads are not restarted while their response is downloading');
+      assert.equal(calls[0].signal.aborted, false);
+      assert.equal(notices, 0);
+      assert.equal(timers.size, 0);
+    });
+  }
+});
+
+test('stalled catalogs are bounded and abort their transfer before a later retry', async () => {
+  await withRequestClock(async ({ advance, timers }) => {
+    let finish;
+    invoke = () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      });
+    let outcome = 'pending';
+    const downloading = api.makeRequest('find-ability-block', { content_sources: [3] }, false).then((result) => {
+      outcome = result;
+    });
+    await advance(0);
+    await advance(119999);
+    assert.equal(outcome, 'pending');
+    await advance(1);
+    await downloading;
+    assert.equal(outcome, null);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].signal.aborted, true, 'expired download no longer consumes bandwidth');
+    finish(ok());
+    await advance(0);
+    assert.equal(outcome, null, 'late responses cannot replace the settled failure');
+    assert.equal(notices, 0);
+    assert.equal(timers.size, 0);
+  });
+});
+
+test('single-record reads retain the short deadline and mutations are never replayed', async () => {
+  for (const type of ['find-ability-block', 'find-character', 'update-character', 'create-character']) {
+    await withRequestClock(async ({ advance, timers }) => {
+      calls = [];
+      invoke = () => new Promise(() => {});
+      const pending = api.makeRequest(type, { id: 1 }, false);
+      await advance(0);
+      await advance(30000);
+      assert.equal(await pending, null);
+      assert.equal(calls.length, 1);
+      assert.equal(calls[0].signal.aborted, type.startsWith('find-'));
+      assert.equal(timers.size, 0);
+    });
+  }
 });
