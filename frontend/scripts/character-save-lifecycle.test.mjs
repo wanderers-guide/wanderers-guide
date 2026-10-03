@@ -307,15 +307,29 @@ const row = (id = 1) => ({
 beforeEach(() => {
   globalThis.localStorage = new Storage();
   events.clear();
+  const listeners = new Map();
+  const addEventListener = (name, fn) => {
+    const group = listeners.get(name) ?? new Set();
+    group.add(fn);
+    listeners.set(name, group);
+    events.set(name, () => {
+      for (const callback of [...group]) callback();
+    });
+  };
+  const removeEventListener = (name, fn) => {
+    const group = listeners.get(name);
+    group?.delete(fn);
+    if (!group?.size) events.delete(name);
+  };
   globalThis.document = {
     visibilityState: 'visible',
-    addEventListener: (name, fn) => events.set(name, fn),
-    removeEventListener: (name) => events.delete(name),
+    addEventListener,
+    removeEventListener,
   };
   globalThis.window = {
     location: { href: '', pathname: '/sheet/1' },
-    addEventListener: (name, fn) => events.set(name, fn),
-    removeEventListener: (name) => events.delete(name),
+    addEventListener,
+    removeEventListener,
   };
   harness = new HookHost();
 });
@@ -1057,7 +1071,7 @@ test('independent drafts from two tabs merge without granting stale data a newer
   harness.unmount();
 });
 
-test('failed initial loading stays on the character route and can retry', async () => {
+test('failed initial loading stays quiet and retries automatically on reconnect', async () => {
   harness.request = async () => {
     throw new Error('Connection unavailable');
   };
@@ -1067,7 +1081,8 @@ test('failed initial loading stays on the character route and can retry', async 
   assert.equal(window.location.href, '');
   assert.equal(harness.character, null);
   harness.request = async () => row();
-  harness.value.retryLoad();
+  assert.equal(harness.notices.length, 0);
+  events.get('online')?.();
   await harness.flush();
   assert.equal(harness.value.loadError, false);
   assert.equal(harness.character.name, row().name);

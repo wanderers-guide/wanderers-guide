@@ -1,10 +1,10 @@
-import { CharacterLoadError } from '@common/CharacterLoadError';
+import { CharacterLoader } from '@common/CharacterLoader';
+import { useCharacterContent } from '@utils/use-character-content';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { useAtomValue } from 'jotai';
 import D20Loader from '@assets/images/D20Loader';
 import { glassStyle } from '@utils/colors';
 import BlurBox from '@common/BlurBox';
-import { defineDefaultSources, fetchContentPackage, fetchContentSources } from '@content/content-store';
 
 import {
   ActionIcon,
@@ -22,7 +22,6 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { useElementSize, useHover, useInterval, useMediaQuery } from '@mantine/hooks';
-import { makeRequest } from '@requests/request-manager';
 import {
   IconBackpack,
   IconBadgesFilled,
@@ -39,7 +38,6 @@ import {
   IconShadow,
   IconX,
 } from '@tabler/icons-react';
-import { useQuery } from '@tanstack/react-query';
 import { Character, ContentPackage, LivingEntity } from '@schemas/content';
 import { VariableListStr } from '@schemas/variables';
 import { setPageTitle } from '@utils/document-change';
@@ -99,33 +97,11 @@ export function Component(props: {}) {
     sourceRequest?.id === characterId && sourceRequest.actor === actorId ? sourceRequest.sources : undefined;
   useEffect(() => setDoneLoading(false), [characterId, actorId]);
 
-  const {
-    data: content,
-    isFetching,
-    isError,
-    refetch,
-  } = useQuery({
-    queryKey: [`find-content-${characterId}`, { actor: actorId, sources: requestedSources ?? null }],
-    queryFn: async () => {
-      // Set default sources
-      const character = await makeRequest<Character>(
-        'find-character',
-        {
-          id: characterId,
-        },
-        false,
-        { throwOnFailure: true, ...(actorId ? { expectedActorId: actorId } : {}) }
-      );
-      const sv = defineDefaultSources('PAGE', requestedSources ?? character?.content_sources?.enabled ?? []);
-
-      // Prefetch content sources (to avoid multiple requests)
-      await fetchContentSources(sv);
-
-      // Fetch content
-      const content = await fetchContentPackage(sv, { fetchSources: true });
-      return content;
-    },
-    refetchOnWindowFocus: false,
+  const content = useCharacterContent({
+    characterId: characterId,
+    actorId,
+    sources: requestedSources,
+    context: 'sheet',
   });
 
   // Manually animate the loader progress bar so it feels responsive even
@@ -159,30 +135,7 @@ export function Component(props: {}) {
     </Box>
   );
 
-  const loadError = (
-    <Box
-      style={{
-        width: '100%',
-        height: '300px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Stack align='center' gap='xs' maw={380} px='md'>
-        <Text fw={600}>Couldn't load game content</Text>
-        <Text size='sm' c='dimmed' ta='center'>
-          The content library didn't load, so the sheet stayed closed to avoid saving your character against missing
-          data. Check your connection and try again.
-        </Text>
-        <Button onClick={() => refetch()}>Retry</Button>
-      </Stack>
-    </Box>
-  );
-
-  if (isError && !isFetching) {
-    return loadError;
-  } else if (isFetching || !content) {
+  if (!content) {
     return loader;
   } else {
     // Render both elements simultaneously so CharacterSheetInner can run
@@ -196,7 +149,6 @@ export function Component(props: {}) {
             key={characterId}
             content={content}
             onSourcesChange={(sources) => {
-              setDoneLoading(false);
               setSourceRequest({ id: characterId, actor: actorId, sources });
             }}
             characterId={parseInt(characterId)}
@@ -233,7 +185,7 @@ function CharacterSheetInner(props: {
 
   // EXECUTE_OPS triggers the character's operation pipeline and calls
   // onFinishLoading when it completes, which dismisses the loading screen.
-  const { character, setCharacter, isLoading, loadError, retryLoad } = useCharacter(props.characterId, {
+  const { character, setCharacter, isLoading, loadError } = useCharacter(props.characterId, {
     type: 'EXECUTE_OPS',
     data: {
       content: props.content,
@@ -263,7 +215,7 @@ function CharacterSheetInner(props: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [character, isLoading, props.content]);
 
-  if (loadError) return <CharacterLoadError onRetry={retryLoad} />;
+  if (loadError) return <CharacterLoader />;
 
   return (
     <Center>

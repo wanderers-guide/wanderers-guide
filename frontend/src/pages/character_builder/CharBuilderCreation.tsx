@@ -1,4 +1,5 @@
-import { CharacterLoadError } from '@common/CharacterLoadError';
+import { CharacterLoader } from '@common/CharacterLoader';
+import { useCharacterContent } from '@utils/use-character-content';
 import D20Loader from '@assets/images/D20Loader';
 import { characterState } from '@atoms/characterAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
@@ -8,13 +9,7 @@ import RichText from '@common/RichText';
 import ResultWrapper from '@common/operations/results/ResultWrapper';
 import { SelectContentButton, selectContent } from '@common/select/SelectContent';
 import { IMPRINT_BG_COLOR, IMPRINT_BG_COLOR_HOVER, IMPRINT_BORDER_COLOR } from '@constants/data';
-import {
-  fetchContent,
-  defineDefaultSources,
-  fetchContentPackage,
-  fetchContentSources,
-  getDefaultSources,
-} from '@content/content-store';
+import { fetchContent, getDefaultSources } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
 import classes from '@css/FaqSimple.module.css';
 import { AncestryInitialOverview, convertAncestryOperationsIntoUI } from '@drawers/types/AncestryDrawer';
@@ -41,8 +36,6 @@ import { OperationResult } from '@schemas/operations';
 import { ObjectWithUUID, convertKeyToBasePrefix, hasOperationSelection } from '@operations/operation-utils';
 import { removeParentSelections } from '@operations/selection-tree';
 import { IconId, IconPuzzle } from '@tabler/icons-react';
-import { useQuery } from '@tanstack/react-query';
-import { makeRequest } from '@requests/request-manager';
 import {
   AbilityBlock,
   Ancestry,
@@ -82,32 +75,11 @@ export default function CharBuilderCreation(props: { characterId: number; pageHe
     sourceRequest?.id === props.characterId && sourceRequest.actor === actorId ? sourceRequest.sources : undefined;
   useEffect(() => setDoneLoading(false), [props.characterId, actorId]);
 
-  const {
-    data: content,
-    isFetching,
-    isError,
-    refetch,
-  } = useQuery({
-    queryKey: [
-      `find-content-${props.characterId}-for-char-builder-creation`,
-      { characterId: props.characterId, actor: actorId, sources: requestedSources ?? null },
-    ],
-    queryFn: async () => {
-      const character = await makeRequest<Character>('find-character', { id: props.characterId }, false, {
-        throwOnFailure: true,
-        ...(actorId ? { expectedActorId: actorId } : {}),
-      });
-      const sources = defineDefaultSources('PAGE', requestedSources ?? character?.content_sources?.enabled ?? []);
-      // Prefetch content sources (to avoid multiple requests)
-      await fetchContentSources(sources);
-
-      const content = await fetchContentPackage(sources, {
-        fetchSources: true,
-        fetchCreatures: false,
-      });
-      return content;
-    },
-    refetchOnWindowFocus: false,
+  const content = useCharacterContent({
+    characterId: props.characterId,
+    actorId,
+    sources: requestedSources,
+    context: 'builder',
   });
 
   // Just load progress manually
@@ -132,30 +104,7 @@ export default function CharBuilderCreation(props: { characterId: number; pageHe
     </Box>
   );
 
-  const loadError = (
-    <Box
-      style={{
-        width: '100%',
-        height: '300px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Stack align='center' gap='xs' maw={380} px='md'>
-        <Text fw={600}>Couldn't load game content</Text>
-        <Text size='sm' c='dimmed' ta='center'>
-          The content library didn't load, so the builder stayed closed to avoid saving your character against missing
-          data. Check your connection and try again.
-        </Text>
-        <Button onClick={() => refetch()}>Retry</Button>
-      </Stack>
-    </Box>
-  );
-
-  if (isError && !isFetching) {
-    return loadError;
-  } else if (isFetching || !content) {
+  if (!content) {
     return loader;
   } else {
     return (
@@ -167,7 +116,6 @@ export default function CharBuilderCreation(props: { characterId: number; pageHe
             characterId={props.characterId}
             content={content}
             onSourcesChange={(sources) => {
-              setDoneLoading(false);
               setSourceRequest({ id: props.characterId, actor: actorId, sources });
             }}
             pageHeight={props.pageHeight}
@@ -195,7 +143,7 @@ export function CharBuilderCreationInner(props: {
 
   const [levelItemValue, setLevelItemValue] = useState<string | null>(null);
 
-  const { character, setCharacter, results, loadError, retryLoad } = useCharacter(props.characterId, {
+  const { character, setCharacter, results, loadError } = useCharacter(props.characterId, {
     type: 'EXECUTE_OPS',
     data: {
       content: props.content,
@@ -205,7 +153,7 @@ export function CharBuilderCreationInner(props: {
     },
   });
 
-  if (loadError) return <CharacterLoadError onRetry={retryLoad} />;
+  if (loadError) return <CharacterLoader />;
 
   const levelItems = Array.from({ length: (character?.level ?? 0) + 1 }, (_, i) => i).map((level) => {
     return (

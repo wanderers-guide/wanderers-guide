@@ -24,6 +24,7 @@ import { saveCustomization } from '@content/customization-cache';
 import { applyEquipmentPenalties } from '@items/inv-utils';
 import { useDebouncedValue, useDidUpdate } from '@mantine/hooks';
 import { hideNotification, showNotification } from '@mantine/notifications';
+import { useQuietRetry } from './use-quiet-retry';
 import { executeOperations, isOperationCancelled } from '@operations/operations.main';
 import { confirmHealth } from '@pages/character_sheet/entity-handler';
 import { hasSessionExpiredNotice, makeRequest } from '@requests/request-manager';
@@ -92,7 +93,6 @@ export default function useCharacter(
   draftStored: boolean;
   retrySave: () => void;
   loadError: boolean;
-  retryLoad: () => void;
 } {
   const [character, setCharacter] = useAtom(characterState);
   const session = useAtomValue(sessionState);
@@ -109,6 +109,7 @@ export default function useCharacter(
   const [isOnline, setIsOnline] = useState(typeof navigator === 'undefined' || navigator.onLine !== false);
   const [loadError, setLoadError] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
+  useQuietRetry(loadError, () => setLoadAttempt((attempt) => attempt + 1));
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryCountRef = useRef(0);
   const retrySaveRef = useRef<() => void>(() => {});
@@ -279,7 +280,7 @@ export default function useCharacter(
     savingRef.current = false;
     pendingSaveRef.current = null;
     void (async () => {
-      // A failed request is not an authorization decision. Keep the route and offer retry.
+      // A failed request is not an authorization decision. Keep the route while retrying quietly.
       const dbCharacter = await makeRequest<Character>('find-character', { id: characterId }, false, {
         throwOnFailure: true,
       });
@@ -329,15 +330,10 @@ export default function useCharacter(
       setLoadError(true);
       if (options.type === 'EXECUTE_OPS') options.data.onFinishLoading();
     });
-    const retryLoadOnReconnect = () => {
-      if (active && !loadedActorRef.current) setLoadAttempt((attempt) => attempt + 1);
-    };
-    window.addEventListener('online', retryLoadOnReconnect);
     return () => {
       active = false;
       saveScopeRef.current = scope + 1;
       clearSaveRetry();
-      window.removeEventListener('online', retryLoadOnReconnect);
       hideNotification(`character-conflict-${characterId}`);
       hideNotification(`character-save-permission-${characterId}`);
       hideNotification(`character-save-storage-${characterId}`);
@@ -1001,7 +997,6 @@ export default function useCharacter(
     draftStored,
     retrySave: () => retrySaveRef.current(),
     loadError,
-    retryLoad: () => setLoadAttempt((attempt) => attempt + 1),
     results: operationResults ?? null,
   };
 }
@@ -1059,11 +1054,9 @@ function useAutoSave(
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
     window.addEventListener('pagehide', saveImmediately);
-    window.addEventListener('wg:before-update', saveImmediately);
     return () => {
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('pagehide', saveImmediately);
-      window.removeEventListener('wg:before-update', saveImmediately);
       saveImmediately();
     };
   }, [characterId, saveImmediately]);

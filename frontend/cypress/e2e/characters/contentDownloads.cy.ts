@@ -138,7 +138,12 @@ describe('Slow content downloads', () => {
       waitForCatalog();
       const path = `${Cypress.config('downloadsFolder')}/slow-download-check-${downloadKey}.${format.toLowerCase()}`;
       if (format === 'JSON') cy.readFile(path, { timeout: 30000 }).its('character.name').should('eq', characterName);
-      else cy.readFile(path, 'binary', { timeout: 30000 }).should('match', /^%PDF-/);
+      else
+        cy.readFile(path, 'binary', { timeout: 30000, log: false }).then((file: string) => {
+          // Logging an entire binary PDF can stall Cypress's browser renderer.
+          expect(file.slice(0, 5), 'PDF header').to.eq('%PDF-');
+          expect(file.trimEnd().endsWith('%%EOF'), 'complete PDF').to.eq(true);
+        });
       cy.then(() => expect(counts.requests()).to.eq(1));
     });
   }

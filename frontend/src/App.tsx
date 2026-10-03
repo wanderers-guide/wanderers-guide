@@ -18,7 +18,7 @@ import {
 } from '@mantine/core';
 import { useMediaQuery, usePrevious } from '@mantine/hooks';
 import { ModalsProvider } from '@mantine/modals';
-import { AppUpdateNotice } from '@common/AppUpdateNotice';
+import { AppUpdates } from '@common/AppUpdates';
 import { Notifications } from '@mantine/notifications';
 import { notifySessionExpired, resetSessionExpiredNotice } from '@requests/request-manager';
 import { clearUserData, getCachedPublicUser } from '@auth/user-manager';
@@ -378,7 +378,7 @@ export default function App() {
         )}
         <SearchSpotlight />
         <Notifications position='top-right' zIndex={9400} containerWidth={350} />
-        <AppUpdateNotice />
+        <AppUpdates />
         <DrawerBase />
         <Box style={{ zoom: getCachedCustomization()?.sheet_theme?.zoom ?? 1 }}>
           <Layout>

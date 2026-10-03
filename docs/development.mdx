@@ -205,7 +205,7 @@ through actual sheet and GM controls, local API saves, mobile viewports, reloadi
 and simulated connection failures. They create and clean up synthetic characters.
 The sheet spec also holds a required content response, verifies no partial save occurs,
 then checks nested homebrew variables and binding chains through level changes and
-reopening. A cyclic homebrew graph must show calculation recovery without persisting
+reopening. A cyclic homebrew graph must recover quietly without persisting
 partial math. The fast homebrew tests cover conditional custom Lore, binding order,
 self-links, repeated assignments, long chains, and companion isolation.
 
@@ -350,6 +350,12 @@ through the API as well as the UI. It uses only its own test characters. These s
 simulate flaky transport, constrained CPU and page lifecycle boundaries, not iOS/Android
 process eviction or a measured physical-device performance profile. The save-hook regressions also cover uncertain writes,
 intentional reversions, separate-tab drafts, storage exhaustion, and account changes.
+
+The `characters/contentRecovery.cy.ts` cases verify automatic content recovery
+without technical error screens or partial saves. Already loaded views keep their
+last complete library during retries; source changes pause calculations and derived
+saves until a complete matching replacement arrives. Character reads, drawers and
+content selectors also retry quietly. App updates never display reload prompts.
 
 The `characters/contentDownloads.cy.ts` regressions delay real feat-catalog responses
 by 31 seconds and verify class details, sheets, Builder, and PDF/JSON file downloads.
