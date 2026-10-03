@@ -16,11 +16,15 @@ import { DisplayIcon } from '@common/IconDisplay';
 export function ClassFeatureDrawerTitle(props: { data: { id?: number; classFeature?: AbilityBlock } }) {
   const id = props.data.id;
 
-  const { data: _classFeature, isFetching, refetch } = useQuery({
+  const {
+    data: _classFeature,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-class-feature-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', id);
     },
@@ -52,11 +56,15 @@ export function ClassFeatureDrawerContent(props: {
 }) {
   const id = props.data.id;
 
-  const { data: _classFeature, isFetching, refetch } = useQuery({
+  const {
+    data: _classFeature,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-class-feature-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', id);
     },
@@ -65,9 +73,7 @@ export function ClassFeatureDrawerContent(props: {
   const classFeature = props.data.classFeature ?? _classFeature;
 
   if (!classFeature) {
-    return (
-      <DrawerLoadState loading={isFetching} onRetry={refetch} />
-    );
+    return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
   }
 
   const hasTopSection =
@@ -128,7 +134,7 @@ export function ClassFeatureDrawerContent(props: {
             <Text fw={600} c='gray.2' span>
               Requirements
             </Text>{' '}
-            {classFeature.requirements}
+            <RichText span>{classFeature.requirements}</RichText>
           </IndentedText>
         )}
         {classFeature.access && (
