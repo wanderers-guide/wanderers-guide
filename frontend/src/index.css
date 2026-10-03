@@ -2,6 +2,13 @@
   --_text-line-height: 1.75;
 }
 
+/* Keep mobile text fields readable and prevent automatic focus zoom in iOS browsers. */
+@media (max-width: 64em) {
+  .mantine-Input-input {
+    font-size: max(1rem, 16px);
+  }
+}
+
 [data-mantine-color-scheme='dark'] {
   --glass-bg-color: var(--mantine-color-dark-7);
   --glass-border-color: rgba(255, 255, 255, 0.125);

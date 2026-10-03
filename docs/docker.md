@@ -6,17 +6,17 @@
 
 ## What's included
 
-| Service     | Image                          | Purpose                                |
-| ----------- | ------------------------------ | -------------------------------------- |
-| `frontend`  | built locally from `frontend/` | The Vite/React app served by nginx     |
-| `kong`      | `kong:2.8.1`                   | API gateway (single entrypoint)        |
-| `auth`      | `supabase/gotrue`              | Authentication                         |
-| `rest`      | `postgrest/postgrest`          | REST over Postgres                     |
-| `storage`   | `supabase/storage-api`         | File storage                           |
-| `meta`      | `supabase/postgres-meta`       | Schema introspection (used by Studio)  |
-| `functions` | `supabase/edge-runtime`        | Runs the Deno edge functions           |
-| `studio`    | `supabase/studio` (optional)   | Web UI for the database                |
-| `db`        | `supabase/postgres:15`         | Postgres + Supabase extensions         |
+| Service     | Image                          | Purpose                               |
+| ----------- | ------------------------------ | ------------------------------------- |
+| `frontend`  | built locally from `frontend/` | The Vite/React app served by nginx    |
+| `kong`      | `kong:2.8.1`                   | API gateway (single entrypoint)       |
+| `auth`      | `supabase/gotrue`              | Authentication                        |
+| `rest`      | `postgrest/postgrest`          | REST over Postgres                    |
+| `storage`   | `supabase/storage-api`         | File storage                          |
+| `meta`      | `supabase/postgres-meta`       | Schema introspection (used by Studio) |
+| `functions` | `supabase/edge-runtime`        | Runs the Deno edge functions          |
+| `studio`    | `supabase/studio` (optional)   | Web UI for the database               |
+| `db`        | `supabase/postgres:15`         | Postgres + Supabase extensions        |
 
 What's **not** included: realtime, analytics/log-stream, image proxy,
 inbucket (mail sink), TLS termination, backups. Add as needed.
@@ -37,10 +37,14 @@ echo "JWT_SECRET=$(openssl rand -hex 32)" >> .env
 # 4. Bring it up
 docker compose up -d
 
-# 5. (Optional) Studio for inspecting the DB
+# 5. Initialize the project schema and bundled content on a fresh database.
+#    This replaces the public schema. Do not run it over an existing installation.
+./data/create-db-docker.sh
+
+# 6. (Optional) Studio for inspecting the DB
 docker compose --profile studio up -d
 
-# 6. Open http://localhost:3000
+# 7. Open http://localhost:3000
 ```
 
 ## Wiring notes
@@ -58,12 +62,47 @@ docker compose --profile studio up -d
 - `ANON_KEY` is intentionally public (it's the browser's API key).
   Never bake `SERVICE_ROLE_KEY` into the frontend.
 
+## Database setup and account recovery
+
+`data/create-db-docker.sh` loads the checked-in schema and sanitized content dump,
+installs the signup trigger, and applies the migrations. Starting Compose alone
+does not install the project tables or content. Initialize a fresh database before
+registering an account or creating characters.
+
+If an existing installation reports **User not found** after login, verify that
+`data/auth-trigger.sql` is installed. The trigger creates profiles for new accounts.
+It does not repair accounts registered before the trigger was installed. Back up
+the database, then install the trigger and create only the missing profiles:
+
+```bash
+docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 < data/auth-trigger.sql
+docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 <<'SQL'
+INSERT INTO public.public_user (user_id, display_name)
+SELECT id, COALESCE(
+  raw_user_meta_data ->> 'display_name',
+  raw_user_meta_data ->> 'name',
+  raw_user_meta_data ->> 'full_name',
+  split_part(email, '@', 1),
+  'Unknown User'
+)
+FROM auth.users AS account
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.public_user AS profile WHERE profile.user_id = account.id
+);
+SQL
+```
+
+Content searches also depend on the edge runtime configuration in
+`supabase/functions/main/index.ts`. Its CPU and worker timeout limits allow the
+larger content queries to finish. If a custom deployment returns empty selectors
+and logs CPU timeouts, update that configuration and restart the `functions`
+service. Do not reset an existing database to repair a runtime timeout.
+
 ## Things you'll have to do yourself
 
-- **Database schema and content seed.** This compose runs `supabase/seed.sql`
-  on first DB init, but the production data lives in cloud Supabase. To
-  populate a fresh self-host, dump and import the schema + content tables
-  you care about, or run whatever migrations you maintain.
+- **Database maintenance.** Back up your database and apply new migrations as the
+  repository changes. The bootstrap script replaces the public schema and is only
+  intended for a fresh or disposable database.
 - **OAuth providers.** Add `GOTRUE_EXTERNAL_<PROVIDER>_*` env vars to the
   `auth` service. The provider's redirect URL must match
   `${PUBLIC_SUPABASE_URL}/auth/v1/callback`.

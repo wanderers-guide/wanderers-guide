@@ -48,7 +48,7 @@ export function CreateClassModal(props: {
     queryKey: [`get-class-${props.editId}`, { editId: props.editId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { editId }] = queryKey;
 
       const class_ = await fetchContentById<Class>('class', editId);
@@ -63,6 +63,8 @@ export function CreateClassModal(props: {
       return class_;
     },
     enabled: props.editId !== undefined && props.editId !== -1,
+    // Editing forms initialize in the query function, including when reopening cached entries.
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
 

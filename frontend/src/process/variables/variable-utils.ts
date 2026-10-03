@@ -299,6 +299,12 @@ export function compileExpressions(id: StoreID, text?: string, round = false) {
   for (const expression of expressions) {
     let compiledExpression = expression.slice(2, -2);
     compiledExpression = compiledExpression.replace(/\\/g, '');
+    const directVariable = getVariables(id)[compiledExpression.trim().toUpperCase()];
+    if (directVariable && isVariableListStr(directVariable)) {
+      // A standalone list reference displays its entries; arithmetic still uses INCLUDES.
+      text = text.replace(expression, () => directVariable.value.join(', '));
+      continue;
+    }
     // Resolve list-membership checks to 1/0 first: INCLUDES(LIST_VARIABLE, 'value').
     // Must run before variable substitution, which would otherwise mangle the list argument.
     // Entries and needle compare case-insensitively; a non-list or missing variable yields 0.

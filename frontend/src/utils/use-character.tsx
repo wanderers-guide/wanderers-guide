@@ -15,12 +15,10 @@ import {
   type BufferedCharacterSaveRecord,
 } from './character-save-buffer';
 import { mergeCharacterSave } from './character-merge';
-import { getCachedPublicUser } from '@auth/user-manager';
 import { applyConditions } from '@conditions/condition-handler';
 import { defineDefaultSources } from '@content/content-store';
 import { COMMON_CORE_ID } from '@constants/data';
 import { compareCharacterVersions } from './character-version';
-import { saveCustomization } from '@content/customization-cache';
 import { applyEquipmentPenalties } from '@items/inv-utils';
 import { useDebouncedValue, useDidUpdate } from '@mantine/hooks';
 import { hideNotification, showNotification } from '@mantine/notifications';
@@ -179,14 +177,6 @@ export default function useCharacter(
 
         // Make sure we sync the enabled content sources
         defineDefaultSources('PAGE', displayedCharacter.content_sources?.enabled ?? []);
-
-        // Cache character customization for fast loading
-        saveCustomization({
-          background_image_url:
-            (displayedCharacter.details?.background_image_url || getCachedPublicUser()?.background_image_url) ??
-            undefined,
-          sheet_theme: (displayedCharacter.details?.sheet_theme || getCachedPublicUser()?.site_theme) ?? undefined,
-        });
       } else {
         // Character not found, probably due to unauthorized access
         window.location.href = '/sheet-unauthorized';

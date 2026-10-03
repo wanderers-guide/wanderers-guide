@@ -166,6 +166,8 @@ export function ContentSourceEditor(props: {
 
       return source;
     },
+    // Editing forms initialize in the query function, including when reopening cached entries.
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
 

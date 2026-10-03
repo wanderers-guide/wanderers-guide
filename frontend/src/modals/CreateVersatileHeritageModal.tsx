@@ -37,7 +37,7 @@ export function CreateVersatileHeritageModal(props: {
     queryKey: [`get-versatile-heritage-${props.editId}`, { editId: props.editId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { editId }] = queryKey;
 
       const versatileHeritage = await fetchContentById<VersatileHeritage>('versatile-heritage', editId);
@@ -52,6 +52,8 @@ export function CreateVersatileHeritageModal(props: {
       return versatileHeritage;
     },
     enabled: props.editId !== undefined && props.editId !== -1,
+    // Editing forms initialize in the query function, including when reopening cached entries.
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
 

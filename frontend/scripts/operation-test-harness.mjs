@@ -135,6 +135,7 @@ export async function createOperationEngine({
   renderRichText = false,
   renderPerceptionDrawer = false,
   renderBindingEditor = false,
+  inspectInitialStats = false,
   resolveArchetypeFixtures = false,
 } = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'wg-operation-tests-'));
@@ -215,6 +216,7 @@ export async function createOperationEngine({
           export { determineFilteredSelectionList } from '@operations/operation-utils';
           export { OperationSelectFiltersAbilityBlockSchema } from '@schemas/operations';
           export { collectEntityAbilityBlocks, collectEntitySenses } from '@content/collect-content';
+          ${inspectInitialStats ? "export { getStatBlockDisplay } from '@variables/initial-stats-display';" : ''}
           export { displaySense } from '@utils/senses';
           export { isAbilityBlockVisible } from '@content/content-hidden';
           export { hasArchetypeClassFeatTraits, getTraitIdByType } from '@utils/traits';
@@ -241,6 +243,17 @@ export async function createOperationEngine({
         {
           name: 'fixture-content',
           setup(pluginBuild) {
+            if (inspectInitialStats) {
+              pluginBuild.onResolve({ filter: /^@common\/select\/SelectContent$/ }, (args) =>
+                args.importer.endsWith('/initial-stats-display.tsx')
+                  ? { path: 'stat-selector', namespace: 'stat-fixture' }
+                  : undefined
+              );
+              pluginBuild.onLoad({ filter: /.*/, namespace: 'stat-fixture' }, () => ({
+                contents: 'export function SelectContentButton() { return null; }',
+                loader: 'ts',
+              }));
+            }
             if (renderBindingEditor) {
               // Omit the surrounding operation menu; render the real binding fields and variable selectors.
               pluginBuild.onResolve({ filter: /^\.\.\/Operations$/ }, (args) =>

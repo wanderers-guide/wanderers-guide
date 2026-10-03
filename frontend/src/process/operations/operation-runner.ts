@@ -76,6 +76,7 @@ import {
 } from './contribution-matching';
 export { getContributionCategories, parseContributionAmount } from './contribution-matching';
 import { throwError } from '@utils/error-handling';
+import { getFinalVariableValue } from '@variables/variable-helpers';
 import {
   grantLanguage,
   parseLanguageOverride,
@@ -1484,6 +1485,7 @@ async function runConditional(
 
   const makeCheck = (check: ConditionCheckData) => {
     let variable = getVariable(varId, check.name);
+    let variableStoreId = varId;
 
     // The parent character is already calculated. Companion checks can read its
     // pending binding now while final copies retain their existing execution order.
@@ -1498,7 +1500,11 @@ async function runConditional(
             areVariableEffectScopesActive(entry.scopes)
         );
       if (binding?.type === 'bind' && binding.value.storeId === 'CHARACTER') {
-        variable = getVariable('CHARACTER', binding.value.variable) ?? variable;
+        const parentVariable = getVariable('CHARACTER', binding.value.variable);
+        if (parentVariable) {
+          variable = parentVariable;
+          variableStoreId = 'CHARACTER';
+        }
       }
     }
 
@@ -1537,18 +1543,21 @@ async function runConditional(
       }
     } else if (variable.type === 'num') {
       const value = parseInt(`${check.value}`);
+      // Modes can set a counter through typed bonuses. Match the calculated value
+      // shown by inline expressions rather than the counter's unmodified base.
+      const currentValue = getFinalVariableValue(variableStoreId, variable.name).total;
       if (check.operator === 'EQUALS') {
-        return variable.value === value;
+        return currentValue === value;
       } else if (check.operator === 'GREATER_THAN') {
-        return variable.value > value;
+        return currentValue > value;
       } else if (check.operator === 'LESS_THAN') {
-        return variable.value < value;
+        return currentValue < value;
       } else if (check.operator === 'NOT_EQUALS') {
-        return variable.value !== value;
+        return currentValue !== value;
       } else if (check.operator === 'GREATER_THAN_OR_EQUALS') {
-        return variable.value >= value;
+        return currentValue >= value;
       } else if (check.operator === 'LESS_THAN_OR_EQUALS') {
-        return variable.value <= value;
+        return currentValue <= value;
       }
     } else if (variable.type === 'str') {
       if (check.operator === 'EQUALS') {

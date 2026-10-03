@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from 'react';
 import { SetterOrUpdater } from '@utils/type-fixing';
 import { resolveThemeColor } from '@utils/theme-color';
 
+/** Edit note pages and preserve pending text before changing their order. */
 export default function NotesPanel(props: {
   panelHeight: number;
   panelWidth: number;
@@ -25,6 +26,7 @@ export default function NotesPanel(props: {
   zIndex?: number;
 }) {
   const [activeTab, setActiveTab] = useState<string | null>('0');
+  const [editorRevision, setEditorRevision] = useState(0);
   const isPhone = isPhoneSized(props.panelWidth);
   const isInCampaign = isCharacter(props.entity) && !!props.entity?.campaign_id;
   const [displayNotes, refreshNotes] = useRefresh();
@@ -38,11 +40,7 @@ export default function NotesPanel(props: {
   useDidUpdate(() => {
     // Saving notes — flush every page with a pending edit, not just the most recent.
     if (!props.entity || pendingPagesRef.current.size === 0) return;
-    const newPages = cloneDeep(pages);
-    for (const [index, json] of pendingPagesRef.current) {
-      if (newPages[index]) newPages[index].contents = json;
-    }
-    pendingPagesRef.current.clear();
+    const newPages = takePendingPages();
     props.setEntity({
       ...props.entity,
       notes: {
@@ -65,9 +63,19 @@ export default function NotesPanel(props: {
 
   const pages = props.entity?.notes?.pages ?? [cloneDeep(defaultPage)];
 
+  /** Apply buffered text before indices change so a deleted page cannot overwrite its successor. */
+  const takePendingPages = () => {
+    const newPages = cloneDeep(pages);
+    for (const [index, json] of pendingPagesRef.current) {
+      if (newPages[index]) newPages[index].contents = json;
+    }
+    pendingPagesRef.current.clear();
+    return newPages;
+  };
+
   const addPage = () => {
     if (!props.entity) return;
-    const newPages = cloneDeep(pages);
+    const newPages = takePendingPages();
     newPages.push(cloneDeep(defaultPage));
     props.setEntity({
       ...props.entity,
@@ -86,6 +94,7 @@ export default function NotesPanel(props: {
     return (
       <ScrollArea h={props.panelHeight} scrollbars='y'>
         <RichTextInput
+          key={`${editorRevision}-${index}`}
           placeholder='Your notes...'
           value={page.contents}
           onChange={(text, json) => {
@@ -208,7 +217,7 @@ export default function NotesPanel(props: {
                   isInCampaign: isInCampaign,
                   onUpdate: (name: string, icon: string, color: string, shared: boolean) => {
                     if (!props.entity) return;
-                    const newPages = cloneDeep(pages);
+                    const newPages = takePendingPages();
                     newPages[index] = {
                       ...newPages[index],
                       name: name,
@@ -226,8 +235,9 @@ export default function NotesPanel(props: {
                   },
                   onDelete: () => {
                     if (!props.entity) return;
-                    const newPages = cloneDeep(pages);
+                    const newPages = takePendingPages();
                     newPages.splice(index, 1);
+                    if (newPages.length === 0) newPages.push(cloneDeep(defaultPage));
                     props.setEntity({
                       ...props.entity,
                       notes: {
@@ -236,6 +246,8 @@ export default function NotesPanel(props: {
                       },
                     });
                     setActiveTab(`0`);
+                    // TipTap reads its contents on mount. Recreate editors after page indices shift.
+                    setEditorRevision((revision) => revision + 1);
                   },
                 },
                 zIndex: props.zIndex,

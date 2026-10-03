@@ -4,7 +4,13 @@ import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import { BuyItemButton } from '@common/BuyItemButton';
 import TraitsDisplay from '@common/TraitsDisplay';
-import { fetchContentAll, fetchContentById, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
+import {
+  fetchContentAll,
+  fetchContentById,
+  getCachedContent,
+  getDefaultSources,
+  getDefaultSourcesKey,
+} from '@content/content-store';
 import { fetchHazards } from '@content/hazards';
 import { isActionCost } from '@content/content-utils';
 import { isItemArchaic } from '@items/inv-utils';
@@ -454,7 +460,13 @@ export default function SelectContentModal({
   const isClassFeat = useMemo(() => {
     if (innerProps.options?.abilityBlockType !== 'feat') return false;
 
-    const classTraitIds = getAllClassTraitVariables('CHARACTER').map((v) => v.value) ?? [];
+    // Copied class features can still select the original class's feats in a homebrew class.
+    const classTraitIds = [
+      ...getAllClassTraitVariables('CHARACTER').map((v) => v.value),
+      ...getCachedContent<Trait>('trait')
+        .filter((trait) => trait.meta_data?.class_trait)
+        .map((trait) => trait.id),
+    ];
     const options = innerProps.options?.overrideOptions ?? [];
     if (options.length === 0) return false;
     if (classTraitIds.length === 0) return false;
