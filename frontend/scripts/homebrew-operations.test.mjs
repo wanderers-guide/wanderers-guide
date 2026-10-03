@@ -206,6 +206,90 @@ test('base class and ancestry traits are included in TRAIT_NAMES', async () => {
   assert.deepEqual(packet.store.variables.TRAIT_NAMES.value, ['FIGHTER', 'DWARF']);
 });
 
+test('custom speed adjustments stack with the published ancestry speed in the builder and sheet', async () => {
+  const rows = await readContentRows([
+    { table: 'ancestry', id: 8 },
+    { table: 'trait', id: 2399 },
+    { table: 'language', id: 81 },
+  ]);
+  const human = rows.find(({ table }) => table === 'ancestry').row;
+  assert.equal(human.name, 'Human');
+  assert.equal(human.content_source_id, 3);
+  assert.equal(
+    human.operations.find(({ type, data }) => type === 'setValue' && data.variable === 'SPEED').data.value,
+    25
+  );
+  engine.setFixtures(rows);
+  try {
+    for (const context of ['CHARACTER-BUILDER', 'CHARACTER-SHEET']) {
+      for (const [adjustments, expected] of [
+        [[], 25],
+        [[5], 30],
+        [[-5], 20],
+        [[5, 10, -5], 35],
+      ]) {
+        const sheet = character(
+          adjustments.map((value, index) => op(`speed-${index}`, 'adjValue', { variable: 'SPEED', value })),
+          1
+        );
+        sheet.details.ancestry = human;
+        const packet = await engine._executeCharacterOperations({
+          character: sheet,
+          content: { ...content, ancestries: [human] },
+          context,
+        });
+        assert.deepEqual(packet.errors, []);
+        assert.equal(packet.store.variables.SPEED.value, expected, `${context}: ${adjustments.join(', ')}`);
+      }
+    }
+    const disabled = character([adjust('SPEED', 5)], 1);
+    disabled.details.ancestry = human;
+    disabled.options.custom_operations = false;
+    const packet = await engine._executeCharacterOperations({
+      character: disabled,
+      content: { ...content, ancestries: [human] },
+      context: 'CHARACTER-SHEET',
+    });
+    assert.equal(packet.store.variables.SPEED.value, 25);
+  } finally {
+    engine.setFixtures([]);
+  }
+});
+
+test('speed adjustments survive higher and lower base grants in either order', async () => {
+  for (const variable of ['SPEED', 'SPEED_FLY', 'SPEED_CLIMB', 'SPEED_BURROW', 'SPEED_SWIM']) {
+    for (const adjustment of [5, -5]) {
+      const changes = [
+        op('lower-base', 'setValue', { variable, value: 25 }),
+        op('higher-base', 'setValue', { variable, value: 30 }),
+        adjust(variable, adjustment),
+      ];
+      for (const operations of [changes, [...changes].reverse(), [changes[0], changes[2], changes[1]]]) {
+        const packet = await calculate(operations);
+        assert.equal(packet.store.variables[variable].value, 30 + adjustment, `${variable}: ${adjustment}`);
+      }
+    }
+  }
+});
+
+test('speed conditions and bindings see the adjusted value, including the destination adjustment', async () => {
+  const packet = await calculate([
+    adjust('SPEED', 5),
+    set('SPEED', 25),
+    adjust('SPEED_CLIMB', 10),
+    bind('SPEED_CLIMB', 'SPEED'),
+    op('speed-check', 'conditional', {
+      conditions: [{ id: 'speed', name: 'SPEED', type: 'num', operator: 'GREATER_THAN_OR_EQUALS', value: '30' }],
+      trueOperations: [set('MAX_HEALTH_BONUS', 7)],
+      falseOperations: [set('MAX_HEALTH_BONUS', 1)],
+    }),
+  ]);
+  assert.deepEqual(packet.errors, []);
+  assert.equal(packet.store.variables.SPEED.value, 30);
+  assert.equal(packet.store.variables.SPEED_CLIMB.value, 40);
+  assert.equal(packet.store.variables.MAX_HEALTH_BONUS.value, 7);
+});
+
 test('a binding chain follows the final source value in either authoring order', async () => {
   const linkOperations = [bind('MAX_HEALTH_BONUS', 'BREW_COUNTER'), bind('BREW_COUNTER', 'SPEED')];
   for (const links of [linkOperations, [...linkOperations].reverse()]) {
