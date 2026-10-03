@@ -33,11 +33,15 @@ export function ActionDrawerTitle(props: { data: { id?: number; action?: Ability
 
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const { data: _action, isFetching, refetch } = useQuery({
+  const {
+    data: _action,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-action-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', id);
     },
@@ -82,11 +86,15 @@ export function ActionDrawerTitle(props: { data: { id?: number; action?: Ability
 export function ActionDrawerContent(props: { data: { id?: number; action?: AbilityBlock; showOperations?: boolean } }) {
   const id = props.data.id;
 
-  const { data: _action, isFetching, refetch } = useQuery({
+  const {
+    data: _action,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-action-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', id);
     },
@@ -95,9 +103,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
   const action = props.data.action ?? _action;
 
   if (!action) {
-    return (
-      <DrawerLoadState loading={isFetching} onRetry={refetch} />
-    );
+    return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
   }
 
   const hasTopSection =
@@ -159,7 +165,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
             <Text fw={600} c='gray.2' span>
               Requirements
             </Text>{' '}
-            {action.requirements}
+            <RichText span>{action.requirements}</RichText>
           </IndentedText>
         )}
         {action.access && (

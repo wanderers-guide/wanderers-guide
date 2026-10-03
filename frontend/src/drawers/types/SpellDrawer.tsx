@@ -24,11 +24,15 @@ export function SpellDrawerTitle(props: { data: { id?: number; spell?: Spell; en
   const _character = useAtomValue(characterState);
   const entity = props.data.entity ?? _character;
 
-  const { data: _spell, isFetching, refetch } = useQuery({
+  const {
+    data: _spell,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-spell-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       return await fetchContentById<Spell>('spell', id);
     },
@@ -83,11 +87,15 @@ export function SpellDrawerTitle(props: { data: { id?: number; spell?: Spell; en
 export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell } }) {
   const id = props.data.id;
 
-  const { data: _spell, isFetching, refetch } = useQuery({
+  const {
+    data: _spell,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-spell-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       return await fetchContentById<Spell>('spell', id);
     },
@@ -96,9 +104,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
   const spell = props.data.spell ?? _spell;
 
   if (!spell) {
-    return (
-      <DrawerLoadState loading={isFetching} onRetry={refetch} />
-    );
+    return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
   }
 
   const CR = [];
@@ -119,7 +125,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
         <Text key={1} fw={600} c='gray.2' span>
           Requirements
         </Text>{' '}
-        {spell.requirements}
+        <RichText span>{spell.requirements}</RichText>
       </>
     );
   }

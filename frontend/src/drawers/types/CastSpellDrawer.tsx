@@ -149,7 +149,9 @@ export function CastSpellDrawerContent(props: {
         <Text key={1} fw={600} c='gray.2' span>
           Requirements
         </Text>{' '}
-        {spell.requirements}
+        <RichText span store={props.data.storeId}>
+          {spell.requirements}
+        </RichText>
       </>
     );
   }

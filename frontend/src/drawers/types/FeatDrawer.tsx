@@ -11,7 +11,6 @@ import { Title, Text, Loader, Group, Divider, Box, Anchor, useMantineTheme, Butt
 import { useQuery } from '@tanstack/react-query';
 import DrawerLoadState from '@drawers/DrawerLoadState';
 import { AbilityBlock } from '@schemas/content';
-import { toLabel } from '@utils/strings';
 import { meetsPrerequisites } from '@variables/prereq-detection';
 import { ReactNode } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
@@ -20,16 +19,21 @@ import ShowInjectedText from '@drawers/ShowInjectedText';
 import { DisplayIcon } from '@common/IconDisplay';
 import { listToLabel } from '@utils/display-strings';
 
+/** Display the authored feat name without applying variable-label transformations. */
 export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBlock; onSelect?: () => void } }) {
   const id = props.data.id;
 
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const { data: _feat, isFetching, refetch } = useQuery({
+  const {
+    data: _feat,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-feat-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', id);
     },
@@ -52,7 +56,7 @@ export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBloc
         <Group justify='space-between' wrap='nowrap'>
           <Group wrap='nowrap' gap={10}>
             <Box>
-              <Title order={3}>{toLabel(feat.name)}</Title>
+              <Title order={3}>{feat.name}</Title>
             </Box>
             <Box>
               <ActionSymbol cost={feat.actions} size={'2.1rem'} />
@@ -87,11 +91,15 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
   const character = useAtomValue(characterState);
   const DETECT_PREREQUS = character?.options?.auto_detect_prerequisites ?? false;
 
-  const { data: _feat, isFetching, refetch } = useQuery({
+  const {
+    data: _feat,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-feat-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', id);
     },
@@ -100,9 +108,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
   const feat = props.data.feat ?? _feat;
 
   if (!feat) {
-    return (
-      <DrawerLoadState loading={isFetching} onRetry={refetch} />
-    );
+    return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
   }
 
   const prereqMet = DETECT_PREREQUS && meetsPrerequisites('CHARACTER', feat.prerequisites ?? undefined);
@@ -231,7 +237,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
             <Text fw={600} c='gray.2' span>
               Requirements
             </Text>{' '}
-            {feat.requirements}
+            <RichText span>{feat.requirements}</RichText>
           </IndentedText>
         )}
         {feat.access && (
@@ -267,7 +273,7 @@ export function PrerequisiteForSection(props: { name: string }) {
     queryKey: [`find-prereqs-for-${props.name}`, { name: props.name }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { name }] = queryKey;
       return await fetchAllPrereqs(name);
     },
