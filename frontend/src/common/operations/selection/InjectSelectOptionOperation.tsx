@@ -5,7 +5,7 @@ import { useDidUpdate } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, ContentSource, Item } from '@schemas/content';
 import { useState } from 'react';
-import { flatten, uniqWith, isEqual, uniqBy } from 'lodash-es';
+import { flatten, uniqBy } from 'lodash-es';
 import { InjectedSelectOption, Operation, OperationSelect, OperationSelectOptionCustom } from '@schemas/operations';
 import { SelectionPredefinedCustomOption } from './SelectionOperation';
 
@@ -28,18 +28,20 @@ export function InjectSelectOptionOperation(props: {
       const abOpps = (await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('PAGE'))).map((ab) => {
         return (ab.operations ?? []).map((op) => ({ ...op, _sourceName: ab.name }));
       });
-      operations.push(...uniqWith(flatten(abOpps), isEqual));
+      operations.push(...flatten(abOpps));
 
       const csOpps = (await fetchContentAll<ContentSource>('content-source', getDefaultSources('PAGE'))).map((cs) => {
         return (cs.operations ?? []).map((op) => ({ ...op, _sourceName: cs.name }));
       });
-      operations.push(...uniqWith(flatten(csOpps), isEqual));
+      operations.push(...flatten(csOpps));
 
       const iOpps = (await fetchContentAll<Item>('item', getDefaultSources('PAGE'))).map((i) => {
         return (i.operations ?? []).map((op) => ({ ...op, _sourceName: i.name }));
       });
-      operations.push(...uniqWith(flatten(iOpps), isEqual));
+      operations.push(...flatten(iOpps));
 
+      // Deduplicate only the selectable operations by ID. Deep comparisons of
+      // every operation made large bundles pause the editor for several seconds.
       return uniqBy(
         operations.filter(
           (op) => op.type === 'select' && op.data.modeType === 'PREDEFINED' && op.data.optionType === 'CUSTOM'

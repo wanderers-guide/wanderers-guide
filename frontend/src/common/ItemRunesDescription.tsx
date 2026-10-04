@@ -47,9 +47,9 @@ export function ItemRunesDescription({ item }: { item: Item }) {
       // Fetch all items
       const results = await Promise.allSettled(itemIds.map((id) => fetchContentById<Item>('item', id)));
 
-      // Keep only successful fetches
+      // A successful lookup can still be empty when a rune is unavailable.
       const items: Item[] = results
-        .filter((r): r is PromiseFulfilledResult<Item> => r.status === 'fulfilled')
+        .filter((r): r is PromiseFulfilledResult<Item> => r.status === 'fulfilled' && r.value !== null)
         .map((r) => r.value);
 
       return items;
