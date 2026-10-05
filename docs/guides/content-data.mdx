@@ -199,6 +199,17 @@ that current state through the same update, including queued unsynced GM damage.
 
 Every entity that lives in a content source carries a generated `uuid` (a hash of `name + type + level/rank + content_source_id`) so duplicate entries within the same source are caught at insert time.
 
+## Character JSON exports
+
+Version 4 JSON exports retain the saved character in `character` and its calculated
+data in `content`. `content.companions` contains each companion's calculated data
+in the same format, including attributes, proficiencies, maximum HP, AC, spells,
+slots, named languages and senses, defenses, speeds, abilities, and traits.
+Each entry has `index`, `id`, `name`, and `content`. Its `index` points to
+`character.companions.list[index]`, including when two companions share a catalog ID.
+Companions use the character's enabled sources and current calculated owner bindings.
+The saved character and companion records stay unchanged; import still reads `character`.
+
 ## Operations
 
 Speed assignments establish a base speed; when several sources grant one, the highest

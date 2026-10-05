@@ -126,7 +126,16 @@ export async function fetchArchetypeByDedicationFeat() { return null; }
 export function getDefaultSources(view) { return sources[view]; }
 export function getDefaultSourcesKey(view) { const scope = getDefaultSources(view); return Array.isArray(scope) ? [...scope].sort((a,b) => a-b).join(',') : scope; }
 export function getContentFast(type, ids) { return getCachedContent(type).filter(row => ids.includes(row.id)); }
-export function defineDefaultSources(view, values) { sources[view] = values; }
+export function defineDefaultSources(view, values) { sources[view] = values; return values; }
+export async function fetchContentPackage(requestedSources) {
+  const tables = { ability_block: 'abilityBlocks', class: 'classes', ancestry: 'ancestries', background: 'backgrounds', spell: 'spells', item: 'items', trait: 'traits', language: 'languages', creature: 'creatures', archetype: 'archetypes', versatile_heritage: 'versatileHeritages', class_archetype: 'classArchetypes', content_source: 'sources' };
+  const content = Object.fromEntries(Object.values(tables).map(key => [key, []]));
+  for (const {table, row} of fixtures) {
+    const sourceId = table === 'content_source' ? row.id : row.content_source_id;
+    if (tables[table] && (!Array.isArray(requestedSources) || requestedSources.includes(sourceId))) content[tables[table]].push(row);
+  }
+  return {...content, defaultSources: structuredClone(sources)};
+}
 export function importFromContentPackage() {}
 `;
 
@@ -137,6 +146,7 @@ export async function createOperationEngine({
   renderBindingEditor = false,
   inspectInitialStats = false,
   resolveArchetypeFixtures = false,
+  exportJson = false,
 } = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'wg-operation-tests-'));
   try {
@@ -223,6 +233,7 @@ export async function createOperationEngine({
           export { hasArchetypeClassFeatTraits, getTraitIdByType } from '@utils/traits';
           export { setFixtures, defineDefaultSources } from '@content/content-store';
           export { getOperationErrorNotifications, clearOperationErrorNotifications } from '@utils/notifications';
+          ${exportJson ? "export { default as jsonV4, getJsonV4Content } from '@export/json/json-v4'; export { getJsonDownload, clearJsonDownload } from '@export/export-to-json';" : ''}
         `,
         resolveDir: frontend,
         loader: 'ts',
@@ -244,6 +255,17 @@ export async function createOperationEngine({
         {
           name: 'fixture-content',
           setup(pluginBuild) {
+            if (exportJson) {
+              pluginBuild.onResolve({ filter: /^@export\/export-to-json$/ }, () => ({
+                path: 'download',
+                namespace: 'json-download',
+              }));
+              pluginBuild.onLoad({ filter: /.*/, namespace: 'json-download' }, () => ({
+                contents:
+                  'let download; export function downloadObjectAsJson(value, name) { download = { value: JSON.parse(JSON.stringify(value)), name }; } export function getJsonDownload() { return download; } export function clearJsonDownload() { download = undefined; }',
+                loader: 'ts',
+              }));
+            }
             if (inspectInitialStats) {
               pluginBuild.onResolve({ filter: /^@common\/select\/SelectContent$/ }, (args) =>
                 args.importer.endsWith('/initial-stats-display.tsx')
