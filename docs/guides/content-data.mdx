@@ -87,6 +87,15 @@ drawer history; returning to the hazard preserves the encounter instance.
 
 Creature rows can carry optional `meta_data.stat_block` annotations for source-specific stat lines, including listed senses and skills, trait labels, conditional defense and HP notes, and innate spell frequencies. `immunities_note` and `resistances_note` display conditional effects in their stat-block lists without treating them as unconditional mechanics. These annotations only affect display. Embedded attack items can use `meta_data.display_traits` for trait text that has no matching trait record and `meta_data.inventory_label` when an inventory label differs from the attack name. The underlying creature operations and abilities still hold the actual mechanics.
 
+### Reviewing content submissions
+
+Content update requests show the content type, applicable hidden setting, repeatability for
+ability blocks, and classification switches for traits. Updates compare the original
+and submitted settings. Expand **Full content data** to inspect the complete read-only
+records, including operations and metadata omitted from the rules preview. The
+original and updated rules previews remain available alongside these review details.
+Reviewing a request does not edit or approve it; moderation still happens in Discord.
+
 ### Loading and saving safely
 
 A content package becomes available only after every requested table and source lookup

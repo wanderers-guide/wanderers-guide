@@ -4,23 +4,10 @@ import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { defineDefaultSources, fetchContent, fetchContentSources } from '@content/content-store';
 import { findContentUpdate } from '@content/content-update';
+import { getContentUpdateChangedFields } from '@content/content-update-review';
 import { fetchHazardById } from '@content/hazards';
 import { mapToDrawerData } from '@drawers/drawer-utils';
-import {
-  Center,
-  Group,
-  Title,
-  ActionIcon,
-  Text,
-  Divider,
-  Loader,
-  Box,
-  Stack,
-  Container,
-  Anchor,
-  Paper,
-  Badge,
-} from '@mantine/core';
+import { Center, Group, Title, ActionIcon, Text, Divider, Loader, Box, Stack, Anchor, Badge } from '@mantine/core';
 import { IconArrowBigRightLine, IconThumbUp, IconThumbDown } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { Creature, Hazard, HazardSchema } from '@schemas/content';
@@ -30,7 +17,9 @@ import { toLabel } from '@utils/strings';
 import { useMemo } from 'react';
 import { useLoaderData } from 'react-router-dom';
 import { useAtom } from 'jotai';
+import ContentUpdateDetails from './content-update/ContentUpdateDetails';
 
+/** Displays a content submission, its review details, previews, and moderation status. */
 export function Component() {
   const { updateId } = useLoaderData() as {
     updateId: string;
@@ -85,30 +74,7 @@ export function Component() {
 
   const changedFields = useMemo(() => {
     if (!data || !data.originalContent) return [];
-    console.log(data);
-    const original = data.originalContent as Record<string, any>;
-    const updated = data.contentUpdate.data ?? {};
-
-    // Compare all fields in the original and updated content, and check all fields in meta_data if it exists
-    const changedFields = [];
-    for (const key of Object.keys(updated)) {
-      if (key.toLowerCase() === 'uuid') continue;
-
-      if (key === 'meta_data') {
-        for (const metaKey of Object.keys(updated.meta_data ?? {})) {
-          if (
-            JSON.stringify(original?.meta_data?.[metaKey] ?? '') !== JSON.stringify(updated?.meta_data?.[metaKey] ?? '')
-          ) {
-            changedFields.push(metaKey);
-          }
-        }
-      } else {
-        if (JSON.stringify(original[key] ?? '') !== JSON.stringify(updated[key] ?? '')) {
-          changedFields.push(key);
-        }
-      }
-    }
-    return changedFields;
+    return getContentUpdateChangedFields(data.originalContent, data.contentUpdate.data);
   }, [data]);
 
   const sizeDiff = useMemo(() => {
@@ -126,18 +92,6 @@ export function Component() {
   return (
     <Center>
       <Box maw={875} w='100%'>
-        <Box>
-          <Group wrap='nowrap' align='center' justify='center' gap={10}>
-            <Title order={1} c='gray.0'>
-              {!data ? 'Loading Update Request...' : `Content Update by ${data?.user.display_name}`}
-            </Title>
-            <Text fz='xl' fw={500} c='gray.2' span>
-              {!data ? `` : `(#${data?.user.id})`}
-            </Text>
-          </Group>
-
-          <Divider color='gray.2' />
-        </Box>
         <Group pt='sm'>
           {!data ? (
             <Loader
@@ -153,11 +107,21 @@ export function Component() {
           ) : (
             <BlurBox w={'100%'} p='md'>
               <Stack gap={10}>
+                <Group align='center' justify='center' gap='xs'>
+                  <Title order={1} size='h2' ta='center'>
+                    Content Update by {data.user.display_name}
+                  </Title>
+                  <Text size='sm' c='dimmed'>
+                    (#{data.user.id})
+                  </Text>
+                </Group>
+                <Divider />
                 {data.contentUpdate.action === 'UPDATE' && (
                   <Stack gap={10}>
                     <Text fz='lg' ta='center'>
-                      {toLabel(data.contentUpdate.action)} <b>{data.originalContent?.name}</b> from{' '}
-                      <b>{data.source.name}</b>.
+                      {toLabel(data.contentUpdate.action)}{' '}
+                      <b>{data.originalContent?.name ?? data.contentUpdate.data.name}</b> from <b>{data.source.name}</b>
+                      .
                     </Text>
                     <Group wrap='nowrap' align='center' justify='center'>
                       <Box>
@@ -247,36 +211,6 @@ export function Component() {
                         </BlurButton>
                       </Box>
                     </Group>
-
-                    <Container pt={15}>
-                      <Paper w={`calc(min(450px, 50dvw))`} withBorder>
-                        <Text ta='center'>Detected Field Changes</Text>
-
-                        <Stack gap={8} pb={8}>
-                          {changedFields.map((field, index) => (
-                            <Box key={index} mx={8}>
-                              <Badge
-                                variant='light'
-                                color='gray'
-                                fullWidth
-                                styles={{
-                                  root: {
-                                    textTransform: 'initial',
-                                  },
-                                }}
-                              >
-                                {toLabel(field)}
-                              </Badge>
-                            </Box>
-                          ))}
-                        </Stack>
-                        {changedFields.length === 0 && (
-                          <Text fz='xs' fs='italic' c='dimmed' ta='center'>
-                            No changes detected?
-                          </Text>
-                        )}
-                      </Paper>
-                    </Container>
                   </Stack>
                 )}
 
@@ -319,6 +253,30 @@ export function Component() {
                         </BlurButton>
                       </Box>
                     </Group>
+                  </Stack>
+                )}
+
+                <ContentUpdateDetails update={data.contentUpdate} original={data.originalContent} />
+
+                {data.contentUpdate.action === 'UPDATE' && (
+                  <Stack gap='xs' mt='sm'>
+                    <Text size='sm' fw={600}>
+                      Detected Field Changes
+                    </Text>
+                    <Group gap='xs'>
+                      {changedFields.map((field) => (
+                        <Badge key={field} variant='light' color='gray' tt='initial'>
+                          {toLabel(field)}
+                        </Badge>
+                      ))}
+                    </Group>
+                    {changedFields.length === 0 && (
+                      <Text size='xs' fs='italic' c='dimmed'>
+                        {data.originalContent
+                          ? 'No changes detected.'
+                          : 'Original content is unavailable for comparison.'}
+                      </Text>
+                    )}
                   </Stack>
                 )}
 
