@@ -356,7 +356,7 @@ export default function InventoryPanel(props: {
 
               <Menu.Dropdown>
                 <Menu.Label>
-                  Bulk: {labelizeBulk(getInvBulk(props.entity?.inventory ?? undefined), true)} /{' '}
+                  Bulk: {labelizeBulk(getInvBulk(props.entity?.inventory ?? undefined, props.id), true)} /{' '}
                   {getBulkLimit(props.id)}{' '}
                 </Menu.Label>
                 <Menu.Item
@@ -385,7 +385,8 @@ export default function InventoryPanel(props: {
                   },
                 }}
               >
-                Bulk: {labelizeBulk(getInvBulk(props.entity?.inventory ?? undefined), true)} / {getBulkLimit(props.id)}
+                Bulk: {labelizeBulk(getInvBulk(props.entity?.inventory ?? undefined, props.id), true)} /{' '}
+                {getBulkLimit(props.id)}
               </Badge>
               <CurrencySection entity={props.entity} onClick={() => openManageCoinsDrawer()} />
               <ImprintButton
@@ -692,7 +693,7 @@ function InvItemOption(props: {
                 <>
                   {' '}
                   <Text ta='center' fz='xs'>
-                    {labelizeBulk(getItemBulk(props.invItem))}
+                    {labelizeBulk(getItemBulk(props.invItem, props.id))}
                   </Text>
                 </>
               )}

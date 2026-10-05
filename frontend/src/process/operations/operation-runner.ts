@@ -1,5 +1,6 @@
 import { fetchContentById, getCachedContent } from '@content/content-store';
 import { getModeKey } from '@common/modes/mode-rules';
+import { requiresFinalSkillSelection } from './custom-selection-rules';
 import { AbilityBlock, Item, Language, Spell, Trait } from '@schemas/content';
 import {
   ConditionCheckData,
@@ -304,6 +305,24 @@ async function runSelect(
   options?: OperationOptions,
   sourceLabel?: string
 ): Promise<OperationResult> {
+  if (requiresFinalSkillSelection(operation.id) && !finalizingSkillSelections) {
+    const result: OperationResult = { selection: { id: operation.id, title: operation.data.title, options: [] } };
+    if (!options?.doOnlyValueCreation) {
+      const identity = `${varId}/${selectionTrack.path}`;
+      const key = finalSkillSelections.get(identity)?.key ?? qualifiedSequence++;
+      finalSkillSelections.set(identity, {
+        key,
+        varId,
+        selectionTrack,
+        operation,
+        options,
+        sourceLabel,
+        scopes: getVariableEffectScopes(varId),
+      });
+      Object.assign(result, { [qualifiedResultKey]: key });
+    }
+    return result;
+  }
   let optionList: ObjectWithUUID[] = [];
 
   if (operation.data.modeType === 'FILTERED' && operation.data.optionsFilters) {
@@ -748,6 +767,8 @@ export function clearDeferredOperations(): void {
   qualifiedOperations = [];
   qualifiedResults.clear();
   qualifiedSequence = 0;
+  finalSkillSelections.clear();
+  finalizingSkillSelections = false;
 }
 
 const qualifiedResultKey = Symbol('qualified-operation-occurrence');
@@ -765,15 +786,56 @@ type QualifiedOperation = {
 let qualifiedOperations: QualifiedOperation[] = [];
 let qualifiedSequence = 0;
 const qualifiedResults = new Map<number, OperationResult>();
+const finalSkillSelections = new Map<
+  string,
+  {
+    key: number;
+    varId: StoreID;
+    scopes: VariableEffectScope[];
+    selectionTrack: SelectionTrack;
+    operation: OperationSelect;
+    options?: OperationOptions;
+    sourceLabel?: string;
+  }
+>();
+let finalizingSkillSelections = false;
+
+/** Bind Assurance after ordinary and conditional trainings, respecting removed grants and saved occurrence paths. */
+export async function resolveFinalSkillSelections(): Promise<void> {
+  finalizingSkillSelections = true;
+  try {
+    for (const entry of finalSkillSelections.values()) {
+      const result = await withVariableEffectScopes(entry.varId, entry.scopes, () =>
+        runSelect(
+          entry.varId,
+          entry.selectionTrack,
+          entry.operation,
+          { ...entry.options, doOnlyConditionals: false, doConditionals: true },
+          entry.sourceLabel
+        )
+      );
+      qualifiedResults.set(entry.key, result ?? null);
+    }
+  } finally {
+    finalSkillSelections.clear();
+    finalizingSkillSelections = false;
+  }
+}
 
 /** Reconcile against the real controller tree after limitBoostOptions cloned its placeholders. */
 export function reconcileQualifiedResults(tree: unknown): void {
   const visit = (value: unknown): void => {
     if (!value || typeof value !== 'object') return;
-    const tagged = value as { [qualifiedResultKey]?: number; result?: NonNullable<OperationResult>['result'] };
+    const tagged = value as {
+      [qualifiedResultKey]?: number;
+      result?: NonNullable<OperationResult>['result'];
+      selection?: NonNullable<OperationResult>['selection'];
+    };
     const key = tagged[qualifiedResultKey];
     if (key !== undefined) {
-      tagged.result = qualifiedResults.get(key)?.result;
+      const resolved = qualifiedResults.get(key);
+      tagged.result = resolved?.result;
+      if (resolved?.selection) tagged.selection = resolved.selection;
       delete tagged[qualifiedResultKey];
     }
     for (const child of Object.values(value)) visit(child);

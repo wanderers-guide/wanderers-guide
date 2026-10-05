@@ -20,6 +20,7 @@ import {
   clearDeferredOperations,
   resolveDeferredOperations,
   resolveQualifiedOperations,
+  resolveFinalSkillSelections,
   reconcileQualifiedResults,
   runOperations,
   withContentGrant,
@@ -1103,7 +1104,8 @@ async function executeCharacterOperations(
   // Apply explicit language overrides and variable bindings after every grant has run.
   const errors = await resolveDeferredOperations();
   errors.push(...(await resolveQualifiedOperations()));
-  reconcileQualifiedResults(conditionalResults);
+  await resolveFinalSkillSelections();
+  reconcileQualifiedResults({ results, conditionalResults });
 
   // Set calculated stats
   setEidolonRunesInStore(character);
@@ -1295,7 +1297,8 @@ async function executeCreatureOperations(
   // Apply explicit language overrides and variable bindings after every grant has run.
   const errors = await resolveDeferredOperations();
   errors.push(...(await resolveQualifiedOperations()));
-  reconcileQualifiedResults(conditionalResults);
+  await resolveFinalSkillSelections();
+  reconcileQualifiedResults({ results, conditionalResults });
 
   // Set calculated stats
   setCalculatedStatsInStore(id, creature);

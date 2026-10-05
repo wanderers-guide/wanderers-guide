@@ -265,7 +265,7 @@ export function checkBulkLimit(
 ) {
   setTimeout(() => {
     if (!entity.inventory) return;
-    if (addEncumbered && Math.floor(getInvBulk(entity.inventory)) > getBulkLimit(storeId)) {
+    if (addEncumbered && Math.floor(getInvBulk(entity.inventory, storeId)) > getBulkLimit(storeId)) {
       // Add encumbered condition
       const newConditions = cloneDeep(entity.details?.conditions ?? []);
       const encumbered = newConditions.find((c) => c.name === 'Encumbered');
