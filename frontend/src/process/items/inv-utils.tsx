@@ -7,6 +7,7 @@ import { getTraitIdByType, hasTraitType, TraitType } from '@utils/traits';
 import { getFinalAcValue, getFinalVariableValue } from '@variables/variable-helpers';
 import { addVariableBonus, getAllSkillVariables, getAllSpeedVariables, getVariable } from '@variables/variable-manager';
 import { cloneDeep, uniq } from 'lodash-es';
+import { getArmorStrengthModifier } from './armor-handler';
 
 /**
  * Get all items in the inventory, including items in containers, as a single array
@@ -34,15 +35,15 @@ export function getFlatInvItems(inv: Inventory) {
  * @param inv - Inventory
  * @returns - Total bulk as a number
  */
-export function getInvBulk(inv: Inventory | undefined) {
+export function getInvBulk(inv: Inventory | undefined, id?: StoreID) {
   let totalBulk = 0;
   for (const invItem of inv?.items ?? []) {
-    totalBulk += getItemBulk(invItem);
+    totalBulk += getItemBulk(invItem, id);
 
     if (isItemContainer(invItem.item)) {
       const ignoredBulk = Number(invItem.item.meta_data?.bulk.ignored ?? 0);
       const containerTotalBulk = invItem.container_contents.reduce(
-        (acc, containerItem) => acc + getItemBulk(containerItem),
+        (acc, containerItem) => acc + getItemBulk(containerItem, id),
         0
       );
       totalBulk += Math.max(containerTotalBulk - ignoredBulk, 0);
@@ -56,7 +57,7 @@ export function getInvBulk(inv: Inventory | undefined) {
  * @param invItem - InventoryItem
  * @returns - Item bulk as a number
  */
-export function getItemBulk(invItem: InventoryItem) {
+export function getItemBulk(invItem: InventoryItem, id?: StoreID) {
   if (isItemFormula(invItem)) return 0;
 
   if (!invItem.item.bulk) return 0;
@@ -70,10 +71,21 @@ export function getItemBulk(invItem: InventoryItem) {
   // If the armor isn't being worn it counts as 1 bulk more
   const armorWornModifier = isItemArmor(invItem.item) && !invItem.is_equipped ? 1 : 0;
 
-  const baseItemBulk = invItem.is_equipped
+  let baseItemBulk = invItem.is_equipped
     ? Number(invItem.item.meta_data?.bulk?.held_or_stowed ?? (parseFloat(invItem.item.bulk ?? '0') || 0))
     : parseFloat(invItem.item.bulk ?? '0') || 0;
 
+  // The armor discount requires Strength itself, even when Constitution qualifies for reduced penalties.
+  if (
+    id &&
+    baseItemBulk > 1 &&
+    invItem.is_equipped &&
+    isItemArmor(invItem.item) &&
+    getVariable<VariableBool>(id, 'USE_CON_FOR_ARMOR_STR_REQ')?.value &&
+    getFinalVariableValue(id, 'ATTRIBUTE_STR').total >= (invItem.item.meta_data?.strength ?? 0)
+  ) {
+    baseItemBulk = Math.max(1, baseItemBulk - 1);
+  }
   totalBulk = (baseItemBulk + armorWornModifier) * getItemQuantity(invItem.item);
 
   // If the total bulk is less than 1 bulk, it counts as light bulk
@@ -116,11 +128,7 @@ export function applyEquipmentPenalties(storeId: StoreID, entity: LivingEntity) 
 
   const applyPenalties = (item: InventoryItem) => {
     if (item.item.meta_data) {
-      const strMod = getFinalVariableValue(STORE_ID, 'ATTRIBUTE_STR').total;
-      // Some abilities meet armor Strength requirements with Con instead (ex. SF2e Walking Armory)
-      const strReqMod = getVariable<VariableBool>(STORE_ID, 'USE_CON_FOR_ARMOR_STR_REQ')?.value
-        ? getFinalVariableValue(STORE_ID, 'ATTRIBUTE_CON').total
-        : strMod;
+      const strReqMod = getArmorStrengthModifier(STORE_ID);
       // If strength requirement exists and the character's str mod is >= to it, reduce/not include it
       if (
         item.item.meta_data.strength !== null &&
@@ -769,15 +777,20 @@ export function labelizeBulk(bulk?: number | string, displayZero = false) {
 export function getBulkLimit(id: StoreID) {
   const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
   const bonus = getFinalVariableValue(id, 'BULK_LIMIT_BONUS').total;
-  // Some abilities add Con mod on top of the usual 5 + Str (ex. SF2e Walking Armory)
+  // Walking Armory adds half Constitution, rounded up, before becoming encumbered.
   const conMod = getVariable<VariableBool>(id, 'ADD_CON_TO_BULK_LIMIT')?.value
     ? getFinalVariableValue(id, 'ATTRIBUTE_CON').total
     : 0;
-  return 5 + strMod + conMod + bonus;
+  return 5 + strMod + Math.ceil(conMod / 2) + bonus;
 }
 
 export function getBulkLimitImmobile(id: StoreID) {
-  return getBulkLimit(id) + 5;
+  const strength = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
+  const bonus = getFinalVariableValue(id, 'BULK_LIMIT_BONUS').total;
+  const constitution = getVariable<VariableBool>(id, 'ADD_CON_TO_BULK_LIMIT')?.value
+    ? getFinalVariableValue(id, 'ATTRIBUTE_CON').total
+    : 0;
+  return 10 + strength + constitution + bonus;
 }
 
 export function reachedInvestedLimit(id: StoreID, inv?: Inventory) {

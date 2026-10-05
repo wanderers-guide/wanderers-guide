@@ -319,5 +319,9 @@
   "20261001240000_treasure_vault_equipment_prose.sql": {
     "check": "treasure-vault-equipment-prose.sql",
     "order": "before-functions"
+  },
+  "20261005000000_repair_content_selection_rules.sql": {
+    "check": "content-selection-rules.sql",
+    "order": "before-functions"
   }
 }

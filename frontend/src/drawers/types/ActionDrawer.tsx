@@ -12,8 +12,7 @@ import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, List, Anchor, Button } from '@mantine/core';
 import {
   determineFilteredSelectionList,
-  getSelectedCustomOption,
-  getSelectedOption,
+  getSelectedOptions,
   ObjectWithUUID,
   sortObjectByName,
 } from '@operations/operation-utils';
@@ -238,15 +237,18 @@ export function DisplayOperationSelection(op: OperationSelect) {
     getOptions();
   }, [op]);
 
-  const [selectedOption, setSelectedOption] = useState(
-    null as OperationSelectOptionCustom | Record<string, any> | null
-  );
+  const [selectedOptions, setSelectedOptions] = useState<ObjectWithUUID[]>([]);
   useEffect(() => {
+    let current = true;
     async function getSelection() {
-      setSelectedOption(await getSelectedOption(character, op));
+      const selected = await getSelectedOptions(character, op);
+      if (current) setSelectedOptions(selected);
     }
     getSelection();
-  });
+    return () => {
+      current = false;
+    };
+  }, [character, op]);
 
   if (options.length === 0) {
     return null;
@@ -281,7 +283,7 @@ export function DisplayOperationSelection(op: OperationSelect) {
             >
               {instanceOfOperationSelectOptionCustom(option) ? option.title : option.name}
             </Anchor>
-            {selectedOption?.id === option.id ? ' (Selected)' : ''}
+            {selectedOptions.some((selected) => selected.id === option.id) ? ' (Selected)' : ''}
           </List.Item>
         ))}
         {more === null ? null : <List.Item key='more'>{more}</List.Item>}

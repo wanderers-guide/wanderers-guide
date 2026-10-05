@@ -210,12 +210,13 @@ export async function createOperationEngine({
           export { getAcParts } from '@items/armor-handler';
           export * from '@items/eidolon-runes';
           export { handleAddItem, handleDeleteItem, handleUpdateItem, handleMoveItem, addExtraItems } from '@items/inv-handlers';
-          export { isItemInvestable, getFlatInvItems, getItemBulk, getInvBulk, applyEquipmentPenalties, getBestArmor, getBestShield, getEquippedWeapons, reachedInvestedLimit, reachedImplantLimit, compileTraits } from '@items/inv-utils';
+          export { isItemInvestable, getFlatInvItems, getItemBulk, getInvBulk, getBulkLimit, getBulkLimitImmobile, applyEquipmentPenalties, getBestArmor, getBestShield, getEquippedWeapons, reachedInvestedLimit, reachedImplantLimit, compileTraits } from '@items/inv-utils';
           export { getListStringInputValue } from '@common/operations/variables/operation-value-defaults';
           export { toggleActiveMode, getExecutableModes } from '@common/modes/mode-rules';
-          export { determineFilteredSelectionList } from '@operations/operation-utils';
+          export { determineFilteredSelectionList, determinePredefinedSelectionList, getSelectedOptions } from '@operations/operation-utils';
+          export { getWeaponSpecialization, getWeaponSpecializations } from '@specializations/weapon-specializations';
           export { OperationSelectFiltersAbilityBlockSchema } from '@schemas/operations';
-          export { collectEntityAbilityBlocks, collectEntitySenses } from '@content/collect-content';
+          export { collectEntityAbilityBlocks, collectEntitySenses, collectEntitySpellcasting } from '@content/collect-content';
           ${inspectInitialStats ? "export { getStatBlockDisplay } from '@variables/initial-stats-display';" : ''}
           export { displaySense } from '@utils/senses';
           export { isAbilityBlockVisible } from '@content/content-hidden';

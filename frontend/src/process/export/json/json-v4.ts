@@ -113,7 +113,7 @@ export async function getJsonV4Content(entity: LivingEntity, inputStoreID?: Stor
   }));
 
   const flatItems = entity.inventory ? getFlatInvItems(entity.inventory) : [];
-  const totalBulk = entity.inventory ? labelizeBulk(getInvBulk(entity.inventory), true) : null;
+  const totalBulk = entity.inventory ? labelizeBulk(getInvBulk(entity.inventory, STORE_ID), true) : null;
 
   const spellData = collectEntitySpellcasting(STORE_ID, entity);
 
