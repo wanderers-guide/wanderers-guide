@@ -1,12 +1,15 @@
 import { Autocomplete } from '@mantine/core';
-import { Variable, VariableType } from '@schemas/variables';
+import { StoreID, Variable, VariableType } from '@schemas/variables';
 import { HIDDEN_VARIABLES, getVariables } from '@variables/variable-manager';
 
+/** Suggest variables from the selected store while allowing custom variable names. */
 export default function VariableSelect(props: {
   value: string;
   variableType?: VariableType;
+  storeId?: StoreID;
   onChange: (value: string, variable?: Variable) => void;
 }) {
+  const variables = getVariables(props.storeId ?? 'CHARACTER');
   return (
     <Autocomplete
       ff='Ubuntu Mono, monospace'
@@ -16,9 +19,9 @@ export default function VariableSelect(props: {
       value={props.value}
       onChange={(value) => {
         const variable = value.toUpperCase().replace(/\s/g, '_');
-        props.onChange(variable, getVariables('CHARACTER')[variable]);
+        props.onChange(variable, variables[variable]);
       }}
-      data={Object.keys(getVariables('CHARACTER'))
+      data={Object.keys(variables)
         .filter(
           (variable) =>
             !variable.startsWith('CS:') &&
@@ -29,7 +32,7 @@ export default function VariableSelect(props: {
         )
         .filter((variable) => {
           if (props.variableType) {
-            return getVariables('CHARACTER')[variable].type === props.variableType;
+            return variables[variable].type === props.variableType;
           }
           return true;
         })}

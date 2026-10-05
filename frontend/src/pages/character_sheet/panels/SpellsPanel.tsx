@@ -17,7 +17,7 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import ManageSpellsModal from '@modals/ManageSpellsModal';
-import { isCantrip } from '@spells/spell-utils';
+import { getKnownSpellsByRank, isCantrip } from '@spells/spell-utils';
 import {
   filterSpellCatalog,
   getExplicitSpellQueryOptions,
@@ -638,33 +638,11 @@ function SpellList(props: {
   };
 
   // Display spells in an ordered list by rank
-  const spells = useMemo(() => {
-    const filteredSpells = props.spellIds
-      .map((id) => {
-        const foundSpell = props.allSpells.find((spell) => spell.id === id);
-        if (!foundSpell) return null;
-        const entry = props.extra.charData.list.find((entry) => entry.spell_id === id);
-        // Don't add spell if we have an entry for it because we're going to add it later
-        if (entry && entry.source !== 'RITUALS') return null;
-        return foundSpell;
-      })
-      .filter(isTruthy);
-
-    // Add spells from entries (for overridded ranks)
-    if (props.type === 'PREPARED' || props.type === 'SPONTANEOUS') {
-      for (const entry of props.extra.charData.list) {
-        const foundSpell = props.allSpells.find((spell) => spell.id === entry.spell_id);
-        if (foundSpell && props.spellIds.includes(foundSpell.id)) {
-          filteredSpells.push({
-            ...foundSpell,
-            rank: entry.rank,
-          });
-        }
-      }
-    }
-
-    return groupBy(filteredSpells, 'rank');
-  }, [props.spellIds, props.allSpells]);
+  const spells = useMemo(
+    () =>
+      getKnownSpellsByRank(props.spellIds, props.allSpells, props.extra.charData.list, props.source?.name, props.type),
+    [props.spellIds, props.allSpells, props.extra.charData.list, props.source?.name, props.type]
+  );
 
   const slots = useMemo(() => {
     if (!props.extra?.slots || props.extra.slots.length === 0) return null;

@@ -36,6 +36,7 @@ import { modals } from '@mantine/modals';
 import { selectContent } from '@common/select/SelectContent';
 import { hasTraitType } from '@utils/traits';
 import { getEntityLevel } from '@utils/entity-utils';
+import { getVariables } from '@variables/variable-manager';
 import { IMPRINT_BG_COLOR, IMPRINT_BG_COLOR_HOVER, IMPRINT_BORDER_COLOR } from '@constants/data';
 
 export default function CompanionsPanel(props: { panelHeight: number; panelWidth: number }) {
@@ -44,11 +45,15 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
 
   // Calculated data for the companions
   const companions = character?.companions?.list ?? [];
+  // Bindings read the owner's calculated variables. History timestamps must not invalidate this cache.
+  const ownerVariables = JSON.stringify(getVariables('CHARACTER'));
   const { data: computedData } = useQuery({
     queryKey: [
       `computed-companions`,
       {
         companions: companions,
+        ownerVariables,
+        sources: getDefaultSourcesKey('PAGE'),
       },
     ],
     queryFn: async () => {

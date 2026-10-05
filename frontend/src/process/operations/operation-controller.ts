@@ -66,7 +66,7 @@ import { setCalculatedStatsInStore } from '@variables/calculated-stats';
 import { getEntityLevel } from '@utils/entity-utils';
 import { defineDefaultSources, importFromContentPackage } from '@content/content-store';
 import { setEidolonRunesInStore } from '@items/eidolon-runes';
-import { getExecutableModes } from '@common/modes/mode-rules';
+import { getExecutableModes, resolveActiveModeKeys } from '@common/modes/mode-rules';
 
 let executionQueue: Promise<void> = Promise.resolve();
 
@@ -212,8 +212,13 @@ async function executeCharacterOperations(
 
   setVariable('CHARACTER', 'LEVEL', character.level);
 
-  setVariable('CHARACTER', 'ACTIVE_MODES', character.meta_data?.active_modes ?? [], 'Loaded');
   const modes = content.abilityBlocks.filter((block) => block.type === 'mode');
+  setVariable(
+    'CHARACTER',
+    'ACTIVE_MODES',
+    resolveActiveModeKeys(modes, character.meta_data?.active_modes ?? []),
+    'Loaded'
+  );
 
   const class_ = content.classes.find((c) => c.id === character.details?.class?.id);
   const class_2 = content.classes.find((c) => c.id === character.details?.class_2?.id);
@@ -915,10 +920,16 @@ async function executeCharacterOperations(
         options,
         ancestry.name
       );
+      const ancestryTraitVariable = labelToVariable(`TRAIT_ANCESTRY_${ancestry.name}_IDS`);
+      const grantedAncestryTrait = getVariable('CHARACTER', ancestryTraitVariable);
+      // A granted trait can share the ancestry's name while having a different ID.
+      // Retain it alongside the base trait so neither set of feats or heritages disappears.
       addVariable(
         'CHARACTER',
         'num',
-        labelToVariable(`TRAIT_ANCESTRY_${ancestry.name}_IDS`),
+        grantedAncestryTrait && grantedAncestryTrait.value !== ancestry.trait_id
+          ? labelToVariable(`TRAIT_ANCESTRY_${ancestry.name}_${ancestry.trait_id}_IDS`)
+          : ancestryTraitVariable,
         ancestry.trait_id,
         ancestry.name
       );
@@ -1312,6 +1323,12 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
         const value = obj[key];
         const otherValue = otherObj && typeof otherObj === 'object' ? otherObj[key] : null;
+        // A nested feat can contain ordinary grants and conditional choices in the same array.
+        // Fill each missing result, even when its siblings already have normal-round results.
+        if ((value === null || value === undefined) && otherValue !== null && otherValue !== undefined) {
+          obj[key] = cloneDeep(otherValue);
+          continue;
+        }
         if (key === 'results' && Array.isArray(value) && Array.isArray(otherValue)) {
           //console.log(`Key: ${key}`, value, otherValue);
 

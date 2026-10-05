@@ -1,6 +1,6 @@
 ---
-title: 'Content Data'
-description: 'How spells, feats, ancestries and the rest are stored, linked, and turned into the rules that drive a character sheet.'
+title: "Content Data"
+description: "How spells, feats, ancestries and the rest are stored, linked, and turned into the rules that drive a character sheet."
 ---
 
 This page is for anyone authoring or programmatically reading Wanderer’s Guide content: homebrew creators, tool builders, and contributors. If you only want to call the public API, the [API reference](/api-reference/introduction) is enough; this is the layer underneath.
@@ -37,6 +37,24 @@ The legacy Heal Companion feat grants the current Heal Companion focus spell thr
 the Ranger casting source, with Wisdom, trained spell proficiency, and the Spells tab.
 It is deprecated and hidden from new feat choices. Its original feat ID and grants
 remain valid for saved characters that already selected it.
+
+Class archetype features can be embedded in `feature_adjustments` instead of stored
+as separate ability-block rows. The sheet and exports resolve these records using the
+calculated class feature IDs, including replacement features and either dual class.
+
+Conditional choices within selected feats remain visible alongside ordinary grants.
+This includes dedication skill choices and feat choices in Free Archetype slots.
+Standalone list expressions such as `{{FEAT_NAMES}}` display their entries. Use
+`INCLUDES` when testing list membership inside an arithmetic expression.
+
+Characters with multiple casting sources can choose **Cast staff using** in the staff's
+spell list. Adding charges uses a slot from the selected prepared source; spontaneous
+casting consumes a slot from the selected spontaneous source.
+
+Deleting a character note page applies pending text edits before removing the page.
+The remaining editors reload their own contents, and deleting the last page leaves
+one blank Notes page. Editing or removing an imported creature ability affects only
+the selected row, even when legacy rows share an ID.
 
 Character calculation failures stay in background diagnostics. The sheet and builder
 remain editable, and retain the last successful calculation during the current session.
@@ -180,7 +198,21 @@ source runs first. For example, a Human's 25-foot base speed and a custom +5 adj
 produce 30 feet in both the builder and character sheet. Removing a grant recalculates
 the remaining base and adjustments.
 
-The `operations` column on each content row is what makes WG content actually *do* something to a character. See **[Operations](/guides/operations)** for the full catalog of types and their JSON shapes.
+Mode keys retain numbers: `Cursebound 2` and `Cursebound 3` toggle independently, and
+`ACTIVE_MODES` conditions distinguish them. Existing shared keys from numbered modes
+retain the effects that were active before the update until those modes are toggled
+individually.
+
+Companion `bindValue` operations keep their saved source store and variable visible
+when reopened, including custom destination values created only in the companion.
+Companion conditions can read bindings from the already calculated parent character.
+Binding to the character's `FEAT_NAMES` lets companion conditionals inspect those feats.
+
+Known spells use the saved ranks for their own casting source. A spell learned from
+two sources appears once per rank in each source; distinct heightened versions remain
+available within that source.
+
+The `operations` column on each content row is what makes WG content actually _do_ something to a character. See **[Operations](/guides/operations)** for the full catalog of types and their JSON shapes.
 
 When you `POST` a content row to a `create-*` endpoint, you’re sending operations in raw JSON. The API treats them as opaque (the OpenAPI schema uses `additionalProperties: true`); validation happens at character-build time on the frontend.
 
@@ -222,9 +254,9 @@ Examples:
 In React code, [`convertToHardcodedLink(type, name)`](https://github.com/wanderers-guide/wanderers-guide/blob/main/frontend/src/process/content/hardcoded-links.ts) does the lookup-by-name against the cache and emits the marker:
 
 ```ts
-import { convertToHardcodedLink } from '@content/hardcoded-links';
+import { convertToHardcodedLink } from "@content/hardcoded-links";
 
-`${convertToHardcodedLink('action', 'Seek')} basic action`;
+`${convertToHardcodedLink("action", "Seek")} basic action`;
 // -> "[Seek](link_action_42) basic action"
 ```
 
@@ -244,3 +276,20 @@ When in doubt: if a reader would benefit from clicking through to the rules, lin
 - [`create-content-source`](/api-reference/content/create-content-source): start a new homebrew book (Patreon tier 2+).
 - [`create-content-update`](/api-reference/content/create-content-update): submit an edit or erratum for community review.
 - [`search-data`](/api-reference/search/search-data): full-text search across every content type.
+
+### Homebrew editor and ancestry behavior
+
+Reopening a cached content editor or creature preview initializes its saved fields
+again. Editing or deleting a creature's base ability targets that entry's position,
+including older creatures whose base abilities share the placeholder ID `-1`.
+
+An ancestry can grant another ancestry trait with the same name as its base
+ancestry. Both trait IDs remain available when filtering ancestry feats and
+heritages. Copied class features recognize feats carrying a class trait even when
+the homebrew class uses a different trait, so the class feat picker retains its
+archetype and dedication tabs.
+
+Numeric conditions use a variable's calculated value, including typed bonuses
+from active modes. This lets a mode raise a counter such as `CURSEBOUND` and have
+dependent conditions match the value shown by inline expressions. Companion
+calculations refresh when their owner's calculated variables change.

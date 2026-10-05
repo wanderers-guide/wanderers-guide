@@ -80,14 +80,15 @@ export function variableToLabel(variable: Variable) {
   return toLabel(variable.name);
 }
 
-export function labelToVariable(label: string, trim = true) {
+/** Normalize authored labels, optionally retaining digits for identities such as numbered modes. */
+export function labelToVariable(label: string, trim = true, options?: { preserveNumbers?: boolean }): string {
   if (trim) {
     label = label.trim();
   }
   let cleanedString = label
     .toUpperCase()
     .replace(/-/g, '_')
-    .replace(/[^a-zA-Z_\s]/g, '');
+    .replace(options?.preserveNumbers ? /[^a-zA-Z0-9_\s]/g : /[^a-zA-Z_\s]/g, '');
   cleanedString = cleanedString.replace(/\s+/g, '_');
   return cleanedString;
 }
@@ -298,6 +299,12 @@ export function compileExpressions(id: StoreID, text?: string, round = false) {
   for (const expression of expressions) {
     let compiledExpression = expression.slice(2, -2);
     compiledExpression = compiledExpression.replace(/\\/g, '');
+    const directVariable = getVariables(id)[compiledExpression.trim().toUpperCase()];
+    if (directVariable && isVariableListStr(directVariable)) {
+      // A standalone list reference displays its entries; arithmetic still uses INCLUDES.
+      text = text.replace(expression, () => directVariable.value.join(', '));
+      continue;
+    }
     // Resolve list-membership checks to 1/0 first: INCLUDES(LIST_VARIABLE, 'value').
     // Must run before variable substitution, which would otherwise mangle the list argument.
     // Entries and needle compare case-insensitively; a non-list or missing variable yields 0.

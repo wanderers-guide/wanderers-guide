@@ -38,7 +38,7 @@ export function CreateLanguageModal(props: {
     queryKey: [`get-language-${props.editId}`, { editId: props.editId, editLanguage: props.editLanguage }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { editId, editLanguage }] = queryKey as [string, { editId?: number; editLanguage?: Language }];
 
       const language = editId ? await fetchContentById<Language>('language', editId) : editLanguage;
@@ -53,6 +53,8 @@ export function CreateLanguageModal(props: {
       return language;
     },
     enabled: editing,
+    // Editing forms initialize in the query function, including when reopening cached entries.
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
 

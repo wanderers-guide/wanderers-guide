@@ -47,7 +47,7 @@ export function CreateBackgroundModal(props: {
     queryKey: [`get-background-${props.editId}`, { editId: props.editId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { editId }] = queryKey;
 
       const background = await fetchContentById<Background>('background', editId);
@@ -62,6 +62,8 @@ export function CreateBackgroundModal(props: {
       return background;
     },
     enabled: props.editId !== undefined && props.editId !== -1,
+    // Editing forms initialize in the query function, including when reopening cached entries.
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
 

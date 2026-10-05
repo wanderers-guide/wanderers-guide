@@ -56,7 +56,7 @@ export function CreateTraitModal(props: {
     queryKey: [`get-trait-${props.editId}`, { editId: props.editId, editTrait: props.editTrait }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { editId, editTrait }] = queryKey as [string, { editId?: number; editTrait?: Trait }];
 
       const trait = editId ? await fetchContentById<Trait>('trait', editId) : editTrait;
@@ -84,6 +84,8 @@ export function CreateTraitModal(props: {
       return trait;
     },
     enabled: editing,
+    // Editing forms initialize in the query function, including when reopening cached entries.
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
 

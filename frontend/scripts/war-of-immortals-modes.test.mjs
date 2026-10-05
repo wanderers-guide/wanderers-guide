@@ -93,6 +93,52 @@ test('switching primary apparition preserves unrelated active modes', () => {
   assert.deepEqual(engine.toggleActiveMode(content.abilityBlocks, [rageName], firstMode), [rageName, first]);
 });
 
+test('numbered modes toggle and execute independently while saved word-based modes retain their keys', () => {
+  const modes = [1, 2, 3, 4].map((number) => ({
+    ...firstMode,
+    id: 90000 + number,
+    name: `Cursebound ${number}`,
+    traits: [],
+  }));
+  const active = engine.toggleActiveMode(modes, ['RAGE'], modes[1]);
+  assert.deepEqual(active, ['RAGE', 'CURSEBOUND_2']);
+  assert.deepEqual(
+    engine
+      .getExecutableModes(
+        modes,
+        active,
+        modes.map((mode) => String(mode.id))
+      )
+      .map((mode) => mode.id),
+    [90002]
+  );
+  const twoActive = engine.toggleActiveMode(modes, active, modes[3]);
+  assert.deepEqual(twoActive, ['RAGE', 'CURSEBOUND_2', 'CURSEBOUND_4']);
+  assert.deepEqual(engine.toggleActiveMode(modes, twoActive, modes[1]), ['RAGE', 'CURSEBOUND_4']);
+  assert.deepEqual(
+    engine.toggleActiveMode([{ ...modes[0], name: 'Cursebound One' }], ['CURSEBOUND_ONE'], {
+      ...modes[0],
+      name: 'Cursebound One',
+    }),
+    []
+  );
+});
+
+test('legacy numbered mode keys preserve the formerly active set, then allow individual toggles', () => {
+  const modes = [1, 2, 3, 4].map((number) => ({
+    ...firstMode,
+    id: 90000 + number,
+    name: `Cursebound ${number}`,
+    traits: [],
+  }));
+  const active = engine.toggleActiveMode(modes, ['RAGE', 'CURSEBOUND_'], modes[1]);
+  assert.deepEqual(active, ['RAGE', 'CURSEBOUND_1', 'CURSEBOUND_3', 'CURSEBOUND_4']);
+  assert.deepEqual(
+    engine.getExecutableModes(modes, active, ['90001', '90003']).map((mode) => mode.id),
+    [90001, 90003]
+  );
+});
+
 test('only one granted primary apparition contributes a vessel spell', async () => {
   const first = engine.labelToVariable(firstMode.name);
   const second = engine.labelToVariable(secondMode.name);

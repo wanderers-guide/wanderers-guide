@@ -28,6 +28,7 @@ import { cloneDeep, isNumber } from 'lodash-es';
 
 type CharacterState = [Character | null, SetterOrUpdater<Character | null>];
 
+/** Group initial-stat displays while retaining every independent editable boost. */
 export function getStatBlockDisplay(
   id: StoreID,
   variableNames: string[],
@@ -65,6 +66,32 @@ export function getStatBlockDisplay(
     if (ui && !foundSet.has(uniqueValue)) {
       output.push({ ui, operation, bestValue, variable, uuid });
       foundSet.add(uniqueValue);
+    }
+  }
+  if (mode === 'READ/WRITE') {
+    const attribute = variableNames.map((name) => getVariable(id, name)).find((variable) => variable?.type === 'attr');
+    if (attribute) {
+      for (const operation of operations) {
+        if (
+          operation.type !== 'select' ||
+          operation.data.optionType !== 'ADJ_VALUE' ||
+          operation.data.optionsFilters?.type !== 'ADJ_VALUE' ||
+          operation.data.optionsFilters.group !== 'ATTRIBUTE' ||
+          output.some((entry) => entry.operation?.id === operation.id)
+        ) {
+          continue;
+        }
+        const value = operation.data.optionsFilters.value;
+        if (!isAttributeValue(value) || (options?.onlyNegatives ? value.value >= 0 : value.value < 0)) continue;
+        // Free boosts share a variable group, but each operation owns a separate saved selection.
+        output.push({
+          ui: getDisplay(id, value, operation, attribute, mode, writeDetails, options),
+          operation,
+          variable: attribute,
+          bestValue: value,
+          uuid: operation.id,
+        });
+      }
     }
   }
   return output;

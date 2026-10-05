@@ -131,14 +131,20 @@ export function importFromContentPackage() {}
 `;
 
 /** Bundle the workspace's actual engine with a local content boundary; register cleanup with test.after(). */
-export async function createOperationEngine({ renderRichText = false, renderPerceptionDrawer = false, resolveArchetypeFixtures = false } = {}) {
+export async function createOperationEngine({
+  renderRichText = false,
+  renderPerceptionDrawer = false,
+  renderBindingEditor = false,
+  inspectInitialStats = false,
+  resolveArchetypeFixtures = false,
+} = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'wg-operation-tests-'));
   try {
     const result = await build({
       absWorkingDir: frontend,
       stdin: {
         contents: `${
-          renderRichText || renderPerceptionDrawer
+          renderRichText || renderPerceptionDrawer || renderBindingEditor
             ? `
           import React from 'react';
           import { renderToStaticMarkup } from 'react-dom/server';
@@ -148,6 +154,18 @@ export async function createOperationEngine({ renderRichText = false, renderPerc
             return renderToStaticMarkup(React.createElement(MantineProvider,
               { theme: { colors: { guide: DEFAULT_THEME.colors.blue } } },
               React.createElement(RichText, { conditionBlacklist, children: text })));
+          }
+          ${
+            renderBindingEditor
+              ? `
+          import { BindValOperation } from '@common/operations/variables/BindValOperation';
+          export function renderBindingEditor(variable, value) {
+            return renderToStaticMarkup(React.createElement(MantineProvider,
+              { theme: { colors: { guide: DEFAULT_THEME.colors.blue } } },
+              React.createElement(BindValOperation, { variable, value, onSelect() {}, onValueChange() {}, onRemove() {} })));
+          }
+          `
+              : ''
           }
           ${
             renderPerceptionDrawer
@@ -180,7 +198,7 @@ export async function createOperationEngine({ renderRichText = false, renderPerc
           export * from '@variables/variable-helpers';
           export { saveCalculatedStats } from '@variables/calculated-stats';
           export { convertToHardcodedLink, buildHrefFromContentData } from '@content/hardcoded-links';
-          export { detectSpells } from '@spells/spell-utils';
+          export { detectSpells, getKnownSpellsByRank } from '@spells/spell-utils';
           export { getInventorySpellIds, getMissingSpellIds, mergeSpellDependencies, filterSpellCatalog } from '@spells/item-spell-dependencies';
           export { filterByTraitType } from '@items/inv-utils';
           export { meetsPrerequisites } from '@variables/prereq-detection';
@@ -198,6 +216,7 @@ export async function createOperationEngine({ renderRichText = false, renderPerc
           export { determineFilteredSelectionList } from '@operations/operation-utils';
           export { OperationSelectFiltersAbilityBlockSchema } from '@schemas/operations';
           export { collectEntityAbilityBlocks, collectEntitySenses } from '@content/collect-content';
+          ${inspectInitialStats ? "export { getStatBlockDisplay } from '@variables/initial-stats-display';" : ''}
           export { displaySense } from '@utils/senses';
           export { isAbilityBlockVisible } from '@content/content-hidden';
           export { hasArchetypeClassFeatTraits, getTraitIdByType } from '@utils/traits';
@@ -212,7 +231,7 @@ export async function createOperationEngine({ renderRichText = false, renderPerc
       write: false,
       platform: 'node',
       format: 'esm',
-      ...(renderRichText || renderPerceptionDrawer
+      ...(renderRichText || renderPerceptionDrawer || renderBindingEditor
         ? {
             banner: {
               js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
@@ -224,6 +243,29 @@ export async function createOperationEngine({ renderRichText = false, renderPerc
         {
           name: 'fixture-content',
           setup(pluginBuild) {
+            if (inspectInitialStats) {
+              pluginBuild.onResolve({ filter: /^@common\/select\/SelectContent$/ }, (args) =>
+                args.importer.endsWith('/initial-stats-display.tsx')
+                  ? { path: 'stat-selector', namespace: 'stat-fixture' }
+                  : undefined
+              );
+              pluginBuild.onLoad({ filter: /.*/, namespace: 'stat-fixture' }, () => ({
+                contents: 'export function SelectContentButton() { return null; }',
+                loader: 'ts',
+              }));
+            }
+            if (renderBindingEditor) {
+              // Omit the surrounding operation menu; render the real binding fields and variable selectors.
+              pluginBuild.onResolve({ filter: /^\.\.\/Operations$/ }, (args) =>
+                args.importer.endsWith('/BindValOperation.tsx')
+                  ? { path: 'operation-wrapper', namespace: 'render-fixture' }
+                  : undefined
+              );
+              pluginBuild.onLoad({ filter: /.*/, namespace: 'render-fixture' }, () => ({
+                contents: 'export function OperationWrapper({ children }) { return children; }',
+                loader: 'ts',
+              }));
+            }
             pluginBuild.onResolve({ filter: /^@utils\/notifications$/ }, () => ({
               path: 'notifications',
               namespace: 'notifications',

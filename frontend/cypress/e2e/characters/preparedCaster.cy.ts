@@ -40,7 +40,7 @@ describe('Character builder', () => {
   });
 
   it('should cast only one prepared spell', () => {
-    cy.contains('Spells').click();
+    cy.contains('Spells', { timeout: 30000 }).click();
 
     cy.get('[data-wg-name="prepared-wizard"]', { timeout: 30000 }).as('preparedSpells');
     cy.get('@preparedSpells').contains('Manage').click();

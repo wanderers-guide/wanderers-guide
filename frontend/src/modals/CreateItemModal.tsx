@@ -89,7 +89,7 @@ export function CreateItemModal(props: {
     queryKey: [`get-item-${props.editId}`, { editId: props.editId, editItem: props.editItem }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { editId, editItem }] = queryKey as [string, { editId?: number; editItem?: Item }];
 
       const item = editId ? await fetchContentById<Item>('item', editId) : editItem;
@@ -135,6 +135,8 @@ export function CreateItemModal(props: {
       return item;
     },
     enabled: editing,
+    // Editing forms initialize in the query function, including when reopening cached entries.
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
 
