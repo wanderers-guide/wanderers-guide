@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { ProficiencyTypeSchema, VariableStoreSchema } from './variables';
 import {
   SourceKeySchema,
+  CastingAttributeSchema,
   SourceValueSchema,
   AvailabilitySchema,
   RaritySchema,
@@ -151,6 +152,7 @@ export const SpellInnateEntrySchema = z.object({
   tradition: z.string(),
   casts_max: z.number(),
   casts_current: z.number(),
+  attribute: CastingAttributeSchema.optional(),
 });
 export type SpellInnateEntry = z.infer<typeof SpellInnateEntrySchema>;
 

@@ -98,6 +98,17 @@ export const SpellSectionTypeSchema = z.enum([
 ]);
 export type SpellSectionType = z.infer<typeof SpellSectionTypeSchema>;
 
+/** Attributes supported by a spell's authored casting ability. */
+export const CastingAttributeSchema = z.enum([
+  'ATTRIBUTE_STR',
+  'ATTRIBUTE_DEX',
+  'ATTRIBUTE_CON',
+  'ATTRIBUTE_INT',
+  'ATTRIBUTE_WIS',
+  'ATTRIBUTE_CHA',
+]);
+export type CastingAttribute = z.infer<typeof CastingAttributeSchema>;
+
 // ─── Item Meta ────────────────────────────────────────────────────────────────
 
 export const ItemGroupSchema = z.enum(['GENERAL', 'WEAPON', 'ARMOR', 'SHIELD', 'RUNE', 'UPGRADE', 'MATERIAL']);

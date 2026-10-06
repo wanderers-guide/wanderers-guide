@@ -19,6 +19,7 @@ import { compileExpressions } from '@variables/variable-utils';
 import { cloneDeep, isEqual, uniqWith } from 'lodash-es';
 import { isCharacter, isCreature, isTruthy } from '@utils/type-fixing';
 import { getEntityLevel } from '@utils/entity-utils';
+import { getInnateSpellAttribute, getInnateSpellKey } from '@spells/innate-spells';
 
 /** Collect the entity's calculated abilities, including embedded class archetype features. */
 export function collectEntityAbilityBlocks(
@@ -237,6 +238,7 @@ export function collectEntitySpellcasting(id: StoreID, entity: LivingEntity) {
         rank: spellData.rank ?? 0,
         casts_max: spellData.casts ?? 0,
         casts_current: 0,
+        attribute: getInnateSpellAttribute(spellData),
       });
     }
   }
@@ -315,18 +317,18 @@ function mergeSpellSlots(emptySlots: SpellSlotRecord[], characterSlots: SpellSlo
 function mergeInnateSpells(emptyCasts: SpellInnateEntry[], characterCasts: SpellInnateEntry[]): SpellInnateEntry[] {
   const castMap = new Map();
   for (const cast of emptyCasts) {
-    castMap.set(`${cast.spell_id}-${cast.tradition}-${cast.rank}`, 0);
+    castMap.set(getInnateSpellKey(cast), 0);
   }
 
   for (const cast of characterCasts) {
-    const key = `${cast.spell_id}-${cast.tradition}-${cast.rank}`;
+    const key = getInnateSpellKey(cast);
     if (castMap.has(key)) {
       castMap.set(key, cast.casts_current);
     }
   }
 
   return emptyCasts.map((cast) => {
-    const key = `${cast.spell_id}-${cast.tradition}-${cast.rank}`;
+    const key = getInnateSpellKey(cast);
     cast.casts_current = castMap.get(key);
     return cast;
   });

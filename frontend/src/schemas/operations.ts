@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { AbilityBlockTypeSchema, ContentTypeSchema, RaritySchema } from './shared';
+import { AbilityBlockTypeSchema, CastingAttributeSchema, ContentTypeSchema, RaritySchema } from './shared';
 import {
   ExtendedProficiencyTypeSchema,
   ExtendedProficiencyValueSchema,
@@ -81,6 +81,7 @@ export const SpellMetadataSchema = z.object({
   rank: z.number().nullable().optional(),
   tradition: z.enum(['ARCANE', 'OCCULT', 'PRIMAL', 'DIVINE']).optional(),
   casts: z.number().nullable().optional(),
+  attribute: CastingAttributeSchema.optional(),
 });
 export type SpellMetadata = z.infer<typeof SpellMetadataSchema>;
 
@@ -143,6 +144,8 @@ export const OperationOptionsSchema = z.object({
   doConditionals: z.boolean().optional(),
   doOnlyConditionals: z.boolean().optional(),
   onlyConditionalsWhitelist: z.array(z.string()).optional(),
+  // Internal context for the child Lore selections of one Additional Lore grant.
+  grantedLore: z.string().optional(),
 });
 export type OperationOptions = z.infer<typeof OperationOptionsSchema>;
 
@@ -194,7 +197,7 @@ export type OperationBindValue = z.infer<typeof OperationBindValueSchema>;
 export const OperationGiveAbilityBlockSchema = z.object({
   id: z.string(),
   type: z.literal('giveAbilityBlock'),
-  data: z.object({ type: AbilityBlockTypeSchema, abilityBlockId: z.number() }),
+  data: z.object({ type: AbilityBlockTypeSchema, abilityBlockId: z.number(), grantedLore: z.string().optional() }),
 });
 export type OperationGiveAbilityBlock = z.infer<typeof OperationGiveAbilityBlockSchema>;
 

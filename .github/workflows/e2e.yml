@@ -132,20 +132,6 @@ jobs:
         working-directory: ./frontend
         run: npm ci --legacy-peer-deps --no-audit --no-fund
 
-      - name: Isolated content migration safety tests
-        run: npm run test:content:native
-
-      - name: Upload content migration safety evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: treasure-vault-native-${{ github.sha }}
-          path: |
-            .agents/legacy/treasure-vault-native-*.json
-            .agents/legacy/treasure-vault-native-*.json.log
-          include-hidden-files: true
-          if-no-files-found: warn
-
       - name: Conditional authoring browser regression tests
         working-directory: ./frontend
         run: |
@@ -246,3 +232,35 @@ jobs:
       - name: Tear down docker stack
         if: always()
         run: docker compose down -v
+
+  content-native:
+    runs-on: ubuntu-latest
+    # The full guarded migration suite takes several hours. Keep its owned
+    # database isolated from the browser/API stack without reducing coverage.
+    timeout-minutes: 360
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Pull pinned native fixture images
+        run: |
+          docker pull supabase/postgres:15.6.1.146
+          docker pull supabase/gotrue:v2.158.1
+
+      - name: Isolated content migration safety tests
+        run: npm run test:content:native
+
+      - name: Upload content migration safety evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: treasure-vault-native-${{ github.sha }}
+          path: |
+            .agents/legacy/treasure-vault-native-*.json
+            .agents/legacy/treasure-vault-native-*.json.log
+          include-hidden-files: true
+          if-no-files-found: warn

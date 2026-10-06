@@ -233,6 +233,7 @@ export async function createOperationEngine({
           export { meetsPrerequisites } from '@variables/prereq-detection';
           export { applyConditions, compiledConditions, getConditionByName } from '@conditions/condition-handler';
           export { getSpellStats, getItemCastingSource, getSpellheartStats, resolveSpellheartCasting } from '@spells/spell-handler';
+          export * from '@spells/innate-spells';
           export { SpellheartCastingSchema, ItemSchema, InventoryItemSchema } from '@schemas/content';
           export { changeEntityConditions, confirmHealth, handleRest } from '@pages/character_sheet/entity-handler';
           export { findDefaultPresets } from '@common/dice/dice-utils';

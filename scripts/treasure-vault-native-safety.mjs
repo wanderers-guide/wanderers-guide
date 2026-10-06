@@ -32,7 +32,7 @@ const displayPath = '20261002101000_treasure_vault_complete_display.sql';
 export const REQUIRED_NATIVE_OBLIGATIONS = Object.freeze([
   {name:'fresh-postgresql-dual-ledger',implemented:true,reason:'Fresh actual-row PostgreSQL derivation and exact loader verifier, never an embedded prior receipt.'},
   {name:'historical023-fresh-four-insert-bootstrap',implemented:true,reason:'Genuine own-stage rollback import, independent four typed literals and explicit native identity consumption.'},
-  {name:'alternate101-allocation-and-full-token-prefix',implemented:true,reason:'Second authentic105 positive chronology and full11 allocated bindings; the separate lexical prefix proof is not a fabricated physical allocation.'},
+  {name:'alternate101-allocation-and-full-token-prefix',implemented:true,reason:'Second authentic106 positive chronology and full11 allocated bindings; the separate lexical prefix proof is not a fabricated physical allocation.'},
   {name:'concurrent-writer-and-count-phantom-ordering',implemented:true,reason:'Actual persistent two-session positive bodies, observed native locks/PIDs and exact55P03/script-exit3.'},
   {name:'shared-helper-all-pending-alias-routes',implemented:true,reason:'Mandatory structural pending-route matrix at both terminals using real GoTrue, full rollback and exact script evidence.'},
   {name:'historical14-exact-approved-positive-projection',implemented:true,reason:'Independent complete before/after approved leaf projections, actual allocations and full unrelated/saved/source preservation.'},
@@ -71,9 +71,9 @@ export function assertRequiredNativeEvidence(receipt) {
   assert.ok(metadata.filter(row=>row!==privileged[0]).every(row=>row.setup_login==='postgres'));
   const ci=receipt.alternate_fixture.registered_ci_replays;
   assert.equal(ci?.schema,'wg-tv-native-registered-ci-replays-v3');assert.equal(ci.passed,true);
-  assert.equal(ci.registered_requirements,98);assert.equal(ci.checks.length,61);assert.equal(ci.replays.length,89);
-  assert.equal(ci.passes,2);assert.equal(ci.registered_verification_rounds,3);assert.equal(ci.expected_native_statements,362);
-  assert.equal(ci.stages.length,362);assert.equal(new Set(ci.stages.map(row=>row.label)).size,362);
+  assert.equal(ci.registered_requirements,99);assert.equal(ci.checks.length,62);assert.equal(ci.replays.length,89);
+  assert.equal(ci.passes,2);assert.equal(ci.registered_verification_rounds,3);assert.equal(ci.expected_native_statements,365);
+  assert.equal(ci.stages.length,365);assert.equal(new Set(ci.stages.map(row=>row.label)).size,365);
   assert.equal(ci.workflow.path,'.github/workflows/e2e.yml');assert.equal(ci.workflow.exact_bytes,true);
   const workflow=receipt.input_manifest.entries.find(row=>row.path===ci.workflow.path);
   assert.ok(workflow);assert.equal(ci.workflow.sha256,workflow.sha256);
@@ -81,14 +81,14 @@ export function assertRequiredNativeEvidence(receipt) {
   assert.equal(ci.registered_release_read_only_transactions,true);assert.equal(ci.full_state_after_each_statement,true);
   assert.match(ci.baseline_sha256,/^[a-f0-9]{64}$/);
   const nativeCiStages=receipt.alternate_fixture.stages.filter(row=>row.name.startsWith('registered-ci:'));
-  assert.equal(nativeCiStages.length,362);assert.equal(new Set(nativeCiStages.map(row=>row.name)).size,362);
+  assert.equal(nativeCiStages.length,365);assert.equal(new Set(nativeCiStages.map(row=>row.name)).size,365);
   const actualStages=new Map(receipt.alternate_fixture.stages.map(row=>[row.name,row]));
   for(const row of ci.stages){
     assert.equal(row.full_state_preserved,true);
     const actual=actualStages.get('registered-ci:'+row.label);assert.ok(actual);
     assert.equal(actual.sql_sha256,row.sql_sha256);assert.equal(actual.status,0);assert.equal(actual.signal,null);assert.equal(actual.passed,true);
   }
-  assert.deepEqual(ci.stages.filter(row=>row.kind==='release').map(row=>row.round),[...Array(61).fill(0),...Array(61).fill(1),...Array(61).fill(2)]);
+  assert.deepEqual(ci.stages.filter(row=>row.kind==='release').map(row=>row.round),[...Array(62).fill(0),...Array(62).fill(1),...Array(62).fill(2)]);
   assert.ok(ci.stages.filter(row=>row.kind==='release').every(row=>row.read_only===true&&row.strict_boolean_checks>0&&Array.isArray(row.ids)&&row.ids.length===row.strict_boolean_checks&&row.ids.every(id=>typeof id==='string'&&id.trim())));
   assert.deepEqual(ci.stages.filter(row=>row.kind==='migration').map(row=>row.pass),[...Array(89).fill(1),...Array(89).fill(2)]);
   assert.deepEqual(ci.stages.filter(row=>row.kind==='footer').map(row=>({paths:row.paths,read_only:row.read_only,schema_temp_scope:row.schema_temp_scope,mutations_rolled_back:row.mutations_rolled_back})),
@@ -100,7 +100,7 @@ export function assertRequiredNativeEvidence(receipt) {
 /** Pure plan: explicit membership/chronology, never glob-skip unknown or future migrations. */
 export function buildNativeVerificationPlan({inputs,files,selectedNegativeFiles = null}) {
   assert.equal(inputs.input_provenance.mode, 'checked-in-default');
-  assert.equal(files.length, 105, 'Exact reviewed complete CI chronology');
+  assert.equal(files.length, 106, 'Exact reviewed complete CI chronology');
   assert.deepEqual([...files].sort(), files);
   assert.equal(new Set(files).size, files.length);
   assert.ok(files.includes('20261001010000_repair_weapon_stat_fields.sql'));

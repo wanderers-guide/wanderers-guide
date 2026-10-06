@@ -365,13 +365,21 @@ test('baseline digest records require an explicit supported algorithm and preser
 
 test('CI retains native migration evidence on failure without archiving unrelated backups', async () => {
   const workflow = await readFile(new URL('../.github/workflows/e2e.yml', import.meta.url), 'utf8');
+  // Scope retention to the isolated job, including a final upload step.
+  const nativeJob = workflow.match(/^  content-native:\n((?: {4}[^\n]*\n|\n)*)/m)?.[1];
+  const browserJob = workflow.match(/^  e2e:\n((?: {4}[^\n]*\n|\n)*)/m)?.[1];
+  assert.ok(nativeJob && browserJob, 'both independent verification jobs exist');
+  assert.match(nativeJob, /^    timeout-minutes: 360$/m);
+  assert.match(browserJob, /^    timeout-minutes: 120$/m);
+  assert.doesNotMatch(browserJob, /npm run test:content:native/);
+  assert.doesNotMatch(nativeJob, /continue-on-error:|--only-negative|^    needs:/m);
+  assert.match(nativeJob, /^        run: npm run test:content:native$/m);
   const marker = '      - name: Upload content migration safety evidence\n';
   assert.equal(workflow.split(marker).length, 2, 'one evidence upload step');
-  const start = workflow.indexOf(marker);
-  const end = workflow.indexOf('\n      - name:', start + marker.length);
-  assert.ok(start > workflow.indexOf('      - name: Isolated content migration safety tests\n'));
-  assert.equal(end, workflow.indexOf('\n      - name: Conditional authoring browser regression tests\n'));
-  const step = workflow.slice(start, end);
+  const start = nativeJob.indexOf(marker);
+  const nextStep = nativeJob.indexOf('\n      - name:', start + marker.length);
+  assert.ok(start > nativeJob.indexOf('      - name: Isolated content migration safety tests\n'));
+  const step = nativeJob.slice(start, nextStep === -1 ? nativeJob.length : nextStep);
   assert.match(step, /^        if: always\(\)$/m);
   assert.match(step, /^        uses: actions\/upload-artifact@v4$/m);
   assert.match(step, /^          name: treasure-vault-native-\$\{\{ github.sha \}\}$/m);

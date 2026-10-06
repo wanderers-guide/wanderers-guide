@@ -485,6 +485,12 @@ snapshot lacks private curator proposal bodies, so acceptance of those exact
 private bodies remains untested. An optional output filename saves the receipt
 without overwriting an existing file.
 
+CI runs this full safety suite in a separate `content-native` job with a
+six-hour budget. Its owned database does not share a runner with the browser/API
+stack. The ordinary E2E job keeps its two-hour budget and runs independently;
+both jobs must pass before release. Local fixture limits and required coverage
+remain the same.
+
 After the safety step, CI uploads generated receipts, redacted stage logs and
 dual-ledger hashes to the `treasure-vault-native-<commit>` artifact. The upload
 runs even if that step fails and includes only these generated files, not other

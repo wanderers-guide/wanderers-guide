@@ -1,4 +1,5 @@
 import TraitsInput from '@common/TraitsInput';
+import { CastingAttributeSelect } from '../spell/CastingAttributeSelect';
 import VariableSelect from '@common/VariableSelect';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { SelectContentButton } from '@common/select/SelectContent';
@@ -426,6 +427,7 @@ function SelectionFilteredSpell(props: {
   const [rank, setRank] = useState(props.filters?.spellData?.rank);
   const [tradition, setTradition] = useState(props.filters?.spellData?.tradition);
   const [casts, setCasts] = useState(props.filters?.spellData?.casts);
+  const [attribute, setAttribute] = useState(props.filters?.spellData?.attribute);
 
   useDidUpdate(() => {
     props.onChange({
@@ -443,9 +445,10 @@ function SelectionFilteredSpell(props: {
         rank: rank,
         tradition: tradition,
         casts: casts,
+        attribute: type === 'INNATE' ? attribute : undefined,
       },
     });
-  }, [minLevel, maxLevel, traits, traditions, type, castingSource, rank, tradition, casts]);
+  }, [minLevel, maxLevel, traits, traditions, type, castingSource, rank, tradition, casts, attribute]);
 
   return (
     <Stack gap={10}>
@@ -540,6 +543,8 @@ function SelectionFilteredSpell(props: {
           </Group>
         )}
       </Stack>
+
+      {type === 'INNATE' && <CastingAttributeSelect value={attribute} onChange={setAttribute} />}
 
       <Divider label={<Text fz='sm'>List Filters</Text>} labelPosition='left' />
 
@@ -980,33 +985,29 @@ function SelectionPredefinedSpell(props: {
   const [rank, setRank] = useState(firstOption?.operation.data.rank);
   const [tradition, setTradition] = useState(firstOption?.operation.data.tradition);
   const [casts, setCasts] = useState(firstOption?.operation.data.casts);
+  const [attribute, setAttribute] = useState(firstOption?.operation.data.attribute);
 
   useDidUpdate(() => {
-    const ops = [...options];
-    if (ops.length > 0) {
-      // Update the first option's spell data
-      ops[0] = {
-        id: ops[0].id,
-        type: 'SPELL',
+    // Every choice shares the first option's metadata. Apply current metadata on
+    // each edit so adding or replacing a spell cannot restore stale attributes.
+    props.onChange(
+      options.map((option) => ({
+        ...option,
         operation: {
-          ...ops[0].operation,
+          ...option.operation,
           data: {
-            ...ops[0].operation.data,
-            type: type,
-            castingSource: castingSource,
-            rank: rank,
-            tradition: tradition,
-            casts: casts,
+            ...option.operation.data,
+            type,
+            castingSource,
+            rank,
+            tradition,
+            casts,
+            attribute: type === 'INNATE' ? attribute : undefined,
           },
         },
-      };
-    }
-    props.onChange(ops);
-  }, [type, castingSource, rank, tradition, casts]);
-
-  useDidUpdate(() => {
-    props.onChange(options);
-  }, [options]);
+      }))
+    );
+  }, [options, type, castingSource, rank, tradition, casts, attribute]);
 
   const optionsForUI =
     options.length === 0
@@ -1112,6 +1113,8 @@ function SelectionPredefinedSpell(props: {
           </Group>
         )}
       </Stack>
+
+      {type === 'INNATE' && <CastingAttributeSelect value={attribute} onChange={setAttribute} />}
 
       <Divider label={<Text fz='sm'>List Options</Text>} labelPosition='left' />
 

@@ -1,5 +1,6 @@
 import { Accordion, Badge, Divider, Group, Paper, Stack, Text } from '@mantine/core';
 import { getSpellStats } from '@spells/spell-handler';
+import { getInnateSpellAttribute, getInnateSpellKey } from '@spells/innate-spells';
 import {
   CastingSource,
   Character,
@@ -44,7 +45,7 @@ export default function InnateSpellsList(props: {
   };
   hasFilters: boolean;
   openManageSpells?: (source: string, type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY') => void;
-  castSpell: (cast: boolean, spell: Spell) => void;
+  castSpell: (cast: boolean, spell: Spell, innate: SpellInnateEntry) => void;
   innateSpells: Dictionary<
     {
       spell: Spell | undefined;
@@ -53,6 +54,7 @@ export default function InnateSpellsList(props: {
       tradition: string;
       casts_max: number;
       casts_current: number;
+      attribute?: SpellInnateEntry['attribute'];
     }[]
   > | null;
 }) {
@@ -135,9 +137,9 @@ export default function InnateSpellsList(props: {
                           spell={innate.spell}
                           exhausted={innate.casts_current >= innate.casts_max && innate.casts_max !== 0}
                           tradition={innate.tradition}
-                          attribute={'ATTRIBUTE_CHA'}
+                          attribute={getInnateSpellAttribute(innate)}
                           onCastSpell={(cast: boolean) => {
-                            if (innate.spell) castSpell(cast, innate.spell);
+                            if (innate.spell) castSpell(cast, innate.spell, innate);
                           }}
                           hasFilters={props.hasFilters}
                           leftSection={
@@ -150,7 +152,7 @@ export default function InnateSpellsList(props: {
                                   if (!c) return c;
 
                                   const innates = (props.extra?.innates ?? []).map((inn) => {
-                                    if (inn.spell_id === innate.spell_id && inn.rank === innate.rank) {
+                                    if (getInnateSpellKey(inn) === getInnateSpellKey(innate)) {
                                       return {
                                         ...inn,
                                         casts_current: v,

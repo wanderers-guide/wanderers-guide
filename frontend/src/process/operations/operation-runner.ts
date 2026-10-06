@@ -1,6 +1,7 @@
 import { fetchContentById, getCachedContent } from '@content/content-store';
 import { getModeKey } from '@common/modes/mode-rules';
 import { requiresFinalSkillSelection } from './custom-selection-rules';
+import { getGrantedLoreVariable, isAdditionalLore } from './granted-lore';
 import { AbilityBlock, Item, Language, Spell, Trait } from '@schemas/content';
 import {
   ConditionCheckData,
@@ -312,6 +313,23 @@ async function runSelect(
   sourceLabel?: string,
   savedIdentity?: { id: string; aliases?: string[] }
 ): Promise<OperationResult> {
+  const grantedLore = getGrantedLoreVariable(options?.grantedLore);
+  if (
+    grantedLore &&
+    operation.data.optionType === 'ADJ_VALUE' &&
+    operation.data.modeType === 'FILTERED' &&
+    operation.data.optionsFilters?.type === 'ADJ_VALUE' &&
+    operation.data.optionsFilters.group === 'ADD-LORE'
+  ) {
+    // Keep the feat's own rank progression for this grant's specified subject.
+    // Direct adjustment avoids the replacement choice used by ordinary skill training.
+    if (!options?.doOnlyConditionals) {
+      addVariable(varId, 'prof', grantedLore, { value: 'U', attribute: 'ATTRIBUTE_INT' }, sourceLabel);
+      if (!options?.doOnlyValueCreation)
+        adjVariable(varId, grantedLore, operation.data.optionsFilters.value, sourceLabel);
+    }
+    return null;
+  }
   if (requiresFinalSkillSelection(operation.id) && !finalizingSkillSelections) {
     const result: OperationResult = {
       selection: {
@@ -558,6 +576,7 @@ async function updateVariables(
         rank: selectedOption._meta_data?.rank,
         tradition: selectedOption._meta_data?.tradition,
         casts: selectedOption._meta_data?.casts,
+        attribute: selectedOption._meta_data?.attribute,
       } satisfies GiveSpellData),
       sourceLabel
     );
@@ -1211,7 +1230,7 @@ async function runGiveAbilityBlock(
             varId,
             { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
             subOperations,
-            options,
+            { ...options, grantedLore: isAdditionalLore(abilityBlock) ? operation.data.grantedLore : undefined },
             abilityBlock.type === 'feat' || abilityBlock.type === 'class-feature'
               ? `${abilityBlock.name} (Lvl. ${abilityBlock.level})`
               : abilityBlock.name
@@ -1337,6 +1356,7 @@ async function runGiveSpell(
           rank: operation.data.rank,
           tradition: operation.data.tradition,
           casts: operation.data.casts,
+          attribute: operation.data.attribute,
         } satisfies GiveSpellData),
         sourceLabel
       );
