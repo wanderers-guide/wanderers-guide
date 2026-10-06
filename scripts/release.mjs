@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs, promisify } from 'node:util';
+import { createPostgresRead } from './release-readonly-postgres.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(new URL('../frontend/package.json', import.meta.url));
@@ -407,26 +408,22 @@ export async function checkRemoteFunctions(
 }
 
 /** Verify functions and migration effects for a complete release. */
-async function checkRemote(manifest, project) {
+export async function checkRemote(manifest, project, {
+  read = managementRead, download = downloadRemoteFunction,
+  databaseRead = (query) => read(project, '/database/query/read-only', query),
+  databaseTransport = 'management-read-only',
+} = {}) {
   const baseline = await jsonFile(path.join(root, 'supabase/release/baseline.json'), baselineSchema);
   if (project !== baseline.project_ref) throw new Error('This schema baseline belongs to a different project');
-  const { inventory, issues } = await captureRemoteFunctions(manifest, project);
+  const { inventory, issues } = await captureRemoteFunctions(manifest, project, read, download);
   const state = stateSchema.parse(
-    await managementRead(
-      project,
-      '/database/query/read-only',
-      await readFile(path.join(root, 'supabase/release/schema-state.sql'), 'utf8')
-    )
+    await databaseRead(await readFile(path.join(root, 'supabase/release/schema-state.sql'), 'utf8'))
   );
   issues.push(...compareSchema(baseline, state));
   const ledgerState = z
     .array(z.object({ present: z.boolean() }))
     .parse(
-      await managementRead(
-        project,
-        '/database/query/read-only',
-        "select to_regclass('supabase_migrations.schema_migrations') is not null as present"
-      )
+      await databaseRead("select to_regclass('supabase_migrations.schema_migrations') is not null as present")
     );
   const ledgerPresent = ledgerState[0]?.present;
   let ledger = [];
@@ -434,11 +431,7 @@ async function checkRemote(manifest, project) {
     ledger = z
       .array(z.object({ version: z.string() }))
       .parse(
-        await managementRead(
-          project,
-          '/database/query/read-only',
-          'select version from supabase_migrations.schema_migrations order by version'
-        )
+        await databaseRead('select version from supabase_migrations.schema_migrations order by version')
       );
     const known = new Set(Object.keys(manifest.migrations).map((name) => name.split('_')[0]));
     for (const row of ledger) if (!known.has(row.version)) issues.push(`Unknown remote migration: ${row.version}`);
@@ -446,11 +439,7 @@ async function checkRemote(manifest, project) {
   const { migrationChecks, issues: migrationIssues } = await evaluateMigrationChecks(
     manifest.requirements,
     async (check) =>
-      managementRead(
-        project,
-        '/database/query/read-only',
-        await readFile(path.join(root, 'supabase/release', check), 'utf8')
-      )
+      databaseRead(await readFile(path.join(root, 'supabase/release', check), 'utf8'))
   );
   issues.push(...migrationIssues);
   for (const [name, requirement] of Object.entries(manifest.requirements)) {
@@ -458,9 +447,7 @@ async function checkRemote(manifest, project) {
       const functionState = z
         .array(z.object({ body: z.string() }))
         .parse(
-          await managementRead(
-            project,
-            '/database/query/read-only',
+          await databaseRead(
             `select prosrc as body from pg_proc where oid = to_regprocedure('${requirement.function_signature}')`
           )
         );
@@ -472,7 +459,7 @@ async function checkRemote(manifest, project) {
       issues.push(`Required migration not recorded: ${name}`);
   }
   // A deployment during the download window would otherwise produce a mixed release snapshot.
-  issues.push(...(await checkInventoryStability(project, inventory)));
+  issues.push(...(await checkInventoryStability(project, inventory, read)));
   if (manifest.dirty) issues.push('Working tree is dirty; a releasable artifact must identify one committed revision');
   return {
     checked_at: new Date().toISOString(),
@@ -482,6 +469,7 @@ async function checkRemote(manifest, project) {
     passed: issues.length === 0,
     issues,
     functions: inventory,
+    database_transport: databaseTransport,
     schema_objects_checked: state.length,
     migration_ledger: ledgerPresent ? ledger : 'absent; verified effects only',
     migration_checks: migrationChecks,
@@ -494,14 +482,17 @@ async function main() {
     options: {
       output: { type: 'string' },
       'project-ref': { type: 'string' },
+      'database-url-env': { type: 'string' },
     },
   });
   const command = positionals[0];
   if (!['check-local', 'manifest', 'check-remote', 'check-remote-functions', 'function-names'].includes(command)) {
     throw new Error(
-      'Usage: release.mjs check-local|manifest|function-names|check-remote|check-remote-functions [--project-ref REF] [--output FILE]'
+      'Usage: release.mjs check-local|manifest|function-names|check-remote|check-remote-functions [--project-ref REF] [--database-url-env NAME] [--output FILE]'
     );
   }
+  if (values['database-url-env'] && command !== 'check-remote')
+    throw new Error('--database-url-env is only supported by check-remote');
   const manifest = await createManifest();
   let result;
   if (command === 'manifest') result = manifest;
@@ -520,7 +511,10 @@ async function main() {
     result =
       command === 'check-remote-functions'
         ? await checkRemoteFunctions(manifest, values['project-ref'])
-        : await checkRemote(manifest, values['project-ref']);
+        : await checkRemote(manifest, values['project-ref'], values['database-url-env'] ? {
+            databaseRead: createPostgresRead(values['project-ref'], values['database-url-env']),
+            databaseTransport: 'postgres-read-only',
+          } : {});
     if (!result.passed) process.exitCode = 1;
   }
   const output = JSON.stringify(result, null, 2) + '\n';

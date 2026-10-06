@@ -468,6 +468,9 @@ An out-of-memory or timeout failure remains a failed test.
 The runner performs a genuine signup and checks the public-user trigger,
 then tests guarded updates, pending proposals, rollback, read-only checks,
 saved-copy preservation, exact replay and concurrent writer ordering.
+It also calls the shared terminal helper as the image's existing
+`supabase_read_only_user` inside a read-only transaction. The verifier has its own
+direct execution grant; it receives no application or administrator role membership.
 
 Receipts record the image tags, observed immutable image IDs and matching Auth
 binary and health versions. An Auth image reporting an unspecified build version

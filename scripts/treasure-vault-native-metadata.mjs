@@ -55,6 +55,32 @@ ${metadata}`);
     name: `execute-${role}`, kind: 'privilege', expected: 'one-boolean-status-row',
     sql: transaction(`set local role ${role};select row_to_json(status) from ${signature} status;`),
   });
+  controls.push({
+    name: 'execute-supabase_read_only_user', kind: 'privilege', expected: 'one-boolean-status-row',
+    executionLogin: 'supabase_admin', executionRole: 'supabase_read_only_user',
+    sql: `begin read only;
+do $native_verifier_admin$
+begin
+  if current_user<>'supabase_admin' or session_user<>'supabase_admin'
+    or not exists(select 1 from pg_catalog.pg_roles where rolname=current_user and rolsuper is true) then
+    raise exception 'Native verifier administrator transport was not independently verified';
+  end if;
+end $native_verifier_admin$;
+set local role supabase_read_only_user;
+do $native_verifier_execution$
+begin
+  if current_user<>'supabase_read_only_user' or session_user<>'supabase_admin'
+    or current_setting('transaction_read_only')<>'on'
+    or not exists(select 1 from pg_catalog.pg_roles where rolname=current_user and rolsuper is false)
+    or not pg_catalog.pg_has_role(current_user,'pg_read_all_data','MEMBER')
+    or pg_catalog.pg_has_role(current_user,'postgres','MEMBER')
+    or pg_catalog.pg_has_role(current_user,'service_role','MEMBER') then
+    raise exception 'Native verifier read-only execution authority was not independently verified';
+  end if;
+end $native_verifier_execution$;
+select row_to_json(status) from ${signature} status;
+rollback;`,
+  });
   for (const role of ['anon', 'authenticated']) controls.push({
     name: `deny-${role}`, kind: 'sql-rejection', expectedSqlState: '42501',
     expectedSetupMarker: `native-metadata-execution-role:${role}`,
@@ -77,10 +103,12 @@ ${metadata}`);
     ['authenticated-execute', `grant execute on function ${signature} to authenticated;`],
     ['service-grant-option', `grant execute on function ${signature} to service_role with grant option;`],
     ['service-execute-revoked', `revoke execute on function ${signature} from service_role;`],
+    ['verifier-grant-option', `grant execute on function ${signature} to supabase_read_only_user with grant option;`],
+    ['verifier-execute-revoked', `revoke execute on function ${signature} from supabase_read_only_user;`],
     ['body', `create or replace function ${signature} returns table(recognized boolean,passed boolean) language sql stable security invoker parallel unsafe cost 100 rows 1 set search_path='' as $metadata_mutant$select true,true;$metadata_mutant$;`],
-    ['return-name', `drop function ${signature};${helper.definition.replace('returns table(recognized boolean,passed boolean)', 'returns table(recognised boolean,passed boolean)')}revoke all on function ${signature} from public,anon,authenticated;grant execute on function ${signature} to postgres,service_role;`],
+    ['return-name', `drop function ${signature};${helper.definition.replace('returns table(recognized boolean,passed boolean)', 'returns table(recognised boolean,passed boolean)')}revoke all on function ${signature} from public,anon,authenticated;grant execute on function ${signature} to postgres,service_role,supabase_read_only_user;`],
     ['language-plpgsql', `create or replace function ${signature} returns table(recognized boolean,passed boolean) language plpgsql stable security invoker parallel unsafe cost 100 rows 1 set search_path='' as $metadata_language$begin return query select true,true;end;$metadata_language$;`],
-    ['return-output-type', `drop function ${signature};create function ${signature} returns table(recognized boolean,passed integer) language sql stable security invoker parallel unsafe cost 100 rows 1 set search_path='' as $metadata_type$select true,1;$metadata_type$;revoke all on function ${signature} from public,anon,authenticated;grant execute on function ${signature} to postgres,service_role;`],
+    ['return-output-type', `drop function ${signature};create function ${signature} returns table(recognized boolean,passed integer) language sql stable security invoker parallel unsafe cost 100 rows 1 set search_path='' as $metadata_type$select true,1;$metadata_type$;revoke all on function ${signature} from public,anon,authenticated;grant execute on function ${signature} to postgres,service_role,supabase_read_only_user;`],
   ];
   for (const [name, setup] of mutations) controls.push({ name: `reject-${name}-metadata`, kind: 'release', executionLogin: name==='leakproof'?'supabase_admin':'postgres', executionRole:'postgres', sql: name==='leakproof'?adminTransaction(setup):transaction(`${setup}\n${metadata}`), expected: false });
   controls.push({ name: 'missing-helper-release-is-false', kind: 'release', sql: transaction(`drop function ${signature};\n${metadata}`), expected: false });
@@ -95,8 +123,8 @@ ${metadata}`);
   controls.push({ name: 'unknown-existing-definition-installer-rejects', kind: 'sql-rejection', expectedSqlState: 'P0001', sql: transaction(`${mutations.find(([name]) => name === 'body')[1]}\n${helper.sql}`) });
   return {
     helper_body_sha256: helper.bodySha256,
-    required_transports: { ordinary:'postgres', privileged_setup:'supabase_admin', execution_role:'postgres', privileged_control_names:['reject-leakproof-metadata'] },
-    native_expected: { configuration: ['search_path=""'], argument_modes: ['t', 't'], argument_names: ['recognized', 'passed'], output_types: ['boolean', 'boolean'], owner: 'postgres', direct_execute_roles: ['postgres', 'service_role'], grant_option: false },
+    required_transports: { ordinary:'postgres', privileged_setup:'supabase_admin', execution_role:'postgres', privileged_control_names:['reject-leakproof-metadata','execute-supabase_read_only_user'] },
+    native_expected: { configuration: ['search_path=""'], argument_modes: ['t', 't'], argument_names: ['recognized', 'passed'], output_types: ['boolean', 'boolean'], owner: 'postgres', direct_execute_roles: ['postgres', 'service_role', 'supabase_read_only_user'], grant_option: false },
     controls,
     limits: ['Metadata/permission proof only, not all39 own-stage or whole-catalog behavioral acceptance.', 'Each mutant rolls back. Expected query errors must be distinguished from transport/process failures.', 'Language and output-type recreation controls also change the body; they prove rejection of those complete altered definitions, not isolated causality for one catalog attribute.', 'Full catalog preservation, mixed terminals, writer order/fresh calls, optional exact queue rows, trigger rollback and all39 actual own stages remain separate mandatory controls.'],
   };

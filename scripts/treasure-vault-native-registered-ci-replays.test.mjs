@@ -44,8 +44,8 @@ function executionModel({badResultAt=null,badStdoutAt=null,mutateSnapshotAt=null
 
 /** Model of already separately asserted six-family receipt fields, not fabricated native evidence. */
 function sixFamilyModel({proof,calls}) {
-  const metadata=Array.from({length:110},(_,index)=>({name:index===0?'reject-leakproof-metadata':'model-'+index,phase:'100',passed:true,full_state_preserved:true,
-    actual_signal:null,no_transport_error:true,actual_exit_status:0,sql_kind:'release',setup_login:index===0?'supabase_admin':'postgres',execution_role:'postgres'}));
+  const metadata=Array.from({length:113},(_,index)=>({name:index===0?'reject-leakproof-metadata':index===1?'execute-supabase_read_only_user':'model-'+index,phase:'100',passed:true,full_state_preserved:true,
+    actual_signal:null,no_transport_error:true,actual_exit_status:0,sql_kind:index===1?'privilege':'release',setup_login:index<2?'supabase_admin':'postgres',execution_role:index===1?'supabase_read_only_user':'postgres'}));
   return{input_manifest:captured.manifest,fresh_native_ledger_verified:{catalog:2349,sources:31,templates:11,all_native_digests_reproduced:true},
     historical023_fresh_import_capsule:{passed:true},historical14_verified:{historical14:true,independent_complete_owner_projection:true,full_unrelated_saved_source_queue_preservation:true},
     shared_helper_pending_alias_verified:{both_terminals_complete:true,required_terminals:['100','101']},

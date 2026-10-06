@@ -127,15 +127,17 @@ export function terminalFunctionState(bodySha256) {
     and p.proallargtypes=array[pg_catalog.to_regtype('boolean')::oid,pg_catalog.to_regtype('boolean')::oid]
     and p.proargmodes=array['t','t']::"char"[] and p.proargnames=array['recognized','passed']::text[]
     and p.proconfig=array['search_path=""']::text[] and p.proowner=pg_catalog.to_regrole('postgres')
-    and (select count(*)=2
+    and (select count(*)=3
       and count(*) filter(where a.grantee=pg_catalog.to_regrole('postgres'))=1
       and count(*) filter(where a.grantee=pg_catalog.to_regrole('service_role'))=1
+      and count(*) filter(where a.grantee=pg_catalog.to_regrole('supabase_read_only_user'))=1
       and bool_and((a.privilege_type='EXECUTE' and a.is_grantable is false
       and a.grantor=pg_catalog.to_regrole('postgres')
-      and a.grantee in(pg_catalog.to_regrole('postgres'),pg_catalog.to_regrole('service_role'))) is true)
+      and a.grantee in(pg_catalog.to_regrole('postgres'),pg_catalog.to_regrole('service_role'),pg_catalog.to_regrole('supabase_read_only_user'))) is true)
       from pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a)
     and pg_catalog.has_function_privilege('postgres',p.oid,'EXECUTE')
-    and pg_catalog.has_function_privilege('service_role',p.oid,'EXECUTE'))`;
+    and pg_catalog.has_function_privilege('service_role',p.oid,'EXECUTE')
+    and pg_catalog.has_function_privilege('supabase_read_only_user',p.oid,'EXECUTE'))`;
 }
 
 /** Extract the one actual checked-in helper and exact installer/release skeleton. */
@@ -169,7 +171,7 @@ begin
 end $terminal_install$;
 alter function ${TERMINAL_HELPER.signature} owner to postgres;
 revoke all on function ${TERMINAL_HELPER.signature} from public,anon,authenticated;
-grant execute on function ${TERMINAL_HELPER.signature} to postgres,service_role;
+grant execute on function ${TERMINAL_HELPER.signature} to postgres,service_role,supabase_read_only_user;
 do $terminal_readback$
 begin
   if (${state}) is not true then
@@ -368,7 +370,7 @@ export function reconstructDualNativeContract(spec100, spec101, proof) {
     expected_templates, historical_files: proof.historical_files, known_pending_dependencies: proof.known_pending_dependencies,
     mandatory_native_controls: [
       "Install exact helper before earliest Dragonprism; all39 actual original bootstrap stages remain unrecognized;100 original body bootstrap; exact100 and exact101 replay",
-      "Missing/changed helper body, volatility/security/search_path/return shape/owner/ACL drift fail closed; PUBLIC/anon/authenticated cannot execute; postgres/service_role can execute",
+      "Missing/changed helper body, volatility/security/search_path/return shape/owner/ACL drift fail closed; PUBLIC/anon/authenticated cannot execute; postgres/service_role/supabase_read_only_user can execute",
       "Actual helper performs current whole-domain checks for every separate call; writer and trigger mutations between calls are not masked by cached prior truth",
       "actual wrappers reject mixed100/101 owner/template domains and any retained100/101 marker with unknown owner/dependency/source/queue state",
       "Approved known queue IDs absent, exact one/both present, or removed are valid; edited/replaced present IDs and all additional matching pending routes reject",

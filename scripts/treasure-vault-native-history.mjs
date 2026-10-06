@@ -67,11 +67,11 @@ export function createAuthenticSharedHistoryControls(context) {
     receipt.shared_history.own_stage.push({ path: wrapper.path, passed: true, before_sha256: before.sha256, after_sha256: terminal.sha256, original_migration_sha256: wrapper.originalMigrationSha256, original_release_sha256: wrapper.originalReleaseSha256, before_recognized: false, after_recognized: false, original_and_wrapped_values_equal: true, original_check_ids: originalAfter.map(row => row.id), replay_full_state_preserved: true });
   }
   async function metadataControls(phase) {
-    assert.equal(phase,'100','The metadata110 family runs once at the actual100 terminal');
-    assert.equal(typeof sqlAsAdmin,'function','A fixed verified administrator transport is required only for the leakproof setup');
+    assert.equal(phase,'100','The complete metadata family runs once at the actual100 terminal');
+    assert.equal(typeof sqlAsAdmin,'function','A fixed verified administrator transport is required only for the named leakproof and verifier controls');
     const plan = buildTerminalHelperMetadataControls(inputs);
-    assert.deepEqual(plan.required_transports,{ordinary:'postgres',privileged_setup:'supabase_admin',execution_role:'postgres',privileged_control_names:['reject-leakproof-metadata']});
-    assert.equal(plan.controls.length,110);
+    assert.deepEqual(plan.required_transports,{ordinary:'postgres',privileged_setup:'supabase_admin',execution_role:'postgres',privileged_control_names:['reject-leakproof-metadata','execute-supabase_read_only_user']});
+    assert.equal(plan.controls.length,113);
     const authorityBefore=stateDigest();status({recognized:true,passed:true});
     const marker=helper.proof.entries.find(row=>row.sha256_100!==row.sha256_101);assert.ok(marker);assert.ok(tables.has(marker.table));assert.ok(Number.isSafeInteger(marker.id));
     assert.equal(query(`select encode(sha256(convert_to(((to_jsonb(r)-'updated_at'-'search_tsv')||jsonb_build_object('uuid',r.uuid::text))::text,'UTF8')),'hex') from public.${marker.table} r where id=${marker.id};`),marker.sha256_100,'Actual complete-row100 phase witness, not only a supplied label');
@@ -87,7 +87,15 @@ export function createAuthenticSharedHistoryControls(context) {
       await checkpoint('helper metadata '+control.name);
       const before = stateDigest(), statement = typeof control.sql === 'function' ? control.sql() : control.sql;
       const login=control.executionLogin??'postgres';assert.ok(['postgres','supabase_admin'].includes(login));
-      if(login==='supabase_admin'){assert.equal(control.name,'reject-leakproof-metadata');assert.equal(control.kind,'release');assert.equal(control.expected,false);assert.equal(control.executionRole,'postgres');}
+      if(login==='supabase_admin') {
+        assert.ok(plan.required_transports.privileged_control_names.includes(control.name));
+        if(control.name==='reject-leakproof-metadata') {
+          assert.equal(control.kind,'release');assert.equal(control.expected,false);assert.equal(control.executionRole,'postgres');
+        } else {
+          assert.equal(control.name,'execute-supabase_read_only_user');assert.equal(control.kind,'privilege');
+          assert.equal(control.expected,'one-boolean-status-row');assert.equal(control.executionRole,'supabase_read_only_user');
+        }
+      }
       const result = (login==='supabase_admin'?sqlAsAdmin:sql)(statement, true);
       assert.equal(result.error==null,true);assert.equal(result.signal,null);
       if (control.kind === 'sql-rejection') {
@@ -105,7 +113,7 @@ export function createAuthenticSharedHistoryControls(context) {
         }
       }
       unchanged(before); status({ recognized: true, passed: true });
-      const executionRole=control.executionRole??/^(?:deny|execute)-(postgres|service_role|anon|authenticated)$/.exec(control.name)?.[1]??'postgres';
+      const executionRole=control.executionRole??/^(?:deny|execute)-(postgres|service_role|supabase_read_only_user|anon|authenticated)$/.exec(control.name)?.[1]??'postgres';
       receipt.shared_history.metadata.push({ name: control.name, phase,passed: true, sql_kind: control.kind, setup_login:login,execution_role:executionRole,setup_marker:control.expectedSetupMarker??null,actual_exit_status:result.status,actual_signal:result.signal,no_transport_error:result.error==null,expected_sqlstate: control.expectedSqlState ?? null, causality: /language-plpgsql|return-output-type/.test(control.name) ? 'Combined complete definition rejection; body also changed' : 'Reviewed complete fingerprint/permission control', full_state_preserved: true });
     }
   }

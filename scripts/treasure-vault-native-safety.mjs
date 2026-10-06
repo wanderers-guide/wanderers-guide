@@ -64,11 +64,14 @@ export function assertRequiredNativeEvidence(receipt) {
   assert.deepEqual(authorities.map(row=>row.login).sort(),['postgres','supabase_admin']);
   assert.ok(authorities.every(row=>row.phase==='100'&&row.actual_exit_status===0&&row.actual_signal===null&&row.no_transport_error===true&&row.full_state_preserved===true));
   const metadata=receipt.shared_history.metadata;
-  assert.equal(metadata.length,110);assert.equal(new Set(metadata.map(row=>row.name)).size,110);
+  assert.equal(metadata.length,113);assert.equal(new Set(metadata.map(row=>row.name)).size,113);
   assert.ok(metadata.every(row=>row.phase==='100'&&row.passed===true&&row.full_state_preserved===true&&row.actual_signal===null&&row.no_transport_error===true&&row.actual_exit_status===(row.sql_kind==='sql-rejection'?3:0)));
   const privileged=metadata.filter(row=>row.setup_login==='supabase_admin');
-  assert.equal(privileged.length,1);assert.equal(privileged[0].name,'reject-leakproof-metadata');assert.equal(privileged[0].execution_role,'postgres');
-  assert.ok(metadata.filter(row=>row!==privileged[0]).every(row=>row.setup_login==='postgres'));
+  assert.equal(privileged.length,2);
+  assert.deepEqual(privileged.map(row=>row.name).sort(),['execute-supabase_read_only_user','reject-leakproof-metadata']);
+  const leakproof=privileged.find(row=>row.name==='reject-leakproof-metadata');assert.equal(leakproof.execution_role,'postgres');
+  const verifier=privileged.find(row=>row.name==='execute-supabase_read_only_user');assert.equal(verifier.execution_role,'supabase_read_only_user');assert.equal(verifier.sql_kind,'privilege');
+  assert.ok(metadata.filter(row=>!privileged.includes(row)).every(row=>row.setup_login==='postgres'));
   const ci=receipt.alternate_fixture.registered_ci_replays;
   assert.equal(ci?.schema,'wg-tv-native-registered-ci-replays-v3');assert.equal(ci.passed,true);
   assert.equal(ci.registered_requirements,99);assert.equal(ci.checks.length,62);assert.equal(ci.replays.length,89);

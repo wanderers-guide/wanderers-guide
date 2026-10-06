@@ -139,7 +139,9 @@ const proseAnchor = (
   label: string,
   occurrence: number
 ): Cypress.Chainable<JQuery<HTMLElement>> =>
-  paragraph(entry)
+  cy
+    .get(`${drawerSelector} .mantine-ScrollArea-viewport p`)
+    .filter((_index, element) => normalizeText(element.textContent ?? '').startsWith(entry.prefix))
     .find('a')
     .filter((_index, element) => normalizeText(element.textContent ?? '') === label)
     .eq(occurrence);
@@ -295,8 +297,9 @@ describe('Finite Treasure Vault catalog reference witnesses', { testIsolation: t
           .slice(0, entry.references.indexOf(reference))
           .filter((prior) => prior.label === reference.label).length;
         proseAnchor(entry, reference.label, occurrence).scrollIntoView();
-        /** Scrolling can replace the subject, so query the current DOM again before clicking. */
-        proseAnchor(entry, reference.label, occurrence).should('be.visible').click();
+        /** Keep visibility assertions separate from the fresh action query after scrolling. */
+        proseAnchor(entry, reference.label, occurrence).should('be.visible');
+        proseAnchor(entry, reference.label, occurrence).click({ scrollBehavior: false });
         title(reference.title);
         cy.get(`${drawerSelector} button[aria-label="Go back to previous drawer"]`).should('be.visible').click();
         title(witness.title);
