@@ -6,7 +6,9 @@ import { useState } from 'react';
 import { useDidUpdate } from '@mantine/hooks';
 import { GiveSpellData } from '@schemas/operations';
 import { labelToVariable } from '@variables/variable-utils';
+import { CastingAttributeSelect } from './CastingAttributeSelect';
 
+/** Edit the metadata for one directly granted spell. */
 export function GiveSpellOperation(props: {
   data: GiveSpellData;
   onSelect: (data: GiveSpellData) => void;
@@ -19,6 +21,7 @@ export function GiveSpellOperation(props: {
   const [defaultRank, setDefaultRank] = useState(props.data.rank);
   const [tradition, setTradition] = useState(props.data.tradition);
   const [casts, setCasts] = useState(props.data.casts);
+  const [attribute, setAttribute] = useState(props.data.attribute);
 
   useDidUpdate(() => {
     props.onSelect({
@@ -28,8 +31,9 @@ export function GiveSpellOperation(props: {
       rank: rank ?? defaultRank,
       tradition,
       casts,
+      attribute: type === 'INNATE' ? attribute : undefined,
     });
-  }, [spellId, type, castingSource, rank, tradition, casts]);
+  }, [spellId, type, castingSource, rank, tradition, casts, attribute]);
 
   return (
     <OperationWrapper onRemove={props.onRemove} title='Give Spell'>
@@ -131,6 +135,7 @@ export function GiveSpellOperation(props: {
             />
           </Group>
         )}
+        {type === 'INNATE' && <CastingAttributeSelect value={attribute} onChange={setAttribute} />}
       </Stack>
     </OperationWrapper>
   );

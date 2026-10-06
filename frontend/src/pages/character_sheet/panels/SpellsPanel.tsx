@@ -18,6 +18,7 @@ import {
 } from '@mantine/core';
 import ManageSpellsModal from '@modals/ManageSpellsModal';
 import { getKnownSpellsByRank, isCantrip } from '@spells/spell-utils';
+import { getInnateSpellKey } from '@spells/innate-spells';
 import {
   filterSpellCatalog,
   getExplicitSpellQueryOptions,
@@ -520,7 +521,7 @@ function SpellList(props: {
     }
   ) => void;
 }) {
-  const castSpell = (cast: boolean, spell: Spell) => {
+  const castSpell = (cast: boolean, spell: Spell, selectedInnate?: SpellInnateEntry) => {
     if (!props.entity) return;
 
     if (isCantrip(spell)) {
@@ -610,7 +611,7 @@ function SpellList(props: {
         if (!c) return c;
 
         const innates = collectEntitySpellcasting(props.id, c).innate.map((innate) => {
-          if (innate.spell_id === spell.id && innate.rank === spell.rank) {
+          if (selectedInnate && getInnateSpellKey(innate) === getInnateSpellKey(selectedInnate)) {
             return {
               ...innate,
               casts_current: cast

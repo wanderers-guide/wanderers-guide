@@ -31,6 +31,7 @@ import { phoneQuery } from '@utils/mobile-responsive';
 import { getEntityLevel } from '@utils/entity-utils';
 import { compiledConditions } from '@conditions/condition-handler';
 import { StoreID } from '@schemas/variables';
+import { getInnateSpellAttribute } from '@spells/innate-spells';
 import { getInnateStatBlockGroups } from '@spells/innate-stat-block';
 
 export default function StatBlockSection(props: {
@@ -267,15 +268,15 @@ export default function StatBlockSection(props: {
   };
 
   const getInnateSpellsDisplay = () => {
-    const spellAttack = data.proficiencies['INNATE_SPELL_ATTACK'].total;
-    const spellDc = parseInt(data.proficiencies['INNATE_SPELL_DC'].total);
-
-    const spellsDict = groupBy(data.innate_spells, (s) => s.tradition);
-    return Object.entries(spellsDict).map(([tradition, spells]) => {
+    const spellsDict = groupBy(data.innate_spells, (s) => `${s.tradition}:${getInnateSpellAttribute(s)}`);
+    return Object.entries(spellsDict).map(([groupKey, spells]) => {
+      const tradition = spells[0].tradition;
+      const spellAttack = spells[0].stats.spell_attack.total[0];
+      const spellDc = spells[0].stats.spell_dc.total;
       const groups = getInnateStatBlockGroups(spells, getEntityLevel(entity), statBlock?.innate_spell_frequencies);
 
       return (
-        <RichText ta='justify' fz='xs' span>
+        <RichText key={groupKey} ta='justify' fz='xs' span>
           **{toLabel(tradition)} Innate Spells** DC {spellDc}
           {statBlock?.omit_innate_attack ? '' : `, attack ${sign(spellAttack)}`};{' '}
           {groups

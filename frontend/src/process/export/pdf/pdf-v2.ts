@@ -48,6 +48,7 @@ import stripMd from 'remove-markdown';
 
 import { PDFDocument, PDFForm } from 'pdf-lib';
 import { getSpellStats } from '@spells/spell-handler';
+import { getInnateSpellPdfLabel } from '@spells/innate-spells';
 import { isCantrip, isRitual } from '@spells/spell-utils';
 import { stripEmojis, toLabel } from '@utils/strings';
 import { isTruthy } from '@utils/type-fixing';
@@ -1050,7 +1051,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   for (let i = 0; i < innateSpells.length; i++) {
     const record = innateSpells[i];
     if (record) {
-      setText(`INNATE SPELL ${i + 1}`, record.spell.name);
+      setText(`INNATE SPELL ${i + 1}`, getInnateSpellPdfLabel(STORE_ID, record.spell, record));
       setText(`INNATE SPELL ACTION ${i + 1}`, actionCostToLabel(record.spell.cast, true));
       setText(`INNATE FREQ ${i + 1}`, `${record.casts_current}/${record.casts_max}`);
     }
