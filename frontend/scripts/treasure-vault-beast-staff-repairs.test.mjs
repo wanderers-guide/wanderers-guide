@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
@@ -39,14 +40,12 @@ const ownerState = (row, patch) => {
     assert.deepEqual(field === 'uuid' ? Number(row[field]) : row[field], value, `${row.id} ${field}`);
   for (const [field, value] of Object.entries(patch.metadata)) assert.deepEqual(row.meta_data?.[field], value);
   const actual = leafPair(row);
-  for (const state of ['before', 'after']) {
-    if (
-      JSON.stringify(actual) ===
-      JSON.stringify({ description: patch.description[state], operations: patch.operations[state] })
-    )
-      return state;
-  }
-  assert.fail('Unreviewed Beast Staff description/operations pair');
+  return assertReviewedTransition(
+    actual,
+    { description: patch.description.before, operations: patch.operations.before },
+    { description: patch.description.after, operations: patch.operations.after },
+    'Unreviewed Beast Staff description/operations pair'
+  );
 };
 function ownerAt(row, patch, state) {
   ownerState(row, patch);
@@ -57,9 +56,12 @@ function ownerAt(row, patch, state) {
 }
 const spellState = (row) => {
   const actual = { traditions: row.traditions, defense: row.defense };
-  for (const state of ['before', 'after'])
-    if (JSON.stringify(actual) === JSON.stringify(spec.spell[state])) return state;
-  assert.fail('Unreviewed Cursed Metamorphosis traditions/defense pair');
+  return assertReviewedTransition(
+    actual,
+    spec.spell.before,
+    spec.spell.after,
+    'Unreviewed Cursed Metamorphosis traditions/defense pair'
+  );
 };
 function curseAt(row, state) {
   spellState(row);

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import { InventorySchema, ItemSchema } from '../src/schemas/content.ts';
@@ -34,9 +35,11 @@ const beastMigration = await readFile(
 const beastSpec = JSON.parse(beastMigration.split('$beast$')[1]);
 const upgradedStaves = beastSpec.items.map((patch) => {
   const item = row('item', patch.id);
-  assert.ok(['before', 'after'].some((state) => item.description === patch.description[state]));
-  assert.ok(
-    ['before', 'after'].some((state) => JSON.stringify(item.operations) === JSON.stringify(patch.operations[state]))
+  assertReviewedTransition(
+    { description: item.description, operations: item.operations },
+    { description: patch.description.before, operations: patch.operations.before },
+    { description: patch.description.after, operations: patch.operations.after },
+    `Unreviewed Beast Staff ${item.id} description/operations pair`
   );
   return { ...item, description: patch.description.after, operations: structuredClone(patch.operations.after) };
 });

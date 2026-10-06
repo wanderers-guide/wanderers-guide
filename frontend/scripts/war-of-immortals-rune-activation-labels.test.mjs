@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { ItemSchema } from '../src/schemas/content.ts';
@@ -52,9 +53,17 @@ test('four mythic rune activations use the correct trait label without changing 
     const prefix = `**Activate—${patch.activation}** <abbr cost="REACTION" class="action-symbol">5</abbr> `;
     const before = `${prefix}([concentration](link_trait_1432))`;
     const after = `${prefix}([concentrate](link_trait_1432))`;
-    assert.equal(original.description.split(before).length - 1, 1);
-    const updated = structuredClone(original);
-    updated.description = original.description.replace(before, after);
+    const state = assertReviewedTransition(
+      [original.description.split(before).length - 1, original.description.split(after).length - 1],
+      [1, 0],
+      [0, 1],
+      `${patch.name} activation label`
+    );
+    const legacy = structuredClone(original);
+    if (state === 'after') legacy.description = legacy.description.replace(after, before);
+    assert.equal(legacy.description.split(before).length - 1, 1);
+    const updated = structuredClone(legacy);
+    updated.description = legacy.description.replace(before, after);
     assert.equal(updated.description.split(after).length - 1, 1);
     assert.ok(!updated.description.includes('[concentration](link_trait_1432)'));
     assert.equal(ItemSchema.safeParse(updated).success, true);
