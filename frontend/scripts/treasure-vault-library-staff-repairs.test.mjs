@@ -1,5 +1,6 @@
 import { readReviewedHistoricalSql } from './treasure-vault-historical-test-support.mjs';
 import assert from 'node:assert/strict';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 import { createHash } from 'node:crypto';
 import { before, after, test } from 'node:test';
 import { ItemSchema, InventorySchema, SpellSchema, AbilityBlockSchema, TraitSchema } from '../src/schemas/content.ts';
@@ -37,13 +38,12 @@ function ownerState(row, patch) {
   assertFields(row, patch.expected);
   assert.ok(row.meta_data && typeof row.meta_data === 'object' && !Array.isArray(row.meta_data));
   for (const [key, value] of Object.entries(patch.metadata)) assert.deepEqual(row.meta_data[key], value);
-  for (const state of ['before', 'after'])
-    if (
-      row.description === patch.description[state] &&
-      JSON.stringify(row.operations) === JSON.stringify(patch.operations[state])
-    )
-      return state;
-  assert.fail(`Unreviewed ${row.id} description/operations pair`);
+  return assertReviewedTransition(
+    { description: row.description, operations: row.operations },
+    { description: patch.description.before, operations: patch.operations.before },
+    { description: patch.description.after, operations: patch.operations.after },
+    `Unreviewed ${row.id} description/operations pair`
+  );
 }
 function ownerAt(row, patch, state) {
   ownerState(row, patch);

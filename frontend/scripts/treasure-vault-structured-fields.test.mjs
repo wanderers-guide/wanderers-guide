@@ -1,5 +1,7 @@
 import { readReviewedHistoricalSql } from './treasure-vault-historical-test-support.mjs';
 import assert from 'node:assert/strict';
+import { isDeepStrictEqual } from 'node:util';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
@@ -49,11 +51,7 @@ function repair(original, patch, { pending = [], collisions = [] } = {}) {
     'pending item submission'
   );
   for (const key of Object.keys(patch.before)) {
-    assert.ok(
-      JSON.stringify(original[key]) === JSON.stringify(patch.before[key]) ||
-        JSON.stringify(original[key]) === JSON.stringify(patch.after[key]),
-      `unreviewed ${key} leaf`
-    );
+    assertReviewedTransition(original[key], patch.before[key], patch.after[key], `unreviewed ${key} leaf`);
   }
   assert.ok(
     !collisions.some((entry) => entry.id !== original.id && String(entry.uuid) === patch.after_uuid),
@@ -85,11 +83,11 @@ function passes(
         item.content_source_id === entry.source &&
         item.level === entry.level &&
         item.group === entry.group &&
-        JSON.stringify(item.price) === JSON.stringify(entry.price) &&
+        isDeepStrictEqual(item.price, entry.price) &&
         item.meta_data != null &&
         !Array.isArray(item.meta_data) &&
-        JSON.stringify(item.meta_data.source) === JSON.stringify(entry.citation) &&
-        Object.entries(entry.leaves).every(([key, value]) => JSON.stringify(item[key]) === JSON.stringify(value))
+        isDeepStrictEqual(item.meta_data.source, entry.citation) &&
+        Object.entries(entry.leaves).every(([key, value]) => isDeepStrictEqual(item[key], value))
       );
     }) &&
     dependencies.every((dependency) =>
@@ -184,7 +182,18 @@ before(async () => {
       fixtureRows[index] = { table: 'item', row: entry.row };
     }
   }
-  originals = patches.map(({ id }) => fixtureRows.find(({ table, row }) => table === 'item' && row.id === id).row);
+  originals = patches.map((patch) => {
+    const published = fixtureRows.find(({ table, row }) => table === 'item' && row.id === patch.id).row;
+    const current = repair(published, patch);
+    const original = {
+      ...structuredClone(published),
+      level: patch.before_level,
+      uuid: patch.before_uuid,
+      ...structuredClone(patch.before),
+    };
+    assert.deepEqual(repair(original, patch), current, `current and historical ${patch.id} converge`);
+    return original;
+  });
   proposed = patches.map((patch, index) => repair(originals[index], patch));
   engine = await createOperationEngine();
 });

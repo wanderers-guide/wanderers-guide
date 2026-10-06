@@ -20,7 +20,7 @@ const rows = await readContentRows([
   { table: 'content_source', id: 16 },
 ]);
 const get = (table, id, input = rows) => input.find((entry) => entry.table === table && entry.row.id === id)?.row;
-const original = get('ability_block', 51111);
+const published = get('ability_block', 51111);
 const source = get('content_source', 16);
 const dependency = get('trait', 3295);
 const object = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -76,7 +76,14 @@ function repair(row, sourceRow = source, traitRow = dependency, queue = []) {
     meta_data: { ...structuredClone(row.meta_data), source: structuredClone(spec.owner.after.source) },
   };
 }
+stateOf(published);
+const original = {
+  ...structuredClone(published),
+  operations: structuredClone(spec.owner.before.operations),
+  meta_data: { ...structuredClone(published.meta_data), source: structuredClone(spec.owner.before.source) },
+};
 const proposed = repair(original);
+assert.deepEqual(repair(published), proposed, 'the current dump retains the reviewed complete state');
 let engine;
 before(async () => {
   engine = await createOperationEngine();

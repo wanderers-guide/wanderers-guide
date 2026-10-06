@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
+import { readReviewedHistoricalSql } from './treasure-vault-historical-test-support.mjs';
 import test from 'node:test';
 import { OperationSchema } from '../src/schemas/operations.ts';
 import { AbilityBlockSchema, OperationCharacterResultPackageSchema } from '../src/schemas/content.ts';
@@ -9,6 +11,17 @@ const published = await readContentRows([
   ...[3295, 3460, 3487, 3479, 1468, 1542, 1346].map((id) => ({ table: 'trait', id })),
   { table: 'item', id: 12068 },
 ]);
+const winterMigration = await readReviewedHistoricalSql(
+  new URL('../../supabase/migrations/20261001220000_treasure_vault_winter_resistance.sql', import.meta.url)
+);
+const winterSpec = JSON.parse(winterMigration.split('$winter$')[1]);
+const publishedWinter = published.find(({ table, row }) => table === 'ability_block' && row.id === 51111).row;
+const publishedState = assertReviewedTransition(
+  { operations: publishedWinter.operations, source: publishedWinter.meta_data.source },
+  winterSpec.owner.before,
+  winterSpec.owner.after,
+  'Unreviewed Winter state'
+);
 const engine = await createOperationEngine();
 test.after(async () => engine.cleanup());
 const block = (rows, id) => rows.find(({ table, row }) => table === 'ability_block' && row.id === id).row;
@@ -96,12 +109,21 @@ async function calculate(operations, selections = {}, rows = optedRows(), overri
   return { result, fire: Math.max(0, ...fire.filter(Number.isFinite)) };
 }
 test('published relic is excluded by cloned opt-in while heritage remains eligible and original content stays unchanged', async () => {
+  const legacy = structuredClone(published);
+  const legacyWinter = block(legacy, 51111);
+  legacyWinter.operations = structuredClone(winterSpec.owner.before.operations);
+  legacyWinter.meta_data.source = structuredClone(winterSpec.owner.before.source);
   assert.equal((await calculate([relicGrant, winterGrant], fireSelection)).fire, 7);
   assert.equal((await calculate([heritageGrant, winterGrant])).fire, 14);
   assert.equal(
-    (await calculate([relicGrant, winterGrant], fireSelection, structuredClone(published))).fire,
+    (await calculate([relicGrant, winterGrant], fireSelection, legacy)).fire,
     14,
     'unopted legacy comparison remains unchanged'
+  );
+  assert.equal(
+    (await calculate([relicGrant, winterGrant], fireSelection, structuredClone(published))).fire,
+    publishedState === 'before' ? 14 : 7,
+    'the current published snapshot uses its reviewed contribution rules'
   );
 });
 

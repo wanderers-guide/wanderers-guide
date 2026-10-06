@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
@@ -30,10 +31,17 @@ before(async () => {
     const adjustment = warrior.feature_adjustments.find(({ prev_id }) => prev_id === repair.prev_id);
     assert.equal(adjustment.type, 'REPLACE');
     assert.equal(adjustment.data.name, repair.name);
-    assert.deepEqual(
+    assertReviewedTransition(
       adjustment.data.operations.filter(({ data }) => data.variable.startsWith('WEAPON_GROUP_')),
-      repair.old_group_operations
+      repair.old_group_operations,
+      repair.scoped_operations,
+      `${repair.name} group ranks`
     );
+    const savedAdjustment = savedWarrior.feature_adjustments.find(({ prev_id }) => prev_id === repair.prev_id);
+    savedAdjustment.data.operations = [
+      ...savedAdjustment.data.operations.filter(({ data }) => !data.variable.startsWith('WEAPON_GROUP_')),
+      ...structuredClone(repair.old_group_operations),
+    ];
     adjustment.data.operations = [
       ...adjustment.data.operations.filter(({ data }) => !data.variable.startsWith('WEAPON_GROUP_')),
       ...repair.scoped_operations,
