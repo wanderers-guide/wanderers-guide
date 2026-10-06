@@ -16,7 +16,7 @@ const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 const result=(overrides={})=>({status:0,signal:null,error:undefined,stdout:'',stderr:'',...overrides});
 
 /** External Docker boundary only. No process, SQL or daemon is started here. */
-function model({psql=result({stdout:'check|t\n'}),fail=null,corruptCopy=false,replaceIdentityAt=null,mktemp=result({stdout:'/tmp/wg-tv-native-sql-Ab1234\n'}),commandResult=null,ownerRead=null,afterAction=()=>{},cleanupResult=result(),noRemoteExecution=false}={}) {
+function model({psql=result({stdout:'check|t\n'}),fail=null,corruptCopy=false,replaceIdentityAt=null,mktemp=result({stdout:'/tmp/wg-tv-native-sql-Ab1234\n'}),commandResult=null,ownerRead=null,afterAction=()=>{},cleanupResult=result(),noRemoteExecution=false,redact=String}={}) {
   const files=new Map(),copied=[],events=[],records=[],localFiles=[];
   let ownershipReads=0,cleanupDepth=0,psqlCalls=0;
   function getOwnedDatabaseId(){
@@ -55,7 +55,7 @@ function model({psql=result({stdout:'check|t\n'}),fail=null,corruptCopy=false,re
     }
     throw new Error('Unmodelled Docker command '+JSON.stringify(args));
   }
-  const sql=createNativeFileSqlTransport({getOwnedDatabaseId,docker,cleanupTransport:callback=>{cleanupDepth++;try{return callback();}finally{cleanupDepth--; }},redact:String,record:row=>records.push(row)});
+  const sql=createNativeFileSqlTransport({getOwnedDatabaseId,docker,cleanupTransport:callback=>{cleanupDepth++;try{return callback();}finally{cleanupDepth--; }},redact,record:row=>records.push(row)});
   return {sql,events,records,files,copied,localFiles,get ownershipReads(){return ownershipReads;},get psqlCalls(){return psqlCalls;}};
 }
 
@@ -70,6 +70,18 @@ test('File-only boundary model: exact UTF8 SQL reaches psql through a private re
   assert.equal(m.records[0].temporary_files_cleaned,true);
   assert.equal(m.records[0].scope,'SQL byte/transport evidence only; not guard/migration proof.');
   assert.ok(m.localFiles.every(path=>!existsSync(path)));
+});
+
+test('File-only diagnostic receipts omit arbitrary cleanup exception names and unknown errno values',()=>{
+  const secret='fake-file-cleanup-credential',error=Object.assign(new Error('cleanup '+secret),{name:'name '+secret,code:'unknown '+secret});
+  const m=model({fail:'copy',redact:text=>String(text).replaceAll(secret,'[owned-fixture-secret]'),commandResult:name=>{if(name==='grouped-cleanup')throw error;}});
+  assert.throws(()=>m.sql('SELECT 1;'),AggregateError);
+  assert.deepEqual(m.records[0].cleanup_errors,[{name:'Error',message:'cleanup [owned-fixture-secret]'}]);
+  assert.equal(JSON.stringify(m.records).includes(secret),false);assert.equal(m.records[0].passed,false);
+  assert.equal(m.records[0].temporary_files_cleaned,false);assert.equal(m.records[0].remote_cleanup_completed,false);
+  assert.deepEqual(m.events.map(row=>row.name),['mktemp','copy','grouped-cleanup']);
+  assert.ok(m.localFiles.every(path=>!existsSync(path)));assert.equal(m.psqlCalls,0);
+  assert.equal(error.name,'name '+secret);assert.equal(error.message,'cleanup '+secret);
 });
 
 /** Capture the real helper's dispatched fixed script through its external boundary. */

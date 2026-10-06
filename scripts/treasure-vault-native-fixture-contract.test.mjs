@@ -29,6 +29,45 @@ function cleanupLogModel({database=true,raw,write=()=>{},redact=value=>String(va
   return {row,name,id,receipt,records,events,errors,removedVolumes,run:()=>disposeNativeOwnedContainer({name,row,database,docker,log:async record=>{await write(record);records.push(record);},redact,receipt,removedVolumes,errors})};
 }
 
+test('pure owned state receipts redact diagnostic strings without changing source state or status metadata',async()=>{
+  const secret='fake-owned-state-credential';
+  const original={Status:'exited',Running:false,Paused:false,Restarting:false,OOMKilled:true,Dead:false,Pid:0,ExitCode:137,
+    Error:'daemon detail '+secret,StartedAt:'2026-10-05T00:00:00Z',FinishedAt:'2026-10-05T00:00:01Z',
+    Health:{Status:'unhealthy',FailingStreak:2,Log:[{Start:'2026-10-05T00:00:00Z',End:'2026-10-05T00:00:01Z',ExitCode:1,Output:'health detail '+secret}]}};
+  const expected=structuredClone(original);expected.Error='daemon detail [owned-fixture-secret]';expected.Health.Log[0].Output='health detail [owned-fixture-secret]';
+  for(const database of [true,false]){
+    const model=cleanupLogModel({database,redact:value=>String(value).replaceAll(secret,'[owned-fixture-secret]')});
+    const state=structuredClone(original),failure=model.receipt.failure;model.row.State=state;
+    await model.run();
+    const recorded=model.receipt.final_owned_states[0];
+    assert.equal(recorded.name,model.name);assert.deepEqual(recorded.state,expected);
+    assert.equal(JSON.stringify(recorded.state).includes(secret),false);
+    assert.notEqual(recorded.state,state);assert.deepEqual(model.row.State,original);assert.equal(model.row.State,state);
+    assert.deepEqual({ExitCode:recorded.state.ExitCode,OOMKilled:recorded.state.OOMKilled,Running:recorded.state.Running,Pid:recorded.state.Pid,healthExitCode:recorded.state.Health.Log[0].ExitCode},
+      {ExitCode:137,OOMKilled:true,Running:false,Pid:0,healthExitCode:1});
+    assert.equal(model.receipt.failure,failure);assert.equal(model.errors.length,0);
+    assert.deepEqual(model.events.slice(-2),[['rm','-f','-v',model.name],['ps','-a','--format','{{.Names}}']]);
+    assert.deepEqual([...model.removedVolumes],['owned-anonymous-volume']);
+  }
+});
+
+test('pure owned diagnostic receipts omit arbitrary error names even if the secret redactor fails',async()=>{
+  const secret='fake-owned-diagnostic-credential',error=Object.assign(new Error('detail '+secret),{name:'name '+secret,code:'unknown '+secret});
+  for(const redactorFails of [false,true]) {
+    const model=cleanupLogModel({write:()=>{throw error;},redact:text=>{
+      if(redactorFails)throw error;return String(text).replaceAll(secret,'[owned-fixture-secret]');
+    }});
+    await model.run();
+    assert.deepEqual(model.receipt.owned_container_diagnostic_errors,[{
+      name:model.name,container_id:model.id,kind:'logs',name_of_error:'Error',
+      message:redactorFails?'Owned diagnostic failed; its message could not be safely redacted':'detail [owned-fixture-secret]',
+    }]);
+    assert.equal(JSON.stringify(model.receipt).includes(secret),false);
+    assert.deepEqual(model.events.slice(-2),[['rm','-f','-v',model.name],['ps','-a','--format','{{.Names}}']]);
+    assert.equal(error.name,'name '+secret);assert.equal(error.message,'detail '+secret);
+  }
+});
+
 test('pure owned PostgreSQL cleanup retains the first failure beyond80 records and12000 characters',async()=>{
   const lines=['2026-10-05T00:00:00Z ERROR: first-preserved-PG-failure',...Array.from({length:200},(_,i)=>'2026-10-05T00:00:01Z ordinary-'+i+' '+'.'.repeat(150))];
   const model=cleanupLogModel({raw:args=>({status:0,signal:null,error:null,stdout:lines.slice(-Number(args[args.indexOf('--tail')+1])).join('\n')+'\n',stderr:''})});

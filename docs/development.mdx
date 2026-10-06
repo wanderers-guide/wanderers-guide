@@ -485,6 +485,11 @@ snapshot lacks private curator proposal bodies, so acceptance of those exact
 private bodies remains untested. An optional output filename saves the receipt
 without overwriting an existing file.
 
+After the safety step, CI uploads generated receipts, redacted stage logs and
+dual-ledger hashes to the `treasure-vault-native-<commit>` artifact. The upload
+runs even if that step fails and includes only these generated files, not other
+backups or database dumps. It does not change the test result.
+
 For a focused iteration, append `--only-negative=<exact migration filename>`
 (or comma-separated filenames). This narrows only failure-injection cases; all
 positive migrations, read-only checks, full preservation and replay still run.

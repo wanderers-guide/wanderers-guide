@@ -3,6 +3,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { spawn,spawnSync } from 'node:child_process';
 import {createOwnedNativeSessions} from './treasure-vault-native-sessions.mjs';
 import {createNativeFileSqlTransport} from './treasure-vault-native-file-transport.mjs';
+import {nativeDiagnostic} from './treasure-vault-native-diagnostics.mjs';
 
 const sha = value => createHash('sha256').update(value).digest('hex');
 const q = value => "'" + String(value).replaceAll("'", "''") + "'";
@@ -102,13 +103,15 @@ export function assertNativeCleanupCensus({ownedContainerNames,removedVolumes,cu
 export async function disposeNativeOwnedContainer({name,row,database,docker,log,redact,receipt,removedVolumes,errors}) {
   let volumes=[];
   function diagnosticFailure(kind,error) {
-    let message;try{message=redact(error.message);}catch{message='Owned diagnostic failed; its message could not be safely redacted';}
+    const {name:nameOfError,message}=nativeDiagnostic(error,{redact,summary:'Owned diagnostic failed; its message could not be safely redacted'});
     errors.push(message);
-    (receipt.owned_container_diagnostic_errors??=[]).push({name,container_id:row.Id,kind,name_of_error:error.name,message});
+    (receipt.owned_container_diagnostic_errors??=[]).push({name,container_id:row.Id,kind,name_of_error:nameOfError,message});
   }
   try {
     volumes=row.Mounts.filter(mount=>mount.Type==='volume').map(mount=>mount.Name);
-    (receipt.final_owned_states??=[]).push({name,state:row.State});
+    // Redact serialized strings only; keep the actual state and typed status evidence intact.
+    const state=JSON.parse(JSON.stringify(row.State,(_key,value)=>typeof value==='string'?redact(value):value));
+    (receipt.final_owned_states??=[]).push({name,state});
     if(database) {
       receipt.owned_database_resources.final_observed={...receipt.owned_database_resources.last_observed};
       assertNativeDatabaseResourceLimits(row);receipt.owned_database_resources.final_verified=true;

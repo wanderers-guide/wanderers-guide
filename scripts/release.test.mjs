@@ -362,3 +362,24 @@ test('baseline digest records require an explicit supported algorithm and preser
     assert.throws(() => compareSchema(baseline, [{ id, definition: 'false' }]));
   }
 });
+
+test('CI retains native migration evidence on failure without archiving unrelated backups', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/e2e.yml', import.meta.url), 'utf8');
+  const marker = '      - name: Upload content migration safety evidence\n';
+  assert.equal(workflow.split(marker).length, 2, 'one evidence upload step');
+  const start = workflow.indexOf(marker);
+  const end = workflow.indexOf('\n      - name:', start + marker.length);
+  assert.ok(start > workflow.indexOf('      - name: Isolated content migration safety tests\n'));
+  assert.equal(end, workflow.indexOf('\n      - name: Conditional authoring browser regression tests\n'));
+  const step = workflow.slice(start, end);
+  assert.match(step, /^        if: always\(\)$/m);
+  assert.match(step, /^        uses: actions\/upload-artifact@v4$/m);
+  assert.match(step, /^          name: treasure-vault-native-\$\{\{ github.sha \}\}$/m);
+  assert.match(step, /^          include-hidden-files: true$/m);
+  assert.match(step, /^          if-no-files-found: warn$/m);
+  const paths = step.match(/          path: \|\n((?:            [^\n]+\n)+)/)?.[1];
+  assert.deepEqual(paths?.split('\n').filter(Boolean).map((line) => line.trim()), [
+    '.agents/legacy/treasure-vault-native-*.json',
+    '.agents/legacy/treasure-vault-native-*.json.log',
+  ]);
+});

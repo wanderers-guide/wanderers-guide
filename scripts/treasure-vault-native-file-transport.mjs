@@ -3,6 +3,7 @@ import {createHash} from 'node:crypto';
 import {mkdtempSync,writeFileSync,readFileSync,lstatSync,realpathSync,unlinkSync,rmdirSync,existsSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
+import {nativeDiagnostic} from './treasure-vault-native-diagnostics.mjs';
 
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 
@@ -139,7 +140,7 @@ export function createNativeFileSqlTransport({getOwnedDatabaseId,docker,cleanupT
       evidence.group_dispatch_attempted=groupAttempted;
       evidence.possible_unknown_remote_allocation=allocationAttempted&&remoteDirectory===null;
       evidence.temporary_files_cleaned=cleanupFailures.length===0&&!evidence.possible_unknown_remote_allocation&&(!remoteDirectory||evidence.remote_cleanup_completed);
-      evidence.cleanup_errors=cleanupFailures.map(error=>({name:error.name,message:redact(error.message)}));
+      evidence.cleanup_errors=cleanupFailures.map(error=>nativeDiagnostic(error,{redact,summary:'Native file-transport cleanup diagnostic unavailable'}));
       evidence.passed=failure===null&&cleanupFailures.length===0;record(evidence);
     }
     if(cleanupFailures.length)throw new AggregateError([...(failure?[failure]:[]),...cleanupFailures],'Exact file-transport cleanup failed; no SQL result may qualify');

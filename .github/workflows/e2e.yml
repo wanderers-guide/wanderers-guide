@@ -135,6 +135,17 @@ jobs:
       - name: Isolated content migration safety tests
         run: npm run test:content:native
 
+      - name: Upload content migration safety evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: treasure-vault-native-${{ github.sha }}
+          path: |
+            .agents/legacy/treasure-vault-native-*.json
+            .agents/legacy/treasure-vault-native-*.json.log
+          include-hidden-files: true
+          if-no-files-found: warn
+
       - name: Conditional authoring browser regression tests
         working-directory: ./frontend
         run: |

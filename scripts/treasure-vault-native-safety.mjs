@@ -18,6 +18,7 @@ import { runNativeWriterOrdering } from './treasure-vault-native-writers.mjs';
 import { runAlternateAllocations } from './treasure-vault-native-allocations.mjs';
 import { createAuthenticAlternateFixtureDriver } from './treasure-vault-native-alternate-fixture.mjs';
 import { APPROVED_REGISTERED_CI_REPLAY_STEP_SHA256 } from './treasure-vault-native-registered-ci-replays.mjs';
+import { nativeDiagnostic } from './treasure-vault-native-diagnostics.mjs';
 
 const sha = value => createHash('sha256').update(value).digest('hex');
 const completionPath = '20261002100000_treasure_vault_complete_catalog.sql';
@@ -222,13 +223,13 @@ export async function executeNativeBase({root,inputs,migrations,inputManifest,ou
     receipt.limits=['Exact known private curator-body-present acceptance is untested because sanitized CI intentionally excludes those bodies. Absence/removal and incorrect-present rejection are actually exercised.',...receipt.shared_helper_pending_alias_verified.schema_unconstructible.map(row=>row.reason),receipt.alternate_allocation_controls[0].native_prefix_limit.reason];
     receipt.passed = true;
   } catch (error) {
-    receipt.passed = false; receipt.failure = {phase,name:error.name,message:fixture.redact(error.message)};
+    receipt.passed = false; receipt.failure = {phase,...nativeDiagnostic(error,{redact:fixture.redact,summary:'Native fixture diagnostic unavailable'})};
     throw error;
   } finally {
     try { await fixture.cleanup(); }
     catch (error) {
       receipt.passed = false;
-      receipt.cleanup_failure = {name:error.name,message:fixture.redact(error.message)};
+      receipt.cleanup_failure = nativeDiagnostic(error,{redact:fixture.redact,summary:'Native fixture cleanup diagnostic unavailable'});
       throw error;
     }
   }
@@ -271,14 +272,18 @@ export async function main(args = process.argv.slice(2)) {
   const stop=createNativeStopController({receipt});
   receipt.stop_policy=stop.limits;
   let logWrites = Promise.resolve();
-  const log = row => { const line = JSON.stringify(row)+'\n'; logWrites = logWrites.then(() => stream.write(line)); };
+  const log = row => {
+    const line = JSON.stringify(row)+'\n'; logWrites = logWrites.then(() => stream.write(line));
+    // Observe rejection immediately; the original chain still rejects at final flush.
+    void logWrites.catch(()=>{});
+  };
   try {
     const migrations = inputManifest.migrations;
     receipt.migrations = migrations.map(({path,sha256}) => ({path,sha256}));
     await executeNativeBase({root:options.root,inputs,migrations,inputManifest,output,selectedNegativeFiles:options.selectedNegativeFiles,receipt,log,stop});
-  } catch (error) { receipt.passed = false; process.exitCode = error.exitCode??1; receipt.failure ??= {name:error.name,message:error.message}; }
+  } catch (error) { receipt.passed = false; process.exitCode = error.exitCode??1; receipt.failure ??= nativeDiagnostic(error,{summary:'Native verification failed before safe fixture diagnostics were available'}); }
   finally {
-    try { await logWrites; } catch (error) { receipt.passed = false; process.exitCode??=1; receipt.log_failure = {name:error.name,message:error.message}; }
+    try { await logWrites; } catch (error) { receipt.passed = false; process.exitCode??=1; receipt.log_failure = nativeDiagnostic(error,{summary:'Native diagnostic log could not be written'}); }
     const lateStopExitCode = await finalizeNativeStopReceipt({receipt,stop});
     if (lateStopExitCode !== null) process.exitCode = lateStopExitCode;
     receipt.finished_at = new Date().toISOString();

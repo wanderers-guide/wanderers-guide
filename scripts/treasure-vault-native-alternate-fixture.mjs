@@ -6,6 +6,7 @@ import {createAuthenticSharedHistoryControls} from './treasure-vault-native-hist
 import {createHistoricalPositiveProjections} from './treasure-vault-native-positive-projections.mjs';
 import {createHistorical023FreshImportCapsule} from './treasure-vault-native-fresh-equipment.mjs';
 import {createNativeRegisteredCiReplayControls} from './treasure-vault-native-registered-ci-replays.mjs';
+import {nativeDiagnostic} from './treasure-vault-native-diagnostics.mjs';
 
 const sha=value=>createHash('sha256').update(value).digest('hex');
 
@@ -23,7 +24,9 @@ export function createAuthenticAlternateFixtureDriver({root,inputs,migrations,in
       allocation_difference_basis:['Reviewed extra real nextval hooks in the secondary fixture','Actual primary setup reservations and failed-insert nextvals from required negative/writer controls'],
       negative_suite_repeated:false};
     receipt.alternate_fixture=evidence;
-    const other=createOwnedNativeFixture({root,receipt:evidence,log:row=>log({fixture:'alternate',...row}),bootstrapRead:inputManifest.readRelative,throwIfRequested:stop.throwIfRequested});
+    let other;
+    try {other=createOwnedNativeFixture({root,receipt:evidence,log:row=>log({fixture:'alternate',...row}),bootstrapRead:inputManifest.readRelative,throwIfRequested:stop.throwIfRequested});}
+    catch(error){evidence.failure=nativeDiagnostic(error,{remember:true,summary:'Alternate fixture failed before safe diagnostics were available'});throw error;}
     async function stage(name,sql) {
       await stop.checkpoint('alternate before '+name);
       const started=Date.now(),result=other.sql(sql,true);
@@ -71,9 +74,9 @@ export function createAuthenticAlternateFixtureDriver({root,inputs,migrations,in
       evidence.final_input_verification=await inputManifest.verify();evidence.passed=true;
       result={chronology,authentic_full_chronology:true,generated_id_mapping:false,sequence_reset:false,positive_only_chronology:true,negative_suite_repeated:false,
         actual_auth:true,independent_historical14:true,fresh023_capsule:true,own_stage39:true,both_terminal_replays40:true,registered_ci_replays:true};
-    } catch(error) {evidence.passed=false;evidence.failure={name:error.name,message:other.redact(error.message)};throw error;}
+    } catch(error) {evidence.passed=false;evidence.failure=nativeDiagnostic(error,{redact:other.redact,remember:true,summary:'Alternate fixture diagnostic unavailable'});throw error;}
     finally {
-      try{await other.cleanup();}catch(error){evidence.passed=false;evidence.cleanup_failure={name:error.name,message:other.redact(error.message)};throw error;}
+      try{await other.cleanup();}catch(error){evidence.passed=false;evidence.cleanup_failure=nativeDiagnostic(error,{redact:other.redact,remember:true,summary:'Alternate fixture cleanup diagnostic unavailable'});throw error;}
     }
     assert.equal(evidence.cleaned_only_owned_containers_and_volumes,true);
     return {...result,cleaned_only_owned_containers_and_volumes:true};

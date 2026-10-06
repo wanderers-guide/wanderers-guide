@@ -3,12 +3,20 @@ import test from 'node:test';
 import {EventEmitter} from 'node:events';
 import {setImmediate} from 'node:timers/promises';
 import {createHash} from 'node:crypto';
+import crypto from 'node:crypto';
+import fs from 'node:fs/promises';
+import childProcess from 'node:child_process';
+import {syncBuiltinESMExports} from 'node:module';
 import {dirname,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import * as loader from './treasure-vault-native-inputs.mjs';
 import * as nativeStop from './treasure-vault-native-stop.mjs';
 import {captureNativeInputManifest} from './treasure-vault-native-input-manifest.mjs';
 import {buildTerminalHelperMetadataControls} from './treasure-vault-native-metadata.mjs';
+import {main as nativeMain,executeNativeBase} from './treasure-vault-native-safety.mjs';
+import {nativeDiagnostic} from './treasure-vault-native-diagnostics.mjs';
+import {createAuthenticAlternateFixtureDriver} from './treasure-vault-native-alternate-fixture.mjs';
+import {nativeDatabaseResourceLimits} from './treasure-vault-native-fixture.mjs';
 import './treasure-vault-native-fixture-contract.test.mjs';
 
 const sha=value=>createHash('sha256').update(value).digest('hex');
@@ -224,4 +232,195 @@ test('native finalization: an unrelated checkpoint failure is propagated without
     await assert.rejects(requireNativeStopFinalizer()({receipt:model.receipt,stop:actualStop}),error=>error===failure);
     assert.deepEqual(model.receipt,before);
   } finally {model.stop.close();}
+});
+
+/** The actual default caller reads checked-in inputs; only external writes and randomness are replaced. */
+function memoryNativeReceipt(t,{logWrite=async()=>{}}={}) {
+  const outputs=new Map(),opened=[];
+  t.mock.method(fs,'mkdir',async path=>assert.equal(path,root+'/.agents/legacy'));
+  t.mock.method(fs,'open',async(path,flags,mode)=>{
+    assert.equal(flags,'wx');assert.equal(mode,0o600);opened.push(path);
+    return {write:async text=>{outputs.set(path,(outputs.get(path)??'')+text);await logWrite(text);},writeFile:async text=>outputs.set(path,text),close:async()=>{}};
+  });
+  syncBuiltinESMExports();
+  return {outputs,opened};
+}
+
+test('native diagnostic receipts: actual outer fallback omits arbitrary exception text and preserves its failure exit',async(t)=>{
+  const secret='fake-outer-diagnostic-credential',error=Object.assign(new Error('message '+secret),{
+    name:'name '+secret,code:'ENOSPC',path:'/path/'+secret,syscall:'syscall '+secret,cause:{secret},argv:[secret],exitCode:143,
+  });
+  const memory=memoryNativeReceipt(t),previousExit=process.exitCode;
+  t.mock.method(crypto,'randomBytes',()=>{throw error;});syncBuiltinESMExports();
+  try {
+    const receipt=await nativeMain();
+    assert.deepEqual(receipt.failure,{name:'Error',message:'Native verification failed before safe fixture diagnostics were available',code:'ENOSPC'});
+    assert.equal(receipt.passed,false);assert.equal(process.exitCode,143);
+    assert.equal(memory.opened.length,2);assert.equal(memory.outputs.size,1);
+    const text=memory.outputs.get(memory.opened[0]);assert.equal(text.includes(secret),false);
+    assert.deepEqual(JSON.parse(text),receipt);
+    assert.equal(error.name,'name '+secret);assert.equal(error.message,'message '+secret);
+  } finally {process.exitCode=previousExit;t.mock.restoreAll();syncBuiltinESMExports();}
+});
+
+test('native diagnostic receipts: actual log writer failure is safe and leaves the originating redacted failure intact',async(t)=>{
+  const secret='fake-log-writer-credential',error=Object.assign(new Error('message '+secret),{
+    name:'name '+secret,code:'EIO',path:'/path/'+secret,cause:{secret},argv:[secret],
+  });
+  const memory=memoryNativeReceipt(t,{logWrite:async()=>{throw error;}}),previousExit=process.exitCode,commands=[];
+  const password='0a'.repeat(24);
+  t.mock.method(crypto,'randomBytes',size=>Buffer.alloc(size,size===24?0x0a:0x0b));
+  t.mock.method(childProcess,'spawnSync',(binary,args)=>{
+    assert.equal(binary,'docker');commands.push(args);
+    if(commands.length===1){assert.deepEqual(args,['context','show']);return {status:1,signal:null,error:null,stdout:'',stderr:'owned start '+password};}
+    assert.ok(args[0]==='ps'||args[0]==='volume','Only failed-startup cleanup censuses, never a real container action');
+    return {status:0,signal:null,error:null,stdout:'',stderr:''};
+  });
+  syncBuiltinESMExports();
+  try {
+    const receipt=await nativeMain();
+    assert.deepEqual(receipt.log_failure,{name:'Error',message:'Native diagnostic log could not be written',code:'EIO'});
+    assert.equal(receipt.failure.phase,'fixture-bootstrap');assert.equal(receipt.failure.name,'AssertionError');
+    assert.ok(receipt.failure.message.includes('[owned-fixture-secret]'));
+    assert.equal(receipt.passed,false);assert.equal(process.exitCode,1);assert.equal(receipt.cleaned_only_owned_containers_and_volumes,true);
+    assert.equal(commands.length,3);assert.equal(memory.opened.length,2);
+    for(const text of memory.outputs.values()){assert.equal(text.includes(secret),false);assert.equal(text.includes(password),false);}
+    assert.deepEqual(JSON.parse(memory.outputs.get(memory.opened[0])),receipt);
+    assert.equal(error.name,'name '+secret);assert.equal(error.message,'message '+secret);
+  } finally {process.exitCode=previousExit;t.mock.restoreAll();syncBuiltinESMExports();}
+});
+
+test('native diagnostic receipts: actual inner failure redacts name and message without replacing its control exception',async(t)=>{
+  const secret='0c'.repeat(24),error=Object.assign(new Error('detail '+secret),{name:'name '+secret,code:'ERR_NATIVE_STOP',exitCode:143,signal:'SIGTERM'});
+  const receipt={stages:[]},commands=[];
+  t.mock.method(crypto,'randomBytes',size=>Buffer.alloc(size,size===24?0x0c:0x0d));
+  t.mock.method(childProcess,'spawnSync',(binary,args)=>{
+    assert.equal(binary,'docker');assert.ok(args[0]==='ps'||args[0]==='volume');commands.push(args);
+    return {status:0,signal:null,error:null,stdout:'',stderr:''};
+  });
+  syncBuiltinESMExports();
+  try {
+    await assert.rejects(executeNativeBase({root,inputs:{},migrations:[],output:'/unused-native-model',receipt,log:()=>{},
+      inputManifest:{verify:async()=>({}),readRelative:()=>''},stop:{checkpoint:async()=>{},throwIfRequested:()=>{throw error;}}}),actual=>actual===error);
+    assert.deepEqual(receipt.failure,{phase:'fixture-bootstrap',name:'Error',message:'detail [owned-fixture-secret]'});
+    assert.equal(JSON.stringify(receipt).includes(secret),false);assert.equal(receipt.passed,false);
+    assert.equal(receipt.cleaned_only_owned_containers_and_volumes,true);assert.equal(commands.length,2);
+    assert.equal(error.code,'ERR_NATIVE_STOP');assert.equal(error.exitCode,143);assert.equal(error.signal,'SIGTERM');
+    assert.equal(error.message,'detail '+secret);assert.equal(error.name,'name '+secret);
+  } finally {t.mock.restoreAll();syncBuiltinESMExports();}
+});
+
+test('native diagnostic receipts: an actual alternate failure stays safe across its primary redactor without changing stop identity',async(t)=>{
+  const secret='0e'.repeat(24),primarySecret='primary-fixture-secret';
+  const error=Object.assign(new Error('alternate detail '+secret),{name:'name '+secret,code:'ERR_NATIVE_STOP',exitCode:143,signal:'SIGTERM',cause:{secret}});
+  const receipt={},commands=[];
+  t.mock.method(crypto,'randomBytes',size=>Buffer.alloc(size,size===24?0x0e:0x0f));
+  t.mock.method(childProcess,'spawnSync',(binary,args)=>{
+    assert.equal(binary,'docker');assert.ok(args[0]==='ps'||args[0]==='volume');commands.push(args);
+    return {status:0,signal:null,error:null,stdout:'',stderr:''};
+  });
+  syncBuiltinESMExports();
+  try {
+    const run=createAuthenticAlternateFixtureDriver({root,inputs:{},migrations:[],receipt,log:()=>{},
+      inputManifest:{verify:async()=>{throw error;},readRelative:()=>''},stop:{checkpoint:async()=>{},throwIfRequested:()=>{}}});
+    await assert.rejects(run({beforeStage:()=>{},afterPhase:()=>{}}),actual=>{
+      assert.equal(actual,error);
+      const primary=nativeDiagnostic(actual,{redact:text=>String(text).replaceAll(primarySecret,'[owned-fixture-secret]')});
+      assert.equal(JSON.stringify(primary).includes(secret),false,'A primary redactor cannot independently redact an alternate credential');
+      assert.deepEqual(primary,{name:'Error',message:'alternate detail [owned-fixture-secret]'});
+      return true;
+    });
+    assert.deepEqual(receipt.alternate_fixture.failure,{name:'Error',message:'alternate detail [owned-fixture-secret]'});
+    assert.equal(JSON.stringify(receipt).includes(secret),false);assert.equal(receipt.alternate_fixture.passed,false);
+    assert.equal(receipt.alternate_fixture.cleaned_only_owned_containers_and_volumes,true);assert.equal(commands.length,2);
+    assert.equal(error.code,'ERR_NATIVE_STOP');assert.equal(error.exitCode,143);assert.equal(error.signal,'SIGTERM');
+    assert.equal(error.message,'alternate detail '+secret);assert.equal(error.name,'name '+secret);assert.deepEqual(error.cause,{secret});
+  } finally {t.mock.restoreAll();syncBuiltinESMExports();}
+});
+
+test('native diagnostic receipts: alternate construction failures use a safe fallback before owning a secret redactor',async(t)=>{
+  const secret='fake-alternate-construction-credential',error=Object.assign(new Error('detail '+secret),{name:'name '+secret,code:'ERR_NATIVE_STOP',exitCode:130,signal:'SIGINT'});
+  const receipt={};t.mock.method(crypto,'randomBytes',()=>{throw error;});
+  t.mock.method(childProcess,'spawnSync',()=>assert.fail('Construction cannot start a service or transport'));syncBuiltinESMExports();
+  try {
+    const run=createAuthenticAlternateFixtureDriver({root,inputs:{},migrations:[],receipt,log:()=>{},
+      inputManifest:{verify:async()=>assert.fail('Failed construction cannot verify or initialize'),readRelative:()=>''},stop:{checkpoint:async()=>{},throwIfRequested:()=>{}}});
+    await assert.rejects(run({beforeStage:()=>{},afterPhase:()=>{}}),actual=>{
+      assert.equal(actual,error);
+      assert.deepEqual(nativeDiagnostic(actual,{redact:String}),{name:'Error',message:'Alternate fixture failed before safe diagnostics were available'});
+      return true;
+    });
+    assert.equal(receipt.alternate_fixture.passed,false);assert.equal(JSON.stringify(receipt).includes(secret),false);
+    assert.deepEqual(receipt.alternate_fixture.failure,{name:'Error',message:'Alternate fixture failed before safe diagnostics were available'});
+    assert.equal(error.code,'ERR_NATIVE_STOP');assert.equal(error.exitCode,130);assert.equal(error.signal,'SIGINT');
+    assert.equal(error.name,'name '+secret);assert.equal(error.message,'detail '+secret);
+  } finally {t.mock.restoreAll();syncBuiltinESMExports();}
+});
+
+test('native diagnostic receipts: remembered summaries also use the next owning redactor without exposing original text',()=>{
+  const secondary='fake-secondary-secret',primary='fake-primary-secret';
+  const error=Object.assign(new Error(secondary+' '+primary),{name:'name '+secondary,code:'ERR_NATIVE_STOP',exitCode:143,signal:'SIGTERM',cause:{secondary,primary}});
+  const owned=nativeDiagnostic(error,{remember:true,redact:text=>text.replaceAll(secondary,'[owned-fixture-secret]')});
+  const next=nativeDiagnostic(error,{redact:text=>text.replaceAll(primary,'[owned-fixture-secret]')});
+  assert.deepEqual(next,{name:'Error',message:'[owned-fixture-secret] [owned-fixture-secret]'});
+  owned.message=secondary;
+  assert.deepEqual(nativeDiagnostic(error,{redact:text=>text.replaceAll(primary,'[owned-fixture-secret]')}),next);
+  assert.deepEqual(nativeDiagnostic(error,{redact:()=>{throw new Error(primary);}}),{name:'Error',message:'Native diagnostic unavailable'});
+  assert.equal(error.code,'ERR_NATIVE_STOP');assert.equal(error.exitCode,143);assert.equal(error.signal,'SIGTERM');
+  assert.equal(error.message,secondary+' '+primary);assert.equal(error.name,'name '+secondary);assert.deepEqual(error.cause,{secondary,primary});
+});
+
+test('native diagnostic receipts: only known errno values and safe names survive malformed or failing diagnostics',()=>{
+  const secret='fake-diagnostic-metadata-credential';
+  const error={name:'TypeError',message:'detail '+secret,code:'EIO',path:secret,syscall:secret,stack:secret,cause:{secret},argv:[secret]};
+  assert.deepEqual(nativeDiagnostic(error),{name:'TypeError',message:'Native diagnostic unavailable',code:'EIO'});
+  assert.deepEqual(nativeDiagnostic(error,{redact:text=>text.replaceAll(secret,'[owned-fixture-secret]')}),{name:'TypeError',message:'detail [owned-fixture-secret]',code:'EIO'});
+  assert.deepEqual(nativeDiagnostic(error,{redact:()=>{throw new Error(secret);}}),{name:'TypeError',message:'Native diagnostic unavailable',code:'EIO'});
+  for(const code of ['unknown '+secret,' EIO','EIO '+secret,{},Symbol(secret),null]) {
+    assert.deepEqual(nativeDiagnostic({...error,name:'name '+secret,code}),{name:'Error',message:'Native diagnostic unavailable'});
+  }
+  const unreadable={};for(const key of ['name','message','code'])Object.defineProperty(unreadable,key,{get(){throw new Error(secret);}});
+  for(const value of [null,undefined,secret,unreadable])assert.deepEqual(nativeDiagnostic(value,{redact:String}),{name:'Error',message:'Native diagnostic unavailable'});
+  assert.equal(error.message,'detail '+secret);assert.deepEqual(error.cause,{secret});
+});
+
+test('native diagnostic receipts: a rejected log write is handled during a real readiness yield and still fails final flush',async(t)=>{
+  const secret='fake-deferred-log-credential',writeError=Object.assign(new Error(secret),{name:'name '+secret,code:'EIO'});
+  const originating=Object.assign(new Error('modeled startup failed after its readiness yield'),{exitCode:77});
+  const memory=memoryNativeReceipt(t,{logWrite:async()=>{throw writeError;}}),previousExit=process.exitCode,unhandled=[];
+  const observed=error=>unhandled.push(error);process.on('unhandledRejection',observed);
+  const id='c'.repeat(64),imageId='sha256:'+'a'.repeat(64),endpoint='unix:///native-diagnostic-model.sock';
+  let name,owner,inspections=0,removed=false;
+  t.mock.method(childProcess,'spawnSync',(binary,raw)=>{
+    assert.equal(binary,'docker');const args=raw[0]==='--host'?raw.slice(2):raw;
+    const result=stdout=>({status:0,signal:null,error:null,stdout,stderr:''});
+    if(args[0]==='context'&&args[1]==='show')return {...result('diagnostic-model\n'),stderr:'owned startup diagnostic'};
+    if(args[0]==='context')return result(JSON.stringify([{Name:'diagnostic-model',Endpoints:{docker:{Host:endpoint}}}]));
+    if(args[0]==='info')return result(JSON.stringify({ID:'diagnostic-model-engine',OSType:'linux',ServerVersion:'test',Architecture:'amd64'}));
+    if(args[0]==='image')return result(JSON.stringify([{Id:args[2].includes('postgres')?imageId:'sha256:'+'b'.repeat(64),RepoTags:[args[2]],RepoDigests:[],Architecture:'amd64'}]));
+    if(args[0]==='run'){
+      assert.equal(name,undefined,'Only a modeled database startup, never Auth or SQL');name=args[args.indexOf('--name')+1];owner=args[args.indexOf('--label')+1].split('=')[1];
+      return result(id+'\n');
+    }
+    if(args[0]==='inspect'){
+      assert.equal(args[1],name);if(++inspections===2)throw originating;
+      return result(JSON.stringify([{Id:id,Name:'/'+name,Image:imageId,Config:{Labels:{'wg.native.owner':owner}},
+        HostConfig:{...nativeDatabaseResourceLimits(),NetworkMode:'none',PortBindings:{}},Mounts:[],State:{Running:true,OOMKilled:false,ExitCode:0}}]));
+    }
+    if(args[0]==='logs')return result('');
+    if(args[0]==='rm'){assert.deepEqual(args,['rm','-f','-v',name]);removed=true;return result('');}
+    if(args[0]==='ps')return result(removed?'':name+'\n');
+    if(args[0]==='volume')return result('');
+    assert.fail('Unmodeled transport, SQL or service action');
+  });
+  syncBuiltinESMExports();
+  try {
+    const receipt=await nativeMain();
+    assert.deepEqual(unhandled,[],'A rejected write cannot escape while the actual readiness loop yields');
+    assert.deepEqual(receipt.log_failure,{name:'Error',message:'Native diagnostic log could not be written',code:'EIO'});
+    assert.equal(receipt.failure.message,originating.message);assert.equal(receipt.passed,false);assert.equal(process.exitCode,77);
+    assert.equal(receipt.cleaned_only_owned_containers_and_volumes,true);assert.equal(removed,true);
+    assert.equal(receipt.owned_database_resources.final_verified,true);
+    assert.equal(JSON.stringify(receipt).includes(secret),false);assert.deepEqual(JSON.parse(memory.outputs.get(memory.opened[0])),receipt);
+  } finally {process.removeListener('unhandledRejection',observed);process.exitCode=previousExit;t.mock.restoreAll();syncBuiltinESMExports();}
 });
