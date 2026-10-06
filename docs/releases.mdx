@@ -224,10 +224,9 @@ workflow failure notifications enabled. GitHub schedules can be delayed and are 
 an availability guarantee. Controlled authenticated save checks remain a release
 step, not a recurring mutation of a real user's character.
 
-The update notice lets each tab choose when to reload. It flushes character drafts
-before activation; finish edits in other forms before choosing **Reload app**.
-An update activated in another tab shows a prompt instead of forcing this tab to
-reload. The error page also offers an explicit reload for missing old assets.
+App updates are checked quietly and activate after existing tabs close. They never
+show a reload toast or interrupt an open editor. Fatal page errors keep technical
+details in logs and offer a simple link home.
 
 ## Quiet character saving
 
@@ -235,14 +234,14 @@ Normal saving, successful retries and compatible remote updates run without a
 status row, toast or recovery controls on the character sheet and builder. Changes
 to that layout require an intentional UI scope decision.
 
-Temporary network failures retry quietly while edits remain retained on the device.
-A toast appears when local retention fails, editing permission is lost, or the server
-explicitly rejects the change. An explicitly rejected payload stays buffered and is
-not repeatedly submitted; a corrected edit can save again. Storage warnings clear
-after local retention or server confirmation succeeds. Conflicting edits that cannot be safely
-merged ask which version to keep. An encounter conflict links to the character to
-resolve it. Authentication and calculation failures retain their existing recovery
-paths. There is no download or discard workflow for save history.
+Temporary network failures retry quietly while input remains in the editor. Session
+expiry, lost editing permission, rejected saves, and unavailable draft storage also
+stay quiet. An explicitly rejected payload stays buffered and is not repeatedly
+submitted; a corrected edit can save again. Conflicting edits pause saving while
+retaining the local input and its original base. Background reads and ordinary
+edits recheck the competing version, and saving resumes when merging is safe.
+Calculation failures retry quietly without publishing partial math. There is no
+download or discard workflow for save history.
 
 Retained drafts stay on the device under the same character ID. They do not create
 additional server characters. Versioned drafts with a known common ancestor can be
@@ -255,7 +254,7 @@ with server reads proving saved values and local checks proving unreplayable dra
 are preserved. The Cypress `saveRecovery` scenario also checks that the ordinary
 sheet has no added saving controls or notifications at desktop and phone widths.
 Connection, encounter and remote-update scenarios verify real acknowledgements,
-reopening, and error-only notifications rather than relying on a displayed Saved label.
+reopening, and quiet recovery rather than relying on a displayed Saved label.
 
 ## Recovery evidence and next drill
 

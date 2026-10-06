@@ -37,7 +37,7 @@ export function CreateArchetypeModal(props: {
     queryKey: [`get-archetype-${props.editId}`, { editId: props.editId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { editId }] = queryKey;
 
       const archetype = await fetchContentById<Archetype>('archetype', editId);
@@ -52,6 +52,8 @@ export function CreateArchetypeModal(props: {
       return archetype;
     },
     enabled: props.editId !== undefined && props.editId !== -1,
+    // Editing forms initialize in the query function, including when reopening cached entries.
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
 

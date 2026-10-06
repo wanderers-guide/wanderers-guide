@@ -388,5 +388,9 @@
   "20261002101000_treasure_vault_complete_display.sql": {
     "check": "treasure-vault-complete-display.sql",
     "order": "before-functions"
+  },
+  "20261005000000_repair_content_selection_rules.sql": {
+    "check": "content-selection-rules.sql",
+    "order": "before-functions"
   }
 }

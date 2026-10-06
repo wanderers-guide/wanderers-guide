@@ -16,6 +16,7 @@ import {
   isItemRangedWeapon,
   labelizeBulk,
   getInvBulk,
+  getItemBulk,
   getItemHealth,
 } from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
@@ -759,7 +760,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   // ── Page 2: Inventory ─────────────────────────────────────────────────────────
 
   if (character.inventory) {
-    setText('BULK TOTAL', labelizeBulk(getInvBulk(character.inventory), true));
+    setText('BULK TOTAL', labelizeBulk(getInvBulk(character.inventory, STORE_ID), true));
 
     setText('COPPER', character.inventory.coins.cp + '');
     setText('SILVER', character.inventory.coins.sp + '');
@@ -785,7 +786,7 @@ async function fillPDF(form: PDFForm, character: Character) {
       wornIndex++;
       setText(`WORN ${wornIndex}`, itemDisplayName(invItem));
       setText(`INVESTED ${wornIndex}`, invItem.is_invested ? 'Yes' : '');
-      setText(`WORN BULK ${wornIndex}`, labelizeBulk(invItem.item.bulk ?? undefined, false));
+      setText(`WORN BULK ${wornIndex}`, labelizeBulk(getItemBulk(invItem, STORE_ID), false));
     } else {
       heldIndex++;
       setText(`HELD ${heldIndex}`, itemDisplayName(invItem));

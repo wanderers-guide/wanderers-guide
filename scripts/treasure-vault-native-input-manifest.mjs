@@ -29,7 +29,7 @@ export async function captureNativeInputManifest({root}) {
     return text;
   }
   const migrationFiles=(await readdir(root+'/supabase/migrations')).filter(path=>migrationName.test(path)).sort();
-  assert.equal(migrationFiles.length,104,'Complete reviewed chronology is mandatory');
+  assert.equal(migrationFiles.length,105,'Complete reviewed chronology is mandatory');
   const requirements=JSON.parse(await capture('supabase/release/requirements.json'));
   const registeredCiPaths=['.github/workflows/e2e.yml','supabase/release/war-of-immortals-index.sql','supabase/release/war-of-immortals-index-regression.sql'];
   for(const path of registeredCiPaths)await capture(path);

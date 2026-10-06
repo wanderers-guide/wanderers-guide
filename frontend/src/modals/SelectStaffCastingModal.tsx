@@ -30,12 +30,14 @@ export default function SelectStaffCastingModal({
 }: ContextModalProps<{
   spell: Spell;
   canCastNormally: boolean;
+  source?: string;
   onSelect: (option: 'NORMAL' | 'SLOT-CONSUME', slotRank?: number) => void;
 }>) {
   return (
     <SelectStaffCastingModalContents
       spell={innerProps.spell}
       canCastNormally={innerProps.canCastNormally}
+      source={innerProps.source}
       onSelect={innerProps.onSelect}
       onClose={() => context.closeModal(id)}
     />
@@ -45,12 +47,16 @@ export default function SelectStaffCastingModal({
 export function SelectStaffCastingModalContents(props: {
   spell: Spell;
   canCastNormally: boolean;
+  source?: string;
   onSelect: (option: 'NORMAL' | 'SLOT-CONSUME', slotRank?: number) => void;
   onClose: () => void;
 }) {
   const [character, setCharacter] = useAtom(characterState);
   const slots = (character && collectEntitySpellcasting('CHARACTER', character).slots) ?? [];
-  const groupedSlots = groupBy(slots, 'rank');
+  const groupedSlots = groupBy(
+    slots.filter((slot) => !props.source || slot.source === props.source),
+    'rank'
+  );
 
   const rankLevels: number[] = [];
   for (const rank of Object.keys(groupedSlots)) {

@@ -73,7 +73,7 @@ export function CreateAbilityBlockModal(props: {
     queryKey: [`get-ability-block-${props.editId}`, { editId: props.editId, editAbilityBlock: props.editAbilityBlock }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { editId, editAbilityBlock }] = queryKey as [
         string,
         { editId: number | undefined; editAbilityBlock: AbilityBlock | undefined },
@@ -98,6 +98,8 @@ export function CreateAbilityBlockModal(props: {
       return abilityBlock;
     },
     enabled: editing,
+    // Editing forms initialize in the query function, including when reopening cached entries.
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
 

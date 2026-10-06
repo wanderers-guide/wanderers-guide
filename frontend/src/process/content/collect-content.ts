@@ -6,7 +6,9 @@ import {
   SenseWithRange,
   LivingEntity,
   SpellSlotRecord,
+  ClassArchetype,
 } from '@schemas/content';
+import { getContentFast } from '@content/content-store';
 import { GiveSpellData } from '@schemas/operations';
 import { StoreID, VariableListStr, VariableNum } from '@schemas/variables';
 import { attemptToFindSense, compactSensesWithRange } from '@utils/senses';
@@ -18,6 +20,7 @@ import { cloneDeep, isEqual, uniqWith } from 'lodash-es';
 import { isCharacter, isCreature, isTruthy } from '@utils/type-fixing';
 import { getEntityLevel } from '@utils/entity-utils';
 
+/** Collect the entity's calculated abilities, including embedded class archetype features. */
 export function collectEntityAbilityBlocks(
   id: StoreID,
   entity: LivingEntity,
@@ -27,8 +30,16 @@ export function collectEntityAbilityBlocks(
   // Feats ///////////////////////////////
 
   const featIds = getVariable<VariableListStr>(id, 'FEAT_IDS')?.value ?? [];
+  const explicitCreatureAbilityIds = new Set(
+    isCreature(entity)
+      ? [...(entity.abilities_base ?? []).map((ability) => ability.id), ...(entity.abilities_added ?? [])]
+      : []
+  );
   const feats = blocks
-    .filter((block) => block.type === 'feat' && featIds.includes(`${block.id}`))
+    // Explicit creature abilities are collected below and must not also appear as granted feats.
+    .filter(
+      (block) => block.type === 'feat' && featIds.includes(`${block.id}`) && !explicitCreatureAbilityIds.has(block.id)
+    )
     .sort((a, b) => {
       if (a.level !== null && b.level !== null) {
         if (a.level !== b.level) {
@@ -65,7 +76,23 @@ export function collectEntityAbilityBlocks(
   // Features ////////////////////////////
 
   const classFeatureIds = getVariable<VariableListStr>(id, 'CLASS_FEATURE_IDS')?.value ?? [];
-  let classFeatures = blocks.filter(
+  // Archetype replacements live inside the archetype, rather than in the ability-block table.
+  // Calculated IDs already decide which features apply, so do not repeat adjustment execution here.
+  const selectedArchetypes = isCharacter(entity)
+    ? [entity.details?.class_archetype, entity.details?.class_archetype_2].filter(isTruthy)
+    : [];
+  const currentArchetypes = getContentFast<ClassArchetype>(
+    'class-archetype',
+    selectedArchetypes.map((archetype) => archetype.id)
+  );
+  const embeddedFeatures = selectedArchetypes.flatMap(
+    (selected) =>
+      (currentArchetypes.find((archetype) => archetype.id === selected.id) ?? selected).feature_adjustments
+        ?.filter((adjustment) => adjustment.type !== 'REMOVE')
+        .map((adjustment) => adjustment.data)
+        .filter(isTruthy) ?? []
+  );
+  let classFeatures = uniqWith([...embeddedFeatures, ...blocks], (a, b) => a.id === b.id).filter(
     (block) => block.type === 'class-feature' && classFeatureIds.includes(`${block.id}`)
   );
   if (options?.filterBasicClassFeatures) {

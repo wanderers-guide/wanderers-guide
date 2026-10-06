@@ -18,6 +18,7 @@ const sources = [
   'src/drawers/types/InvItemDrawer.tsx',
   'src/drawers/ShowInjectedText.tsx',
   'src/common/ItemIcon.tsx',
+  'src/common/ItemRunesDescription.tsx',
 ];
 const imports = new Map();
 for (const file of sources) {
@@ -40,7 +41,14 @@ for (const file of sources) {
 const special = {
   useAtom: '() => [null, () => {}]',
   useAtomValue: '() => null',
-  useQuery: '() => ({data:globalThis.__wgDrawerQueryItem,isFetching:false,refetch:()=>{}})',
+  useQuery:
+    'options => { if (globalThis.__wgRuneLookups) { globalThis.__wgRuneQuery = options; return {data:globalThis.__wgRuneItems,isFetching:false}; } return {data:globalThis.__wgDrawerQueryItem,isFetching:false,refetch:()=>{}}; }',
+  fetchContentById:
+    'async (_type,id) => { const result = globalThis.__wgRuneLookups.get(id); if (result instanceof Error) throw result; return result ?? null; }',
+  FUNDAMENTAL_RUNES: '{potency_weapon_2:7951,striking_1:7862}',
+  isItemWithRunes: 'item => !!item.meta_data?.runes',
+  isItemWeapon: 'item => item.group === "WEAPON"',
+  isItemArmor: '() => false',
   useMantineTheme: '() => ({colors:{gray:Array(10).fill("gray")}})',
   getVariable:
     '(id,name) => name === "INJECT_TEXT" ? {value:[JSON.stringify({type:"item",id:801,text:id+" RESEARCH FIELD TEXT"})]} : null',
@@ -62,7 +70,7 @@ const output = path.join(directory, 'drawers.cjs');
 await build({
   absWorkingDir: root,
   stdin: {
-    contents: `export {ItemDrawerContent} from './src/drawers/types/ItemDrawer.tsx'; export {InvItemDrawerContent} from './src/drawers/types/InvItemDrawer.tsx'; export {ItemIcon} from './src/common/ItemIcon.tsx';`,
+    contents: `export {ItemDrawerContent} from './src/drawers/types/ItemDrawer.tsx'; export {InvItemDrawerContent} from './src/drawers/types/InvItemDrawer.tsx'; export {ItemIcon} from './src/common/ItemIcon.tsx'; export {ItemRunesDescription} from './src/common/ItemRunesDescription.tsx';`,
     resolveDir: root,
     loader: 'tsx',
   },
@@ -103,7 +111,7 @@ await build({
     },
   ],
 });
-const { ItemDrawerContent, InvItemDrawerContent, ItemIcon } = require(output);
+const { ItemDrawerContent, InvItemDrawerContent, ItemIcon, ItemRunesDescription } = require(output);
 const item = {
   id: 801,
   name: 'Versatile Vial',
@@ -162,5 +170,40 @@ test('item icons render when optional bulk metadata is absent', () => {
         })
       )
     );
+  }
+});
+
+test('unavailable fundamental runes do not crash the item and leave other rune details visible', async () => {
+  const propertyRune = { id: 90001, name: 'Shock', rune: { description: 'PROPERTY RUNE DETAILS' } };
+  const weapon = {
+    ...item,
+    group: 'WEAPON',
+    meta_data: { runes: { potency: 2, striking: 1, property: [propertyRune] } },
+  };
+  const striking = { ...item, id: 7862, name: 'Striking', description: 'STRIKING RUNE DETAILS' };
+  try {
+    for (const missing of [null, new Error('Synthetic unavailable rune')]) {
+      globalThis.__wgRuneLookups = new Map([
+        [7951, missing],
+        [7862, striking],
+      ]);
+      delete globalThis.__wgRuneItems;
+      renderToStaticMarkup(React.createElement(ItemRunesDescription, { item: weapon }));
+      globalThis.__wgRuneItems = await globalThis.__wgRuneQuery.queryFn();
+      assert.deepEqual(globalThis.__wgRuneItems, [striking]);
+      const html = renderToStaticMarkup(React.createElement(ItemRunesDescription, { item: weapon }));
+      assert.ok(html.includes('PROPERTY RUNE DETAILS'));
+      assert.ok(html.includes('STRIKING RUNE DETAILS'));
+    }
+    globalThis.__wgRuneLookups = new Map();
+    globalThis.__wgRuneItems = await globalThis.__wgRuneQuery.queryFn();
+    assert.deepEqual(globalThis.__wgRuneItems, []);
+    const html = renderToStaticMarkup(React.createElement(ItemRunesDescription, { item: weapon }));
+    assert.ok(html.includes('PROPERTY RUNE DETAILS'));
+    assert.ok(!html.includes('Fundamental Runes'));
+  } finally {
+    delete globalThis.__wgRuneLookups;
+    delete globalThis.__wgRuneQuery;
+    delete globalThis.__wgRuneItems;
   }
 });

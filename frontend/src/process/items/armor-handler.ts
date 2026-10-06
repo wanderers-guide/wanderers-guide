@@ -84,6 +84,14 @@ function getAcModifiers(id: StoreID, item?: Item) {
   };
 }
 
+/** Walking Armory allows either attribute to meet an armor requirement. */
+export function getArmorStrengthModifier(id: StoreID): number {
+  const strength = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
+  return getVariable<VariableBool>(id, 'USE_CON_FOR_ARMOR_STR_REQ')?.value
+    ? Math.max(strength, getFinalVariableValue(id, 'ATTRIBUTE_CON').total)
+    : strength;
+}
+
 export function getAcParts(id: StoreID, item?: Item) {
   const modifiers = getAcModifiers(id, item);
   let dexBonus = getFinalVariableValue(id, 'ATTRIBUTE_DEX').total;
@@ -91,18 +99,12 @@ export function getAcParts(id: StoreID, item?: Item) {
     return { ...modifiers, dexBonus, checkPenalty: 0, speedPenalty: 0 };
   }
 
-  const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
   const dexCap = item.meta_data?.dex_cap ?? 0;
   const strengthReq = item.meta_data?.strength ?? 0;
   let checkPenalty = -1 * Math.abs(Number(item.meta_data?.check_penalty ?? 0));
   let speedPenalty = -1 * Math.abs(Number(item.meta_data?.speed_penalty ?? 0));
 
-  // Some abilities meet armor Strength requirements with Con instead (ex. SF2e Walking Armory)
-  const strReqMod = getVariable<VariableBool>(id, 'USE_CON_FOR_ARMOR_STR_REQ')?.value
-    ? getFinalVariableValue(id, 'ATTRIBUTE_CON').total
-    : strMod;
-
-  if (strReqMod >= strengthReq) {
+  if (getArmorStrengthModifier(id) >= strengthReq) {
     checkPenalty = 0;
     speedPenalty = Math.min(0, speedPenalty + 5);
   }

@@ -1,4 +1,4 @@
-import { ProficiencyType, StoreID, VariableAttr, VariableProf } from '@schemas/variables';
+import { ProficiencyType, StoreID, VariableAttr, VariableListStr, VariableProf } from '@schemas/variables';
 import {
   compactLabels,
   compileProficiencyType,
@@ -12,7 +12,7 @@ import {
 import { getAllAttributeVariables, getAllSkillVariables, getVariable } from './variable-manager';
 import { toLabel } from '@utils/strings';
 import { getCachedContent, getContentFast, getDefaultSources } from '@content/content-store';
-import { AbilityBlock } from '@schemas/content';
+import { AbilityBlock, Trait } from '@schemas/content';
 
 type PrereqMet = 'FULLY' | 'PARTIALLY' | 'NOT' | 'UNKNOWN' | null;
 export function meetsPrerequisites(
@@ -73,6 +73,9 @@ function meetPreq(id: StoreID, prereq: string): PrereqMet {
   if (result) return result;
 
   result = checkForAttribute(id, prereq);
+  if (result) return result;
+
+  result = checkForOwnedContent(id, prereq);
   if (result) return result;
 
   result = checkForFeat(id, prereq);
@@ -216,6 +219,20 @@ function checkForAttribute(id: StoreID, prereq: string): PrereqMet {
   };
 
   return handleChecking(attributeText, checkAttr);
+}
+
+/** Resolve named requirements against every owned feature catalog, including heritages and traits. */
+function checkForOwnedContent(id: StoreID, prereq: string): PrereqMet {
+  const name = prereq.toUpperCase();
+  const catalogs = ['FEAT_NAMES', 'CLASS_FEATURE_NAMES', 'HERITAGE_NAMES', 'PHYSICAL_FEATURE_NAMES', 'TRAIT_NAMES'];
+  if (catalogs.some((catalog) => getVariable<VariableListStr>(id, catalog)?.value.includes(name))) {
+    return 'FULLY';
+  }
+  const knownFeature = getCachedContent<AbilityBlock>('ability-block').some(
+    (block) => block.name.toUpperCase() === name
+  );
+  const knownTrait = getCachedContent<Trait>('trait').some((trait) => trait.name.toUpperCase() === name);
+  return knownFeature || knownTrait ? 'NOT' : null;
 }
 
 function checkForFeat(id: StoreID, prereq: string): PrereqMet {

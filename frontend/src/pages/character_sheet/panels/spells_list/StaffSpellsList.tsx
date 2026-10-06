@@ -1,4 +1,4 @@
-import { Accordion, Badge, Box, Divider, Group, Stack, Text, Title } from '@mantine/core';
+import { Accordion, Badge, Box, Divider, Group, Select, Stack, Text, Title } from '@mantine/core';
 import {
   CastingSource,
   InventoryItem,
@@ -15,7 +15,7 @@ import { SpellSlotSelect } from '../SpellsPanel';
 import SpellListEntrySection from './SpellListEntrySection';
 import { detectSpells, getSpellcastingType } from '@spells/spell-utils';
 import { getItemCastingSource } from '@spells/spell-handler';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import BlurButton from '@common/BlurButton';
 import { openContextModal } from '@mantine/modals';
 import { collectEntitySpellcasting } from '@content/collect-content';
@@ -24,6 +24,7 @@ import { StoreID } from '@schemas/variables';
 import { cloneDeep, groupBy } from 'lodash-es';
 import ImprintButton from '@common/ImprintButton';
 
+/** Display staff spells using the casting source chosen by characters with multiple sources. */
 export default function StaffSpellsList(props: {
   id: StoreID;
   entity: LivingEntity;
@@ -58,7 +59,19 @@ export default function StaffSpellsList(props: {
       greatestSlotRank = slot.rank;
     }
   }
-  const castingType = getSpellcastingType(props.id, props.entity);
+  const [selectedSource, setSelectedSource] = useState<string | null>(null);
+  const castingSources = props.extra.charData.sources.filter(
+    (source) =>
+      typeof source.type === 'string' && (source.type.startsWith('PREPARED') || source.type.startsWith('SPONTANEOUS'))
+  );
+  const castingSource =
+    castingSources.find((source) => source.name === selectedSource) ??
+    castingSources.find((source) => source.type.startsWith(getSpellcastingType(props.id, props.entity)));
+  const castingType = castingSource?.type.startsWith('PREPARED')
+    ? 'PREPARED'
+    : castingSource?.type.startsWith('SPONTANEOUS')
+      ? 'SPONTANEOUS'
+      : 'NONE';
   const canAddPreparedExtraCharges = castingType === 'PREPARED' && maxCharges <= greatestSlotRank;
 
   // On init,
@@ -103,6 +116,7 @@ export default function StaffSpellsList(props: {
                       innerProps: {
                         text: 'Select a spell slot to expend it and add a number of charges equal to its rank to your staff.',
                         allSpells: props.allSpells,
+                        source: castingSource?.name,
                         onSelect: (slot: SpellSlotRecord) => {
                           // Expend the selected slot
                           props.setEntity((c) => {
@@ -172,6 +186,18 @@ export default function StaffSpellsList(props: {
         }}
       >
         <Stack gap={0}>
+          {castingSources.length > 1 && (
+            <Select
+              label='Cast staff using'
+              size='xs'
+              mx='sm'
+              mb='sm'
+              data={castingSources.map((source) => ({ value: source.name, label: source.name }))}
+              value={castingSource?.name ?? null}
+              onChange={setSelectedSource}
+              allowDeselect={false}
+            />
+          )}
           {/* <Divider color='dark.6' /> */}
           <Accordion
             px={10}
@@ -216,7 +242,8 @@ export default function StaffSpellsList(props: {
                     <Divider my={5} />
                     <Stack gap={5} mb={5}>
                       {detectedSpells[rank].map((record, index) => {
-                        const castingSource = getItemCastingSource(props.id, record.spell, props.extra.charData);
+                        const spellCastingSource =
+                          castingSource ?? getItemCastingSource(props.id, record.spell, props.extra.charData);
                         return (
                           <SpellListEntrySection
                             key={index}
@@ -229,8 +256,8 @@ export default function StaffSpellsList(props: {
                                 ? currentCharges + 1 > maxCharges
                                 : currentCharges + record.spell.rank > maxCharges)
                             }
-                            tradition={castingSource?.tradition ?? 'NONE'}
-                            attribute={castingSource?.attribute ?? 'ATTRIBUTE_CHA'}
+                            tradition={spellCastingSource?.tradition ?? 'NONE'}
+                            attribute={spellCastingSource?.attribute ?? 'ATTRIBUTE_CHA'}
                             onCastSpell={(cast: boolean) => {
                               const castWithCharges = () => {
                                 handleUpdateItemCharges(props.setEntity, props.staff, {
@@ -254,6 +281,7 @@ export default function StaffSpellsList(props: {
                                       innerProps: {
                                         canCastNormally: currentCharges + record.spell.rank <= maxCharges,
                                         spell: record.spell,
+                                        source: castingSource?.name,
                                         onSelect: (option: 'NORMAL' | 'SLOT-CONSUME', slotRank?: number) => {
                                           if (option === 'NORMAL') {
                                             castWithCharges();
@@ -268,7 +296,12 @@ export default function StaffSpellsList(props: {
                                               let added = false;
                                               const newUpdatedSlots = collectEntitySpellcasting(props.id, c).slots.map(
                                                 (slot) => {
-                                                  if (!added && slot.rank === slotRank && slot.exhausted !== true) {
+                                                  if (
+                                                    !added &&
+                                                    slot.source === castingSource?.name &&
+                                                    slot.rank === slotRank &&
+                                                    slot.exhausted !== true
+                                                  ) {
                                                     added = true;
                                                     return {
                                                       ...slot,

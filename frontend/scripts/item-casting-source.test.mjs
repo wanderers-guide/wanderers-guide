@@ -82,6 +82,34 @@ async function itemOffering(spell, entity, kind, options = {}) {
     staff: item,
     setEntity: options.setEntity ?? (() => assert.fail('reading or opening a cast must not write the saved character')),
   };
+  let castingSources;
+  let castingSource;
+  let castingType = 'PREPARED';
+  if (kind === 'Staff') {
+    const utils = await source('process/spells/spell-utils.ts');
+    const declaration = utils.nodes.find(
+      (node) => ts.isFunctionDeclaration(node) && node.name?.text === 'getSpellcastingType'
+    );
+    assert.ok(declaration, 'use the actual default staff casting type');
+    const getSpellcastingType = evaluate(utils.file, declaration, {
+      collectEntitySpellcasting: engine.collectEntitySpellcasting,
+    });
+    const initializer = (name) => {
+      const variables = list.nodes.filter(
+        (node) => ts.isVariableDeclaration(node) && node.name.getText(list.file) === name
+      );
+      assert.equal(variables.length, 1, `one actual panel ${name} expression`);
+      return variables[0].initializer;
+    };
+    castingSources = evaluate(list.file, initializer('castingSources'), { props });
+    castingSource = evaluate(list.file, initializer('castingSource'), {
+      props,
+      castingSources,
+      selectedSource: options.selectedSource ?? null,
+      getSpellcastingType,
+    });
+    castingType = evaluate(list.file, initializer('castingType'), { castingSource });
+  }
   const callback = evaluate(list.file, mapCallback, {
     React,
     props,
@@ -91,7 +119,8 @@ async function itemOffering(spell, entity, kind, options = {}) {
     isItemBroken: engine.isItemBroken,
     handleUpdateItemCharges: engine.handleUpdateItemCharges,
     collectEntitySpellcasting: engine.collectEntitySpellcasting,
-    castingType: options.castingType ?? 'PREPARED',
+    castingSource,
+    castingType,
     currentCharges: item.item.meta_data.charges.current,
     maxCharges: item.item.meta_data.charges.max,
     modals: options.modals ?? { openConfirmModal: () => assert.fail('opening must not overcharge') },
@@ -105,7 +134,7 @@ async function itemOffering(spell, entity, kind, options = {}) {
   );
   assert.equal(rendered.type.name, 'SpellListEntrySection');
   assert.equal(rendered.props.spell, spell);
-  return { rendered, props, item, charData };
+  return { rendered, props, item, charData, castingSources, castingSource, castingType };
 }
 
 async function itemDrawerData(spell, entity, kind, options) {
@@ -224,8 +253,8 @@ test('a legal level-12 WIS4 expert Cleric staff uses its real source through the
   assert.deepEqual(entity, before);
 });
 
-test('both item lists select the strongest eligible source, not a stronger irrelevant caster', async () => {
-  for (const kind of ['Wand', 'Staff']) {
+test('automatic wand casting selects the strongest eligible source, not a stronger irrelevant caster', async () => {
+  for (const kind of ['Wand']) {
     const entity = caster({
       attributes: { INT: 3, WIS: 4, CHA: 6 },
       sources: [
@@ -259,8 +288,8 @@ test('ordinary tradition-list spells need not be learned or in the repertoire, a
   }
 });
 
-test('only an exact source-bound NORMAL grant expands an off-tradition spell list', async () => {
-  for (const kind of ['Wand', 'Staff']) {
+test('only an exact source-bound NORMAL grant expands the automatic wand spell list', async () => {
+  for (const kind of ['Wand']) {
     for (const [grant, expected] of [
       [{ type: 'NORMAL', spellId: 4571, castingSource: 'CLERIC' }, true],
       [{ type: 'NORMAL', spellId: 4571, castingSource: 'FOREIGN' }, false],
@@ -295,17 +324,24 @@ test('only an exact source-bound NORMAL grant expands an off-tradition spell lis
   }
 });
 
-test('malformed, focus-only, innate-only and removed sources retain the compatible fallback', async () => {
+test('invalid automatic wand sources and absent staff panel sources retain the compatible fallback', async () => {
   for (const kind of ['Wand', 'Staff']) {
-    for (const source of [
+    const absentPanelSources = [
       'BROKEN',
-      ' :::PREPARED-LIST:::ARCANE:::ATTRIBUTE_INT',
       'FOCUS:::FOCUS:::ARCANE:::ATTRIBUTE_INT',
       'INNATE:::-:::ARCANE:::ATTRIBUTE_INT',
-      'NONE:::PREPARED-LIST:::NONE:::ATTRIBUTE_INT',
-      'BAD_ATTRIBUTE:::PREPARED-LIST:::ARCANE:::LEVEL',
-      'MISSING_ATTRIBUTE:::PREPARED-LIST:::ARCANE:::ATTRIBUTE_MISSING',
-    ]) {
+    ];
+    for (const source of kind === 'Staff'
+      ? absentPanelSources
+      : [
+          'BROKEN',
+          ' :::PREPARED-LIST:::ARCANE:::ATTRIBUTE_INT',
+          'FOCUS:::FOCUS:::ARCANE:::ATTRIBUTE_INT',
+          'INNATE:::-:::ARCANE:::ATTRIBUTE_INT',
+          'NONE:::PREPARED-LIST:::NONE:::ATTRIBUTE_INT',
+          'BAD_ATTRIBUTE:::PREPARED-LIST:::ARCANE:::LEVEL',
+          'MISSING_ATTRIBUTE:::PREPARED-LIST:::ARCANE:::ATTRIBUTE_MISSING',
+        ]) {
       const entity = caster({ sources: [source] });
       await expectContext(displaySpell(disintegrate), entity, kind, {
         tradition: 'NONE',
@@ -328,7 +364,39 @@ test('malformed, focus-only, innate-only and removed sources retain the compatib
   }
 });
 
-test('one source supplies both numbers, with existing modifier stacking and MAP unchanged', async () => {
+test('a malformed source beside a valid staff caster does not prevent the existing default source', async () => {
+  const entity = caster({
+    sources: ['BROKEN', 'WIZARD:::PREPARED-LIST:::ARCANE:::ATTRIBUTE_INT'],
+  });
+  await expectContext(displaySpell(disintegrate), entity, 'Staff', {
+    tradition: 'ARCANE',
+    attribute: 'ATTRIBUTE_INT',
+    math: 'Attack+20/+15/+10DC30',
+  });
+});
+
+test('the actual default casting-type utility tolerates malformed-only sources without changing slot priority', async () => {
+  const utils = await source('process/spells/spell-utils.ts');
+  const declaration = utils.nodes.find(
+    (node) => ts.isFunctionDeclaration(node) && node.name?.text === 'getSpellcastingType'
+  );
+  assert.ok(declaration);
+  const getSpellcastingType = evaluate(utils.file, declaration, {
+    collectEntitySpellcasting: engine.collectEntitySpellcasting,
+  });
+  for (const [sources, slots, expected] of [
+    [['BROKEN'], [], 'NONE'],
+    [['BROKEN', 'WIZARD:::PREPARED-LIST:::ARCANE:::ATTRIBUTE_INT'], [], 'PREPARED'],
+    [['BROKEN'], [{ lvl: 12, rank: 3, amt: 1, source: 'SPONTANEOUS_OLD', opId: 'old-slot' }], 'SPONTANEOUS'],
+  ]) {
+    const entity = caster({ sources, slots });
+    const before = structuredClone({ entity, variables: engine.getVariables('CHARACTER') });
+    assert.equal(getSpellcastingType('CHARACTER', entity), expected);
+    assert.deepEqual({ entity, variables: engine.getVariables('CHARACTER') }, before);
+  }
+});
+
+test('automatic wand or explicitly selected staff context supplies both numbers, with modifiers and MAP unchanged', async () => {
   for (const kind of ['Wand', 'Staff']) {
     for (const [dexterity, attribute, math] of [
       [3, 'ATTRIBUTE_INT', 'Attack+23/+18/+13DC32'],
@@ -348,7 +416,15 @@ test('one source supplies both numbers, with existing modifier stacking and MAP 
       engine.addVariableBonus('CHARACTER', 'ATTACK_ROLLS_BONUS', 2, 'status', '', 'Strong status');
       engine.addVariableBonus('CHARACTER', 'ATTACK_ROLLS_BONUS', 1, 'status', '', 'Weak status');
       engine.addVariableBonus('CHARACTER', 'SPELL_DC', 2, 'status', '', 'DC status');
-      await expectContext(displaySpell(disintegrate), entity, kind, { tradition: 'ARCANE', attribute, math });
+      await expectContext(
+        displaySpell(disintegrate),
+        entity,
+        kind,
+        { tradition: 'ARCANE', attribute, math },
+        {
+          selectedSource: attribute === 'ATTRIBUTE_INT' ? 'INT_CASTER' : 'DEX_CASTER',
+        }
+      );
     }
   }
 });
@@ -369,6 +445,107 @@ test('equal attack and DC keep the first actual collected source deterministical
       });
     }
   }
+});
+
+for (const selected of [false, true]) {
+  test(`staff ${selected ? 'explicit weaker selection' : 'default weaker source'} supplies math and the exact consumed slot`, async () => {
+    const weakName = selected ? 'Z_WEAK' : 'A_WEAK';
+    const strongName = selected ? 'A_STRONG' : 'Z_STRONG';
+    const entity = caster({
+      attributes: { WIS: 1, INT: 4 },
+      sources: [
+        `${strongName}:::SPONTANEOUS-REPERTOIRE:::DIVINE:::ATTRIBUTE_INT`,
+        `${weakName}:::SPONTANEOUS-REPERTOIRE:::DIVINE:::ATTRIBUTE_WIS`,
+      ],
+      slots: [
+        { lvl: 12, rank: 3, amt: 1, source: strongName, opId: 'strong-slot' },
+        { lvl: 12, rank: 3, amt: 1, source: weakName, opId: 'weak-slot' },
+      ],
+    });
+    const spell = displaySpell(heal, { rank: 3 });
+    const before = structuredClone(entity);
+    const collected = engine.collectEntitySpellcasting('CHARACTER', entity);
+    assert.equal(engine.getItemCastingSource('CHARACTER', spell, collected).name, strongName);
+    let state = entity;
+    let writes = 0;
+    let modal;
+    const options = {
+      selectedSource: selected ? weakName : null,
+      setEntity: (update) => {
+        writes++;
+        state = update(state);
+      },
+      openContextModal: (request) => {
+        modal = request;
+      },
+    };
+    const offering = await itemOffering(spell, entity, 'Staff', options);
+    assert.equal(offering.castingSource.name, weakName);
+    assert.equal(offering.castingType, 'SPONTANEOUS');
+    const staff = await source('pages/character_sheet/panels/spells_list/StaffSpellsList.tsx');
+    const selectors = staff.nodes.filter(
+      (node) => ts.isJsxSelfClosingElement(node) && node.tagName.getText(staff.file) === 'Select'
+    );
+    assert.equal(selectors.length, 1, 'retain the existing staff source selector');
+    const attribute = (name) => selectors[0].attributes.properties.find((node) => node.name?.text === name);
+    assert.equal(evaluate(staff.file, attribute('value').initializer.expression, offering), weakName);
+    let chosen;
+    evaluate(staff.file, attribute('onChange').initializer.expression, {
+      setSelectedSource: (name) => {
+        chosen = name;
+      },
+    })(strongName);
+    assert.equal(chosen, strongName, 'the actual selector updates the panel source');
+    const data = await itemDrawerData(spell, entity, 'Staff', options);
+    assert.equal(data.tradition, 'DIVINE');
+    assert.equal(data.attribute, 'ATTRIBUTE_WIS');
+    assert.equal(drawerText(data).replace(/\s+/g, ''), 'Attack+17/+12/+7DC27');
+    assert.equal(writes, 0);
+    assert.deepEqual(state, before);
+    data.onCastSpell(true);
+    assert.equal(writes, 0);
+    assert.equal(modal.modal, 'selectStaffCasting');
+    assert.equal(modal.innerProps.source, weakName);
+    modal.innerProps.onSelect('SLOT-CONSUME', 3);
+    const expected = structuredClone(before);
+    expected.inventory.items[0].item.meta_data.charges.current = 1;
+    expected.spells.slots = collected.slots.map((slot) =>
+      slot.source === weakName ? { ...slot, exhausted: true } : slot
+    );
+    assert.equal(writes, 2);
+    assert.deepEqual(state, expected);
+    assert.deepEqual(entity, before);
+  });
+}
+
+test('an absent staff panel source uses stats fallback without changing its no-source charge path', async () => {
+  const entity = caster({
+    sources: ['WIZARD:::PREPARED-LIST:::ARCANE:::ATTRIBUTE_INT'],
+    slots: [{ lvl: 12, rank: 3, amt: 1, source: 'SPONTANEOUS_ORPHAN', opId: 'orphan-slot' }],
+  });
+  const before = structuredClone(entity);
+  let state = entity;
+  let writes = 0;
+  const options = {
+    setEntity: (update) => {
+      writes++;
+      state = update(state);
+    },
+  };
+  const spell = displaySpell(disintegrate, { rank: 3 });
+  const offering = await itemOffering(spell, entity, 'Staff', options);
+  assert.equal(offering.castingSource, undefined);
+  assert.equal(offering.castingType, 'NONE');
+  const data = await itemDrawerData(spell, entity, 'Staff', options);
+  assert.equal(data.attribute, 'ATTRIBUTE_INT');
+  assert.equal(drawerText(data).replace(/\s+/g, ''), 'Attack+20/+15/+10DC30');
+  assert.equal(writes, 0);
+  data.onCastSpell(true);
+  const expected = structuredClone(before);
+  expected.inventory.items[0].item.meta_data.charges.current = 3;
+  assert.equal(writes, 1);
+  assert.deepEqual(state, expected);
+  assert.deepEqual(entity, before);
 });
 
 test('reading and opening does not write items; real wand and prepared staff casts only spend their existing charges', async () => {
@@ -412,7 +589,6 @@ test('spontaneous staff choices retain rank-charge and one-charge-plus-slot conv
     let writes = 0;
     let modal;
     const data = await itemDrawerData(displaySpell(heal, { rank: 3 }), entity, 'Staff', {
-      castingType: 'SPONTANEOUS',
       setEntity: (update) => {
         writes++;
         state = update(state);
@@ -427,6 +603,7 @@ test('spontaneous staff choices retain rank-charge and one-charge-plus-slot conv
     assert.equal(writes, 0, 'no charge or slot is spent before choosing');
     assert.equal(modal.modal, 'selectStaffCasting');
     assert.equal(modal.innerProps.canCastNormally, true);
+    assert.equal(modal.innerProps.source, 'SORCERER');
     modal.innerProps.onSelect(option, 3);
     const expected = structuredClone(before);
     expected.inventory.items[0].item.meta_data.charges.current = option === 'NORMAL' ? 3 : 1;
@@ -484,22 +661,32 @@ test('the actual staff mount effect retains its existing greatest-slot charge in
 
 test('the actual prepared-staff extra-charge choice preserves slot use and delayed charge write', async () => {
   const entity = caster({
-    attributes: { WIS: 4 },
-    sources: ['CLERIC:::PREPARED-TRADITION:::DIVINE:::ATTRIBUTE_WIS'],
-    slots: [{ lvl: 12, rank: 3, amt: 1, source: 'CLERIC', opId: 'prepared-slot' }],
+    attributes: { INT: 4, WIS: 1 },
+    sources: [
+      'A_WIZARD:::PREPARED-LIST:::ARCANE:::ATTRIBUTE_INT',
+      'Z_CLERIC:::PREPARED-TRADITION:::DIVINE:::ATTRIBUTE_WIS',
+    ],
+    slots: [
+      { lvl: 12, rank: 3, amt: 1, source: 'A_WIZARD', opId: 'wizard-slot' },
+      { lvl: 12, rank: 3, amt: 1, source: 'Z_CLERIC', opId: 'cleric-slot' },
+    ],
   });
   entity.inventory.items[0].item.meta_data.charges.max = 3;
   const before = structuredClone(entity);
   const collected = engine.collectEntitySpellcasting('CHARACTER', entity);
   assert.deepEqual(
     collected.slots.map(({ id, rank, source }) => ({ id, rank, source })),
-    [{ id: 'CHARACTER-spell-slot-0', rank: 3, source: 'CLERIC' }]
+    [
+      { id: 'CHARACTER-spell-slot-0', rank: 3, source: 'A_WIZARD' },
+      { id: 'CHARACTER-spell-slot-1', rank: 3, source: 'Z_CLERIC' },
+    ]
   );
   let state = entity;
   let writes = 0;
   let modal;
   const scheduled = [];
-  const { props } = await itemOffering(displaySpell(heal), entity, 'Staff', {
+  const { props, castingSource } = await itemOffering(displaySpell(heal), entity, 'Staff', {
+    selectedSource: 'Z_CLERIC',
     setEntity: (update) => {
       writes++;
       state = update(state);
@@ -510,6 +697,7 @@ test('the actual prepared-staff extra-charge choice preserves slot use and delay
   assert.equal(clicks.length, 1, 'the real Add Charges handler');
   evaluate(staff.file, clicks[0].initializer.expression, {
     props,
+    castingSource,
     React,
     Title: () => null,
     cloneDeep,
@@ -524,15 +712,16 @@ test('the actual prepared-staff extra-charge choice preserves slot use and delay
     },
   })({ stopPropagation() {}, preventDefault() {} });
   assert.equal(modal.modal, 'selectSpellSlot');
+  assert.equal(modal.innerProps.source, 'Z_CLERIC');
   assert.equal(writes, 0);
-  modal.innerProps.onSelect(collected.slots[0]);
+  modal.innerProps.onSelect(collected.slots[1]);
   assert.equal(writes, 1);
   assert.deepEqual(
     scheduled.map(({ delay }) => delay),
     [250]
   );
   const slotExpected = structuredClone(before);
-  slotExpected.spells.slots = [{ ...collected.slots[0], exhausted: true }];
+  slotExpected.spells.slots = [collected.slots[0], { ...collected.slots[1], exhausted: true }];
   assert.deepEqual(state, slotExpected);
   scheduled[0].callback();
   slotExpected.inventory.items[0].item.meta_data.charges.max = 6;

@@ -1,9 +1,10 @@
 import { characterState } from '@atoms/characterAtoms';
 import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
+import { userState } from '@atoms/userAtoms';
 import { getContentDataFromHref } from '@common/rich_text_input/ContentLinkExtension';
 import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
-import { getCachedCustomization } from '@content/customization-cache';
+import { getCachedCustomization, saveCustomization } from '@content/customization-cache';
 import DrawerBase from '@drawers/DrawerBase';
 import { convertContentLink } from '@drawers/drawer-utils';
 import {
@@ -16,16 +17,16 @@ import {
   createTheme,
   v8CssVariablesResolver,
 } from '@mantine/core';
-import { useMediaQuery, usePrevious } from '@mantine/hooks';
+import { useMediaQuery } from '@mantine/hooks';
 import { ModalsProvider } from '@mantine/modals';
-import { AppUpdateNotice } from '@common/AppUpdateNotice';
+import { AppUpdates } from '@common/AppUpdates';
 import { Notifications } from '@mantine/notifications';
-import { notifySessionExpired, resetSessionExpiredNotice } from '@requests/request-manager';
+import { markSessionExpired, resetSessionExpired } from '@requests/request-manager';
 import { clearUserData, getCachedPublicUser } from '@auth/user-manager';
 import SearchSpotlight from '@nav/SearchSpotlight';
 import { IconBrush } from '@tabler/icons-react';
 import { getBackgroundImageFromURL } from '@utils/background-images';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import { useAtom, useAtomValue } from 'jotai';
 import { supabase } from './main';
@@ -41,7 +42,6 @@ import SelectImageModal from '@modals/SelectImageModal';
 import UpdateCharacterPortraitModal from '@modals/UpdateCharacterPortraitModal';
 import UpdateNotePageModal from '@modals/UpdateNotePageModal';
 import AddItemsModal from '@modals/AddItemsModal';
-import { isEqual } from 'lodash-es';
 import SelectSpellSlotModal from '@modals/SelectSpellSlotModal';
 import SelectStaffCastingModal from '@modals/SelectStaffCastingModal';
 import InitiativeRollModal from '@modals/InitiativeRollModal';
@@ -109,13 +109,7 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setContentCacheActor(session?.user.id ?? null);
       setSession(session);
-      // Cold load with a dead session (expired from inactivity while the tab was
-      // closed): supabase-js clears its stored session without a SIGNED_OUT event,
-      // so catch the "cached user but no session" mismatch here too. Clear silently,
-      // with no toast: the page renders signed-out from the very first paint, so
-      // announcing "you've been signed out" on arrival is just noise. (The mid-visit
-      // expiry paths below still notify, because there the user may be mid-edit with
-      // unsaved work at stake.)
+      // Clear stale account chrome quietly; character drafts remain account-scoped.
       if (!session && getCachedPublicUser()) {
         clearUserData();
       }
@@ -126,19 +120,14 @@ export default function App() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       setContentCacheActor(session?.user.id ?? null);
       setSession(session);
-      if (session) resetSessionExpiredNotice();
+      if (session) resetSessionExpired();
 
       if (event === 'SIGNED_OUT') {
-        // The session ended. If the cached user data is still present, this was NOT an
-        // intentional logout (that path runs localStorage.clear() first) — the session
-        // expired or was revoked while the user was browsing. Guarded routes redirect to
-        // login on their own, but public pages (sheet, builder, home) kept rendering a
-        // logged-in-looking UI whose every write silently failed. Clear the stale cache
-        // and tell the user, so "logged out but the site never says so" can't happen.
+        // Unexpected expiry pauses saves quietly. Intentional logout already cleared the user cache.
         const hadUser = !!getCachedPublicUser();
         clearUserData();
         if (hadUser && !window.location.pathname.startsWith('/login')) {
-          notifySessionExpired();
+          markSessionExpired();
         }
       }
     });
@@ -147,27 +136,36 @@ export default function App() {
   }, []);
 
   const activeCharacer = useAtomValue(characterState);
-  const prevCharacer = usePrevious(activeCharacer);
+  const account = useAtomValue(userState) ?? getCachedPublicUser();
+  const location = useLocation();
+  const characterPage = /^\/(builder|sheet)\//.test(location.pathname);
+  const sheetTheme = {
+    ...(account ? account.site_theme : getCachedCustomization()?.sheet_theme),
+    ...(characterPage ? activeCharacer?.details?.sheet_theme : undefined),
+  };
+  const backgroundUrl =
+    (characterPage ? activeCharacer?.details?.background_image_url : undefined) || account?.background_image_url;
+
+  // Publish the same resolved preferences that the app renders, including account fields
+  // omitted by a character's partial theme. Drawers read this cache when they open.
+  useEffect(() => {
+    saveCustomization({ background_image_url: backgroundUrl ?? undefined, sheet_theme: sheetTheme });
+  }, [backgroundUrl, sheetTheme.color, sheetTheme.dyslexia_font, sheetTheme.view_operations, sheetTheme.zoom]);
 
   // Update background image when background_image_url changes
   const [background, setBackground] = useState<ImageOption>();
   useEffect(() => {
+    let active = true;
     (async () => {
-      if (prevCharacer?.details?.background_image_url === activeCharacer?.details?.background_image_url) {
-        if (!background?.url) {
-          // Use cached customization if available
-          const cache = getCachedCustomization();
-
-          setBackground(await getBackgroundImageFromURL(cache?.background_image_url ?? undefined));
-        }
-        return;
-      }
-      console.log('Updating background image...');
-      setBackground(await getBackgroundImageFromURL(activeCharacer?.details?.background_image_url));
+      const image = await getBackgroundImageFromURL(backgroundUrl ?? undefined);
+      if (active) setBackground(image);
     })();
-  }, [activeCharacer]);
+    return () => {
+      active = false;
+    };
+  }, [backgroundUrl]);
 
-  const dyslexiaFontEnabled = !!getCachedCustomization()?.sheet_theme?.dyslexia_font;
+  const dyslexiaFontEnabled = !!sheetTheme.dyslexia_font;
   useEffect(() => {
     if (dyslexiaFontEnabled) ensureDyslexicFontLoaded();
   }, [dyslexiaFontEnabled]);
@@ -175,7 +173,7 @@ export default function App() {
   const generateTheme = (theme?: { color?: string }) => {
     return createTheme({
       colors: {
-        guide: generateThemeColors(theme?.color || getCachedCustomization()?.sheet_theme?.color),
+        guide: generateThemeColors(theme?.color || sheetTheme.color),
         // Dark scale: near-opaque at [0] → nearly transparent at [9]
         dark: [
           'rgba(193, 194, 197, 0.89)', // [0] lightest text / icons
@@ -211,6 +209,12 @@ export default function App() {
       fontFamily: dyslexiaFontEnabled ? 'OpenDyslexicRegular, sans-serif' : 'Montserrat, sans-serif',
       fontFamilyMonospace: 'Ubuntu Mono, monospace',
       components: {
+        Modal: {
+          defaultProps: { removeScrollProps: { allowPinchZoom: true } },
+        },
+        Drawer: {
+          defaultProps: { removeScrollProps: { allowPinchZoom: true } },
+        },
         Popover: {
           vars: () => ({
             dropdown: {
@@ -294,15 +298,9 @@ export default function App() {
     });
   };
 
-  const [theme, setTheme] = useState<any>(generateTheme());
-  useEffect(() => {
-    if (isEqual(prevCharacer?.details?.sheet_theme, activeCharacer?.details?.sheet_theme)) return;
-    console.log('Updating site theme...');
-    setTheme(generateTheme({ color: activeCharacer?.details?.sheet_theme?.color }));
-  }, [activeCharacer]);
+  const theme = useMemo(() => generateTheme(), [sheetTheme.color, dyslexiaFontEnabled]);
 
   // Handle query params
-  const location = useLocation();
   const [searchParams] = useSearchParams();
   useEffect(() => {
     (async () => {
@@ -378,9 +376,9 @@ export default function App() {
         )}
         <SearchSpotlight />
         <Notifications position='top-right' zIndex={9400} containerWidth={350} />
-        <AppUpdateNotice />
+        <AppUpdates />
         <DrawerBase />
-        <Box style={{ zoom: getCachedCustomization()?.sheet_theme?.zoom ?? 1 }}>
+        <Box style={{ zoom: sheetTheme.zoom ?? 1 }}>
           <Layout>
             {/* Outlet is where react-router will render child routes */}
             <Outlet />

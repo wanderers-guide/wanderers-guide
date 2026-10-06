@@ -70,6 +70,7 @@ import { escapeRegExp, isNumber, intersection } from 'lodash-es';
 import { throwError } from '@utils/error-handling';
 import { GenericData } from '@schemas/index';
 import { getRootSelection, SelectionTreeNode } from './selection-tree';
+import { applyCustomSelectionRules } from './custom-selection-rules';
 
 export function createDefaultOperation<T = Operation>(type: OperationType): T {
   if (type === 'giveAbilityBlock') {
@@ -282,49 +283,48 @@ export const hasOperationSelection = (result: OperationResult) => {
   return false;
 };
 
+/** Resolve the single custom choice used by a builder's content preview. */
 export function getSelectedCustomOption(
   entity: LivingEntity | null,
   op: Operation
 ): OperationSelectOptionCustom | null {
-  if (!entity) return null;
-  if (op.type === 'select' && op.data.modeType === 'PREDEFINED' && op.data.optionType === 'CUSTOM') {
-    // Custom select option
-  } else {
-    return null;
-  }
-
-  const selectionKey = Object.keys(entity?.operation_data?.selections ?? {}).find((key) => key.endsWith(op.id));
-  const selectedOption = selectionKey
-    ? op.data.optionsPredefined?.find((option) => option.id === entity!.operation_data!.selections![selectionKey])
-    : null;
-  return (selectedOption as OperationSelectOptionCustom) ?? null;
+  if (op.type !== 'select' || op.data.modeType !== 'PREDEFINED' || op.data.optionType !== 'CUSTOM') return null;
+  const selection = Object.entries(entity?.operation_data?.selections ?? {}).find(([key]) => key.endsWith(`_${op.id}`));
+  return (
+    (op.data.optionsPredefined ?? []).find(
+      (option): option is OperationSelectOptionCustom => option.type === 'CUSTOM' && option.id === selection?.[1]
+    ) ?? null
+  );
 }
 
-export async function getSelectedOption(
-  entity: LivingEntity | null,
-  op: OperationSelect
-): Promise<OperationSelectOptionCustom | Record<string, any> | null> {
-  if (!entity) return null;
-  if (op.type === 'select' && op.data.modeType === 'PREDEFINED' && op.data.optionType === 'CUSTOM') {
-    // Custom select option
-    const selectionKey = Object.keys(entity?.operation_data?.selections ?? {}).find((key) => key.endsWith(op.id));
-    const selectedOption = selectionKey
-      ? op.data.optionsPredefined?.find((option) => option.id === entity!.operation_data!.selections![selectionKey])
-      : null;
-    return (selectedOption as OperationSelectOptionCustom) ?? null;
-  } else {
-    const selectionKey = Object.keys(entity?.operation_data?.selections ?? {}).find((key) => key.endsWith(op.id));
-    if (!selectionKey) {
-      return null;
-    }
-    const options: Record<string, any>[] = await fetchContentAll(
-      op.data.optionsFilters?.type.toLowerCase().replace('_', '-') as ContentType,
-      getDefaultSources('PAGE')
+/** Resolve every saved occurrence of a selection, such as Anvil Dwarf's two crafting specialties. */
+export async function getSelectedOptions(entity: LivingEntity | null, op: OperationSelect): Promise<ObjectWithUUID[]> {
+  const selections = Object.entries(entity?.operation_data?.selections ?? {})
+    .filter(([key]) => key.endsWith(`_${op.id}`))
+    .map(([, value]) => value);
+  if (selections.length === 0) return [];
+  let options: ObjectWithUUID[];
+  if (op.data.modeType === 'PREDEFINED') {
+    options = await determinePredefinedSelectionList(
+      'CHARACTER',
+      op.id,
+      op.data.optionType,
+      op.data.optionsPredefined ?? []
     );
-    const key: string = entity!.operation_data!.selections![selectionKey];
-    const selectedOption = options.find((option) => String(option.id) === key);
-    return selectedOption ?? null;
+  } else if (op.data.optionType === 'ADJ_VALUE') {
+    options = op.data.optionsFilters
+      ? await determineFilteredSelectionList('CHARACTER', op.id, op.data.optionsFilters)
+      : [];
+  } else {
+    // A selected feat can be excluded from its original picker after it is owned. Resolve it from the catalog.
+    const type = op.data.optionType.toLowerCase().replace('_', '-') as ContentType;
+    options = (await fetchContentAll(type, getDefaultSources('PAGE'))).map((option) => ({
+      ...option,
+      _select_uuid: String(option.id),
+      _content_type: type,
+    }));
   }
+  return options.filter((option) => selections.includes(option._select_uuid));
 }
 
 export function convertKeyToBasePrefix(key: string, id?: number): string {
@@ -884,7 +884,7 @@ async function getCustomPredefinedList(id: StoreID, operationId: string, options
     .filter((v) => v && v?.opId === operationId)
     .map((v) => v!.option);
 
-  return [...options, ...injectedOptions].map((option) => {
+  return applyCustomSelectionRules(id, operationId, [...options, ...injectedOptions]).map((option) => {
     return {
       _select_uuid: option.id,
       _content_type: 'ability-block' as ContentType,

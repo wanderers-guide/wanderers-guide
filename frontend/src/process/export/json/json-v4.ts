@@ -1,5 +1,6 @@
 import { collectEntityAbilityBlocks, collectEntitySenses, collectEntitySpellcasting } from '@content/collect-content';
 import { defineDefaultSources, fetchContentPackage } from '@content/content-store';
+import { applyConditions } from '@conditions/condition-handler';
 import { downloadObjectAsJson } from '@export/export-to-json';
 import {
   getEquippedWeapons,
@@ -13,7 +14,7 @@ import { getWeaponStats } from '@items/weapon-handler';
 import { executeOperations } from '@operations/operations.main';
 import { getSpellStats } from '@spells/spell-handler';
 import { isCantrip, isRitual } from '@spells/spell-utils';
-import { LivingEntity, SourceValue } from '@schemas/content';
+import { ContentPackage, LivingEntity, SourceValue } from '@schemas/content';
 import { StoreID, VariableListStr, VariableStr } from '@schemas/variables';
 import { displayResistWeak } from '@utils/resist-weaks';
 import { toLabel } from '@utils/strings';
@@ -34,11 +35,36 @@ import {
   getVariables,
 } from '@variables/variable-manager';
 
+/** Downloads the existing version 4 character format with calculated companion sections. */
 export default async function jsonV4(entity: LivingEntity) {
+  const sources = defineDefaultSources(
+    'PAGE',
+    isCharacter(entity) ? (entity.content_sources?.enabled ?? []) : 'ALL-USER-ACCESSIBLE'
+  );
+  const contentPackage = await fetchContentPackage(sources, { fetchSources: true });
+  const content = await getJsonV4Content(entity, undefined, contentPackage);
+  const companions: { index: number; id: number; name: string; content: typeof content }[] = [];
+  if (isCharacter(entity) && entity.companions?.list?.length) {
+    for (const [index, companion] of entity.companions.list.entries()) {
+      // Match the sheet's stores so saved self-bindings work, including repeated catalog IDs.
+      const storeId = `COMPANION_${index}`;
+      await executeOperations({
+        type: 'CREATURE',
+        data: { id: storeId, creature: companion, content: contentPackage },
+      });
+      applyConditions(storeId, companion.details.conditions ?? []);
+      companions.push({
+        index,
+        id: companion.id,
+        name: companion.name,
+        content: await getJsonV4Content(companion, storeId, contentPackage),
+      });
+    }
+  }
   const exportObject = {
     version: 4,
     character: entity,
-    content: await getJsonV4Content(entity),
+    content: { ...content, ...(isCharacter(entity) ? { companions } : {}) },
   };
 
   const fileName = entity.name
@@ -48,7 +74,8 @@ export default async function jsonV4(entity: LivingEntity) {
   downloadObjectAsJson(exportObject, fileName);
 }
 
-export async function getJsonV4Content(entity: LivingEntity, inputStoreID?: StoreID) {
+/** Compiles character or creature data, optionally reusing a calculated store and loaded source package. */
+export async function getJsonV4Content(entity: LivingEntity, inputStoreID?: StoreID, contentPackage?: ContentPackage) {
   // Get all content that the character uses
   let sv: SourceValue = 'ALL-USER-ACCESSIBLE';
   if (isCharacter(entity)) {
@@ -59,7 +86,7 @@ export async function getJsonV4Content(entity: LivingEntity, inputStoreID?: Stor
       sv = defineDefaultSources('PAGE', 'ALL-USER-ACCESSIBLE');
     }
   }
-  const content = await fetchContentPackage(sv, { fetchSources: true });
+  const content = contentPackage ?? (await fetchContentPackage(sv, { fetchSources: true }));
   const STORE_ID = inputStoreID ?? (isCharacter(entity) ? 'CHARACTER' : `CREATURE_${entity.id}`);
 
   // If we weren't provided a store, execute all operations (to update the variables)
@@ -113,7 +140,7 @@ export async function getJsonV4Content(entity: LivingEntity, inputStoreID?: Stor
   }));
 
   const flatItems = entity.inventory ? getFlatInvItems(entity.inventory) : [];
-  const totalBulk = entity.inventory ? labelizeBulk(getInvBulk(entity.inventory), true) : null;
+  const totalBulk = entity.inventory ? labelizeBulk(getInvBulk(entity.inventory, STORE_ID), true) : null;
 
   const spellData = collectEntitySpellcasting(STORE_ID, entity);
 

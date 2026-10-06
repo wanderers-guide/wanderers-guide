@@ -1,10 +1,37 @@
 import { collectEntitySpellcasting } from '@content/collect-content';
 import { fetchContentById } from '@content/content-store';
 import { getEntityLevel } from '@utils/entity-utils';
-import { Item, LivingEntity, Spell } from '@schemas/content';
+import { Item, LivingEntity, Spell, SpellListEntry, SpellSectionType } from '@schemas/content';
 import { StoreID } from '@schemas/variables';
 import { hasTraitType } from '@utils/traits';
-import { cloneDeep } from 'lodash-es';
+import { cloneDeep, groupBy, uniqBy } from 'lodash-es';
+
+/** Group known spells using only this casting source's saved ranks, retaining distinct heightened versions. */
+export function getKnownSpellsByRank(
+  spellIds: number[],
+  allSpells: Spell[],
+  entries: SpellListEntry[],
+  source: string | undefined,
+  type: SpellSectionType
+): Record<string, Spell[]> {
+  const sourceEntries = entries.filter((entry) => entry.source === source);
+  const usesSavedRanks = type === 'PREPARED' || type === 'SPONTANEOUS';
+  const spells: Spell[] = [];
+  for (const id of spellIds) {
+    const spell = allSpells.find((candidate) => candidate.id === id);
+    if (!spell) continue;
+    const savedEntries = usesSavedRanks ? sourceEntries.filter((entry) => entry.spell_id === id) : [];
+    if (savedEntries.length > 0) {
+      spells.push(...savedEntries.map((entry) => ({ ...spell, rank: entry.rank })));
+    } else {
+      spells.push(spell);
+    }
+  }
+  return groupBy(
+    uniqBy(spells, (spell) => `${spell.id}:${spell.rank}`),
+    'rank'
+  );
+}
 
 /**
  * Utility function to determine if a spell is a focus spell
@@ -71,6 +98,7 @@ export function getSpellcastingType(id: StoreID, entity: LivingEntity): 'PREPARE
 
   // If no slots, just grab the first type
   for (const source of spellData.sources) {
+    if (typeof source.type !== 'string') continue;
     if (source.type.startsWith('PREPARED')) {
       return 'PREPARED';
     } else if (source.type.startsWith('SPONTANEOUS')) {

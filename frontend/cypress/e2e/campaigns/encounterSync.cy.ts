@@ -110,8 +110,8 @@ describe('Campaign encounter synchronization', () => {
     cy.wrap(null).should(() => expect(releaseSave).to.be.a('function'));
     cy.task('campaignFixture:playerUpdate', { key: fixture!.key, hp: 19 }, { log: false }).then(() => releaseSave!());
     cy.wait('@heldDrainedSave').its('response.body.data.__conflict').should('eq', true);
-    cy.contains('Conflicting character edits', { timeout: 30000 }).should('be.visible');
-    cy.contains('Open character').should('be.visible');
+    cy.contains('Conflicting character edits').should('not.exist');
+    cy.contains('Open character').should('not.exist');
     cy.get('input[placeholder="HP"]').should('have.value', '19');
     cy.contains('Drained').should('be.visible');
     readPlayer().then((character) => {
@@ -132,28 +132,49 @@ describe('Campaign encounter synchronization', () => {
     cy.screenshot('campaign-drained-player-damage-conflict');
   });
 
-  it('keeps interrupted saves quiet until a retry discovers conflicting player damage', () => {
+  it('retains conflicting player damage quietly and automatically resumes a compatible GM edit', () => {
     let writes = 0;
+    let disrupted = true;
     cy.intercept('POST', '**/functions/v1/update-character', (request) => {
       if (request.body.id !== fixture!.characterId) return;
       writes += 1;
-      request.alias = 'failedDamageSave';
-      request.reply({ statusCode: 503, body: { status: 'error', message: 'Simulated weak connection' } });
+      if (disrupted) {
+        request.alias = 'failedDamageSave';
+        request.reply({ statusCode: 503, body: { status: 'error', message: 'Simulated weak connection' } });
+      } else request.alias = 'recoveredDamageSave';
     });
     cy.get('input[placeholder="HP"]').clear().type('16{enter}');
     cy.wait('@failedDamageSave');
     cy.contains('Changes not saved').should('not.exist');
     cy.task('campaignFixture:playerUpdate', { key: fixture!.key, hp: 12 }, { log: false });
+    cy.intercept('POST', '**/functions/v1/find-character', (request) => {
+      if (request.body.id === fixture!.characterId) request.alias = 'readConflictingDamage';
+    });
     cy.window().then((win) => win.dispatchEvent(new Event('online')));
-    cy.contains('Conflicting character edits', { timeout: 15000 }).should('be.visible');
-    cy.contains('Open character').should('be.visible');
+    cy.wait('@readConflictingDamage').its('response.body.data.hp_current').should('eq', 12);
+    cy.contains('Conflicting character edits').should('not.exist');
+    cy.contains('Open character').should('not.exist');
     cy.contains('Changes not saved').should('not.exist');
     cy.get('input[placeholder="HP"]').should('have.value', '16');
     readPlayer().its('hp_current').should('eq', 12);
     cy.then(() => expect(writes, 'conflicting damage must not be retried as a write').to.eq(1));
+    cy.then(() => {
+      disrupted = false;
+    });
+    cy.task('campaignFixture:playerUpdate', { key: fixture!.key, hp: 20 }, { log: false });
+    cy.wait('@recoveredDamageSave', { timeout: 20000 }).then(({ request, response }) => {
+      expect(request.body.hp_current).to.eq(16);
+      expect(request.body.expected_updated_at).to.be.a('string');
+      expect(response?.body.data[0].hp_current).to.eq(16);
+    });
+    readPlayer().its('hp_current').should('eq', 16);
+    cy.get('input[placeholder="HP"]').should('have.value', '16');
+    cy.get('.mantine-Notification-root').should('not.exist');
+    cy.then(() => expect(writes).to.eq(2));
+    cy.screenshot('campaign-conflict-recovered-without-ui');
   });
 
-  it('warns only while pending encounter edits cannot be retained locally', () => {
+  it('keeps pending encounter edits quiet when storage is unavailable and saves after recovery', () => {
     let disrupted = true;
     let restoreStorage: () => void;
     cy.intercept('POST', '**/functions/v1/update-character', (request) => {
@@ -178,7 +199,9 @@ describe('Campaign encounter synchronization', () => {
     });
     cy.get('input[placeholder="HP"]').clear().type('16{enter}');
     cy.wait('@blockedUnretainedHp');
-    cy.contains('Keep this page open until saving completes.').should('be.visible');
+    cy.contains('Keep this page open until saving completes.').should('not.exist');
+    cy.contains('Changes not saved').should('not.exist');
+    cy.get('input[placeholder="HP"]').should('have.value', '16');
     readPlayer().its('hp_current').should('eq', 20);
     cy.window().then((win) => {
       restoreStorage();

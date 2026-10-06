@@ -11,9 +11,8 @@ import { ModeSelectionOption } from '@common/select/SelectContent';
 import { drawerState } from '@atoms/navAtoms';
 import { getVariable, setVariable } from '@variables/variable-manager';
 import { VariableListStr } from '@schemas/variables';
-import { labelToVariable } from '@variables/variable-utils';
 import { useSwipeGesture } from '@utils/use-swipe-gesture';
-import { toggleActiveMode } from './mode-rules';
+import { getModeKey, resolveActiveModeKeys, toggleActiveMode } from './mode-rules';
 
 export default function ModesDrawer(props: { opened: boolean; onClose: () => void; content: ContentPackage }) {
   const theme = useMantineTheme();
@@ -30,10 +29,10 @@ export default function ModesDrawer(props: { opened: boolean; onClose: () => voi
   const swipeHandlers = useSwipeGesture({ onSwipeLeft: props.onClose });
 
   const hasModeActive = (mode: AbilityBlock) => {
-    const modeName = labelToVariable(mode.name);
+    const modeName = getModeKey(mode);
     // Toggle mode
     const activeModes = getVariable<VariableListStr>('CHARACTER', 'ACTIVE_MODES')?.value || [];
-    return activeModes.includes(modeName);
+    return resolveActiveModeKeys(modes, activeModes).includes(modeName);
   };
 
   return (

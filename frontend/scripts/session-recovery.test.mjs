@@ -108,7 +108,7 @@ const api = await import(pathToFileURL(join(directory, 'session.mjs')).href);
 const originalError = console.error;
 const originalTimer = globalThis.setTimeout;
 console.error = () => {}; // Expected failures are asserted below, not emitted as noisy logs.
-globalThis.setTimeout = (callback, delay, ...args) => originalTimer(callback, delay === 30000 ? delay : 0, ...args);
+globalThis.setTimeout = (callback, delay, ...args) => originalTimer(callback, delay >= 30000 ? delay : 0, ...args);
 after(async () => {
   console.error = originalError;
   globalThis.setTimeout = originalTimer;
@@ -140,7 +140,7 @@ beforeEach(() => {
     session = signedIn('fresh-token');
     return { data: { session }, error: null };
   };
-  api.resetSessionExpiredNotice();
+  api.resetSessionExpired();
   hides = 0;
 });
 
@@ -171,27 +171,30 @@ test('many concurrent rejected requests share one refresh', async () => {
   assert.ok(results.every((result) => result?.[0]?.id === 1));
 });
 
-test('one rejected auth retry stops and shows a persistent, resettable notice', async () => {
+test('one rejected auth retry pauses silently and keeps the pending draft through session recovery', async () => {
+  api.bufferCharacterSave(character(), 'owner', 'version-1', { base: character('Saved name') });
   localStorage.setItem('user-data', '{"id":"owner"}');
   invoke = async () => expired();
   assert.equal(await api.makeRequest('update-character', { id: 1 }), null);
   assert.equal(refreshes, 1);
   assert.equal(calls.length, 2);
-  assert.equal(notices, 1);
-  assert.equal(api.hasSessionExpiredNotice(), true);
-  api.resetSessionExpiredNotice();
-  assert.equal(api.hasSessionExpiredNotice(), false);
-  assert.ok(hides > 0);
+  assert.equal(notices, 0);
+  assert.equal(api.hasSessionExpired(), true);
+  assert.equal(savedDraft().draft.body.name, 'Local draft');
+  assert.equal(localStorage.getItem('user-data'), null);
+  api.resetSessionExpired();
+  assert.equal(api.hasSessionExpired(), false);
+  assert.equal(hides, 0);
 });
 
-test('expired saved session with no refreshable session surfaces the auth notice', async () => {
+test('expired saved session with no refreshable session stays quiet', async () => {
   session = null;
   localStorage.setItem('user-data', '{"id":"owner"}');
   invoke = async () => expired();
   assert.equal(await api.makeRequest('update-character', { id: 1 }), null);
   assert.equal(refreshes, 0);
   assert.equal(calls.length, 1);
-  assert.equal(notices, 1);
+  assert.equal(notices, 0);
 });
 
 test('permission, API-key, and application failures never trigger auth retries', async () => {
@@ -240,7 +243,15 @@ test('HTTP 400 character statement timeouts remain uncertain failures without re
     null
   );
   assert.deepEqual(body, before);
-  assert.deepEqual(calls, [{ type: 'update-character', body: before, headers: { Authorization: 'Bearer current-token' } }]);
+  assert.equal(calls.length, 1);
+  const { signal, ...sent } = calls[0];
+  assert.ok(signal instanceof AbortSignal);
+  assert.equal(signal.aborted, false, 'an uncertain write is not aborted or replayed');
+  assert.deepEqual(sent, {
+    type: 'update-character',
+    body: before,
+    headers: { Authorization: 'Bearer current-token' },
+  });
   await assert.rejects(
     api.makeRequest('update-character', body, false, { throwOnRejection: true, throwOnFailure: true }),
     (error) => error.constructor === Error && error.message === 'Request failed: update-character'
@@ -304,7 +315,10 @@ test('timeout-shaped bodies cannot supersede JWT recovery or replay as another a
     [{ id: 1 }]
   );
   assert.equal(refreshes, 1);
-  assert.deepEqual(calls.map((call) => call.headers.Authorization), ['Bearer current-token', 'Bearer fresh-token']);
+  assert.deepEqual(
+    calls.map((call) => call.headers.Authorization),
+    ['Bearer current-token', 'Bearer fresh-token']
+  );
   calls = [];
   invoke = async () => {
     session = signedIn('other-token', 'other');
@@ -340,7 +354,7 @@ test('rejection-aware writes preserve JWT recovery and never classify ambiguous 
   }
 });
 
-test('a changed account cannot inherit an old request or receive its expired-session notice', async () => {
+test('a changed account cannot inherit an old request or its expired-session state', async () => {
   invoke = async () => {
     session = signedIn('other-token', 'other');
     return expired();
@@ -361,7 +375,7 @@ test('a timeout never sends a replacement write', async () => {
     assert.equal(calls.length, 1);
     assert.equal(refreshes, 0);
   } finally {
-    globalThis.setTimeout = (callback, delay, ...args) => originalTimer(callback, delay === 30000 ? delay : 0, ...args);
+    globalThis.setTimeout = (callback, delay, ...args) => originalTimer(callback, delay >= 30000 ? delay : 0, ...args);
   }
 });
 
@@ -714,4 +728,112 @@ test('reconciliation retires an already accepted copy only after required calcul
     'removed'
   );
   assert.deepEqual(savedDraft(), { status: 'none' });
+});
+
+/** Advance the actual request deadline without waiting minutes for slow-transfer cases. */
+async function withRequestClock(run) {
+  const previousTimer = globalThis.setTimeout;
+  const previousClear = globalThis.clearTimeout;
+  const timers = new Map();
+  let nextTimer = 0;
+  let now = 0;
+  globalThis.setTimeout = (callback, delay) => {
+    const id = ++nextTimer;
+    timers.set(id, { callback, due: now + delay });
+    return id;
+  };
+  globalThis.clearTimeout = (id) => timers.delete(id);
+  const advance = async (ms) => {
+    now += ms;
+    for (const [id, timer] of timers) {
+      if (timer.due <= now) {
+        timers.delete(id);
+        timer.callback();
+      }
+    }
+    await new Promise((resolve) => setImmediate(resolve));
+  };
+  try {
+    await run({ advance, timers });
+  } finally {
+    globalThis.setTimeout = previousTimer;
+    globalThis.clearTimeout = previousClear;
+  }
+}
+
+test('successful catalog downloads can finish after 30 seconds without duplicate requests', async () => {
+  for (const [type, body] of [
+    ['find-ability-block', { content_sources: [3] }],
+    ['find-item', { content_sources: [3] }],
+    ['find-spell', { content_sources: [3] }],
+    ['find-ability-block', { id: [1, 2] }],
+    ['search-data', {}],
+  ]) {
+    await withRequestClock(async ({ advance, timers }) => {
+      calls = [];
+      let finish;
+      invoke = () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        });
+      let outcome = 'pending';
+      const downloading = api.makeRequest(type, body, false).then((result) => {
+        outcome = result;
+      });
+      await advance(0);
+      await advance(30000);
+      assert.equal(outcome, 'pending', `${type}: valid content still transferring must not be discarded at 30s`);
+      await advance(15000);
+      finish(ok([{ id: 1, name: 'Oracle feat' }]));
+      await downloading;
+      assert.deepEqual(outcome, [{ id: 1, name: 'Oracle feat' }]);
+      assert.equal(calls.length, 1, 'slow reads are not restarted while their response is downloading');
+      assert.equal(calls[0].signal.aborted, false);
+      assert.equal(notices, 0);
+      assert.equal(timers.size, 0);
+    });
+  }
+});
+
+test('stalled catalogs are bounded and abort their transfer before a later retry', async () => {
+  await withRequestClock(async ({ advance, timers }) => {
+    let finish;
+    invoke = () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      });
+    let outcome = 'pending';
+    const downloading = api.makeRequest('find-ability-block', { content_sources: [3] }, false).then((result) => {
+      outcome = result;
+    });
+    await advance(0);
+    await advance(119999);
+    assert.equal(outcome, 'pending');
+    await advance(1);
+    await downloading;
+    assert.equal(outcome, null);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].signal.aborted, true, 'expired download no longer consumes bandwidth');
+    finish(ok());
+    await advance(0);
+    assert.equal(outcome, null, 'late responses cannot replace the settled failure');
+    assert.equal(notices, 0);
+    assert.equal(timers.size, 0);
+  });
+});
+
+test('single-record reads retain the short deadline and mutations are never replayed', async () => {
+  for (const type of ['find-ability-block', 'find-character', 'update-character', 'create-character']) {
+    await withRequestClock(async ({ advance, timers }) => {
+      calls = [];
+      invoke = () => new Promise(() => {});
+      const pending = api.makeRequest(type, { id: 1 }, false);
+      await advance(0);
+      await advance(30000);
+      assert.equal(await pending, null);
+      assert.equal(calls.length, 1);
+      assert.equal(calls[0].signal.aborted, type.startsWith('find-'));
+      assert.equal(timers.size, 0);
+    });
+  }
 });

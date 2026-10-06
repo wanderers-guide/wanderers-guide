@@ -205,7 +205,7 @@ through actual sheet and GM controls, local API saves, mobile viewports, reloadi
 and simulated connection failures. They create and clean up synthetic characters.
 The sheet spec also holds a required content response, verifies no partial save occurs,
 then checks nested homebrew variables and binding chains through level changes and
-reopening. A cyclic homebrew graph must show calculation recovery without persisting
+reopening. A cyclic homebrew graph must recover quietly without persisting
 partial math. The fast homebrew tests cover conditional custom Lore, binding order,
 self-links, repeated assignments, long chains, and companion isolation.
 
@@ -363,6 +363,24 @@ through the API as well as the UI. It uses only its own test characters. These s
 simulate flaky transport, constrained CPU and page lifecycle boundaries, not iOS/Android
 process eviction or a measured physical-device performance profile. The save-hook regressions also cover uncertain writes,
 intentional reversions, separate-tab drafts, storage exhaustion, and account changes.
+Save failures and session expiry stay quiet, including conflicting edits. Conflict
+cases verify retained local input and the unchanged competing server version through reload,
+then automatic guarded saving after a background read finds a compatible version.
+Hook regressions also cover ordinary edits resolving a conflict, remote fields changing
+while saving is paused, uncertain-write reversions, and repeated-conflict loop guards.
+
+The `characters/contentRecovery.cy.ts` cases verify automatic content recovery
+without technical error screens or partial saves. Already loaded views keep their
+last complete library during retries; source changes pause calculations and derived
+saves until a complete matching replacement arrives. Character reads, drawers and
+content selectors also retry quietly. App updates never display reload prompts.
+
+The `characters/contentDownloads.cy.ts` regressions delay real feat-catalog responses
+by 31 seconds and verify class details, sheets, Builder, and PDF/JSON file downloads.
+They use a private local test account and disable persisted content caching for each
+visit. Bulk catalog reads allow up to two minutes for transfer and JSON parsing;
+single-record reads and writes retain their 30-second deadline. Expired reads abort
+before later retries, while uncertain writes retain their existing recovery behavior.
 
 The `characters/mobileLoading.cy.ts` scenario applies 150 ms latency, 192 KiB/s
 download throughput, 96 KiB/s upload throughput, and 4x CPU throttling before visiting
@@ -391,8 +409,12 @@ use the runtime cache. The complete icon library is not fetched on an idle timer
 The encounter writer regressions run in `test:infra`. They exercise GM/player races,
 serialized HP edits, lost acknowledgements, narrow guarded writes, retained drafts,
 and failure/conflict responses. The encounter keeps unsynced edits visible and retries
-transport failures. Conflicting edits offer **Open character**, which opens the sheet's
-existing conflict resolution flow. Navigating away preserves its versioned local draft; the campaign
+transport failures quietly. Conflicting writes recheck the remote row every five seconds
+and resume only when merging is safe; normal GM edits also recheck a paused conflict.
+Disposing the writer cancels those reads. Forbidden and rejected writes retain their
+existing guards. All remain silent without recovery messages or conflict-choice controls.
+Navigating away preserves the
+versioned local draft when browser storage is available; the campaign
 does not automatically restore old drafts into encounter controls on a new visit.
 
 `campaigns/encounterSync.cy.ts` creates two confirmed synthetic accounts, joins a real

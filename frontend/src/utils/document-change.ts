@@ -1,16 +1,6 @@
-import { getCachedPublicUser } from '@auth/user-manager';
 import { SITE_NAME } from '@constants/data';
-import { saveCustomization } from '@content/customization-cache';
 
 export function setPageTitle(title?: string) {
-  // This is a hack to make it so the builder and sheets user character customization
-  if (!title?.includes('Builder') && !title?.includes('Sheet')) {
-    saveCustomization({
-      background_image_url: getCachedPublicUser()?.background_image_url ?? undefined,
-      sheet_theme: getCachedPublicUser()?.site_theme ?? undefined,
-    });
-  }
-
   if (!title) {
     document.title = SITE_NAME;
     return;

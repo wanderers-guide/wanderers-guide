@@ -1,4 +1,6 @@
 import { fetchContentById, getCachedContent } from '@content/content-store';
+import { getModeKey } from '@common/modes/mode-rules';
+import { requiresFinalSkillSelection } from './custom-selection-rules';
 import { AbilityBlock, Item, Language, Spell, Trait } from '@schemas/content';
 import {
   ConditionCheckData,
@@ -75,6 +77,7 @@ import {
 } from './contribution-matching';
 export { getContributionCategories, parseContributionAmount } from './contribution-matching';
 import { throwError } from '@utils/error-handling';
+import { getFinalVariableValue } from '@variables/variable-helpers';
 import {
   grantLanguage,
   parseLanguageOverride,
@@ -309,6 +312,32 @@ async function runSelect(
   sourceLabel?: string,
   savedIdentity?: { id: string; aliases?: string[] }
 ): Promise<OperationResult> {
+  if (requiresFinalSkillSelection(operation.id) && !finalizingSkillSelections) {
+    const result: OperationResult = {
+      selection: {
+        id: savedIdentity?.id ?? operation.id,
+        ...(savedIdentity?.aliases ? { aliases: savedIdentity.aliases } : {}),
+        title: operation.data.title,
+        options: [],
+      },
+    };
+    if (!options?.doOnlyValueCreation) {
+      const identity = `${varId}/${selectionTrack.path}`;
+      const key = finalSkillSelections.get(identity)?.key ?? qualifiedSequence++;
+      finalSkillSelections.set(identity, {
+        key,
+        varId,
+        selectionTrack,
+        operation,
+        options,
+        sourceLabel,
+        savedIdentity,
+        scopes: getVariableEffectScopes(varId),
+      });
+      Object.assign(result, { [qualifiedResultKey]: key });
+    }
+    return result;
+  }
   let optionList: ObjectWithUUID[] = [];
 
   if (operation.data.modeType === 'FILTERED' && operation.data.optionsFilters) {
@@ -754,6 +783,8 @@ export function clearDeferredOperations(): void {
   qualifiedOperations = [];
   qualifiedResults.clear();
   qualifiedSequence = 0;
+  finalSkillSelections.clear();
+  finalizingSkillSelections = false;
 }
 
 const qualifiedResultKey = Symbol('qualified-operation-occurrence');
@@ -771,15 +802,58 @@ type QualifiedOperation = {
 let qualifiedOperations: QualifiedOperation[] = [];
 let qualifiedSequence = 0;
 const qualifiedResults = new Map<number, OperationResult>();
+const finalSkillSelections = new Map<
+  string,
+  {
+    key: number;
+    varId: StoreID;
+    scopes: VariableEffectScope[];
+    selectionTrack: SelectionTrack;
+    operation: OperationSelect;
+    options?: OperationOptions;
+    sourceLabel?: string;
+    savedIdentity?: { id: string; aliases?: string[] };
+  }
+>();
+let finalizingSkillSelections = false;
+
+/** Bind Assurance after ordinary and conditional trainings, respecting removed grants and saved occurrence paths. */
+export async function resolveFinalSkillSelections(): Promise<void> {
+  finalizingSkillSelections = true;
+  try {
+    for (const entry of finalSkillSelections.values()) {
+      const result = await withVariableEffectScopes(entry.varId, entry.scopes, () =>
+        runSelect(
+          entry.varId,
+          entry.selectionTrack,
+          entry.operation,
+          { ...entry.options, doOnlyConditionals: false, doConditionals: true },
+          entry.sourceLabel,
+          entry.savedIdentity
+        )
+      );
+      qualifiedResults.set(entry.key, result ?? null);
+    }
+  } finally {
+    finalSkillSelections.clear();
+    finalizingSkillSelections = false;
+  }
+}
 
 /** Reconcile against the real controller tree after limitBoostOptions cloned its placeholders. */
 export function reconcileQualifiedResults(tree: unknown): void {
   const visit = (value: unknown): void => {
     if (!value || typeof value !== 'object') return;
-    const tagged = value as { [qualifiedResultKey]?: number; result?: NonNullable<OperationResult>['result'] };
+    const tagged = value as {
+      [qualifiedResultKey]?: number;
+      result?: NonNullable<OperationResult>['result'];
+      selection?: NonNullable<OperationResult>['selection'];
+    };
     const key = tagged[qualifiedResultKey];
     if (key !== undefined) {
-      tagged.result = qualifiedResults.get(key)?.result;
+      const resolved = qualifiedResults.get(key);
+      tagged.result = resolved?.result;
+      if (resolved?.selection) tagged.selection = resolved.selection;
       delete tagged[qualifiedResultKey];
     }
     for (const child of Object.values(value)) visit(child);
@@ -1396,7 +1470,7 @@ async function runRemoveAbilityBlock(
 
   removeVariableEffects(varId, `ability-block:${abilityBlock.id}`);
   if (operation.data.type === 'mode') {
-    filterVariableList(varId, 'ACTIVE_MODES', (mode) => mode !== labelToVariable(abilityBlock.name), sourceLabel);
+    filterVariableList(varId, 'ACTIVE_MODES', (mode) => mode !== getModeKey(abilityBlock), sourceLabel);
   }
 
   const prefix: Record<string, string> = {
@@ -1491,6 +1565,28 @@ async function runConditional(
 
   const makeCheck = (check: ConditionCheckData) => {
     let variable = getVariable(varId, check.name);
+    let variableStoreId = varId;
+
+    // The parent character is already calculated. Companion checks can read its
+    // pending binding now while final copies retain their existing execution order.
+    if (variable && varId !== 'CHARACTER') {
+      const binding = [...deferredOperations]
+        .reverse()
+        .find(
+          (entry) =>
+            entry.type === 'bind' &&
+            entry.varId === varId &&
+            entry.variable === check.name &&
+            areVariableEffectScopesActive(entry.scopes)
+        );
+      if (binding?.type === 'bind' && binding.value.storeId === 'CHARACTER') {
+        const parentVariable = getVariable('CHARACTER', binding.value.variable);
+        if (parentVariable) {
+          variable = parentVariable;
+          variableStoreId = 'CHARACTER';
+        }
+      }
+    }
 
     if (!variable) {
       // if (!check.type) {
@@ -1527,18 +1623,21 @@ async function runConditional(
       }
     } else if (variable.type === 'num') {
       const value = parseInt(`${check.value}`);
+      // Modes can set a counter through typed bonuses. Match the calculated value
+      // shown by inline expressions rather than the counter's unmodified base.
+      const currentValue = getFinalVariableValue(variableStoreId, variable.name).total;
       if (check.operator === 'EQUALS') {
-        return variable.value === value;
+        return currentValue === value;
       } else if (check.operator === 'GREATER_THAN') {
-        return variable.value > value;
+        return currentValue > value;
       } else if (check.operator === 'LESS_THAN') {
-        return variable.value < value;
+        return currentValue < value;
       } else if (check.operator === 'NOT_EQUALS') {
-        return variable.value !== value;
+        return currentValue !== value;
       } else if (check.operator === 'GREATER_THAN_OR_EQUALS') {
-        return variable.value >= value;
+        return currentValue >= value;
       } else if (check.operator === 'LESS_THAN_OR_EQUALS') {
-        return variable.value <= value;
+        return currentValue <= value;
       }
     } else if (variable.type === 'str') {
       if (check.operator === 'EQUALS') {
@@ -1567,6 +1666,8 @@ async function runConditional(
         }
       } catch (e) {}
       let checkValue: string[] = [];
+      const normalize = (value: string): string =>
+        labelToVariable(value, true, { preserveNumbers: variable.name === 'ACTIVE_MODES' });
       try {
         if (typeof check.value === 'string') {
           checkValue = JSON.parse(check.value.toUpperCase());
@@ -1577,9 +1678,9 @@ async function runConditional(
       } else if (check.operator === 'NOT_EQUALS') {
         return !isEqual(varValue, checkValue);
       } else if (check.operator === 'INCLUDES') {
-        return varValue.map((v) => labelToVariable(v)).includes(labelToVariable(`${check.value}`));
+        return varValue.map(normalize).includes(normalize(`${check.value}`));
       } else if (check.operator === 'NOT_INCLUDES') {
-        return !varValue.map((v) => labelToVariable(v)).includes(labelToVariable(`${check.value}`));
+        return !varValue.map(normalize).includes(normalize(`${check.value}`));
       }
     } else if (variable.type === 'prof') {
       // Level-capped compile: conditionals execute before normalizeProficiencies

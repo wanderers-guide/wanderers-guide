@@ -118,7 +118,7 @@ describe('Interrupted character saves', () => {
     );
   });
 
-  it('warns when an interrupted edit cannot be retained locally, then clears when storage recovers', () => {
+  it('keeps an interrupted edit quiet and retains it when storage recovers', () => {
     let disrupted = true;
     let restoreStorage: () => void;
     cy.intercept('POST', '**/functions/v1/update-character', (req) => {
@@ -141,7 +141,9 @@ describe('Interrupted character saves', () => {
     });
     cy.get('input[placeholder="Unknown Wanderer"]').type('Retained after storage recovery');
     cy.wait('@unretainedSave', { timeout: 15000 });
-    cy.contains('Keep this page open until saving completes.').should('be.visible');
+    cy.contains('Keep this page open until saving completes.').should('not.exist');
+    cy.contains('Changes not saved').should('not.exist');
+    cy.get('input[placeholder="Unknown Wanderer"]').should('have.value', 'Retained after storage recovery');
     cy.window().then((win) => {
       restoreStorage();
       win.dispatchEvent(new Event('pagehide'));
@@ -172,7 +174,9 @@ describe('Interrupted character saves', () => {
     });
     cy.get('input[placeholder="Unknown Wanderer"]').type('Rejected save');
     cy.wait('@rejectedSave', { timeout: 15000 });
-    cy.contains('These changes could not be saved.').should('be.visible');
+    cy.contains('These changes could not be saved.').should('not.exist');
+    cy.contains('Changes not saved').should('not.exist');
+    cy.get('input[placeholder="Unknown Wanderer"]').should('have.value', 'Rejected save');
     cy.window().should((win) => {
       const key = Object.keys(win.localStorage).find((key) =>
         key.startsWith(`autosave-character-${characterId}-${actorId}:writer:`)

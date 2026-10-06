@@ -4,7 +4,13 @@ import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import { BuyItemButton } from '@common/BuyItemButton';
 import TraitsDisplay from '@common/TraitsDisplay';
-import { fetchContentAll, fetchContentById, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
+import {
+  fetchContentAll,
+  fetchContentById,
+  getCachedContent,
+  getDefaultSources,
+  getDefaultSourcesKey,
+} from '@content/content-store';
 import { fetchHazards } from '@content/hazards';
 import { isActionCost } from '@content/content-utils';
 import { isItemArchaic } from '@items/inv-utils';
@@ -50,6 +56,7 @@ import {
   IconZoomQuestion,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
+import { useQuietRetry } from '@utils/use-quiet-retry';
 import { DrawerType, GenericData } from '@schemas/index';
 import { OperationSelectOptionCustom } from '@schemas/operations';
 import { ExtendedProficiencyType, ProficiencyType, VariableListStr, VariableProf } from '@schemas/variables';
@@ -454,7 +461,13 @@ export default function SelectContentModal({
   const isClassFeat = useMemo(() => {
     if (innerProps.options?.abilityBlockType !== 'feat') return false;
 
-    const classTraitIds = getAllClassTraitVariables('CHARACTER').map((v) => v.value) ?? [];
+    // Copied class features can still select the original class's feats in a homebrew class.
+    const classTraitIds = [
+      ...getAllClassTraitVariables('CHARACTER').map((v) => v.value),
+      ...getCachedContent<Trait>('trait')
+        .filter((trait) => trait.meta_data?.class_trait)
+        .map((trait) => trait.id),
+    ];
     const options = innerProps.options?.overrideOptions ?? [];
     if (options.length === 0) return false;
     if (classTraitIds.length === 0) return false;
@@ -802,6 +815,7 @@ function SelectionOptions(props: {
     refetchOnMount: true,
     //enabled: !props.overrideOptions, Run even for override options to update JsSearch
   });
+  useQuietRetry(isError && !isFetching && !props.overrideOptions, refetch);
   let options = useMemo<Record<string, any>[]>(() => (data ? [...data.values()] : []), [data]);
   if (props.overrideOptions) options = props.overrideOptions;
   options = options.filter((d) => d).filter(props.filterFn ? props.filterFn : () => true);
@@ -892,26 +906,13 @@ function SelectionOptions(props: {
     return (a.name ?? '').localeCompare(b.name ?? '');
   });
 
-  if (props.type === 'hazard' && isError && !props.overrideOptions) {
-    return (
-      <Stack align='center' gap='xs' pt='lg'>
-        <Text size='sm' c='dimmed'>
-          Unable to load hazards.
-        </Text>
-        <Button size='xs' variant='light' loading={isFetching} onClick={() => refetch()}>
-          Retry
-        </Button>
-      </Stack>
-    );
-  }
-
   return (
     <SelectionOptionsInner
       options={filteredOptions}
       type={props.type}
       skillAdjustment={props.skillAdjustment}
       abilityBlockType={props.abilityBlockType}
-      isLoading={isFetching || !options}
+      isLoading={!props.overrideOptions && !data && (isFetching || isError)}
       onClick={props.onClick}
       selectedId={props.selectedId}
       showButton={props.showButton}

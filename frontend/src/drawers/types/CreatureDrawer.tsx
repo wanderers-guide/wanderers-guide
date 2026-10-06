@@ -157,6 +157,8 @@ export function CreatureDrawerContent(props: {
       });
       return content;
     },
+    // Reopening a cached preview still needs to initialize its local creature state.
+    refetchOnMount: 'always',
   });
   const [_creatureDrawer, openCreatureDrawer] = useAtom(creatureDrawerState);
   const [displayStatBlock, refreshStatBlock] = useRefresh();

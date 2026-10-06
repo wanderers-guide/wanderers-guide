@@ -127,7 +127,16 @@ export async function fetchArchetypeByDedicationFeat() { return null; }
 export function getDefaultSources(view) { return sources[view]; }
 export function getDefaultSourcesKey(view) { const scope = getDefaultSources(view); return Array.isArray(scope) ? [...scope].sort((a,b) => a-b).join(',') : scope; }
 export function getContentFast(type, ids) { return getCachedContent(type).filter(row => ids.includes(row.id)); }
-export function defineDefaultSources(view, values) { sources[view] = values; }
+export function defineDefaultSources(view, values) { sources[view] = values; return values; }
+export async function fetchContentPackage(requestedSources) {
+  const tables = { ability_block: 'abilityBlocks', class: 'classes', ancestry: 'ancestries', background: 'backgrounds', spell: 'spells', item: 'items', trait: 'traits', language: 'languages', creature: 'creatures', archetype: 'archetypes', versatile_heritage: 'versatileHeritages', class_archetype: 'classArchetypes', content_source: 'sources' };
+  const content = Object.fromEntries(Object.values(tables).map(key => [key, []]));
+  for (const {table, row} of fixtures) {
+    const sourceId = table === 'content_source' ? row.id : row.content_source_id;
+    if (tables[table] && (!Array.isArray(requestedSources) || requestedSources.includes(sourceId))) content[tables[table]].push(row);
+  }
+  return {...content, defaultSources: structuredClone(sources)};
+}
 export function importFromContentPackage() {}
 `;
 
@@ -136,7 +145,10 @@ export async function createOperationEngine({
   renderRichText = false,
   renderPerceptionDrawer = false,
   renderCastSpellDrawer = false,
+  renderBindingEditor = false,
+  inspectInitialStats = false,
   resolveArchetypeFixtures = false,
+  exportJson = false,
 } = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'wg-operation-tests-'));
   try {
@@ -144,7 +156,7 @@ export async function createOperationEngine({
       absWorkingDir: frontend,
       stdin: {
         contents: `${
-          renderRichText || renderPerceptionDrawer || renderCastSpellDrawer
+          renderRichText || renderPerceptionDrawer || renderCastSpellDrawer || renderBindingEditor
             ? `
           import React from 'react';
           import { renderToStaticMarkup } from 'react-dom/server';
@@ -168,6 +180,18 @@ export async function createOperationEngine({
                 React.createElement(CastQueryClientProvider, { client },
                   React.createElement(CastSpellDrawerContent, { data }))));
             } finally { client.clear(); }
+          }
+          `
+              : ''
+          }
+          ${
+            renderBindingEditor
+              ? `
+          import { BindValOperation } from '@common/operations/variables/BindValOperation';
+          export function renderBindingEditor(variable, value) {
+            return renderToStaticMarkup(React.createElement(MantineProvider,
+              { theme: { colors: { guide: DEFAULT_THEME.colors.blue } } },
+              React.createElement(BindValOperation, { variable, value, onSelect() {}, onValueChange() {}, onRemove() {} })));
           }
           `
               : ''
@@ -203,7 +227,7 @@ export async function createOperationEngine({
           export * from '@variables/variable-helpers';
           export { saveCalculatedStats } from '@variables/calculated-stats';
           export { convertToHardcodedLink, buildHrefFromContentData } from '@content/hardcoded-links';
-          export { detectSpells } from '@spells/spell-utils';
+          export { detectSpells, getKnownSpellsByRank } from '@spells/spell-utils';
           export { getInventorySpellIds, getMissingSpellIds, mergeSpellDependencies, filterSpellCatalog } from '@spells/item-spell-dependencies';
           export { filterByTraitType } from '@items/inv-utils';
           export { meetsPrerequisites } from '@variables/prereq-detection';
@@ -216,17 +240,20 @@ export async function createOperationEngine({
           export { getAcParts } from '@items/armor-handler';
           export * from '@items/eidolon-runes';
           export { handleAddItem, handleDeleteItem, handleUpdateItem, handleMoveItem, addExtraItems, handleUpdateItemCharges } from '@items/inv-handlers';
-          export { isItemInvestable, isItemBroken, getFlatInvItems, getItemBulk, getInvBulk, applyEquipmentPenalties, getBestArmor, getBestShield, getEquippedWeapons, reachedInvestedLimit, reachedImplantLimit, compileTraits } from '@items/inv-utils';
+          export { isItemInvestable, isItemBroken, getFlatInvItems, getItemBulk, getInvBulk, getBulkLimit, getBulkLimitImmobile, applyEquipmentPenalties, getBestArmor, getBestShield, getEquippedWeapons, reachedInvestedLimit, reachedImplantLimit, compileTraits } from '@items/inv-utils';
           export { getListStringInputValue } from '@common/operations/variables/operation-value-defaults';
           export { toggleActiveMode, getExecutableModes } from '@common/modes/mode-rules';
-          export { determineFilteredSelectionList } from '@operations/operation-utils';
+          export { determineFilteredSelectionList, determinePredefinedSelectionList, getSelectedOptions } from '@operations/operation-utils';
+          export { getWeaponSpecialization, getWeaponSpecializations } from '@specializations/weapon-specializations';
           export { OperationSelectFiltersAbilityBlockSchema } from '@schemas/operations';
           export { collectEntityAbilityBlocks, collectEntitySenses, collectEntitySpellcasting } from '@content/collect-content';
+          ${inspectInitialStats ? "export { getStatBlockDisplay } from '@variables/initial-stats-display';" : ''}
           export { displaySense } from '@utils/senses';
           export { isAbilityBlockVisible } from '@content/content-hidden';
           export { hasArchetypeClassFeatTraits, getTraitIdByType } from '@utils/traits';
           export { setFixtures, defineDefaultSources } from '@content/content-store';
           export { getOperationErrorNotifications, clearOperationErrorNotifications } from '@utils/notifications';
+          ${exportJson ? "export { default as jsonV4, getJsonV4Content } from '@export/json/json-v4'; export { getJsonDownload, clearJsonDownload } from '@export/export-to-json';" : ''}
         `,
         resolveDir: frontend,
         loader: 'ts',
@@ -237,7 +264,7 @@ export async function createOperationEngine({
       platform: 'node',
       format: 'esm',
       ...(renderCastSpellDrawer ? { loader: { '.css': 'empty', '.module.css': 'empty' } } : {}),
-      ...(renderRichText || renderPerceptionDrawer || renderCastSpellDrawer
+      ...(renderRichText || renderPerceptionDrawer || renderCastSpellDrawer || renderBindingEditor
         ? {
             banner: {
               js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
@@ -249,6 +276,40 @@ export async function createOperationEngine({
         {
           name: 'fixture-content',
           setup(pluginBuild) {
+            if (exportJson) {
+              pluginBuild.onResolve({ filter: /^@export\/export-to-json$/ }, () => ({
+                path: 'download',
+                namespace: 'json-download',
+              }));
+              pluginBuild.onLoad({ filter: /.*/, namespace: 'json-download' }, () => ({
+                contents:
+                  'let download; export function downloadObjectAsJson(value, name) { download = { value: JSON.parse(JSON.stringify(value)), name }; } export function getJsonDownload() { return download; } export function clearJsonDownload() { download = undefined; }',
+                loader: 'ts',
+              }));
+            }
+            if (inspectInitialStats) {
+              pluginBuild.onResolve({ filter: /^@common\/select\/SelectContent$/ }, (args) =>
+                args.importer.endsWith('/initial-stats-display.tsx')
+                  ? { path: 'stat-selector', namespace: 'stat-fixture' }
+                  : undefined
+              );
+              pluginBuild.onLoad({ filter: /.*/, namespace: 'stat-fixture' }, () => ({
+                contents: 'export function SelectContentButton() { return null; }',
+                loader: 'ts',
+              }));
+            }
+            if (renderBindingEditor) {
+              // Omit the surrounding operation menu; render the real binding fields and variable selectors.
+              pluginBuild.onResolve({ filter: /^\.\.\/Operations$/ }, (args) =>
+                args.importer.endsWith('/BindValOperation.tsx')
+                  ? { path: 'operation-wrapper', namespace: 'render-fixture' }
+                  : undefined
+              );
+              pluginBuild.onLoad({ filter: /.*/, namespace: 'render-fixture' }, () => ({
+                contents: 'export function OperationWrapper({ children }) { return children; }',
+                loader: 'ts',
+              }));
+            }
             pluginBuild.onResolve({ filter: /^@utils\/notifications$/ }, () => ({
               path: 'notifications',
               namespace: 'notifications',

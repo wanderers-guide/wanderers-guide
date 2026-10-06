@@ -95,7 +95,7 @@ const STARFINDER_SPECIALIZATIONS = [
   },
   {
     name: 'Grenade',
-    description: ` Varies depending on grenade (SF playtest, pg. 184).`,
+    description: `Varies depending on grenade.`,
   },
   {
     name: 'Laser',
@@ -133,7 +133,10 @@ const STARFINDER_SPECIALIZATIONS = [
 
 export function getWeaponSpecialization(group: string | null | undefined) {
   if (!group) return undefined;
-  return getWeaponSpecializations().find((s) => s.name.trim().toLowerCase() === group.trim().toLowerCase());
+  // A weapon's rules remain available when it is viewed from a character in either system.
+  return [...PATHFINDER_SPECIALIZATIONS, ...STARFINDER_SPECIALIZATIONS].find(
+    (s) => s.name.trim().toLowerCase() === group.trim().toLowerCase()
+  );
 }
 
 export function getWeaponSpecializations() {

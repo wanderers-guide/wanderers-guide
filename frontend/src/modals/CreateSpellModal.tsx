@@ -71,7 +71,7 @@ export function CreateSpellModal(props: {
     queryKey: [`get-spell-${props.editId}`, { editId: props.editId, editSpell: props.editSpell }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { editId, editSpell }] = queryKey as [string, { editId?: number; editSpell?: Spell }];
 
       const spell = editId ? await fetchContentById<Spell>('spell', editId) : editSpell;
@@ -91,6 +91,8 @@ export function CreateSpellModal(props: {
       return spell;
     },
     enabled: editing,
+    // Editing forms initialize in the query function, including when reopening cached entries.
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
 

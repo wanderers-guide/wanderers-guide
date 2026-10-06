@@ -87,13 +87,14 @@ export function CreateCreatureModal(props: {
   const [openedInventory, { toggle: toggleInventory }] = useDisclosure(false);
 
   const [openedModal, setOpenedModal] = useState<AbilityBlock | -1 | null>(null);
+  const [openedAbilityIndex, setOpenedAbilityIndex] = useState<number | null>(null);
 
   // Fetch the creature if in editing mode
   const { data, isFetching } = useQuery({
     queryKey: [`get-creature-${props.editId}`, { editId: props.editId, editCreature: props.editCreature }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { editId, editCreature }] = queryKey as [string, { editId?: number; editCreature?: Creature }];
 
       const creature = editId ? await fetchContentById<Creature>('creature', editId) : editCreature;
@@ -116,6 +117,8 @@ export function CreateCreatureModal(props: {
       return creature;
     },
     enabled: editing,
+    // Editing forms initialize in the query function, including when reopening cached entries.
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
 
@@ -410,6 +413,7 @@ export function CreateCreatureModal(props: {
                       fullWidth
                       onClick={() => {
                         setOpenedModal(-1);
+                        setOpenedAbilityIndex(null);
                       }}
                     >
                       Create Custom Ability
@@ -423,6 +427,7 @@ export function CreateCreatureModal(props: {
                           fullWidth
                           onClick={() => {
                             setOpenedModal(ability);
+                            setOpenedAbilityIndex(i);
                           }}
                         >
                           {ability.name}{' '}
@@ -444,7 +449,7 @@ export function CreateCreatureModal(props: {
                           onClick={() => {
                             form.setValues({
                               ...form.values,
-                              abilities_base: form.values.abilities_base?.filter((ab) => ab.id !== ability.id),
+                              abilities_base: form.values.abilities_base?.filter((_ability, index) => index !== i),
                             });
                           }}
                           style={{
@@ -820,8 +825,9 @@ export function CreateCreatureModal(props: {
               // Update
               form.setValues({
                 ...form.values,
-                abilities_base: form.values.abilities_base?.map((ability) =>
-                  ability.id === abilityBlock.id ? abilityBlock : ability
+                // Imported legacy abilities can share an ID. Edit only the row that was opened.
+                abilities_base: form.values.abilities_base?.map((ability, index) =>
+                  index === openedAbilityIndex ? abilityBlock : ability
                 ),
               });
             }

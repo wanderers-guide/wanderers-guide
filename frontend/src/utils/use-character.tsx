@@ -1,13 +1,11 @@
 import { reportClientFailure } from './client-errors';
 import { characterState } from '@atoms/characterAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
-import { Button, Group, Text } from '@mantine/core';
 import {
   SAVED_CHARACTER_FIELDS,
   characterSaveValuesEqual,
   acknowledgeBufferedCharacterSave,
   bufferCharacterSave,
-  getBufferedCharacterSave,
   loadBufferedCharacterSaves,
   reconcileBufferedCharacterSave,
   acknowledgeBufferedCharacterRecovery,
@@ -15,18 +13,16 @@ import {
   type BufferedCharacterSaveRecord,
 } from './character-save-buffer';
 import { mergeCharacterSave } from './character-merge';
-import { getCachedPublicUser } from '@auth/user-manager';
 import { applyConditions } from '@conditions/condition-handler';
 import { defineDefaultSources } from '@content/content-store';
 import { COMMON_CORE_ID } from '@constants/data';
 import { compareCharacterVersions } from './character-version';
-import { saveCustomization } from '@content/customization-cache';
 import { applyEquipmentPenalties } from '@items/inv-utils';
 import { useDebouncedValue, useDidUpdate } from '@mantine/hooks';
-import { hideNotification, showNotification } from '@mantine/notifications';
+import { useQuietRetry } from './use-quiet-retry';
 import { executeOperations, isOperationCancelled } from '@operations/operations.main';
 import { confirmHealth } from '@pages/character_sheet/entity-handler';
-import { hasSessionExpiredNotice, makeRequest } from '@requests/request-manager';
+import { hasSessionExpired, makeRequest } from '@requests/request-manager';
 import { RequestRejectedError } from '@requests/request-rejection';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Character, CharacterSchema, ContentPackage, OperationCharacterResultPackage } from '@schemas/content';
@@ -92,7 +88,6 @@ export default function useCharacter(
   draftStored: boolean;
   retrySave: () => void;
   loadError: boolean;
-  retryLoad: () => void;
 } {
   const [character, setCharacter] = useAtom(characterState);
   const session = useAtomValue(sessionState);
@@ -109,11 +104,10 @@ export default function useCharacter(
   const [isOnline, setIsOnline] = useState(typeof navigator === 'undefined' || navigator.onLine !== false);
   const [loadError, setLoadError] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
+  useQuietRetry(loadError, () => setLoadAttempt((attempt) => attempt + 1));
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryCountRef = useRef(0);
   const retrySaveRef = useRef<() => void>(() => {});
-  const hasSavedRef = useRef(false);
-  const storageNoticeRef = useRef(false);
   const rejectedSaveRef = useRef<Character | null>(null);
 
   /** Only retire recovered snapshots after their merged values are accepted. */
@@ -179,14 +173,6 @@ export default function useCharacter(
 
         // Make sure we sync the enabled content sources
         defineDefaultSources('PAGE', displayedCharacter.content_sources?.enabled ?? []);
-
-        // Cache character customization for fast loading
-        saveCustomization({
-          background_image_url:
-            (displayedCharacter.details?.background_image_url || getCachedPublicUser()?.background_image_url) ??
-            undefined,
-          sheet_theme: (displayedCharacter.details?.sheet_theme || getCachedPublicUser()?.site_theme) ?? undefined,
-        });
       } else {
         // Character not found, probably due to unauthorized access
         window.location.href = '/sheet-unauthorized';
@@ -196,63 +182,32 @@ export default function useCharacter(
   );
 
   const saveConflictRef = useRef(false);
+  const [hasSaveConflict, setHasSaveConflict] = useState(false);
+  const pendingConflictRef = useRef<{
+    remote: Character;
+    submitted?: Record<string, unknown>;
+    repeatedInput?: Character;
+  } | null>(null);
 
-  /** Keep conflicting input recoverable until the same account chooses which copy to save. */
-  const offerConflictResolution = useCallback(
-    (remote: Character) => {
+  /** Keep the original local intent while reads and ordinary edits can resolve a conflict. */
+  const pauseConflictingSave = useCallback(
+    (remote: Character, submitted?: Record<string, unknown>, repeatedConflict = false) => {
+      const current = characterRef.current;
+      pendingConflictRef.current = {
+        remote,
+        // A later deliberate reversion still needs the uncertain attempt as an ancestor.
+        ...(submitted &&
+        SAVED_CHARACTER_FIELDS.some((field) => !characterSaveValuesEqual(submitted[field], current?.[field]))
+          ? { submitted }
+          : {}),
+        ...(repeatedConflict && current ? { repeatedInput: cloneDeep(current) } : {}),
+      };
       saveConflictRef.current = true;
-      hideNotification(`character-save-rejected-${characterId}`);
+      setHasSaveConflict(true);
       clearSaveRetry();
       setSavePhase('idle');
-      const scope = saveScopeRef.current;
-      const actor = loadedActorRef.current;
-      const noticeId = `character-conflict-${characterId}`;
-      const resolve = (useLocal: boolean) => {
-        if (scope !== saveScopeRef.current || !actor || actor !== loadedActorRef.current) return;
-        const chosen = useLocal ? characterRef.current : remote;
-        if (!chosen) return;
-        if (!useLocal) {
-          const owned = getBufferedCharacterSave(characterId, actor);
-          if ('draft' in owned) acknowledgeBufferedCharacterRecovery(owned);
-          acknowledgeRecoveredDrafts();
-        } else {
-          const reconciled = reconcileBufferedCharacterSave(chosen, actor, remote, {
-            requiresCalculation: needsCalculationRef.current || options.type === 'EXECUTE_OPS',
-          });
-          setDraftStored(reconciled.status !== 'unavailable');
-        }
-        uncertainSaveRef.current = null;
-        lastSyncedRef.current = remote;
-        conflictStreakRef.current = 0;
-        saveConflictRef.current = false;
-        if (!useLocal) needsCalculationRef.current = false;
-        hideNotification(noticeId);
-        characterRef.current = cloneDeep(chosen);
-        setCharacter(characterRef.current);
-        setSavePhase('idle');
-      };
-      showNotification({
-        id: noticeId,
-        title: 'Conflicting character edits',
-        message: (
-          <>
-            <Text size='sm'>Choose which changes to keep.</Text>
-            <Group gap='xs' mt='xs'>
-              <Button size='xs' onClick={() => resolve(true)}>
-                Keep my edits
-              </Button>
-              <Button size='xs' variant='light' onClick={() => resolve(false)}>
-                Use saved version
-              </Button>
-            </Group>
-          </>
-        ),
-        color: 'yellow',
-        autoClose: false,
-        withCloseButton: false,
-      });
     },
-    [characterId, options.type, setCharacter]
+    []
   );
 
   // Restore drafts into the editor. This path never writes around its save queue.
@@ -265,7 +220,6 @@ export default function useCharacter(
     setLoadError(false);
     setSavePhase('idle');
     setDraftStored(true);
-    hasSavedRef.current = false;
     rejectedSaveRef.current = null;
     retryCountRef.current = 0;
     uncertainSaveRef.current = null;
@@ -274,12 +228,13 @@ export default function useCharacter(
     lastSyncedRef.current = null;
     readOnlyRef.current = false;
     saveConflictRef.current = false;
-    hideNotification(`character-conflict-${characterId}`);
+    pendingConflictRef.current = null;
+    setHasSaveConflict(false);
     conflictStreakRef.current = 0;
     savingRef.current = false;
     pendingSaveRef.current = null;
     void (async () => {
-      // A failed request is not an authorization decision. Keep the route and offer retry.
+      // A failed request is not an authorization decision. Keep the route while retrying quietly.
       const dbCharacter = await makeRequest<Character>('find-character', { id: characterId }, false, {
         throwOnFailure: true,
       });
@@ -306,13 +261,26 @@ export default function useCharacter(
           recoveredDraftsRef.current.push(record);
         }
       } else if (restored?.status === 'unavailable') setDraftStored(false);
-      handleFetchedCharacter(dbCharacter, displayed);
       if (conflicts.length) {
-        // Original records remain available until the user resolves the conflict.
+        // Do not project unrelated remote values into the retained local input: a
+        // later read would mistake those values for edits against the original base.
         const firstBase = recoveredDraftsRef.current[0]?.draft.base;
-        if (firstBase) lastSyncedRef.current = { ...dbCharacter, ...firstBase };
-        offerConflictResolution(dbCharacter);
-      } else if (sessionActorId) {
+        const localBase = { ...dbCharacter, ...firstBase };
+        let local = localBase;
+        let submitted: Character | undefined;
+        for (const { draft } of recoveredDraftsRef.current) {
+          if (draft.submission)
+            submitted = mergeCharacterSave(draft.base!, draft.submission.body, submitted ?? local).character;
+          local = mergeCharacterSave(draft.base!, draft.body, local, draft.submission?.body).character;
+        }
+        handleFetchedCharacter(dbCharacter, local);
+        characterRef.current = local;
+        lastSyncedRef.current = localBase;
+        pauseConflictingSave(dbCharacter, submitted);
+      } else {
+        handleFetchedCharacter(dbCharacter, displayed);
+      }
+      if (!conflicts.length && sessionActorId) {
         if (recoveredDraftsRef.current.length) {
           const reconciled = reconcileBufferedCharacterSave(displayed, sessionActorId, dbCharacter, {
             requiresCalculation: needsCalculationRef.current,
@@ -329,22 +297,12 @@ export default function useCharacter(
       setLoadError(true);
       if (options.type === 'EXECUTE_OPS') options.data.onFinishLoading();
     });
-    const retryLoadOnReconnect = () => {
-      if (active && !loadedActorRef.current) setLoadAttempt((attempt) => attempt + 1);
-    };
-    window.addEventListener('online', retryLoadOnReconnect);
     return () => {
       active = false;
       saveScopeRef.current = scope + 1;
       clearSaveRetry();
-      window.removeEventListener('online', retryLoadOnReconnect);
-      hideNotification(`character-conflict-${characterId}`);
-      hideNotification(`character-save-permission-${characterId}`);
-      hideNotification(`character-save-storage-${characterId}`);
-      hideNotification(`character-save-rejected-${characterId}`);
-      storageNoticeRef.current = false;
     };
-  }, [characterId, sessionActorId, loadAttempt, handleFetchedCharacter, offerConflictResolution]);
+  }, [characterId, sessionActorId, loadAttempt, handleFetchedCharacter, pauseConflictingSave]);
 
   // Execute operations
   const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
@@ -554,6 +512,16 @@ export default function useCharacter(
   // The server guard handles concurrent writers on other devices.
   const savingRef = useRef(false);
   const pendingSaveRef = useRef<QueuedCharacterSave | null>(null);
+  const hasSettledCalculation = () =>
+    options.type !== 'EXECUTE_OPS'
+      ? !needsCalculationRef.current
+      : !isCalculating &&
+        contentSourcesMatch &&
+        executingOperations.current === null &&
+        !calculationFailed &&
+        !!operationResults &&
+        getUpdateHash(characterRef.current) === debouncedOperationsHash &&
+        !!options.data.content;
   const canPersist = () =>
     hasLoadedCharacter &&
     !readOnlyRef.current &&
@@ -562,15 +530,7 @@ export default function useCharacter(
     lastSyncedRef.current?.id === characterId &&
     !!loadedActorRef.current &&
     loadedActorRef.current === sessionActorId &&
-    (options.type !== 'EXECUTE_OPS'
-      ? !needsCalculationRef.current
-      : !isCalculating &&
-        contentSourcesMatch &&
-        executingOperations.current === null &&
-        !calculationFailed &&
-        !!operationResults &&
-        getUpdateHash(characterRef.current) === debouncedOperationsHash &&
-        !!options.data.content);
+    hasSettledCalculation();
 
   const canPersistRef = useRef(canPersist);
   canPersistRef.current = canPersist;
@@ -585,8 +545,9 @@ export default function useCharacter(
       // is waiting or failed. The flag prevents automatic server replay.
       canBuffer: !readOnlyRef.current && loadedActorRef.current === sessionActorId,
       forceBuffer: savingRef.current || !!uncertainSaveRef.current,
-      requiresCalculation:
-        saveConflictRef.current || (!canPersist() && (needsCalculationRef.current || options.type === 'EXECUTE_OPS')),
+      // A conflict is rechecked against its ancestor after reload, not a pending
+      // calculation. Conflating the two would permanently block Builder Home saves.
+      requiresCalculation: !hasSettledCalculation(),
     }),
     setDraftStored
   );
@@ -602,20 +563,34 @@ export default function useCharacter(
     loadedActorRef.current === save.actorId &&
     sessionActorId === save.actorId;
 
-  /** Incoming reads and rejected saves share one merge, draft and conflict-resolution path. */
+  /** Incoming reads and rejected saves share one merge and draft-retention path. */
   const receiveRemoteCharacter = (remote: Character, submitted?: Record<string, unknown>, repeatedConflict = false) => {
     const base = lastSyncedRef.current;
+    const pending = pendingConflictRef.current;
+    if (
+      pending?.repeatedInput &&
+      remote.updated_at === pending.remote.updated_at &&
+      SAVED_CHARACTER_FIELDS.every((field) =>
+        characterSaveValuesEqual(characterRef.current?.[field], pending.repeatedInput?.[field])
+      )
+    )
+      return null;
+    const attempt = submitted ?? pending?.submitted;
     const merge =
       readOnlyRef.current || !loadedActorRef.current
         ? { character: cloneDeep(remote), conflicts: [] }
-        : mergeCharacterSave(base, characterRef.current, remote, submitted);
+        : mergeCharacterSave(base, characterRef.current, remote, attempt);
     const merged = merge.character;
     pendingSaveRef.current = null;
     if (merge.conflicts.length || repeatedConflict) {
-      characterRef.current = merged;
-      setCharacter(merged);
-      offerConflictResolution(remote);
+      pauseConflictingSave(remote, attempt, repeatedConflict);
       return null;
+    }
+    if (saveConflictRef.current) {
+      saveConflictRef.current = false;
+      pendingConflictRef.current = null;
+      conflictStreakRef.current = 0;
+      setHasSaveConflict(false);
     }
     const changed = SAVED_CHARACTER_FIELDS.some(
       (field) => !characterSaveValuesEqual(merged[field], characterRef.current?.[field])
@@ -628,9 +603,8 @@ export default function useCharacter(
     if (actor && !readOnlyRef.current) {
       const reconciled = reconcileBufferedCharacterSave(merged, actor, remote, {
         requiresCalculation:
-          needsCalculationRef.current ||
-          (options.type === 'EXECUTE_OPS' &&
-            (!canPersistRef.current() || getUpdateHash(merged) !== debouncedOperationsHash)),
+          !hasSettledCalculation() ||
+          (options.type === 'EXECUTE_OPS' && getUpdateHash(merged) !== debouncedOperationsHash),
       });
       setDraftStored(reconciled.status !== 'unavailable');
     }
@@ -638,7 +612,6 @@ export default function useCharacter(
     if (!needsSave) {
       retryCountRef.current = 0;
       rejectedSaveRef.current = null;
-      hideNotification(`character-save-rejected-${characterId}`);
       acknowledgeRecoveredDrafts();
     }
     if (changed) setCharacter(merged);
@@ -646,6 +619,13 @@ export default function useCharacter(
   };
   const receiveRemoteRef = useRef(receiveRemoteCharacter);
   receiveRemoteRef.current = receiveRemoteCharacter;
+
+  // A normal edit can make the latest remote version compatible without a special control.
+  useEffect(() => {
+    const pending = pendingConflictRef.current;
+    if (!hasLoadedCharacter || !pending || savingRef.current || uncertainSaveRef.current) return;
+    receiveRemoteRef.current(pending.remote);
+  }, [character, hasLoadedCharacter]);
 
   // A successful calculation can release an edit that was waiting for derived values.
   useDidUpdate(() => {
@@ -659,7 +639,7 @@ export default function useCharacter(
     )
       return;
     if (characterRef.current) mutateCharacter(characterRef.current);
-  }, [debouncedCharacter, isCalculating, calculationFailed, operationResults, sessionActorId]);
+  }, [debouncedCharacter, isCalculating, calculationFailed, operationResults, sessionActorId, hasSaveConflict]);
   const { mutate: mutateCharacterRaw } = useMutation({
     mutationFn: async (save: QueuedCharacterSave) => {
       if (!isCurrentSave(save)) throw new Error('Character save scope changed');
@@ -729,18 +709,9 @@ export default function useCharacter(
       clearSaveRetry();
       setSavePhase('idle');
       if (result.forbidden) {
-        // Public viewers can calculate locally. Only a known editor losing access
-        // needs a warning; neither case should continue sending rejected writes.
+        // Preserve the buffered edit and stop unauthorized writes without recovery UI.
         readOnlyRef.current = true;
         pendingSaveRef.current = null;
-        if (save.character.user_id === save.actorId || hasSavedRef.current)
-          showNotification({
-            id: `character-save-permission-${characterId}`,
-            title: 'Changes not saved',
-            message: 'You no longer have permission to edit this character.',
-            color: 'yellow',
-            autoClose: false,
-          });
         console.warn('Character is view-only for this session; auto-save disabled.');
         return;
       }
@@ -761,9 +732,7 @@ export default function useCharacter(
         // Record the authoritative post-write state (incl. the new updated_at token).
         conflictStreakRef.current = 0;
         retryCountRef.current = 0;
-        hasSavedRef.current = true;
         rejectedSaveRef.current = null;
-        hideNotification(`character-save-rejected-${characterId}`);
         lastSyncedRef.current = result.server;
         acknowledgeBufferedCharacterSave(
           save.character.id,
@@ -795,22 +764,11 @@ export default function useCharacter(
               requiresCalculation: !canPersistRef.current(),
             }).status !== 'unavailable'
           );
-        if (
-          current &&
-          SAVED_CHARACTER_FIELDS.every((field) => characterSaveValuesEqual(current[field], save.character[field]))
-        )
-          showNotification({
-            id: `character-save-rejected-${characterId}`,
-            title: 'Changes not saved',
-            message: 'These changes could not be saved.',
-            color: 'yellow',
-            autoClose: false,
-          });
         return;
       }
       // A connection failure is recoverable while the local draft is safe. Retry
       // quietly, including when a flaky network never fires an `online` event.
-      if (!hasSessionExpiredNotice()) {
+      if (!hasSessionExpired()) {
         const delay = Math.min(30000, 2000 * 2 ** Math.min(retryCountRef.current++, 4));
         retryTimerRef.current = setTimeout(() => {
           retryTimerRef.current = null;
@@ -848,7 +806,6 @@ export default function useCharacter(
       return;
     if (rejectedSaveRef.current) {
       rejectedSaveRef.current = null;
-      hideNotification(`character-save-rejected-${characterId}`);
     }
     const save = { character: snapshot, actorId: loadedActorRef.current, scope: saveScopeRef.current };
     if (savingRef.current) {
@@ -885,7 +842,7 @@ export default function useCharacter(
       }
       return { ...context, character: remote };
     },
-    enabled: hasLoadedCharacter && isOnline && !loadError && !saveConflictRef.current,
+    enabled: hasLoadedCharacter && isOnline && !loadError,
     refetchInterval: REMOTE_CHARACTER_INTERVAL,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: 'always',
@@ -903,8 +860,7 @@ export default function useCharacter(
       remoteSnapshot.baseVersion !== lastSyncedRef.current?.updated_at ||
       remoteSnapshot.writeRevision !== writeRevisionRef.current ||
       savingRef.current ||
-      uncertainSaveRef.current ||
-      saveConflictRef.current
+      uncertainSaveRef.current
     )
       return;
     const remote = remoteSnapshot.character;
@@ -917,7 +873,7 @@ export default function useCharacter(
 
   retrySaveRef.current = () => {
     const current = characterRef.current;
-    if (!current || savingRef.current || !canPersistRef.current() || hasSessionExpiredNotice()) return;
+    if (!current || savingRef.current || !canPersistRef.current() || hasSessionExpired()) return;
     if (
       !uncertainSaveRef.current &&
       SAVED_CHARACTER_FIELDS.every((field) => characterSaveValuesEqual(current[field], lastSyncedRef.current?.[field]))
@@ -951,25 +907,6 @@ export default function useCharacter(
     !!uncertainSaveRef.current ||
     !character ||
     SAVED_CHARACTER_FIELDS.some((field) => !characterSaveValuesEqual(character[field], lastSyncedRef.current?.[field]));
-  /** Only warn when pending edits cannot be kept safely through closing the page. */
-  useEffect(() => {
-    const needsNotice =
-      hasLoadedCharacter && !!sessionActorId && !draftStored && hasPendingChanges && !readOnlyRef.current;
-    if (needsNotice === storageNoticeRef.current) return;
-    storageNoticeRef.current = needsNotice;
-    const id = `character-save-storage-${characterId}`;
-    if (!needsNotice) {
-      hideNotification(id);
-      return;
-    }
-    showNotification({
-      id,
-      title: 'Changes not saved',
-      message: 'Keep this page open until saving completes.',
-      color: 'yellow',
-      autoClose: false,
-    });
-  }, [characterId, sessionActorId, hasLoadedCharacter, draftStored, hasPendingChanges, savePhase]);
   const saveState: CharacterSaveState = readOnlyRef.current
     ? 'read-only'
     : saveConflictRef.current
@@ -1001,7 +938,6 @@ export default function useCharacter(
     draftStored,
     retrySave: () => retrySaveRef.current(),
     loadError,
-    retryLoad: () => setLoadAttempt((attempt) => attempt + 1),
     results: operationResults ?? null,
   };
 }
@@ -1059,11 +995,9 @@ function useAutoSave(
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
     window.addEventListener('pagehide', saveImmediately);
-    window.addEventListener('wg:before-update', saveImmediately);
     return () => {
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('pagehide', saveImmediately);
-      window.removeEventListener('wg:before-update', saveImmediately);
       saveImmediately();
     };
   }, [characterId, saveImmediately]);
