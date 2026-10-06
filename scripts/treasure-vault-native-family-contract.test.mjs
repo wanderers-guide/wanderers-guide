@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { loadTreasureVaultDefaultNativeInputs } from './treasure-vault-native-inputs.mjs';
-import { originalNativeBatches } from './treasure-vault-native-negatives.mjs';
+import { createNativeNegativeGroups, originalNativeBatches } from './treasure-vault-native-negatives.mjs';
 import { createHistoricalPositiveProjections } from './treasure-vault-native-positive-projections.mjs';
 import { createSharedHelperPendingAliasControls } from './treasure-vault-native-pending-aliases.mjs';
 import { assertFreshEquipmentProjection } from './treasure-vault-native-fresh-equipment.mjs';
@@ -254,3 +254,45 @@ test('JSON model: unrelated sequence consumption is rejected',()=>{
   const value=freshEquipmentModel();value.after.sequences['public.content_update_id_seq']=sequence(2);assert.throws(()=>assertFreshEquipmentProjection(value),/no unreviewed identity consumption/);
 });
 console.log(JSON.stringify({mode:'JSON-model-only',native_executed:false,sql_executed:false,Auth_proved:false,PostgreSQL_typing_proved:false,original_equipment_sql_sha256:digest(equipmentSql),original_literal_sha256:digest(equipmentSql.split('$equipment$')[1])}));
+
+
+/** Construction counterexample only; the native runner separately verifies FK setup and guard rollback. */
+function wrongDedicationRecipe(feats) {
+  const groups = createNativeNegativeGroups({
+    inputs,
+    userId: '11111111-1111-4111-8111-111111111111',
+    reserveProposalId: () => assert.fail('This control must not allocate a proposal'),
+    reserveContentId: () => assert.fail('This control must not allocate content'),
+    readState: () => ({
+      ability_block: structuredClone(feats),
+      spell: [{ id: 99999999, content_source_id: 3 }],
+    }),
+    queryJson: () => assert.fail('This construction must use the captured fixture state'),
+  });
+  return groups.beforeOriginal(batches.artifactAccess.path).cases.find(
+    (row) => row.name === 'artifact-access-archetype-110-wrong-dedication',
+  ).prepare();
+}
+
+test('Construction counterexample: wrong dedication uses an existing unrelated feat instead of missing ID 1', () => {
+  const owner = batches.artifactAccess.spec.patches.find(row => row.table === 'archetype');
+  const control = wrongDedicationRecipe([
+    { id: owner.anchor.dedication_feat_id, type: 'feat' },
+    { id: owner.final.dedication_feat_id, type: 'feat' },
+    { id: 123456, type: 'action' },
+    { id: 234567, type: 'feat' },
+  ]);
+  assert.equal(control.setup, 'update public.archetype set dedication_feat_id=234567 where id=110;');
+  assert.equal(control.expectedSqlState, 'P0001');
+  assert.match('Treasure Vault artifact owner changed: archetype:110', control.match);
+  assert.deepEqual(control.reservations, []);
+});
+
+test('Construction counterexample: no existing unrelated feat rejects before a fabricated FK setup', () => {
+  const owner = batches.artifactAccess.spec.patches.find(row => row.table === 'archetype');
+  assert.throws(() => wrongDedicationRecipe([
+    { id: owner.anchor.dedication_feat_id, type: 'feat' },
+    { id: owner.final.dedication_feat_id, type: 'feat' },
+    { id: 123456, type: 'action' },
+  ]), /requires an existing unrelated feat/);
+});

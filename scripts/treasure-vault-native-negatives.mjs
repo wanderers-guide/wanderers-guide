@@ -1553,9 +1553,17 @@ export function createNativeNegativeGroups({ inputs, userId, reserveProposalId, 
             `update public.${owner.table} set operations=${operationSql(wrong)} where id=${owner.id};`,
           ]);
         } else {
+          // Use an actual feat so the setup reaches the owner guard rather than a foreign-key error.
+          const wrongDedication = readState().ability_block.find(
+            (row) => row.type === "feat" &&
+              row.id !== owner.anchor.dedication_feat_id &&
+              row.id !== owner.final.dedication_feat_id,
+          );
+          assert.ok(wrongDedication && Number.isSafeInteger(wrongDedication.id) && wrongDedication.id > 0,
+            "The wrong-dedication control requires an existing unrelated feat");
           controls.push([
             "wrong-dedication",
-            `update public.archetype set dedication_feat_id=1 where id=${owner.id};`,
+            `update public.archetype set dedication_feat_id=${wrongDedication.id} where id=${owner.id};`,
           ]);
         }
         for (const [name, setup] of controls)
