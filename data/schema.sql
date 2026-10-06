@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict gKsXknyhzfU2DLvBpwJaiMpNkTPktf4CQyfHhtVrXiO50596UlCeFRwZqoW34dZ
+\restrict wjigK5gXbbmPXmji59xDU5W4cqo7cfV3upmFqY0Sq4eUKehDgULQW5RNJN0e4tg
 
 -- Dumped from database version 15.1 (Ubuntu 15.1-1.pgdg20.04+1)
 -- Dumped by pg_dump version 16.15 (Ubuntu 16.15-1.pgdg24.04+2)
@@ -475,7 +475,9 @@ CREATE TABLE public.creature (
     resolve_current integer,
     operation_data json,
     search_tsv tsvector GENERATED ALWAYS AS (setweight(to_tsvector('english'::regconfig, (COALESCE(name, ''::character varying))::text), 'A'::"char")) STORED,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    type text DEFAULT 'creature'::text NOT NULL,
+    CONSTRAINT creature_type_check CHECK ((type = ANY (ARRAY['creature'::text, 'hazard'::text])))
 );
 
 
@@ -3079,5 +3081,5 @@ GRANT ALL ON SEQUENCE public.versatile_heritage_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict gKsXknyhzfU2DLvBpwJaiMpNkTPktf4CQyfHhtVrXiO50596UlCeFRwZqoW34dZ
+\unrestrict wjigK5gXbbmPXmji59xDU5W4cqo7cfV3upmFqY0Sq4eUKehDgULQW5RNJN0e4tg
 
