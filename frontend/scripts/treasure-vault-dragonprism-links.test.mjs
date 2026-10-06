@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { readContentRows } from './operation-test-harness.mjs';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 
 const sql = await readFile(
   new URL('../../supabase/migrations/20260927250000_treasure_vault_dragonprism_links.sql', import.meta.url),
@@ -40,10 +41,21 @@ test('Dragonprism Staff escaped tokens render as content links without changing 
   assert.equal(staff.name, 'Dragonprism Staff');
   assert.equal(staff.content_source_id, 16);
   assert.equal(staff.uuid, '982148341471611');
-  assert.equal(md5(staff.description), 'b4b3e5ee7a8b92e7eea230368d3571f3');
-  assert.match(render(staff.description), /\[\[Demoralize\]\]/);
+  const state = assertReviewedTransition(
+    md5(staff.description),
+    'b4b3e5ee7a8b92e7eea230368d3571f3',
+    '8098f54e420d89eadfb852aae690b8c3',
+    'Reviewed Dragonprism description'
+  );
+  let beforeDescription = staff.description;
+  if (state === 'after') {
+    for (const [name, replacement] of links)
+      beforeDescription = beforeDescription.replaceAll(replacement, '\\[\\[' + name + '\\]\\]');
+  }
+  assert.equal(md5(beforeDescription), 'b4b3e5ee7a8b92e7eea230368d3571f3');
+  assert.match(render(beforeDescription), /\[\[Demoralize\]\]/);
 
-  let corrected = staff.description;
+  let corrected = beforeDescription;
   for (const [name, replacement] of links) {
     corrected = corrected.replaceAll(`\\[\\[${name}\\]\\]`, replacement);
     if (replacement !== name) assert.ok(greater.description.includes(replacement));

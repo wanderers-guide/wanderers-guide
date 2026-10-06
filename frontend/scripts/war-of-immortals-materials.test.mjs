@@ -79,12 +79,12 @@ test('the checked-in War item corpus has at most one copy of each reviewed mater
   const dreamweb = rows.find(({ name }) => name === 'Dreamweb');
   assert.equal(dreamweb?.meta_data?.source?.url, 'https://2e.aonprd.com/Equipment.aspx?ID=3517');
   for (const material of materials) {
-    const matches = rows.filter(({ name, uuid }) => name === material.name || uuid === material.uuid);
+    const matches = rows.filter(({ name, uuid }) => name === material.name || String(uuid) === String(material.uuid));
     assert.ok(matches.length <= 1, `${material.name} must not be duplicated`);
     if (matches.length === 0) continue;
     const [row] = matches;
     assert.equal(row.name, material.name);
-    assert.equal(row.uuid, material.uuid);
+    assert.equal(String(row.uuid), String(material.uuid));
     assert.equal(row.level, material.level);
     assert.equal(row.group, material.item_group);
     assert.equal(row.bulk, null);
