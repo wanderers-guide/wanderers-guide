@@ -257,7 +257,7 @@ console.log(JSON.stringify({mode:'JSON-model-only',native_executed:false,sql_exe
 
 
 /** Construction counterexample only; the native runner separately verifies FK setup and guard rollback. */
-function wrongDedicationRecipe(feats) {
+function nativeControlRecipe(family, name, feats = [{ id: 234567, type: 'feat' }], linked = {}) {
   const groups = createNativeNegativeGroups({
     inputs,
     userId: '11111111-1111-4111-8111-111111111111',
@@ -266,17 +266,21 @@ function wrongDedicationRecipe(feats) {
     readState: () => ({
       ability_block: structuredClone(feats),
       spell: [{ id: 99999999, content_source_id: 3 }],
+      ancestry: [],
+      archetype: [],
+      versatile_heritage: [],
+      ...structuredClone(linked),
     }),
     queryJson: () => assert.fail('This construction must use the captured fixture state'),
   });
-  return groups.beforeOriginal(batches.artifactAccess.path).cases.find(
-    (row) => row.name === 'artifact-access-archetype-110-wrong-dedication',
+  return groups.beforeOriginal(batches[family].path).cases.find(
+    (row) => row.name === name,
   ).prepare();
 }
 
 test('Construction counterexample: wrong dedication uses an existing unrelated feat instead of missing ID 1', () => {
   const owner = batches.artifactAccess.spec.patches.find(row => row.table === 'archetype');
-  const control = wrongDedicationRecipe([
+  const control = nativeControlRecipe('artifactAccess', 'artifact-access-archetype-110-wrong-dedication', [
     { id: owner.anchor.dedication_feat_id, type: 'feat' },
     { id: owner.final.dedication_feat_id, type: 'feat' },
     { id: 123456, type: 'action' },
@@ -290,9 +294,54 @@ test('Construction counterexample: wrong dedication uses an existing unrelated f
 
 test('Construction counterexample: no existing unrelated feat rejects before a fabricated FK setup', () => {
   const owner = batches.artifactAccess.spec.patches.find(row => row.table === 'archetype');
-  assert.throws(() => wrongDedicationRecipe([
+  assert.throws(() => nativeControlRecipe('artifactAccess', 'artifact-access-archetype-110-wrong-dedication', [
     { id: owner.anchor.dedication_feat_id, type: 'feat' },
     { id: owner.final.dedication_feat_id, type: 'feat' },
     { id: 123456, type: 'action' },
   ]), /requires an existing unrelated feat/);
+});
+
+
+for (const [family, name, traitId, linked, expectedSetup, expectedGuard] of [
+  ['artifactAccess', 'artifact-access-dependency-trait-3295-missing', 3295,
+    { archetype: [{ id: 110, trait_id: 3295 }, { id: 111, trait_id: 999 }] },
+    'delete from public.archetype where id=110;delete from public.trait where id=3295;',
+    'Treasure Vault artifact dependency changed: trait:3295'],
+  ['legacyGrips', 'legacy-grips-dependency-2977-missing', 2977,
+    { ancestry: [{ id: 61, trait_id: 2977 }, { id: 62, trait_id: 3280 }] },
+    'delete from public.ancestry where id=61;delete from public.trait where id=2977;',
+    'Treasure Vault grips dependency changed: 2977'],
+  ['legacyGrips', 'legacy-grips-dependency-3280-missing', 3280,
+    { ancestry: [{ id: 61, trait_id: 2977 }, { id: 62, trait_id: 3280 }] },
+    'delete from public.ancestry where id=62;delete from public.trait where id=3280;',
+    'Treasure Vault grips dependency changed: 3280'],
+]) {
+  test(`Construction counterexample: ${name} removes captured links before the trait`, () => {
+    const control = nativeControlRecipe(family, name, undefined, linked);
+    assert.equal(control.setup, expectedSetup);
+    assert.equal(control.expectedSqlState, 'P0001');
+    assert.match(expectedGuard, control.match);
+    assert.match(expectedGuard + '\nCONTEXT: original migration body', control.match);
+    assert.doesNotMatch(expectedGuard.replace(String(traitId), '999999'), control.match);
+    assert.doesNotMatch('Treasure Vault artifact owner changed: archetype:110', control.match);
+    assert.equal(control.includeRelease, true);
+    assert.deepEqual(control.reservations, []);
+    assert.deepEqual(control.sequence_expectation.expected_nextval_calls, {});
+  });
+}
+
+test('Construction counterexample: missing trait requires all blocking link domains in the captured state', () => {
+  assert.throws(() => nativeControlRecipe('legacyGrips', 'legacy-grips-dependency-2977-missing', undefined,
+    { ancestry: undefined }), /captured ancestry/);
+});
+
+test('Construction counterexample: linked trait setup handles each blocking table and deterministic IDs', () => {
+  const control = nativeControlRecipe('artifactAccess', 'artifact-access-dependency-trait-3295-missing', undefined, {
+    ancestry: [{ id: 8, trait_id: 3295 }, { id: 2, trait_id: 3295 }],
+    archetype: [{ id: 110, trait_id: 3295 }],
+    versatile_heritage: [{ id: 9, trait_id: 3295 }],
+  });
+  assert.equal(control.setup, 'delete from public.ancestry where id=2;delete from public.ancestry where id=8;' +
+    'delete from public.archetype where id=110;delete from public.versatile_heritage where id=9;' +
+    'delete from public.trait where id=3295;');
 });

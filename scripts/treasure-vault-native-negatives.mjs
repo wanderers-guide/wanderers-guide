@@ -79,6 +79,25 @@ export function createNativeNegativeGroups({ inputs, userId, reserveProposalId, 
   const batches = originalNativeBatches(inputs);
   const { seeds, gifts, chair, physical, repository, advancements, bastion, traitDefinitions, thirdEye, scalar, itemOperations, artifactAccess, legacyGrips, embeddedDisplay, equipment } = batches;
   const sequence = [seeds,gifts,chair,physical,repository,advancements,bastion,traitDefinitions,thirdEye,scalar,itemOperations,artifactAccess,legacyGrips,embeddedDisplay];
+  /** Remove captured RESTRICT/required SET NULL links so the original dependency guard is exercised. */
+  function missingDependencySetup(table, id) {
+    assert.ok(allowedTables.has(table));
+    assert.ok(Number.isSafeInteger(id) && id > 0);
+    const statements = [];
+    if (table === 'trait') {
+      const captured = readState();
+      for (const linkedTable of ['ancestry', 'archetype', 'versatile_heritage']) {
+        assert.ok(Array.isArray(captured[linkedTable]), `Missing captured ${linkedTable} link domain`);
+        const linkedIds = captured[linkedTable].filter(row => row.trait_id === id).map(row => row.id);
+        assert.ok(linkedIds.every(linkedId => Number.isSafeInteger(linkedId) && linkedId > 0));
+        assert.equal(new Set(linkedIds).size, linkedIds.length);
+        for (const linkedId of linkedIds.sort((a, b) => a - b))
+          statements.push(`delete from public.${linkedTable} where id=${linkedId};`);
+      }
+    }
+    statements.push(`delete from public.${table} where id=${id};`);
+    return statements.join('');
+  }
   function collector(label) {
     const cases = [], requests = new Map(), contentRequests = new Map();
     let pendingIndex = 0, contentIndex = 0;
@@ -1414,7 +1433,7 @@ export function createNativeNegativeGroups({ inputs, userId, reserveProposalId, 
       }
       for (const dependency of legacyGrips.spec.dependencies) {
         for (const [suffix, setup] of [
-          ["missing", `delete from public.trait where id=${dependency.id};`],
+          ["missing", missingDependencySetup("trait", dependency.id)],
           [
             "full-drift",
             `update public.trait set description=description||' changed' where id=${dependency.id};`,
@@ -1438,7 +1457,9 @@ export function createNativeNegativeGroups({ inputs, userId, reserveProposalId, 
             `legacy-grips-dependency-${dependency.id}-${suffix}`,
             legacyGrips,
             setup,
-            /dependency changed|pending curator/i,
+            suffix === "missing"
+              ? new RegExp(`Treasure Vault grips dependency changed: ${dependency.id}(?:\\s|$)`)
+              : /dependency changed|pending curator/i,
           );
       }
       for (const source of legacyGrips.spec.sources) {
@@ -1614,7 +1635,7 @@ export function createNativeNegativeGroups({ inputs, userId, reserveProposalId, 
         for (const [name, setup] of [
           [
             "missing",
-            `delete from public.${dependency.table} where id=${dependency.id};`,
+            missingDependencySetup(dependency.table, dependency.id),
           ],
           [
             "full-drift",
@@ -1646,7 +1667,9 @@ export function createNativeNegativeGroups({ inputs, userId, reserveProposalId, 
             `artifact-access-dependency-${dependency.table}-${dependency.id}-${name}`,
             artifactAccess,
             setup,
-            /dependency changed|pending curator/i,
+            name === "missing"
+              ? new RegExp(`Treasure Vault artifact dependency changed: ${dependency.table}:${dependency.id}(?:\\s|$)`)
+              : /dependency changed|pending curator/i,
           );
       }
       for (const source of artifactAccess.spec.sources) {
