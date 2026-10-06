@@ -1,6 +1,6 @@
+import { readReviewedHistoricalSql } from './treasure-vault-historical-test-support.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -12,11 +12,11 @@ import { createOperationEngine, readContentRows } from './operation-test-harness
 import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 
 const { uniqueId } = uploadUtils;
-const migration = await readFile(
+const migration = await readReviewedHistoricalSql(
   new URL('../../supabase/migrations/20261001090000_treasure_vault_harnessed_trait.sql', import.meta.url),
   'utf8'
 );
-const release = await readFile(
+const release = await readReviewedHistoricalSql(
   new URL('../../supabase/release/treasure-vault-harnessed-trait.sql', import.meta.url),
   'utf8'
 );

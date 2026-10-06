@@ -83,8 +83,12 @@ update. Do not overwrite the baseline from an unreviewed production snapshot jus
 to make a failing gate green.
 
 **Do not run `supabase db push` against this project to replay historical files.**
-Do not run `migration repair` merely to create a ledger. Historical SQL is immutable;
-use new migrations. Every new migration needs an entry and read-only effect check
+Do not run `migration repair` merely to create a ledger. The baseline historical
+migration bytes remain immutable; use new migrations for new effects. The reviewed
+Treasure Vault compatibility wrappers preserve their original migration bodies
+and release queries byte-for-byte and depend on the versioned terminal helper.
+They do not authorize rewriting historical effects.
+Every new migration needs an entry and read-only effect check
 in `supabase/release/requirements.json`. If a ledger is introduced in a separately
 reviewed reconciliation, the gate also checks recorded post-baseline versions and
 rejects unknown versions. Absence of a ledger never substitutes for effect checks.

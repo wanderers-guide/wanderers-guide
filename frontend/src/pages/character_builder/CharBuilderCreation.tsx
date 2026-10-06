@@ -65,7 +65,7 @@ import { compileProficiencyType, variableToLabel } from '@variables/variable-uti
 import { isEqual, truncate } from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
-import { SetterOrUpdater } from '@utils/type-fixing';
+import { SetterOrUpdater, isTruthy } from '@utils/type-fixing';
 import useCharacter from '@utils/use-character';
 import { phoneQuery } from '@utils/mobile-responsive';
 import ImprintButton from '@common/ImprintButton';
@@ -2176,6 +2176,7 @@ export function DisplayOperationResult(props: {
   level?: number;
   results: OperationResult[];
   onChange: (path: string, value: string) => void;
+  onClearSelections?: (paths: string[]) => void;
 }) {
   const selections = props.results.filter((result) => hasOperationSelection(result));
   if (selections.length === 0) return null;
@@ -2187,13 +2188,28 @@ export function DisplayOperationResult(props: {
         {selections.map((result, i) => (
           <Stack key={i} gap={10}>
             {result?.selection && (
-              <OperationResultSelector result={result} level={props.level} onChange={props.onChange} />
+              <OperationResultSelector
+                result={result}
+                level={props.level}
+                onChange={props.onChange}
+                onClearSelections={props.onClearSelections}
+              />
             )}
             {result?.result?.results && result.result.results.length > 0 && (
               <DisplayOperationResult
                 source={result.result.source}
                 level={props.level}
                 results={result.result.results}
+                onClearSelections={
+                  props.onClearSelections
+                    ? (paths) => {
+                        const prefix: string[] = [result.selection?.id, result.result?.source?._select_uuid].filter(
+                          isTruthy
+                        );
+                        props.onClearSelections!(paths.map((path) => [...prefix, path].join('_')));
+                      }
+                    : undefined
+                }
                 onChange={(path, value) => {
                   let selectionUUID = result.selection?.id ?? '';
                   let resultUUID = result.result?.source?._select_uuid ?? '';
@@ -2216,6 +2232,7 @@ function OperationResultSelector(props: {
   result: OperationResult;
   level?: number;
   onChange: (path: string, value: string) => void;
+  onClearSelections?: (paths: string[]) => void;
 }) {
   return (
     <SelectContentButton
@@ -2228,7 +2245,10 @@ function OperationResultSelector(props: {
         props.onChange(props.result!.selection?.id ?? '', option._select_uuid);
       }}
       onClear={() => {
-        props.onChange(props.result!.selection?.id ?? '', '');
+        // Clear each authored sibling at this same parent path so an older rank cannot reappear.
+        const ids: string[] = props.result?.selection?.aliases ?? [props.result?.selection?.id ?? ''];
+        if (props.result?.selection?.aliases && props.onClearSelections) props.onClearSelections(ids);
+        else for (const id of ids) props.onChange(id, '');
       }}
       selectedId={props.result!.result?.source?.id}
       options={{

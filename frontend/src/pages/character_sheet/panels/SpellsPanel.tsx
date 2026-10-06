@@ -24,12 +24,17 @@ import {
   getInventorySpellIds,
   getMissingSpellIds,
   mergeSpellDependencies,
+  resolveItemSpellRead,
 } from '@spells/item-spell-dependencies';
+import type { ItemSpellRead } from '@spells/item-spell-dependencies';
 import { IconSearch, IconSquareRounded, IconSquareRoundedFilled, IconX } from '@tabler/icons-react';
 import {
   ActionCost,
   CastingSource,
   ContentPackage,
+  ContentSource,
+  InventoryItem,
+  Item,
   LivingEntity,
   Spell,
   SpellInnateEntry,
@@ -93,6 +98,18 @@ export default function SpellsPanel(props: {
     return collectEntitySpellcasting(props.id, props.entity);
   }, [props.id, props.entity]);
 
+  // Read indexing corrections from enabled official content without changing saved items.
+  const itemSpellReads = useMemo(() => {
+    const canonicalItems = new Map(props.content.items.map((item) => [item.id, item]));
+    const sources = new Map((props.content.sources ?? []).map((source) => [source.id, source]));
+    return new Map(
+      (props.entity?.inventory?.items ?? []).map((entry) => [
+        entry,
+        resolveItemSpellRead(entry.item, canonicalItems.get(entry.item.id), sources.get(entry.item.content_source_id)),
+      ])
+    );
+  }, [props.content.items, props.content.sources, props.entity?.inventory]);
+
   // Explicit innate and inventory references do not enable their books for selection.
   const missingInnateIds = useMemo(() => {
     return getMissingSpellIds(
@@ -101,8 +118,11 @@ export default function SpellsPanel(props: {
     );
   }, [props.content.spells, charData]);
   const missingItemIds = useMemo(() => {
-    return getMissingSpellIds(props.content.spells, getInventorySpellIds(props.entity?.inventory?.items ?? []));
-  }, [props.content.spells, props.entity?.inventory]);
+    return getMissingSpellIds(
+      props.content.spells,
+      getInventorySpellIds(props.entity?.inventory?.items ?? [], itemSpellReads)
+    );
+  }, [props.content.spells, props.entity?.inventory, itemSpellReads]);
   const missingIds = useMemo(
     () => [...new Set([...missingInnateIds, ...missingItemIds])].sort((a, b) => a - b),
     [missingInnateIds, missingItemIds]
@@ -320,6 +340,7 @@ export default function SpellsPanel(props: {
                   spellIds={[]}
                   allSpells={allItemSpells}
                   type='WAND'
+                  itemSpellReads={itemSpellReads}
                   hasFilters={hasFilters}
                   extra={{ charData: charData }}
                 />
@@ -334,6 +355,8 @@ export default function SpellsPanel(props: {
                   spellIds={[]}
                   allSpells={allItemSpells}
                   type='SPELLHEART'
+                  canonicalItems={props.content.items}
+                  contentSources={props.content.sources}
                   hasFilters={hasFilters}
                   extra={{ charData: charData }}
                 />
@@ -493,6 +516,9 @@ function SpellList(props: {
   source?: CastingSource;
   spellIds: number[];
   allSpells: Spell[];
+  itemSpellReads?: ReadonlyMap<InventoryItem, ItemSpellRead>;
+  canonicalItems?: Item[];
+  contentSources?: ContentSource[];
   type: SpellSectionType;
   extra: {
     charData: {

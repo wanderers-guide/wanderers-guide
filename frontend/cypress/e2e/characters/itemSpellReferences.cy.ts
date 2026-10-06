@@ -1,4 +1,12 @@
-import type { Character, Class as CharacterClass, Condition, InventoryItem, Item } from '../../../src/schemas/content';
+import type {
+  AbilityBlock,
+  Character,
+  Class as CharacterClass,
+  Condition,
+  InventoryItem,
+  Item,
+} from '../../../src/schemas/content';
+import { InventoryItemSchema, ItemSchema } from '../../../src/schemas/content';
 
 type ItemSpellFixture = { key: string; gm: { email: string; password: string } };
 
@@ -200,11 +208,11 @@ describe('Treasure Vault item spell references', () => {
           expect(items.every((item) => item.content_source_id === 16)).to.eq(true);
           expect(items.find((item) => item.id === 11794)?.description).to.include('(link_spell_8867)');
           expect(items.find((item) => item.id === 11814)?.description).to.include(
-            '6th-rank [petal storm](link_spell_8999)'
+            '6th-rank *[petal storm](link_spell_8999)*'
           );
           expect(items.find((item) => item.id === 12676)?.name).to.eq('Wand of Refracting Rays (6th-level)');
           expect(items.find((item) => item.id === 12676)?.description).to.include(
-            'You cast 6th-rank *[Chromatic Ray](link_spell_5322)*'
+            'You cast 6th-rank *[chromatic ray](link_spell_5322)*'
           );
           const inventory: InventoryItem[] = items.map((item) => ({
             id: crypto.randomUUID(),
@@ -258,6 +266,440 @@ describe('Treasure Vault item spell references', () => {
       );
     if (fixture) cy.task('campaignFixture:cleanup', fixture.key, { log: false });
   });
+
+  it('recovers the saved Ash Puppet cast without rewriting its snapshot or initializing charges on mount', () => {
+    cy.viewport(1280, 900);
+    let legacy: InventoryItem;
+    let casting = false;
+    // Independently reviewed historical snapshot, not copied from the runtime resolver.
+    const historicalDescription =
+      "This wand is composed of ash that has been compressed, shaped, and sealed with a clear lacquer. When you trace the wand's tip along a solid surface, it leaves a black trail of charcoal. Writing with the wand in this way never damages or wears the wand down.\n\n**Activate** Cast a Spell\n\n**Effect** You cast \\[\\[Disintegrate\\]\\]. If the spell reduces a living creature to fine powder, you animate that creature's ashes into a \\[\\[Sulfur Zombie\\]\\] with the same general appearance as the disintegrated creature. You control this sulfur zombie, which gains the minion and summoned traits. You can issue a verbal command to the sulfur zombie as a single action with the auditory and concentrate traits. The sulfur zombie crumbles into inanimate ash when reduced to 0 Hit Points or after 1 minute, whichever comes first.";
+    cy.then(() => request<Item[]>('find-item', { id: [12695] }))
+      .then((items) => {
+        expect(items).to.have.length(1);
+        expect(items[0].description).to.include('**Effect** You cast [Disintegrate](link_spell_4571).');
+        const item = ItemSchema.parse(items[0]);
+        expect(item.created_at).to.eq('2024-04-19T04:25:49.043177+00:00');
+        if (!item.meta_data) throw new Error('Published Ash Puppet metadata is required for this snapshot fixture.');
+        item.description = historicalDescription;
+        item.meta_data = { ...item.meta_data };
+        delete item.meta_data.charges;
+        legacy = InventoryItemSchema.parse({
+          id: crypto.randomUUID(),
+          item,
+          is_formula: false,
+          is_equipped: false,
+          is_invested: false,
+          is_implanted: false,
+          container_contents: [],
+        });
+        expect(legacy.item).not.to.have.property('uuid');
+        return readCharacter();
+      })
+      .then((saved) =>
+        request('update-character', {
+          id: characterId,
+          expected_updated_at: saved.updated_at,
+          inventory: { ...saved.inventory, items: [...saved.inventory!.items, legacy] },
+        })
+      );
+    cy.intercept('POST', '**/functions/v1/update-character', (request) => {
+      if (request.body.id !== characterId) return;
+      const entry = request.body.inventory?.items?.find((item: InventoryItem) => item.id === legacy?.id);
+      if (!entry) return;
+      if (!casting) expect(entry, 'saved snapshot unchanged by actual mount and drawer opening').to.deep.eq(legacy);
+      else if (entry.item.meta_data?.charges?.current === 1) request.alias = 'savedAshCast';
+    });
+    const ashButton = () => {
+      const label = /Wand of the Ash Puppet[\s\S]*Disintegrate/;
+      cy.contains('button', label, { timeout: 30000 }).scrollIntoView();
+      return cy.contains('button', label, { timeout: 30000 });
+    };
+    const unchanged = () =>
+      readCharacter().then((saved) => {
+        expect(saved.inventory!.items.find((entry) => entry.id === legacy.id)).to.deep.eq(legacy);
+      });
+    cy.then(() => cy.visit(`/sheet/${characterId}`));
+    sheetLoaded();
+    spellPanel(false);
+    expand('Wands');
+    expectCastingRank(() => ashButton().click(), 'Disintegrate', 6);
+    unchanged();
+    cy.reload();
+    sheetLoaded();
+    spellPanel(false);
+    expand('Wands');
+    expectCastingRank(() => ashButton().click(), 'Disintegrate', 6);
+    unchanged();
+    ashButton().click();
+    cy.contains('.mantine-Drawer-root', 'Disintegrate').within(() => {
+      cy.contains('button', /^Cast Spell 6$/)
+        .should('be.visible')
+        .and('not.be.disabled');
+      cy.get('.mantine-Drawer-content').should('be.visible');
+    });
+    cy.document().screenshot('treasure-vault-saved-ash-disintegrate-rank-6', { capture: 'viewport' });
+    cy.contains('.mantine-Drawer-root', 'Disintegrate').within(() => {
+      cy.then(() => {
+        casting = true;
+      });
+      cy.contains('button', /^Cast Spell 6$/)
+        .should('not.be.disabled')
+        .click();
+    });
+    cy.wait('@savedAshCast', { timeout: 30000 }).its('response.body.status').should('eq', 'success');
+    readCharacter().then((saved) => {
+      const cast = saved.inventory!.items.find((entry) => entry.id === legacy.id)!;
+      expect(cast.item.meta_data?.charges?.current).to.eq(1);
+      expect(cast.item.meta_data?.charges?.max).to.eq(undefined);
+      const expected = structuredClone(legacy);
+      if (!expected.item.meta_data) throw new Error('Saved Ash Puppet metadata must remain present.');
+      expected.item.meta_data = { ...expected.item.meta_data, charges: { current: 1 } };
+      expect(cast).to.deep.eq(expected);
+    });
+  });
+
+  it('uses the real casting source for an older saved Spellheart and preserves its explicit override', () => {
+    cy.viewport(1280, 900);
+    let legacy: InventoryItem;
+    // Reviewed pre100 body: Bullhorn only, without the later Biting Words activation.
+    const historicalDescription =
+      "This two-pronged fork of metal emits a constant low hum, vibrating slightly when touched. The spell attack roll of any spell cast by Activating this item is +9, and the spell DC is 19.\n\n*   **Armor** You gain resistance 2 to [sonic](link_trait_1484) damage and a +1 item bonus to saving throws against effects with the [auditory](link_trait_1469) or [sonic](link_trait_1484) trait.\n    \n*   **Weapon** After you cast a [sonic](link_trait_1484) spell by activating the fork, the weapon reverberates with trapped sound waves. Your next [Strike](link_action_19856) causes the target to be deafened for 1 round if it hits (or for 3 rounds on a critical hit). If you don't make a [Strike](link_action_19856) by the end of your next turn, the sound waves dissipate with no effect.\n    \n\n**Activate** [Cast a Spell](link_action_19611); **Effect** You cast [bullhorn](link_spell_6722).";
+    cy.then(() => request<Item[]>('find-item', { id: [12326] }))
+      .then((items) => {
+        expect(items).to.have.length(1);
+        expect(items[0].meta_data?.spellheart_casting).to.deep.eq({ attack: 9, dc: 19 });
+        const item = ItemSchema.parse(items[0]);
+        expect(item.created_at).to.eq('2024-04-19T04:21:32.107616+00:00');
+        if (!item.meta_data)
+          throw new Error('Published Resonating Fork metadata is required for this snapshot fixture.');
+        item.description = historicalDescription;
+        item.meta_data = { ...item.meta_data };
+        delete item.meta_data.spellheart_casting;
+        legacy = InventoryItemSchema.parse({
+          id: crypto.randomUUID(),
+          item,
+          is_formula: false,
+          is_equipped: false,
+          is_invested: false,
+          is_implanted: false,
+          container_contents: [],
+        });
+        expect(legacy.item).not.to.have.property('uuid');
+        expect(legacy.item.meta_data).not.to.have.property('spellheart_casting');
+        return readCharacter();
+      })
+      .then((saved) =>
+        request('update-character', {
+          id: characterId,
+          expected_updated_at: saved.updated_at,
+          inventory: { ...saved.inventory, items: [...saved.inventory!.items, legacy] },
+        })
+      );
+    cy.intercept('POST', '**/functions/v1/update-character', (request) => {
+      if (request.body.id !== characterId) return;
+      const entry = request.body.inventory?.items?.find((item: InventoryItem) => item.id === legacy?.id);
+      if (entry) expect(entry, 'saved Spellheart snapshot unchanged by fallback or drawer opening').to.deep.eq(legacy);
+    });
+    const unchanged = () =>
+      readCharacter().then((saved) => {
+        expect(saved.content_sources?.enabled).to.deep.eq([1, 3, 16]);
+        expect(saved.inventory!.items.find((entry) => entry.id === legacy.id)).to.deep.eq(legacy);
+      });
+    const showBullhorn = (attack: number, dc: number, screenshot?: string) => {
+      spellPanel(false);
+      expand('Spellhearts');
+      cy.contains('button', /Resonating Fork[\s\S]*Biting Words/).should('not.exist');
+      const label = /Resonating Fork[\s\S]*Bullhorn/;
+      cy.contains('button', label, { timeout: 30000 }).scrollIntoView();
+      cy.contains('button', label, { timeout: 30000 }).click();
+      cy.contains('.mantine-Drawer-root', 'Bullhorn', { timeout: 30000 }).within(() => {
+        cy.contains('button', /^Cast Cantrip 6$/)
+          .should('be.visible')
+          .and('not.be.disabled');
+        cy.contains('span', /^Attack$/)
+          .next('span')
+          .should(($value) => {
+            expect($value.text().trim().split('/')[0].trim(), 'first spell attack modifier').to.eq(`+${attack}`);
+          });
+        cy.contains('span', /^DC$/).next('span').should('have.text', String(dc));
+        cy.get('.mantine-Drawer-content').should('be.visible');
+      });
+      if (screenshot) cy.document().screenshot(screenshot, { capture: 'viewport' });
+      cy.contains('.mantine-Drawer-root', 'Bullhorn', { timeout: 30000 }).within(() => {
+        cy.get('button[aria-label="Close drawer"]').click();
+      });
+      cy.get('.mantine-Drawer-content, .mantine-Drawer-overlay').should('not.exist');
+    };
+    cy.then(() => cy.visit(`/sheet/${characterId}`));
+    sheetLoaded();
+    // Expert proficiency (4) + level 12 + Wisdom 4 = +20, DC30.
+    // The incompatible NONE/Charisma0 path would display +16, DC26 instead.
+    showBullhorn(20, 30, 'treasure-vault-saved-spellheart-bullhorn-higher-casting-source');
+    unchanged();
+    cy.reload();
+    sheetLoaded();
+    showBullhorn(20, 30);
+    unchanged();
+
+    cy.visit('/characters');
+    readCharacter().then((saved) => {
+      if (!legacy.item.meta_data) throw new Error('Saved Resonating Fork metadata must remain present.');
+      legacy = InventoryItemSchema.parse({
+        ...legacy,
+        item: {
+          ...legacy.item,
+          meta_data: { ...legacy.item.meta_data, spellheart_casting: { attack: 30, dc: 40 } },
+        },
+      });
+      return request('update-character', {
+        id: characterId,
+        expected_updated_at: saved.updated_at,
+        inventory: {
+          ...saved.inventory,
+          items: saved.inventory!.items.map((entry) => (entry.id === legacy.id ? legacy : entry)),
+        },
+      });
+    });
+    cy.then(() => cy.visit(`/sheet/${characterId}`));
+    sheetLoaded();
+    showBullhorn(30, 40, 'treasure-vault-saved-spellheart-bullhorn-own-printed-override');
+    unchanged();
+    cy.reload();
+    sheetLoaded();
+    showBullhorn(30, 40);
+    unchanged();
+  });
+
+  for (const scenario of [
+    {
+      className: 'Wizard',
+      attribute: 'INT',
+      itemId: 12695,
+      itemName: 'Wand of the Ash Puppet',
+      section: 'Wands',
+      spellName: 'Disintegrate',
+      rank: 6,
+      maxCharges: 1,
+    },
+    {
+      className: 'Cleric',
+      attribute: 'WIS',
+      itemId: 11679,
+      itemName: 'Accursed Staff',
+      section: 'Accursed Staff',
+      spellName: 'Bane',
+      rank: 1,
+      maxCharges: 6,
+    },
+  ] as const) {
+    it(`uses the ${scenario.className}'s real casting attribute for ${scenario.itemName} without rewriting it`, () => {
+      cy.viewport(1280, 900);
+      let original: InventoryItem;
+      let fistControl: InventoryItem | undefined;
+      let spellbookControl: InventoryItem | undefined;
+      let inventoryBaseline: NonNullable<Character['inventory']> | undefined;
+      let givenItemIdsBaseline: number[] | undefined;
+      if (scenario.className === 'Cleric') {
+        request<AbilityBlock[]>('find-ability-block', { id: [34053] }).then((doctrines) => {
+          expect(doctrines).to.have.length(1);
+          expect(doctrines[0].name).to.eq('Cloistered Cleric Doctrine');
+          expect(doctrines[0].type).to.eq('feat');
+          expect(doctrines[0].content_source_id).to.eq(1);
+        });
+      }
+      if (scenario.className === 'Wizard') {
+        request<AbilityBlock[]>('find-ability-block', { id: [21238] }).then((features) => {
+          expect(features).to.have.length(1);
+          expect(features[0].name).to.eq('Wizard Spellcasting');
+          expect(features[0].type).to.eq('class-feature');
+          expect(features[0].content_source_id).to.eq(1);
+          expect(features[0].operations).to.deep.include({
+            id: 'e001288e-a043-4268-a513-812e67491ffd',
+            type: 'giveItem',
+            data: { itemId: 7799 },
+          });
+        });
+        request<Item[]>('find-item', { id: [7799] }).then((items) => {
+          expect(items).to.have.length(1);
+          const spellbook = ItemSchema.parse(items[0]);
+          expect(spellbook.id).to.eq(7799);
+          expect(spellbook.name).to.eq('Spellbook (Blank)');
+          expect(spellbook.content_source_id).to.eq(1);
+          expect(spellbook.group).to.eq('GENERAL');
+          if (!spellbook.meta_data) throw new Error('The published Spellbook must have metadata.');
+          expect(spellbook.meta_data.hp_max).to.eq(0);
+          expect(spellbook.meta_data.base_item).to.eq(undefined);
+          expect(spellbook.meta_data.base_item_content).to.eq(undefined);
+          expect(spellbook.meta_data.container_default_items ?? []).to.deep.eq([]);
+          // Wizard Spellcasting grants this ordinary item before opening any wand.
+          spellbookControl = InventoryItemSchema.parse({
+            id: 'extra-item-7799',
+            item: { ...spellbook, meta_data: { ...spellbook.meta_data, hp: spellbook.meta_data.hp_max } },
+            is_formula: false,
+            is_equipped: false,
+            is_invested: false,
+            is_implanted: false,
+            container_contents: [],
+          });
+        });
+      }
+      request<Item[]>('find-item', { id: [9252] }).then((items) => {
+        expect(items).to.have.length(1);
+        const fist = ItemSchema.parse(items[0]);
+        expect(fist.id).to.eq(9252);
+        expect(fist.name).to.eq('Fist');
+        expect(fist.content_source_id).to.eq(1);
+        expect(fist.group).to.eq('WEAPON');
+        expect(fist.traits).to.deep.eq([1569, 1570, 1571, 2398]);
+        if (!fist.meta_data) throw new Error('The published Fist must have metadata.');
+        expect(fist.meta_data.category).to.eq('unarmed_attack');
+        expect(fist.meta_data.damage?.damageType).to.eq('bludgeoning');
+        expect(fist.meta_data.hp_max).to.eq(0);
+        expect(fist.meta_data.base_item).to.eq(undefined);
+        expect(fist.meta_data.base_item_content).to.eq(undefined);
+        expect(fist.meta_data.container_default_items ?? []).to.deep.eq([]);
+        // Match the ordinary addExtraItems control before the first calculation.
+        fistControl = InventoryItemSchema.parse({
+          id: 'extra-item-9252',
+          item: { ...fist, meta_data: { ...fist.meta_data, hp: fist.meta_data.hp_max } },
+          is_formula: false,
+          is_equipped: true,
+          is_invested: false,
+          is_implanted: false,
+          container_contents: [],
+        });
+      });
+      cy.then(() => request<CharacterClass[]>('find-class', { content_sources: [1] })).then((classes) => {
+        const playerClass = classes.find((entry) => entry.name === scenario.className);
+        expect(playerClass, `published ${scenario.className} class`).to.exist;
+        request<Item[]>('find-item', { id: [scenario.itemId] })
+          .then((items) => {
+            expect(items).to.have.length(1);
+            const item = ItemSchema.parse(items[0]);
+            expect(item.name).to.eq(scenario.itemName);
+            expect(item.content_source_id).to.eq(16);
+            if (!item.meta_data) throw new Error('The published casting item must have metadata.');
+            original = InventoryItemSchema.parse({
+              id: crypto.randomUUID(),
+              item: {
+                ...item,
+                meta_data: { ...item.meta_data, charges: { max: scenario.maxCharges, current: 0 } },
+              },
+              is_formula: false,
+              is_equipped: true,
+              is_invested: false,
+              is_implanted: false,
+              container_contents: [],
+            });
+            return readCharacter();
+          })
+          .then((saved) => {
+            if (!saved.inventory || !fistControl) throw new Error('The complete inventory baseline is required.');
+            expect(saved.meta_data?.given_item_ids ?? []).to.deep.eq([]);
+            if (scenario.className === 'Wizard' && !spellbookControl)
+              throw new Error('The Wizard Spellbook baseline is required.');
+            inventoryBaseline = {
+              ...saved.inventory,
+              items: [original, fistControl, ...(spellbookControl ? [spellbookControl] : [])],
+            };
+            givenItemIdsBaseline = [9252, ...(spellbookControl ? [7799] : [])];
+            return request('update-character', {
+              id: characterId,
+              expected_updated_at: saved.updated_at,
+              details: { ...saved.details, class: playerClass },
+              inventory: inventoryBaseline,
+              meta_data: { ...saved.meta_data, given_item_ids: givenItemIdsBaseline },
+              custom_operations: [
+                ...(saved.custom_operations ?? []),
+                // Use the actual doctrine's level-based rules, not a synthetic proficiency override.
+                ...(scenario.className === 'Cleric'
+                  ? [
+                      {
+                        id: crypto.randomUUID(),
+                        type: 'giveAbilityBlock',
+                        data: { type: 'feat', abilityBlockId: 34053 },
+                      },
+                    ]
+                  : []),
+                ...Object.entries({
+                  INT: scenario.attribute === 'INT' ? 4 : 0,
+                  WIS: scenario.attribute === 'WIS' ? 4 : 0,
+                }).map(([attribute, value]) => ({
+                  id: crypto.randomUUID(),
+                  type: 'setValue',
+                  data: { variable: `ATTRIBUTE_${attribute}`, value: { value } },
+                })),
+              ],
+            });
+          });
+      });
+      const unchanged = () =>
+        readCharacter().then((saved) => {
+          if (!inventoryBaseline || !fistControl) throw new Error('The complete inventory baseline is required.');
+          expect(saved.inventory, 'opening preserves the complete saved inventory, including coins').to.deep.eq(
+            inventoryBaseline
+          );
+          expect(saved.inventory!.coins).to.deep.eq(inventoryBaseline.coins);
+          expect(saved.inventory!.items.find((entry) => entry.id === original.id)).to.deep.eq(original);
+          expect(saved.inventory!.items.find((entry) => entry.id === 'extra-item-9252')).to.deep.eq(fistControl);
+          if (spellbookControl)
+            expect(saved.inventory!.items.find((entry) => entry.id === 'extra-item-7799')).to.deep.eq(spellbookControl);
+          expect(saved.meta_data?.given_item_ids).to.deep.eq(givenItemIdsBaseline);
+        });
+      const showCast = (capture: boolean) => {
+        spellPanel(false);
+        expand(scenario.section);
+        const label =
+          scenario.section === 'Wands'
+            ? new RegExp(`${scenario.itemName}[\\s\\S]*${scenario.spellName}`)
+            : scenario.spellName;
+        cy.contains('button', label, { timeout: 30000 }).scrollIntoView();
+        cy.contains('button', label, { timeout: 30000 }).click();
+        cy.contains('.mantine-Drawer-root', scenario.spellName, { timeout: 30000 }).within(() => {
+          // The Attack trait Badge precedes the numeric statistics in some spells.
+          cy.contains('span', /^DC$/)
+            .closest('.mantine-Paper-root')
+            .should('have.length', 1)
+            .within(() => {
+              cy.contains('span', /^Attack$/)
+                .next('span')
+                .should(($value) => {
+                  expect(
+                    $value
+                      .text()
+                      .trim()
+                      .split('/')
+                      .map((part) => part.trim()),
+                    'level 12 + expert 4 + casting attribute 4'
+                  ).to.deep.eq(['+20', '+15', '+10']);
+                });
+              cy.contains('span', /^DC$/).next('span').should('have.text', '30');
+            });
+          cy.contains('button', new RegExp(`^Cast Spell ${scenario.rank}$`))
+            .should('be.visible')
+            .and('not.be.disabled');
+          cy.get('.mantine-Drawer-content').should('be.visible');
+        });
+        if (capture)
+          cy.document().screenshot(`treasure-vault-${scenario.className.toLowerCase()}-item-casting`, {
+            capture: 'viewport',
+          });
+        cy.contains('.mantine-Drawer-root', scenario.spellName).within(() => {
+          cy.get('button[aria-label="Close drawer"]').click();
+        });
+        cy.get('.mantine-Drawer-content, .mantine-Drawer-overlay').should('not.exist');
+        unchanged();
+      };
+      unchanged();
+      cy.then(() => cy.visit(`/sheet/${characterId}`));
+      sheetLoaded();
+      showCast(true);
+      cy.reload();
+      sheetLoaded();
+      showCast(false);
+    });
+  }
 
   it('keeps formulas as knowledge without physical crafting bonuses, weapon attacks or rest charge resets', () => {
     cy.viewport(1280, 900);

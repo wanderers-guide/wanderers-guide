@@ -28,6 +28,35 @@ Weapon `hands` is a top-level field holding the printed value, such as `1`, `2`,
 line. Magical equipment can have a real Usage line, which should be preserved.
 Weapon reload is stored in `meta_data.reload`; the thrown-weapon placeholder is `—`.
 
+Spellhearts may store explicit printed casting values in optional
+`meta_data.spellheart_casting`. Its `attack` and `dc` fields are finite integers;
+at least one is required. Missing fields are unknown and are never inferred from
+the other value. Spellheart cantrips can use a higher corresponding value from
+the character's current spellcasting sources. Other spellheart spells use the
+explicit item values. This metadata does not change staff or wand casting, spell
+frequency, or saved item snapshots.
+
+Older saved Spellhearts without explicit casting values can use the printed values
+from their matching, enabled official catalog item. Saved overrides take precedence;
+the saved description, operations, and item settings remain unchanged.
+
+The confirmed historical Wand of the Ash Puppet spell reference can be read for spell
+indexing without replacing its saved description or initializing charges. This does
+not add an activation or switch the saved item to a different printing.
+
+Wand and staff casts use one current spellcasting source whose tradition lists the
+spell, or whose normal spell list includes that spell. Multiple eligible sources use
+the highest spell DC, then attack modifier. Attack and DC stay paired with that source.
+This calculation does not grant casting permission or change saved items, staff
+preparation, charges, or spell slots. Characters without a matching source keep the
+existing manual fallback; Trick Magic Item checks are not automated.
+
+Spellheart spell lists read the item’s casting activations. Plain `You cast` and
+`You [cast](link_action_19611)` expose the same spells and printed ranks. Passive
+spell references, prerequisites, literal code examples and other linked actions
+do not grant additional cast spells. Comma-separated casting alternatives retain
+each printed rank. Headerless legacy descriptions retain first-link compatibility.
+
 Automatic Bonus Progression's level-17 Ability Apex increases the selected attribute
 modifier by 1 or raises it to +4, whichever is higher. This is a full increase even
 above +4, and preserves any existing half-boost. Ordinary attribute boosts retain
@@ -224,6 +253,11 @@ If the name isn’t in the cache, it falls back to plain text, so prose still re
 Link named feats, actions, spells, items, and traits that have a row in the database. Energy damage types such as fire are traits; physical damage types such as piercing have no trait record and stay plain text. Conditions already auto-link in `RichText`, so do not wrap them manually. Link each relevant occurrence, using the helper to resolve its actual record.
 
 Don’t link generic phrases (“any spell”), abstract skill or attribute names, or verbs that happen to share an action’s name.
+
+Condition links are added after Markdown parsing, leaving authored links and code
+untouched. Persistent damage also auto-links across emphasis and linked damage-type
+lists. The condition and traits stay separately clickable without nested links or
+changed wording. The condition blacklist also applies to persistent damage.
 
 When in doubt: if a reader would benefit from clicking through to the rules, link it. If not, leave it plain.
 

@@ -3,9 +3,7 @@ declare
   patches constant jsonb := $patches$
   [
     {"id":16929,"name":"Final Scalecloak","url":"https://2e.aonprd.com/Equipment.aspx?ID=3508","field":"bulk","before":"0.1","after":"1"},
-    {"id":17101,"name":"Freedom's Flame","url":"https://2e.aonprd.com/Equipment.aspx?ID=3509","field":"bulk","before":"1","after":"0.1"},
-    {"id":16930,"name":"Worldforge","url":"https://2e.aonprd.com/Equipment.aspx?ID=3511","field":"bulk","before":"15","after":"1"},
-    {"id":16930,"name":"Worldforge","url":"https://2e.aonprd.com/Equipment.aspx?ID=3511","field":"usage","before":"","after":"held in 1 hand"}
+    {"id":17101,"name":"Freedom's Flame","url":"https://2e.aonprd.com/Equipment.aspx?ID=3509","field":"bulk","before":"1","after":"0.1"}
   ]
   $patches$::jsonb;
   patch jsonb;

@@ -464,7 +464,14 @@ export function determineWeaponDivisions(item: Item): string[] {
 
   // One-handed agile/finesse weapons (ex. SF2e Striker Operative specialization).
   // "One-handed" counts anything wieldable in a single hand: 1, 1+, or 1 or 2.
-  const isOneHanded = ['1', '1+', '1 or 2'].includes(`${item.hands ?? ''}`.trim());
+  // Specific weapons can print Usage instead of Hands. Keep explicit grip values authoritative.
+  const usage = `${item.usage ?? ''}`.trim().toLowerCase().replaceAll('-', ' ');
+  const isOneHanded =
+    item.hands == null
+      ? item.meta_data?.category !== 'unarmed_attack' &&
+        !hasTraitType('UNARMED', traitsIds) &&
+        /^held in (?:1|one) hand$/.test(usage)
+      : ['1', '1+', '1 or 2'].includes(`${item.hands}`.trim());
   if (isOneHanded && (hasTraitType('AGILE', traitsIds) || hasTraitType('FINESSE', traitsIds))) {
     divisions.push('WEAPON_DIVISION_ONE_HANDED_AGILE_FINESSE');
   }

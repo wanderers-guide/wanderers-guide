@@ -230,6 +230,95 @@ test('character writes can distinguish confirmed input rejection without changin
   }
 });
 
+test('HTTP 400 character statement timeouts remain uncertain failures without replacement writes', async () => {
+  const body = { id: 1, name: 'Retained draft', expected_updated_at: 'version-1' };
+  const before = structuredClone(body);
+  invoke = async () =>
+    http(400, { status: 'fail', data: { code: '57014', message: 'canceling statement due to statement timeout' } });
+  assert.equal(
+    await api.makeRequest('update-character', body, false, { expectedActorId: 'owner', throwOnRejection: true }),
+    null
+  );
+  assert.deepEqual(body, before);
+  assert.deepEqual(calls, [{ type: 'update-character', body: before, headers: { Authorization: 'Bearer current-token' } }]);
+  await assert.rejects(
+    api.makeRequest('update-character', body, false, { throwOnRejection: true, throwOnFailure: true }),
+    (error) => error.constructor === Error && error.message === 'Request failed: update-character'
+  );
+  assert.equal(calls.length, 2, 'each explicit caller invocation sends only one write');
+  assert.equal(await api.makeRequest('update-character', body, false), null);
+  assert.equal(calls.length, 3);
+  assert.equal(refreshes, 0);
+  assert.equal(notices, 0);
+});
+
+test('the timeout exception requires the exact character endpoint, HTTP status and JSend code boundary', async () => {
+  const timeout = { status: 'fail', data: { code: '57014' } };
+  for (const [type, status, payload] of [
+    ['create-character', 400, timeout],
+    ['update-campaign', 400, timeout],
+    ['find-character', 400, timeout],
+    ['update-character', 413, timeout],
+    ['update-character', 422, timeout],
+    ['update-character', 200, timeout],
+    ['update-character', 400, { status: 'fail', data: { code: '23505' } }],
+    ['update-character', 400, { status: 'fail', data: { code: 57014 } }],
+    ['update-character', 400, { status: 'fail', data: { code: ' 57014' } }],
+    ['update-character', 400, { status: 'fail', data: { code: '57014 ' } }],
+    ['update-character', 400, { status: 'error', data: { code: '57014' } }],
+    ['update-character', 400, { data: { code: '57014' } }],
+    ['update-character', 400, { status: 'fail', data: { error: { code: '57014' } } }],
+    ['update-character', 400, { status: 'fail', data: ['57014'] }],
+    ['update-character', 400, { status: 'fail', data: null }],
+    ['update-character', 400, null],
+  ]) {
+    calls = [];
+    invoke = async () => (status === 200 ? { data: payload, error: null } : http(status, payload));
+    await assert.rejects(
+      api.makeRequest(type, { id: 1 }, false, { throwOnRejection: true }),
+      api.RequestRejectedError,
+      `${type}/${status}/${JSON.stringify(payload)}`
+    );
+    assert.equal(calls.length, 1);
+    assert.equal(refreshes, 0);
+    assert.equal(notices, 0);
+  }
+  calls = [];
+  invoke = async () => ({
+    data: null,
+    error: new FunctionsHttpError(new Response('not JSON', { status: 400 })),
+  });
+  await assert.rejects(
+    api.makeRequest('update-character', { id: 1 }, false, { throwOnRejection: true }),
+    api.RequestRejectedError
+  );
+  assert.equal(calls.length, 1);
+});
+
+test('timeout-shaped bodies cannot supersede JWT recovery or replay as another actor', async () => {
+  const rejectedJwt = () =>
+    http(400, { status: 'fail', data: { code: '57014', error: { code: 'PGRST301', message: 'JWT expired' } } });
+  invoke = async () => (calls.length === 1 ? rejectedJwt() : ok());
+  assert.deepEqual(
+    await api.makeRequest('update-character', { id: 1 }, false, { expectedActorId: 'owner', throwOnRejection: true }),
+    [{ id: 1 }]
+  );
+  assert.equal(refreshes, 1);
+  assert.deepEqual(calls.map((call) => call.headers.Authorization), ['Bearer current-token', 'Bearer fresh-token']);
+  calls = [];
+  invoke = async () => {
+    session = signedIn('other-token', 'other');
+    return rejectedJwt();
+  };
+  assert.equal(
+    await api.makeRequest('update-character', { id: 1 }, false, { expectedActorId: 'owner', throwOnRejection: true }),
+    null
+  );
+  assert.equal(calls.length, 1);
+  assert.equal(refreshes, 1);
+  assert.equal(notices, 0);
+});
+
 test('rejection-aware writes preserve JWT recovery and never classify ambiguous failures as rejected', async () => {
   invoke = async () => (calls.length === 1 ? expired() : ok());
   assert.deepEqual(await api.makeRequest('update-character', { id: 1 }, false, { throwOnRejection: true }), [

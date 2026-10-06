@@ -1,6 +1,6 @@
 import { fetchContent } from '@content/content-store';
 import { filterByTraitType } from '@items/inv-utils';
-import type { ActionCost, InventoryItem, LivingEntity, Spell } from '@schemas/content';
+import type { ActionCost, ContentSource, InventoryItem, Item, LivingEntity, Spell } from '@schemas/content';
 import type { StoreID } from '@schemas/variables';
 import type { UseQueryOptions } from '@tanstack/react-query';
 
@@ -14,8 +14,57 @@ export type SpellDependencyScope = {
   ids: number[];
 };
 
+/** Effective spell indexing text, never written back to a saved inventory snapshot. */
+export type ItemSpellRead = { description: string; recoveredLegacyReference: boolean };
+
+// Exact reviewed pre-indexing body. Custom text and other printings remain authoritative.
+const LEGACY_ASH_PUPPET_DESCRIPTION =
+  "This wand is composed of ash that has been compressed, shaped, and sealed with a clear lacquer. When you trace the wand's tip along a solid surface, it leaves a black trail of charcoal. Writing with the wand in this way never damages or wears the wand down.\n\n**Activate** Cast a Spell\n\n**Effect** You cast \\[\\[Disintegrate\\]\\]. If the spell reduces a living creature to fine powder, you animate that creature's ashes into a \\[\\[Sulfur Zombie\\]\\] with the same general appearance as the disintegrated creature. You control this sulfur zombie, which gains the minion and summoned traits. You can issue a verbal command to the sulfur zombie as a single action with the auditory and concentrate traits. The sulfur zombie crumbles into inanimate ash when reduced to 0 Hit Points or after 1 minute, whichever comes first.";
+
+/** Recover only Ash Puppet's existing escaped spell reference from its exact official counterpart. */
+export function resolveItemSpellRead(
+  item: Item,
+  canonicalItem: Item | undefined,
+  source: ContentSource | undefined
+): ItemSpellRead {
+  const unchanged = { description: item.description, recoveredLegacyReference: false };
+  if (
+    item.id !== 12695 ||
+    item.content_source_id !== 16 ||
+    item.created_at !== '2024-04-19T04:25:49.043177+00:00' ||
+    item.name !== 'Wand of the Ash Puppet' ||
+    item.level !== 14 ||
+    item.group !== 'GENERAL' ||
+    item.description !== LEGACY_ASH_PUPPET_DESCRIPTION ||
+    !canonicalItem ||
+    canonicalItem.id !== item.id ||
+    canonicalItem.content_source_id !== item.content_source_id ||
+    canonicalItem.created_at !== item.created_at ||
+    canonicalItem.name !== item.name ||
+    canonicalItem.level !== item.level ||
+    canonicalItem.group !== item.group ||
+    source?.id !== item.content_source_id ||
+    source.user_id !== null ||
+    source.is_published !== true
+  ) {
+    return unchanged;
+  }
+  // Derive the numeric target from the canonical explicit cast, never a name-only lookup.
+  const references = [
+    ...canonicalItem.description.matchAll(/\*\*Effect\*\* You cast (\[Disintegrate\]\(link_spell_(\d+)\))\./g),
+  ];
+  if (references.length !== 1 || references[0][2] !== '4571') return unchanged;
+  return {
+    description: item.description.replace('\\[\\[Disintegrate\\]\\]', references[0][1]),
+    recoveredLegacyReference: true,
+  };
+}
+
 /** Read exact numeric spell references only from inventory items the spell panels expose. */
-export function getInventorySpellIds(items: InventoryItem[]): number[] {
+export function getInventorySpellIds(
+  items: InventoryItem[],
+  reads?: ReadonlyMap<InventoryItem, ItemSpellRead>
+): number[] {
   const eligible = [
     ...filterByTraitType(items, 'STAFF').filter((item) => item.is_equipped),
     ...filterByTraitType(items, 'WAND'),
@@ -23,7 +72,8 @@ export function getInventorySpellIds(items: InventoryItem[]): number[] {
   ];
   const ids = new Set<number>();
   for (const entry of eligible) {
-    for (const match of entry.item.description.matchAll(/\(link_spell_(\d+)\)/g)) {
+    const description = reads?.get(entry)?.description ?? entry.item.description;
+    for (const match of description.matchAll(/\(link_spell_(\d+)\)/g)) {
       const id = Number(match[1]);
       if (Number.isSafeInteger(id) && id > 0) ids.add(id);
     }

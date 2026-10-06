@@ -1,16 +1,16 @@
+import { readReviewedHistoricalSql } from './treasure-vault-historical-test-support.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
 import { before, after, test } from 'node:test';
 import { SpellSchema, ContentSourceSchema, InventorySchema } from '../src/schemas/content.ts';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
 import { inventoryItem, summoner } from './fixtures/eidolon.mjs';
 
-const migration = await readFile(
+const migration = await readReviewedHistoricalSql(
   new URL('../../supabase/migrations/20261001190000_treasure_vault_safe_passage_duration.sql', import.meta.url),
   'utf8'
 );
-const release = await readFile(
+const release = await readReviewedHistoricalSql(
   new URL('../../supabase/release/treasure-vault-safe-passage-duration.sql', import.meta.url),
   'utf8'
 );

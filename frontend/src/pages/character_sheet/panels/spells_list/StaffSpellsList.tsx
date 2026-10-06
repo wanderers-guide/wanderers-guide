@@ -14,6 +14,7 @@ import { SetterOrUpdater } from '@utils/type-fixing';
 import { SpellSlotSelect } from '../SpellsPanel';
 import SpellListEntrySection from './SpellListEntrySection';
 import { detectSpells, getSpellcastingType } from '@spells/spell-utils';
+import { getItemCastingSource } from '@spells/spell-handler';
 import { useEffect } from 'react';
 import BlurButton from '@common/BlurButton';
 import { openContextModal } from '@mantine/modals';
@@ -214,95 +215,98 @@ export default function StaffSpellsList(props: {
                     </Group>
                     <Divider my={5} />
                     <Stack gap={5} mb={5}>
-                      {detectedSpells[rank].map((record, index) => (
-                        <SpellListEntrySection
-                          key={index}
-                          id={props.id}
-                          entity={props.entity}
-                          spell={record.spell}
-                          exhausted={
-                            record.spell.rank > 0 &&
-                            (castingType === 'SPONTANEOUS'
-                              ? currentCharges + 1 > maxCharges
-                              : currentCharges + record.spell.rank > maxCharges)
-                          }
-                          tradition={'NONE'}
-                          attribute={'ATTRIBUTE_CHA'}
-                          onCastSpell={(cast: boolean) => {
-                            const castWithCharges = () => {
-                              handleUpdateItemCharges(props.setEntity, props.staff, {
-                                current: Math.max(
-                                  Math.min(
-                                    currentCharges + (cast ? record.spell.rank : -record.spell.rank),
-                                    maxCharges
-                                  ),
-                                  0
-                                ),
-                              });
-                            };
-
-                            if (record.spell) {
-                              // If is spontaneous casting, open choice modal
-                              if (cast === true && castingType === 'SPONTANEOUS') {
-                                if (record.spell.rank > 0) {
-                                  openContextModal({
-                                    modal: 'selectStaffCasting',
-                                    title: <Title order={3}>Cast Spell Choice</Title>,
-                                    innerProps: {
-                                      canCastNormally: currentCharges + record.spell.rank <= maxCharges,
-                                      spell: record.spell,
-                                      onSelect: (option: 'NORMAL' | 'SLOT-CONSUME', slotRank?: number) => {
-                                        if (option === 'NORMAL') {
-                                          castWithCharges();
-                                        } else if (option === 'SLOT-CONSUME') {
-                                          // Consume 1 charge
-                                          handleUpdateItemCharges(props.setEntity, props.staff, {
-                                            current: Math.min(currentCharges + 1, maxCharges),
-                                          });
-                                          // Consume slot
-                                          props.setEntity((c) => {
-                                            if (!c) return c;
-                                            let added = false;
-                                            const newUpdatedSlots = collectEntitySpellcasting(props.id, c).slots.map(
-                                              (slot) => {
-                                                if (!added && slot.rank === slotRank && slot.exhausted !== true) {
-                                                  added = true;
-                                                  return {
-                                                    ...slot,
-                                                    exhausted: true,
-                                                  };
-                                                }
-                                                return slot;
-                                              }
-                                            );
-
-                                            return {
-                                              ...c,
-                                              spells: {
-                                                ...(c.spells ?? {
-                                                  slots: [],
-                                                  list: [],
-                                                  focus_point_current: 0,
-                                                  innate_casts: [],
-                                                }),
-                                                slots: newUpdatedSlots,
-                                              },
-                                            };
-                                          });
-                                        }
-                                      },
-                                    },
-                                  });
-                                }
-                              } else {
-                                // Else just cast
-                                castWithCharges();
-                              }
+                      {detectedSpells[rank].map((record, index) => {
+                        const castingSource = getItemCastingSource(props.id, record.spell, props.extra.charData);
+                        return (
+                          <SpellListEntrySection
+                            key={index}
+                            id={props.id}
+                            entity={props.entity}
+                            spell={record.spell}
+                            exhausted={
+                              record.spell.rank > 0 &&
+                              (castingType === 'SPONTANEOUS'
+                                ? currentCharges + 1 > maxCharges
+                                : currentCharges + record.spell.rank > maxCharges)
                             }
-                          }}
-                          hasFilters={props.hasFilters}
-                        />
-                      ))}
+                            tradition={castingSource?.tradition ?? 'NONE'}
+                            attribute={castingSource?.attribute ?? 'ATTRIBUTE_CHA'}
+                            onCastSpell={(cast: boolean) => {
+                              const castWithCharges = () => {
+                                handleUpdateItemCharges(props.setEntity, props.staff, {
+                                  current: Math.max(
+                                    Math.min(
+                                      currentCharges + (cast ? record.spell.rank : -record.spell.rank),
+                                      maxCharges
+                                    ),
+                                    0
+                                  ),
+                                });
+                              };
+
+                              if (record.spell) {
+                                // If is spontaneous casting, open choice modal
+                                if (cast === true && castingType === 'SPONTANEOUS') {
+                                  if (record.spell.rank > 0) {
+                                    openContextModal({
+                                      modal: 'selectStaffCasting',
+                                      title: <Title order={3}>Cast Spell Choice</Title>,
+                                      innerProps: {
+                                        canCastNormally: currentCharges + record.spell.rank <= maxCharges,
+                                        spell: record.spell,
+                                        onSelect: (option: 'NORMAL' | 'SLOT-CONSUME', slotRank?: number) => {
+                                          if (option === 'NORMAL') {
+                                            castWithCharges();
+                                          } else if (option === 'SLOT-CONSUME') {
+                                            // Consume 1 charge
+                                            handleUpdateItemCharges(props.setEntity, props.staff, {
+                                              current: Math.min(currentCharges + 1, maxCharges),
+                                            });
+                                            // Consume slot
+                                            props.setEntity((c) => {
+                                              if (!c) return c;
+                                              let added = false;
+                                              const newUpdatedSlots = collectEntitySpellcasting(props.id, c).slots.map(
+                                                (slot) => {
+                                                  if (!added && slot.rank === slotRank && slot.exhausted !== true) {
+                                                    added = true;
+                                                    return {
+                                                      ...slot,
+                                                      exhausted: true,
+                                                    };
+                                                  }
+                                                  return slot;
+                                                }
+                                              );
+
+                                              return {
+                                                ...c,
+                                                spells: {
+                                                  ...(c.spells ?? {
+                                                    slots: [],
+                                                    list: [],
+                                                    focus_point_current: 0,
+                                                    innate_casts: [],
+                                                  }),
+                                                  slots: newUpdatedSlots,
+                                                },
+                                              };
+                                            });
+                                          }
+                                        },
+                                      },
+                                    });
+                                  }
+                                } else {
+                                  // Else just cast
+                                  castWithCharges();
+                                }
+                              }
+                            }}
+                            hasFilters={props.hasFilters}
+                          />
+                        );
+                      })}
                     </Stack>
                   </div>
                 ))}

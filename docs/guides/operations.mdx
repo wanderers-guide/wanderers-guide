@@ -482,6 +482,19 @@ Player-facing choice. Two modes:
 
 The chosen option id is recorded on `character.operation_data.selections`, keyed by the select operation’s id.
 
+A filtered additional Lore choice (`ADJ_VALUE`, group `ADD-LORE`) can explicitly
+list up to 16 unique sibling select UUIDs in optional `data.selectionAliases`,
+excluding its own UUID. This preserves
+already saved Lore choices when mutually exclusive branches raise their rank.
+The current operation's saved key takes priority, including an empty saved choice;
+otherwise the first present alias in authored order is used. Lookup is limited to
+the same parent path, without name matching, transitive aliases or saved-key
+migration. Each Lore slot needs its own aliases. Clearing the choice removes all
+of its sibling keys at that parent, without clearing other slots or owners.
+Other selection kinds do not support aliases, and choices without aliases retain
+their existing behavior. The editor preserves this authored field for Lore edits
+without adding controls; changing to an unsupported selection kind removes it.
+
 An `ABILITY_BLOCK` filter can use `excludedTraits` to omit feats with any listed trait. It accepts trait IDs or names, like the required `traits` filter. A string `level.max` such as `{{LEVEL/2}}` is resolved when the character makes the selection.
 
 For a `SPELL` filter, `rarity` limits the available spells to one rarity. `traditionFromSelection: { key, castingSource }` uses the ability block saved at that selection key to find its unambiguous `defineCastingSource` tradition; if no tradition is found, the filter offers no spells. This lets a spell choice follow a selected patron before conditional casting-source grants run.

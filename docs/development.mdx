@@ -333,7 +333,20 @@ npm --prefix frontend run cy:e2e          # headless run of all specs
 npm --prefix frontend run cy:e2e:open     # interactive Cypress UI
 ```
 
-`cy:e2e` bakes in `CYPRESS_BASE_URL=http://localhost:3000` and the default test creds (`test@wanderersguide.app` / `test1234`). To scope to a single spec:
+`cy:e2e` bakes in `CYPRESS_BASE_URL=http://localhost:3000` and the default test creds (`test@wanderersguide.app` / `test1234`).
+
+The `content/treasure-vault-references.cy.ts` catalog-only cases require `ANON_KEY`
+in the Cypress process environment, matching the public anonymous JWT used by
+the local frontend. Cypress maps it to `publicAnonKey`; CI already supplies it.
+These cases read public catalog data without creating an account or inventory.
+Use the public anonymous key, never the service-role key.
+
+The Cypress commands preserve existing `NODE_OPTIONS` and disable synchronous
+ES module loading for the test process. This lets Cypress 13 load the existing
+configuration with its TypeScript loader on Node 20. CI uses
+the same `cy:run` entry point; application and API runtime options are unchanged.
+
+To scope to a single spec:
 
 ```bash
 npm --prefix frontend run cy:e2e -- --spec "cypress/e2e/login/*.cy.ts"
@@ -417,6 +430,44 @@ function/schema manifest. The production content snapshot refreshes weekly or by
 manual dispatch, independently of code pushes. See [Release and recovery](/releases)
 for the read-only production gate, including `release:verify:functions` before
 schema changes, migration baseline and rollout order.
+
+Run `npm run test:content:contracts` for the checked-in migration input, historical
+guard and safety-runner regressions. These use local files and bounded models,
+not a running database, production credentials or private audit exports.
+
+Run `npm run test:content:native` with Docker running to rehearse the Treasure
+Vault repairs against the complete checked-in sanitized catalog and actual
+schema. It requires locally available PostgreSQL 15.6 and GoTrue images and a
+local Docker engine. It creates uniquely owned offline containers without
+published ports. Each new test PostgreSQL container is limited to 1 GiB of memory,
+no swap and one CPU, with fresh limit checks recorded in its receipt. These limits
+apply per container, not to the whole machine; existing containers are unchanged.
+An out-of-memory or timeout failure remains a failed test.
+The runner performs a genuine signup and checks the public-user trigger,
+then tests guarded updates, pending proposals, rollback, read-only checks,
+saved-copy preservation, exact replay and concurrent writer ordering.
+
+Receipts record the image tags, observed immutable image IDs and matching Auth
+binary and health versions. An Auth image reporting an unspecified build version
+is recorded as such, not as a confirmed runtime semantic version.
+Version checks retain raw stderr and accept only empty output or the pinned
+binary's exact single informational shutdown record. Other diagnostics fail
+verification.
+
+The runner verifies its complete input manifest before and after execution and
+recomputes the catalog, source and authored-content comparisons from actual
+database rows. Only its own containers and anonymous volumes are removed. It
+does not reset another local stack, access production or certify every possible
+character build or all authentication and authorization behavior. The sanitized
+snapshot lacks private curator proposal bodies, so acceptance of those exact
+private bodies remains untested. An optional output filename saves the receipt
+without overwriting an existing file.
+
+For a focused iteration, append `--only-negative=<exact migration filename>`
+(or comma-separated filenames). This narrows only failure-injection cases; all
+positive migrations, read-only checks, full preservation and replay still run.
+The receipt records this reduced negative coverage. Omit the option for the full
+safety suite.
 
 ## Troubleshooting
 

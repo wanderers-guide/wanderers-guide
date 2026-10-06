@@ -37,6 +37,7 @@ import {
   OperationGiveLanguage,
   OperationGiveSpell,
   OperationSelectFilters,
+  OperationSelect,
   OperationSelectFiltersAbilityBlock,
   OperationSelectFiltersAdjValue,
   OperationSelectFiltersLanguage,
@@ -60,23 +61,10 @@ import { labelToVariable } from '@variables/variable-utils';
 import { DISCORD_URL } from '@constants/urls';
 import { modals } from '@mantine/modals';
 
+/** Edit selection fields while preserving authored compatibility metadata without additional controls. */
 export function SelectionOperation(props: {
-  data: {
-    title?: string;
-    description?: string;
-    modeType: 'PREDEFINED' | 'FILTERED';
-    optionType: OperationSelectOptionType;
-    optionsPredefined?: OperationSelectOption[];
-    optionsFilters?: OperationSelectFilters;
-  };
-  onChange: (option: {
-    title?: string;
-    description?: string;
-    modeType: 'PREDEFINED' | 'FILTERED';
-    optionType: OperationSelectOptionType;
-    optionsPredefined?: OperationSelectOption[];
-    optionsFilters?: OperationSelectFilters;
-  }) => void;
+  data: OperationSelect['data'];
+  onChange: (option: OperationSelect['data']) => void;
   onRemove: () => void;
 }) {
   // const [optionType, setOptionType] = useState<OperationSelectOptionType | null>(props.data.optionType);
@@ -113,13 +101,23 @@ export function SelectionOperation(props: {
     optionsPredefined?: OperationSelectOption[];
     optionsFilters?: OperationSelectFilters;
   }) => {
-    props.onChange({
+    const next: OperationSelect['data'] = {
+      ...props.data,
       title: data.title ?? props.data.title,
       modeType: data.modeType ?? props.data.modeType,
       optionType: data.optionType ?? props.data.optionType,
       optionsPredefined: data.optionsPredefined ?? props.data.optionsPredefined,
       optionsFilters: data.optionsFilters ?? props.data.optionsFilters,
-    });
+    };
+    if (
+      next.modeType !== 'FILTERED' ||
+      next.optionType !== 'ADJ_VALUE' ||
+      next.optionsFilters?.type !== 'ADJ_VALUE' ||
+      next.optionsFilters.group !== 'ADD-LORE'
+    ) {
+      delete next.selectionAliases;
+    }
+    props.onChange(next);
   };
 
   return (

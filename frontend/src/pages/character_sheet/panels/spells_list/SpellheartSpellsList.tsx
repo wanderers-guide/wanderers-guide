@@ -1,7 +1,9 @@
 import { Accordion, Badge, Group, Stack, Text } from '@mantine/core';
 import {
   CastingSource,
+  ContentSource,
   InventoryItem,
+  Item,
   LivingEntity,
   Spell,
   SpellInnateEntry,
@@ -14,7 +16,11 @@ import { useMemo } from 'react';
 import { detectSpellheartSpells } from '@spells/spell-utils';
 import { isItemBroken } from '@items/inv-utils';
 import { StoreID } from '@schemas/variables';
+import { getDefaultSourcesKey } from '@content/content-store';
+import { resolveSpellheartCasting } from '@spells/spell-handler';
+import { SourceValueSchema } from '@schemas/shared';
 
+/** Display saved Spellheart activations, with printed values from the enabled official catalog when needed. */
 export default function SpellheartSpellsList(props: {
   id: StoreID;
   entity: LivingEntity;
@@ -22,6 +28,8 @@ export default function SpellheartSpellsList(props: {
   //
   index: string;
   spellhearts: InventoryItem[];
+  canonicalItems?: Item[];
+  contentSources?: ContentSource[];
   allSpells: Spell[];
   extra: {
     charData: {
@@ -38,8 +46,24 @@ export default function SpellheartSpellsList(props: {
   };
   hasFilters: boolean;
 }) {
+  const sourceKey = getDefaultSourcesKey('PAGE');
   const processedSpellhearts = useMemo(() => {
+    // Numeric fingerprints restrict books; symbolic source modes retain official-header filtering.
+    const sourceIds = sourceKey.split(',').map(Number);
+    const hasExplicitSources = !SourceValueSchema.safeParse(sourceKey).success;
     const processed = [];
+    const canonicalItems = new Map(
+      (props.canonicalItems ?? [])
+        .filter(
+          (item) =>
+            (!hasExplicitSources || sourceIds.includes(item.content_source_id)) &&
+            props.contentSources?.some(
+              (source) =>
+                source.id === item.content_source_id && source.user_id === null && source.is_published === true
+            )
+        )
+        .map((item) => [item.id, item])
+    );
     for (const spellheart of props.spellhearts) {
       const detectedSpells = detectSpellheartSpells(spellheart.item.description, props.allSpells);
       if (detectedSpells.length === 0) {
@@ -59,12 +83,16 @@ export default function SpellheartSpellsList(props: {
       }
 
       for (const spell of detectedSpells) {
-        processed.push({ item: spellheart, spell });
+        processed.push({
+          item: spellheart,
+          spell,
+          casting: resolveSpellheartCasting(spellheart.item, canonicalItems.get(spellheart.item.id)),
+        });
       }
     }
 
     return processed;
-  }, [props.spellhearts, props.allSpells]);
+  }, [props.spellhearts, props.allSpells, props.canonicalItems, props.contentSources, sourceKey]);
 
   // If there are no spellhearts to display, and there are filters, return null
   if (props.hasFilters && props.spellhearts.length === 0) {
@@ -128,6 +156,7 @@ export default function SpellheartSpellsList(props: {
                 exhausted={isItemBroken(spellheart.item.item)}
                 tradition={'NONE'}
                 attribute={'ATTRIBUTE_CHA'}
+                spellheartCasting={spellheart.casting}
                 onCastSpell={(cast: boolean) => {
                   console.log('Cast spell from spellheart:', cast);
                 }}

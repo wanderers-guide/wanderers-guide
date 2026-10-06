@@ -1,3 +1,28 @@
+-- Preserve original check IDs and predicates; use the pinned shared terminal check.
+with terminal_function as materialized(select (exists(select 1 from pg_catalog.pg_proc p
+  where p.oid=pg_catalog.to_regprocedure('public.treasure_vault_terminal_status_v1()')
+    and pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to((p.prosrc)::text,'UTF8')),'hex')='306b98528f553f9089d3b46c8541b30121c9cdf1c30a48a69034842982f22c87'
+    and p.prokind='f' and p.prolang=(select l.oid from pg_catalog.pg_language l where l.lanname='sql')
+    and p.provolatile='s' and p.prosecdef is false and p.proisstrict is false and p.proleakproof is false
+    and p.proparallel='u' and p.procost=100 and p.prorows=1
+    and p.pronargs=0 and p.pronargdefaults=0 and p.proretset is true
+    and p.prorettype=pg_catalog.to_regtype('record')
+    and p.proallargtypes=array[pg_catalog.to_regtype('boolean')::oid,pg_catalog.to_regtype('boolean')::oid]
+    and p.proargmodes=array['t','t']::"char"[] and p.proargnames=array['recognized','passed']::text[]
+    and p.proconfig=array['search_path=""']::text[] and p.proowner=pg_catalog.to_regrole('postgres')
+    and (select count(*)=2
+      and count(*) filter(where a.grantee=pg_catalog.to_regrole('postgres'))=1
+      and count(*) filter(where a.grantee=pg_catalog.to_regrole('service_role'))=1
+      and bool_and((a.privilege_type='EXECUTE' and a.is_grantable is false
+      and a.grantor=pg_catalog.to_regrole('postgres')
+      and a.grantee in(pg_catalog.to_regrole('postgres'),pg_catalog.to_regrole('service_role'))) is true)
+      from pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a)
+    and pg_catalog.has_function_privilege('postgres',p.oid,'EXECUTE')
+    and pg_catalog.has_function_privilege('service_role',p.oid,'EXECUTE'))) as valid),
+terminal_status as materialized(select case when f.valid is true then
+  coalesce((select pg_catalog.to_jsonb(s) from public.treasure_vault_terminal_status_v1() s),'{"recognized":true,"passed":false}'::jsonb)
+  else '{"recognized":true,"passed":false}'::jsonb end as value from terminal_function f),
+original_checks as(
 with spec as (select $noisome${
   "items": [
     {
@@ -513,4 +538,6 @@ select 'treasure-vault-noisome-wand-repairs'::text as id,
    exists(select 1 from sources where u.type='content-source' and (u.ref_id=(source_spec->>'id')::bigint or u.data->>'id'=source_spec->>'id' or (u.ref_id is null and u.data->>'name'=source_spec->>'name')))
    or exists(select 1 from dependencies where u.type=dependency->>'table' and (u.ref_id=(dependency->>'id')::bigint or u.data->>'id'=dependency->>'id' or u.data->>'uuid'=dependency#>>'{expected,uuid}' or ((u.content_source_id=(dependency->>'source')::bigint or u.data->>'content_source_id'=dependency->>'source') and u.data->>'name'=dependency->>'name')))
    or exists(select 1 from owners cross join lateral(select (patch->>'id')::bigint as id,(patch#>>'{expected,uuid}')::bigint as uuid,(patch#>>'{expected,content_source_id}')::bigint as content_source_id,patch#>>'{expected,name}' as name) item_row where u.type='item' and (u.ref_id=item_row.id or u.data->>'id'=item_row.id::text or u.data->>'uuid'=item_row.uuid::text or ((u.content_source_id=item_row.content_source_id or u.data->>'content_source_id'=item_row.content_source_id::text) and u.data->>'name'=item_row.name)))
- )) as passed;
+ )) as passed
+)
+select original_checks.id,case when coalesce((status.value->>'recognized')::boolean,true) then coalesce((status.value->>'passed')::boolean,false) else original_checks.passed end as passed from original_checks cross join terminal_status status;

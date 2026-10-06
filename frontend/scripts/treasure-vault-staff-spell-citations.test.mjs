@@ -1,16 +1,16 @@
+import { readReviewedHistoricalSql } from './treasure-vault-historical-test-support.mjs';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { ContentSourceSchema, SpellSchema } from '../src/schemas/content.ts';
 import uploadUtils from '../../supabase/functions/_shared/upload-utils.ts';
 import { readContentRows } from './operation-test-harness.mjs';
 
 const { uniqueId } = uploadUtils;
-const migration = await readFile(
+const migration = await readReviewedHistoricalSql(
   new URL('../../supabase/migrations/20261001150000_treasure_vault_staff_spell_citations.sql', import.meta.url),
   'utf8'
 );
-const release = await readFile(
+const release = await readReviewedHistoricalSql(
   new URL('../../supabase/release/treasure-vault-staff-spell-citations.sql', import.meta.url),
   'utf8'
 );

@@ -1,4 +1,5 @@
 import { cloneDeep } from 'lodash-es';
+import { OperationSelect, validateSelectionAliases } from '@schemas/operations';
 
 export interface SelectionTreeNode {
   value: string | null;
@@ -8,6 +9,27 @@ export interface SelectionTreeNode {
 export interface SelectionTrack {
   path: string;
   node: SelectionTreeNode | undefined;
+}
+
+/** Resolve an explicitly authored sibling only within this selection's current owner path. */
+export function resolveSelectionNode(
+  parent: SelectionTreeNode | undefined,
+  operation: OperationSelect
+): { id: string; node: SelectionTreeNode | undefined; aliases?: string[] } {
+  validateSelectionAliases(operation);
+  const peers: string[] | undefined = operation.data.selectionAliases;
+  if (!peers?.length) return { id: operation.id, node: parent?.children[operation.id] };
+  const aliases: string[] = [operation.id, ...peers];
+  // A present primary, even an empty clear marker, must not resurrect a stale peer.
+  const id: string = aliases.find((candidate) => parent && Object.hasOwn(parent.children, candidate)) ?? operation.id;
+  return { id, node: parent?.children[id], aliases };
+}
+
+/** Remove only exact saved choice keys in one immutable update, preserving unrelated owners and siblings. */
+export function clearSelectionPaths(paths: string[], selections?: Record<string, string>): Record<string, string> {
+  const next: Record<string, string> = { ...selections };
+  for (const path of paths) delete next[path];
+  return next;
 }
 
 let selectionTree: SelectionTreeNode = { value: null, children: {} };

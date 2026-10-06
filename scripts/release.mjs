@@ -43,7 +43,7 @@ const requirementsSchema = z.record(
     order: z.enum(['before-functions', 'after-compatible-functions']),
     function_signature: z
       .string()
-      .regex(/^public\.[a-z_]+\([a-z, ]+\)$/)
+      .regex(/^public\.[a-z_][a-z0-9_]*\([a-z, ]*\)$/)
       .optional(),
   })
 );

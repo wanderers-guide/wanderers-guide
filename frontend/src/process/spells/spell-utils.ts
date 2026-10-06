@@ -133,31 +133,116 @@ export function detectSpells(text: string, allSpells: Spell[], simpleDetect = fa
   return detectedSpells;
 }
 
+/** Exclude literal Markdown code without joining the surrounding casting prose. */
+function maskSpellheartCode(text: string): string {
+  let fence: { marker: string; length: number } | undefined;
+  let prose = text
+    .split('\n')
+    .map((line: string) => {
+      if (fence) {
+        const closing = line.match(/^ {0,3}(`+|~+)\s*$/);
+        if (closing && closing[1][0] === fence.marker && closing[1].length >= fence.length) fence = undefined;
+        return ' '.repeat(line.length);
+      }
+      const opening = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+      if (opening && (opening[1][0] !== '`' || !opening[2].includes('`'))) {
+        fence = { marker: opening[1][0], length: opening[1].length };
+        return ' '.repeat(line.length);
+      }
+      return line;
+    })
+    .join('\n');
+
+  const delimiters = [...prose.matchAll(/`+/g)];
+  for (let index = 0; index < delimiters.length; index++) {
+    const opening = delimiters[index];
+    const escapes = prose.slice(0, opening.index).match(/\\+$/)?.[0].length ?? 0;
+    if (escapes % 2 !== 0) continue;
+    const closingIndex = delimiters.findIndex(
+      (closing, candidateIndex) => candidateIndex > index && closing[0].length === opening[0].length
+    );
+    if (closingIndex === -1) continue;
+    const end = delimiters[closingIndex].index + delimiters[closingIndex][0].length;
+    prose = prose.slice(0, opening.index) + prose.slice(opening.index, end).replace(/[^\n]/g, ' ') + prose.slice(end);
+    index = closingIndex;
+  }
+  return prose;
+}
+
+/** Keep flat spell references and the canonical Cast verb; other link labels are not casting prose. */
+function maskSpellheartLinkExamples(text: string): string {
+  const closingIndex = (start: number, opening: string, closing: string): number => {
+    let depth = 1;
+    for (let index = start + 1; index < text.length; index++) {
+      if (text[index] === '\\') {
+        index++;
+      } else if (text[index] === opening) {
+        depth++;
+      } else if (text[index] === closing && --depth === 0) {
+        return index;
+      }
+    }
+    return -1;
+  };
+  let prose = text;
+  for (let index = 0; index < text.length; index++) {
+    if (text[index] === '\\') {
+      index++;
+      continue;
+    }
+    if (text[index] !== '[') continue;
+    const labelEnd = closingIndex(index, '[', ']');
+    if (labelEnd === -1 || text[labelEnd + 1] !== '(') continue;
+    const hrefEnd = closingIndex(labelEnd + 1, '(', ')');
+    if (hrefEnd === -1) continue;
+    const literal = text.slice(index, hrefEnd + 1);
+    if (!/^\[(?:\\.|[^\]\\])+\]\(link_spell_\d+\)$|^\[cast\]\(link_action_19611\)$/i.test(literal)) {
+      prose = prose.slice(0, index) + literal.replace(/[^\n]/g, ' ') + prose.slice(hrefEnd + 1);
+    }
+    index = hrefEnd;
+  }
+  return prose;
+}
+
 /** Read casting activations, retaining first-link compatibility for headerless spellhearts. */
 export function detectSpellheartSpells(text: string, allSpells: Spell[]): { spell: Spell; rank: number }[] {
-  const activations = text.split(/(?:^|\n)\s*(?:\*\*|__)?Activate(?:\*\*|__)?(?=\s|:)/gi).slice(1);
+  const prose = maskSpellheartLinkExamples(maskSpellheartCode(text));
+  const activations = prose.split(/(?:^|\n)\s*(?:\*\*|__)?Activate(?:\*\*|__)?(?=\s|:)/gi).slice(1);
   // Older and homebrew descriptions may omit activation headers entirely.
-  if (activations.length === 0) return detectSpells(text, allSpells, true).slice(0, 1);
+  if (activations.length === 0) return detectSpells(prose, allSpells, true).slice(0, 1);
   const qualifier = String.raw`(?:[1-9]|10)(?:st|nd|rd|th)-(?:rank|level)`;
   const reference = String.raw`(?:a\s+)?(?:${qualifier}\s+)?[*_]*\[[^\]]+\]\(link_spell_\d+\)[*_]*`;
-  const castClause = new RegExp(String.raw`\byou\s+cast\s+(${reference}(?:\s*(?:,|or|and)\s*${reference})*)`, 'gi');
+  // Linking the casting verb must not remove spells from the Spellheart panel.
+  const castingVerb = String.raw`(?:cast|\[cast\]\(link_action_19611\))`;
+  // A direct effect or sentence grants a cast; subordinate conditions and requirements do not.
+  const effectStart = String.raw`(?:^|[.!?;]\s+|(?:\*\*|__)?\bEffect(?:\*\*|__)?\s*:?)\s*`;
+  const castClause = new RegExp(
+    String.raw`${effectStart}you\s+${castingVerb}\s+(${reference}(?:\s*(?:,\s*(?:(?:or|and)\s+)?|(?:or|and)\s+)${reference})*)`,
+    'gi'
+  );
   const linkedSpell = new RegExp(reference, 'gi');
   const detectedSpells: { spell: Spell; rank: number }[] = [];
   const seen = new Set<string>();
 
   for (const activation of activations) {
-    for (const clause of activation.matchAll(castClause)) {
-      let castRank: number | undefined;
-      for (const match of clause[1].matchAll(linkedSpell)) {
-        const rankMatch = match[0].match(/([1-9]|10)(?:st|nd|rd|th)-(?:rank|level)/i);
-        if (rankMatch) castRank = Number(rankMatch[1]);
-        for (const detected of detectSpells(match[0], allSpells, true)) {
-          // A qualifier can apply to alternatives, such as 4th-rank harm or heal.
-          const rank = castRank ?? detected.rank;
-          const key = `${detected.spell.id}-${rank}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          detectedSpells.push({ spell: { ...detected.spell, rank }, rank });
+    const sections = activation.split(
+      /(?:\*\*|__)(Effect|Requirements|Trigger|Frequency|Cost|Armor|Weapon)(?:\*\*|__)/gi
+    );
+    for (let index = 0; index < sections.length; index += 2) {
+      if (index > 0 && sections[index - 1].toLowerCase() !== 'effect') continue;
+      for (const clause of sections[index].matchAll(castClause)) {
+        let castRank: number | undefined;
+        for (const match of clause[1].matchAll(linkedSpell)) {
+          const rankMatch = match[0].match(/([1-9]|10)(?:st|nd|rd|th)-(?:rank|level)/i);
+          if (rankMatch) castRank = Number(rankMatch[1]);
+          for (const detected of detectSpells(match[0], allSpells, true)) {
+            // A qualifier can apply to alternatives, such as 4th-rank harm or heal.
+            const rank = castRank ?? detected.rank;
+            const key = `${detected.spell.id}-${rank}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            detectedSpells.push({ spell: { ...detected.spell, rank }, rank });
+          }
         }
       }
     }

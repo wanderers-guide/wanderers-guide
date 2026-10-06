@@ -283,6 +283,50 @@ test('new migrations need compatibility checks; historical migrations cannot be 
   await assert.rejects(createManifest(repo), /Historical migration changed/);
 });
 
+test('release manifests pin no-argument versioned helpers without accepting SQL in signatures', async (t) => {
+  const repo = await fixture(t);
+  const name = '20260905000000_terminal.sql';
+  const body = '\nselect false as recognized, false as passed;\n';
+  await write(
+    repo,
+    `supabase/migrations/${name}`,
+    `create function public.terminal_status_v1() returns table(recognized boolean, passed boolean) language sql as $$${body}$$;`
+  );
+  await write(
+    repo,
+    'supabase/release/terminal-status.sql',
+    "select 'terminal-status' as id, true as passed;"
+  );
+  const requirement = {
+    check: 'terminal-status.sql',
+    order: 'before-functions',
+    function_signature: 'public.terminal_status_v1()',
+  };
+  await write(
+    repo,
+    'supabase/release/requirements.json',
+    JSON.stringify({ [name]: requirement })
+  );
+  const manifest = await createManifest(repo);
+  assert.equal(manifest.requirements[name].function_body_sha256, sha256(body));
+  for (const signature of [
+    'public.terminal_status_v1(); select 1',
+    "public.terminal_status_v1('payload')",
+    'private.terminal_status_v1()',
+    'public.1terminal_status()',
+    'public.terminal_status_v1(integer);',
+  ]) {
+    await write(
+      repo,
+      'supabase/release/requirements.json',
+      JSON.stringify({
+        [name]: { ...requirement, function_signature: signature },
+      })
+    );
+    await assert.rejects(createManifest(repo), undefined, signature);
+  }
+});
+
 test('schema effects are required without a migration ledger, including secret-column grants and trigger definitions', () => {
   const state = [
     { id: 'grant:anon.public_user.api', definition: 'false' },

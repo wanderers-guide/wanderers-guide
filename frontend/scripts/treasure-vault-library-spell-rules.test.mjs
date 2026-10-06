@@ -1,22 +1,22 @@
+import { readReviewedHistoricalSql } from './treasure-vault-historical-test-support.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
 import { before, after, test } from 'node:test';
 import { SpellSchema, InventorySchema } from '../src/schemas/content.ts';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
 import { inventoryItem, summoner } from './fixtures/eidolon.mjs';
 
-const migration = await readFile(
+const migration = await readReviewedHistoricalSql(
   new URL('../../supabase/migrations/20261001160000_treasure_vault_library_spell_rules.sql', import.meta.url),
   'utf8'
 );
-const release = await readFile(
+const release = await readReviewedHistoricalSql(
   new URL('../../supabase/release/treasure-vault-library-spell-rules.sql', import.meta.url),
   'utf8'
 );
 const spec = JSON.parse(migration.split('$rules$')[1]);
 assert.deepEqual(JSON.parse(release.split('$rules$')[1]), spec);
-const staffMigration = await readFile(
+const staffMigration = await readReviewedHistoricalSql(
   new URL('../../supabase/migrations/20261001140000_treasure_vault_library_staff_repairs.sql', import.meta.url),
   'utf8'
 );

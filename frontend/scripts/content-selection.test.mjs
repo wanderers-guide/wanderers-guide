@@ -409,7 +409,7 @@ test('advanced search still resets when preset values or source scope really cha
 const protectorTree = { id: 6759, name: 'Protector Tree', rank: 1 };
 const spellPanelProps = {
   id: 'CHARACTER',
-  content: { spells: [charm] },
+  content: { items: [], spells: [charm] },
   entity: { id: 1, spells: { sources: [], list: [], slots: [], focus: [], innate: [{ spell_id: 6759 }] } },
   setEntity() {},
   panelHeight: 600,
@@ -448,7 +448,7 @@ test('late innate spell data respects an active search and never replaces source
   tree = host.render(SpellsPanel, spellPanelProps);
   assert.deepEqual(findChild(tree, 'SpellList').props.allSpells, [protectorTree]);
   const enabledTree = { ...protectorTree, name: 'Protector Tree (current)' };
-  const enabled = { ...spellPanelProps, content: { spells: [charm, enabledTree] } };
+  const enabled = { ...spellPanelProps, content: { ...spellPanelProps.content, spells: [charm, enabledTree] } };
   assert.deepEqual(findChild(host.render(SpellsPanel, enabled), 'SpellList').props.allSpells, [enabledTree]);
   assert.equal(host.queryOptions.enabled, false);
 });

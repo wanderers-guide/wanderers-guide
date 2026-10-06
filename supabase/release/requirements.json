@@ -124,6 +124,11 @@
     "check": "war-of-immortals.sql",
     "order": "before-functions"
   },
+  "20260927245900_treasure_vault_terminal_status.sql": {
+    "check": "treasure-vault-terminal-status.sql",
+    "order": "before-functions",
+    "function_signature": "public.treasure_vault_terminal_status_v1()"
+  },
   "20260927250000_treasure_vault_dragonprism_links.sql": {
     "check": "war-of-immortals.sql",
     "order": "before-functions"
@@ -216,12 +221,12 @@
     "check": "heal-companion.sql",
     "order": "before-functions"
   },
-  "20261001010000_repair_weapon_stat_fields.sql": {
-    "check": "weapon-stat-fields.sql",
-    "order": "before-functions"
-  },
   "20261001000000_war_of_immortals_spell_emphasis.sql": {
     "check": "war-of-immortals-spell-emphasis.sql",
+    "order": "before-functions"
+  },
+  "20261001010000_repair_weapon_stat_fields.sql": {
+    "check": "weapon-stat-fields.sql",
     "order": "before-functions"
   },
   "20261001010000_treasure_vault_reference_repairs.sql": {
@@ -318,6 +323,70 @@
   },
   "20261001240000_treasure_vault_equipment_prose.sql": {
     "check": "treasure-vault-equipment-prose.sql",
+    "order": "before-functions"
+  },
+  "20261002010000_treasure_vault_relic_seeds.sql": {
+    "check": "treasure-vault-relic-seeds.sql",
+    "order": "before-functions"
+  },
+  "20261002020000_treasure_vault_relic_gifts.sql": {
+    "check": "treasure-vault-relic-gifts.sql",
+    "order": "before-functions"
+  },
+  "20261002030000_treasure_vault_oozeform_chair.sql": {
+    "check": "treasure-vault-oozeform-chair.sql",
+    "order": "before-functions"
+  },
+  "20261002040000_treasure_vault_physical_headers.sql": {
+    "check": "treasure-vault-physical-headers.sql",
+    "order": "before-functions"
+  },
+  "20261002050000_treasure_vault_repository_selections.sql": {
+    "check": "treasure-vault-repository-selections.sql",
+    "order": "before-functions"
+  },
+  "20261002060000_animal_companion_full_increases.sql": {
+    "check": "animal-companion-full-increases.sql",
+    "order": "before-functions"
+  },
+  "20261002070000_treasure_vault_immortal_bastion_prose.sql": {
+    "check": "treasure-vault-immortal-bastion-prose.sql",
+    "order": "before-functions"
+  },
+  "20261002080000_treasure_vault_equipment_trait_definitions.sql": {
+    "check": "treasure-vault-equipment-trait-definitions.sql",
+    "order": "before-functions"
+  },
+  "20261002090000_treasure_vault_third_eye_apex.sql": {
+    "check": "treasure-vault-third-eye-apex.sql",
+    "order": "before-functions"
+  },
+  "20261002095000_treasure_vault_scalar_mechanics.sql": {
+    "check": "treasure-vault-scalar-mechanics.sql",
+    "order": "before-functions"
+  },
+  "20261002096000_treasure_vault_item_operations.sql": {
+    "check": "treasure-vault-item-operations.sql",
+    "order": "before-functions"
+  },
+  "20261002097000_treasure_vault_artifact_access.sql": {
+    "check": "treasure-vault-artifact-access.sql",
+    "order": "before-functions"
+  },
+  "20261002098000_treasure_vault_legacy_grips.sql": {
+    "check": "treasure-vault-legacy-grips.sql",
+    "order": "before-functions"
+  },
+  "20261002099000_treasure_vault_embedded_display_links.sql": {
+    "check": "treasure-vault-embedded-display-links.sql",
+    "order": "before-functions"
+  },
+  "20261002100000_treasure_vault_complete_catalog.sql": {
+    "check": "treasure-vault-complete-catalog.sql",
+    "order": "before-functions"
+  },
+  "20261002101000_treasure_vault_complete_display.sql": {
+    "check": "treasure-vault-complete-display.sql",
     "order": "before-functions"
   }
 }
