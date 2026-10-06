@@ -146,7 +146,7 @@
         }
       },
       "Operation": {
-        "description": "An entry in the operations engine. See the Content Model guide. Shape varies by `type`; treated as opaque JSON by the API.",
+        "description": "An entry in the operations engine. See the Content Model and Operations guides. Shape varies by `type`; treated as opaque JSON by the API. Innate spell grants and spell selections accept an optional casting attribute, defaulting to ATTRIBUTE_CHA. A giveAbilityBlock grant of Additional Lore accepts optional data.grantedLore for that grant's subject.",
         "type": "object",
         "additionalProperties": true
       },

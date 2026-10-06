@@ -13,6 +13,7 @@ import {
 import { getWeaponStats } from '@items/weapon-handler';
 import { executeOperations } from '@operations/operations.main';
 import { getSpellStats } from '@spells/spell-handler';
+import { getInnateSpellAttribute } from '@spells/innate-spells';
 import { isCantrip, isRitual } from '@spells/spell-utils';
 import { ContentPackage, LivingEntity, SourceValue } from '@schemas/content';
 import { StoreID, VariableListStr, VariableStr } from '@schemas/variables';
@@ -188,6 +189,7 @@ export async function getJsonV4Content(entity: LivingEntity, inputStoreID?: Stor
         return {
           ...s,
           spell: spell,
+          stats: getSpellStats(STORE_ID, spell, s.tradition, getInnateSpellAttribute(s)),
         };
       }
       return null;
@@ -241,14 +243,16 @@ export async function getJsonV4Content(entity: LivingEntity, inputStoreID?: Stor
     }
   }
 
-  // Add spell attack innate and spell DC innate
+  // A shared innate summary applies when all grants use one attribute. Mixed grants use their per-spell stats.
+  const innateAttributes = [...new Set(spellData.innate.map(getInnateSpellAttribute))];
+  const innateAttribute = innateAttributes.length === 1 ? innateAttributes[0] : 'ATTRIBUTE_CHA';
   profs[`INNATE_SPELL_ATTACK`] = {
-    total: getFinalProfValue(STORE_ID, 'SPELL_ATTACK', false, 'ATTRIBUTE_CHA'),
-    parts: getProfValueParts(STORE_ID, 'SPELL_ATTACK', 'ATTRIBUTE_CHA'),
+    total: getFinalProfValue(STORE_ID, 'SPELL_ATTACK', false, innateAttribute),
+    parts: getProfValueParts(STORE_ID, 'SPELL_ATTACK', innateAttribute),
   };
   profs[`INNATE_SPELL_DC`] = {
-    total: getFinalProfValue(STORE_ID, 'SPELL_DC', true, 'ATTRIBUTE_CHA'),
-    parts: getProfValueParts(STORE_ID, 'SPELL_DC', 'ATTRIBUTE_CHA'),
+    total: getFinalProfValue(STORE_ID, 'SPELL_DC', true, innateAttribute),
+    parts: getProfValueParts(STORE_ID, 'SPELL_DC', innateAttribute),
   };
 
   // Attribute dump

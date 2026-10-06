@@ -380,9 +380,9 @@ export function OperationDisplay(props: {
         case 'feat':
           return (
             <GiveFeatOperation
-              selectedId={opGiveAbilBlock.data.abilityBlockId}
-              onSelect={(option) => {
-                opGiveAbilBlock.data.abilityBlockId = option.id;
+              data={opGiveAbilBlock.data}
+              onSelect={(data) => {
+                opGiveAbilBlock.data = data;
                 props.onChange(cloneDeep(opGiveAbilBlock));
               }}
               onRemove={() => props.onRemove(props.operation.id)}
