@@ -323,5 +323,9 @@
   "20261005000000_repair_content_selection_rules.sql": {
     "check": "content-selection-rules.sql",
     "order": "before-functions"
+  },
+  "20261006000000_war_of_immortals_bespell_tradition.sql": {
+    "check": "war-of-immortals-bespell-tradition.sql",
+    "order": "before-functions"
   }
 }
