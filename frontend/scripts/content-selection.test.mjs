@@ -87,7 +87,7 @@ const special = {
   getDefaultSourcesKey: '() => "1"',
   openContextModal: 'value => { globalThis.__selectionModal = value; }',
   useDebouncedValue: 'value => [value]',
-  getCachedContent: '() => []',
+  getCachedContent: 'type => type === \"content-source\" ? (globalThis.__selectionSources ?? []) : []',
   getContentFast: '() => []',
   fetchContent: 'async (...args) => { globalThis.__selectionFetch = args; return []; }',
   fetchContentAll: 'async (...args) => { globalThis.__selectionFetchAll = args; return []; }',
@@ -119,6 +119,8 @@ for (const path of paths) {
         '@tanstack/react-query',
         './AdvancedSearchModal',
         '@spells/item-spell-dependencies',
+        '@content/content-printings',
+        '@schemas/content',
       ].includes(match[2])
     )
       continue;
@@ -554,4 +556,111 @@ test('War item selections retain intrinsic traits with the parent book disabled 
   assert.deepEqual(fixtures, originals, 'catalog selection never rewrites the original rows');
   assert.match(migration, /to_jsonb\(entry\.traits\) is distinct from patch->'before'/);
   assert.match(migration, /type = 'item' and ref_id = entry\.id and status->>'state' = 'PENDING'/);
+});
+
+test('the real catalog picker applies verified preferences while preserving pinned and authored choices', () => {
+  const host = new RenderHost();
+  const original = { id: 91, content_source_id: 16, name: 'Test legacy entry', level: 0 };
+  const replacement = {
+    id: 92,
+    content_source_id: 900,
+    name: 'Test remastered entry',
+    level: 0,
+    meta_data: {
+      printing: {
+        replaces: [
+          {
+            type: 'item',
+            id: 91,
+            content_source_id: 16,
+            relationship: 'REMASTER',
+            verification: {
+              original: { url: 'https://2e.aonprd.com/Equipment.aspx?ID=4712&NoRedirect=1' },
+              replacement: { url: 'https://2e.aonprd.com/Equipment.aspx?ID=2178' },
+              reviewed_on: '2026-10-07',
+            },
+          },
+        ],
+      },
+    },
+  };
+  globalThis.__selectionSources = [
+    {
+      id: 16,
+      user_id: null,
+      is_published: true,
+      meta_data: {
+        printing: {
+          book_key: 'test',
+          printing: 1,
+          published_on: '2023-01-01',
+          role: 'RULEBOOK',
+          rules_edition: 'LEGACY',
+        },
+      },
+    },
+    {
+      id: 900,
+      user_id: null,
+      is_published: true,
+      meta_data: {
+        printing: {
+          book_key: 'test',
+          printing: 2,
+          published_on: '2025-01-01',
+          role: 'RULEBOOK',
+          rules_edition: 'REMASTER',
+        },
+      },
+    },
+  ];
+  try {
+    host.data = [original, replacement];
+    const props = { type: 'item', searchQuery: '', limitSelectedOptions: false };
+    assert.deepEqual(host.render(SelectionOptions, props).props.options, [replacement]);
+    assert.deepEqual(host.render(SelectionOptions, { ...props, selectedId: 91 }).props.options, [
+      original,
+      replacement,
+    ]);
+    assert.deepEqual(host.render(SelectionOptions, { ...props, sourceId: 16 }).props.options, [original]);
+    assert.deepEqual(
+      host.render(SelectionOptions, { ...props, overrideOptions: [original, replacement] }).props.options,
+      [original, replacement]
+    );
+    assert.deepEqual(host.render(SelectionOptions, { ...props, filterFn: (entry) => entry.id === 91 }).props.options, [
+      original,
+    ]);
+
+    globalThis.__selectionLabels = (value) => value;
+    const inventory = new RenderHost();
+    const variant = {
+      id: 93,
+      content_source_id: 16,
+      name: 'Variant',
+      level: 2,
+      meta_data: { base_item: original.name },
+    };
+    let added;
+    const inventoryProps = {
+      context: { closeModal() {} },
+      id: 'items',
+      innerProps: { onAddItem: (item) => (added = item) },
+    };
+    inventory.data = [original, replacement, variant];
+    let items = findChild(inventory.render(AddItemsModal, inventoryProps), 'ItemsList');
+    assert.deepEqual(items.props.options, [replacement, variant]);
+    items.props.onClick(variant, 'GIVE');
+    assert.equal(added.meta_data.base_item_content, original, 'base-item snapshots retain the exact original row');
+    inventory.searchQuery = 'Test';
+    inventory.render(AddItemsModal, inventoryProps);
+    assert.deepEqual(findChild(inventory.render(AddItemsModal, inventoryProps), 'ItemsList').props.options, [
+      replacement,
+    ]);
+    inventory.data = [original, variant];
+    inventory.render(AddItemsModal, inventoryProps);
+    assert.deepEqual(findChild(inventory.render(AddItemsModal, inventoryProps), 'ItemsList').props.options, [original]);
+  } finally {
+    delete globalThis.__selectionSources;
+    delete globalThis.__selectionLabels;
+  }
 });

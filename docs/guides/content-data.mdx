@@ -199,6 +199,42 @@ that current state through the same update, including queued unsynced GM damage.
 
 Every entity that lives in a content source carries a generated `uuid` (a hash of `name + type + level/rank + content_source_id`) so duplicate entries within the same source are caught at insert time.
 
+## Book printings and verified replacements
+
+Each complete printing belongs to its own content source. Keep all entries in each
+book, including identical reprints and legacy rules backported into remastered books.
+Do not delete or deprecate a row merely because another book prints it. Existing IDs,
+saved selections, item snapshots, homebrew and direct links remain literal.
+
+Optional `content_source.meta_data.printing` records `book_key`, positive `printing`,
+`published_on` (YYYY-MM-DD), `role` (`RULEBOOK`, `SETTING`, or `ADVENTURE`), and optional
+`rules_edition` (`LEGACY` or `REMASTER`). Omit an uncertain edition, especially for a
+mixed catalog. A row's `meta_data.printing.rules_edition` overrides the book's edition
+when, for example, a remastered book reprints legacy rules.
+
+A successor's `meta_data.printing.replaces` lists exact original `type`, `id`, and
+`content_source_id`, with relationship `REMASTER` or `EQUIVALENT_REPRINT`. Its
+`verification` retains `original` and `replacement` source citations with HTTP(S)
+URLs and `reviewed_on` (YYYY-MM-DD). A matching name, level, UUID, or timestamp is not
+verification. Review both printed rules before publishing a relationship, and
+re-review it if either rule changes. An equivalent reprint must actually be equivalent;
+different variants remain separate candidates.
+
+The shared resolver considers only already eligible rows from enabled, published,
+official sources. A verified remaster replaces a verified legacy entry. Equivalent
+reprints prefer remastered rules, broad rulebooks over adventures, then publication
+date, then printing number within the same book. Unknown provenance, ties, branching
+successors, or contradictory cycles retain candidates. A missing or disabled
+replacement leaves the enabled original available. Homebrew cannot hide official
+content. Pinned books, predefined choices, and existing selected IDs bypass preference.
+
+The general catalog picker and Add Item picker use this resolver without changing
+stored rows or source membership. Full packages and ID lookups retain all printings.
+No production replacement relationships are introduced by this implementation.
+Treasure Vault's current source 16 contains reviewed repairs across editions; it is
+not certified as a complete legacy or remastered printing. Splitting that corpus and
+publishing verified relationships require a separate reviewed data migration.
+
 ## Character JSON exports
 
 Version 4 JSON exports retain the saved character in `character` and its calculated

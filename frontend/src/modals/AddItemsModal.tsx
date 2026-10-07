@@ -1,6 +1,6 @@
 import { drawerState } from '@atoms/navAtoms';
 import { ItemSelectionOption } from '@common/select/SelectContent';
-import { fetchContentAll, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
+import { fetchContentAll, getCachedContent, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
 import {
   ActionIcon,
   Center,
@@ -17,9 +17,10 @@ import {
 import { ContextModalProps } from '@mantine/modals';
 import { IconSearch, IconAdjustments, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Item } from '@schemas/content';
+import { ContentSource, Item } from '@schemas/content';
+import { selectPreferredPrintings } from '@content/content-printings';
 import { labelToVariable } from '@variables/variable-utils';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAtom } from 'jotai';
 import * as JsSearch from 'js-search';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
@@ -50,17 +51,23 @@ export default function AddItemsModal({
     },
   });
 
+  // Keep the complete eligible catalog for base-item lookups and literal references.
+  const preferredItems = useMemo(
+    () => selectPreferredPrintings('item', rawItems ?? [], getCachedContent<ContentSource>('content-source')),
+    [rawItems]
+  );
+
   // Filter options based on search query
   const search = useRef(new JsSearch.Search('id'));
   useEffect(() => {
-    if (!rawItems) return;
+    search.current = new JsSearch.Search('id');
     search.current.addIndex('name');
     search.current.addIndex('group');
-    search.current.addDocuments(rawItems);
-  }, [rawItems]);
+    search.current.addDocuments(preferredItems);
+  }, [preferredItems]);
 
   const allFilteredItems = (
-    (searchQuery.trim() ? (search.current?.search(searchQuery.trim()) as Item[] | undefined) : (rawItems ?? [])) ?? []
+    (searchQuery.trim() ? (search.current?.search(searchQuery.trim()) as Item[] | undefined) : preferredItems) ?? []
   ).sort((a, b) => {
     if (a.level === b.level) return a.name.localeCompare(b.name);
     return a.level - b.level;

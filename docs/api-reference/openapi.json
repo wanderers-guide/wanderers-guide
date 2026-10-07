@@ -150,6 +150,160 @@
         "type": "object",
         "additionalProperties": true
       },
+      "ContentSourcePrinting": {
+        "type": "object",
+        "required": [
+          "book_key",
+          "printing",
+          "published_on",
+          "role"
+        ],
+        "properties": {
+          "book_key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "printing": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "published_on": {
+            "type": "string",
+            "format": "date"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "RULEBOOK",
+              "SETTING",
+              "ADVENTURE"
+            ]
+          },
+          "rules_edition": {
+            "type": "string",
+            "enum": [
+              "LEGACY",
+              "REMASTER"
+            ]
+          }
+        }
+      },
+      "ContentReplacement": {
+        "type": "object",
+        "required": [
+          "type",
+          "id",
+          "content_source_id",
+          "relationship",
+          "verification"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "trait",
+              "item",
+              "spell",
+              "class",
+              "archetype",
+              "versatile-heritage",
+              "class-archetype",
+              "ability-block",
+              "creature",
+              "ancestry",
+              "background",
+              "language"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "content_source_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "relationship": {
+            "type": "string",
+            "enum": [
+              "REMASTER",
+              "EQUIVALENT_REPRINT"
+            ]
+          },
+          "verification": {
+            "type": "object",
+            "required": [
+              "original",
+              "replacement",
+              "reviewed_on"
+            ],
+            "properties": {
+              "original": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ContentSourceCite"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "url"
+                    ],
+                    "properties": {
+                      "url": {
+                        "type": "string",
+                        "format": "uri",
+                        "pattern": "^https?://"
+                      }
+                    }
+                  }
+                ]
+              },
+              "replacement": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ContentSourceCite"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "url"
+                    ],
+                    "properties": {
+                      "url": {
+                        "type": "string",
+                        "format": "uri",
+                        "pattern": "^https?://"
+                      }
+                    }
+                  }
+                ]
+              },
+              "reviewed_on": {
+                "type": "string",
+                "format": "date"
+              }
+            }
+          }
+        }
+      },
+      "ContentEntryPrinting": {
+        "type": "object",
+        "properties": {
+          "rules_edition": {
+            "type": "string",
+            "enum": [
+              "LEGACY",
+              "REMASTER"
+            ]
+          },
+          "replaces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentReplacement"
+            }
+          }
+        }
+      },
       "ContentSourceCite": {
         "type": "object",
         "description": "Optional citation recording where a piece of content came from. Stored at `meta_data.source` on every content type. `book` is recorded as text even though `content_source_id` already identifies the source, because a page reference can belong to a different book than the row is filed under, which is what happens with reprints. `page` is text rather than a number so it can express spans such as `154-155`. All three fields are optional; an absent `source` means the content has not been cited yet.",
@@ -183,7 +337,8 @@
               "ancestry_trait": { "type": "boolean" },
               "archetype_trait": { "type": "boolean" },
               "versatile_heritage_trait": { "type": "boolean" },
-              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" },
+              "printing": { "$ref": "#/components/schemas/ContentEntryPrinting" }
             }
           }
         }
@@ -220,7 +375,8 @@
             "type": "object",
             "additionalProperties": true,
             "properties": {
-              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" },
+              "printing": { "$ref": "#/components/schemas/ContentEntryPrinting" }
             }
           },
           "content_source_id": { "type": "integer" },
@@ -264,6 +420,7 @@
             "additionalProperties": true,
             "properties": {
               "source": { "$ref": "#/components/schemas/ContentSourceCite" },
+              "printing": { "$ref": "#/components/schemas/ContentEntryPrinting" },
               "display_traits": {
                 "type": "array",
                 "description": "Display-only traits for embedded creature attacks when no catalog trait matches.",
@@ -310,7 +467,8 @@
             "type": "object",
             "additionalProperties": true,
             "properties": {
-              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" },
+              "printing": { "$ref": "#/components/schemas/ContentEntryPrinting" }
             }
           },
           "traits": { "type": "array", "items": { "type": "integer" } },
@@ -340,7 +498,8 @@
             "nullable": true,
             "additionalProperties": true,
             "properties": {
-              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" },
+              "printing": { "$ref": "#/components/schemas/ContentEntryPrinting" }
             }
           },
           "version": { "type": "string" },
@@ -368,7 +527,8 @@
             "nullable": true,
             "additionalProperties": true,
             "properties": {
-              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" },
+              "printing": { "$ref": "#/components/schemas/ContentEntryPrinting" }
             }
           },
           "version": { "type": "string" }
@@ -398,7 +558,8 @@
             "nullable": true,
             "additionalProperties": true,
             "properties": {
-              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" },
+              "printing": { "$ref": "#/components/schemas/ContentEntryPrinting" }
             }
           },
           "version": { "type": "string" }
@@ -442,7 +603,8 @@
             "nullable": true,
             "additionalProperties": true,
             "properties": {
-              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" },
+              "printing": { "$ref": "#/components/schemas/ContentEntryPrinting" }
             }
           },
           "deprecated": { "type": "boolean" },
@@ -471,7 +633,8 @@
             "nullable": true,
             "additionalProperties": true,
             "properties": {
-              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" },
+              "printing": { "$ref": "#/components/schemas/ContentEntryPrinting" }
             }
           },
           "version": { "type": "string" },
@@ -500,7 +663,8 @@
             "nullable": true,
             "additionalProperties": true,
             "properties": {
-              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" },
+              "printing": { "$ref": "#/components/schemas/ContentEntryPrinting" }
             }
           },
           "version": { "type": "string" },
@@ -528,7 +692,8 @@
             "nullable": true,
             "additionalProperties": true,
             "properties": {
-              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" },
+              "printing": { "$ref": "#/components/schemas/ContentEntryPrinting" }
             }
           },
           "rarity": { "$ref": "#/components/schemas/Rarity" },
@@ -570,6 +735,7 @@
             "additionalProperties": true,
             "properties": {
               "source": { "$ref": "#/components/schemas/ContentSourceCite" },
+              "printing": { "$ref": "#/components/schemas/ContentEntryPrinting" },
               "stat_block": {
                 "type": "object",
                 "description": "Optional creature stat-block annotations. Absent fields do not change existing displays.",
@@ -660,7 +826,8 @@
             "type": "object",
             "additionalProperties": true,
             "properties": {
-              "source": { "$ref": "#/components/schemas/ContentSourceCite" }
+              "source": { "$ref": "#/components/schemas/ContentSourceCite" },
+              "printing": { "$ref": "#/components/schemas/ContentEntryPrinting" }
             }
           },
           "content_source_id": { "type": "integer" },
@@ -820,7 +987,8 @@
           "meta_data": {
             "type": "object",
             "properties": {
-              "counts": { "type": "object", "additionalProperties": { "type": "integer" } }
+              "counts": { "type": "object", "additionalProperties": { "type": "integer" } },
+              "printing": { "$ref": "#/components/schemas/ContentSourcePrinting" }
             }
           }
         }
