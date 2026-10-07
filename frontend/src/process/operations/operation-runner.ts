@@ -69,7 +69,7 @@ import {
   determinePredefinedSelectionList,
   extendOperations,
 } from './operation-utils';
-import { SelectionTrack } from './selection-tree';
+import { SelectionTrack, resolveSelectionNode } from './selection-tree';
 import { isEqual } from 'lodash-es';
 import {
   getContributionCategories,
@@ -175,14 +175,16 @@ export async function runOperations(
         // Run the ability block but only to pass the create variables
         return await runGiveAbilityBlock(varId, selectionTrack, operation, options, sourceLabel);
       } else if (operation.type === 'select') {
-        const subNode = selectionTrack.node?.children[operation.id];
+        const savedIdentity = resolveSelectionNode(selectionTrack.node, operation);
+        const subNode = savedIdentity.node;
         // Run the select operation but only the parts that create variables
         return await runSelect(
           varId,
           { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
           operation,
           options,
-          sourceLabel
+          sourceLabel,
+          savedIdentity
         );
       }
       return null;
@@ -196,14 +198,16 @@ export async function runOperations(
         // Run the ability block but only to pass the conditional check
         return await runGiveAbilityBlock(varId, selectionTrack, operation, options, sourceLabel);
       } else if (operation.type === 'select') {
-        const subNode = selectionTrack.node?.children[operation.id];
+        const savedIdentity = resolveSelectionNode(selectionTrack.node, operation);
+        const subNode = savedIdentity.node;
         // Run the select operation but only the parts that are conditionals
         return await runSelect(
           varId,
           { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
           operation,
           options,
-          sourceLabel
+          sourceLabel,
+          savedIdentity
         );
       }
 
@@ -254,13 +258,15 @@ export async function runOperations(
     } else if (operation.type === 'sendNotification') {
       return await runSendNotification(varId, operation, sourceLabel);
     } else if (operation.type === 'select') {
-      const subNode = selectionTrack.node?.children[operation.id];
+      const resolved = resolveSelectionNode(selectionTrack.node, operation);
+      const subNode = resolved.node;
       return await runSelect(
         varId,
         { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
         operation,
         options,
-        sourceLabel
+        sourceLabel,
+        resolved
       );
     }
     return null;
@@ -304,7 +310,8 @@ async function runSelect(
   selectionTrack: SelectionTrack,
   operation: OperationSelect,
   options?: OperationOptions,
-  sourceLabel?: string
+  sourceLabel?: string,
+  savedIdentity?: { id: string; aliases?: string[] }
 ): Promise<OperationResult> {
   const grantedLore = getGrantedLoreVariable(options?.grantedLore);
   if (
@@ -324,7 +331,14 @@ async function runSelect(
     return null;
   }
   if (requiresFinalSkillSelection(operation.id) && !finalizingSkillSelections) {
-    const result: OperationResult = { selection: { id: operation.id, title: operation.data.title, options: [] } };
+    const result: OperationResult = {
+      selection: {
+        id: savedIdentity?.id ?? operation.id,
+        ...(savedIdentity?.aliases ? { aliases: savedIdentity.aliases } : {}),
+        title: operation.data.title,
+        options: [],
+      },
+    };
     if (!options?.doOnlyValueCreation) {
       const identity = `${varId}/${selectionTrack.path}`;
       const key = finalSkillSelections.get(identity)?.key ?? qualifiedSequence++;
@@ -335,6 +349,7 @@ async function runSelect(
         operation,
         options,
         sourceLabel,
+        savedIdentity,
         scopes: getVariableEffectScopes(varId),
       });
       Object.assign(result, { [qualifiedResultKey]: key });
@@ -451,7 +466,8 @@ async function runSelect(
 
   return {
     selection: {
-      id: operation.id,
+      id: savedIdentity?.id ?? operation.id,
+      ...(savedIdentity?.aliases ? { aliases: savedIdentity.aliases } : {}),
       title: operation.data.title,
       description: operation.data.description,
       options: optionList,
@@ -815,6 +831,7 @@ const finalSkillSelections = new Map<
     operation: OperationSelect;
     options?: OperationOptions;
     sourceLabel?: string;
+    savedIdentity?: { id: string; aliases?: string[] };
   }
 >();
 let finalizingSkillSelections = false;
@@ -830,7 +847,8 @@ export async function resolveFinalSkillSelections(): Promise<void> {
           entry.selectionTrack,
           entry.operation,
           { ...entry.options, doOnlyConditionals: false, doConditionals: true },
-          entry.sourceLabel
+          entry.sourceLabel,
+          entry.savedIdentity
         )
       );
       qualifiedResults.set(entry.key, result ?? null);

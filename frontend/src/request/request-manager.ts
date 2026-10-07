@@ -83,6 +83,16 @@ function isRejectedJwt(status: number, body: unknown): boolean {
   return isRejectedJwt(status, error.data) || isRejectedJwt(status, error.error);
 }
 
+/** A database timeout is an uncertain character save, not rejected character input. */
+function isCharacterStatementTimeout(type: RequestType, status: number, body: unknown): boolean {
+  if (type !== 'update-character' || status !== 400 || !body || typeof body !== 'object' || Array.isArray(body))
+    return false;
+  const response = body as Record<string, unknown>;
+  if (response.status !== 'fail' || !response.data || typeof response.data !== 'object' || Array.isArray(response.data))
+    return false;
+  return (response.data as Record<string, unknown>).code === '57014';
+}
+
 /** Refresh once for concurrent failures, and never replay a request as a different account. */
 async function recoverSession(failedSession: Session | null): Promise<Session | null> {
   const current = await getSession();
@@ -176,7 +186,11 @@ export async function makeRequest<T = Record<string, any>>(
       }
       // JWT-related 400 responses above retain their existing auth recovery. Only
       // explicit input rejection can stop a writer repeating the same payload.
-      if (options?.throwOnRejection && [400, 413, 422].includes(error.context.status)) {
+      if (
+        options?.throwOnRejection &&
+        [400, 413, 422].includes(error.context.status) &&
+        !isCharacterStatementTimeout(type, error.context.status, lastErrorBody)
+      ) {
         console.error(`Request to '${type}' rejected (HTTP ${error.context.status})`, lastErrorBody);
         throw new RequestRejectedError(type);
       }

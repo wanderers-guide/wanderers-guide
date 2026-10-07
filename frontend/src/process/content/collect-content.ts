@@ -145,7 +145,7 @@ export function collectEntitySenses(id: StoreID, blocks: AbilityBlock[]) {
   const imprecise = getVariable<VariableListStr>(id, 'SENSES_IMPRECISE')?.value ?? [];
   const vague = getVariable<VariableListStr>(id, 'SENSES_VAGUE')?.value ?? [];
 
-  const findSense = (varTitle: string) => {
+  const findSense = (varTitle: string, precision: SenseWithRange['type']) => {
     let range: string | null = null;
     if (varTitle.includes(',')) {
       const parts = varTitle.split(',');
@@ -155,20 +155,20 @@ export function collectEntitySenses(id: StoreID, blocks: AbilityBlock[]) {
 
     const finalRange = compileExpressions(id, range?.trim() ?? '', true) ?? '';
     const finalSenseName = toLabel(varTitle);
-    return attemptToFindSense(finalSenseName, finalRange, allSenses);
+    return attemptToFindSense(finalSenseName, finalRange, allSenses, precision);
   };
 
   const compactSenses = compactSensesWithRange([
     ...precise
-      .map(findSense)
+      .map((sense) => findSense(sense, 'precise'))
       .filter(isTruthy)
       .map((s) => ({ ...s, type: 'precise' }) satisfies SenseWithRange),
     ...imprecise
-      .map(findSense)
+      .map((sense) => findSense(sense, 'imprecise'))
       .filter(isTruthy)
       .map((s) => ({ ...s, type: 'imprecise' }) satisfies SenseWithRange),
     ...vague
-      .map(findSense)
+      .map((sense) => findSense(sense, 'vague'))
       .filter(isTruthy)
       .map((s) => ({ ...s, type: 'vague' }) satisfies SenseWithRange),
   ]);

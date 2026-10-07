@@ -6,6 +6,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      exhaustive-content:
+        description: Run the exhaustive content failure matrix instead of representative release hazards
+        type: boolean
+        default: false
 
 concurrency:
   group: e2e-${{ github.workflow }}-${{ github.ref }}
@@ -14,7 +19,7 @@ concurrency:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 120
 
     steps:
       - uses: actions/checkout@v4
@@ -95,66 +100,35 @@ jobs:
         working-directory: ./data
         run: ./create-db-docker.sh
 
-      - name: Verify and replay War of Immortals and Treasure Vault repairs
+      - name: Verify and replay registered content repairs
         run: |
           set -euo pipefail
-          verify_war() {
-            docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -At -f - < supabase/release/war-of-immortals.sql \
-              | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed War of Immortals check: " $1; failed = 1 } END { if (NR == 0) { print "No War of Immortals checks ran"; failed = 1 } exit failed }'
+          checks="$(node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            const requirements = JSON.parse(readFileSync("supabase/release/requirements.json", "utf8"));
+            const names = [...new Set(Object.values(requirements).map(row => row.check))].sort();
+            if (!names.length || !names.every(name => typeof name === "string" && /^[a-z0-9-]+\.sql$/.test(name))) {
+              throw new Error("Invalid or empty registered release check inventory");
+            }
+            process.stdout.write(names.map(name => "supabase/release/" + name).join("\n"));
+          ')"
+          verify_registered() {
+            while IFS= read -r check; do
+              { printf 'BEGIN READ ONLY;\n'; cat "$check"; printf '\nROLLBACK;\n'; } \
+                | docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -qAt -f - \
+                | awk -F'|' 'NF != 2 || $1 !~ /[^[:space:]]/ || $2 != "t" { print "Failed registered release check: " $1; failed = 1 } END { if (NR == 0) { print "No registered release checks ran"; failed = 1 } exit failed }'
+            done <<< "$checks"
           }
-          verify_index() {
-            docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - < supabase/release/war-of-immortals-index.sql \
-              | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed War of Immortals index check: " $1; failed = 1 } END { if (NR == 0) { print "No War of Immortals index checks ran"; failed = 1 } exit failed }'
-          }
-          verify_hazards() {
-            docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - < supabase/release/war-of-immortals-hazards.sql \
-              | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed War of Immortals hazard check: " $1; failed = 1 } END { if (NR == 0) { print "No War of Immortals hazard checks ran"; failed = 1 } exit failed }'
-          }
-          verify_monsters() {
-            docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - < supabase/release/war-of-immortals-monsters.sql \
-              | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed War of Immortals monster check: " $1; failed = 1 } END { if (NR == 0) { print "No War of Immortals monster checks ran"; failed = 1 } exit failed }'
-            docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - < supabase/release/war-of-immortals-mythic-variants.sql \
-              | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed War of Immortals mythic variant check: " $1; failed = 1 } END { if (NR == 0) { print "No War of Immortals mythic variant checks ran"; failed = 1 } exit failed }'
-          }
-          verify_treasure_vault() {
-            for check in supabase/release/treasure-vault-remaster-repairs.sql supabase/release/treasure-vault-wand-fields.sql supabase/release/treasure-vault-staff-price.sql supabase/release/treasure-vault-harnessed-trait.sql supabase/release/treasure-vault-wand-spell-links.sql supabase/release/treasure-vault-beast-staff-repairs.sql supabase/release/treasure-vault-remaining-wand-repairs.sql supabase/release/treasure-vault-condition-references.sql supabase/release/treasure-vault-library-staff-repairs.sql supabase/release/treasure-vault-staff-spell-citations.sql supabase/release/treasure-vault-library-spell-rules.sql supabase/release/treasure-vault-wand-family-repairs.sql supabase/release/treasure-vault-intelligent-item-repairs.sql supabase/release/treasure-vault-safe-passage-duration.sql supabase/release/treasure-vault-noisome-wand-repairs.sql supabase/release/treasure-vault-equipment-headers.sql supabase/release/treasure-vault-missing-equipment.sql supabase/release/treasure-vault-passive-bonuses.sql supabase/release/treasure-vault-structured-fields.sql supabase/release/treasure-vault-ursine-feats.sql supabase/release/treasure-vault-lattice-price.sql supabase/release/treasure-vault-winter-resistance.sql supabase/release/treasure-vault-equipment-prose.sql; do
-              docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - < "$check" \
-                | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed Treasure Vault repair check: " $1; failed = 1 } END { if (NR == 0) { print "No Treasure Vault repair checks ran"; failed = 1 } exit failed }'
-            done
-          }
-          verify_war
-          for migration in supabase/migrations/20260927*.sql supabase/migrations/20260928*.sql supabase/migrations/20260929*.sql supabase/migrations/20261001*.sql; do
-            docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"
-          done
-          verify_war
-          verify_index
-          verify_hazards
-          verify_monsters
-          verify_treasure_vault
-          for migration in supabase/migrations/20260929*.sql supabase/migrations/20261001*.sql; do
-            docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"
-          done
-          verify_war
-          verify_index
-          verify_hazards
-          verify_monsters
-          verify_treasure_vault
-          { cat supabase/release/war-of-immortals-index.sql; cat supabase/release/war-of-immortals-index-regression.sql; } \
-            | docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - \
-            | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed War of Immortals index regression: " $1; failed = 1 } END { if (NR == 0) { print "No War of Immortals index regressions ran"; failed = 1 } exit failed }'
-
-      - name: Verify and replay Discord content repairs
-        run: |
-          set -euo pipefail
+          verify_registered
           for pass in 1 2; do
-            for migration in supabase/migrations/20261001000000_repair_heal_companion.sql supabase/migrations/20261001010000_repair_weapon_stat_fields.sql; do
-              docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"
+            for migration in supabase/migrations/20260927*.sql supabase/migrations/20260928*.sql supabase/migrations/20260929*.sql supabase/migrations/20260930*.sql supabase/migrations/20261001*.sql supabase/migrations/20261002*.sql; do
+              docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"
             done
-            for check in supabase/release/heal-companion.sql supabase/release/weapon-stat-fields.sql; do
-              docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -qAt -f - < "$check" \
-                | awk -F'|' 'NF != 2 || $2 != "t" { print "Failed Discord content repair: " $1; failed = 1 } END { if (NR == 0) { print "No Discord content repair checks ran"; failed = 1 } exit failed }'
-            done
+            verify_registered
           done
+          { cat supabase/release/war-of-immortals-index.sql; cat supabase/release/war-of-immortals-index-regression.sql; } \
+            | docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -qAt -f - \
+            | awk -F'|' 'NF != 2 || $1 !~ /[^[:space:]]/ || $2 != "t" { print "Failed War of Immortals index regression: " $1; failed = 1 } END { if (NR == 0) { print "No War of Immortals index regressions ran"; failed = 1 } exit failed }'
 
       - name: Database authorization regression tests
         run: npm run test:authorization
@@ -221,7 +195,7 @@ jobs:
         with:
           working-directory: ./frontend
           install: false
-          browser: chrome
+          command: npm run cy:run -- --browser chrome
         env:
           CYPRESS_BASE_URL: http://localhost:3000
           CYPRESS_TEST_EMAIL: test@wanderersguide.app
@@ -263,3 +237,45 @@ jobs:
       - name: Tear down docker stack
         if: always()
         run: docker compose down -v
+
+  content-native:
+    runs-on: ubuntu-latest
+    # Routine releases use representative failures with complete preservation.
+    # The exhaustive matrix is available through an explicit manual run.
+    timeout-minutes: ${{ inputs.exhaustive-content && 360 || 120 }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate native contracts before fixture startup
+        run: npm run test:content:contracts
+
+      - name: Pull pinned native fixture images
+        run: |
+          docker pull supabase/postgres:15.6.1.146
+          docker pull supabase/gotrue:v2.158.1
+
+      - name: Isolated content migration safety tests
+        env:
+          EXHAUSTIVE_CONTENT: ${{ inputs.exhaustive-content }}
+        run: |
+          if [ "$EXHAUSTIVE_CONTENT" = "true" ]; then
+            npm run test:content:native
+          else
+            npm run test:content:native -- --release
+          fi
+
+      - name: Upload content migration safety evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: treasure-vault-native-${{ github.sha }}
+          path: |
+            .agents/legacy/treasure-vault-native-*.json
+            .agents/legacy/treasure-vault-native-*.json.log
+          include-hidden-files: true
+          if-no-files-found: warn

@@ -164,6 +164,17 @@ export const CastingSourceSchema = z.object({
 });
 export type CastingSource = z.infer<typeof CastingSourceSchema>;
 
+export const SpellheartCastingSchema = z
+  .object({
+    attack: z.number().int().finite().optional(),
+    dc: z.number().int().finite().optional(),
+  })
+  .strict()
+  .refine((casting) => casting.attack !== undefined || casting.dc !== undefined, {
+    message: 'A spellheart must specify an attack modifier or DC.',
+  });
+export type SpellheartCasting = z.infer<typeof SpellheartCastingSchema>;
+
 // ─── Item (self-referential) ──────────────────────────────────────────────────
 
 export interface Item {
@@ -192,6 +203,7 @@ export interface Item {
     group?: z.infer<typeof ItemMetaGroupSchema> | '';
     damage?: { damageType?: string; dice?: number | string; die?: string | null; extra?: string } | null;
     attack_bonus?: number | null;
+    spellheart_casting?: SpellheartCasting;
     ac_bonus?: number;
     check_penalty?: number | string;
     speed_penalty?: number | string;
@@ -287,6 +299,7 @@ export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
           .nullable()
           .optional(),
         attack_bonus: z.number().nullable().optional(),
+        spellheart_casting: SpellheartCastingSchema.optional(),
         ac_bonus: z.number().optional(),
         check_penalty: z.union([z.number(), z.string()]).optional(),
         speed_penalty: z.union([z.number(), z.string()]).optional(),
@@ -901,10 +914,7 @@ export const HazardSchema = z.object({
   content_source_id: z.number(),
   deprecated: z.boolean().nullable(),
   version: z.string(),
-  meta_data: z
-    .object({ source: ContentSourceCiteSchema.optional() })
-    .passthrough()
-    .nullable(),
+  meta_data: z.object({ source: ContentSourceCiteSchema.optional() }).passthrough().nullable(),
 });
 export type Hazard = z.infer<typeof HazardSchema>;
 

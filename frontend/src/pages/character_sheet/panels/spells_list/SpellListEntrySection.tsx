@@ -3,7 +3,7 @@ import { SpellSelectionOption } from '@common/select/SelectContent';
 import { Text } from '@mantine/core';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { isCantrip, isRitual } from '@spells/spell-utils';
-import { LivingEntity, Spell } from '@schemas/content';
+import { LivingEntity, Spell, SpellheartCasting } from '@schemas/content';
 import { StoreID } from '@schemas/variables';
 import { useAtom } from 'jotai';
 
@@ -15,6 +15,7 @@ export default function SpellListEntrySection(props: {
   exhausted: boolean;
   tradition: string;
   attribute: string;
+  spellheartCasting?: SpellheartCasting;
   onCastSpell: (cast: boolean) => void;
   onOpenManageSpells?: () => void;
   hasFilters: boolean;
@@ -51,6 +52,7 @@ export default function SpellListEntrySection(props: {
               exhausted: exhausted,
               tradition: props.tradition,
               attribute: props.attribute,
+              spellheartCasting: props.spellheartCasting,
               onCastSpell: (cast: boolean) => {
                 props.onCastSpell(cast);
               },

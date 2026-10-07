@@ -1,3 +1,4 @@
+import { readReviewedHistoricalSql } from './treasure-vault-historical-test-support.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
@@ -9,8 +10,8 @@ import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 
 const { uniqueId } = uploadUtils;
 const migrationName = '20261001070000_treasure_vault_ursine_feats.sql';
-const migration = await readFile(new URL('../../supabase/migrations/' + migrationName, import.meta.url), 'utf8');
-const release = await readFile(
+const migration = await readReviewedHistoricalSql(new URL('../../supabase/migrations/' + migrationName, import.meta.url), 'utf8');
+const release = await readReviewedHistoricalSql(
   new URL('../../supabase/release/treasure-vault-ursine-feats.sql', import.meta.url),
   'utf8'
 );

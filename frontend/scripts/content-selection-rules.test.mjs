@@ -175,6 +175,46 @@ test('Assurance binds a trained Lore and lets multiple Lores retain separate sav
   assert.equal(engine.getFinalVariableValue('CHARACTER', 'SKILL_LORE_SAILING').conditionals.length, 1);
 });
 
+test('deferred selection finalization preserves explicit saved Lore identities and clear markers', async () => {
+  // Exercise the two selector mechanisms together without changing official Assurance content or alias rules.
+  const id = row('ability_block', 19919).operations[0].id;
+  const alias = 'd2358fb5-aebc-4abd-9e25-000000000001';
+  const selection = op(id, 'select', {
+    title: 'Deferred Lore regression',
+    modeType: 'FILTERED',
+    optionType: 'ADJ_VALUE',
+    selectionAliases: [alias],
+    optionsFilters: { id, type: 'ADJ_VALUE', group: 'ADD-LORE', value: { value: 'T' } },
+  });
+  const character = base(
+    1,
+    [
+      op('deferred-lore', 'createValue', {
+        variable: 'SKILL_LORE_SAILING',
+        type: 'prof',
+        value: { value: 'U', attribute: 'ATTRIBUTE_INT' },
+      }),
+      selection,
+    ],
+    { [`character_${alias}`]: 'SKILL_LORE_SAILING' }
+  );
+  const saved = structuredClone(character.operation_data.selections);
+  for (const reload of [character, structuredClone(character)]) {
+    const choice = choices(await calculate(reload)).find((choice) => choice.title === selection.data.title);
+    assert.equal(choice.id, alias);
+    assert.deepEqual(choice.aliases, [id, alias]);
+    assert.equal(choice.selected.variable, 'SKILL_LORE_SAILING');
+    assert.equal(rank('SKILL_LORE_SAILING'), 'T');
+    assert.deepEqual(reload.operation_data.selections, saved);
+  }
+  character.operation_data.selections[`character_${id}`] = '';
+  const cleared = choices(await calculate(character)).find((choice) => choice.title === selection.data.title);
+  assert.equal(cleared.id, id);
+  assert.deepEqual(cleared.aliases, [id, alias]);
+  assert.equal(cleared.selected, undefined);
+  assert.equal(rank('SKILL_LORE_SAILING'), 'U');
+});
+
 test('all twelve legal Monk paths survive reload and invalid saved paths do not grant ranks', async () => {
   const paths = [31263, 31266, 31269].map((id) => row('ability_block', id).operations[0]);
   const labels = ['Fortitude', 'Reflex', 'Will'];

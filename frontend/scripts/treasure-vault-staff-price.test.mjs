@@ -1,14 +1,14 @@
+import { readReviewedHistoricalSql } from './treasure-vault-historical-test-support.mjs';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { ItemSchema } from '../src/schemas/content.ts';
 import { readContentRows } from './operation-test-harness.mjs';
 
-const migration = await readFile(
+const migration = await readReviewedHistoricalSql(
   new URL('../../supabase/migrations/20261001040000_treasure_vault_staff_price.sql', import.meta.url),
   'utf8'
 );
-const predicate = await readFile(
+const predicate = await readReviewedHistoricalSql(
   new URL('../../supabase/release/treasure-vault-staff-price.sql', import.meta.url),
   'utf8'
 );

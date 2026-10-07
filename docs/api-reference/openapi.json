@@ -146,7 +146,7 @@
         }
       },
       "Operation": {
-        "description": "An entry in the operations engine. See the Content Model and Operations guides. Shape varies by `type`; treated as opaque JSON by the API. Innate spell grants and spell selections accept an optional casting attribute, defaulting to ATTRIBUTE_CHA. A giveAbilityBlock grant of Additional Lore accepts optional data.grantedLore for that grant's subject.",
+        "description": "An entry in the operations engine. See the Content Model and Operations guides. Shape varies by `type`; treated as opaque JSON by the API. Filtered additional Lore selections may use optional `data.selectionAliases` to preserve an explicitly listed sibling choice across rank branches. Other selection kinds cannot use this field. Innate spell grants and spell selections accept an optional casting attribute, defaulting to ATTRIBUTE_CHA. A giveAbilityBlock grant of Additional Lore accepts optional data.grantedLore for that grant's subject.",
         "type": "object",
         "additionalProperties": true
       },
@@ -272,6 +272,16 @@
               "inventory_label": {
                 "type": "string",
                 "description": "Display-only inventory name when the stat block differs from the embedded attack name."
+              },
+              "spellheart_casting": {
+                "type": "object",
+                "description": "Optional explicit printed spellheart casting values. Missing fields are unknown and are never inferred. Cantrips may use a higher corresponding character value; other spellheart spells use the printed value.",
+                "additionalProperties": false,
+                "anyOf": [{ "required": ["attack"] }, { "required": ["dc"] }],
+                "properties": {
+                  "attack": { "type": "integer" },
+                  "dc": { "type": "integer" }
+                }
               }
             }
           },

@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import {
+  checkRemote,
   checkRemoteFunctions,
   compareFunctions,
   compareSchema,
@@ -13,6 +14,7 @@ import {
   functionPolicies,
   sha256,
 } from './release.mjs';
+import { createPostgresRead } from './release-readonly-postgres.mjs';
 
 async function write(root, name, content) {
   await mkdir(path.dirname(path.join(root, name)), { recursive: true });
@@ -283,6 +285,50 @@ test('new migrations need compatibility checks; historical migrations cannot be 
   await assert.rejects(createManifest(repo), /Historical migration changed/);
 });
 
+test('release manifests pin no-argument versioned helpers without accepting SQL in signatures', async (t) => {
+  const repo = await fixture(t);
+  const name = '20260905000000_terminal.sql';
+  const body = '\nselect false as recognized, false as passed;\n';
+  await write(
+    repo,
+    `supabase/migrations/${name}`,
+    `create function public.terminal_status_v1() returns table(recognized boolean, passed boolean) language sql as $$${body}$$;`
+  );
+  await write(
+    repo,
+    'supabase/release/terminal-status.sql',
+    "select 'terminal-status' as id, true as passed;"
+  );
+  const requirement = {
+    check: 'terminal-status.sql',
+    order: 'before-functions',
+    function_signature: 'public.terminal_status_v1()',
+  };
+  await write(
+    repo,
+    'supabase/release/requirements.json',
+    JSON.stringify({ [name]: requirement })
+  );
+  const manifest = await createManifest(repo);
+  assert.equal(manifest.requirements[name].function_body_sha256, sha256(body));
+  for (const signature of [
+    'public.terminal_status_v1(); select 1',
+    "public.terminal_status_v1('payload')",
+    'private.terminal_status_v1()',
+    'public.1terminal_status()',
+    'public.terminal_status_v1(integer);',
+  ]) {
+    await write(
+      repo,
+      'supabase/release/requirements.json',
+      JSON.stringify({
+        [name]: { ...requirement, function_signature: signature },
+      })
+    );
+    await assert.rejects(createManifest(repo), undefined, signature);
+  }
+});
+
 test('schema effects are required without a migration ledger, including secret-column grants and trigger definitions', () => {
   const state = [
     { id: 'grant:anon.public_user.api', definition: 'false' },
@@ -317,4 +363,199 @@ test('baseline digest records require an explicit supported algorithm and preser
     await assert.rejects(createManifest(repo));
     assert.throws(() => compareSchema(baseline, [{ id, definition: 'false' }]));
   }
+});
+
+test('CI retains native migration evidence on failure without archiving unrelated backups', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/e2e.yml', import.meta.url), 'utf8');
+  // Scope retention to the isolated job, including a final upload step.
+  const nativeJob = workflow.match(/^  content-native:\n((?: {4}[^\n]*\n|\n)*)/m)?.[1];
+  const browserJob = workflow.match(/^  e2e:\n((?: {4}[^\n]*\n|\n)*)/m)?.[1];
+  assert.ok(nativeJob && browserJob, 'both independent verification jobs exist');
+  assert.match(nativeJob, /^    timeout-minutes: \$\{\{ inputs\.exhaustive-content && 360 \|\| 120 \}\}$/m);
+  assert.match(browserJob, /^    timeout-minutes: 120$/m);
+  assert.doesNotMatch(browserJob, /npm run test:content:native/);
+  assert.doesNotMatch(nativeJob, /continue-on-error:|--only-negative|^    needs:/m);
+  assert.match(nativeJob, /if \[ "\$EXHAUSTIVE_CONTENT" = "true" \]; then\s+npm run test:content:native\s+else\s+npm run test:content:native -- --release\s+fi/);
+  const marker = '      - name: Upload content migration safety evidence\n';
+  assert.equal(workflow.split(marker).length, 2, 'one evidence upload step');
+  const start = nativeJob.indexOf(marker);
+  const nextStep = nativeJob.indexOf('\n      - name:', start + marker.length);
+  assert.ok(start > nativeJob.indexOf('      - name: Isolated content migration safety tests\n'));
+  const step = nativeJob.slice(start, nextStep === -1 ? nativeJob.length : nextStep);
+  assert.match(step, /^        if: always\(\)$/m);
+  assert.match(step, /^        uses: actions\/upload-artifact@v4$/m);
+  assert.match(step, /^          name: treasure-vault-native-\$\{\{ github.sha \}\}$/m);
+  assert.match(step, /^          include-hidden-files: true$/m);
+  assert.match(step, /^          if-no-files-found: warn$/m);
+  const paths = step.match(/          path: \|\n((?:            [^\n]+\n)+)/)?.[1];
+  assert.deepEqual(paths?.split('\n').filter(Boolean).map((line) => line.trim()), [
+    '.agents/legacy/treasure-vault-native-*.json',
+    '.agents/legacy/treasure-vault-native-*.json.log',
+  ]);
+});
+
+
+const databaseProject = 'fdrjqcyjklatdrmjdnys';
+const databaseVariable = 'WG_RELEASE_DATABASE_URL';
+const databaseUrl = 'postgresql://postgres:fixture%24secret@db.' + databaseProject + '.supabase.co:5432/postgres';
+const databaseEnvironment = { [databaseVariable]: databaseUrl };
+
+test('direct release transport pins the project and discards libpq connection overrides', async () => {
+  let captured;
+  const read = createPostgresRead(databaseProject, databaseVariable, {
+    environment: { ...databaseEnvironment, PATH: '/fixture/bin', PGHOSTADDR: 'malicious-host',
+      PGSERVICE: 'malicious-service', PGSERVICEFILE: '/fixture/service', PGOPTIONS: '-c default_transaction_read_only=off',
+      PGSSLMODE: 'disable', PGPASSWORD: 'wrong-password' },
+    execute: async (sql, env) => { captured = { sql, env }; return JSON.stringify({ read_only: 'on', rows: [{ id: 'real-predicate', passed: false }] }); },
+  });
+  assert.deepEqual(await read('select false as passed;'), [{ id: 'real-predicate', passed: false }]);
+  assert.equal(captured.env.PGHOST, 'db.' + databaseProject + '.supabase.co');
+  assert.equal(captured.env.PGSSLMODE, 'verify-full');
+  assert.equal(captured.env.PGSSLROOTCERT, 'system');
+  assert.equal(captured.env.PGPASSWORD, 'fixture$secret');
+  assert.equal(captured.env.PGCONNECT_TIMEOUT, '15');
+  assert.equal(captured.env.PATH, '/fixture/bin');
+  for (const name of ['PGHOSTADDR', 'PGSERVICE', 'PGSERVICEFILE', 'PGOPTIONS', databaseVariable]) assert.equal(captured.env[name], undefined);
+  assert.match(captured.sql, /^begin read only;/);
+  assert.match(captured.sql, /statement_timeout='120s'/);
+  assert.match(captured.sql, /lock_timeout='5s'/);
+  assert.match(captured.sql, /current_setting\('transaction_read_only'\)/);
+  assert.match(captured.sql, /rollback;\n$/);
+  assert.ok(!captured.sql.includes('fixture$secret'));
+});
+
+test('direct database URLs cannot select another project, host, database or connection override', () => {
+  const invalid = [
+    undefined, 'not-a-url', databaseUrl.replace(databaseProject, 'aaaaaaaaaaaaaaaaaaaa'),
+    databaseUrl.replace('.supabase.co', '.supabase.co.evil.invalid'),
+    databaseUrl.replace('/postgres', '/another_database'),
+    databaseUrl + '?host=evil.invalid', databaseUrl + '?sslmode=disable',
+    databaseUrl + '?sslmode=require&sslmode=require', databaseUrl + '#fragment',
+    databaseUrl.replace(':5432', ':1234'), databaseUrl.replace('fixture%24secret', ''),
+    databaseUrl.replace('fixture%24secret', '%0Asecret'), databaseUrl.replace('postgres:', 'another_role:'),
+    'postgresql://postgres.aaaaaaaaaaaaaaaaaaaa:secret@aws-0-us-east-1.pooler.supabase.com:6543/postgres',
+  ];
+  for (const value of invalid) assert.throws(() => createPostgresRead(databaseProject, databaseVariable, {
+    environment: { [databaseVariable]: value },
+  }), /Database URL/);
+  assert.throws(() => createPostgresRead(databaseProject, databaseUrl), /environment variable name/);
+});
+
+test('project-specific Supabase pooler URLs retain the same read-only result contract', async () => {
+  const read = createPostgresRead(databaseProject, databaseVariable, {
+    environment: { [databaseVariable]: 'postgresql://postgres.' + databaseProject + ':fixture-secret@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require' },
+    execute: async (_sql, env) => {
+      assert.equal(env.PGUSER, 'postgres.' + databaseProject);
+      assert.equal(env.PGPORT, '6543');
+      assert.equal(env.PGSSLMODE, 'verify-full');
+      return '{"read_only":"on","rows":[]}';
+    },
+  });
+  assert.deepEqual(await read('select 1 where false'), []);
+});
+
+test('direct transport fails closed on errors, invalid JSON and absent read-only witnesses', async () => {
+  for (const stdout of ['not JSON', '[]', 'null', '{}', '{"read_only":"off","rows":[]}',
+    '{"read_only":"on","rows":[null]}', '{"read_only":"on","rows":[1]}',
+    '{"read_only":"on","rows":[[]]}', '{"read_only":"on","rows":[],"extra":true}']) {
+    const read = createPostgresRead(databaseProject, databaseVariable, {
+      environment: databaseEnvironment, execute: async () => stdout,
+    });
+    await assert.rejects(read('select 1'), /invalid JSON|read-only row result/);
+  }
+  let calls = 0;
+  const read = createPostgresRead(databaseProject, databaseVariable, {
+    environment: databaseEnvironment,
+    execute: async () => { calls++; throw new Error(databaseUrl + ' fixture$secret'); },
+  });
+  await assert.rejects(read('select 1'), error => {
+    assert.equal(error.message, 'Direct read-only query failed; no release result was accepted');
+    assert.equal(error.cause, undefined); return true;
+  });
+  assert.equal(calls, 1, 'No API fallback or transport retry');
+  for (const query of ['', '\\connect another-database', 'select 1;\n\\! fixture-command'])
+    await assert.rejects(read(query), /reviewed release SELECT/);
+  assert.equal(calls, 1, 'psql commands never reach the transport');
+});
+
+test('actual child-process boundary keeps credentials out of arguments and sends the complete large SELECT on stdin', async t => {
+  const directory = await mkdtemp(path.join(tmpdir(), 'wg-release-psql-model-'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  // This executable is a boundary model, not a PostgreSQL correctness test.
+  await writeFile(path.join(directory, 'psql'), '#!' + process.execPath + '\n' + String.raw`
+import { createHash } from 'node:crypto';
+let sql=''; for await (const chunk of process.stdin) sql+=chunk;
+process.stdout.write(JSON.stringify({read_only:'on',rows:[{
+  args:process.argv.slice(2),input_sha256:createHash('sha256').update(sql).digest('hex'),
+  supplied_password:process.env.PGPASSWORD==='fixture$secret',
+  leaked_url:process.env.WG_RELEASE_DATABASE_URL!==undefined,
+  leaked_host_override:process.env.PGHOSTADDR!==undefined,
+}]}));
+`, { mode: 0o700 });
+  const query = "select '" + 'x'.repeat(4 * 1024 * 1024) + "' as original_content;";
+  let expectedSql;
+  await createPostgresRead(databaseProject, databaseVariable, {
+    environment: databaseEnvironment,
+    execute: async sql => { expectedSql = sql; return '{"read_only":"on","rows":[]}'; },
+  })(query);
+  const read = createPostgresRead(databaseProject, databaseVariable, {
+    environment: { ...databaseEnvironment, PATH: directory, PGHOSTADDR: 'malicious-host' },
+  });
+  const [row] = await read(query);
+  assert.deepEqual(row.args, ['-X', '-w', '-qAt', '-v', 'ON_ERROR_STOP=1', '-f', '-']);
+  assert.equal(row.input_sha256, sha256(expectedSql));
+  assert.equal(row.supplied_password, true);
+  assert.equal(row.leaked_url, false);
+  assert.equal(row.leaked_host_override, false);
+});
+
+test('the full release gate sends unchanged catalog requirements through the selected database reader', async t => {
+  const repo = await fixture(t);
+  const manifest = await createManifest(repo);
+  manifest.dirty = false;
+  manifest.requirements = {
+    '20261002100000_treasure_vault_complete_catalog.sql': { check: 'treasure-vault-complete-catalog.sql', order: 'before-functions' },
+    '20261002101000_treasure_vault_complete_display.sql': { check: 'treasure-vault-complete-display.sql', order: 'before-functions' },
+  };
+  const databaseQueries = [], endpoints = [];
+  const result = await checkRemote(manifest, databaseProject, {
+    read: async (_project, endpoint) => { endpoints.push(endpoint); assert.equal(endpoint, '/functions'); return inventory; },
+    download: async (entry, _project, workdir) => {
+      for (const file of Object.keys(manifest.functions[entry.slug].files)) await write(workdir, file, await readFile(path.join(repo, file)));
+    },
+    databaseTransport: 'postgres-read-only',
+    databaseRead: async query => {
+      databaseQueries.push(query);
+      if (query.includes("to_regclass('supabase_migrations.schema_migrations')")) return [{ present: false }];
+      if (query.startsWith('-- Schema')) return [];
+      return databaseQueries.length <= 2 ? [] : [{ id: 'deliberate-negative-fixture', passed: false }];
+    },
+  });
+  assert.equal(result.database_transport, 'postgres-read-only');
+  assert.equal(result.passed, false, 'Synthetic missing schema and false predicates cannot pass');
+  assert.ok(result.issues.some(issue => issue.includes('deliberate-negative-fixture')));
+  assert.deepEqual(endpoints, ['/functions', '/functions']);
+  assert.equal(databaseQueries.length, 4);
+  const realRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+  for (const [index, file] of ['treasure-vault-complete-catalog.sql', 'treasure-vault-complete-display.sql'].entries()) {
+    const original = await readFile(path.join(realRoot, 'supabase/release', file), 'utf8');
+    assert.equal(databaseQueries[index + 2], original);
+    assert.ok(Buffer.byteLength(original) > 3 * 1024 * 1024);
+  }
+});
+
+
+test('a project CA certificate preserves full TLS verification without allowing connection overrides', async () => {
+  const read = createPostgresRead(databaseProject, databaseVariable, {
+    environment: { ...databaseEnvironment, PGSSLROOTCERT: '/fixture/project-root.crt' },
+    execute: async (_sql, env) => {
+      assert.equal(env.PGSSLROOTCERT, '/fixture/project-root.crt');
+      assert.equal(env.PGSSLMODE, 'verify-full');
+      return '{"read_only":"on","rows":[]}';
+    },
+  });
+  assert.deepEqual(await read('select 1 where false'), []);
+  assert.throws(() => createPostgresRead(databaseProject, databaseVariable, {
+    environment: { ...databaseEnvironment, PGSSLROOTCERT: 'relative/certificate.crt' },
+  }), /absolute certificate path/);
 });

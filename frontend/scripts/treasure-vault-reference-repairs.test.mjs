@@ -1,3 +1,4 @@
+import { readReviewedHistoricalSql } from './treasure-vault-historical-test-support.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
@@ -14,7 +15,7 @@ const migrationNames = [
   '20261001020000_treasure_vault_equipment_fields.sql',
 ];
 const migrations = await Promise.all(
-  migrationNames.map((name) => readFile(new URL(`../../supabase/migrations/${name}`, import.meta.url), 'utf8'))
+  migrationNames.map((name) => readReviewedHistoricalSql(new URL(`../../supabase/migrations/${name}`, import.meta.url), 'utf8'))
 );
 const specs = migrations.map((sql) => JSON.parse(sql.split('$patches$')[1]));
 const spellTargets = JSON.parse(migrations[0].split('$targets$')[1]);
@@ -135,7 +136,7 @@ test('migrations reject identity or curator drift before replay and release chec
   const requirements = JSON.parse(
     await readFile(new URL('../../supabase/release/requirements.json', import.meta.url), 'utf8')
   );
-  const release = await readFile(
+  const release = await readReviewedHistoricalSql(
     new URL('../../supabase/release/treasure-vault-remaster-repairs.sql', import.meta.url),
     'utf8'
   );

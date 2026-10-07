@@ -472,8 +472,35 @@ export type OperationSelect = {
     optionType: OperationSelectOptionType;
     optionsPredefined?: OperationSelectOption[];
     optionsFilters?: OperationSelectFilters;
+    selectionAliases?: string[];
   };
 };
+
+/** Explicit saved sibling identities for a Lore choice whose rank changes in another branch. */
+const selectionIdentityListSchema = (maximum: number) =>
+  z
+    .array(z.string().uuid())
+    .max(maximum)
+    .refine((aliases) => new Set(aliases).size === aliases.length, 'Selection aliases must be unique.');
+
+export const SelectionAliasesSchema = selectionIdentityListSchema(16);
+const SelectionResultAliasesSchema = selectionIdentityListSchema(17);
+
+/** Validate opt-in aliases without accepting names, transitive links, or unrelated selection kinds. */
+export function validateSelectionAliases(operation: OperationSelect): void {
+  if (operation.data.selectionAliases === undefined) return;
+  const aliases: string[] = SelectionAliasesSchema.parse(operation.data.selectionAliases);
+  z.string().uuid().parse(operation.id);
+  if (aliases.includes(operation.id)) throw new Error('A selection cannot alias itself.');
+  if (
+    operation.data.modeType !== 'FILTERED' ||
+    operation.data.optionType !== 'ADJ_VALUE' ||
+    operation.data.optionsFilters?.type !== 'ADJ_VALUE' ||
+    operation.data.optionsFilters.group !== 'ADD-LORE'
+  ) {
+    throw new Error('Selection aliases are supported only for filtered additional Lore choices.');
+  }
+}
 
 export type Operation =
   | OperationAdjValue
@@ -504,6 +531,7 @@ export type OperationResult = {
     description?: string;
     options: ObjectWithUUID[];
     skillAdjustment?: z.infer<typeof ExtendedProficiencyTypeSchema>;
+    aliases?: string[];
   };
   result?: {
     source?: ObjectWithUUID;
@@ -540,34 +568,43 @@ export const OperationSchema: z.ZodType<Operation> = z.lazy(() =>
           }
         }),
     }),
-    z.object({
-      id: z.string(),
-      type: z.literal('select'),
-      data: z.object({
-        title: z.string().optional(),
-        description: z.string().optional(),
-        modeType: z.enum(['PREDEFINED', 'FILTERED']),
-        optionType: OperationSelectOptionTypeSchema,
-        optionsPredefined: z
-          .array(
-            z.union([
-              z.object({
-                id: z.string(),
-                type: z.literal('CUSTOM'),
-                title: z.string(),
-                description: z.string(),
-                operations: z.array(z.lazy(() => OperationSchema)).optional(),
-              }),
-              OperationSelectOptionAbilityBlockSchema,
-              OperationSelectOptionSpellSchema,
-              OperationSelectOptionLanguageSchema,
-              OperationSelectOptionAdjValueSchema,
-            ])
-          )
-          .optional(),
-        optionsFilters: OperationSelectFiltersSchema.optional(),
+    z
+      .object({
+        id: z.string(),
+        type: z.literal('select'),
+        data: z.object({
+          title: z.string().optional(),
+          description: z.string().optional(),
+          modeType: z.enum(['PREDEFINED', 'FILTERED']),
+          optionType: OperationSelectOptionTypeSchema,
+          optionsPredefined: z
+            .array(
+              z.union([
+                z.object({
+                  id: z.string(),
+                  type: z.literal('CUSTOM'),
+                  title: z.string(),
+                  description: z.string(),
+                  operations: z.array(z.lazy(() => OperationSchema)).optional(),
+                }),
+                OperationSelectOptionAbilityBlockSchema,
+                OperationSelectOptionSpellSchema,
+                OperationSelectOptionLanguageSchema,
+                OperationSelectOptionAdjValueSchema,
+              ])
+            )
+            .optional(),
+          optionsFilters: OperationSelectFiltersSchema.optional(),
+          selectionAliases: SelectionAliasesSchema.optional(),
+        }),
+      })
+      .superRefine((operation, context) => {
+        try {
+          validateSelectionAliases(operation);
+        } catch (error) {
+          context.addIssue({ code: 'custom', message: error instanceof Error ? error.message : String(error) });
+        }
       }),
-    }),
     OperationGiveLanguageSchema,
     OperationRemoveLanguageSchema,
     OperationGiveSpellSchema,
@@ -610,6 +647,7 @@ export const OperationResultSchema: z.ZodType<OperationResult> = z.lazy(() =>
           description: z.string().optional(),
           options: z.array(ObjectWithUUIDSchema),
           skillAdjustment: ExtendedProficiencyTypeSchema.optional(),
+          aliases: SelectionResultAliasesSchema.optional(),
         })
         .optional(),
       result: z

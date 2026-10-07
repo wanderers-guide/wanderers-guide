@@ -1,3 +1,4 @@
+import { readReviewedHistoricalSql } from './treasure-vault-historical-test-support.mjs';
 import assert from 'node:assert/strict';
 import { isDeepStrictEqual } from 'node:util';
 import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
@@ -10,11 +11,11 @@ import uploadUtils from '../../supabase/functions/_shared/upload-utils.ts';
 
 const { uniqueId } = uploadUtils;
 
-const migration = await readFile(
+const migration = await readReviewedHistoricalSql(
   new URL('../../supabase/migrations/20261001060000_treasure_vault_structured_fields.sql', import.meta.url),
   'utf8'
 );
-const predicate = await readFile(
+const predicate = await readReviewedHistoricalSql(
   new URL('../../supabase/release/treasure-vault-structured-fields.sql', import.meta.url),
   'utf8'
 );

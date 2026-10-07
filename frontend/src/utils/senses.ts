@@ -70,10 +70,29 @@ export function compactSensesWithRange(senses: SenseWithRange[]): SenseWithRange
   return senses.filter((sense) => compact.includes(sense.senseName));
 }
 
-export function attemptToFindSense(name: string, range: string, allSenses: AbilityBlock[]): SenseWithRange {
-  let foundSense = allSenses.find((sense) => labelToVariable(sense.name) === labelToVariable(name));
+function matchesSensePrecision(sense: AbilityBlock, precision: SenseWithRange['type']) {
+  if (!precision) return true;
+  const declarations = new Set<string>();
+  for (const operation of sense.operations ?? []) {
+    if (operation.type !== 'adjValue' && operation.type !== 'setValue') continue;
+    const declared = /^SENSES_(PRECISE|IMPRECISE|VAGUE)$/.exec(operation.data.variable)?.[1];
+    if (declared) declarations.add(declared.toLowerCase());
+  }
+  const qualifier = /\((precise|imprecise|vague)\b/i.exec(sense.name)?.[1]?.toLowerCase();
+  if (qualifier) declarations.add(qualifier);
+  return declarations.size === 0 || (declarations.size === 1 && declarations.has(precision));
+}
+
+export function attemptToFindSense(
+  name: string,
+  range: string,
+  allSenses: AbilityBlock[],
+  precision?: SenseWithRange['type']
+): SenseWithRange {
+  const compatible = allSenses.filter((sense) => matchesSensePrecision(sense, precision));
+  let foundSense = compatible.find((sense) => labelToVariable(sense.name) === labelToVariable(name));
   if (!foundSense) {
-    for (const sense of allSenses) {
+    for (const sense of compatible) {
       if (labelToVariable(sense.name).startsWith(labelToVariable(name))) {
         if (range) {
           const senseParts = sense.name.split(' (');

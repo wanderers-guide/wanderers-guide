@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
-import { readFile } from 'node:fs/promises';
+import { readReviewedHistoricalSql } from './treasure-vault-historical-test-support.mjs';
 import test from 'node:test';
 import { OperationSchema } from '../src/schemas/operations.ts';
 import { AbilityBlockSchema, OperationCharacterResultPackageSchema } from '../src/schemas/content.ts';
@@ -11,9 +11,8 @@ const published = await readContentRows([
   ...[3295, 3460, 3487, 3479, 1468, 1542, 1346].map((id) => ({ table: 'trait', id })),
   { table: 'item', id: 12068 },
 ]);
-const winterMigration = await readFile(
-  new URL('../../supabase/migrations/20261001220000_treasure_vault_winter_resistance.sql', import.meta.url),
-  'utf8'
+const winterMigration = await readReviewedHistoricalSql(
+  new URL('../../supabase/migrations/20261001220000_treasure_vault_winter_resistance.sql', import.meta.url)
 );
 const winterSpec = JSON.parse(winterMigration.split('$winter$')[1]);
 const publishedWinter = published.find(({ table, row }) => table === 'ability_block' && row.id === 51111).row;

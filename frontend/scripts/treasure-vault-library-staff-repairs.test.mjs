@@ -1,17 +1,17 @@
+import { readReviewedHistoricalSql } from './treasure-vault-historical-test-support.mjs';
 import assert from 'node:assert/strict';
 import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
 import { before, after, test } from 'node:test';
 import { ItemSchema, InventorySchema, SpellSchema, AbilityBlockSchema, TraitSchema } from '../src/schemas/content.ts';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
 import { content as emptyContent, inventoryItem, summoner } from './fixtures/eidolon.mjs';
 
-const migration = await readFile(
+const migration = await readReviewedHistoricalSql(
   new URL('../../supabase/migrations/20261001140000_treasure_vault_library_staff_repairs.sql', import.meta.url),
   'utf8'
 );
-const release = await readFile(
+const release = await readReviewedHistoricalSql(
   new URL('../../supabase/release/treasure-vault-library-staff-repairs.sql', import.meta.url),
   'utf8'
 );

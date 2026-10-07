@@ -122,6 +122,7 @@ export async function fetchContentById(type, id) { return getCachedContent(type)
 export async function fetchContent(type, data) { return getCachedContent(type).filter(row => (data.id === undefined || (Array.isArray(data.id) ? data.id : [data.id]).includes(row.id)) && (!Array.isArray(data.content_sources) || data.content_sources.includes(row.content_source_id))); }
 export async function fetchContentAll(type, requestedSources) { return getCachedContent(type).filter(row => !Array.isArray(requestedSources) || requestedSources.length === 0 || requestedSources.includes(row.content_source_id)); }
 export async function fetchTraitByName(name) { return getCachedContent('trait').find(row => row.name.toLowerCase() === name.toLowerCase()) || null; }
+export async function fetchTraits(ids) { return getCachedContent('trait').filter(row => ids.includes(row.id)); }
 export async function fetchArchetypeByDedicationFeat() { return null; }
 export function getDefaultSources(view) { return sources[view]; }
 export function getDefaultSourcesKey(view) { const scope = getDefaultSources(view); return Array.isArray(scope) ? [...scope].sort((a,b) => a-b).join(',') : scope; }
@@ -143,6 +144,7 @@ export function importFromContentPackage() {}
 export async function createOperationEngine({
   renderRichText = false,
   renderPerceptionDrawer = false,
+  renderCastSpellDrawer = false,
   renderBindingEditor = false,
   inspectInitialStats = false,
   resolveArchetypeFixtures = false,
@@ -154,7 +156,7 @@ export async function createOperationEngine({
       absWorkingDir: frontend,
       stdin: {
         contents: `${
-          renderRichText || renderPerceptionDrawer || renderBindingEditor
+          renderRichText || renderPerceptionDrawer || renderCastSpellDrawer || renderBindingEditor
             ? `
           import React from 'react';
           import { renderToStaticMarkup } from 'react-dom/server';
@@ -164,6 +166,23 @@ export async function createOperationEngine({
             return renderToStaticMarkup(React.createElement(MantineProvider,
               { theme: { colors: { guide: DEFAULT_THEME.colors.blue } } },
               React.createElement(RichText, { conditionBlacklist, children: text })));
+          }
+          ${
+            renderCastSpellDrawer
+              ? `
+          import { QueryClient as CastQueryClient, QueryClientProvider as CastQueryClientProvider } from '@tanstack/react-query';
+          import { CastSpellDrawerContent } from '@drawers/types/CastSpellDrawer';
+          export function renderCastSpellDrawer(data) {
+            const client = new CastQueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
+            try {
+              return renderToStaticMarkup(React.createElement(MantineProvider,
+                { theme: { colors: { guide: DEFAULT_THEME.colors.blue } } },
+                React.createElement(CastQueryClientProvider, { client },
+                  React.createElement(CastSpellDrawerContent, { data }))));
+            } finally { client.clear(); }
+          }
+          `
+              : ''
           }
           ${
             renderBindingEditor
@@ -213,15 +232,16 @@ export async function createOperationEngine({
           export { filterByTraitType } from '@items/inv-utils';
           export { meetsPrerequisites } from '@variables/prereq-detection';
           export { applyConditions, compiledConditions, getConditionByName } from '@conditions/condition-handler';
-          export { getSpellStats } from '@spells/spell-handler';
+          export { getSpellStats, getItemCastingSource, getSpellheartStats, resolveSpellheartCasting } from '@spells/spell-handler';
           export * from '@spells/innate-spells';
+          export { SpellheartCastingSchema, ItemSchema, InventoryItemSchema } from '@schemas/content';
           export { changeEntityConditions, confirmHealth, handleRest } from '@pages/character_sheet/entity-handler';
           export { findDefaultPresets } from '@common/dice/dice-utils';
           export { getWeaponStats } from '@items/weapon-handler';
           export { getAcParts } from '@items/armor-handler';
           export * from '@items/eidolon-runes';
-          export { handleAddItem, handleDeleteItem, handleUpdateItem, handleMoveItem, addExtraItems } from '@items/inv-handlers';
-          export { isItemInvestable, getFlatInvItems, getItemBulk, getInvBulk, getBulkLimit, getBulkLimitImmobile, applyEquipmentPenalties, getBestArmor, getBestShield, getEquippedWeapons, reachedInvestedLimit, reachedImplantLimit, compileTraits } from '@items/inv-utils';
+          export { handleAddItem, handleDeleteItem, handleUpdateItem, handleMoveItem, addExtraItems, handleUpdateItemCharges } from '@items/inv-handlers';
+          export { isItemInvestable, isItemBroken, getFlatInvItems, getItemBulk, getInvBulk, getBulkLimit, getBulkLimitImmobile, applyEquipmentPenalties, getBestArmor, getBestShield, getEquippedWeapons, reachedInvestedLimit, reachedImplantLimit, compileTraits } from '@items/inv-utils';
           export { getListStringInputValue } from '@common/operations/variables/operation-value-defaults';
           export { toggleActiveMode, getExecutableModes } from '@common/modes/mode-rules';
           export { determineFilteredSelectionList, determinePredefinedSelectionList, getSelectedOptions } from '@operations/operation-utils';
@@ -244,7 +264,8 @@ export async function createOperationEngine({
       write: false,
       platform: 'node',
       format: 'esm',
-      ...(renderRichText || renderPerceptionDrawer || renderBindingEditor
+      ...(renderCastSpellDrawer ? { loader: { '.css': 'empty', '.module.css': 'empty' } } : {}),
+      ...(renderRichText || renderPerceptionDrawer || renderCastSpellDrawer || renderBindingEditor
         ? {
             banner: {
               js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",

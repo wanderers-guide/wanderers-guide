@@ -1,6 +1,6 @@
+import { readReviewedHistoricalSql } from './treasure-vault-historical-test-support.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
 import { before, after, test } from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -9,15 +9,15 @@ import remarkGfm from 'remark-gfm';
 import { AbilityBlockSchema, ItemSchema, SpellSchema, TraitSchema } from '../src/schemas/content.ts';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
 
-const migration = await readFile(
+const migration = await readReviewedHistoricalSql(
   new URL('../../supabase/migrations/20261001120000_treasure_vault_remaining_wand_repairs.sql', import.meta.url),
   'utf8'
 );
-const release = await readFile(
+const release = await readReviewedHistoricalSql(
   new URL('../../supabase/release/treasure-vault-remaining-wand-repairs.sql', import.meta.url),
   'utf8'
 );
-const old = await readFile(
+const old = await readReviewedHistoricalSql(
   new URL('../../supabase/migrations/20261001030000_treasure_vault_wand_fields.sql', import.meta.url),
   'utf8'
 );

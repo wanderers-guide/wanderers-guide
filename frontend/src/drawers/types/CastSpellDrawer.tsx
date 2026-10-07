@@ -9,15 +9,16 @@ import ShowInjectedText from '@drawers/ShowInjectedText';
 import { Title, Text, Group, Divider, Box, Button, Paper } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { getEntityLevel } from '@utils/entity-utils';
-import { getSpellStats } from '@spells/spell-handler';
+import { getSpellheartStats, getSpellStats } from '@spells/spell-handler';
 import { getHeighteningData, getSpellRank, isCantrip, isFocusSpell, isRitual } from '@spells/spell-utils';
 import { useQuery } from '@tanstack/react-query';
-import { LivingEntity, Spell } from '@schemas/content';
+import { LivingEntity, Spell, SpellheartCasting } from '@schemas/content';
 import { StoreID } from '@schemas/variables';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { useAtom } from 'jotai';
+import { Fragment } from 'react';
 
 export function CastSpellDrawerTitle(props: {
   data: {
@@ -115,6 +116,7 @@ export function CastSpellDrawerContent(props: {
     exhausted: boolean;
     tradition: string;
     attribute: string;
+    spellheartCasting?: SpellheartCasting;
     storeId: StoreID;
     entity: LivingEntity | null;
   };
@@ -135,100 +137,100 @@ export function CastSpellDrawerContent(props: {
   const cast = spell?.cast ?? '';
   if (cast && !isActionCost(cast)) {
     CR.push(
-      <>
-        <Text key={0} fw={600} c='gray.2' span>
+      <Fragment key='cast'>
+        <Text fw={600} c='gray.2' span>
           Cast
         </Text>{' '}
         {cast}
-      </>
+      </Fragment>
     );
   }
   if (spell.requirements) {
     CR.push(
-      <>
-        <Text key={1} fw={600} c='gray.2' span>
+      <Fragment key='requirements'>
+        <Text fw={600} c='gray.2' span>
           Requirements
         </Text>{' '}
         <RichText span store={props.data.storeId}>
           {spell.requirements}
         </RichText>
-      </>
+      </Fragment>
     );
   }
 
   const CT = [];
   if (spell.cost) {
     CT.push(
-      <>
-        <Text key={0} fw={600} c='gray.2' span>
+      <Fragment key='cost'>
+        <Text fw={600} c='gray.2' span>
           Cost
         </Text>{' '}
         {spell.cost}
-      </>
+      </Fragment>
     );
   }
   if (spell.trigger) {
     CT.push(
-      <>
-        <Text key={1} fw={600} c='gray.2' span>
+      <Fragment key='trigger'>
+        <Text fw={600} c='gray.2' span>
           Trigger
         </Text>{' '}
         {spell.trigger}
-      </>
+      </Fragment>
     );
   }
 
   const RAT = [];
   if (spell.range) {
     RAT.push(
-      <>
-        <Text key={0} fw={600} c='gray.2' span>
+      <Fragment key='range'>
+        <Text fw={600} c='gray.2' span>
           Range
         </Text>{' '}
         {spell.range}
-      </>
+      </Fragment>
     );
   }
   if (spell.area) {
     RAT.push(
-      <>
-        <Text key={1} fw={600} c='gray.2' span>
+      <Fragment key='area'>
+        <Text fw={600} c='gray.2' span>
           Area
         </Text>{' '}
         {spell.area}
-      </>
+      </Fragment>
     );
   }
   if (spell.targets) {
     RAT.push(
-      <>
-        <Text key={2} fw={600} c='gray.2' span>
+      <Fragment key='targets'>
+        <Text fw={600} c='gray.2' span>
           Targets
         </Text>{' '}
         {spell.targets}
-      </>
+      </Fragment>
     );
   }
 
   const DD = [];
   if (spell.defense) {
     DD.push(
-      <>
-        <Text key={0} fw={600} c='gray.2' span>
+      <Fragment key='defense'>
+        <Text fw={600} c='gray.2' span>
           Defense
         </Text>{' '}
         {spell.defense}
-      </>
+      </Fragment>
     );
   }
   if (spell.duration) {
     DD.push(
-      <>
-        <Text key={1} fw={600} c='gray.2' span>
+      <Fragment key='duration'>
+        <Text fw={600} c='gray.2' span>
           Duration
         </Text>{' '}
         {spell.duration}
-      </>
+      </Fragment>
     );
   }
 
@@ -243,13 +245,22 @@ export function CastSpellDrawerContent(props: {
           </Text>
         );
       } else {
-        TRADITIONS.push(<>{tradition}</>);
+        TRADITIONS.push(<Fragment key={tradition}>{tradition}</Fragment>);
       }
     }
   }
 
   // Spell Attack and DC
-  const spellStats = getSpellStats(props.data.storeId, spell, props.data.tradition, props.data.attribute);
+  const spellStats = props.data.spellheartCasting
+    ? getSpellheartStats(
+        props.data.storeId,
+        spell,
+        props.data.tradition,
+        props.data.attribute,
+        props.data.spellheartCasting,
+        props.data.entity
+      )
+    : getSpellStats(props.data.storeId, spell, props.data.tradition, props.data.attribute);
 
   const attackAndDcSection = (
     <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>

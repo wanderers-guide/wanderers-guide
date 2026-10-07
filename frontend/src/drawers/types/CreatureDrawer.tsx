@@ -34,6 +34,7 @@ import { useDebouncedValue, useDidUpdate, useLocalStorage } from '@mantine/hooks
 import { CreateCreatureModal } from '@modals/CreateCreatureModal';
 import { executeOperations, isOperationCancelled } from '@operations/operations.main';
 import { convertKeyToBasePrefix } from '@operations/operation-utils';
+import { clearSelectionPaths } from '@operations/selection-tree';
 import { DisplayOperationResult } from '@pages/character_builder/CharBuilderCreation';
 import { confirmHealth, handleRest } from '@pages/character_sheet/entity-handler';
 import CreatureAbilitiesPanel from '@pages/character_sheet/panels/CreatureAbilitiesPanel';
@@ -313,6 +314,21 @@ export function CreatureDrawerContent(props: {
     });
   };
 
+  /** Clear compatible rank choices together so the immediate parent update receives the complete deletion. */
+  const clearSelections = (paths: string[]): void => {
+    setCreatureInstant((prev) =>
+      prev
+        ? {
+            ...prev,
+            operation_data: {
+              ...prev.operation_data,
+              selections: clearSelectionPaths(paths, prev.operation_data?.selections),
+            },
+          }
+        : prev
+    );
+  };
+
   if (loading || !creature || !content) {
     return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
   }
@@ -370,6 +386,7 @@ export function CreatureDrawerContent(props: {
                 <CreatureOperationResults
                   creature={creature}
                   operationResults={operationResults}
+                  onClearSelections={clearSelections}
                   onSaveChanges={(path, value) => {
                     saveSelectionChange(path, value);
                   }}
@@ -406,6 +423,7 @@ export function CreatureDrawerContent(props: {
                       <CreatureOperationResults
                         creature={creature}
                         operationResults={operationResults}
+                        onClearSelections={clearSelections}
                         onSaveChanges={(path, value) => {
                           saveSelectionChange(path, value);
                         }}
@@ -814,6 +832,7 @@ export function RecallKnowledgeText(props: { entity: Creature; traits: Trait[] }
 function CreatureOperationResults(props: {
   operationResults: OperationCreatureResultPackage;
   onSaveChanges: (path: string, value: string) => void;
+  onClearSelections: (paths: string[]) => void;
   creature: Creature;
 }) {
   return (
@@ -822,6 +841,9 @@ function CreatureOperationResults(props: {
         source={undefined}
         level={props.creature.level}
         results={props.operationResults.creatureResults}
+        onClearSelections={(paths) => {
+          props.onClearSelections(paths.map((path) => `${convertKeyToBasePrefix('creatureResults')}_${path}`));
+        }}
         onChange={(path, value) => {
           props.onSaveChanges(`${convertKeyToBasePrefix('creatureResults')}_${path}`, value);
         }}
@@ -836,6 +858,11 @@ function CreatureOperationResults(props: {
           }}
           level={s.baseSource.level ?? undefined}
           results={s.baseResults}
+          onClearSelections={(paths) => {
+            props.onClearSelections(
+              paths.map((path) => `${convertKeyToBasePrefix('abilityResults', s.baseSource.id)}_${path}`)
+            );
+          }}
           onChange={(path, value) => {
             props.onSaveChanges(`${convertKeyToBasePrefix('abilityResults', s.baseSource.id)}_${path}`, value);
           }}
@@ -851,6 +878,11 @@ function CreatureOperationResults(props: {
           }}
           level={s.baseSource.level}
           results={s.baseResults}
+          onClearSelections={(paths) => {
+            props.onClearSelections(
+              paths.map((path) => `${convertKeyToBasePrefix('itemResults', s.baseSource.id)}_${path}`)
+            );
+          }}
           onChange={(path, value) => {
             props.onSaveChanges(`${convertKeyToBasePrefix('itemResults', s.baseSource.id)}_${path}`, value);
           }}

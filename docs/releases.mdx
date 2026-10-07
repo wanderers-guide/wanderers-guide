@@ -35,6 +35,25 @@ the database, so it can run before a pending schema migration. The full check
 evaluates each distinct migration requirement query once and identifies failed
 predicates by check name and predicate ID.
 
+For checks larger than the management API request limit, use the same full gate
+with a direct database transport:
+
+```bash
+npm run release:verify -- --project-ref fdrjqcyjklatdrmjdnys --database-url-env WG_RELEASE_DATABASE_URL --output /tmp/wg-release-verification.json
+```
+
+Configure that environment variable locally with the project's direct or Supabase
+pooler URL for the `postgres` database. Do not place the URL or password in command
+arguments. This option requires `psql` with libpq 17 or newer and system CA roots.
+For a project CA, set `PGSSLROOTCERT` to the absolute path of the certificate
+downloaded from Supabase Database settings. The default is `system`.
+It verifies the TLS hostname and certificate, disables inherited libpq connection
+overrides, runs each original requirement in a read-only transaction with bounded
+statement/lock timeouts, and verifies the server's read-only witness before accepting
+rows. It does not execute migrations. Function downloads still use the management
+credential. Transport failures and malformed results stop verification; checks are
+never shortened or skipped to fit the API.
+
 The manifest records the commit, dirty-worktree state, every cloud entry point,
 explicit gateway policy, shared runtime dependencies, declarations, import map,
 Deno lockfile, migration hashes and schema requirements. A shared helper change
@@ -83,8 +102,15 @@ update. Do not overwrite the baseline from an unreviewed production snapshot jus
 to make a failing gate green.
 
 **Do not run `supabase db push` against this project to replay historical files.**
-Do not run `migration repair` merely to create a ledger. Historical SQL is immutable;
-use new migrations. Every new migration needs an entry and read-only effect check
+Do not run `migration repair` merely to create a ledger. The baseline historical
+migration bytes remain immutable; use new migrations for new effects. The reviewed
+Treasure Vault compatibility wrappers preserve their original migration bodies
+and release queries byte-for-byte and depend on the versioned terminal helper.
+They do not authorize rewriting historical effects.
+The helper permits direct execution by `postgres`, `service_role` and the provider's
+existing `supabase_read_only_user`. Its exact ACL excludes PUBLIC, anon and
+authenticated, has no grant options, and does not grant role membership.
+Every new migration needs an entry and read-only effect check
 in `supabase/release/requirements.json`. If a ledger is introduced in a separately
 reviewed reconciliation, the gate also checks recorded post-baseline versions and
 rejects unknown versions. Absence of a ledger never substitutes for effect checks.
@@ -230,14 +256,14 @@ Normal saving, successful retries and compatible remote updates run without a
 status row, toast or recovery controls on the character sheet and builder. Changes
 to that layout require an intentional UI scope decision.
 
-Temporary network failures retry quietly while edits remain retained on the device.
-A toast appears when local retention fails, editing permission is lost, or the server
-explicitly rejects the change. An explicitly rejected payload stays buffered and is
-not repeatedly submitted; a corrected edit can save again. Storage warnings clear
-after local retention or server confirmation succeeds. Conflicting edits that cannot be safely
-merged ask which version to keep. An encounter conflict links to the character to
-resolve it. Authentication still prompts when signing in is required. Calculation failures
-retry quietly without publishing partial math. There is no download or discard workflow for save history.
+Temporary network failures retry quietly while input remains in the editor. Session
+expiry, lost editing permission, rejected saves, and unavailable draft storage also
+stay quiet. An explicitly rejected payload stays buffered and is not repeatedly
+submitted; a corrected edit can save again. Conflicting edits pause saving while
+retaining the local input and its original base. Background reads and ordinary
+edits recheck the competing version, and saving resumes when merging is safe.
+Calculation failures retry quietly without publishing partial math. There is no
+download or discard workflow for save history.
 
 Retained drafts stay on the device under the same character ID. They do not create
 additional server characters. Versioned drafts with a known common ancestor can be
@@ -250,7 +276,7 @@ with server reads proving saved values and local checks proving unreplayable dra
 are preserved. The Cypress `saveRecovery` scenario also checks that the ordinary
 sheet has no added saving controls or notifications at desktop and phone widths.
 Connection, encounter and remote-update scenarios verify real acknowledgements,
-reopening, and error-only notifications rather than relying on a displayed Saved label.
+reopening, and quiet recovery rather than relying on a displayed Saved label.
 
 ## Recovery evidence and next drill
 

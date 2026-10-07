@@ -21,11 +21,9 @@ test('War artifact fields match their cited entries without changing other item 
     [
       { id: 16929, field: 'bulk', before: '0.1', after: '1' },
       { id: 17101, field: 'bulk', before: '1', after: '0.1' },
-      { id: 16930, field: 'bulk', before: '15', after: '1' },
-      { id: 16930, field: 'usage', before: '', after: 'held in 1 hand' },
     ]
   );
-  const rows = await readContentRows([...new Set(patches.map(({ id }) => id))].map((id) => ({ table: 'item', id })));
+  const rows = await readContentRows([16929, 16930, 17101].map((id) => ({ table: 'item', id })));
   const originals = rows.map(({ row }) => structuredClone(row));
   const updated = rows.map(({ row }) => structuredClone(row));
   for (const patch of patches) {
@@ -52,6 +50,23 @@ test('War artifact fields match their cited entries without changing other item 
   assert.match(migration, /original is distinct from patch->>'before'/);
 });
 
+test('artifact-field replays never revert the confirmed Worldforge record', async () => {
+  const [{ row }] = await readContentRows([{ table: 'item', id: 16930 }]);
+  assert.equal(row.bulk, '15');
+  assert.equal(row.usage, '');
+  assert.equal(
+    patches.some(({ id }) => id === row.id),
+    false
+  );
+  const replayed = structuredClone(row);
+  for (const patch of patches.filter(({ id }) => id === row.id)) {
+    if (replayed[patch.field] === patch.after) continue;
+    assert.equal(replayed[patch.field], patch.before);
+    replayed[patch.field] = patch.after;
+  }
+  assert.deepEqual(replayed, row, 'every retained Worldforge field is unchanged');
+});
+
 test('Worldforge correction restores only its reviewed bulk and usage', async () => {
   const [{ row }] = await readContentRows([{ table: 'item', id: 16930 }]);
   assert.equal(row.name, 'Worldforge');
@@ -66,13 +81,19 @@ test('Worldforge correction restores only its reviewed bulk and usage', async ()
   assert.match(correction, /worldforge\.meta_data #>> '\{source,book\}' is distinct from 'War of Immortals'/);
   assert.match(correction, /worldforge\.meta_data #>> '\{source,page\}' is distinct from '152'/);
   assert.match(correction, /if worldforge\.bulk = '15' and worldforge\.usage = '' then\s+return;/);
-  assert.match(correction, /worldforge\.bulk is distinct from '1'\s+or worldforge\.usage is distinct from 'held in 1 hand'/);
+  assert.match(
+    correction,
+    /worldforge\.bulk is distinct from '1'\s+or worldforge\.usage is distinct from 'held in 1 hand'/
+  );
   assert.match(correction, /type = 'item' and ref_id = 16930 and status->>'state' = 'PENDING'/);
   assert.ok(correction.indexOf("status->>'state' = 'PENDING'") < correction.indexOf("if worldforge.bulk = '15'"));
   const update = correction.match(/update public\.item\s+set (.*?)\s+where /s);
   assert.ok(update);
   assert.equal(update[1], "bulk = '15', usage = ''");
   assert.match(correction, /content_source_id = 400 and bulk = '1' and usage = 'held in 1 hand'/);
-  assert.match(correction, /if not found then\s+raise exception 'Worldforge changed before its bulk and usage could be preserved'/);
+  assert.match(
+    correction,
+    /if not found then\s+raise exception 'Worldforge changed before its bulk and usage could be preserved'/
+  );
   assert.match(release, /select 'war-worldforge-preservation',[\s\S]*?bulk = '15' and usage = ''/);
 });

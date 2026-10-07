@@ -1,3 +1,4 @@
+import { readReviewedHistoricalSql } from './treasure-vault-historical-test-support.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -10,11 +11,11 @@ import { OperationSchema } from '../src/schemas/operations.ts';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
 
 const frontend = fileURLToPath(new URL('../', import.meta.url));
-const migration = await readFile(
+const migration = await readReviewedHistoricalSql(
   new URL('../../supabase/migrations/20261001050000_treasure_vault_passive_bonuses.sql', import.meta.url),
   'utf8'
 );
-const predicate = await readFile(
+const predicate = await readReviewedHistoricalSql(
   new URL('../../supabase/release/treasure-vault-passive-bonuses.sql', import.meta.url),
   'utf8'
 );

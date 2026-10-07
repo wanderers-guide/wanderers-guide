@@ -1,15 +1,15 @@
+import { readReviewedHistoricalSql } from './treasure-vault-historical-test-support.mjs';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import { AbilityBlockSchema, ContentSourceSchema, TraitSchema } from '../src/schemas/content.ts';
 import { OperationSchema } from '../src/schemas/operations.ts';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
 
-const migration = await readFile(
+const migration = await readReviewedHistoricalSql(
   new URL('../../supabase/migrations/20261001220000_treasure_vault_winter_resistance.sql', import.meta.url),
   'utf8'
 );
-const release = await readFile(
+const release = await readReviewedHistoricalSql(
   new URL('../../supabase/release/treasure-vault-winter-resistance.sql', import.meta.url),
   'utf8'
 );
