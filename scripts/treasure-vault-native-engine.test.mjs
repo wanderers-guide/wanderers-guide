@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {mkdtempSync,writeFileSync,readFileSync,chmodSync,symlinkSync,linkSync,unlinkSync,rmdirSync,existsSync,lstatSync} from 'node:fs';
+import {mkdtempSync,writeFileSync,readFileSync,chmodSync,symlinkSync,linkSync,unlinkSync,rmdirSync,existsSync,lstatSync,realpathSync} from 'node:fs';
 import {join} from 'node:path';
+import {tmpdir} from 'node:os';
 import {Worker} from 'node:worker_threads';
 import {createStrictEngineDemux,createStrictStatementArchive,wireSha256} from './treasure-vault-native-engine-wire.mjs';
 
@@ -29,7 +30,7 @@ function waitFakeMessage(worker,kind,deadlineMs=5000) {
 
 /** Every server is a task-owned fake Unix service. No Docker, SQL or artifacts. */
 async function fake(scenario,callback) {
-  const folder=mkdtempSync('/private/tmp/wg-tv-engine-fake-'),socketPath=join(folder,'engine.sock');
+  const folder=mkdtempSync(join(realpathSync(tmpdir()),'wg-tv-engine-fake-')),socketPath=join(folder,'engine.sock');
   const binding={socketPath,engineId:'captured-fake-engine',database:{id:'a'.repeat(64),imageId:'sha256:'+'b'.repeat(64),imageTag:'supabase/postgres:15.6.1.146',name:'wg-tv-fake-owned',owner:'fake-owner'}};
   const server=new Worker(new URL('./treasure-vault-native-engine-fake.mjs',import.meta.url),{workerData:{binding,scenario}});
   let client=null,clientWorker=null,failure=null;const cleanupErrors=[];
@@ -71,7 +72,7 @@ test('strict frames retain fragmented Unicode and reject incomplete/system/overs
 });
 
 test('one regular private archive has exact bytes, mode and SHA; no aliases/path/link entries',()=>{
-  const folder=mkdtempSync('/private/tmp/wg-tv-engine-archive-'),sourcePath=join(folder,'statement.sql'),alias=join(folder,'alias.sql');
+  const folder=mkdtempSync(join(realpathSync(tmpdir()),'wg-tv-engine-archive-')),sourcePath=join(folder,'statement.sql'),alias=join(folder,'alias.sql');
   const bytes=Buffer.from('fake Ω雪 payload');writeFileSync(sourcePath,bytes,{flag:'wx',mode:0o600});
   const input={sourcePath,expectedSha256:wireSha256(bytes),expectedSize:bytes.length};
   try {
