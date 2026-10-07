@@ -3,6 +3,10 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { spawn,spawnSync } from 'node:child_process';
 import {createOwnedNativeSessions} from './treasure-vault-native-sessions.mjs';
 import {createNativeFileSqlTransport} from './treasure-vault-native-file-transport.mjs';
+import {createNativeEngineSqlDispatch} from './treasure-vault-native-engine-dispatch.mjs';
+import {createOwnedUnixEngineWorker} from './treasure-vault-native-engine.mjs';
+import {nativeDatabaseResourceLimits,assertNativeDatabaseResourceLimits} from './treasure-vault-native-resources.mjs';
+export {nativeDatabaseResourceLimits,assertNativeDatabaseResourceLimits} from './treasure-vault-native-resources.mjs';
 import {nativeDiagnostic} from './treasure-vault-native-diagnostics.mjs';
 
 const sha = value => createHash('sha256').update(value).digest('hex');
@@ -44,20 +48,6 @@ export function readNativeContentStateRows(result) {
   }
   for(const table of keys)state[table].sort((left,right)=>left.id-right.id);
   return state;
-}
-
-/** A bounded policy for each newly created test PostgreSQL container, not the whole host. */
-export function nativeDatabaseResourceLimits() {
-  return {Memory:1073741824,MemorySwap:1073741824,NanoCpus:1000000000};
-}
-
-/** Call only after fresh exact owner/image/container verification; these are actual HostConfig values. */
-export function assertNativeDatabaseResourceLimits(row) {
-  assert.ok(row?.HostConfig&&typeof row.HostConfig==='object'&&!Array.isArray(row.HostConfig),'Actual owned database HostConfig');
-  const expected=nativeDatabaseResourceLimits();
-  const observed=Object.fromEntries(Object.keys(expected).map(field=>[field,row.HostConfig[field]]));
-  for(const field of Object.keys(expected))assert.equal(observed[field],expected[field],'Exact new-owned PostgreSQL '+field+' limit');
-  return observed;
 }
 
 /** Default CI accepts only a positively identified local Unix engine, never remote overrides. */
@@ -243,7 +233,7 @@ export function createOwnedNativeFixture({ root, receipt, log, bootstrapRead,thr
   const databaseLimits=nativeDatabaseResourceLimits();
   receipt.owned_database_resources={requested:{...databaseLimits},per_container_only:true,total_host_guarantee:false,
     auth_resource_policy_unchanged:true,fresh_verified_inspections:0,initial_observed:null,last_observed:null,final_observed:null,final_verified:false};
-  let databaseAttempted = false, authAttempted = false, cleaning=false,cleanupTransportDepth=0,localEndpoint=null,engineId=null;
+  let databaseAttempted = false, authAttempted = false, cleaning=false,cleanupTransportDepth=0,cleanupCliDepth=0,localEndpoint=null,engineId=null,engineTransport=null,engineEnableAttempted=false;
   const redact = value => {
     let text = String(value ?? '');
     for (const secret of secrets) text = text.replaceAll(secret, '[owned-fixture-secret]');
@@ -281,11 +271,32 @@ export function createOwnedNativeFixture({ root, receipt, log, bootstrapRead,thr
     assert.deepEqual(row.HostConfig.PortBindings ?? {}, {});
     return row;
   }
+  const engineDispatch=createNativeEngineSqlDispatch({getEngine:()=>engineTransport,
+    engineEnableAttempted:()=>engineEnableAttempted,cliCleanup:()=>cleaning||cleanupCliDepth>0,
+    databaseId:()=>containerIds.get(db),resources:receipt.owned_database_resources,cliDocker:docker,
+    cliInspect:()=>{const row=inspect(db);assert.equal(row.State.Running,true,'Owned database must remain running');return row.Id;}});
+  const inspectSqlDatabase=engineDispatch.inspect,fileCommand=engineDispatch.command;
   const sqlWithLogin=createNativeFileSqlTransport({
-    getOwnedDatabaseId:()=>{const row=inspect(db);assert.equal(row.State.Running,true,'Owned database must remain running');return row.Id;},
-    docker,cleanupTransport:callback=>cleanupTransport(callback),redact,
+    getOwnedDatabaseId:inspectSqlDatabase,docker:fileCommand,
+    cleanupTransport:callback=>cleanupTransport(callback),redact,
     record:evidence=>log({kind:'file-sql-transport',...evidence}),
   });
+  /** Bind once to the original locally witnessed Engine and fully bootstrapped owned DB. */
+  async function enableEngineTransport() {
+    assert.equal(engineEnableAttempted,false,'No constructor retry or CLI fallback');engineEnableAttempted=true;
+    assert.equal(cleaning,false);assert.ok(localEndpoint);assert.equal(receipt.local_docker.local_unix_verified,true);
+    assert.equal(receipt.bootstrap.real_auth,true);assert.equal(receipt.owned_auth_fixture.real_signup,true);
+    assert.equal(receipt.owned_auth_fixture.auth_and_public_trigger_match,true);
+    assert.equal(receipt.saved_copy_fixture.inventory_and_custom_graph_created,true);
+    assertOwned();
+    const binding={socketPath:localEndpoint.slice('unix://'.length),engineId,
+      database:{id:containerIds.get(db),name:db,owner,imageId:imageIds.get(image),imageTag:image}};
+    engineTransport=await createOwnedUnixEngineWorker({binding,throwIfRequested:label=>{if(!cleaning&&!cleanupTransportDepth)throwIfRequested(label);}});
+    receipt.local_engine_transport={enabled:true,api_version:'1.45',owned_database_id:containerIds.get(db),
+      original_binding:true,sql_bytes_unchanged:true,file_identity_callbacks:5,resource_limits_unchanged:true,
+      bootstrap_auth_sessions_cleanup:'Original CLI authority',http_connections_reused:false};
+    log({kind:'local-engine-transport-enabled',...receipt.local_engine_transport});
+  }
   const sql=(statement,allowFailure=false)=>sqlWithLogin(statement,allowFailure,'postgres');
   // The reviewed leakproof setup requires the image's actual administrator.
   // Its SQL asserts that identity, then tests the release as ordinary postgres.
@@ -435,15 +446,18 @@ export function createOwnedNativeFixture({ root, receipt, log, bootstrapRead,thr
     assert.deepEqual(Object.keys(membership).sort(),['relations','roles','sequence_names']);
     const values=queryJson(buildNativeSnapshotValuesQuery({relations:membership.relations,sequenceNames:membership.sequence_names}));
     const {tuples,sequences}=normalizeNativeSnapshotValues({relations:membership.relations,sequenceNames:membership.sequence_names,values});
-    inspect(db);
-    const dumped = docker(['exec',db,'pg_dump','-U','postgres','-d','postgres','--schema-only','--schema=public','--schema=auth','--schema=proof']).stdout;
-    const schema = sha(dumped.split('\n').filter(line => !/^\\(?:un)?restrict /.test(line)).join('\n'));
+    const id=inspectSqlDatabase();
+    const dumped = fileCommand(['exec',id,'pg_dump','-U','postgres','-d','postgres','--schema-only','--schema=public','--schema=auth','--schema=proof'],undefined,true);
+    assert.equal(dumped.error==null,true);assert.equal(dumped.signal,null);assert.equal(dumped.status,0,'Complete native schema dump');
+    const schema = sha(dumped.stdout.split('\n').filter(line => !/^\\(?:un)?restrict /.test(line)).join('\n'));
     const state = {tuples,sequences,schema_sha256:schema,roles_sha256:sha(JSON.stringify(membership.roles))};
     return {...state,sha256:sha(JSON.stringify(state))};
   }
   async function cleanup() {
     cleaning=true;
     const errors = [],removedVolumes=new Set();
+    if(engineTransport)try {receipt.local_engine_transport.closed=await engineTransport.close();}
+    catch(error){errors.push(redact(error.message));}
     try {await sessions.closeAll();}catch(error){errors.push(redact(error.message));}
     if(localEndpoint)try {
       assert.equal(JSON.parse(docker(['info','--format','{{json .}}']).stdout).ID,engineId,'Same positively identified local engine');
@@ -470,12 +484,12 @@ export function createOwnedNativeFixture({ root, receipt, log, bootstrapRead,thr
   // requests, startup and ordinary fixture reads retain cooperative interruption.
   const cleanupTransport=callback=>{cleanupTransportDepth++;try{return callback();}finally{cleanupTransportDepth--;}};
   const cleanupAssertOwned=()=>cleanupTransport(assertOwned);
-  const cleanupQueryJson=statement=>cleanupTransport(()=>queryJson(statement));
+  const cleanupQueryJson=statement=>cleanupTransport(()=>{cleanupCliDepth++;try{return queryJson(statement);}finally{cleanupCliDepth--;}});
   const sessions=createOwnedNativeSessions({assertOwned,queryJson,cleanupAssertOwned,cleanupQueryJson,redact,throwIfRequested,receipt,spawnPsql:()=>{
     assertOwned();assert.ok(localEndpoint);throwIfRequested('spawn actual owned psql');
     const environment={...process.env};
     for(const name of ['DOCKER_HOST','DOCKER_CONTEXT','DOCKER_TLS_VERIFY','DOCKER_CERT_PATH'])delete environment[name];
     return spawn('docker',['--host',localEndpoint,'exec','-i',db,'psql','-U','postgres','-d','postgres','-X','-qAt','-v','ON_ERROR_STOP=1','-v','VERBOSITY=verbose'],{env:environment,stdio:['pipe','pipe','pipe']});
   }});
-  return {initialize,signup,sql,sqlAsAdmin,query,queryJson,readState,snapshot,stateDigest:snapshot,reserveProposalId:()=>reserveId('content_update'),reserveContentId:reserveId,savedCopyFixture,cleanup,redact,assertOwned,openSession:sessions.openSession};
+  return {initialize,signup,enableEngineTransport,sql,sqlAsAdmin,query,queryJson,readState,snapshot,stateDigest:snapshot,reserveProposalId:()=>reserveId('content_update'),reserveContentId:reserveId,savedCopyFixture,cleanup,redact,assertOwned,openSession:sessions.openSession};
 }

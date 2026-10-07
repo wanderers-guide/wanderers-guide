@@ -39,6 +39,7 @@ export function createAuthenticAlternateFixtureDriver({root,inputs,migrations,in
     try {
       evidence.starting_input_verification=await inputManifest.verify();
       await other.initialize(stage);const userId=other.signup();other.savedCopyFixture(userId);
+      await other.enableEngineTransport();
       const phases=createNativePhaseRunner({fixture:other,receipt:evidence,stage,checkpoint:stop.checkpoint,log:row=>log({fixture:'alternate',...row})});
       const history=createAuthenticSharedHistoryControls({inputs,query:other.query,sql:other.sql,stateDigest:other.stateDigest,receipt:evidence,stage,checkpoint:stop.checkpoint});
       const positives=createHistoricalPositiveProjections({inputs,fixture:other,receipt:evidence});

@@ -146,6 +146,7 @@ export async function executeNativeBase({root,inputs,migrations,inputManifest,ou
     await fixture.initialize(stage);
     const userId = fixture.signup();
     fixture.savedCopyFixture(userId);
+    await fixture.enableEngineTransport();
     const phases = createNativePhaseRunner({fixture,receipt,stage,selectedNegativeFiles,checkpoint:stop.checkpoint,log});
     const negatives = createNativeNegativeGroups({inputs,userId,reserveProposalId:fixture.reserveProposalId,reserveContentId:fixture.reserveContentId,readState:fixture.readState,queryJson:fixture.queryJson});
     const history = createAuthenticSharedHistoryControls({inputs,query:fixture.query,sql:fixture.sql,sqlAsAdmin:fixture.sqlAsAdmin,stateDigest:fixture.stateDigest,receipt,stage,checkpoint:stop.checkpoint});

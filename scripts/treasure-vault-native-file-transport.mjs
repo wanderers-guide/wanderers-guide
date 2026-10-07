@@ -9,7 +9,7 @@ const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 
 // Fixed transport program only. SQL is solely the copied regular file, never
 // a shell argument, stdin, command substitution, or added psql framing.
-const GROUPED_NATIVE_FILE_SCRIPT=`if [ "$#" -ne 5 ]; then printf '%s\\n' 'Native file transport setup failed: arguments' >&2; exit 92; fi
+export const GROUPED_NATIVE_FILE_SCRIPT=`if [ "$#" -ne 5 ]; then printf '%s\\n' 'Native file transport setup failed: arguments' >&2; exit 92; fi
 mode=$1; directory=$2; file=$3; expected=$4; login=$5
 case "$mode" in run|cleanup) ;; *) printf '%s\\n' 'Native file transport setup failed: mode' >&2; exit 92 ;; esac
 case "$directory" in /tmp/wg-tv-native-sql-??????) ;; *) printf '%s\\n' 'Native file transport setup failed: directory' >&2; exit 92 ;; esac
@@ -45,7 +45,7 @@ psql -U "$login" -d postgres -X -qAt -v ON_ERROR_STOP=1 -v VERBOSITY=verbose -f 
 native=$?
 exit "$native"
 `;
-const GROUPED_NATIVE_FILE_SCRIPT_SHA256=sha(Buffer.from(GROUPED_NATIVE_FILE_SCRIPT,'utf8'));
+export const GROUPED_NATIVE_FILE_SCRIPT_SHA256=sha(Buffer.from(GROUPED_NATIVE_FILE_SCRIPT,'utf8'));
 
 /** Synchronous exact-file API with one fixed verify/execute/cleanup program. */
 export function createNativeFileSqlTransport({getOwnedDatabaseId,docker,cleanupTransport,redact,record=()=>{}}) {
