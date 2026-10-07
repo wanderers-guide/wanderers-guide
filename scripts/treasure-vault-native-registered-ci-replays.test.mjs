@@ -155,17 +155,22 @@ test('Receipt reporting model never labels focused negative coverage as full nat
   const safety=captured.readRelative('scripts/treasure-vault-native-safety.mjs');
   const assignments=safety.match(/^[ \t]*receipt\.full_native_execution_complete\s*=\s*[^\r\n]+;$/gm)??[];
   assert.equal(assignments.length,1,'Exactly one success-path completion report');
-  const report=new Function('receipt','selectedNegativeFiles',assignments[0]);
+  const report=new Function('receipt','selectedNegativeFiles','releaseScope',assignments[0]);
   const filename='20261002100000_treasure_vault_complete_catalog.sql';
   const display='20261002101000_treasure_vault_complete_display.sql';
-  for(const {args,full}of [{args:[],full:true},{args:['--only-negative='+filename],full:false},{args:['--only-negative='+filename+','+display],full:false}]){
-    const {selectedNegativeFiles}=parseNativeOptions(args,root);
+  for(const {args,full}of [{args:[],full:true},{args:['--release'],full:false},{args:['--only-negative='+filename],full:false},{args:['--only-negative='+filename+','+display],full:false}]){
+    const {selectedNegativeFiles,releaseScope}=parseNativeOptions(args,root);
     const before={passed:true,cleaned_only_owned_containers_and_volumes:true,execution_family_proofs:['unchanged'],full_native_execution_complete:false};
-    const receipt=structuredClone(before);report(receipt,selectedNegativeFiles);
+    const receipt=structuredClone(before);report(receipt,selectedNegativeFiles,releaseScope);
     assert.deepEqual(receipt,{...before,full_native_execution_complete:full},'Only the full-coverage label changes; scoped pass, cleanup and family evidence remain intact');
   }
   const reportPosition=safety.indexOf(assignments[0]);
   const evidencePosition=safety.indexOf('receipt.execution_family_proofs=assertRequiredNativeEvidence(receipt);');
   assert.ok(evidencePosition>=0&&evidencePosition<reportPosition,'Required-family aggregation still precedes the success report');
   assert.ok(safety.indexOf('receipt.passed = true;',reportPosition)>reportPosition);
+});
+
+test('Release scope cannot be combined with arbitrary file filtering',()=>{
+  const file='--only-negative=20261002100000_treasure_vault_complete_catalog.sql';
+  for(const args of [['--release',file],[file,'--release'],['--release','--release']])assert.throws(()=>parseNativeOptions(args,root),{name:'AssertionError'});
 });

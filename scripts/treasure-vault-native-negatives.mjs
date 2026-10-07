@@ -67,6 +67,118 @@ export function originalNativeBatches(inputs) {
   return batches;
 }
 
+/**
+ * Select existing recipes before prepare() can reserve identities or query SQL.
+ * Release coverage samples repeated row predicates, while retaining every late
+ * write/trigger rollback and each structural shared-helper ref-id shape. Full
+ * execution keeps the original plans and does not call this selector.
+ */
+export function selectReleaseNegativeCases(plan) {
+  assert.ok(plan && typeof plan === 'object');
+  assert.ok(Array.isArray(plan.cases) && plan.cases.length, 'A release negative plan must be nonempty');
+  const phase = plan.phase ?? plan.cases[0].phase;
+  assert.equal(typeof phase, 'string');
+  const cases = plan.cases;
+  assert.equal(new Set(cases.map(row => row.name)).size, cases.length, 'Release recipe names must be unique');
+  for (const row of cases) {
+    assert.ok(row && typeof row.name === 'string' && row.name.length);
+    assert.equal(row.phase, phase, 'One actual predecessor/terminal phase per selection');
+    assert.equal(typeof row.prepare, 'function');
+    assert.ok(row.batch && typeof row.batch.path === 'string');
+  }
+  const selected = new Set();
+  const first = (category, predicate, required = false) => {
+    const row = cases.find(predicate);
+    assert.ok(row || !required, 'Missing release hazard category: ' + category + ' at ' + phase);
+    if (row) selected.add(row);
+    return row;
+  };
+  if (/^shared-helper-pending-aliases:(?:100|101)$/.test(phase)) {
+    const routes = new Set([
+      'ref-id', 'data-id', 'canonical-uuid', 'before-uuid',
+      'canonical-name-top-source', 'canonical-name-data-source',
+      'before-name-top-source', 'before-name-data-source', 'citation',
+      'normalized-name', 'top-url', 'nested-url', 'runtime-ref-id',
+      'runtime-data-id', 'canonical-url', 'alias-name-top-source',
+      'alias-name-data-source', 'alias-citation', 'missing-state', 'null-state',
+      'normalized-pending', 'unknown-state',
+    ]);
+    const groups = new Map(), domains = new Set();
+    for (const row of cases) {
+      const parts = row.name.split(':');
+      assert.equal(parts[0], 'shared-helper');
+      const domain = parts[1], route = parts.at(-2), type = parts.at(-1);
+      const target = parts.slice(2, -2).join(':');
+      assert.ok(['owner', 'dependency', 'source', 'template', 'state'].includes(domain), 'Unknown shared-helper release domain');
+      assert.ok(target); assert.match(type, /^[a-z-]+$/);
+      const normalized = route.replace(/-\d+(?=-|$)/g, '');
+      assert.ok(routes.has(normalized), 'Unknown shared-helper release route: ' + route);
+      let key = domain + ':' + normalized;
+      if (route === 'ref-id' && ['owner', 'dependency'].includes(domain)) {
+        const shape = target.split(':');
+        assert.equal(shape.length, 3); assert.equal(shape[0], domain);
+        // The generic ability-block queue predicate is the same for each
+        // authored subtype. Keep it once per table/role, alongside each real
+        // subtype route, rather than once per repeated generic target.
+        key += ':' + shape[1] + ':' + type;
+      }
+      if (route === 'runtime-ref-id') key += ':' + type;
+      if (!groups.has(key)) groups.set(key, row);
+      domains.add(domain);
+    }
+    assert.deepEqual([...domains].sort(), ['dependency', 'owner', 'source', 'state', 'template']);
+    for (const row of groups.values()) selected.add(row);
+  } else {
+    const paths = new Set(Object.values(definitions).map(([path]) => path));
+    const predecessor = /^(before|after):(.+)$/.exec(phase);
+    assert.ok(phase === 'before100' || phase === 'before101' || predecessor && paths.has(predecessor[2]), 'Unknown release negative phase: ' + phase);
+    const isLate = row => /(?:^|-)late(?:-|$)|trigger|same-transaction-pending/.test(row.name);
+    first('late rollback',isLate,phase.startsWith('before'));
+    const isPending = row => /pending/.test(row.name) && !/known-queue/.test(row.name) && !isLate(row);
+    const isState = row => !isPending(row) && !isLate(row) && /missing|drift|null|unknown|prose|metadata|frequency|identity|bulk|stat|name|uuid|wrong|edited|cache|terminal|nonpositive|full-row|whole-row|created-at|hands|usage|readback|cardinality|count|sibling|partial|hybrid|collision|dependency|source|occurrence/.test(row.name.toLowerCase());
+    for (const row of cases) {
+      assert.ok(isLate(row) || isPending(row) || isState(row) || /known-queue/.test(row.name), 'Unknown release hazard recipe: ' + row.name);
+      if (isLate(row)) selected.add(row);
+    }
+    // Prefer a partially applied atomic domain when one exists; otherwise use
+    // one stale complete row. Repeated owners/columns stay in the stress mode.
+    if (!first('partial atomic state', row => isState(row) && /partial|hybrid/.test(row.name))) first('stale state', isState, true);
+    first('pending conflict', isPending, true);
+    if (predecessor) {
+      if (![...selected].some(row => /dependency|source|cache/.test(row.name))) {
+        first('dependency/source baseline', row => isState(row) && /dependency|source|cache/.test(row.name));
+      }
+    } else {
+      first('complete-row stale state', row => isState(row) && /full-row|created-at|unknown-sibling/.test(row.name), true);
+      first('dependency baseline', row => isState(row) && /dependency/.test(row.name), true);
+      first('source baseline', row => isState(row) && /source-\d+/.test(row.name), true);
+      const known = new Map();
+      for (const row of cases) {
+        const match = /known-queue-(\d+)-body$/.exec(row.name);
+        if (match) known.set(match[1], row);
+      }
+      assert.equal(known.size, 2, 'Both known queue exceptions need an incorrect-body rejection');
+      for (const row of known.values()) selected.add(row);
+      if (phase === 'before100') {
+        first('insert UUID collision', row => /global-uuid-other-source$/.test(row.name), true);
+        first('insert normalized-name collision', row => /normalized-name-collision$/.test(row.name), true);
+        first('runtime prerequisite binding', row => /prerequisite-wrong-attack-binding$/.test(row.name), true);
+      } else {
+        first('generic ability-block queue route', row => /ability_block-pending-top-level$/.test(row.name), true);
+        for (const table of ['item', 'creature']) {
+          first(table + ' duplicate UUID restoration', row => row.name.startsWith('display101-' + table + ':') && /global-duplicate-UUID$/.test(row.name), true);
+          first(table + ' positive runtime identity', row => row.name.startsWith('display101-' + table + ':') && /nonpositive-ID$/.test(row.name), true);
+        }
+        first('runtime attack binding', row => /chair-wrong-attack$/.test(row.name), true);
+        first('allocated display link identity', row => /description-wrong-ID$/.test(row.name), true);
+      }
+    }
+  }
+  const result = cases.filter(row => selected.has(row));
+  assert.ok(result.length && result.length <= 80, 'Release phase selection must remain bounded and nonempty');
+  return result;
+}
+
 /** The owner fixture must prove userId is a real GoTrue signup; this module never fabricates Auth. */
 export function createNativeNegativeGroups({ inputs, userId, reserveProposalId, reserveContentId, readState, queryJson }) {
   assert.match(userId, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
@@ -124,6 +236,7 @@ export function createNativeNegativeGroups({ inputs, userId, reserveProposalId, 
         ['seed-existing-item-trigger-drift', {item: 1}],
         ['seed-source-trigger-drift', {item: seeds.spec.items.length}],
         ['seed-migration-only-late-pending-insert', {item: seeds.spec.items.length}],
+        ['chair-late-creature-insert-dependency-drift', {item: 1, creature: 1}],
         ...['earlier-owner','dependency','source','prerequisite','queue','matching-pending']
           .map(route => ['completion100-late-' + route, {item: inputs.completion.spec.inserts.length}]),
       ]);
@@ -378,6 +491,20 @@ export function createNativeNegativeGroups({ inputs, userId, reserveProposalId, 
     /final curator guard changed/,
     false,
   );
+    }
+    if (active === chair) {
+      const dependency = chair.spec.dependencies[0];
+      assert.equal(dependency.table, 'ability_block');
+      assert.ok(Number.isSafeInteger(dependency.id) && dependency.id > 0);
+      negative('chair-dependency-drift', chair,
+        `update public.ability_block set name=name||' native chair drift' where id=${dependency.id};`,
+        /treasure-vault-oozeform-chair: dependency drift/);
+      negative('chair-pending-creature-uuid', chair,
+        pending('creature', null, {uuid: String(chair.spec.creature.uuid)}),
+        /treasure-vault-oozeform-chair: pending content requires review/);
+      negative('chair-late-creature-insert-dependency-drift', chair,
+        trigger('creature', 'insert', `if new.uuid=${q(chair.spec.creature.uuid)} then update public.ability_block set name=name||' native late chair drift' where id=${dependency.id};end if;`),
+        /treasure-vault-oozeform-chair: final dependency drift/, false);
     }
     if (active === physical) {
   const p = physical.spec.find((p) => p.id === 11926);

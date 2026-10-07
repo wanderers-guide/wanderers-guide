@@ -371,11 +371,11 @@ test('CI retains native migration evidence on failure without archiving unrelate
   const nativeJob = workflow.match(/^  content-native:\n((?: {4}[^\n]*\n|\n)*)/m)?.[1];
   const browserJob = workflow.match(/^  e2e:\n((?: {4}[^\n]*\n|\n)*)/m)?.[1];
   assert.ok(nativeJob && browserJob, 'both independent verification jobs exist');
-  assert.match(nativeJob, /^    timeout-minutes: 360$/m);
+  assert.match(nativeJob, /^    timeout-minutes: \$\{\{ inputs\.exhaustive-content && 360 \|\| 90 \}\}$/m);
   assert.match(browserJob, /^    timeout-minutes: 120$/m);
   assert.doesNotMatch(browserJob, /npm run test:content:native/);
   assert.doesNotMatch(nativeJob, /continue-on-error:|--only-negative|^    needs:/m);
-  assert.match(nativeJob, /^        run: npm run test:content:native$/m);
+  assert.match(nativeJob, /if \[ "\$EXHAUSTIVE_CONTENT" = "true" \]; then\s+npm run test:content:native\s+else\s+npm run test:content:native -- --release\s+fi/);
   const marker = '      - name: Upload content migration safety evidence\n';
   assert.equal(workflow.split(marker).length, 2, 'one evidence upload step');
   const start = nativeJob.indexOf(marker);

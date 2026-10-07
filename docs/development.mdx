@@ -457,7 +457,7 @@ Run `npm run test:content:contracts` for the checked-in migration input, histori
 guard and safety-runner regressions. These use local files and bounded models,
 not a running database, production credentials or private audit exports.
 
-Run `npm run test:content:native` with Docker running to rehearse the Treasure
+Run `npm run test:content:native -- --release` with Docker running to rehearse the Treasure
 Vault repairs against the complete checked-in sanitized catalog and actual
 schema. It requires locally available PostgreSQL 15.6 and GoTrue images and a
 local Docker engine. It creates uniquely owned offline containers without
@@ -494,14 +494,23 @@ snapshot lacks private curator proposal bodies, so acceptance of those exact
 private bodies remains untested. An optional output filename saves the receipt
 without overwriting an existing file.
 
-CI runs this full safety suite in a separate `content-native` job with a
-six-hour budget. It runs the fast contract tests before pulling images or creating
+CI runs representative failure cases in a separate `content-native` job with a
+90-minute budget. Each repair retains direct rejection and late rollback coverage.
+The terminal checks retain representative stale/partial state, pending conflicts,
+identity/allocation and source/dependency failures. All actual positive migrations,
+complete preservation snapshots, shared-helper compatibility, permission checks,
+concurrent writers and alternate allocations still run. The receipt explicitly
+records reduced negative coverage and never claims an exhaustive pass.
+It runs the fast contract tests before pulling images or creating
 a fixture. These include passing the complete captured 106-file chronology through
 the alternate allocation guard, so a stale migration count fails immediately.
 Its owned database does not share a runner with the browser/API
 stack. The ordinary E2E job keeps its two-hour budget and runs independently;
-both jobs must pass before release. Local fixture limits and required coverage
-remain the same.
+both jobs must pass before release. Local fixture limits remain the same.
+
+The exhaustive matrix is separate from routine releases. Run
+`npm run test:content:native` locally or select **exhaustive-content** when manually
+dispatching the E2E workflow. That explicit manual run has a six-hour budget.
 
 After the safety step, CI uploads generated receipts, redacted stage logs and
 dual-ledger hashes to the `treasure-vault-native-<commit>` artifact. The upload
@@ -515,8 +524,9 @@ verification and remains a failure while independent owned cleanup still runs.
 For a focused iteration, append `--only-negative=<exact migration filename>`
 (or comma-separated filenames). This narrows only failure-injection cases; all
 positive migrations, read-only checks, full preservation and replay still run.
-The receipt records this reduced negative coverage. Omit the option for the full
-safety suite.
+The receipt records this reduced negative coverage. It cannot be combined with
+`--release`, whose representative cases are fixed by the checked-in selection policy.
+Omit both options for the exhaustive safety suite.
 
 ## Troubleshooting
 

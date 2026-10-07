@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { loadTreasureVaultDefaultNativeInputs } from './treasure-vault-native-inputs.mjs';
-import { createNativeNegativeGroups, originalNativeBatches } from './treasure-vault-native-negatives.mjs';
+import { createNativeNegativeGroups, originalNativeBatches, selectReleaseNegativeCases } from './treasure-vault-native-negatives.mjs';
 import { createHistoricalPositiveProjections } from './treasure-vault-native-positive-projections.mjs';
 import { createSharedHelperPendingAliasControls } from './treasure-vault-native-pending-aliases.mjs';
 import { assertFreshEquipmentProjection } from './treasure-vault-native-fresh-equipment.mjs';
@@ -23,6 +23,30 @@ const digest = value => createHash('sha256').update(value).digest('hex');
 const tables = ['ability_block','ancestry','archetype','background','class','class_archetype','creature','item','language','spell','trait','versatile_heritage'];
 const knownCreated = '2026-10-03T12:00:00.000Z';
 const sequence = last=>({last_value:String(last),is_called:true,increment:'1',cache:'1',cycle:false});
+
+test('Release selection rejects missing safety categories before any SQL or identity reservation',()=>{
+  const phase='before:'+batches.seeds.path;
+  const cases=['seed-identity-drift','seed-pending-name','seed-source-trigger-drift'].map(name=>({name,phase,batch:batches.seeds,prepare:()=>assert.fail('Selection must never prepare SQL')}));
+  assert.deepEqual(selectReleaseNegativeCases({phase,cases}),cases);
+  for(const remove of cases)assert.throws(()=>selectReleaseNegativeCases({phase,cases:cases.filter(row=>row!==remove)}),/Missing release hazard category/);
+  assert.throws(()=>selectReleaseNegativeCases({phase:'unknown',cases}),{name:'AssertionError'});
+  assert.throws(()=>selectReleaseNegativeCases({phase,cases:[]}),/nonempty/);
+});
+
+test('Release alias selection retains identity routes and cannot qualify an omitted selected rejection',()=>{
+  const receipt={unit_model_only:true,native_executed:false,negative_controls:[],shared_helper_pending_alias_positives:[]};
+  const aliases=createSharedHelperPendingAliasControls({inputs,userId:'11111111-1111-4111-8111-111111111111',reserveProposalId:()=>assert.fail('No model allocation'),queryJson:()=>assert.fail('No model SQL'),receipt,releaseScope:true});
+  for(const terminal of ['100','101']){
+    const plan=aliases.atTerminal(terminal),selected=selectReleaseNegativeCases(plan);
+    assert.ok(selected.length<plan.cases.length/4);
+    for(const route of ['before-uuid','before-name-data-source','runtime-ref-id','alias-0-name-0-data-source','normalized-pending','unknown-state'])assert.ok(selected.some(row=>row.name.includes(':'+route+':')));
+    receipt.negative_controls.push(...selected.map(row=>({name:row.name,phase:row.phase,original_guard:true,guard_message_matched:true,setup_type_proved:true,setup_status:0,setup_signal:null,actual_exit_status:3,actual_signal:null,no_transport_error:true,expected_sqlstate:'P0001',rollback_schema_tuples_saved_preserved:true})));
+    receipt.shared_helper_pending_alias_positives.push(...plan.positiveCases.map(row=>({name:row.name,phase:row.phase,passed:true,actual_exit_status:0,actual_signal:null,no_transport_error:true,actual_helper:true,actual_wrapper:true,actual_release:true,full_rollback:true})));
+  }
+  assert.equal(aliases.complete().reduced_negative_coverage,true);
+  receipt.negative_controls.pop();
+  assert.throws(()=>aliases.complete(),{name:'AssertionError'});
+});
 
 /** Only the external database boundary is modelled; public capture/verify is real. */
 function model(family) {

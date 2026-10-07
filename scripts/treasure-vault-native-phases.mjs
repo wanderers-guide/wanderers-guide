@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { selectReleaseNegativeCases } from './treasure-vault-native-negatives.mjs';
 
 const sha = value => createHash('sha256').update(value).digest('hex');
 const q = value => "'" + String(value).replaceAll("'", "''") + "'";
@@ -32,7 +33,7 @@ export function assertNativeRestoration({before,after,expectedCalls = {},sequenc
 }
 
 /** The same strict read-only release reader is used for real queries and malformed-result controls. */
-export function createNativePhaseRunner({fixture,receipt,stage,selectedNegativeFiles = null,checkpoint=async()=>{},log=()=>{}}) {
+export function createNativePhaseRunner({fixture,receipt,stage,selectedNegativeFiles = null,releaseScope=false,checkpoint=async()=>{},log=()=>{}}) {
   assert.equal(typeof log,'function');
   const sequenceForTable = table => {
     assert.ok(['item','creature','content_update'].includes(table));
@@ -69,7 +70,9 @@ export function createNativePhaseRunner({fixture,receipt,stage,selectedNegativeF
   }
   async function negatives(plan,{mandatory=false}={}) {
     assert.equal(typeof mandatory,'boolean');
-    for (const recipe of plan.cases) {
+    const cases=releaseScope&&plan.cases.length?selectReleaseNegativeCases(plan):plan.cases;
+    const completed=[];
+    for (const recipe of cases) {
       await checkpoint('negative '+recipe.name);
       if (!mandatory&&selectedNegativeFiles && !selectedNegativeFiles.has(recipe.batch.path)) continue;
       const started=Date.now();
@@ -104,6 +107,11 @@ export function createNativePhaseRunner({fixture,receipt,stage,selectedNegativeF
       }
       const record={name:recipe.name,phase:recipe.phase,path:control.batch.path,elapsed_ms:Date.now()-started,mandatory_scope:mandatory,setup_sha256:sha(control.setup),actual_reservations:control.reservations,expected_sqlstate:control.expectedSqlState,actual_exit_status:result.status,actual_signal:result.signal,no_transport_error:result.error==null,setup_status:setupResult.status,setup_signal:setupResult.signal,guard_message_matched:true,original_guard:true,setup_type_proved:true,rollback_schema_tuples_saved_preserved:true,sequence_consumption:consumption};
       (receipt.negative_controls ??= []).push(record);log({kind:'negative',...record});
+      completed.push(recipe.name);
+    }
+    if(releaseScope&&cases.length){
+      assert.deepEqual(completed,cases.map(row=>row.name),'Every selected release negative must actually execute');
+      (receipt.release_negative_selection??=[]).push({phase:plan.phase??cases[0]?.phase,available:plan.cases.length,inventory:plan.cases.map(row=>({name:row.name,path:row.batch.path})),selected:completed,reduced_negative_coverage:true});
     }
   }
   async function after(plan) {

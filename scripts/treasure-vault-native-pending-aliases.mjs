@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { selectReleaseNegativeCases } from './treasure-vault-native-negatives.mjs';
 
 const quote = value => "'" + String(value).replaceAll("'", "''") + "'";
 const json = value => quote(JSON.stringify(value)) + '::json';
@@ -11,7 +12,7 @@ const normalizedAlias = value => String(value).toLowerCase().replace(/[^a-z0-9]+
  * prepare() verifies the real caller-owned GoTrue/public-user proof and reserves
  * an explicit unused proposal ID before the phase runner takes its baseline.
  */
-export function createSharedHelperPendingAliasControls({inputs,userId,reserveProposalId,queryJson,receipt}) {
+export function createSharedHelperPendingAliasControls({inputs,userId,reserveProposalId,queryJson,receipt,releaseScope=false}) {
   assert.equal(inputs.input_provenance.mode, 'checked-in-default');
   assert.match(userId, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
   assert.equal(typeof reserveProposalId, 'function'); assert.equal(typeof queryJson, 'function');
@@ -156,6 +157,7 @@ export function createSharedHelperPendingAliasControls({inputs,userId,reservePro
   function complete() {
     for(const terminal of ['100','101']) {
       const phase='shared-helper-pending-aliases:'+terminal,plan=atTerminal(terminal);
+      if(releaseScope)plan.cases=selectReleaseNegativeCases(plan);
       const negatives=(receipt.negative_controls??[]).filter(row=>row.phase===phase);
       const positives=(receipt.shared_helper_pending_alias_positives??[]).filter(row=>row.phase===phase);
       assert.equal(negatives.length,plan.cases.length); assert.equal(new Set(negatives.map(row=>row.name)).size,negatives.length);
@@ -165,7 +167,10 @@ export function createSharedHelperPendingAliasControls({inputs,userId,reservePro
       assert.ok(negatives.every(row=>row.original_guard && row.guard_message_matched===true && row.setup_type_proved && row.setup_status===0 && row.setup_signal===null && row.actual_exit_status===3 && row.actual_signal===null && row.no_transport_error===true && row.expected_sqlstate==='P0001' && row.rollback_schema_tuples_saved_preserved),'Every alias negative requires exact setup/script exit/SQLSTATE/guard evidence');
       assert.ok(positives.every(row=>row.passed && row.actual_exit_status===0 && row.actual_signal===null && row.no_transport_error===true && row.actual_helper && row.actual_wrapper && row.actual_release && row.full_rollback));
     }
-    return {...coverage,both_terminals_complete:true};
+    if(!releaseScope)return {...coverage,both_terminals_complete:true};
+    const selected=selectReleaseNegativeCases(atTerminal('100'));
+    const selectedRoutes=[...new Set(selected.map(row=>{const parts=row.name.split(':');return parts[1]+':'+parts.at(-2)+':'+parts.at(-1);} ))].sort();
+    return {...coverage,both_terminals_complete:true,scope:'Representative pending identity/source/template routes and all state variants at both terminals; per-row exhaustive variations are separate.',reduced_negative_coverage:true,pending_cases:selected.length,pending_cases_full:coverage.pending_cases,available_routes:coverage.routes,routes:selectedRoutes,selected_names:selected.map(row=>row.name)};
   }
   return {atTerminal,coverage,positive,complete};
 }

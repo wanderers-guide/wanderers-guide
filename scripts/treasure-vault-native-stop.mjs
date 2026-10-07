@@ -44,6 +44,7 @@ export async function finalizeNativeStopReceipt({receipt,stop}) {
   assert.equal(failure.exitCode,failure.signal==='SIGINT'?130:143);
   receipt.passed=false;
   receipt.full_native_execution_complete=false;
+  if('release_native_execution_complete' in receipt)receipt.release_native_execution_complete=false;
   receipt.late_stop={phase:'final receipt serialization',name:failure.name,code:failure.code,signal:failure.signal,exit_code:failure.exitCode,requested_at:stop.requested.requested_at,message:failure.message};
   receipt.failure??=receipt.late_stop;
   return failure.exitCode;

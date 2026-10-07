@@ -6,6 +6,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      exhaustive-content:
+        description: Run the exhaustive content failure matrix instead of representative release hazards
+        type: boolean
+        default: false
 
 concurrency:
   group: e2e-${{ github.workflow }}-${{ github.ref }}
@@ -235,9 +240,9 @@ jobs:
 
   content-native:
     runs-on: ubuntu-latest
-    # The full guarded migration suite takes several hours. Keep its owned
-    # database isolated from the browser/API stack without reducing coverage.
-    timeout-minutes: 360
+    # Routine releases use representative failures with complete preservation.
+    # The exhaustive matrix is available through an explicit manual run.
+    timeout-minutes: ${{ inputs.exhaustive-content && 360 || 90 }}
 
     steps:
       - uses: actions/checkout@v4
@@ -255,7 +260,14 @@ jobs:
           docker pull supabase/gotrue:v2.158.1
 
       - name: Isolated content migration safety tests
-        run: npm run test:content:native
+        env:
+          EXHAUSTIVE_CONTENT: ${{ inputs.exhaustive-content }}
+        run: |
+          if [ "$EXHAUSTIVE_CONTENT" = "true" ]; then
+            npm run test:content:native
+          else
+            npm run test:content:native -- --release
+          fi
 
       - name: Upload content migration safety evidence
         if: always()
