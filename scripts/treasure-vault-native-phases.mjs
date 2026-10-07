@@ -6,6 +6,7 @@ const q = value => "'" + String(value).replaceAll("'", "''") + "'";
 
 /** Compare rollback content/schema exactly, allowing only declared real nextval calls. */
 export function assertNativeRestoration({before,after,expectedCalls = {},sequenceForTable}) {
+  assert.equal(after.tuple_codec,before.tuple_codec,'Same complete-row codec throughout restoration');
   assert.deepEqual(after.tuples, before.tuples, 'Every public/Auth/saved tuple restored');
   assert.equal(after.schema_sha256, before.schema_sha256, 'Schema, helper body/ACL, RLS, constraints and triggers restored');
   assert.equal(after.roles_sha256, before.roles_sha256, 'Role attributes and membership restored');

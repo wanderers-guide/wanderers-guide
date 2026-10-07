@@ -14,7 +14,7 @@ import * as nativeStop from './treasure-vault-native-stop.mjs';
 import {captureNativeInputManifest} from './treasure-vault-native-input-manifest.mjs';
 import {buildTerminalHelperMetadataControls} from './treasure-vault-native-metadata.mjs';
 import {main as nativeMain,executeNativeBase} from './treasure-vault-native-safety.mjs';
-import {nativeDiagnostic} from './treasure-vault-native-diagnostics.mjs';
+import {nativeDiagnostic,createNativeReceiptLogger} from './treasure-vault-native-diagnostics.mjs';
 import {createAuthenticAlternateFixtureDriver} from './treasure-vault-native-alternate-fixture.mjs';
 import {nativeDatabaseResourceLimits} from './treasure-vault-native-fixture.mjs';
 import './treasure-vault-native-fixture-contract.test.mjs';
@@ -249,7 +249,7 @@ function memoryNativeReceipt(t,{logWrite=async()=>{}}={}) {
   t.mock.method(fs,'mkdir',async path=>assert.equal(path,root+'/.agents/legacy'));
   t.mock.method(fs,'open',async(path,flags,mode)=>{
     assert.equal(flags,'wx');assert.equal(mode,0o600);opened.push(path);
-    return {write:async text=>{outputs.set(path,(outputs.get(path)??'')+text);await logWrite(text);},writeFile:async text=>outputs.set(path,text),close:async()=>{}};
+    return {write:async(buffer,offset=0,length=buffer.length)=>{const bytes=buffer.subarray(offset,offset+length);outputs.set(path,(outputs.get(path)??'')+bytes.toString('utf8'));await logWrite(bytes);return {bytesWritten:bytes.length};},writeFile:async text=>outputs.set(path,text),close:async()=>{}};
   });
   syncBuiltinESMExports();
   return {outputs,opened};
@@ -432,4 +432,41 @@ test('native diagnostic receipts: a rejected log write is handled during a real 
     assert.equal(receipt.owned_database_resources.final_verified,true);
     assert.equal(JSON.stringify(receipt).includes(secret),false);assert.deepEqual(JSON.parse(memory.outputs.get(memory.opened[0])),receipt);
   } finally {process.removeListener('unhandledRejection',observed);process.exitCode=previousExit;t.mock.restoreAll();syncBuiltinESMExports();}
+});
+/** Real log ordering/writing boundary; no database or native SQL success is modeled. */
+test('native logs: a checkpoint persists every UTF8 record despite partial byte writes',async()=>{
+  const chunks=[],events=[];let elapsed=100;
+  const writer=createNativeReceiptLogger({write:async(buffer,offset,length)=>{
+    await setImmediate();const count=Math.min(length,3);chunks.push(Buffer.from(buffer.subarray(offset,offset+count)));return {bytesWritten:count};
+  },checkpoint:async label=>{events.push(label);},monotonic:()=>elapsed++,timestamp:()=> '2026-10-07T09:00:00.000Z'});
+  const first={kind:'transport',text:'Ω雪\nexact'},second={kind:'negative',passed:false};
+  writer.log(first);writer.log(second);
+  assert.equal(chunks.length,0,'The test reproduces deferred writes before the real drain');
+  await writer.checkpoint('before next owned action');
+  const records=Buffer.concat(chunks).toString('utf8').trimEnd().split('\n').map(JSON.parse);
+  assert.deepEqual(records,[{...first,log_sequence:1,observed_at:'2026-10-07T09:00:00.000Z',observed_elapsed_ms:1},{...second,log_sequence:2,observed_at:'2026-10-07T09:00:00.000Z',observed_elapsed_ms:2}]);
+  assert.deepEqual(events,['before next owned action','after log drain: before next owned action']);
+  assert.deepEqual(first,{kind:'transport',text:'Ω雪\nexact'});await writer.flush();
+});
+
+test('native logs: returned write promises and failed drains prevent later actions',async()=>{
+  for(const result of [{bytesWritten:0},{bytesWritten:-1},{bytesWritten:999},undefined]) {
+    const writer=createNativeReceiptLogger({write:async()=>result,checkpoint:async()=>{}});
+    const pending=writer.log({kind:'test'});assert.equal(typeof pending.then,'function');
+    await assert.rejects(pending);await assert.rejects(writer.checkpoint('next action'));await assert.rejects(writer.flush());
+  }
+  const failure=Object.assign(new Error('owned file failure'),{code:'ENOSPC'});let writes=0;
+  const writer=createNativeReceiptLogger({write:async()=>{writes++;throw failure;},checkpoint:async()=>{}});
+  const first=writer.log({kind:'first'}),second=writer.log({kind:'second'});
+  await assert.rejects(first,error=>error===failure);await assert.rejects(second,error=>error===failure);assert.equal(writes,1);
+  await assert.rejects(writer.checkpoint('next action'),error=>error===failure);
+});
+
+test('native logs: checkpoints still deliver stops before or after a write drain',async()=>{
+  for(const stopAt of [1,2]) {
+    let calls=0;const failure=new Error('actual stop checkpoint');
+    const writer=createNativeReceiptLogger({write:async(buffer,offset,length)=>({bytesWritten:length}),checkpoint:async()=>{if(++calls===stopAt)throw failure;}});
+    writer.log({kind:'transport'});
+    await assert.rejects(writer.checkpoint('owned action'),error=>error===failure);await writer.flush();assert.equal(calls,stopAt);
+  }
 });

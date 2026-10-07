@@ -232,17 +232,17 @@ test('pure local ownership and successful absence census reject substitutions/tr
   assert.throws(()=>assertNativeCleanupCensus({ownedContainerNames:[],removedVolumes:['removed'],currentVolumeNames:['removed']}));
 });
 
-test('pure batched snapshot preserves exact SQL, membership, typed values and original field ordering',()=>{
+test('pure batched snapshot retains all relation/sequence membership and complete binary rows',()=>{
   const relations=[{schema:'auth',table:'users'},{schema:'public',table:'character'},{schema:'public',table:'item'}];
   const sequenceNames=[{schema:'public',name:'character_id_seq'},{schema:'public',name:'item_id_seq'}];
   const values={tuples:{'public.item':'27467:'+'a'.repeat(32),'auth.users':'1:'+'b'.repeat(32),'public.character':'1:'+'c'.repeat(32)},sequences:{'public.item_id_seq':{last_value:'23440',is_called:true,increment:'1',cache:'1',cycle:false},'public.character_id_seq':{last_value:'7',is_called:false,increment:'-2',cache:'1',cycle:false}}};
   const parsed=normalizeNativeSnapshotValues({relations,sequenceNames,values});
   assert.deepEqual(parsed,{tuples:values.tuples,sequences:Object.fromEntries(sequenceNames.map(row=>[row.schema+'.'+row.name,values.sequences[row.schema+'.'+row.name]]))});
   assert.deepEqual(Object.keys(parsed.sequences),sequenceNames.map(row=>row.schema+'.'+row.name));
-  const oldBranches=relations.map(row=>`select '${row.schema+'.'+row.table}' name,count(*)||':'||md5(coalesce(string_agg(md5(to_jsonb(r)::text),'' order by md5(to_jsonb(r)::text)),'')) value from "${row.schema}"."${row.table}" r`);
+  const oldBranches=relations.map(row=>`select '${row.schema+'.'+row.table}' name,count(*)||':'||md5(coalesce(string_agg(md5(pg_catalog.record_send(r)),'' order by md5(pg_catalog.record_send(r))),'')) value from "${row.schema}"."${row.table}" r`);
   const oldTuples='select jsonb_object_agg(name,value order by name) from ('+oldBranches.join(' union all ')+') s';
   const batched=buildNativeSnapshotValuesQuery({relations,sequenceNames});
-  assert.ok(batched.includes(oldTuples),'Complete original row-digest SQL preserved byte-for-byte');
+  assert.ok(batched.includes(oldTuples),'Complete typed binary rows, order-independent hashes, multiplicity and empty tables');
   assert.ok(batched.includes(buildNativeSequenceSnapshotQuery(sequenceNames).slice(0,-1)),'Complete original typed sequence SQL preserved byte-for-byte');
   const membership=buildNativeSnapshotMembershipQuery();
   for(const original of ["select coalesce(jsonb_agg(jsonb_build_object('schema',schemaname,'table',tablename) order by schemaname,tablename),'[]'::jsonb) from pg_tables where schemaname in('public','auth','proof')","select coalesce(jsonb_agg(jsonb_build_object('schema',schemaname,'name',sequencename) order by schemaname,sequencename),'[]'::jsonb) from pg_sequences where schemaname in('public','auth','proof')","jsonb_build_object('roles',(select jsonb_agg(to_jsonb(r) order by rolname) from pg_roles r),'members',(select coalesce(jsonb_agg(to_jsonb(m) order by roleid,member,grantor),'[]'::jsonb) from pg_auth_members m))"])assert.ok(membership.includes(original));
@@ -254,11 +254,11 @@ test('pure batched snapshot preserves exact SQL, membership, typed values and or
 });
 
 test('pure restoration models distinguish expected nontransactional nextvals from unreviewed drift',()=>{
-  const before={tuples:{item:'1:hash'},schema_sha256:'schema',roles_sha256:'roles',sequences:{'public.item_id_seq':{last_value:'9',is_called:false,increment:'2',cache:'1',cycle:false},'public.other':{last_value:'7',is_called:true,increment:'1',cache:'1',cycle:false}}};
+  const before={tuple_codec:'postgres-record-send-v1',tuples:{item:'1:hash'},schema_sha256:'schema',roles_sha256:'roles',sequences:{'public.item_id_seq':{last_value:'9',is_called:false,increment:'2',cache:'1',cycle:false},'public.other':{last_value:'7',is_called:true,increment:'1',cache:'1',cycle:false}}};
   const after=structuredClone(before);after.sequences['public.item_id_seq']={...before.sequences['public.item_id_seq'],last_value:'15',is_called:true};
   assert.equal(assertNativeRestoration({before,after,expectedCalls:{item:4},sequenceForTable:()=> 'public.item_id_seq'})[0].calls,4);
   assert.throws(()=>assertNativeRestoration({before,after,sequenceForTable:()=> 'public.item_id_seq'}));
-  for(const change of [row=>{row.tuples.item='changed';},row=>{row.schema_sha256='changed';},row=>{row.roles_sha256='changed';},row=>{row.sequences['public.other'].last_value='8';}]) {
+  for(const change of [row=>{row.tuple_codec='unreviewed-codec';},row=>{row.tuples.item='changed';},row=>{row.schema_sha256='changed';},row=>{row.roles_sha256='changed';},row=>{row.sequences['public.other'].last_value='8';}]) {
     const wrong=structuredClone(after);change(wrong);assert.throws(()=>assertNativeRestoration({before,after:wrong,expectedCalls:{item:4},sequenceForTable:()=> 'public.item_id_seq'}));
   }
 });

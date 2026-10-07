@@ -18,7 +18,7 @@ import { runNativeWriterOrdering } from './treasure-vault-native-writers.mjs';
 import { runAlternateAllocations } from './treasure-vault-native-allocations.mjs';
 import { createAuthenticAlternateFixtureDriver } from './treasure-vault-native-alternate-fixture.mjs';
 import { APPROVED_REGISTERED_CI_REPLAY_STEP_SHA256 } from './treasure-vault-native-registered-ci-replays.mjs';
-import { nativeDiagnostic } from './treasure-vault-native-diagnostics.mjs';
+import { nativeDiagnostic, createNativeReceiptLogger } from './treasure-vault-native-diagnostics.mjs';
 
 const sha = value => createHash('sha256').update(value).digest('hex');
 const completionPath = '20261002100000_treasure_vault_complete_catalog.sql';
@@ -165,6 +165,8 @@ export async function executeNativeBase({root,inputs,migrations,inputManifest,ou
     for (const migration of migrations) {
       await stop.checkpoint('chronology '+migration.path);
       phase = migration.path;
+      const chronologyStarted=Date.now();
+      log({kind:'chronology-start',path:migration.path});
       if (migration.path === completionPath) {
         await phases.negatives(negatives.beforeCompletion());
         await stop.checkpoint('actual writer family before100');
@@ -206,6 +208,7 @@ export async function executeNativeBase({root,inputs,migrations,inputManifest,ou
         if(projection){await stop.checkpoint('independent projection '+migration.path);projection.verify();}
         if (originalPaths.has(migration.path)) await phases.after(negatives.afterOriginal(migration.path));
       }
+      log({kind:'chronology-complete',path:migration.path,elapsed_ms:Date.now()-chronologyStarted});
     }
     assert.equal(receipt.shared_history.own_stage.length, 39);
     assert.equal(receipt.shared_history.terminal.length, 2);
@@ -275,19 +278,18 @@ export async function main(args = process.argv.slice(2)) {
   receipt.input_manifest=inputManifest.manifest;
   const stop=createNativeStopController({receipt});
   receipt.stop_policy=stop.limits;
-  let logWrites = Promise.resolve();
-  const log = row => {
-    const line = JSON.stringify(row)+'\n'; logWrites = logWrites.then(() => stream.write(line));
-    // Observe rejection immediately; the original chain still rejects at final flush.
-    void logWrites.catch(()=>{});
-  };
+  const logger=createNativeReceiptLogger({write:(buffer,offset,length)=>stream.write(buffer,offset,length),checkpoint:stop.checkpoint});
+  // Persistence is drained at orchestration checkpoints and finalization. Keep
+  // filesystem failures outside the fixture's owned Docker-log diagnostics.
+  const log=row=>{void logger.log(row);};
+  const executionStop={checkpoint:logger.checkpoint,throwIfRequested:stop.throwIfRequested};
   try {
     const migrations = inputManifest.migrations;
     receipt.migrations = migrations.map(({path,sha256}) => ({path,sha256}));
-    await executeNativeBase({root:options.root,inputs,migrations,inputManifest,output,selectedNegativeFiles:options.selectedNegativeFiles,receipt,log,stop});
+    await executeNativeBase({root:options.root,inputs,migrations,inputManifest,output,selectedNegativeFiles:options.selectedNegativeFiles,receipt,log,stop:executionStop});
   } catch (error) { receipt.passed = false; process.exitCode = error.exitCode??1; receipt.failure ??= nativeDiagnostic(error,{summary:'Native verification failed before safe fixture diagnostics were available'}); }
   finally {
-    try { await logWrites; } catch (error) { receipt.passed = false; process.exitCode??=1; receipt.log_failure = nativeDiagnostic(error,{summary:'Native diagnostic log could not be written'}); }
+    try { await logger.flush(); } catch (error) { receipt.passed = false; process.exitCode??=1; receipt.log_failure = nativeDiagnostic(error,{summary:'Native diagnostic log could not be written'}); }
     const lateStopExitCode = await finalizeNativeStopReceipt({receipt,stop});
     if (lateStopExitCode !== null) process.exitCode = lateStopExitCode;
     receipt.finished_at = new Date().toISOString();

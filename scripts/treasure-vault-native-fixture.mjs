@@ -185,7 +185,9 @@ export function buildNativeSnapshotMembershipQuery() {
   return "select jsonb_build_object('relations',(select coalesce(jsonb_agg(jsonb_build_object('schema',schemaname,'table',tablename) order by schemaname,tablename),'[]'::jsonb) from pg_tables where schemaname in('public','auth','proof')),'sequence_names',(select coalesce(jsonb_agg(jsonb_build_object('schema',schemaname,'name',sequencename) order by schemaname,sequencename),'[]'::jsonb) from pg_sequences where schemaname in('public','auth','proof')),'roles',jsonb_build_object('roles',(select jsonb_agg(to_jsonb(r) order by rolname) from pg_roles r),'members',(select coalesce(jsonb_agg(to_jsonb(m) order by roleid,member,grantor),'[]'::jsonb) from pg_auth_members m)));";
 }
 
-/** Preserve the original complete tuple digests and typed sequence values. */
+/** Complete binary row digests include type OIDs, NULLs and every live/generated attribute.
+ * Compare only within the same pinned fixture; this is not a portable content fingerprint.
+ */
 export function buildNativeSnapshotValuesQuery({relations,sequenceNames}) {
   assert.ok(Array.isArray(relations));assert.ok(Array.isArray(sequenceNames));
   const paths=relations.map(row=>{
@@ -194,7 +196,7 @@ export function buildNativeSnapshotValuesQuery({relations,sequenceNames}) {
     identifier(row.schema);identifier(row.table);return row.schema+'.'+row.table;
   });
   assert.equal(new Set(paths).size,paths.length);
-  const branches=relations.map(row=>`select ${q(row.schema+'.'+row.table)} name,count(*)||':'||md5(coalesce(string_agg(md5(to_jsonb(r)::text),'' order by md5(to_jsonb(r)::text)),'')) value from ${identifier(row.schema)}.${identifier(row.table)} r`);
+  const branches=relations.map(row=>`select ${q(row.schema+'.'+row.table)} name,count(*)||':'||md5(coalesce(string_agg(md5(pg_catalog.record_send(r)),'' order by md5(pg_catalog.record_send(r))),'')) value from ${identifier(row.schema)}.${identifier(row.table)} r`);
   const tuples=branches.length?'select jsonb_object_agg(name,value order by name) from ('+branches.join(' union all ')+') s':"select '{}'::jsonb";
   const sequences=buildNativeSequenceSnapshotQuery(sequenceNames).replace(/;$/,'');
   return "select jsonb_build_object('tuples',("+tuples+"),'sequences',("+sequences+'));';
@@ -231,6 +233,7 @@ export function createOwnedNativeFixture({ root, receipt, log, bootstrapRead,thr
   const image = 'supabase/postgres:15.6.1.146', authImage = 'supabase/gotrue:v2.158.1';
   const imageIds=new Map(),containerIds=new Map();
   const databaseLimits=nativeDatabaseResourceLimits();
+  receipt.native_snapshot_policy={tuple_codec:'postgres-record-send-v1',complete_live_attributes:true,generated_fields_included:true,null_and_type_framing:true,row_order_independent:true,duplicate_multiplicity_preserved:true,comparison_scope:'Same owned PostgreSQL15.6 fixture only; not portable across databases/type OIDs',fresh_relation_and_sequence_membership:true,full_schema_dump:true,complete_roles_and_memberships:true};
   receipt.owned_database_resources={requested:{...databaseLimits},per_container_only:true,total_host_guarantee:false,
     auth_resource_policy_unchanged:true,fresh_verified_inspections:0,initial_observed:null,last_observed:null,final_observed:null,final_verified:false};
   let databaseAttempted = false, authAttempted = false, cleaning=false,cleanupTransportDepth=0,cleanupCliDepth=0,localEndpoint=null,engineId=null,engineTransport=null,engineEnableAttempted=false;
@@ -450,7 +453,7 @@ export function createOwnedNativeFixture({ root, receipt, log, bootstrapRead,thr
     const dumped = fileCommand(['exec',id,'pg_dump','-U','postgres','-d','postgres','--schema-only','--schema=public','--schema=auth','--schema=proof'],undefined,true);
     assert.equal(dumped.error==null,true);assert.equal(dumped.signal,null);assert.equal(dumped.status,0,'Complete native schema dump');
     const schema = sha(dumped.stdout.split('\n').filter(line => !/^\\(?:un)?restrict /.test(line)).join('\n'));
-    const state = {tuples,sequences,schema_sha256:schema,roles_sha256:sha(JSON.stringify(membership.roles))};
+    const state = {tuple_codec:'postgres-record-send-v1',tuples,sequences,schema_sha256:schema,roles_sha256:sha(JSON.stringify(membership.roles))};
     return {...state,sha256:sha(JSON.stringify(state))};
   }
   async function cleanup() {

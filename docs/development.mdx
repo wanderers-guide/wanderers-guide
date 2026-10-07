@@ -481,7 +481,13 @@ verification.
 
 The runner verifies its complete input manifest before and after execution and
 recomputes the catalog, source and authored-content comparisons from actual
-database rows. Only its own containers and anonymous volumes are removed. It
+database rows. Preservation snapshots hash the complete PostgreSQL binary row,
+including every live column, generated field, NULL marker and column type. They
+still read all current public, Auth and proof relations and sequences, capture
+all roles and memberships, and take a complete schema dump. These binary hashes
+are compared only within the same owned PostgreSQL 15.6 fixture. The reviewed
+portable catalog and release fingerprints keep their existing JSON derivation.
+Only its own containers and anonymous volumes are removed. It
 does not reset another local stack, access production or certify every possible
 character build or all authentication and authorization behavior. The sanitized
 snapshot lacks private curator proposal bodies, so acceptance of those exact
@@ -497,7 +503,11 @@ remain the same.
 After the safety step, CI uploads generated receipts, redacted stage logs and
 dual-ledger hashes to the `treasure-vault-native-<commit>` artifact. The upload
 runs even if that step fails and includes only these generated files, not other
-backups or database dumps. It does not change the test result.
+backups or database dumps. It does not change the test result. Logs record their
+sequence number and observation time. Every orchestration checkpoint drains all
+queued byte writes before another owned action, so a timeout artifact retains the
+observed progress instead of an arbitrarily delayed prefix. Logging failure stops
+verification and remains a failure while independent owned cleanup still runs.
 
 For a focused iteration, append `--only-negative=<exact migration filename>`
 (or comma-separated filenames). This narrows only failure-injection cases; all
