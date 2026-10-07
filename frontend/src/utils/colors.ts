@@ -1,15 +1,15 @@
 import Color from 'colorjs.io';
+import type { CSSProperties } from 'react';
 
-
-export function glassStyle(options?: { bg?: boolean; border?: boolean }) {
+/** Applies the shared glass filter, with optional surface tint and border. */
+export function glassStyle(options?: { bg?: boolean; border?: boolean }): CSSProperties {
   return {
-    backdropFilter: 'blur(16px) saturate(180%)',
-    WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+    backdropFilter: 'var(--glass-backdrop-filter)',
+    WebkitBackdropFilter: 'var(--glass-backdrop-filter)',
     ...(options?.bg ? { backgroundColor: 'var(--glass-bg-color)' } : {}),
     ...(options?.border ? { border: '1px solid var(--glass-border-color)', borderRadius: '12px' } : {}),
   };
 }
-// import tinycolor from 'tinycolor2';
 
 export function interpolateHealth(percentage: number) {
   const green = new Color('p3', [0, 0.9, 0.35]);
