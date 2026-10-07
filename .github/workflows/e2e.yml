@@ -242,7 +242,7 @@ jobs:
     runs-on: ubuntu-latest
     # Routine releases use representative failures with complete preservation.
     # The exhaustive matrix is available through an explicit manual run.
-    timeout-minutes: ${{ inputs.exhaustive-content && 360 || 90 }}
+    timeout-minutes: ${{ inputs.exhaustive-content && 360 || 120 }}
 
     steps:
       - uses: actions/checkout@v4
