@@ -2,6 +2,8 @@
 
 :root {
   --_text-line-height: 1.75;
+  /* Keep some of the artwork's color while softening it behind reading surfaces. */
+  --glass-backdrop-filter: blur(16px) saturate(140%);
 }
 
 /* Keep mobile text fields readable and prevent automatic focus zoom in iOS browsers. */
@@ -12,7 +14,8 @@
 }
 
 [data-mantine-color-scheme='dark'] {
-  --glass-bg-color: var(--mantine-color-dark-7);
+  /* Give reading surfaces a stable tint without changing the text or control color scales. */
+  --glass-bg-color: rgba(26, 27, 30, 0.76);
   --glass-border-color: rgba(255, 255, 255, 0.125);
   --avatar-placeholder-bg: var(--mantine-color-dark-6);
   --imprint-bg-color: rgba(222, 226, 230, 0.06);
