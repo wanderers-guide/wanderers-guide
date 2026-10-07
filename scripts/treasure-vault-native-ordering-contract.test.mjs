@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { captureNativeInputManifest } from './treasure-vault-native-input-manifest.mjs';
 import { proveWholeHelperTokenBoundary, runAlternateAllocations } from './treasure-vault-native-allocations.mjs';
 import { assertNativeLockTimeout, observeNativeHeldSession, runNativeWriterOrdering } from './treasure-vault-native-writers.mjs';
 
@@ -47,4 +50,27 @@ test('alternate allocation rejects a missing authentic fixture or incomplete chr
   await assert.rejects(runAlternateAllocations({inputs:{},fixture,primaryChronology:[],receipt:{}}),/second authentic fixture driver/);
   await assert.rejects(runAlternateAllocations({inputs:{},fixture,withAlternateFixture(){},primaryChronology:[],receipt:{}}),/primary complete chronology/);
   assert.equal(touched,false);
+});
+
+test('alternate allocation accepts the actual complete captured chronology before touching SQL',async()=>{
+  const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+  const captured=await captureNativeInputManifest({root});
+  const primaryChronology=captured.manifest.chronology;
+  assert.equal(primaryChronology.length,106);
+  const boundary=new Error('validated chronology reached the first snapshot');
+  let snapshots=0;
+  const fixture={snapshot(){snapshots++;throw boundary;}};
+  await assert.rejects(runAlternateAllocations({inputs:{},fixture,withAlternateFixture(){assert.fail('No alternate SQL in this contract');},primaryChronology,receipt:{}}),error=>error===boundary);
+  assert.equal(snapshots,1,'The actual current manifest passes the production validation path');
+  for(const rows of [
+    primaryChronology.slice(0,-1),
+    [...primaryChronology,primaryChronology.at(-1)],
+    [...primaryChronology.slice(0,-1),primaryChronology.at(-2)],
+    [...primaryChronology].reverse(),
+    primaryChronology.map((row,index)=>index===0?{...row,path:'invalid.sql'}:row),
+    primaryChronology.map((row,index)=>index===0?{...row,sha256:'invalid'}:row),
+  ]){
+    await assert.rejects(runAlternateAllocations({inputs:{},fixture,withAlternateFixture(){assert.fail('Malformed chronology cannot create an alternate fixture');},primaryChronology:rows,receipt:{}}),{name:'AssertionError'});
+    assert.equal(snapshots,1,'Malformed chronology rejects before the first SQL snapshot');
+  }
 });

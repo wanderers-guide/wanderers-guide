@@ -495,7 +495,10 @@ private bodies remains untested. An optional output filename saves the receipt
 without overwriting an existing file.
 
 CI runs this full safety suite in a separate `content-native` job with a
-six-hour budget. Its owned database does not share a runner with the browser/API
+six-hour budget. It runs the fast contract tests before pulling images or creating
+a fixture. These include passing the complete captured 106-file chronology through
+the alternate allocation guard, so a stale migration count fails immediately.
+Its owned database does not share a runner with the browser/API
 stack. The ordinary E2E job keeps its two-hour budget and runs independently;
 both jobs must pass before release. Local fixture limits and required coverage
 remain the same.

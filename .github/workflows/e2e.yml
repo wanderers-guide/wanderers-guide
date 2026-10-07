@@ -246,6 +246,9 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Validate native contracts before fixture startup
+        run: npm run test:content:contracts
+
       - name: Pull pinned native fixture images
         run: |
           docker pull supabase/postgres:15.6.1.146
