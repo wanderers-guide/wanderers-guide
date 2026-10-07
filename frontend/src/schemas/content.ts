@@ -76,10 +76,45 @@ export const ContentSourceCiteSchema = z.object({
 });
 export type ContentSourceCite = z.infer<typeof ContentSourceCiteSchema>;
 
+/** A book printing is explicit provenance, never inferred from its name or creation time. */
+export const ContentSourcePrintingSchema = z.object({
+  book_key: z.string().min(1),
+  printing: z.number().int().positive(),
+  published_on: z.iso.date(),
+  role: z.enum(['RULEBOOK', 'SETTING', 'ADVENTURE']),
+  rules_edition: z.enum(['LEGACY', 'REMASTER']).optional(),
+});
+export type ContentSourcePrinting = z.infer<typeof ContentSourcePrintingSchema>;
+
+const VerifiedPrintingCiteSchema = ContentSourceCiteSchema.extend({
+  url: z.url({ protocol: /^https?$/ }),
+});
+
+/** Stored on the successor: a reviewed relationship to an exact retained catalog entry. */
+export const ContentReplacementSchema = z.object({
+  type: ContentTypeSchema.exclude(['content-source']),
+  id: z.number().int().positive(),
+  content_source_id: z.number().int().positive(),
+  relationship: z.enum(['REMASTER', 'EQUIVALENT_REPRINT']),
+  verification: z.object({
+    original: VerifiedPrintingCiteSchema,
+    replacement: VerifiedPrintingCiteSchema,
+    reviewed_on: z.iso.date(),
+  }),
+});
+export type ContentReplacement = z.infer<typeof ContentReplacementSchema>;
+
+/** Entry-level edition overrides support legacy rules reprinted in remastered books. */
+export const ContentEntryPrintingSchema = z.object({
+  rules_edition: z.enum(['LEGACY', 'REMASTER']).optional(),
+  replaces: z.array(ContentReplacementSchema).optional(),
+});
+export type ContentEntryPrinting = z.infer<typeof ContentEntryPrintingSchema>;
+
 // For content types whose `meta_data` exists only to hold the cite — they carry no
 // type-specific fields of their own.
 const CiteOnlyMetaDataSchema = z
-  .object({ source: ContentSourceCiteSchema.optional() })
+  .object({ source: ContentSourceCiteSchema.optional(), printing: ContentEntryPrintingSchema.optional() })
   .passthrough()
   .nullable()
   .optional();
@@ -104,6 +139,7 @@ export const TraitSchema = z.object({
       versatile_heritage_trait: z.boolean().optional(),
       companion_type_trait: z.boolean().optional(),
       source: ContentSourceCiteSchema.optional(),
+      printing: ContentEntryPrintingSchema.optional(),
     })
     .passthrough()
     .nullable(),
@@ -238,6 +274,7 @@ export interface Item {
     display_traits?: string[];
     inventory_label?: string;
     source?: ContentSourceCite;
+    printing?: ContentEntryPrinting;
   } | null;
   operations: Operation[] | null;
   content_source_id: number;
@@ -373,6 +410,7 @@ export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
         display_traits: z.array(z.string()).optional(),
         inventory_label: z.string().optional(),
         source: ContentSourceCiteSchema.optional(),
+        printing: ContentEntryPrintingSchema.optional(),
       })
       .passthrough()
       .nullable(),
@@ -459,6 +497,7 @@ export const SpellSchema = z.object({
       deprecated: z.boolean().optional(),
       image_url: z.string().optional(),
       source: ContentSourceCiteSchema.optional(),
+      printing: ContentEntryPrintingSchema.optional(),
     })
     .passthrough(),
   content_source_id: z.number(),
@@ -496,6 +535,7 @@ export const AbilityBlockSchema = z.object({
       image_url: z.string().optional(),
       foundry: z.record(z.string(), z.any()).optional(),
       source: ContentSourceCiteSchema.optional(),
+      printing: ContentEntryPrintingSchema.optional(),
     })
     .passthrough()
     .nullable(),
@@ -834,6 +874,7 @@ export const CreatureSchema = LivingEntitySchema.extend({
   version: z.string(),
   meta_data: LivingEntityMetaDataSchema.extend({
     source: ContentSourceCiteSchema.optional(),
+    printing: ContentEntryPrintingSchema.optional(),
     stat_block: z
       .object({
         perception_note: z.string().optional(),
@@ -902,7 +943,7 @@ export const HazardSchema = z.object({
   deprecated: z.boolean().nullable(),
   version: z.string(),
   meta_data: z
-    .object({ source: ContentSourceCiteSchema.optional() })
+    .object({ source: ContentSourceCiteSchema.optional(), printing: ContentEntryPrintingSchema.optional() })
     .passthrough()
     .nullable(),
 });
@@ -1180,7 +1221,13 @@ export const ContentSourceSchema = z.object({
   required_content_sources: z.array(z.number()).nullable(),
   group: z.string().nullable(),
   artwork_url: z.string().nullable(),
-  meta_data: z.object({ counts: z.record(z.string(), z.number()).optional() }).nullable(),
+  meta_data: z
+    .object({
+      counts: z.record(z.string(), z.number()).optional(),
+      printing: ContentSourcePrintingSchema.optional(),
+    })
+    .passthrough()
+    .nullable(),
 });
 export type ContentSource = z.infer<typeof ContentSourceSchema>;
 

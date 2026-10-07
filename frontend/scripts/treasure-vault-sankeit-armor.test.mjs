@@ -20,6 +20,8 @@ test('Sankeit is cataloged as armor without changing its identity or saved-item 
   assertReviewedTransition(row.group, 'WEAPON', 'ARMOR', 'Sankeit item classification');
 
   const savedItem = structuredClone({ id: 'existing-inventory-entry', item_id: row.id, item: row });
+  // Model a character saved before the classification repair, regardless of dump age.
+  savedItem.item.group = 'WEAPON';
   const corrected = structuredClone(row);
   corrected.group = 'ARMOR';
   assert.deepEqual({ ...corrected, group: row.group }, row);

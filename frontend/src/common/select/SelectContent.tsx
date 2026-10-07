@@ -12,6 +12,7 @@ import {
   getDefaultSourcesKey,
 } from '@content/content-store';
 import { fetchHazards } from '@content/hazards';
+import { selectPreferredPrintings } from '@content/content-printings';
 import { isActionCost } from '@content/content-utils';
 import { isItemArchaic } from '@items/inv-utils';
 import {
@@ -93,6 +94,7 @@ import {
   Class,
   ClassArchetype,
   ContentType,
+  ContentSource,
   Creature,
   Hazard,
   Item,
@@ -832,6 +834,25 @@ function SelectionOptions(props: {
     // An ability block type is required for ability blocks
     if (props.type === 'ability-block' && (!props.overrideOptions || props.overrideOptions.length === 0)) {
       options = [];
+    }
+  }
+
+  if (!props.overrideOptions && props.type !== 'hazard') {
+    const printingOptions = options.filter(
+      (option): option is Record<string, any> & { id: number; content_source_id: number } =>
+        typeof option.id === 'number' && typeof option.content_source_id === 'number'
+    );
+    // Keep a malformed legacy picker result literal rather than discarding its entries.
+    if (printingOptions.length === options.length) {
+      options = selectPreferredPrintings(
+        props.type,
+        printingOptions,
+        getCachedContent<ContentSource>('content-source'),
+        {
+          sourceId: typeof props.sourceId === 'number' ? props.sourceId : undefined,
+          preserveIds: props.selectedId === undefined ? [] : [props.selectedId],
+        }
+      );
     }
   }
 

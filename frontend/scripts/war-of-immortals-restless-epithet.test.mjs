@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { readContentRows } from './operation-test-harness.mjs';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 
 const sql = await readFile(
   new URL('../../supabase/migrations/20260927240000_war_of_immortals_restless_epithet.sql', import.meta.url),
@@ -19,10 +20,19 @@ test('Restless epithet matches its War of Immortals title without changing saved
   assert.equal(choices.length, 6);
   const choice = choices.find(({ id }) => id === '18a731d1-6507-461d-9f40-3081ee17e04c');
   assert.ok(choice);
-  assert.equal(choice.title, 'Restless as the Tide');
   assert.equal(choice.operations[1].id, '6b05ec0d-238b-45b7-bebc-27f25dc460f1');
   const before = '**Dominion Epithet—Restless as the Tide**';
   const after = '**Dominion Epithet—Restless as the Tides**';
+  const prefix = [before, after].find((value) => choice.operations[1].data.text.startsWith(value));
+  assertReviewedTransition(
+    { title: choice.title, prefix },
+    { title: 'Restless as the Tide', prefix: before },
+    { title: 'Restless as the Tides', prefix: after },
+    'Reviewed complete epithet title/text pair'
+  );
+  // Exercise the exact old-to-new leaf even when the dump already contains the repair.
+  choice.title = 'Restless as the Tide';
+  choice.operations[1].data.text = choice.operations[1].data.text.replace(after, before);
   assert.ok(choice.operations[1].data.text.startsWith(before));
 
   const savedChoiceId = choice.id;

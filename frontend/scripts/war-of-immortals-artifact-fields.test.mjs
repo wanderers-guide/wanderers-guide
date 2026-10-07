@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { readContentRows } from './operation-test-harness.mjs';
@@ -33,7 +34,7 @@ test('War artifact fields match their cited entries without changing other item 
     assert.equal(item.name, patch.name);
     assert.equal(item.content_source_id, 400);
     assert.equal(item.meta_data.source.url, patch.url);
-    assert.equal(item[patch.field], patch.before);
+    assertReviewedTransition(item[patch.field], patch.before, patch.after, `${patch.name}/${patch.field}`);
     item[patch.field] = patch.after;
   }
   for (const { row } of rows) {

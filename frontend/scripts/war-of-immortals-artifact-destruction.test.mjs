@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { createElement } from 'react';
@@ -30,7 +31,29 @@ test('five War artifacts present destruction conditions as descriptions', () => 
   );
   const originals = rows.map(({ row }) => structuredClone(row));
   for (const patch of patches) {
-    const original = rows.find(({ row }) => row.id === patch.id).row;
+    const published = rows.find(({ row }) => row.id === patch.id).row;
+    const original = structuredClone(published);
+    if (patch.kind === 'heading') {
+      const state = assertReviewedTransition(
+        [original.description.split(oldHeading).length - 1, original.description.split(newHeading).length - 1],
+        [1, 0],
+        [0, 1],
+        `${patch.name} destruction heading`
+      );
+      if (state === 'after') original.description = original.description.replace(newHeading, oldHeading);
+    } else {
+      const ending = `\n\n${newHeading} ${patch.destruction}`;
+      const state = assertReviewedTransition(
+        { requirements: original.craft_requirements, ending: original.description.endsWith(ending) },
+        { requirements: patch.destruction, ending: false },
+        { requirements: '', ending: true },
+        `${patch.name} destruction pair`
+      );
+      if (state === 'after') {
+        original.description = original.description.slice(0, -ending.length);
+        original.craft_requirements = patch.destruction;
+      }
+    }
     const updated = structuredClone(original);
     assert.equal(original.content_source_id, 400);
     assert.equal(original.name, patch.name);
