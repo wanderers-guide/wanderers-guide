@@ -217,7 +217,10 @@ test('seven complete remaster rows have canonical identity, source, traits, prer
 test('every numeric prose reference resolves through the production helper and Mighty uses the local Great Bear ID', () => {
   for (const firstId of [990101, 123456]) {
     const allocated = importedRows(firstId);
-    engine.setFixtures([...fixtures, ...allocated.map((row) => ({ table: 'ability_block', row }))]);
+    engine.setFixtures([
+      ...lookupFixtures.filter(({ table, row }) => table !== 'ability_block' || !candidateIds.has(row.id)),
+      ...allocated.map((row) => ({ table: 'ability_block', row })),
+    ]);
     const great = allocated.find(({ name }) => name === 'Great Bear');
     const mighty = allocated.find(({ name }) => name === 'Mighty Bear');
     assert.ok(mighty.description.includes(engine.convertToHardcodedLink('feat', 'Great Bear')));

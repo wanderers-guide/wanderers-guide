@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
@@ -11,7 +12,9 @@ const rows = await readContentRows([
   { table: 'ability_block', id: 43770 },
   { table: 'ability_block', id: 43769 },
 ]);
-const original = rows.find(({ row }) => row.id === 43770).row;
+const published = rows.find(({ row }) => row.id === 43770).row;
+assertReviewedTransition(published.meta_data, {}, { unselectable: true }, 'Masterful Vindication metadata');
+const original = { ...structuredClone(published), meta_data: {} };
 const edge = rows.find(({ row }) => row.id === 43769).row;
 let engine;
 

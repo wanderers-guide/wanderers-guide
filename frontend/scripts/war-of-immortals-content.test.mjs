@@ -31,7 +31,13 @@ test('AoN citations target distinct existing War of Immortals records without ov
   for (const patch of provenance) {
     const row = rows.find((entry) => entry.table === patch.table && entry.row.id === patch.id)?.row;
     assert.ok(row, `${patch.table}:${patch.id}`);
-    assert.equal(row.name, patch.name);
+    const nameRepair = fields.find(
+      (entry) => entry.table === patch.table && entry.id === patch.id && entry.field === 'name'
+    );
+    if (nameRepair) {
+      assert.equal(nameRepair.before, patch.name, 'the spelling repair targets the same original record');
+      assertReviewedTransition(row.name, nameRepair.before, nameRepair.after, `${patch.table}:${patch.id} name`);
+    } else assert.equal(row.name, patch.name);
     assert.equal(row.content_source_id, 400);
     assertReviewedTransition(row.meta_data?.source, undefined, patch.cite, `${patch.table}:${patch.id} citation`);
     const url = new URL(patch.cite.url);

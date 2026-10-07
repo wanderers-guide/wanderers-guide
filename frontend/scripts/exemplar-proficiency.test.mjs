@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
@@ -26,7 +27,11 @@ before(async () => {
     assert.equal(feature.name, patch.name);
     assert.equal(feature.type, 'class-feature');
     assert.equal(feature.content_source_id, patch.source);
-    assert.equal(feature.operations.length, patch.before_count);
+    assert.equal(feature.operations.slice(0, patch.before_count).length, patch.before_count);
+    assertReviewedTransition(feature.operations.slice(patch.before_count), [], [patch.after], 'Humble Strikes suffix');
+    const original = originals.find(({ table, row }) => table === 'ability_block' && row.id === patch.id).row;
+    original.operations = structuredClone(feature.operations.slice(0, patch.before_count));
+    feature.operations = structuredClone(original.operations);
     assert.ok(feature.meta_data.source.url.startsWith('https://2e.aonprd.com/Classes.aspx?ID=65'));
     feature.operations.push(structuredClone(patch.after));
   }

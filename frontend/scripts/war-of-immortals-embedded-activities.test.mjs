@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
@@ -26,7 +27,7 @@ before(async () => {
     assert.equal(parent.type, 'feat');
     assert.equal(parent.content_source_id, 400);
     assert.equal(parent.uuid, String(patch.parent.uuid));
-    assert.deepEqual(parent.operations, []);
+    assertReviewedTransition(parent.operations, [], [patch.grant], `${parent.name} grants`);
     assert.match(parent.description, new RegExp(patch.child.name));
     assert.equal(child.name, patch.child.name);
     assert.equal(child.type, 'feat');
@@ -34,8 +35,8 @@ before(async () => {
     assert.equal(child.uuid, String(patch.child.uuid));
     assert.equal(child.actions, patch.child.actions);
     assert.deepEqual(child.operations, []);
-    assert.equal(child.meta_data.unselectable, undefined);
-    parent.operations.push(patch.grant);
+    assertReviewedTransition(child.meta_data.unselectable, undefined, true, `${child.name} visibility`);
+    parent.operations = [structuredClone(patch.grant)];
     child.meta_data.unselectable = true;
   }
   engine.setFixtures(rows);

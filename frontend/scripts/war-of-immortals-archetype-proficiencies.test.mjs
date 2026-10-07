@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
@@ -14,6 +15,8 @@ const fixtureIds = [...affectedIds, 39204, 38584, 38705];
 
 let engine;
 let originalRows;
+let originalSnapshot;
+let publishedRows;
 let patchedRows;
 let patchedSnapshot;
 let content;
@@ -47,7 +50,28 @@ function applyMigration(rows) {
 before(async () => {
   engine = await createOperationEngine();
   originalRows = await readContentRows(fixtureIds.map((id) => ({ table: 'ability_block', id })));
+  publishedRows = structuredClone(originalRows);
+  for (const patch of additions) {
+    const feat = originalRows.find(({ row }) => row.id === patch.id).row;
+    assert.equal(feat.operations.slice(0, patch.before_count).length, patch.before_count);
+    assertReviewedTransition(feat.operations.slice(patch.before_count), [], patch.append, `${patch.name} suffix`);
+    feat.operations = feat.operations.slice(0, patch.before_count);
+  }
+  const master = originalRows.find(({ row }) => row.id === 39213).row;
+  for (const patch of rankUpdates) {
+    const operation = master.operations.find(({ id }) => id === patch.operation_id);
+    assertReviewedTransition(operation.data.value.value, patch.before, patch.after, `${patch.variable} rank`);
+    operation.data.value.value = patch.before;
+  }
+  originalSnapshot = structuredClone(originalRows);
   patchedRows = applyMigration(originalRows);
+  for (const patch of additions) {
+    const published = publishedRows.find(({ row }) => row.id === patch.id).row;
+    assert.deepEqual(patchedRows.find(({ row }) => row.id === patch.id).row.operations, [
+      ...published.operations.slice(0, patch.before_count),
+      ...patch.append,
+    ]);
+  }
   patchedSnapshot = structuredClone(patchedRows);
   engine.setFixtures(patchedRows);
   content = {
@@ -195,5 +219,6 @@ test('Exemplar Expertise adds HP only with Resiliency and a class HP value of 8 
     }
   }
   assert.deepEqual(patchedRows, patchedSnapshot, 'character calculation must not change source feat content');
-  assert.deepEqual(originalRows, await readContentRows(fixtureIds.map((id) => ({ table: 'ability_block', id }))));
+  assert.deepEqual(originalRows, originalSnapshot, 'historical fixtures remain unchanged');
+  assert.deepEqual(publishedRows, await readContentRows(fixtureIds.map((id) => ({ table: 'ability_block', id }))));
 });

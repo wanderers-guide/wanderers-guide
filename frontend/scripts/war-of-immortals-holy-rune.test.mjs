@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import { ItemSchema } from '../src/schemas/content.ts';
@@ -13,15 +14,48 @@ const rows = await readContentRows([
   { table: 'item', id: 17102 },
   { table: 'item', id: 7040 },
 ]);
-const weapon = rows.find(({ row }) => row.id === 17101).row;
+const publishedWeapon = rows.find(({ row }) => row.id === 17101).row;
+const weapon = structuredClone(publishedWeapon);
 const shadowpiercer = rows.find(({ row }) => row.id === 17102).row;
-const holy = rows.find(({ row }) => row.id === 7040).row;
+const publishedHoly = rows.find(({ row }) => row.id === 7040).row;
+const holy = structuredClone(publishedHoly);
+const linkedActivation = '[**Holy Healing**](link_spell_3371)';
+const bareActivation = '**Holy Healing**';
+const holyState = assertReviewedTransition(
+  [
+    holy.description.split(linkedActivation).length - 1,
+    holy.description.replaceAll(linkedActivation, '').split(bareActivation).length - 1,
+  ],
+  [1, 0],
+  [0, 1],
+  'Holy Healing activation'
+);
+if (holyState === 'after') holy.description = holy.description.replace(bareActivation, linkedActivation);
 const patched = structuredClone(weapon);
 const runeSnapshot = structuredClone(holy);
 delete runeSnapshot.updated_at;
 delete runeSnapshot.search_tsv;
 runeSnapshot.description = runeSnapshot.description.replace('[**Holy Healing**](link_spell_3371)', '**Holy Healing**');
-patched.meta_data.runes.property = [{ id: holy.id, name: holy.name, rune: runeSnapshot }];
+const reviewedProperty = [{ id: holy.id, name: holy.name, rune: runeSnapshot }];
+// COPY scalar text and PostgreSQL to_jsonb use different UUID and timestamp representations.
+// Normalize those two fields only, then compare every field of the embedded rune.
+const propertyProjection = (properties) =>
+  properties.map((property) => ({
+    ...property,
+    rune: {
+      ...property.rune,
+      uuid: String(property.rune.uuid),
+      created_at: property.rune.created_at.replace(' ', 'T').replace(/\+00$/, '+00:00'),
+    },
+  }));
+assertReviewedTransition(
+  propertyProjection(publishedWeapon.meta_data.runes.property),
+  [],
+  propertyProjection(reviewedProperty),
+  "Freedom's Flame property runes"
+);
+weapon.meta_data.runes.property = [];
+patched.meta_data.runes.property = structuredClone(reviewedProperty);
 
 let engine;
 before(async () => {
