@@ -22,6 +22,7 @@ import {
   EncounterSchema,
   SpellSchema,
   AbilityBlockTypeSchema,
+  SocietyAdventureEntrySchema,
   ContentTypeSchema,
   type LivingEntity,
   type Spell,
@@ -58,7 +59,7 @@ import ViewOperationsModal from '@modals/ViewOperationsModal';
 import ManageSpellsModal from '@modals/ManageSpellsModal';
 import ModesDrawer from '@common/modes/ModesDrawer';
 import { getVariable, setVariable } from '@variables/variable-manager';
-import type { VariableListStr } from '@schemas/variables';
+import type { VariableBool, VariableListStr } from '@schemas/variables';
 import { ContentPackageSchema } from '@schemas/content';
 
 const LoaderSchema = z.object({ caseId: z.string(), characterId: z.string() });
@@ -214,6 +215,24 @@ function ReviewSurface({
       return <CreateContentSourceOnlyModal {...common} editId={source.id} />;
     case 'editor:society':
       return <CreateSocietyAdventureEntryModal {...common} onDelete={onClose} />;
+    case 'editor:society-existing':
+      return (
+        <CreateSocietyAdventureEntryModal
+          {...common}
+          editEntry={SocietyAdventureEntrySchema.parse({
+            id: 'local-review-record',
+            name: 'The Sapphire Archive',
+            event: 'Local visual review',
+            items_snapshot: [],
+            conditions_snapshot: [],
+            items_sold: [],
+            items_bought: [],
+            conditions_gained: [],
+            conditions_cleared: [],
+          })}
+          onDelete={onClose}
+        />
+      );
     case 'import:pathbuilder':
       return <PathbuilderInputModal open onConfirm={onClose} onClose={onClose} />;
     case 'search:advanced':
@@ -299,7 +318,7 @@ function ContextSurface({ fixture, caseId, onClose }: { fixture: Fixture; caseId
       return parsed.success ? [parsed.data] : [];
     });
     if (caseId.startsWith('picker:')) {
-      const requestedType = caseId.slice(7);
+      const [, requestedType, state] = caseId.split(':');
       const abilityType = AbilityBlockTypeSchema.safeParse(requestedType);
       openContextModal({
         ...base,
@@ -307,7 +326,12 @@ function ContextSurface({ fixture, caseId, onClose }: { fixture: Fixture; caseId
         title: 'Select Content',
         innerProps: {
           type: abilityType.success ? 'ability-block' : ContentTypeSchema.or(z.literal('hazard')).parse(requestedType),
-          options: abilityType.success ? { abilityBlockType: abilityType.data } : undefined,
+          options: {
+            ...(abilityType.success ? { abilityBlockType: abilityType.data } : {}),
+            ...(state === 'change'
+              ? { selectedId: z.object({ id: z.number() }).parse(fixture.catalog[requestedType]?.[0]).id }
+              : {}),
+          },
           onClick: onClose,
         },
       });
@@ -473,6 +497,9 @@ function DrawerSurface({ fixture, caseId, onClose }: { fixture: Fixture; caseId:
     );
     const base = { id: 'CHARACTER' as const };
     if (type.startsWith('stat-')) {
+      const previousStamina = getVariable<VariableBool>('CHARACTER', 'STAMINA_VARIANT')?.value ?? false;
+      if (type === 'stat-hp' && state === 'stamina')
+        setVariable('CHARACTER', 'STAMINA_VARIANT', true, 'Local visual review');
       openDrawer({
         type,
         data: {
@@ -483,6 +510,8 @@ function DrawerSurface({ fixture, caseId, onClose }: { fixture: Fixture; caseId:
           isDC: state === 'CLASS_DC',
         },
       });
+      if (type === 'stat-hp' && state === 'stamina')
+        return () => setVariable('CHARACTER', 'STAMINA_VARIANT', previousStamina, 'Local visual review');
       return;
     }
     if (type === 'condition') {
@@ -569,7 +598,14 @@ function DrawerSurface({ fixture, caseId, onClose }: { fixture: Fixture; caseId:
       return;
     }
     const table = type.replaceAll('-', '_');
-    const row = z.object({ id: z.number() }).passthrough().parse(fixture.catalog[table]?.[0]);
+    const row = z
+      .object({ id: z.number() })
+      .passthrough()
+      .parse(
+        state
+          ? fixture.catalog[table]?.find((entry) => z.object({ id: z.number() }).parse(entry).id === Number(state))
+          : fixture.catalog[table]?.[0]
+      );
     openDrawer(
       mapToDrawerData(ContentTypeSchema.parse(type), row, { id: row.id, readOnly: true, showOperations: true })
     );

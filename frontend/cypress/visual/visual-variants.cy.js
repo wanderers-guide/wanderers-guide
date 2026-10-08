@@ -34,6 +34,8 @@ function cancelConfirm(name) {
     .click();
 }
 describe('Conditional editor and navigation states', { testIsolation: false }, () => {
+  // Preserve the same recorded local reads for each case, not only the first editor.
+  beforeEach(() => recordedCatalogReads());
   before(() => {
     recordedCatalogReads();
     cy.intercept('POST', '**/functions/v1/get-user', (req) => {
@@ -202,4 +204,26 @@ describe('Conditional editor and navigation states', { testIsolation: false }, (
     cy.contains('Are you sure you want to rest?').should('be.visible');
     cancelConfirm('rest');
   });
+  for (const type of ['Ability Block', 'Spell', 'Language', 'Adjust Value', 'Custom'])
+    review('remove option confirmation ' + type, () => {
+      open('operation:select');
+      cy.get('.mantine-Modal-content:visible input[placeholder="Type"]').click();
+      cy.contains('[role=option]:visible', new RegExp('^' + type + '$')).click();
+      cy.contains('.mantine-Modal-content:visible .mantine-SegmentedControl-label', /^Predefined$/).click();
+      cy.get('.mantine-Modal-content:visible svg.tabler-icon-circle-plus')
+        .last()
+        .closest('button')
+        .scrollIntoView()
+        .click();
+      cy.get('.mantine-Modal-content:visible svg.tabler-icon-circle-minus')
+        .last()
+        .closest('button')
+        .scrollIntoView()
+        .click();
+      cy.get('.mantine-Modal-content:visible')
+        .last()
+        .contains('.mantine-Title-root', 'Remove Option')
+        .should('be.visible');
+      cancelConfirm('option-' + type.toLowerCase().replaceAll(' ', '-'));
+    });
 });

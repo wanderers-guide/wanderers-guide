@@ -101,7 +101,9 @@ export function capture(name, interaction) {
         s.visibility !== 'hidden'
       );
     };
-    const scope = [...doc.querySelectorAll('[role=dialog]')].filter(visible).at(-1) ?? doc.body;
+    // Hover cards can also have dialog roles. They must not hide the surrounding page from the source inventory.
+    const scope =
+      [...doc.querySelectorAll('.mantine-Modal-content,.mantine-Drawer-content')].filter(visible).at(-1) ?? doc.body;
     const sources = [
       ...new Set(
         [scope, ...scope.querySelectorAll('[data-ui-review-source]')]
@@ -195,14 +197,27 @@ export function captureScrolls(
       for (const [i, el] of views.entries()) {
         const steps = Math.ceil((el.scrollHeight - el.clientHeight) / (el.clientHeight * 0.75));
         for (let step = 1; step <= steps; step++) {
-          cy.wrap(el, { log: false }).scrollTo(
-            0,
-            Math.min(el.scrollHeight - el.clientHeight, step * el.clientHeight * 0.75),
-            { duration: 0 }
-          );
+          // React can replace a viewport after a panel opens. Requery before each scroll.
+          cy.get(selector)
+            .last()
+            .then(($current) => {
+              const live = [$current[0], ...$current[0].querySelectorAll('*')].filter(
+                (node) =>
+                  node.clientHeight > 100 &&
+                  node.scrollHeight > node.clientHeight + 2 &&
+                  /auto|scroll/.test(win.getComputedStyle(node).overflowY)
+              )[i];
+              if (live)
+                live.scrollTop = Math.min(live.scrollHeight - live.clientHeight, step * live.clientHeight * 0.75);
+            });
           capture(name + `/scroll-${i}-${step}`);
         }
-        cy.wrap(el, { log: false }).scrollTo('top', { duration: 0 });
+        cy.get(selector)
+          .last()
+          .then(($current) => {
+            for (const node of [$current[0], ...$current[0].querySelectorAll('*')])
+              if (/auto|scroll/.test(win.getComputedStyle(node).overflowY)) node.scrollTop = 0;
+          });
       }
       if (includeHorizontal) {
         const horizontalViews = [root, ...root.querySelectorAll('*')].filter(
@@ -249,6 +264,11 @@ export function reviewPanels(
           !el.disabled &&
           el.getClientRects().length &&
           el.ownerDocument.defaultView.getComputedStyle(el).pointerEvents !== 'none' &&
+          // Shared operation controls are reviewed in their own operation cases.
+          !(
+            name.startsWith('editor-') &&
+            el.closest('[data-ui-review-source]')?.getAttribute('data-ui-review-source')?.includes('/operations/')
+          ) &&
           !/^(New Encounter|Generate Encounter|Add Page)$/.test(el.textContent.trim()) &&
           !(el.classList.contains('mantine-Stepper-step') && el.textContent.trim() === 'Sheet')
       );

@@ -86,6 +86,9 @@ const cases = [
     'creature',
     'hazard',
     'content-source',
+    'content-source:1',
+    'content-source:400',
+    'content-source:8',
     'action',
     'feat',
     'class-feature',
@@ -102,6 +105,7 @@ const cases = [
     'stat-attr',
     'stat-attr:ATTRIBUTE_INT',
     'stat-hp',
+    'stat-hp:stamina',
     'stat-ac',
     'stat-weapon',
     'stat-speed',
@@ -151,6 +155,8 @@ import {
   recordedCatalogReads,
 } from './visual-helpers.js';
 describe(`Actual app surfaces ${prefix}`, { testIsolation: false }, () => {
+  // Cypress clears request interceptions between tests even when the browser context is retained.
+  beforeEach(() => recordedCatalogReads());
   before(() => {
     recordedCatalogReads();
     const accounts = Cypress.env('fixtureAccounts'),
@@ -184,10 +190,11 @@ describe(`Actual app surfaces ${prefix}`, { testIsolation: false }, () => {
   });
   for (const name of cases.filter(
     (name) =>
-      !Cypress.env('reviewFilter') ||
-      Cypress.env('reviewFilter')
-        .split(',')
-        .some((filter) => name.startsWith(filter))
+      !(Cypress.env('reviewExclude') ?? '').split(',').includes(name) &&
+      (!Cypress.env('reviewFilter') ||
+        Cypress.env('reviewFilter')
+          .split(',')
+          .some((filter) => name.startsWith(filter)))
   ))
     it(name, () => {
       cy.get('body', { log: false }).then((body) => body.find('[data-visual-dock]').css('visibility', 'visible'));
@@ -210,6 +217,8 @@ describe(`Actual app surfaces ${prefix}`, { testIsolation: false }, () => {
       if (Cypress.env('reviewInputs')) reviewInputs(label);
       if (name.startsWith('editor:')) reviewRarity(label);
       if (Cypress.env('reviewInteractions')) {
+        // Review portals in initially expanded panels before enumeration changes their state.
+        reviewPortals(label);
         reviewPanels(label);
         reviewPortals(label);
       }

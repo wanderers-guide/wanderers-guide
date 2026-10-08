@@ -514,14 +514,14 @@ function SectionPanels(props: {
             )}
           </BlurBox>
         ) : (
-          <Box pb={35}>
+          <BlurBox p='sm' pb={35}>
             <NotesPanel
               campaign={props.campaign}
               setCampaign={props.setCampaign}
               panelHeight={props.panelHeight}
               panelWidth={props.panelWidth}
             />
-          </Box>
+          </BlurBox>
         )}
 
         <Box style={getAnchorStyles({ r: 20, b: 20 })}>

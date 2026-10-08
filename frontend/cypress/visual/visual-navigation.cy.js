@@ -13,7 +13,7 @@ const phone = Cypress.config('viewportWidth') < 600;
 const filter = Cypress.env('reviewFilter');
 const review = (name, fn) =>
   !filter || filter.split(',').some((value) => name.includes(value)) ? it(name, fn) : it.skip(name, fn);
-function login(role, url, siteTheme) {
+function login(role, url, siteTheme, profileOverrides = {}) {
   recordedCatalogReads();
   // Exercise the existing local dice fallback without creating an external room.
   cy.intercept('https://api.dddice.com/**', { statusCode: 503, body: {} });
@@ -35,7 +35,11 @@ function login(role, url, siteTheme) {
     if (!req.body.id || req.body.id === actor.userId)
       req.reply({
         status: 'success',
-        data: { ...actor.profile, ...(siteTheme ? { site_theme: { ...actor.profile.site_theme, ...siteTheme } } : {}) },
+        data: {
+          ...actor.profile,
+          ...profileOverrides,
+          ...(siteTheme ? { site_theme: { ...actor.profile.site_theme, ...siteTheme } } : {}),
+        },
       });
     else req.continue();
   }).as('navigationProfile');
@@ -68,6 +72,7 @@ function panel(label, name) {
     });
   }
   captureScrolls(name, 'body');
+  reviewPortals(name, 'body');
   cy.get('body').then(($body) => {
     reviewPanels(name, $body.find('.mantine-Tabs-panel:visible').length ? '.mantine-Tabs-panel:visible' : 'body');
   });
@@ -77,6 +82,23 @@ function panel(label, name) {
       doc.documentElement.clientWidth + 1
     )
   );
+}
+/** Open and inspect the existing confirmation, then cancel without applying its action. */
+function cancelConfirmation(name, title) {
+  cy.get('.mantine-Modal-content:visible').last().contains('.mantine-Title-root', title).should('be.visible');
+  captureScrolls('confirmations/' + name);
+  cy.get('.mantine-Modal-content:visible')
+    .last()
+    .contains('button', /^(Cancel|Skip|Continue without)$/)
+    .click();
+}
+/** Select a native editor in the development-only review host. */
+function openReviewSurface(name) {
+  login('owner', `/sheet/${scenes.casterId}/__visual/${name}`);
+  cy.contains('Hit Points', { timeout: 120000 }).should('be.visible');
+  cy.get('[data-testid="review-case"]').clear().type(name, { parseSpecialCharSequences: false });
+  cy.get('[data-testid="open-review-surface"]').click();
+  settled('.mantine-Modal-content:visible');
 }
 describe('Actual navigation and populated panels', () => {
   for (const [name, siteTheme] of [
@@ -97,6 +119,10 @@ describe('Actual navigation and populated panels', () => {
           .should(($counter) => expect($counter.text()).to.match(/^\d+$/));
       settled('main');
       captureScrolls('navigation/appearance/' + name, 'body');
+      cy.get('main .mantine-ColorSwatch-root:visible').first().scrollIntoView().click();
+      cy.get('.mantine-Popover-dropdown:visible .mantine-ColorPicker-root').should('be.visible');
+      captureScrolls('navigation/appearance/' + name + '/accent-picker');
+      cy.get('main .mantine-ColorSwatch-root:visible').first().click();
       cy.document().then((doc) =>
         expect(doc.documentElement.scrollWidth, 'appearance variant fits viewport').to.be.at.most(
           doc.documentElement.clientWidth + 1
@@ -105,6 +131,11 @@ describe('Actual navigation and populated panels', () => {
       if (name === 'dyslexia font') cy.get('main').should('have.css', 'font-family').and('include', 'OpenDyslexic');
       cy.get('[aria-label="Switch to dark mode"]').focus().should('have.focus');
       capture('navigation/appearance/' + name + '/keyboard-focus');
+      if (phone && name === 'large UI') {
+        cy.get('.mantine-Burger-root:visible').click();
+        captureScrolls('navigation/appearance/large UI/open-menu', 'body');
+        cy.get('.mantine-Burger-root:visible').click();
+      }
     });
   for (const id of ['casterId', 'variantId', 'playerId'])
     review('sheet ' + id, () => {
@@ -250,5 +281,234 @@ describe('Actual navigation and populated panels', () => {
     cy.contains('.mantine-Spotlight-action:visible', 'Heal', { timeout: 30000 }).should('be.visible');
     capture('navigation/search/results');
     cy.get('body').type('{esc}');
+  });
+  review('confirmation delete account', () => {
+    login('player', '/account');
+    cy.contains('main button', /^Account$/, { timeout: 120000 }).click();
+    cy.contains('main button', /^Delete Account$/)
+      .scrollIntoView()
+      .click();
+    cancelConfirmation('delete-account', 'Delete Account');
+  });
+  review('confirmation delete character', () => {
+    login('owner', '/characters');
+    cy.get('main [aria-label="Options"]', { timeout: 120000 }).first().click();
+    cy.contains('.mantine-Menu-item:visible', 'Delete Character').click();
+    cancelConfirmation('delete-character', 'Delete Character');
+  });
+  for (const action of ['delete campaign', 'kick player'])
+    review('confirmation ' + action, () => {
+      login('gm', '/campaign/' + scenes.campaignId);
+      if (phone) {
+        cy.get('[aria-label="Panel Grid"]:visible', { timeout: 120000 }).last().click();
+        cy.contains('.mantine-Popover-dropdown:visible button', 'Settings').click();
+      } else cy.contains('[role=tab]:visible', 'Settings', { timeout: 120000 }).click();
+      const label = action === 'delete campaign' ? 'Delete Campaign' : 'Kick Player';
+      cy.contains('main button', label).scrollIntoView().click();
+      if (action === 'kick player') cy.get('.mantine-Menu-item:visible').first().click();
+      cancelConfirmation(action.replaceAll(' ', '-'), action === 'kick player' ? /^Kick / : label);
+    });
+  review('confirmation publish bundle', () => {
+    openReviewSurface('editor:source-bundle');
+    cy.contains('label', /^Published$/)
+      .parent()
+      .find('input[type=checkbox]')
+      .then(($input) => {
+        if ($input.is(':checked')) cy.wrap($input).uncheck({ force: true });
+        cy.wrap($input).click({ force: true });
+      });
+    cancelConfirmation('publish-bundle', 'Publish Bundle');
+  });
+  review('confirmation override creature', () => {
+    openReviewSurface('editor:creature-populated');
+    cy.contains('.mantine-Modal-content:visible [role=tab]', 'Auto Builder').click();
+    cy.contains('.mantine-Modal-content:visible button', /^Process/).click();
+    cancelConfirmation('override-creature', 'Override Existing Creature');
+  });
+  review('confirmation decrease level', () => {
+    cy.intercept('POST', '**/functions/v1/find-character', (req) => {
+      req.continue((res) => {
+        if (req.body.id === scenes.casterId && res.body.status === 'success') {
+          res.body.data = { ...res.body.data, level: 2 };
+        }
+      });
+    });
+    login('owner', '/builder/' + scenes.casterId);
+    cy.contains('label', /^Level$/, { timeout: 120000 })
+      .parent()
+      .find('input')
+      .click();
+    cy.contains('[role=option]:visible', /^1$/).click();
+    cancelConfirmation('decrease-level', /^Decrease Level/);
+  });
+  for (const type of ['ancestry', 'background', 'class'])
+    review('confirmation change ' + type, () => {
+      openReviewSurface('picker:' + type + ':change');
+      cy.get('.mantine-Modal-content:visible button')
+        .filter((_, el) => /^Select$/.test(el.textContent) && !el.disabled)
+        .first()
+        .click();
+      cancelConfirmation('change-' + type, 'Change ' + type[0].toUpperCase() + type.slice(1));
+    });
+  review('confirmation delete society record', () => {
+    openReviewSurface('editor:society-existing');
+    cy.contains('.mantine-Modal-content:visible button', 'Delete Record').scrollIntoView().click();
+    cancelConfirmation('delete-society-record', 'Are you sure you want to delete this record?');
+  });
+  review('confirmation delete companion', () => {
+    login('owner', '/sheet/' + scenes.casterId);
+    cy.contains('main', 'Hit Points', { timeout: 120000 }).should('be.visible');
+    panel('Companions', 'navigation/confirmations/companion');
+    cy.get('[aria-label="Remove Companion"]:visible').first().scrollIntoView().click();
+    cancelConfirmation('delete-companion', 'Delete Companion');
+  });
+  review('confirmation import encounter', () => {
+    openReviewSurface('context:encounter');
+    cy.readFile('/private/tmp/wg-light-mode-verification/visual-data.json', { log: false }).then((fixture) => {
+      cy.get('.mantine-Modal-content:visible input[type=file]').selectFile(
+        {
+          contents: Cypress.Buffer.from(JSON.stringify({ version: 1, encounter: fixture.encounter })),
+          fileName: 'local-review-encounter.json',
+          mimeType: 'application/json',
+        },
+        { force: true }
+      );
+    });
+    cancelConfirmation('import-encounter', 'Import Encounter');
+  });
+  review('confirmation delete bundle', () => {
+    login('owner', '/homebrew');
+    cy.contains('main [role=tab]', 'My Creations', { timeout: 120000 }).click();
+    cy.get('main [aria-label="Options"]', { timeout: 120000 }).last().scrollIntoView().click();
+    cy.contains('.mantine-Menu-item:visible', 'Delete').click();
+    cancelConfirmation('delete-bundle', 'Delete Bundle');
+  });
+  review('confirmation unsubscribe bundle', () => {
+    login('player', '/homebrew', undefined, {
+      subscribed_content_sources: [
+        { source_id: 900, source_name: 'Sapphire Archive', added_at: '2026-10-07T12:00:00Z' },
+      ],
+    });
+    cy.contains('main [role=tab]', 'Subscriptions', { timeout: 120000 }).click();
+    cy.get('main [aria-label="Options"]', { timeout: 120000 }).first().scrollIntoView().click();
+    cy.contains('.mantine-Menu-item:visible', 'Unsubscribe').click();
+    cancelConfirmation('unsubscribe-bundle', 'Unsubscribe');
+  });
+  review('confirmation remove benefiting user', () => {
+    cy.intercept('POST', '**/functions/v1/gm-users-in-group', { status: 'success', data: [accounts.player.profile] });
+    login('gm', '/account');
+    cy.contains('main', 'Users in your Group', { timeout: 120000 })
+      .parent()
+      .parent()
+      .find('.mantine-CloseButton-root')
+      .first()
+      .scrollIntoView()
+      .click();
+    cancelConfirmation('remove-benefiting-user', 'Remove User');
+  });
+  for (const location of ['builder', 'campaign'])
+    review('confirmation dependencies ' + location, () => {
+      // These existing Cancel handlers enable the requested book. Keep that change in the review browser only.
+      cy.intercept('POST', '**/functions/v1/update-character', { status: 'fail', data: { review: 'Write skipped' } });
+      cy.intercept('POST', '**/functions/v1/update-campaign', { status: 'fail', data: { review: 'Write skipped' } });
+      login(
+        location === 'builder' ? 'owner' : 'gm',
+        location === 'builder' ? '/builder/' + scenes.casterId : '/campaign/' + scenes.campaignId
+      );
+      if (location === 'campaign') {
+        if (phone) {
+          cy.get('[aria-label="Panel Grid"]:visible', { timeout: 120000 }).last().click();
+          cy.contains('.mantine-Popover-dropdown:visible button', 'Settings').click();
+        } else cy.contains('[role=tab]:visible', 'Settings', { timeout: 120000 }).click();
+      } else cy.contains('[role=tab]:visible', /^Books$/, { timeout: 120000 }).click();
+      cy.contains('main button', /^Lost Omens/)
+        .scrollIntoView()
+        .click();
+      cy.contains('label', /^Rival Academies$/)
+        .scrollIntoView()
+        .click();
+      cancelConfirmation('dependencies-' + location, 'Enable Dependencies');
+    });
+  for (const nested of [false, true])
+    review('confirmation campaign defaults' + (nested ? ' homebrew' : ''), () => {
+      cy.intercept('POST', '**/functions/v1/update-character', { status: 'fail', data: { review: 'Write skipped' } });
+      cy.readFile('/private/tmp/wg-light-mode-verification/visual-data.json', { log: false }).then((fixture) => {
+        cy.intercept('POST', '**/functions/v1/find-campaign', {
+          status: 'success',
+          data: [{ ...fixture.campaign, recommended_content_sources: { enabled: [900], disabled: [] } }],
+        });
+      });
+      login('owner', '/builder/' + scenes.builderId);
+      cy.get('input[placeholder="Enter Join Key"]', { timeout: 120000 }).scrollIntoView().type('local-review{enter}');
+      cy.contains('.mantine-Modal-content:visible', 'Campaign Default Settings').should('be.visible');
+      captureScrolls('confirmations/campaign-default-settings');
+      if (nested) {
+        cy.contains('.mantine-Modal-content:visible button', 'Apply Settings').click();
+        cancelConfirmation('campaign-default-homebrew', 'Campaign Default Homebrew');
+      } else cancelConfirmation('campaign-default-settings', 'Campaign Default Settings');
+    });
+  review('confirmation revoke client access', () => {
+    cy.intercept('POST', '**/functions/v1/find-character', (req) =>
+      req.continue((res) => {
+        if (req.body.id === scenes.casterId && res.body.status === 'success')
+          res.body.data = {
+            ...res.body.data,
+            details: {
+              ...res.body.data.details,
+              api_clients: {
+                client_access: [
+                  { publicUserId: String(accounts.owner.profileId), clientId: 'local-review', addedAt: 1791374400 },
+                ],
+              },
+            },
+          };
+      })
+    );
+    login('owner', '/builder/' + scenes.casterId, undefined, {
+      api: { clients: [{ id: 'local-review', name: 'Observatory Journal', api_key: 'LOCAL-REVIEW-PLACEHOLDER' }] },
+    });
+    cy.contains('main a', 'Revoke Access', { timeout: 120000 }).scrollIntoView().click();
+    cancelConfirmation('revoke-access', 'Revoke Access');
+  });
+  review('confirmation overcharge wand', () => {
+    // Keep the exhausted charge in a read fixture; cancelling never changes the inventory.
+    cy.intercept('POST', '**/functions/v1/update-character', { status: 'fail', data: { review: 'Write skipped' } });
+    cy.intercept('POST', '**/functions/v1/find-character', (req) =>
+      req.continue((res) => {
+        if (req.body.id === scenes.casterId && res.body.status === 'success') {
+          const character = res.body.data;
+          res.body.data = {
+            ...character,
+            inventory: {
+              ...character.inventory,
+              items: character.inventory.items.map((entry) =>
+                entry.item.name.toLowerCase().includes('wand')
+                  ? {
+                      ...entry,
+                      item: { ...entry.item, meta_data: { ...entry.item.meta_data, charges: { current: 1, max: 1 } } },
+                    }
+                  : entry
+              ),
+            },
+          };
+        }
+      })
+    );
+    login('owner', '/sheet/' + scenes.casterId);
+    cy.contains('main', 'Hit Points', { timeout: 120000 }).should('be.visible');
+    if (phone) {
+      cy.get('[aria-label="Panel Grid"]:visible').last().click();
+      cy.contains('.mantine-Popover-dropdown:visible button', 'Spells').click();
+    } else cy.contains('[role=tab]:visible', /^Spells$/).click();
+    cy.contains('main button', /^Wands/)
+      .scrollIntoView()
+      .click();
+    cy.contains('main button', /Wand of/)
+      .scrollIntoView()
+      .click();
+    cy.contains('.mantine-Drawer-content:visible button', /^Cast /)
+      .scrollIntoView()
+      .click();
+    cancelConfirmation('overcharge-wand', 'Overcharge Wand');
   });
 });
