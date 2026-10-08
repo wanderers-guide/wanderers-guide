@@ -26,6 +26,7 @@ export function settled(selector = 'body') {
 }
 export function capture(name, interaction) {
   const id = `${prefix}/${name}`;
+  let screenshotPath;
   let previousDockVisibility;
   cy.document().then(async (doc) => {
     await doc.fonts.ready;
@@ -82,7 +83,14 @@ export function capture(name, interaction) {
     previousDockVisibility = body.find('[data-visual-dock]').css('visibility');
     body.find('[data-visual-dock]').css('visibility', 'hidden');
   });
-  cy.screenshot(id, { capture: 'viewport', scale: false, overwrite: true });
+  cy.screenshot(id, {
+    capture: 'viewport',
+    scale: false,
+    overwrite: true,
+    onAfterScreenshot(_element, details) {
+      screenshotPath = details.path;
+    },
+  });
   cy.get('body', { log: false }).then((body) =>
     body.find('[data-visual-dock]').css('visibility', previousDockVisibility ?? 'visible')
   );
@@ -160,9 +168,21 @@ export function capture(name, interaction) {
           class: el.className,
         });
     }
+    // Cypress appends retry suffixes to image names; keep each image's evidence paired with that exact capture.
+    const captureId = screenshotPath?.split(`/${prefix}/`)[1]?.replace(/\.png$/, '');
+    const metadataId = captureId ? `${prefix}/${captureId}` : id;
     cy.writeFile(
-      `${Cypress.env('reviewMetadataFolder')}/${id}.json`,
-      { id, scheme, width, height: doc.defaultView.innerHeight, sources, targets, interaction, lowContrast },
+      `${Cypress.env('reviewMetadataFolder')}/${metadataId}.json`,
+      {
+        id: metadataId,
+        scheme,
+        width,
+        height: doc.defaultView.innerHeight,
+        sources,
+        targets,
+        interaction,
+        lowContrast,
+      },
       { log: false }
     );
   });

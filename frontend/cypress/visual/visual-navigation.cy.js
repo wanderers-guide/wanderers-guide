@@ -241,6 +241,37 @@ describe('Actual navigation and populated panels', () => {
       }
     }
   });
+  review('campaign conditional settings and available players', () => {
+    // Inspect the available-player menu without adding or changing any campaign member.
+    cy.intercept('POST', '**/functions/v1/find-encounter', (req) =>
+      req.continue((res) => {
+        if (res.body.status !== 'success' || !Array.isArray(res.body.data)) return;
+        res.body.data = res.body.data.map((encounter) => ({
+          ...encounter,
+          combatants: {
+            ...encounter.combatants,
+            list: encounter.combatants.list.filter((combatant) => combatant.type !== 'CHARACTER'),
+          },
+        }));
+      })
+    );
+    login('gm', '/campaign/' + scenes.campaignId);
+    cy.contains('main', 'The Shattered Observatory', { timeout: 120000 }).should('be.visible');
+    panel('Encounters', 'navigation/campaign-conditional/Encounters');
+    cy.contains('main button', 'Add Player').scrollIntoView().should('not.be.disabled').click();
+    cy.contains('.mantine-Menu-dropdown:visible', 'Ilyana').should('be.visible');
+    capture('navigation/campaign-conditional/available-players', {
+      id: 'EncountersPanel:Menu:737',
+      opened: true,
+    });
+    cy.get('body').type('{esc}');
+    panel('Settings', 'navigation/campaign-conditional/Settings');
+    for (const label of ['Homebrew', 'Variant Rules', 'Options']) {
+      cy.contains('main [role=tab]:visible', label).scrollIntoView().click();
+      captureScrolls('navigation/campaign-conditional/settings-' + label, 'body');
+      reviewPortals('navigation/campaign-conditional/settings-' + label, 'body');
+    }
+  });
   review('builder books', () => {
     login('owner', '/builder/' + scenes.casterId);
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 120000 }).should('be.visible');
