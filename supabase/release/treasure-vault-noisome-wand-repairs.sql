@@ -1,7 +1,7 @@
 -- Preserve original check IDs and predicates; use the pinned shared terminal check.
 with terminal_function as materialized(select (exists(select 1 from pg_catalog.pg_proc p
   where p.oid=pg_catalog.to_regprocedure('public.treasure_vault_terminal_status_v1()')
-    and pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to((p.prosrc)::text,'UTF8')),'hex')='306b98528f553f9089d3b46c8541b30121c9cdf1c30a48a69034842982f22c87'
+    and pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to((p.prosrc)::text,'UTF8')),'hex')='18134f9ceb5b974368dcfba9e6a145c839b63a762014424005872665b4dce869'
     and p.prokind='f' and p.prolang=(select l.oid from pg_catalog.pg_language l where l.lanname='sql')
     and p.provolatile='s' and p.prosecdef is false and p.proisstrict is false and p.proleakproof is false
     and p.proparallel='u' and p.procost=100 and p.prorows=1

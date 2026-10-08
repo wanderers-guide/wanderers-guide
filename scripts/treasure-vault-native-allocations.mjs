@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { assertNativeRestoration } from './treasure-vault-native-phases.mjs';
+import { sourceCorrectionRows } from './treasure-vault-native-source-corrections.mjs';
 
 const tables=new Set(['ability_block','ancestry','archetype','background','class','class_archetype','creature','item','language','spell','trait','versatile_heritage']);
 const q=value=>"'"+String(value).replaceAll("'","''")+"'";
@@ -10,11 +11,14 @@ const normal=row=>{const result=structuredClone(row);delete result.updated_at;de
 const occurrence=(text,token)=>text.split(token).length-1;
 
 /** Independent full literal/binding validation. Never derive expected references from after-links. */
-export function verifyAllocationPhase({inputs,fixture,phase}) {
+export function verifyAllocationPhase({inputs,fixture,phase,sourceCorrected=false}) {
   assert.ok(['100','101'].includes(phase));
   assert.equal(inputs.input_provenance.mode,'checked-in-default');
   fixture.assertOwned();
   const contract=inputs.contract,actuals=new Map();
+  assert.equal(typeof sourceCorrected,'boolean');
+  assert.ok(!sourceCorrected||phase==='101');
+  const sourcePatches=sourceCorrected?sourceCorrectionRows(inputs.display.spec):[];
   assert.equal(contract.expected_entries.length,2349);assert.equal(contract.expected_sources.length,31);assert.equal(contract.expected_templates.length,11);
   assert.equal(fixture.query(`select (${inputs.helper.state});`),'t','Pinned helper metadata is required before its invocation');
   assert.deepEqual(fixture.queryJson('select row_to_json(s) from '+inputs.helper.signature+' s;'),{recognized:true,passed:true});
@@ -25,7 +29,7 @@ export function verifyAllocationPhase({inputs,fixture,phase}) {
     assert.ok(ids.every(id=>Number.isSafeInteger(id)&&id>0));assert.equal(new Set(ids).size,ids.length);
     const actual=fixture.queryJson(`select coalesce(jsonb_agg((to_jsonb(r)-'updated_at'-'search_tsv')||jsonb_build_object('uuid',r.uuid::text) order by r.id),'[]'::jsonb) from public.${table} r where r.id in(${ids.join(',')});`);
     const map=new Map(actual.map(row=>[row.id,row]));assert.equal(map.size,expected.length);
-    for(const entry of expected){assert.deepEqual(map.get(entry.id),normal(entry['row_'+phase]),'Full retained identity/date/field parity '+table+':'+entry.id);retained++;}
+    for(const entry of expected){const correction=table==='item'?sourcePatches.find(patch=>patch.id===entry.id):null;assert.deepEqual(map.get(entry.id),normal(correction?.after??entry['row_'+phase]),'Full retained identity/date/field parity '+table+':'+entry.id);retained++;}
   }
   for(const source of contract.expected_sources) {
     const actual=fixture.queryJson(`select to_jsonb(r)-'updated_at' from public.content_source r where id=${source.id};`);
@@ -77,17 +81,17 @@ export function proveWholeHelperTokenBoundary() {
 
 /**
  * Two authentic fixtures, not a delete/reinsert/sequence-remap capsule. The driver
- * owns startup/cleanup and exact106 chronology; callbacks below own the evidence.
+ * owns startup/cleanup and exact108 chronology; callbacks below own the evidence.
  * Importing/constructing this module executes no SQL or creates any resource.
  */
 export async function runAlternateAllocations({inputs,fixture,withAlternateFixture,primaryChronology,receipt}) {
   assert.equal(typeof withAlternateFixture,'function','A reviewed second authentic fixture driver is mandatory');
-  assert.equal(primaryChronology.length,106,'The primary complete chronology is explicit');
+  assert.equal(primaryChronology.length,108,'The primary complete chronology is explicit');
   assert.deepEqual(primaryChronology.map(row=>row.path),primaryChronology.map(row=>row.path).sort());
-  assert.equal(new Set(primaryChronology.map(row=>row.path)).size,106);
+  assert.equal(new Set(primaryChronology.map(row=>row.path)).size,108);
   for(const row of primaryChronology){assert.match(row.path,/^[0-9]{14}_[a-z0-9_]+\.sql$/);assert.match(row.sha256,/^[a-f0-9]{64}$/);}
   const primaryBefore=fixture.snapshot();
-  const primary=verifyAllocationPhase({inputs,fixture,phase:'101'});
+  const primary=verifyAllocationPhase({inputs,fixture,phase:'101',sourceCorrected:true});
   const hooks=new Map([
     ['20261002010000_treasure_vault_relic_seeds.sql',{item:2}],
     ['20261002030000_treasure_vault_oozeform_chair.sql',{item:2,creature:2}],
@@ -115,7 +119,7 @@ export async function runAlternateAllocations({inputs,fixture,withAlternateFixtu
   });
   assert.equal(secondary.authentic_full_chronology,true);assert.equal(secondary.generated_id_mapping,false);assert.equal(secondary.sequence_reset,false);
   assert.equal(secondary.cleaned_only_owned_containers_and_volumes,true);
-  assert.deepEqual(secondary.chronology,primaryChronology,'Both genuinely owned fixtures execute the exact same106 sorted file bytes');
+  assert.deepEqual(secondary.chronology,primaryChronology,'Both genuinely owned fixtures execute the exact same108 sorted file bytes');
   assert.deepEqual(fixture.snapshot(),primaryBefore,'The second fixture never changes any primary tuple/sequence/schema/role');
   assert.deepEqual([...visited].sort(),[...hooks.keys()].sort());assert.deepEqual([...captures.keys()].sort(),['100','101']);
   const after100=captures.get('100'),after101=captures.get('101');

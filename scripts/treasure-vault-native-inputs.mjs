@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { PREVIOUS_TERMINAL_BODY_SHA256, SOURCE_CORRECTION_TERMINAL_BODY_SHA256, SOURCE_CORRECTION_UPGRADE_PATH, SOURCE_CORRECTION_PATH, sourceCorrectionRows, terminalSourceCorrectionInstaller, terminalSourceCorrectionUpgrade, wrapDisplaySourceCorrections } from './treasure-vault-native-source-corrections.mjs';
 
 const sha = (value) => createHash('sha256').update(value).digest('hex');
 const validHash = (value) => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
@@ -32,7 +33,7 @@ export const TERMINAL_HELPER = Object.freeze({
   signature: 'public.treasure_vault_terminal_status_v1()',
 });
 export const APPROVED_SHARED_CHECK = Object.freeze({
-  body_sha256: '306b98528f553f9089d3b46c8541b30121c9cdf1c30a48a69034842982f22c87',
+  body_sha256: SOURCE_CORRECTION_TERMINAL_BODY_SHA256,
   proof_sha256: '39c123a1676c1bb3c6492e4d55b9cd59941b182ab73b574c835b727f1d30a504',
   manifest_sha256: 'dfeec0ae6e8d18e443237f7e9bfbc6571ba8ca8c61521562a0620179b84f64c3',
 });
@@ -159,27 +160,8 @@ language sql stable security invoker parallel unsafe cost 100 rows 1
 set search_path = ''
 as $$${body}$$;`;
   assert.ok(definition === expectedDefinition, 'Exact qualified STABLE INVOKER helper signature');
-  const expectedMigration = `-- Shared read-only terminal proof. Install before the first dependent repair.
-begin;
-do $terminal_install$
-begin
-  if pg_catalog.to_regprocedure(${quote(TERMINAL_HELPER.signature)}) is null then
-    execute $terminal_definition$${expectedDefinition}$terminal_definition$;
-  elsif (${state}) is not true then
-    raise exception 'Treasure Vault terminal helper differs from the reviewed definition';
-  end if;
-end $terminal_install$;
-alter function ${TERMINAL_HELPER.signature} owner to postgres;
-revoke all on function ${TERMINAL_HELPER.signature} from public,anon,authenticated;
-grant execute on function ${TERMINAL_HELPER.signature} to postgres,service_role,supabase_read_only_user;
-do $terminal_readback$
-begin
-  if (${state}) is not true then
-    raise exception 'Treasure Vault terminal helper readback failed';
-  end if;
-end $terminal_readback$;
-commit;
-`;
+  const expectedMigration = terminalSourceCorrectionInstaller({ definition: expectedDefinition, state,
+    previousState: terminalFunctionState(PREVIOUS_TERMINAL_BODY_SHA256), signature: TERMINAL_HELPER.signature });
   assert.ok(migrationSql === expectedMigration, 'No installer body, grant or readback mutation');
   assert.equal(releaseSql, `-- Only inspect definition and grants; this check does not alter or cache content.
 select 'treasure-vault-terminal-status' as id,coalesce((${state}),false) as passed;
@@ -190,15 +172,37 @@ select 'treasure-vault-terminal-status' as id,coalesce((${state}),false) as pass
     proof, proofText, proofSha256: sha(proofText), state, migrationSha256: sha(migrationSql), releaseSha256: sha(releaseSql) };
 }
 
+/** Verify the added successor wrapper while retaining the exact original101 four-pin proof. */
+export function extractReviewedDisplaySourceWrapper({ migrationSql, releaseSql, helper }) {
+  const originalSql = literal(migrationSql, '$display_original_source$');
+  const start = releaseSql.indexOf('\noriginal_checks as(\n') + '\noriginal_checks as(\n'.length;
+  const end = releaseSql.lastIndexOf('\n)\nselect o.id,case when c.passed');
+  assert.ok(start > 0 && end > start);
+  const originalReleaseSql = releaseSql.slice(start, end) + ';\n';
+  assert.equal(sha(originalSql), APPROVED_CANDIDATES.display101.migration_sha256);
+  assert.equal(sha(originalReleaseSql), APPROVED_CANDIDATES.display101.release_sha256);
+  const spec = JSON.parse(literal(originalSql, '$display101$'));
+  const patches = sourceCorrectionRows(spec);
+  const expected = wrapDisplaySourceCorrections({ originalSql, originalReleaseSql, patches,
+    helperState: helper.state, locks: historicalWrapperLocks(helper.proof), signature: TERMINAL_HELPER.signature });
+  assert.equal(migrationSql, expected.migration, 'Exact101 successor wrapper and no fallback bypass');
+  assert.equal(releaseSql, expected.release, 'Exact101 successor SELECT and unchanged original predicates');
+  return { originalSql, originalReleaseSql, patches };
+}
+
+export function historicalWrapperLocks(proof) {
+  const tables = [...new Set(proof.entries.map(entry => entry.table))].sort();
+  for (const table of tables) assert.ok(TABLES.has(table));
+  for (const table of ['item', 'creature', 'trait']) assert.ok(tables.includes(table), 'Every counted table is locked');
+  return `lock table public.content_update in share mode;\n  lock table public.content_source in share mode;\n  ${tables.map(table => `lock table public.${table} in share row exclusive mode;`).join('\n  ')}\n  perform s.id from public.content_source s where s.id in(${proof.sources.map(source => source.id).join(',')}) order by s.id for share;`;
+}
+
 /** Require exact originals, caller locks and the one shared helper pin. */
 export function extractReviewedWrapper({ migrationSql, releaseSql, manifest, helper }) {
   assert.ok(!migrationSql.includes('$global_dual$') && !releaseSql.includes('$global_dual$'), 'Global proof occurs only in the shared helper');
   const proof = helper.proof, original = literal(migrationSql, '$historical_original_dual$');
   assert.equal(sha(original), manifest.migration_sha256, 'Exact original migration body');
-  const tables = [...new Set(proof.entries.map(entry => entry.table))].sort();
-  for (const table of tables) assert.ok(TABLES.has(table));
-  for (const table of ['item', 'creature', 'trait']) assert.ok(tables.includes(table), 'Every counted table is locked');
-  const locks = `lock table public.content_update in share mode;\n  lock table public.content_source in share mode;\n  ${tables.map(table => `lock table public.${table} in share row exclusive mode;`).join('\n  ')}\n  perform s.id from public.content_source s where s.id in(${proof.sources.map(source => source.id).join(',')}) order by s.id for share;`;
+  const locks = historicalWrapperLocks(proof);
   const expectedMigration = `-- Preserve the original repair; use the pinned shared terminal check.
 do $historical_dual$
 declare completion_recognized boolean;completion_passed boolean;
@@ -391,9 +395,11 @@ export function loadTreasureVaultDefaultNativeInputs({ root, readText = path => 
       ['migrations', DISPLAY_PATH], ['release', DISPLAY_RELEASE],
       ['migrations', TERMINAL_HELPER.migration], ['release', TERMINAL_HELPER.release],
       ['release', 'requirements.json'],
+      ['migrations', SOURCE_CORRECTION_UPGRADE_PATH], ['release', 'treasure-vault-terminal-source-corrections.sql'],
+      ['migrations', SOURCE_CORRECTION_PATH], ['release', 'treasure-vault-source-corrections.sql'],
     ];
     const snapshots = await Promise.all(filenames.map(([directory, filename]) => read(directory, filename)));
-    const [completionSql, completionReleaseSql, displaySql, displayReleaseSql, helperSql, helperReleaseSql, requirementsText] = snapshots;
+    const [completionSql, completionReleaseSql, displaySql, displayReleaseSql, helperSql, helperReleaseSql, requirementsText, sourceUpgradeSql, sourceUpgradeReleaseSql, sourceRepairSql, sourceRepairReleaseSql] = snapshots;
     const helper = extractReviewedTerminalHelper({ migrationSql: helperSql, releaseSql: helperReleaseSql });
     const proof = helper.proof;
     assert.deepEqual(proof.candidates, APPROVED_CANDIDATES);
@@ -469,10 +475,23 @@ export function loadTreasureVaultDefaultNativeInputs({ root, readText = path => 
     // Reject exact file/registry alterations before rebuilding the complete row contract.
     await verifyHistoricalFiles(proof.historical_files);
     const completion = originalBatch(COMPLETION_PATH, COMPLETION_RELEASE, completionWrapper.originalSql, completionWrapper.originalReleaseSql, '$completion100$', proof.candidates.completion100, 'approved candidate origin metadata derived from tracked wrapper, not a private file read');
-    const display = originalBatch(DISPLAY_PATH, DISPLAY_RELEASE, displaySql, displayReleaseSql, '$display101$', proof.candidates.display101, 'approved candidate origin metadata verified against tracked direct SQL, not a private file read');
+    const displayWrapper = extractReviewedDisplaySourceWrapper({ migrationSql: displaySql, releaseSql: displayReleaseSql, helper });
+    const displayOriginal = originalBatch(DISPLAY_PATH, DISPLAY_RELEASE, displayWrapper.originalSql, displayWrapper.originalReleaseSql, '$display101$', proof.candidates.display101, 'approved candidate origin metadata verified against tracked original SQL, not a private file read');
+    const display = { ...displayOriginal, sql: displaySql, releaseSql: displayReleaseSql, check: displayReleaseSql.trim().replace(/;$/, ''), originalSql: displayWrapper.originalSql, originalReleaseSql: displayWrapper.originalReleaseSql };
+    const patches = sourceCorrectionRows(display.spec);
+    const sourceRepairSpec = JSON.parse(literal(sourceRepairSql, '$source_corrections102$'));
+    assert.deepEqual(sourceRepairSpec.patches.map(({ id, before, after }) => ({ table: 'item', id, before, after })), patches, 'The repair and compatibility guard accept the same three full rows');
+    assert.deepEqual(JSON.parse(literal(sourceRepairReleaseSql, '$source_corrections102$')), sourceRepairSpec);
+    assert.deepEqual(sourceRepairSpec.source, display.spec.sources.find(source => source.id === 16).row);
+    assert.equal(sourceUpgradeSql, terminalSourceCorrectionUpgrade({ state: helper.state, previousState: terminalFunctionState(PREVIOUS_TERMINAL_BODY_SHA256), patches, signature: helper.signature }));
+    assert.equal(sourceUpgradeReleaseSql, `-- Only inspect the exact source-corrected helper definition and unchanged grants.\nselect 'treasure-vault-terminal-source-corrections' as id,coalesce((${helper.state}),false) as passed;\n`);
+    assert.deepEqual(requirements[SOURCE_CORRECTION_UPGRADE_PATH], { check: 'treasure-vault-terminal-source-corrections.sql', order: 'before-functions' });
+    assert.deepEqual(requirements[SOURCE_CORRECTION_PATH], { check: 'treasure-vault-source-corrections.sql', order: 'before-functions' });
+    const sourceCorrections = { path: SOURCE_CORRECTION_PATH, sql: sourceRepairSql, releaseSql: sourceRepairReleaseSql, spec: sourceRepairSpec, patches,
+      upgrade: { path: SOURCE_CORRECTION_UPGRADE_PATH, sql: sourceUpgradeSql, releaseSql: sourceUpgradeReleaseSql } };
     const contract = reconstructDualNativeContract(completion.spec, display.spec, proof);
     return {
-      completion, display, helper, contract, verifyHistoricalFiles, verifyFreshNativeLedger, originalHistorical,
+      completion, display, helper, contract, sourceCorrections, verifyHistoricalFiles, verifyFreshNativeLedger, originalHistorical,
       completionWrapper: { path: COMPLETION_PATH, release: COMPLETION_RELEASE, sql: completionSql, releaseSql: completionReleaseSql, ...completionWrapper },
       actualWrapperMetadata: wrapperMetadata, embeddedProof: proof,
       input_provenance: {

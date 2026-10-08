@@ -81,7 +81,7 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
   const workflow=assertRegisteredCiWorkflowRecipe(read(workflowPath));
   const requirements=JSON.parse(read('supabase/release/requirements.json'));
   const chronology=inputManifest.migrations;
-  assert.equal(chronology.length,106);
+  assert.equal(chronology.length,108);
   const names=chronology.map(row=>row.path);
   assert.deepEqual([...names].sort(),names);assert.equal(new Set(names).size,names.length);
   for(const name of names)assert.match(name,migrationName);

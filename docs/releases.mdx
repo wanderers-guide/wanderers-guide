@@ -107,6 +107,12 @@ migration bytes remain immutable; use new migrations for new effects. The review
 Treasure Vault compatibility wrappers preserve their original migration bodies
 and release queries byte-for-byte and depend on the versioned terminal helper.
 They do not authorize rewriting historical effects.
+The terminal helper also recognizes one exact source-correction successor: both
+Dragon Damage Types tables use Bludgeoning for conspirator or horned dragons, and
+Major Resonating Fork uses +19 in its description and casting metadata, with DC 29
+unchanged. All three complete corrected records must match together. Mixed states
+and unrelated field changes still fail. Historical comparisons retain the original
+ledger; this allowance does not modify saved items or permit later arbitrary edits.
 The helper permits direct execution by `postgres`, `service_role` and the provider's
 existing `supabase_read_only_user`. Its exact ACL excludes PUBLIC, anon and
 authenticated, has no grant options, and does not grant role membership.

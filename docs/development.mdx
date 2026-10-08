@@ -502,8 +502,11 @@ complete preservation snapshots, shared-helper compatibility, permission checks,
 concurrent writers and alternate allocations still run. The receipt explicitly
 records reduced negative coverage and never claims an exhaustive pass.
 It runs the fast contract tests before pulling images or creating
-a fixture. These include passing the complete captured 106-file chronology through
+a fixture. These include passing the complete captured 108-file chronology through
 the alternate allocation guard, so a stale migration count fails immediately.
+The chronology also checks the exact three-record source correction, its old-helper
+upgrade, replay, conflicting proposals, partial states and late rollback. Those
+controls preserve the other catalog rows and saved-item copies.
 Its owned database does not share a runner with the browser/API
 stack. The ordinary E2E job keeps its two-hour budget and runs independently;
 both jobs must pass before release. Local fixture limits remain the same.

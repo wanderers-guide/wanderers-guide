@@ -19,6 +19,7 @@ import { runAlternateAllocations } from './treasure-vault-native-allocations.mjs
 import { createAuthenticAlternateFixtureDriver } from './treasure-vault-native-alternate-fixture.mjs';
 import { APPROVED_REGISTERED_CI_REPLAY_STEP_SHA256 } from './treasure-vault-native-registered-ci-replays.mjs';
 import { nativeDiagnostic, createNativeReceiptLogger } from './treasure-vault-native-diagnostics.mjs';
+import { createNativeSourceCorrectionControls, SOURCE_CORRECTION_UPGRADE_PATH, SOURCE_CORRECTION_PATH, SOURCE_CORRECTION_CONTROL_NAMES } from './treasure-vault-native-source-corrections.mjs';
 
 const sha = value => createHash('sha256').update(value).digest('hex');
 const completionPath = '20261002100000_treasure_vault_complete_catalog.sql';
@@ -32,11 +33,12 @@ const displayPath = '20261002101000_treasure_vault_complete_display.sql';
 export const REQUIRED_NATIVE_OBLIGATIONS = Object.freeze([
   {name:'fresh-postgresql-dual-ledger',implemented:true,reason:'Fresh actual-row PostgreSQL derivation and exact loader verifier, never an embedded prior receipt.'},
   {name:'historical023-fresh-four-insert-bootstrap',implemented:true,reason:'Genuine own-stage rollback import, independent four typed literals and explicit native identity consumption.'},
-  {name:'alternate101-allocation-and-full-token-prefix',implemented:true,reason:'Second authentic106 positive chronology and full11 allocated bindings; the separate lexical prefix proof is not a fabricated physical allocation.'},
+  {name:'alternate101-allocation-and-full-token-prefix',implemented:true,reason:'Second authentic108 positive chronology and full11 allocated bindings; the separate lexical prefix proof is not a fabricated physical allocation.'},
   {name:'concurrent-writer-and-count-phantom-ordering',implemented:true,reason:'Actual persistent two-session positive bodies, observed native locks/PIDs and exact55P03/script-exit3.'},
   {name:'shared-helper-all-pending-alias-routes',implemented:true,reason:'Mandatory structural pending-route matrix at both terminals using real GoTrue, full rollback and exact script evidence.'},
   {name:'historical14-exact-approved-positive-projection',implemented:true,reason:'Independent complete before/after approved leaf projections, actual allocations and full unrelated/saved/source preservation.'},
   {name:'exact-registered-CI-replay-recipe',implemented:true,reason:'Captured actual workflow/registered files and same-session footer, once after alternate positive chronology with full preservation and exact current input verification.'},
+  {name:'exact-source-correction-successor',implemented:true,reason:'Actual old helper upgrade, exact three-row correction/replay, mixed and curator conflict rejection, late rollback and complete saved-copy preservation.'},
 ]);
 
 /** Keep the release's representative evidence distinct from exhaustive coverage. */
@@ -104,9 +106,9 @@ export function assertRequiredNativeEvidence(receipt) {
   assert.ok(metadata.filter(row=>!privileged.includes(row)).every(row=>row.setup_login==='postgres'));
   const ci=receipt.alternate_fixture.registered_ci_replays;
   assert.equal(ci?.schema,'wg-tv-native-registered-ci-replays-v3');assert.equal(ci.passed,true);
-  assert.equal(ci.registered_requirements,99);assert.equal(ci.checks.length,62);assert.equal(ci.replays.length,89);
-  assert.equal(ci.passes,2);assert.equal(ci.registered_verification_rounds,3);assert.equal(ci.expected_native_statements,365);
-  assert.equal(ci.stages.length,365);assert.equal(new Set(ci.stages.map(row=>row.label)).size,365);
+  assert.equal(ci.registered_requirements,101);assert.equal(ci.checks.length,64);assert.equal(ci.replays.length,89);
+  assert.equal(ci.passes,2);assert.equal(ci.registered_verification_rounds,3);assert.equal(ci.expected_native_statements,371);
+  assert.equal(ci.stages.length,371);assert.equal(new Set(ci.stages.map(row=>row.label)).size,371);
   assert.equal(ci.workflow.path,'.github/workflows/e2e.yml');assert.equal(ci.workflow.exact_bytes,true);
   const workflow=receipt.input_manifest.entries.find(row=>row.path===ci.workflow.path);
   assert.ok(workflow);assert.equal(ci.workflow.sha256,workflow.sha256);
@@ -114,30 +116,42 @@ export function assertRequiredNativeEvidence(receipt) {
   assert.equal(ci.registered_release_read_only_transactions,true);assert.equal(ci.full_state_after_each_statement,true);
   assert.match(ci.baseline_sha256,/^[a-f0-9]{64}$/);
   const nativeCiStages=receipt.alternate_fixture.stages.filter(row=>row.name.startsWith('registered-ci:'));
-  assert.equal(nativeCiStages.length,365);assert.equal(new Set(nativeCiStages.map(row=>row.name)).size,365);
+  assert.equal(nativeCiStages.length,371);assert.equal(new Set(nativeCiStages.map(row=>row.name)).size,371);
   const actualStages=new Map(receipt.alternate_fixture.stages.map(row=>[row.name,row]));
   for(const row of ci.stages){
     assert.equal(row.full_state_preserved,true);
     const actual=actualStages.get('registered-ci:'+row.label);assert.ok(actual);
     assert.equal(actual.sql_sha256,row.sql_sha256);assert.equal(actual.status,0);assert.equal(actual.signal,null);assert.equal(actual.passed,true);
   }
-  assert.deepEqual(ci.stages.filter(row=>row.kind==='release').map(row=>row.round),[...Array(62).fill(0),...Array(62).fill(1),...Array(62).fill(2)]);
+  assert.deepEqual(ci.stages.filter(row=>row.kind==='release').map(row=>row.round),[...Array(64).fill(0),...Array(64).fill(1),...Array(64).fill(2)]);
   assert.ok(ci.stages.filter(row=>row.kind==='release').every(row=>row.read_only===true&&row.strict_boolean_checks>0&&Array.isArray(row.ids)&&row.ids.length===row.strict_boolean_checks&&row.ids.every(id=>typeof id==='string'&&id.trim())));
   assert.deepEqual(ci.stages.filter(row=>row.kind==='migration').map(row=>row.pass),[...Array(89).fill(1),...Array(89).fill(2)]);
   assert.deepEqual(ci.stages.filter(row=>row.kind==='footer').map(row=>({paths:row.paths,read_only:row.read_only,schema_temp_scope:row.schema_temp_scope,mutations_rolled_back:row.mutations_rolled_back})),
     [{paths:['supabase/release/war-of-immortals-index.sql','supabase/release/war-of-immortals-index-regression.sql'],read_only:false,schema_temp_scope:true,mutations_rolled_back:true}]);
   assert.equal(receipt.registered_ci_replays,undefined,'Generic CI replay runs only once, in the positive-only alternate fixture');
+  const source = receipt.source_corrections;
+  assert.equal(source?.passed, true);assert.equal(source.native_executed, true);
+  assert.deepEqual(source.owner_ids, [11937,11944,12325]);
+  assert.deepEqual(source.controls.map(row=>row.name), SOURCE_CORRECTION_CONTROL_NAMES);
+  assert.equal(new Set(source.controls.map(row => row.name)).size, source.controls.length);
+  assert.ok(source.controls.every(row => row.passed === true && row.full_state_preserved === true && row.no_transport_error === true && row.actual_signal === null));
+  for (const row of source.controls) {
+    const rejects = /^(?:changed-old-helper-rejection|mixed-successor-[1-6]|unreviewed-field-(?:11937|11944|12325)|pending-curator|late-failure-full-rollback)$/.test(row.name);
+    assert.equal(row.actual_exit_status, rejects ? 3 : 0, row.name + ': exact native script status');
+    if (rejects) assert.equal(row.sqlstate, 'P0001', row.name + ': exact guard SQLSTATE');
+  }
+  for (const name of ['exact-old-helper-upgrade','changed-old-helper-rejection','all-before-to-all-after','pending-curator','late-failure-full-rollback','actual-correction-full-preservation','corrected-historical-replays','corrected-read-only-checks',...Array.from({length:6},(_,index)=>'mixed-successor-'+(index+1)),...[11937,11944,12325].map(id=>'unreviewed-field-'+id)]) assert.ok(source.controls.some(row=>row.name===name), 'Missing native source correction control '+name);
   return requiredNativeObligations(releaseScope).map(row=>({name:row.name,implemented:true,fresh_native_evidence_verified:true}));
 }
 
 /** Pure plan: explicit membership/chronology, never glob-skip unknown or future migrations. */
 export function buildNativeVerificationPlan({inputs,files,selectedNegativeFiles = null,releaseScope=false}) {
   assert.equal(inputs.input_provenance.mode, 'checked-in-default');
-  assert.equal(files.length, 106, 'Exact reviewed complete CI chronology');
+  assert.equal(files.length, 108, 'Exact reviewed complete CI chronology');
   assert.deepEqual([...files].sort(), files);
   assert.equal(new Set(files).size, files.length);
   assert.ok(files.includes('20261001010000_repair_weapon_stat_fields.sql'));
-  for (const path of [inputs.helper.path,completionPath,displayPath]) assert.ok(files.includes(path));
+  for (const path of [inputs.helper.path,completionPath,displayPath,SOURCE_CORRECTION_UPGRADE_PATH,SOURCE_CORRECTION_PATH]) assert.ok(files.includes(path));
   const firstWrapper = inputs.actualWrapperMetadata.map(row => row.path).sort()[0];
   assert.ok(inputs.helper.path < firstWrapper);
   assert.equal(inputs.actualWrapperMetadata.length, 39);
@@ -184,6 +198,7 @@ export async function executeNativeBase({root,inputs,migrations,inputManifest,ou
     const exporter = createAuthenticDualExporter({contract:inputs.contract,completion:inputs.completion,display:inputs.display,query:fixture.query,output,receipt,verifyHistoricalFiles:inputs.verifyHistoricalFiles,checkpoint:stop.checkpoint});
     const positives=createHistoricalPositiveProjections({inputs,fixture,receipt});
     const fresh023=createHistorical023FreshImportCapsule({inputs,fixture,receipt,checkpoint:stop.checkpoint});
+    const sourceCorrections=createNativeSourceCorrectionControls({inputs,fixture,receipt,userId,checkpoint:stop.checkpoint});
     const aliases=createSharedHelperPendingAliasControls({inputs,userId,reserveProposalId:fixture.reserveProposalId,queryJson:fixture.queryJson,receipt,releaseScope});
     async function pendingAtTerminal(terminal) {
       const plan=aliases.atTerminal(terminal);
@@ -229,6 +244,18 @@ export async function executeNativeBase({root,inputs,migrations,inputManifest,ou
         assert.equal(history.status().recognized, false);
         await phases.readOnly(inputs.helper);
         await phases.replay(inputs.helper, 'installer-replay');
+      } else if (migration.path === SOURCE_CORRECTION_UPGRADE_PATH) {
+        await sourceCorrections.beforeUpgrade();
+        await stage(migration.path, migration.sql);
+        await phases.readOnly(inputs.sourceCorrections.upgrade);
+        await phases.replay(inputs.sourceCorrections.upgrade);
+      } else if (migration.path === SOURCE_CORRECTION_PATH) {
+        const captured = await sourceCorrections.beforeRepair();
+        await stage(migration.path, migration.sql);
+        sourceCorrections.afterRepair(captured);
+        await phases.readOnly(inputs.sourceCorrections);
+        await phases.replay(inputs.sourceCorrections);
+        await sourceCorrections.afterReplay();
       } else {
         if (originalPaths.has(migration.path)) await phases.negatives(negatives.beforeOriginal(migration.path));
         if(migration.path===fresh023.path)await fresh023.run();
