@@ -288,41 +288,151 @@ Property rune compatibility and other equipment benefits still require manual co
 
 ## Linking content from prose
 
-Descriptions, requirements, special clauses, and notes can reference other content. The convention is a flat marker the frontend rewrites into a real link:
+Content references are Markdown links with a drawer target:
 
+```text
+[display text](link_<type>_<id>)
 ```
-link_<type>_<id>
-```
 
-Examples:
+The target uses the actual numeric content `id`, not its `uuid`. Ability-block links
+use the appropriate subtype, such as `action`, `feat`, or `class-feature`, even
+though those records share the `ability_block` table.
 
-- `link_spell_1234` links to spell #1234
-- `link_action_42` links to ability block #42 of type `action`
-- `link_trait_7` links to trait #7
+Generate links with
+[`convertToHardcodedLink(type, name, displayText?)`](https://github.com/wanderers-guide/wanderers-guide/blob/main/frontend/src/process/content/hardcoded-links.ts).
+Do not type or guess target IDs. Resolve the intended official printing first,
+using source-scoped content lookups rather than homebrew or playtest name matches.
+When names collide, verify the target's type, source, level or rank, and rules.
 
-In React code, [`convertToHardcodedLink(type, name)`](https://github.com/wanderers-guide/wanderers-guide/blob/main/frontend/src/process/content/hardcoded-links.ts) does the lookup-by-name against the cache and emits the marker:
+For example, these calls produce the separate references in a magical weapon's
+opening phrase. Rune records use the `item` link type:
 
 ```ts
 import { convertToHardcodedLink } from "@content/hardcoded-links";
 
-`${convertToHardcodedLink("action", "Seek")} basic action`;
-// -> "[Seek](link_action_42) basic action"
+const potency: string = convertToHardcodedLink(
+  "item",
+  "Weapon Potency (+1)",
+  "+1",
+);
+const striking: string = convertToHardcodedLink("item", "Striking", "striking");
+const weapon: string = convertToHardcodedLink(
+  "item",
+  "Flintlock Musket",
+  "flintlock musket",
+);
+const openingPhrase: string = `*${potency} ${striking} ${weapon}*`;
+
+const fire: string = convertToHardcodedLink("trait", "Fire", "fire");
+const strike: string = convertToHardcodedLink("action", "Strike");
+const diseases: string = convertToHardcodedLink("trait", "Disease", "diseases");
 ```
 
-If the name isn’t in the cache, it falls back to plain text, so prose still reads correctly when the cache hasn’t loaded.
+The helper reads the current cache and falls back to plain text if a target is
+missing. That fallback keeps prose readable, but it is not a successful indexing
+check. Load the intended records and assert that every required reference resolves.
+New records without allocated IDs should retain explicit unresolved bindings in
+private staging. Do not publish placeholder IDs or borrow another printing's ID.
 
 ### What to link in prose
 
-Link named feats, actions, spells, items, and traits that have a row in the database. Energy damage types such as fire are traits; physical damage types such as piercing have no trait record and stay plain text. Conditions already auto-link in `RichText`, so do not wrap them manually. Link each relevant occurrence, using the helper to resolve its actual record.
+Link every relevant occurrence, not only the first mention. This includes
+descriptions, heightened entries, and prose in requirements, targets, triggers,
+costs, frequency, access, and special clauses. A source website's existing links
+are a starting point, not a complete WG indexing checklist.
 
-Don’t link generic phrases (“any spell”), abstract skill or attribute names, or verbs that happen to share an action’s name.
+| Reference                                               | Handling                                                                                                                                                          |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Named feats, actions, spells, items, and class features | Link the actual matching content record.                                                                                                                          |
+| Energy damage and explicit trait references             | Link the trait, including repeated fire, electricity, Tech, or Powered references in their rules context.                                                         |
+| Materials                                               | Link the complete material phrase to its matching record. For example, cold iron can resolve to a material item; never link only the word cold to the Cold trait. |
+| Inflected or plural references                          | Use the helper's display-text argument. For example, Casting this Spell can reference Cast a Spell without rewriting the sentence.                                |
+| Conditions and persistent damage                        | Leave the stored condition wording plain. `RichText` adds the condition links.                                                                                    |
+| Physical damage types                                   | Keep bludgeoning, piercing, and slashing plain; they have no corresponding damage-trait records.                                                                  |
+| Skills, attributes, and generic nouns                   | Keep abstract Acrobatics, Strength, spell, attack, and creature wording plain.                                                                                    |
+| Ordinary verbs                                          | Do not link hide, summon, fire, or similar words merely because a content name matches. Check the sentence's meaning.                                             |
+
+Disambiguate by context. A named spell reference is not a same-named trait, and
+an ordinary action verb is not necessarily a named rules action. Do not run a
+global word replacement over all fields.
 
 Condition links are added after Markdown parsing, leaving authored links and code
 untouched. Persistent damage also auto-links across emphasis and linked damage-type
 lists. The condition and traits stay separately clickable without nested links or
 changed wording. The condition blacklist also applies to persistent damage.
 
-When in doubt: if a reader would benefit from clicking through to the rules, link it. If not, leave it plain.
+### Preserve formatting and field meaning
+
+- Items, traits, and class-feature references use lowercase prose labels. Spell
+  references use lowercase italic labels. Feats and named actions use Title Case.
+  Preserve the source's emphasis for magic items and self-references.
+- Keep existing valid links, code spans, and code blocks intact. Do not re-link
+  words inside an authored link or convert literal examples into game references.
+- Preserve the book's divider between item stat lines and description text.
+  Do not add dividers absent from the source or leave empty trailing dividers.
+- Preserve Markdown hard line breaks. Consecutive stat lines need two trailing
+  spaces when a line break, rather than a new paragraph, is intended. A bare
+  newline may join those lines in the renderer.
+- Add action-symbol markup only for an explicit printed action cost, not each
+  prose mention of Interact, Strike, or another action. For example,
+  `<abbr cost="ONE-ACTION" class="action-symbol">1</abbr>` represents a printed
+  one-action cost; the named action remains a separate content link.
+- Keep activation labels, requirements, and frequency distinct. Do not move a
+  requirement into frequency merely because another website labels it differently.
+- Do not add new headings, bullets, citation notes, or explanatory wording to
+  printed rules merely to describe a repair. Use clean punctuation in new prose.
+- Prerequisite arrays, trait ID arrays, operations, and selection filters are
+  structured engine inputs, not Markdown fields. Do not insert prose links into
+  them during a formatting pass.
+
+Linking fire damage does not grant the Fire trait to the item. Likewise, linking
+a spell does not grant that spell mechanically. Staff and Spellheart casting must
+follow the printed activation and the existing item-casting rules, not every
+spell mentioned in passive description text.
+
+## Source verification and book completion
+
+Compare each record's complete rules and stat fields with the correct final
+printing, not just its name. Preserve verified book, page, and Archives of Nethys
+URL metadata under `meta_data.source.book`, `meta_data.source.page`, and
+`meta_data.source.url`. Store the exact entry URL, not a search page or an
+unrelated similarly named entry. Citation metadata is separate from player-facing
+rules text; a formatting-only edit preserves it.
+
+When sources disagree, record the exact discrepancy privately and compare the
+official rules or errata and other curated implementations. Do not silently
+invent omitted values, copy generated tables without checking their rules, or
+assume every Foundry record reflects the latest printing.
+
+A book inventory is a finite checklist, not a correctness certificate. Separate
+printed entries from WG scaffolding, generated grade variants, navigation pages,
+and unsupported rule systems. Existing source-owned records and dependencies in
+other books still need verification. A matching name or a successful schema parse
+does not prove the content is complete or mechanically connected.
+
+### Verification checklist
+
+1. Reconcile every applicable printed entry, its fields, reprints, and dependencies.
+   Keep source discrepancies and unsupported mechanics explicit.
+2. Check every prose field for all relevant reference occurrences and verify each
+   target's actual identity. Preserve operations and structured prerequisites when
+   the change is formatting-only.
+3. Validate complete proposed rows with the app's schemas. See
+   [Validating content](/development#validating-content) for the existing commands.
+4. Test the actual character or encounter controller for mechanical changes,
+   including removal, reload, source choices, stacking, and unchanged saved input.
+   Do not model temporary activation effects as unconditional passive bonuses.
+5. Inspect the actual drawer and casting view on desktop and mobile. Check headers
+   as well as the description: valid Markdown in storage is not enough if the
+   consuming field renders plain text. Count repeated links, open their targets,
+   return through drawer history, and check condition links and line breaks.
+6. Before a write, check pending curator submissions and protect the exact current
+   values from concurrent changes. Afterward, read back the complete saved row,
+   validate it, and verify the intended rendered result. Preserve existing saved
+   characters and playtest identities.
+7. Report imported content, privately staged content, verified behavior, and
+   unresolved work separately. Keep private audit reports and unpublished records
+   out of Git. Do not call an incomplete audit a completed book.
 
 ## See also
 
