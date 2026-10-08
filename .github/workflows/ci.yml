@@ -54,10 +54,13 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit -p tsconfig.json
 
+      - name: Tech Core spell and conditional regression tests
+        run: |
+          node --import=tsx --test scripts/tech-core-introductory-spells.test.mjs scripts/spell-targets.test.mjs scripts/list-id-conditionals.test.mjs
+
       - name: Rules and content audit regression tests
         run: |
           npm run test:rules
-          node --import=tsx --test scripts/tech-core-introductory-spells.test.mjs scripts/spell-targets.test.mjs
           npm run test:infra
           npm run test:audit:content
 

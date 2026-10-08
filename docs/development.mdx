@@ -165,6 +165,9 @@ Run the character rules and item drawer regressions with `npm --prefix frontend 
 These bundle the actual operation engine and drawer components against explicit local fixtures;
 selected rules content comes from the checked-in sanitized data dump. They need no running
 database or authentication account.
+Run `node --import=tsx --test scripts/list-id-conditionals.test.mjs` from `frontend`
+for numeric content-ID membership, unchanged name and mode comparisons, and conditional
+focus grants through character reload, branch replacement, and removal.
 Run `npm --prefix frontend run test:contribution:authoring` for the actual Mantine
 conditional editor's source-qualified check controls. It mounts synthetic local
 content and runs Cypress Electron without a database, account or save endpoint.
