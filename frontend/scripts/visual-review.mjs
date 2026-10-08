@@ -8,6 +8,17 @@ const file = process.env.WG_VISUAL_SESSION_FILE;
 const output = process.env.WG_VISUAL_OUTPUT_DIR;
 if (!file || !output) throw new Error('Set WG_VISUAL_SESSION_FILE and WG_VISUAL_OUTPUT_DIR. See docs/development.mdx.');
 const fixture = JSON.parse(await readFile(file, 'utf8'));
+/** Keep failed request details from retaining disposable credentials or session tokens. */
+function redactReviewError(value) {
+  if (typeof value !== 'string') return value;
+  let safe = value;
+  for (const account of Object.values(fixture.accounts ?? {}))
+    for (const secret of [account.email, account.password])
+      if (typeof secret === 'string' && secret.length) safe = safe.split(secret).join('[redacted local credential]');
+  return safe
+    .replace(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, '[redacted session token]')
+    .replace(/Bearer\s+[A-Za-z0-9._~+\/-]+=*/gi, 'Bearer [redacted]');
+}
 const baseUrl = process.env.WG_VISUAL_BASE_URL ?? 'http://127.0.0.1:5173';
 for (const value of [baseUrl, fixture.origin])
   if (!['127.0.0.1', 'localhost', '[::1]'].includes(new URL(value).hostname))
@@ -68,7 +79,11 @@ await writeFile(
       totalPassed: result.totalPassed,
       totalFailed: result.totalFailed,
       tests: result.runs?.flatMap((run) =>
-        run.tests?.map((test) => ({ title: test.title, state: test.state, displayError: test.displayError }))
+        run.tests?.map((test) => ({
+          title: test.title,
+          state: test.state,
+          displayError: redactReviewError(test.displayError),
+        }))
       ),
     },
     null,
