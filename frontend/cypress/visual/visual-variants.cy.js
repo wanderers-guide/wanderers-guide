@@ -175,11 +175,39 @@ describe('Conditional editor and navigation states', { testIsolation: false }, (
       .last()
       .should(($el) => expect($el[0].scrollWidth).to.be.at.most($el[0].clientWidth + 1));
   });
+  review('bundle delete menu contrast', () => {
+    open('editor:source-bundle');
+    cy.contains('.mantine-Modal-content:visible [role=tab]', /^Items\b/)
+      .scrollIntoView()
+      .click();
+    cy.get('[data-ui-review-id="SelectContent:Menu:1761"]:visible').first().click();
+    cy.get('.mantine-Menu-dropdown:visible').should('have.css', 'opacity', '1');
+    cy.contains('.mantine-Menu-dropdown:visible [role=menuitem]', /^Delete$/).should(($item) => {
+      const item = $item[0];
+      const styles = (element) => item.ownerDocument.defaultView.getComputedStyle(element);
+      const luminance = (color) =>
+        color
+          .match(/[\d.]+/g)
+          .slice(0, 3)
+          .map(Number)
+          .map((channel) => {
+            const value = channel / 255;
+            return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+          })
+          .reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
+      const foreground = luminance(styles(item).color);
+      const background = luminance(styles(item.closest('.mantine-Menu-dropdown')).backgroundColor);
+      expect((Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05)).to.be.at.least(4.5);
+    });
+    capture('bundle-delete-menu/upper', { id: 'SelectContent:Menu:1761', kind: 'Menu', opened: true });
+  });
   review('creature view and source feedback', () => {
     cy.window().then((win) => win.localStorage.setItem('creature-drawer-view', JSON.stringify({ view: 'SHEET' })));
     open('scene:creature-source');
     const inspectHint = (label, text, id, state) => {
-      cy.get('[aria-label="' + label + '"]:visible')
+      // Switching the native creature view recalculates its stat block before
+      // the controls become available again on the local content stack.
+      cy.get('[aria-label="' + label + '"]:visible', { timeout: 30000 })
         .last()
         .trigger('mouseover')
         .trigger('mouseenter');

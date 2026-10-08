@@ -330,6 +330,9 @@ describe('Actual navigation and populated panels', () => {
         const character = res.body.data;
         res.body.data = {
           ...character,
+          // Source 4 is absent from the recorded catalog. Keep this fixture's source
+          // request inside that catalog so its book-choice operation is replayed.
+          content_sources: { enabled: [1, 3, 8, 400] },
           options: { ...character.options, custom_operations: true },
           custom_operations: [choice('custom')],
           inventory: {
