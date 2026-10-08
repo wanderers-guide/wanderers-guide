@@ -2,6 +2,7 @@
 const cases = [
   'scene:creature-live',
   'scene:campaign-party',
+  'scene:modes',
   ...[
     'adjValue',
     'addBonusToValue',
@@ -9,9 +10,7 @@ const cases = [
     'createValue',
     'bindValue',
     'giveAbilityBlock',
-    'removeAbilityBlock',
     'giveLanguage',
-    'removeLanguage',
     'conditional',
     'select',
     'giveSpell',
@@ -144,23 +143,35 @@ const cases = [
 const scheme = Cypress.env('reviewScheme') ?? 'light';
 const width = Cypress.config('viewportWidth');
 const prefix = `${scheme}-${width}`;
-import { captureScrolls, reviewPanels, reviewPortals, recordedCatalogReads } from './visual-helpers.js';
+import { captureScrolls, reviewPanels, reviewPortals, reviewInputs, recordedCatalogReads } from './visual-helpers.js';
 describe(`Actual app surfaces ${prefix}`, { testIsolation: false }, () => {
   before(() => {
     recordedCatalogReads();
-    const accounts = Cypress.env('fixtureAccounts');
-    cy.intercept('POST', '**/functions/v1/get-user', { status: 'success', data: accounts.owner.profile });
-
-    cy.visit('/', {
+    const accounts = Cypress.env('fixtureAccounts'),
+      role = Cypress.env('reviewRole') ?? 'owner',
+      actor = accounts[role];
+    cy.intercept('POST', '**/functions/v1/get-user', (req) => {
+      if (!req.body.id || req.body.id === actor.userId) req.reply({ status: 'success', data: actor.profile });
+      else req.continue();
+    });
+    cy.intercept('POST', '**/auth/v1/token*').as('reviewSignIn');
+    cy.visit('/login?redirect=characters', {
       onBeforeLoad(win) {
         win.localStorage.setItem('wg-color-scheme', JSON.stringify(scheme));
-        win.localStorage.setItem('sb-127-auth-token', JSON.stringify(accounts.owner.session));
-        win.localStorage.setItem('user-data', JSON.stringify(accounts.owner.profile));
       },
     });
-    cy.contains('header', 'Light mode owner', { timeout: 30000 }).should('exist');
+    cy.get('input[name=email]:visible').type(actor.email, { log: false });
+    cy.get('input[name=password]:visible').type(actor.password, { log: false });
+    cy.contains('button', 'Sign in with Email').click();
+    cy.wait('@reviewSignIn', { timeout: 120000 }).its('response.statusCode').should('eq', 200);
+    cy.location('pathname', { timeout: 30000 }).should('eq', '/characters');
+    cy.contains('header', `Light mode ${role}`, { timeout: 30000 }).should('exist');
     cy.window().then((win) => {
-      win.history.pushState({}, '', `/sheet/${Cypress.env('fixtureScenes').casterId}/__visual/editor:item`);
+      win.history.pushState(
+        {},
+        '',
+        `/sheet/${Cypress.env('fixtureScenes')[role === 'player' ? 'playerId' : 'casterId']}/__visual/editor:item`
+      );
       win.dispatchEvent(new win.PopStateEvent('popstate'));
     });
     cy.contains('Hit Points', { timeout: 120000 }).should('be.visible');
@@ -173,10 +184,12 @@ describe(`Actual app surfaces ${prefix}`, { testIsolation: false }, () => {
         .some((filter) => name.startsWith(filter))
   ))
     it(name, () => {
+      cy.get('body', { log: false }).then((body) => body.find('[data-visual-dock]').css('visibility', 'visible'));
       cy.get('[data-testid="review-case"]', { timeout: 30000 })
         .clear()
         .type(name, { parseSpecialCharSequences: false });
       cy.get('[data-testid="open-review-surface"]').click();
+      cy.get('body', { log: false }).then((body) => body.find('[data-visual-dock]').css('visibility', 'hidden'));
       const selector =
         name.startsWith('drawer:') || name.startsWith('scene:')
           ? '.mantine-Drawer-content:visible'
@@ -188,6 +201,7 @@ describe(`Actual app surfaces ${prefix}`, { testIsolation: false }, () => {
         .should('not.exist');
       const label = name.replaceAll(':', '-');
       captureScrolls(label);
+      if (Cypress.env('reviewInputs')) reviewInputs(label);
       if (Cypress.env('reviewInteractions')) {
         reviewPanels(label);
         reviewPortals(label);

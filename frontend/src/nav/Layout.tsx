@@ -194,7 +194,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                         leftSection={
                           <IconUsers
                             style={{ width: rem(16), height: rem(16) }}
-                            color={theme.colors.blue[5]}
+                            color={theme.colors.blueInk[5]}
                             stroke={1.5}
                           />
                         }
@@ -211,7 +211,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                         leftSection={
                           <IconAsset
                             style={{ width: rem(16), height: rem(16) }}
-                            color={theme.colors.yellow[6]}
+                            color={theme.colors.yellowInk[6]}
                             stroke={1.5}
                           />
                         }
@@ -228,7 +228,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                         leftSection={
                           <IconFlag
                             style={{ width: rem(16), height: rem(16) }}
-                            color={theme.colors.violet[4]}
+                            color={theme.colors.violetInk[4]}
                             stroke={1.5}
                           />
                         }
@@ -245,7 +245,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                         leftSection={
                           <IconSwords
                             style={{ width: rem(16), height: rem(16) }}
-                            color={theme.colors.teal[6]}
+                            color={theme.colors.tealInk[6]}
                             stroke={1.5}
                           />
                         }
@@ -264,7 +264,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                           leftSection={
                             <IconLayersIntersect
                               style={{ width: rem(16), height: rem(16) }}
-                              color={theme.colors.pink[6]}
+                              color={theme.colors.pinkInk[6]}
                               stroke={1.5}
                             />
                           }

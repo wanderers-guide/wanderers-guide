@@ -589,15 +589,19 @@ The host renders the actual production forms, drawers and pickers over a real lo
 sheet. Its review controls and source tags are excluded from production builds.
 
 Run `npm --prefix frontend run review:visual -- pages` for routes, or omit `pages` for
-editors, operations, pickers and drawers. Configure the runner with:
+editors, operations, pickers and drawers. Use `-- navigation` for populated sheet and
+campaign panels and `-- variants` for conditional editor fields and confirmations.
+Configure the runner with:
 
 - `WG_VISUAL_BASE_URL`: the loopback preview URL.
 - `WG_VISUAL_SESSION_FILE`: a private JSON file with `origin`, `scenes` and synthetic
-  `accounts` for owner, player, GM, moderator and admin. Each account contains its fresh
-  local Supabase `session`, current `profile`, `userId` and `profileId`.
+  `accounts` for owner, player, GM, moderator and admin. Each account contains local `email` and `password` sign-in credentials, its current
+  `profile`, `userId` and `profileId`. Unused session tokens are omitted from browser inputs.
 - `WG_VISUAL_OUTPUT_DIR`: an absolute directory for screenshots and visible-source metadata.
 - `WG_VISUAL_WIDTH`, `WG_VISUAL_HEIGHT`, `WG_VISUAL_SCHEME`: viewport and `light` or `dark`.
 - `WG_VISUAL_BROWSER`: an installed Cypress browser name or executable path.
+- `WG_VISUAL_ROLE`: `owner` (default) or another synthetic role for surface cases.
+- `WG_VISUAL_INPUTS`: set to `true` to capture existing input dropdowns.
 - `WG_VISUAL_FILTER`: optional comma-separated case prefixes for focused reruns.
 - `WG_VISUAL_CATALOG_FILE`: optional JSON mapping content types to successful local API
   read results. It replays catalog reads for deterministic visual inspection only.

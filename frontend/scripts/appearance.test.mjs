@@ -169,3 +169,12 @@ test('dark foregrounds match the original palettes and character accents remain 
   assert.equal(vars.dark['--mantine-color-text'], 'rgb(202, 202, 202)');
   assert.equal(vars.dark['--mantine-color-body'], 'rgba(26, 27, 30, 1)');
 });
+
+test('secondary light controls with explicit neutral shades keep a pale fill', () => {
+  const api = load();
+  const theme = api.mergeMantineTheme(api.DEFAULT_THEME, api.createAppTheme({ scheme: 'light' }));
+  const colors = theme.variantColorResolver({ theme, color: 'gray.6', variant: 'light' });
+  assert.equal(Number(new api.Color(colors.background).alpha), 0.1);
+  assert.equal(Number(new api.Color(colors.hover).alpha), 0.16);
+  assert.equal(colors.color, 'var(--mantine-color-text-6)');
+});

@@ -56,6 +56,10 @@ import CampaignDrawer from '@pages/campaign/CampaignDrawer';
 import OperationsModal from '@modals/OperationsModal';
 import ViewOperationsModal from '@modals/ViewOperationsModal';
 import ManageSpellsModal from '@modals/ManageSpellsModal';
+import ModesDrawer from '@common/modes/ModesDrawer';
+import { getVariable, setVariable } from '@variables/variable-manager';
+import type { VariableListStr } from '@schemas/variables';
+import { ContentPackageSchema } from '@schemas/content';
 
 const LoaderSchema = z.object({ caseId: z.string(), characterId: z.string() });
 const FixtureSchema = z.object({
@@ -155,6 +159,7 @@ function ReviewSurface({
         onClose={onClose}
       />
     );
+  if (caseId === 'scene:modes') return <ModesScene fixture={fixture} onClose={onClose} />;
   if (caseId === 'scene:creature-live') return <CreatureScene fixture={fixture} />;
   if (caseId === 'scene:campaign-party')
     return (
@@ -245,7 +250,7 @@ function ReviewSurface({
           opened
           entity={entity}
           setEntity={setEntity}
-          source='Wizard'
+          source='WIZARD'
           type='SLOTS-ONLY'
           onClose={onClose}
         />
@@ -257,7 +262,7 @@ function ReviewSurface({
           opened
           entity={entity}
           setEntity={setEntity}
-          source='Wizard'
+          source='WIZARD'
           type='SLOTS-AND-LIST'
           onClose={onClose}
         />
@@ -269,7 +274,7 @@ function ReviewSurface({
           opened
           entity={entity}
           setEntity={setEntity}
-          source='Wizard'
+          source='WIZARD'
           type='LIST-ONLY'
           onClose={onClose}
         />
@@ -294,12 +299,15 @@ function ContextSurface({ fixture, caseId, onClose }: { fixture: Fixture; caseId
       return parsed.success ? [parsed.data] : [];
     });
     if (caseId.startsWith('picker:')) {
+      const requestedType = caseId.slice(7);
+      const abilityType = AbilityBlockTypeSchema.safeParse(requestedType);
       openContextModal({
         ...base,
         modal: 'selectContent',
         title: 'Select Content',
         innerProps: {
-          type: ContentTypeSchema.or(AbilityBlockTypeSchema).or(z.literal('hazard')).parse(caseId.slice(7)),
+          type: abilityType.success ? 'ability-block' : ContentTypeSchema.or(z.literal('hazard')).parse(requestedType),
+          options: abilityType.success ? { abilityBlockType: abilityType.data } : undefined,
           onClick: onClose,
         },
       });
@@ -583,4 +591,43 @@ function CreatureScene({ fixture }: { fixture: Fixture }): null {
     return () => open(null);
   }, [fixture, open]);
   return null;
+}
+
+/** Populate the real mode drawer in memory without changing the local character record. */
+function ModesScene({ fixture, onClose }: { fixture: Fixture; onClose: () => void }): ReactNode {
+  const [content] = useState(() =>
+    ContentPackageSchema.parse({
+      ancestries: [],
+      backgrounds: [],
+      classes: [],
+      abilityBlocks: (fixture.catalog.ability_block ?? [])
+        .flatMap((row) => {
+          const ability = AbilityBlockSchema.safeParse(row);
+          return ability.success && ability.data.type === 'mode' ? [ability.data] : [];
+        })
+        .slice(0, 5),
+      items: [],
+      languages: [],
+      spells: [],
+      traits: [],
+      creatures: [],
+      archetypes: [],
+      versatileHeritages: [],
+      classArchetypes: [],
+      defaultSources: { PAGE: [1, 3, 4, 8, 400], INFO: [1, 3, 4, 8, 400] },
+    })
+  );
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const previous = getVariable<VariableListStr>('CHARACTER', 'MODE_IDS')?.value ?? [];
+    setVariable(
+      'CHARACTER',
+      'MODE_IDS',
+      content.abilityBlocks.map((mode) => String(mode.id)),
+      'Local visual review'
+    );
+    setReady(true);
+    return () => setVariable('CHARACTER', 'MODE_IDS', previous, 'Local visual review');
+  }, [content]);
+  return ready ? <ModesDrawer opened onClose={onClose} content={content} /> : null;
 }

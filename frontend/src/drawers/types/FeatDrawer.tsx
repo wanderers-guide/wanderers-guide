@@ -151,7 +151,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
             <Text
               style={{
                 textDecoration: 'underline',
-                textDecorationColor: theme.colors.red[4],
+                textDecorationColor: theme.colors.redInk[4],
               }}
               span
             >
@@ -165,7 +165,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
             <Text
               style={{
                 textDecoration: 'underline',
-                textDecorationColor: theme.colors.yellow[2],
+                textDecorationColor: theme.colors.yellowInk[2],
               }}
               span
             >

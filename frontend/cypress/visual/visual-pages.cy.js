@@ -151,24 +151,37 @@ describe(`App routes ${scheme}-${Cypress.config('viewportWidth')}`, () => {
             req.reply({ status: 'success', data: accounts[scene.role].profile });
           else req.continue();
         });
-      cy.visit(scene.role ? '/' : scene.url, {
-        onBeforeLoad(win) {
-          win.localStorage.setItem('wg-color-scheme', JSON.stringify(scheme));
-          if (scene.role) {
-            win.localStorage.setItem('sb-127-auth-token', JSON.stringify(accounts[scene.role].session));
-            win.localStorage.setItem('user-data', JSON.stringify(accounts[scene.role].profile));
-          }
-          scene.setup?.(win);
-        },
-      });
       if (scene.role) {
+        cy.intercept('POST', '**/auth/v1/token*').as('reviewSignIn');
+        cy.visit('/login?redirect=characters', {
+          onBeforeLoad(win) {
+            win.localStorage.setItem('wg-color-scheme', JSON.stringify(scheme));
+            scene.setup?.(win);
+          },
+        });
+        cy.get('input[name=email]:visible').type(accounts[scene.role].email, { log: false });
+        cy.get('input[name=password]:visible').type(accounts[scene.role].password, { log: false });
+        cy.contains('button', 'Sign in with Email').click();
+        cy.wait('@reviewSignIn', { timeout: 120000 }).its('response.statusCode').should('eq', 200);
+        cy.location('pathname', { timeout: 30000 }).should('eq', '/characters');
         cy.contains('header', `Light mode ${scene.role}`, { timeout: 30000 }).should('exist');
         cy.window().then((win) => {
           win.history.pushState({}, '', scene.url);
           win.dispatchEvent(new win.PopStateEvent('popstate'));
         });
-      }
-      if (scene.ready) cy.contains(scene.ready, { timeout: 120000 }).should('be.visible');
+      } else
+        cy.visit(scene.url, {
+          onBeforeLoad(win) {
+            win.localStorage.setItem('wg-color-scheme', JSON.stringify(scheme));
+            scene.setup?.(win);
+          },
+        });
+      if (scene.ready)
+        cy.get('body').then(($body) => {
+          cy.contains($body.find('main').length ? 'main' : 'body', scene.ready, { timeout: 120000 }).should(
+            'be.visible'
+          );
+        });
       if (scene.name.startsWith('builder-'))
         cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 120000 }).should('be.visible');
       if (scene.loading) {

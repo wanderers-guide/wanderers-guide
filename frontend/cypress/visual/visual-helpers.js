@@ -26,8 +26,21 @@ export function settled(selector = 'body') {
 }
 export function capture(name, interaction) {
   const id = `${prefix}/${name}`;
+  let previousDockVisibility;
   cy.document().then(async (doc) => {
     await doc.fonts.ready;
+    await Promise.all(
+      [...doc.images]
+        .filter((img) => img.getClientRects().length && !img.complete)
+        .map(
+          (img) =>
+            new Promise((resolve) => {
+              img.addEventListener('load', resolve, { once: true });
+              img.addEventListener('error', resolve, { once: true });
+              setTimeout(resolve, 10000);
+            })
+        )
+    );
     const urls = new Set(
       [...doc.querySelectorAll('*')]
         .filter((el) => el.getClientRects().length)
@@ -56,9 +69,14 @@ export function capture(name, interaction) {
         )
     );
   });
-  cy.get('body', { log: false }).then((body) => body.find('[data-visual-dock]').css('visibility', 'hidden'));
+  cy.get('body', { log: false }).then((body) => {
+    previousDockVisibility = body.find('[data-visual-dock]').css('visibility');
+    body.find('[data-visual-dock]').css('visibility', 'hidden');
+  });
   cy.screenshot(id, { capture: 'viewport', scale: false, overwrite: true });
-  cy.get('body', { log: false }).then((body) => body.find('[data-visual-dock]').css('visibility', 'visible'));
+  cy.get('body', { log: false }).then((body) =>
+    body.find('[data-visual-dock]').css('visibility', previousDockVisibility ?? 'visible')
+  );
   cy.document().then((doc) => {
     const visible = (el) => {
       const b = el.getBoundingClientRect(),
@@ -77,13 +95,14 @@ export function capture(name, interaction) {
     const scope = [...doc.querySelectorAll('[role=dialog]')].filter(visible).at(-1) ?? doc.body;
     const sources = [
       ...new Set(
-        [...scope.querySelectorAll('[data-ui-review-source]')]
+        [scope, ...scope.querySelectorAll('[data-ui-review-source]')]
           .filter(visible)
           .map((el) => el.getAttribute('data-ui-review-source'))
+          .filter(Boolean)
       ),
     ];
-    const targets = [...scope.querySelectorAll('[data-ui-review-id]')]
-      .filter(visible)
+    const targets = [scope, ...scope.querySelectorAll('[data-ui-review-id]')]
+      .filter((el) => visible(el) && el.hasAttribute('data-ui-review-id'))
       .map((el) => ({
         id: el.getAttribute('data-ui-review-id'),
         kind: el.getAttribute('data-ui-review-kind'),
@@ -125,6 +144,7 @@ export function capture(name, interaction) {
           text: el.textContent.trim().slice(0, 100),
           ratio: Number(ratio.toFixed(2)),
           foreground: style.color,
+          background,
           source: el.closest('[data-ui-review-source]')?.getAttribute('data-ui-review-source'),
           class: el.className,
         });
@@ -190,19 +210,30 @@ export function reviewPanels(
           el.textContent.trim()
         )
       );
+      const choices = /^(editor-|operation-)/.test(name)
+        ? [...root.querySelectorAll('.mantine-SegmentedControl-label')]
+        : [];
       const targets = [
-        ...root.querySelectorAll('[role=tab],.mantine-Accordion-control,.mantine-Spoiler-control'),
+        ...choices,
         ...extras,
-        ...root.querySelectorAll('.mantine-Stepper-step'),
+        ...root.querySelectorAll('.mantine-Accordion-control,.mantine-Spoiler-control'),
+        ...root.querySelectorAll('[role=tab],.mantine-Stepper-step'),
       ].filter(
         (el) =>
           !el.disabled &&
           el.getClientRects().length &&
+          el.ownerDocument.defaultView.getComputedStyle(el).pointerEvents !== 'none' &&
           !/^(New Encounter|Generate Encounter|Add Page)$/.test(el.textContent.trim()) &&
           !(el.classList.contains('mantine-Stepper-step') && el.textContent.trim() === 'Sheet')
       );
       const key = (el) =>
         [
+          el.classList.contains('mantine-SegmentedControl-label')
+            ? 'choice-' +
+              [...root.querySelectorAll('.mantine-SegmentedControl-root')].indexOf(
+                el.closest('.mantine-SegmentedControl-root')
+              )
+            : 'panel',
           el.closest('[data-ui-review-id]')?.getAttribute('data-ui-review-id') ?? 'control',
           el.getAttribute('data-value') ?? el.textContent,
         ].join('-');
@@ -230,7 +261,8 @@ export function reviewPortals(name, selector = '.mantine-Modal-content:visible,.
         (el) =>
           ['Menu', 'Popover', 'HoverCard', 'Tooltip'].includes(el.dataset.uiReviewKind) &&
           !el.disabled &&
-          el.getClientRects().length
+          el.getClientRects().length &&
+          el.ownerDocument.defaultView.getComputedStyle(el).pointerEvents !== 'none'
       );
       for (const el of targets)
         cy.then(() => {
@@ -245,14 +277,24 @@ export function reviewPortals(name, selector = '.mantine-Modal-content:visible,.
           if (kind === 'Menu' || kind === 'Popover') cy.wrap(el, { log: false }).click();
           else cy.wrap(el, { log: false }).trigger('mouseover').trigger('mouseenter').trigger('mousemove');
           const overlay = kind === 'Tooltip' ? '.mantine-Tooltip-tooltip' : `.mantine-${kind}-dropdown`;
-          cy.get(overlay + ':visible', { timeout: 3000 }).should('be.visible');
-          capture(`${name}/portal-${slug(id)}`, { id, kind, opened: true });
-          if (kind === 'Menu' || kind === 'Popover') cy.wrap(el, { log: false }).click();
-          else
-            cy.wrap(el, { log: false })
-              .trigger('mouseout', { relatedTarget: el.ownerDocument.body })
-              .trigger('mouseleave');
-          cy.get(overlay + ':visible', { timeout: 5000 }).should('not.exist');
+          cy.wait(800, { log: false });
+          cy.get('body').then(($body) => {
+            if (!$body.find(overlay + ':visible').length) {
+              cy.writeFile(
+                `${Cypress.env('reviewMetadataFolder')}/${prefix}/${name}/unopened-${slug(id)}.json`,
+                { id, kind, opened: false },
+                { log: false }
+              );
+              return;
+            }
+            capture(`${name}/portal-${slug(id)}`, { id, kind, opened: true });
+            if (kind === 'Menu' || kind === 'Popover') cy.wrap(el, { log: false }).click();
+            else
+              cy.wrap(el, { log: false })
+                .trigger('mouseout', { relatedTarget: el.ownerDocument.body })
+                .trigger('mouseleave');
+            cy.get(overlay + ':visible', { timeout: 5000 }).should('not.exist');
+          });
         });
     });
 }
@@ -309,20 +351,30 @@ export function reviewInputs(name, selector = '.mantine-Modal-content:visible,.m
     .then(($root) => {
       const inputs = [
         ...$root[0].querySelectorAll(
-          '.mantine-Select-input,.mantine-MultiSelect-input,.mantine-Autocomplete-input,.mantine-TagsInput-input'
+          'input.mantine-Select-input,.mantine-MultiSelect-input input,input.mantine-Autocomplete-input,.mantine-TagsInput-input input,input.mantine-ColorInput-input'
         ),
-      ].filter((el) => !el.disabled && el.getClientRects().length);
+      ].filter(
+        (el) =>
+          !el.disabled &&
+          el.getClientRects().length &&
+          el.ownerDocument.defaultView.getComputedStyle(el).pointerEvents !== 'none'
+      );
       for (const [i, el] of inputs.entries())
         cy.then(() => {
           if (!el.isConnected || !el.getClientRects().length) return;
           cy.wrap(el, { log: false }).scrollIntoView().click();
-          cy.get('.mantine-Combobox-dropdown:visible', { timeout: 10000 }).should('be.visible');
+          cy.wait(200, { log: false });
           capture(
             `${name}/input-${i}-${slug(el.closest('.mantine-InputWrapper-root')?.querySelector('label')?.textContent ?? el.getAttribute('placeholder') ?? 'options')}`,
-            { kind: 'Combobox', opened: true }
+            {
+              kind: el.classList.contains('mantine-ColorInput-input') ? 'ColorInput' : 'Combobox',
+              opened: !!el.ownerDocument.querySelector('[role=listbox],.mantine-ColorInput-dropdown'),
+            }
           );
-          cy.wrap(el, { log: false }).type('{esc}', { force: true });
-          cy.get('.mantine-Combobox-dropdown:visible', { timeout: 5000 }).should('not.exist');
+          if (el.classList.contains('mantine-ColorInput-input'))
+            cy.get('.mantine-Modal-header:visible,.mantine-Drawer-header:visible').last().click('center');
+          else cy.wrap(el, { log: false }).type('{esc}', { force: true });
+          cy.get('[role=listbox]:visible,.mantine-ColorInput-dropdown:visible', { timeout: 5000 }).should('not.exist');
         });
     });
 }

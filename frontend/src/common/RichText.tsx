@@ -277,9 +277,11 @@ export default function RichText(props: RichTextProps) {
         table(innerProps) {
           const { children, className } = innerProps;
           return (
-            <Table striped withTableBorder className={className}>
-              {children}
-            </Table>
+            <Table.ScrollContainer minWidth={0} type='native' style={{ maxWidth: '100%', minWidth: 0 }}>
+              <Table striped withTableBorder className={className}>
+                {children}
+              </Table>
+            </Table.ScrollContainer>
           );
         },
         thead(innerProps) {

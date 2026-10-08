@@ -3,6 +3,7 @@ import {
   DEFAULT_THEME,
   defaultVariantColorsResolver,
   parseThemeColor,
+  rgba,
   v8CssVariablesResolver,
   type CSSVariablesResolver,
   type MantineColorsTuple,
@@ -98,20 +99,33 @@ export function createAppTheme({
         'rgba(16,  17,  19,  0.57)', // [9] darkest / most transparent
       ],
 
-      // Gray scale for light mode: near-opaque at [0] → nearly transparent at [9]
-      // Mirrors the dark scale's opacity curve on a neutral-light palette.
-      gray: [
-        'rgba(248, 249, 250, 0.89)', // [0] near-white surfaces
-        'rgba(241, 243, 245, 0.85)', // [1]
-        'rgba(233, 236, 239, 0.80)', // [2]
-        'rgba(222, 226, 230, 0.75)', // [3]
-        'rgba(206, 212, 218, 0.82)', // [4] ← glass surfaces
-        'rgba(173, 181, 189, 0.77)', // [5]
-        'rgba(134, 142, 150, 0.72)', // [6] ← borders / muted text
-        'rgba(73,  80,  87,  0.67)', // [7] ← body text
-        'rgba(52,  58,  64,  0.62)', // [8]
-        'rgba(33,  37,  41,  0.57)', // [9] darkest text
-      ],
+      // Native light controls need opaque neutral text and surfaces; preserve the original dark gray scale.
+      gray:
+        scheme === 'light'
+          ? [
+              '#f8f9fa',
+              '#f1f3f5',
+              '#e9ecef',
+              '#dee2e6',
+              '#ced4da',
+              '#adb5bd',
+              '#596779',
+              '#3d4b5c',
+              '#344152',
+              '#2c394b',
+            ]
+          : [
+              'rgba(248, 249, 250, 0.89)', // [0] near-white surfaces
+              'rgba(241, 243, 245, 0.85)', // [1]
+              'rgba(233, 236, 239, 0.80)', // [2]
+              'rgba(222, 226, 230, 0.75)', // [3]
+              'rgba(206, 212, 218, 0.82)', // [4] ← glass surfaces
+              'rgba(173, 181, 189, 0.77)', // [5]
+              'rgba(134, 142, 150, 0.72)', // [6] ← borders / muted text
+              'rgba(73,  80,  87,  0.67)', // [7] ← body text
+              'rgba(52,  58,  64,  0.62)', // [8]
+              'rgba(33,  37,  41,  0.57)', // [9] darkest text
+            ],
     },
     cursorType: 'pointer',
     primaryColor: 'guide',
@@ -129,7 +143,16 @@ export function createAppTheme({
       const role = parsed.color === 'gray' ? 'text' : parsed.color === 'dark' ? 'darkInk' : parsed.color + 'Ink';
       if (!input.theme.colors[role]) return resolved;
       const foreground = 'var(--mantine-color-' + role + '-' + (parsed.shade ?? 6) + ')';
-      return { ...resolved, color: foreground, hoverColor: foreground };
+      // Mantine 9 treats an explicit shade in the light variant as an opaque fill.
+      // Keep these secondary controls pale so the foreground role stays readable.
+      const lightFill =
+        input.variant === 'light' && parsed.shade !== undefined
+          ? {
+              background: rgba(input.theme.colors[parsed.color][parsed.shade], 0.1),
+              hover: rgba(input.theme.colors[parsed.color][parsed.shade], 0.16),
+            }
+          : {};
+      return { ...resolved, ...lightFill, color: foreground, hoverColor: foreground };
     },
     defaultRadius: 'md',
     fontFamily: dyslexiaFontEnabled ? 'OpenDyslexicRegular, sans-serif' : 'Montserrat, sans-serif',
@@ -149,15 +172,20 @@ export function createAppTheme({
           header: { backgroundColor: 'var(--reading-bg-color)' },
         },
       },
+      // Portaled controls remain above the app's existing modal and drawer layers.
       Popover: {
+        defaultProps: { zIndex: 1500 },
         styles: { dropdown: { backgroundColor: 'var(--portal-bg-color)' } },
       },
       Menu: {
+        defaultProps: { zIndex: 1500 },
         styles: { dropdown: { backgroundColor: 'var(--portal-bg-color)' } },
       },
       HoverCard: {
+        defaultProps: { zIndex: 1500 },
         styles: { dropdown: { backgroundColor: 'var(--portal-bg-color)' } },
       },
+      Tooltip: { defaultProps: { zIndex: 1500 } },
       Accordion: {
         vars: () => ({
           item: {
@@ -174,6 +202,8 @@ export function createAppTheme({
         styles: scheme === 'light' ? { markLabel: { color: 'var(--mantine-color-dimmed)' } } : {},
       },
       Badge: {
+        // Resolve native filled colors even when a badge relies on its default variant.
+        defaultProps: scheme === 'light' ? { variant: 'filled' } : undefined,
         styles: {
           label: { overflow: 'visible' },
         },
@@ -203,6 +233,7 @@ export function createAppTheme({
         }),
       },
       RichTextEditor: {
+        styles: scheme === 'light' ? { root: { backgroundColor: 'var(--reading-bg-color)' } } : undefined,
         vars: () => ({
           root: {
             borderColor: IMPRINT_BORDER_COLOR,

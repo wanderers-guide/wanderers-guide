@@ -1,5 +1,5 @@
 /** Local visual reviews only; fixture credentials never enter source control or screenshots. */
-import { readFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
 import cypress from 'cypress';
@@ -13,13 +13,17 @@ for (const value of [baseUrl, fixture.origin])
   if (!['127.0.0.1', 'localhost', '[::1]'].includes(new URL(value).hostname))
     throw new Error('Visual fixture reviews require loopback origins.');
 for (const role of ['owner', 'player', 'gm', 'mod', 'admin'])
-  if (!fixture.accounts?.[role]?.session || !fixture.accounts[role].profile)
-    throw new Error('Provide fresh synthetic sessions and profiles for every review role.');
+  if (!fixture.accounts?.[role]?.email || !fixture.accounts[role].password || !fixture.accounts[role].profile)
+    throw new Error('Provide synthetic local sign-in credentials and profiles for every review role.');
 await mkdir(output, { recursive: true });
 const result = await cypress.run({
   project,
   browser: process.env.WG_VISUAL_BROWSER ?? 'chrome',
-  spec: join(project, 'cypress/visual', process.argv[2] === 'pages' ? 'visual-pages.cy.js' : 'visual-surfaces.cy.js'),
+  spec: join(
+    project,
+    'cypress/visual',
+    `visual-${['pages', 'navigation', 'variants'].includes(process.argv[2]) ? process.argv[2] : 'surfaces'}.cy.js`
+  ),
   config: {
     baseUrl,
     specPattern: 'cypress/visual/*.cy.js',
@@ -30,14 +34,45 @@ const result = await cypress.run({
     trashAssetsBeforeRuns: false,
   },
   env: {
+    reviewRole: process.env.WG_VISUAL_ROLE ?? 'owner',
+    reviewInputs: process.env.WG_VISUAL_INPUTS === 'true',
     reviewScheme: process.env.WG_VISUAL_SCHEME ?? 'light',
     reviewFilter: process.env.WG_VISUAL_FILTER,
     reviewInteractions: process.env.WG_VISUAL_INTERACTIONS !== 'false',
     reviewMetadataFolder: join(output, 'metadata'),
     recordedCatalogFile: process.env.WG_VISUAL_CATALOG_FILE,
-    fixtureAccounts: fixture.accounts,
+    fixtureAccounts: Object.fromEntries(
+      Object.entries(fixture.accounts).map(([role, account]) => [
+        role,
+        {
+          email: account.email,
+          password: account.password,
+          userId: account.userId,
+          profileId: account.profileId,
+          profile: account.profile,
+        },
+      ])
+    ),
     fixtureScenes: fixture.scenes,
     functions_url: fixture.origin + '/functions/v1',
   },
 });
+await writeFile(
+  join(output, 'result.json'),
+  JSON.stringify(
+    {
+      scheme: process.env.WG_VISUAL_SCHEME ?? 'light',
+      width: Number(process.env.WG_VISUAL_WIDTH ?? 1280),
+      filter: process.env.WG_VISUAL_FILTER,
+      totalTests: result.totalTests,
+      totalPassed: result.totalPassed,
+      totalFailed: result.totalFailed,
+      tests: result.runs?.flatMap((run) =>
+        run.tests?.map((test) => ({ title: test.title, state: test.state, displayError: test.displayError }))
+      ),
+    },
+    null,
+    2
+  )
+);
 process.exitCode = result.totalFailed > 0 || result.failures ? 1 : 0;
