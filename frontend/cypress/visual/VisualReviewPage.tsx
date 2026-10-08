@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-quer
 import { z } from 'zod';
 import { Provider, createStore, useSetAtom } from 'jotai';
 import { characterState } from '@atoms/characterAtoms';
+import { npcsState, sessionIdeasState } from '@atoms/campaignAtoms';
 import { drawerState, creatureDrawerState } from '@atoms/navAtoms';
 import { mapToDrawerData } from '@drawers/drawer-utils';
 import { DrawerTypeSchema } from '@schemas/index';
@@ -28,6 +29,7 @@ import {
   AbilityBlockSchema,
   ItemSchema,
   CharacterSchema,
+  CampaignSchema,
   CreatureSchema,
   HazardSchema,
   ContentSourceSchema,
@@ -67,6 +69,7 @@ import { AdvancedSearchModal } from '@modals/AdvancedSearchModal';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import UnlockHomebrewModal from '@modals/UnlockHomebrewModal';
 import CampaignDrawer from '@pages/campaign/CampaignDrawer';
+import InspirationPanel from '@pages/campaign/panels/InspirationPanel';
 import OperationsModal from '@modals/OperationsModal';
 import ViewOperationsModal from '@modals/ViewOperationsModal';
 import ManageSpellsModal from '@modals/ManageSpellsModal';
@@ -238,6 +241,7 @@ function ReviewSurface({
     );
   if (caseId === 'scene:modes') return <ModesScene fixture={fixture} onClose={onClose} />;
   if (caseId === 'scene:notifications') return <NotificationScene />;
+  if (caseId === 'scene:inspiration') return <InspirationScene fixture={fixture} onClose={onClose} />;
   if (caseId === 'scene:conditional-hints') return <ConditionalHintsScene fixture={fixture} onClose={onClose} />;
   if (caseId === 'scene:creature-live') return <CreatureScene fixture={fixture} />;
   if (caseId.startsWith('panel:')) return <ConditionalPanelScene fixture={fixture} caseId={caseId} onClose={onClose} />;
@@ -769,6 +773,51 @@ function DrawerSurface({ fixture, caseId, onClose }: { fixture: Fixture; caseId:
     );
   }, [caseId, character, fixture.catalog, openDrawer]);
   return null;
+}
+
+/** Populate the native inspiration cards without calling generation or storing campaign changes. */
+function InspirationScene({ fixture, onClose }: { fixture: Fixture; onClose: () => void }): ReactNode {
+  const [store] = useState(() => {
+    const reviewStore = createStore();
+    reviewStore.set(sessionIdeasState, [
+      {
+        name: 'The Keeper’s Invitation',
+        outline: 'The party returns to the observatory and discovers a sealed letter beside the sapphire archive.',
+        actions: [
+          { name: 'The Keeper', description: 'A patient scholar with an unfinished star chart.', type: 'NPC' },
+          {
+            name: 'The Sealed Archive',
+            description: 'An encounter at the observatory’s eastern gate.',
+            type: 'ENCOUNTER',
+          },
+        ],
+      },
+    ]);
+    reviewStore.set(npcsState, [
+      {
+        name: 'Eliara, Keeper of the Archive',
+        description: 'A patient scholar carrying a silver lantern and an unfinished star chart.',
+        level: 3,
+        class: 'Wizard',
+        background: 'Scholar',
+        ancestry: 'Elf',
+      },
+    ]);
+    return reviewStore;
+  });
+  return (
+    <Modal opened title='Campaign Inspiration' onClose={onClose} size={1100}>
+      <Provider store={store}>
+        <InspirationPanel
+          panelHeight={540}
+          panelWidth={Math.min(window.innerWidth - 80, 1000)}
+          campaign={CampaignSchema.parse(fixture.campaign)}
+          players={[fixture.characters.playerId]}
+          setCampaign={() => {}}
+        />
+      </Provider>
+    </Modal>
+  );
 }
 
 /** Preview the existing action-notification template without invoking imports, generation, or recovery. */

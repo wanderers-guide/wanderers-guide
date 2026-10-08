@@ -101,6 +101,7 @@ function cancelConfirmation(name, title) {
     .last()
     .contains('.mantine-Title-root', title, { timeout: 30000 })
     .should('be.visible');
+  if (name === 'campaign-default-homebrew') reviewPortals('confirmations/' + name);
   captureScrolls('confirmations/' + name);
   cy.get('.mantine-Modal-content:visible')
     .last()
@@ -220,6 +221,7 @@ describe('Actual navigation and populated panels', () => {
   review('builder books', () => {
     login('owner', '/builder/' + scenes.casterId);
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 120000 }).should('be.visible');
+    reviewPortals('navigation/builder/home', 'main');
     if (phone) {
       cy.contains('main button', /^Builder$/).click();
       cy.contains('main button', /^Preview$/).click();
@@ -342,6 +344,8 @@ describe('Actual navigation and populated panels', () => {
       cy.get('input[placeholder="Select content source"]').type(source.name);
       cy.contains('[role=option]:visible', source.name).click();
       cy.contains('main button', /^Fetch$/).click();
+      cy.contains('main button', /^View$/).should('be.visible');
+      reviewPortals('navigation/cleaning/record-controls', 'main');
       cy.contains('main button', /^View$/).click();
       cy.contains('.mantine-Modal-content:visible', 'Cleaning Log').should('be.visible');
       captureScrolls('navigation/cleaning/log-modal');

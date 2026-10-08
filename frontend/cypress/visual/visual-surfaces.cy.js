@@ -4,6 +4,7 @@ const cases = [
   'scene:campaign-party',
   'scene:modes',
   'scene:notifications',
+  'scene:inspiration',
   'scene:conditional-hints',
   'panel:details',
   'panel:feats',
