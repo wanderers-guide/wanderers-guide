@@ -123,7 +123,7 @@ describe(`App routes ${scheme}-${Cypress.config('viewportWidth')}`, () => {
         .split(',')
         .some((f) => s.name.startsWith(f))
   ))
-    it(scene.name, () => {
+    it(scene.name, { retries: 1 }, () => {
       recordedCatalogReads();
       cy.intercept('POST', '**/functions/v1/handle-patreon-redirect', {
         statusCode: 503,

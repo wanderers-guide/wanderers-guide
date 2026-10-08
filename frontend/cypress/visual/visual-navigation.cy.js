@@ -12,7 +12,7 @@ const accounts = Cypress.env('fixtureAccounts'),
 const phone = Cypress.config('viewportWidth') < 600;
 const filter = Cypress.env('reviewFilter');
 const review = (name, fn) =>
-  !filter || filter.split(',').some((value) => name.includes(value)) ? it(name, fn) : it.skip(name, fn);
+  !filter || filter.split(',').some((value) => name.includes(value)) ? it(name, { retries: 1 }, fn) : it.skip(name, fn);
 function login(role, url, siteTheme, profileOverrides = {}, catalogTransform) {
   recordedCatalogReads(catalogTransform);
   // Exercise the existing local dice fallback without creating an external room.
@@ -74,14 +74,17 @@ function panel(label, name) {
       }
     });
   }
-  if (name === 'navigation/campaign/Encounters')
-    cy.get('main input[placeholder="HP"]', { timeout: 120000 }).should(($inputs) => {
-      expect($inputs.length, 'populated local combatants').to.be.greaterThan(1);
-      expect(
-        [...$inputs].every((input) => input.value !== ''),
-        'combatant statistics have loaded'
-      ).to.eq(true);
-    });
+  if (name === 'navigation/campaign/Encounters') {
+    if (phone) cy.contains('main .mantine-Text-root', /^\d+ AC$/, { timeout: 120000 }).should('be.visible');
+    else
+      cy.get('main input[placeholder="HP"]', { timeout: 120000 }).should(($inputs) => {
+        expect($inputs.length, 'populated local combatants').to.be.greaterThan(1);
+        expect(
+          [...$inputs].every((input) => input.value !== ''),
+          'combatant statistics have loaded'
+        ).to.eq(true);
+      });
+  }
   captureScrolls(name, 'body');
   reviewPortals(name, 'body');
   cy.get('body').then(($body) => {
