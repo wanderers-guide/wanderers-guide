@@ -10,6 +10,13 @@ assert(!existsSync(join(directory, 'stats.html')), 'developer reports must stay 
 assert(!precached.some((url) => /stats\.html|game-icons-/.test(url)), 'optional reports/icons must not be precached');
 const icons = readdirSync(join(directory, 'assets')).filter((name) => /^game-icons-.*\.js$/.test(name));
 assert.equal(icons.length, 1, 'the existing icon set must remain an independent optional chunk');
+for (const name of readdirSync(join(directory, 'assets')).filter((name) => /\.js$/.test(name))) {
+  const script = readFileSync(join(directory, 'assets', name), 'utf8');
+  assert(
+    !/__visual-fixtures|data-ui-review-|Open review surface|CREATURE_LOCAL_VISUAL/.test(script),
+    'local visual review fixtures and controls must not ship'
+  );
+}
 assert(worker.includes('wg-game-icons') && worker.includes('CacheFirst'), 'icons must be cached after use');
 console.log(
   JSON.stringify(

@@ -321,7 +321,7 @@ function SelectionFilteredAbilityBlock(props: {
       />
 
       <Box>
-        <Text c='gray.4' fz='xs'>
+        <Text c='text.4' fz='xs'>
           Levels
         </Text>
         <Group>
@@ -549,7 +549,7 @@ function SelectionFilteredSpell(props: {
       <Divider label={<Text fz='sm'>List Filters</Text>} labelPosition='left' />
 
       <Box>
-        <Text c='gray.4' fz='xs'>
+        <Text c='text.4' fz='xs'>
           Levels
         </Text>
         <Group>

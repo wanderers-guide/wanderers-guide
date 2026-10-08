@@ -24,7 +24,6 @@ import { setPageTitle } from '@utils/document-change';
 import { clearUserData } from '@auth/user-manager';
 import { IconMail } from '@tabler/icons-react';
 import { supabase } from '../main';
-import { set } from 'node_modules/cypress/types/lodash';
 
 export function Component() {
   setPageTitle('Login');
@@ -67,7 +66,7 @@ export function Component() {
   const signinSection = () => {
     return (
       <Stack>
-        <Title order={5} pb={0} ta='center' c='gray'>
+        <Title order={5} pb={0} ta='center' c='text'>
           Sign in to continue
         </Title>
         <Stack gap={10}>
@@ -156,7 +155,6 @@ export function Component() {
 
               if (data.user) {
                 // Will automatically update and redirect
-                console.log('Sign in data:', data);
                 setEmail('');
                 setPassword('');
               }
@@ -165,12 +163,12 @@ export function Component() {
             Sign in with Email
           </Button>
           {error && (
-            <Text c='red' ta='center' size='sm'>
+            <Text c='redInk' ta='center' size='sm'>
               {error}
             </Text>
           )}
           {message && (
-            <Text c='blue' ta='center' size='sm'>
+            <Text c='blueInk' ta='center' size='sm'>
               {message}
             </Text>
           )}
@@ -247,8 +245,6 @@ export function Component() {
                 setError(null);
               }
 
-              console.log('Register in data:', data);
-
               if (data.user) {
                 if (!data.user.user_metadata.email_verified) {
                   setMessage('A verification email has been sent to your email address. Please check your inbox.');
@@ -262,12 +258,12 @@ export function Component() {
             Register
           </Button>
           {error && (
-            <Text c='red' ta='center' size='sm'>
+            <Text c='redInk' ta='center' size='sm'>
               {error}
             </Text>
           )}
           {message && (
-            <Text c='blue' ta='center' size='sm'>
+            <Text c='blueInk' ta='center' size='sm'>
               {message}
             </Text>
           )}
@@ -322,12 +318,12 @@ export function Component() {
             Send Reset Email
           </Button>
           {error && (
-            <Text c='red' ta='center' size='sm'>
+            <Text c='redInk' ta='center' size='sm'>
               {error}
             </Text>
           )}
           {message && (
-            <Text c='blue' ta='center' size='sm'>
+            <Text c='blueInk' ta='center' size='sm'>
               {message}
             </Text>
           )}

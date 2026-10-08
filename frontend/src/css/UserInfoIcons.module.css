@@ -1,5 +1,5 @@
 .icon {
-  color: light-dark(var(--mantine-color-gray-5), var(--mantine-color-dark-1));
+  color: light-dark(var(--mantine-color-text-5), var(--mantine-color-dark-1));
 }
 
 .name {

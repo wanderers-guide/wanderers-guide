@@ -1,3 +1,4 @@
+import { colorSchemeAtom } from '@atoms/appearance';
 import { clearSessionDataPreservingDrafts } from '@utils/character-save-buffer';
 import {
   Title,
@@ -127,6 +128,7 @@ function SettingRow({
 }
 
 function ProfileSection() {
+  const [colorScheme, setColorScheme] = useAtom(colorSchemeAtom);
   const theme = useMantineTheme();
   const [loading, setLoading] = useState(false);
   const [_user, setUser] = useAtom(userState);
@@ -356,8 +358,8 @@ function ProfileSection() {
                     radius={80}
                     mt={-30}
                     style={{
-                      backgroundColor: theme.colors.dark[7],
-                      border: `2px solid ${theme.colors.dark[7] + 'D3'}`,
+                      backgroundColor: 'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-7))',
+                      border: `2px solid ${'var(--reading-bg-color)'}`,
                       cursor: 'pointer',
                     }}
                   />
@@ -593,6 +595,14 @@ function ProfileSection() {
               <Accordion.Control icon={<IconPalette size='0.9rem' />}>Appearance</Accordion.Control>
               <Accordion.Panel>
                 <Stack gap={0}>
+                  <SettingRow label='Light Mode'>
+                    <Switch
+                      size='sm'
+                      aria-label='Light mode'
+                      checked={colorScheme === 'light'}
+                      onChange={(event) => setColorScheme(event.currentTarget.checked ? 'light' : 'dark')}
+                    />
+                  </SettingRow>
                   <SettingRow label='Theme Color' description='Primary accent color for the site'>
                     <Popover position='bottom-end' withArrow shadow='md'>
                       <Popover.Target>

@@ -17,7 +17,7 @@ import { installClientErrorReporting } from '@utils/client-errors';
 installClientErrorReporting();
 import './index.css';
 import { ErrorPage } from './pages/ErrorPage.tsx';
-import { MantineProvider } from '@mantine/core';
+import { AppThemeProvider } from '@common/AppThemeProvider';
 import { supabase } from './supabase-client.ts';
 
 // The default QueryClient uses staleTime: 0, which marks every result stale immediately —
@@ -47,6 +47,18 @@ const router = createBrowserRouter([
     element: <App />,
     errorElement: <ErrorPage />,
     children: [
+      ...(import.meta.env.DEV && import.meta.env.MODE === 'visual'
+        ? [
+            {
+              path: 'sheet/:characterId/__visual/:caseId',
+              lazy: () => import('../cypress/visual/VisualReviewPage'),
+              loader: ({ params }: { params: { caseId?: string; characterId?: string } }) => ({
+                caseId: params.caseId,
+                characterId: params.characterId,
+              }),
+            },
+          ]
+        : []),
       {
         Component: AuthRouteWrapper,
         children: [
@@ -182,10 +194,10 @@ console.error = function (message, ...args) {
 const root = createRoot(document.getElementById('root') as HTMLElement);
 root.render(
   <StrictMode>
-    <MantineProvider forceColorScheme='dark'>
+    <AppThemeProvider>
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
       </QueryClientProvider>
-    </MantineProvider>
+    </AppThemeProvider>
   </StrictMode>
 );

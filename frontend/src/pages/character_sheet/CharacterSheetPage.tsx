@@ -766,7 +766,7 @@ function SectionPanels(props: {
                     ref={tabOptionsRef}
                     style={{
                       backgroundColor: hoveredTabOptions || openedTabOption ? IMPRINT_BG_COLOR : 'transparent',
-                      color: openedTabOption ? theme.colors.gray[0] : undefined,
+                      color: openedTabOption ? theme.colors.text[0] : undefined,
                       border: openedTabOption ? `1px solid ` + IMPRINT_BORDER_COLOR : `1px solid transparent`,
                     }}
                   >
@@ -785,7 +785,7 @@ function SectionPanels(props: {
                       }}
                       style={{
                         backgroundColor: activeTab === tab ? IMPRINT_BG_COLOR : undefined,
-                        color: activeTab === tab ? theme.colors.gray[0] : undefined,
+                        color: activeTab === tab ? theme.colors.text[0] : undefined,
                       }}
                     >
                       {toLabel(tab)}

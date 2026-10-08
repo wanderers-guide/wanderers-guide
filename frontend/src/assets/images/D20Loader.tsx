@@ -68,7 +68,7 @@ export default function D20Loader(props: {
         fz='sm'
         ta='center'
         fs='italic'
-        c='gray.0'
+        c='text.0'
         style={{
           ...(props.hasStatusBg ? glassStyle() : {}),
           borderRadius: '25px',

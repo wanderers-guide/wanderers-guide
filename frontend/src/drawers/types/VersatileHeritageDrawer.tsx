@@ -33,11 +33,15 @@ export function VersatileHeritageDrawerTitle(props: {
 
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const { data: _versatileHeritage, isFetching, refetch } = useQuery({
+  const {
+    data: _versatileHeritage,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-versatile-heritage-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       return await fetchContentById<VersatileHeritage>('versatile-heritage', id);
     },
@@ -85,7 +89,7 @@ export function VersatileHeritageDrawerContent(props: {
     queryKey: [`find-versatileHeritage-details-${id}`, { id, sources: getDefaultSourcesKey('INFO') }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       const versatileHeritage = await fetchContentById<VersatileHeritage>('versatile-heritage', id);
       const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('INFO'));
@@ -110,11 +114,11 @@ export function VersatileHeritageDrawerContent(props: {
     <Accordion.Item key={level} value={level}>
       <Accordion.Control>
         <Group wrap='nowrap' justify='space-between' gap={0}>
-          <Text c='gray.2' fw={700} fz='md'>
+          <Text c='text.2' fw={700} fz='md'>
             Level {level}
           </Text>
           <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-            <Text c='gray.2' span inherit>
+            <Text c='text.2' span inherit>
               {feats[level].filter((feat) => isAbilityBlockVisible('CHARACTER', feat)).length}
             </Text>
           </Badge>
@@ -153,9 +157,7 @@ export function VersatileHeritageDrawerContent(props: {
   ));
 
   if (!data || !data.versatileHeritage || !data.abilityBlocks) {
-    return (
-      <DrawerLoadState loading={isFetching} onRetry={refetch} />
-    );
+    return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
   }
 
   return (
@@ -232,7 +234,7 @@ export function VersatileHeritageDrawerContent(props: {
         </Accordion>
 
         {featSections.length === 0 && (
-          <Text c='gray.2' fz='sm' ta='center' fs='italic' py={10}>
+          <Text c='text.2' fz='sm' ta='center' fs='italic' py={10}>
             No feats found.
           </Text>
         )}

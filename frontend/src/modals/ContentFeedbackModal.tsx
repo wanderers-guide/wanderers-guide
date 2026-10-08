@@ -487,7 +487,7 @@ function ContentFeedbackSection(props: {
         <Group
           justify='center'
           p='xs'
-          style={{ border: `1px solid ${theme.colors.gray[6]}`, borderRadius: theme.radius.md }}
+          style={{ border: `1px solid ${theme.colors.text[6]}`, borderRadius: theme.radius.md }}
         >
           <Text fz='sm'>
             <b>Contact Info:</b> {data.source.contact_info || 'Not Provided'}

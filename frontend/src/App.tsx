@@ -1,22 +1,13 @@
+import { AppThemeProvider } from '@common/AppThemeProvider';
 import { characterState } from '@atoms/characterAtoms';
 import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { userState } from '@atoms/userAtoms';
 import { getContentDataFromHref } from '@common/rich_text_input/ContentLinkExtension';
-import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 import { getCachedCustomization, saveCustomization } from '@content/customization-cache';
 import DrawerBase from '@drawers/DrawerBase';
 import { convertContentLink } from '@drawers/drawer-utils';
-import {
-  Anchor,
-  BackgroundImage,
-  Box,
-  Button,
-  MantineProvider,
-  Text,
-  createTheme,
-  v8CssVariablesResolver,
-} from '@mantine/core';
+import { Anchor, BackgroundImage, Box, Button, Text } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { ModalsProvider } from '@mantine/modals';
 import { AppUpdates } from '@common/AppUpdates';
@@ -26,7 +17,7 @@ import { clearUserData, getCachedPublicUser } from '@auth/user-manager';
 import SearchSpotlight from '@nav/SearchSpotlight';
 import { IconBrush } from '@tabler/icons-react';
 import { getBackgroundImageFromURL } from '@utils/background-images';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import { useAtom, useAtomValue } from 'jotai';
 import { supabase } from './main';
@@ -49,7 +40,6 @@ import UpdateEncounterModal from '@modals/UpdateEncounterModal';
 import GenerateEncounterModal from '@modals/GenerateEncounterModal';
 import UpdateApiClientModal from '@modals/UpdateApiClientModal';
 import { getAnchorStyles } from '@utils/anchor';
-import { generateThemeColors } from '@utils/theme-color';
 import BuyItemModal from '@modals/BuyItemModal';
 import { ImageOption } from '@schemas/index';
 
@@ -170,136 +160,6 @@ export default function App() {
     if (dyslexiaFontEnabled) ensureDyslexicFontLoaded();
   }, [dyslexiaFontEnabled]);
 
-  const generateTheme = (theme?: { color?: string }) => {
-    return createTheme({
-      colors: {
-        guide: generateThemeColors(theme?.color || sheetTheme.color),
-        // Dark scale: near-opaque at [0] → nearly transparent at [9]
-        dark: [
-          'rgba(193, 194, 197, 0.89)', // [0] lightest text / icons
-          'rgba(166, 167, 171, 0.85)', // [1]
-          'rgba(144, 146, 150, 0.80)', // [2]
-          'rgba(92,  95,  102, 0.75)', // [3]
-          'rgba(55,  58,  64,  0.82)', // [4] ← glass surfaces
-          'rgba(44,  46,  51,  0.77)', // [5]
-          'rgba(37,  38,  43,  0.72)', // [6] ← card bg
-          'rgba(26,  27,  30,  0.67)', // [7] ← page bg
-          'rgba(20,  21,  23,  0.62)', // [8]
-          'rgba(16,  17,  19,  0.57)', // [9] darkest / most transparent
-        ],
-
-        // Gray scale for light mode: near-opaque at [0] → nearly transparent at [9]
-        // Mirrors the dark scale's opacity curve on a neutral-light palette.
-        gray: [
-          'rgba(248, 249, 250, 0.89)', // [0] near-white surfaces
-          'rgba(241, 243, 245, 0.85)', // [1]
-          'rgba(233, 236, 239, 0.80)', // [2]
-          'rgba(222, 226, 230, 0.75)', // [3]
-          'rgba(206, 212, 218, 0.82)', // [4] ← glass surfaces
-          'rgba(173, 181, 189, 0.77)', // [5]
-          'rgba(134, 142, 150, 0.72)', // [6] ← borders / muted text
-          'rgba(73,  80,  87,  0.67)', // [7] ← body text
-          'rgba(52,  58,  64,  0.62)', // [8]
-          'rgba(33,  37,  41,  0.57)', // [9] darkest text
-        ],
-      },
-      cursorType: 'pointer',
-      primaryColor: 'guide',
-      defaultRadius: 'md',
-      fontFamily: dyslexiaFontEnabled ? 'OpenDyslexicRegular, sans-serif' : 'Montserrat, sans-serif',
-      fontFamilyMonospace: 'Ubuntu Mono, monospace',
-      components: {
-        Modal: {
-          defaultProps: { removeScrollProps: { allowPinchZoom: true } },
-        },
-        Drawer: {
-          defaultProps: { removeScrollProps: { allowPinchZoom: true } },
-        },
-        Popover: {
-          vars: () => ({
-            dropdown: {
-              '--mantine-color-dark-6': 'rgba(37,  38,  43,  1)',
-            },
-          }),
-        },
-        Menu: {
-          vars: () => ({
-            dropdown: {
-              '--mantine-color-dark-6': 'rgba(37,  38,  43,  1)',
-            },
-          }),
-        },
-        HoverCard: {
-          vars: () => ({
-            dropdown: {
-              '--mantine-color-dark-6': 'rgba(37,  38,  43,  1)',
-            },
-          }),
-        },
-        Accordion: {
-          vars: () => ({
-            item: {
-              '--item-filled-color': IMPRINT_BG_COLOR,
-            },
-          }),
-          styles: {
-            item: {
-              borderColor: IMPRINT_BORDER_COLOR,
-            },
-          },
-        },
-        Badge: {
-          styles: {
-            label: { overflow: 'visible' },
-          },
-        },
-        Tabs: {
-          vars: () => ({
-            tab: {
-              '--tab-hover-color': IMPRINT_BG_COLOR,
-            },
-            list: {
-              '--tab-border-color': IMPRINT_BG_COLOR,
-            },
-          }),
-        },
-        Stepper: {
-          vars: () => ({
-            root: {
-              '--stepper-outline-color': IMPRINT_BG_COLOR,
-            },
-          }),
-        },
-        Divider: {
-          vars: () => ({
-            root: {
-              '--divider-color': IMPRINT_BORDER_COLOR,
-            },
-          }),
-        },
-        RichTextEditor: {
-          vars: () => ({
-            root: {
-              borderColor: IMPRINT_BORDER_COLOR,
-            },
-            toolbar: {
-              borderColor: IMPRINT_BORDER_COLOR,
-            },
-          }),
-        },
-        Notification: {
-          vars: () => ({
-            root: {
-              backgroundColor: 'rgba(37,  38,  43,  1)',
-            },
-          }),
-        },
-      },
-    });
-  };
-
-  const theme = useMemo(() => generateTheme(), [sheetTheme.color, dyslexiaFontEnabled]);
-
   // Handle query params
   const [searchParams] = useSearchParams();
   useEffect(() => {
@@ -331,25 +191,7 @@ export default function App() {
   }, [location]);
 
   return (
-    <MantineProvider
-      theme={theme}
-      forceColorScheme='dark'
-      cssVariablesResolver={(theme) => {
-        const v8 = v8CssVariablesResolver(theme);
-        return {
-          variables: { ...v8.variables },
-          // Light scheme is intentionally empty — `forceColorScheme='dark'` locks the app to dark.
-          // Mantine's resolver typing requires this key, but its values are never applied.
-          light: {},
-          dark: {
-            ...v8.dark,
-            '--mantine-color-text': 'rgb(202, 202, 202)',
-            '--mantine-color-dimmed': 'rgb(200, 200, 200)',
-            '--mantine-color-body': 'rgba(26, 27, 30, 1)',
-          },
-        };
-      }}
-    >
+    <AppThemeProvider accent={sheetTheme.color} dyslexiaFontEnabled={dyslexiaFontEnabled}>
       <ModalsProvider modals={modals}>
         <BackgroundImage
           src={background?.url ?? ''}
@@ -385,6 +227,6 @@ export default function App() {
           </Layout>
         </Box>
       </ModalsProvider>
-    </MantineProvider>
+    </AppThemeProvider>
   );
 }

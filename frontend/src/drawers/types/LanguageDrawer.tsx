@@ -12,11 +12,15 @@ import { AbilityBlock, Language } from '@schemas/content';
 export function LanguageDrawerTitle(props: { data: { id?: number; language?: Language } }) {
   const id = props.data.id;
 
-  const { data: _language, isFetching, refetch } = useQuery({
+  const {
+    data: _language,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-language-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       return await fetchContentById<Language>('language', id);
     },
@@ -45,11 +49,15 @@ export function LanguageDrawerTitle(props: { data: { id?: number; language?: Lan
 export function LanguageDrawerContent(props: { data: { id?: number; language?: Language } }) {
   const id = props.data.id;
 
-  const { data: _language, isFetching, refetch } = useQuery({
+  const {
+    data: _language,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-language-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       return await fetchContentById<Language>('language', id);
     },
@@ -58,9 +66,7 @@ export function LanguageDrawerContent(props: { data: { id?: number; language?: L
   const language = props.data.language ?? _language;
 
   if (!language) {
-    return (
-      <DrawerLoadState loading={isFetching} onRetry={refetch} />
-    );
+    return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
   }
 
   return (
@@ -68,7 +74,7 @@ export function LanguageDrawerContent(props: { data: { id?: number; language?: L
       <Box>
         {language.speakers && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Speakers
             </Text>{' '}
             {language.speakers}
@@ -76,7 +82,7 @@ export function LanguageDrawerContent(props: { data: { id?: number; language?: L
         )}
         {language.script && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Script
             </Text>{' '}
             {language.script}

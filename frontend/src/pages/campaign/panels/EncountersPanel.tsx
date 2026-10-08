@@ -906,7 +906,7 @@ function EncounterView(props: {
               )}
             {combatants.length === 0 && (
               <Stack mt={40} gap={10}>
-                <Text ta='center' c='gray.6' fz='sm' fs='italic'>
+                <Text ta='center' c='text.6' fz='sm' fs='italic'>
                   No combatants found. Go add some!
                 </Text>
               </Stack>
@@ -1104,19 +1104,19 @@ function CombatantCard(props: {
 
           {props.computed && (
             <Group gap={5} wrap='nowrap'>
-              <Text fz='xs' c='gray.6'>
+              <Text fz='xs' c='text.6'>
                 {props.computed.ac} AC
               </Text>
-              <Text fz='xs' c='gray.7'>
+              <Text fz='xs' c='text.7'>
                 |
               </Text>
-              <Text fz='xs' c='gray.6'>
+              <Text fz='xs' c='text.6'>
                 Fort. {sign(props.computed.fort)},
               </Text>
-              <Text fz='xs' c='gray.6'>
+              <Text fz='xs' c='text.6'>
                 Ref. {sign(props.computed.reflex)},
               </Text>
-              <Text fz='xs' c='gray.6'>
+              <Text fz='xs' c='text.6'>
                 Will {sign(props.computed.will)}
               </Text>
             </Group>

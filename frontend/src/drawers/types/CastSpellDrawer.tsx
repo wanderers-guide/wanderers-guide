@@ -138,7 +138,7 @@ export function CastSpellDrawerContent(props: {
   if (cast && !isActionCost(cast)) {
     CR.push(
       <Fragment key='cast'>
-        <Text fw={600} c='gray.2' span>
+        <Text fw={600} c='text.2' span>
           Cast
         </Text>{' '}
         {cast}
@@ -148,7 +148,7 @@ export function CastSpellDrawerContent(props: {
   if (spell.requirements) {
     CR.push(
       <Fragment key='requirements'>
-        <Text fw={600} c='gray.2' span>
+        <Text fw={600} c='text.2' span>
           Requirements
         </Text>{' '}
         <RichText span store={props.data.storeId}>
@@ -162,7 +162,7 @@ export function CastSpellDrawerContent(props: {
   if (spell.cost) {
     CT.push(
       <Fragment key='cost'>
-        <Text fw={600} c='gray.2' span>
+        <Text fw={600} c='text.2' span>
           Cost
         </Text>{' '}
         {spell.cost}
@@ -172,7 +172,7 @@ export function CastSpellDrawerContent(props: {
   if (spell.trigger) {
     CT.push(
       <Fragment key='trigger'>
-        <Text fw={600} c='gray.2' span>
+        <Text fw={600} c='text.2' span>
           Trigger
         </Text>{' '}
         {spell.trigger}
@@ -184,7 +184,7 @@ export function CastSpellDrawerContent(props: {
   if (spell.range) {
     RAT.push(
       <Fragment key='range'>
-        <Text fw={600} c='gray.2' span>
+        <Text fw={600} c='text.2' span>
           Range
         </Text>{' '}
         {spell.range}
@@ -194,7 +194,7 @@ export function CastSpellDrawerContent(props: {
   if (spell.area) {
     RAT.push(
       <Fragment key='area'>
-        <Text fw={600} c='gray.2' span>
+        <Text fw={600} c='text.2' span>
           Area
         </Text>{' '}
         {spell.area}
@@ -204,7 +204,7 @@ export function CastSpellDrawerContent(props: {
   if (spell.targets) {
     RAT.push(
       <Fragment key='targets'>
-        <Text fw={600} c='gray.2' span>
+        <Text fw={600} c='text.2' span>
           Targets
         </Text>{' '}
         {spell.targets}
@@ -216,7 +216,7 @@ export function CastSpellDrawerContent(props: {
   if (spell.defense) {
     DD.push(
       <Fragment key='defense'>
-        <Text fw={600} c='gray.2' span>
+        <Text fw={600} c='text.2' span>
           Defense
         </Text>{' '}
         {spell.defense}
@@ -226,7 +226,7 @@ export function CastSpellDrawerContent(props: {
   if (spell.duration) {
     DD.push(
       <Fragment key='duration'>
-        <Text fw={600} c='gray.2' span>
+        <Text fw={600} c='text.2' span>
           Duration
         </Text>{' '}
         {spell.duration}
@@ -266,10 +266,10 @@ export function CastSpellDrawerContent(props: {
     <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
       <Group wrap='nowrap' grow>
         <Group wrap='nowrap' gap={10}>
-          <Text fw={600} c='gray.2' span>
+          <Text fw={600} c='text.2' span>
             Attack
           </Text>
-          <Text c='gray.2' span>
+          <Text c='text.2' span>
             {sign(spellStats.spell_attack.total[0])}
             {!isPhone &&
               ` / ${sign(spellStats.spell_attack.total[1])} /
@@ -277,10 +277,10 @@ export function CastSpellDrawerContent(props: {
           </Text>
         </Group>
         <Group wrap='nowrap' gap={10}>
-          <Text fw={600} c='gray.2' span>
+          <Text fw={600} c='text.2' span>
             DC
           </Text>
-          <Text c='gray.2' span>
+          <Text c='text.2' span>
             {spellStats.spell_dc.total}
           </Text>
         </Group>
@@ -299,7 +299,7 @@ export function CastSpellDrawerContent(props: {
         {attackAndDcSection}
         {spell.traditions && spell.traditions.length > 0 && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Traditions
             </Text>{' '}
             {TRADITIONS.flatMap((node, index) => (index < TRADITIONS.length - 1 ? [node, ', '] : [node]))}
@@ -340,10 +340,10 @@ export function CastSpellDrawerContent(props: {
                     opacity: props.data.entity && !hasHeightening(text.amount) ? 0.6 : 1,
                   }}
                 >
-                  <Text fw={600} c='gray.2' span>
+                  <Text fw={600} c='text.2' span>
                     Heightened {text.amount}{' '}
                     {text.amount.startsWith('(+') && hasHeightening(text.amount) ? (
-                      <Text fw={600} c='gray.2' span>
+                      <Text fw={600} c='text.2' span>
                         [{heighteningData?.get(text.amount)}x]
                       </Text>
                     ) : (

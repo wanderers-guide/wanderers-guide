@@ -69,7 +69,7 @@ export function StatAttrDrawerContent(props: { data: { id: StoreID; attributeNam
             <Table.Td key={i}>{record !== null ? record === undefined ? <>–</> : <>{sign(record)}</> : <></>}</Table.Td>
           </HoverCard.Target>
           <HoverCard.Dropdown py={5} px={10}>
-            <Text c='gray.0' size='xs'>
+            <Text c='text.0' size='xs'>
               From {source}
             </Text>
           </HoverCard.Dropdown>
@@ -94,10 +94,10 @@ export function StatAttrDrawerContent(props: { data: { id: StoreID; attributeNam
         <Table.Th key={index} ta='center'>
           {' '}
           ={' '}
-          <Text c='gray.0' span>
+          <Text c='text.0' span>
             {attribute.value.value < 0 ? '-' : '+'}
           </Text>
-          <Text c='gray.0' td={attribute.value.partial ? 'underline' : undefined} span>
+          <Text c='text.0' td={attribute.value.partial ? 'underline' : undefined} span>
             {Math.abs(attribute.value.value)}
           </Text>
         </Table.Th>
@@ -110,7 +110,7 @@ export function StatAttrDrawerContent(props: { data: { id: StoreID; attributeNam
       <Table highlightOnHover withTableBorder withColumnBorders withRowBorders={false}>
         <Table.Thead
           style={{
-            borderBottom: '1px solid ' + theme.colors.dark[6],
+            borderBottom: '1px solid ' + 'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))',
           }}
         >
           {ths}
@@ -118,7 +118,7 @@ export function StatAttrDrawerContent(props: { data: { id: StoreID; attributeNam
         <Table.Tbody>{rows}</Table.Tbody>
         <Table.Tfoot
           style={{
-            borderTop: '1px solid ' + theme.colors.dark[6],
+            borderTop: '1px solid ' + 'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))',
           }}
         >
           {tfs}

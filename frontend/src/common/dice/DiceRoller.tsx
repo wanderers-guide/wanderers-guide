@@ -255,15 +255,15 @@ export default function DiceRoller(props: {
             .filter((group) => groupedRolls[group].length > 0)
             .sort((a, b) => groupedRolls[b][0].timestamp - groupedRolls[a][0].timestamp)
             .map((group, i) => (
-              <Paper key={i} withBorder p={3} style={{ backgroundColor: theme.colors.dark[6] + '77' }}>
+              <Paper key={i} withBorder p={3} style={{ backgroundColor: 'var(--imprint-bg-color)' }}>
                 <Group justify='space-between' align='start' wrap='nowrap' pl={5} pr={10}>
                   <Box>{getRollEntry(groupedRolls[group])}</Box>
                   <Box>
                     <Stack gap={0} justify='space-between' align='end'>
-                      <Text fz={8} c='gray.6' fs='italic' ta='end' style={{ whiteSpace: 'nowrap' }}>
+                      <Text fz={8} c='text.6' fs='italic' ta='end' style={{ whiteSpace: 'nowrap' }}>
                         {new Date(groupedRolls[group][0].timestamp).toLocaleTimeString()}
                       </Text>
-                      <Text fz={10} c='gray.2' ta='end'>
+                      <Text fz={10} c='text.2' ta='end'>
                         {groupedRolls[group][0].label}
                       </Text>
                     </Stack>
@@ -309,7 +309,7 @@ export default function DiceRoller(props: {
   const getPresetList = () => {
     const getPresetEntry = (preset: { id: string; name: string; dice: Dice[] }, includeDelete: boolean) => {
       return (
-        <Paper withBorder p={3} style={{ backgroundColor: theme.colors.dark[6] + '77' }}>
+        <Paper withBorder p={3} style={{ backgroundColor: 'var(--imprint-bg-color)' }}>
           <Group justify='space-between' align='center' wrap='nowrap' px={5}>
             <Group wrap='nowrap' gap={10}>
               <Text fz='sm'>{preset.name}</Text>
@@ -366,7 +366,7 @@ export default function DiceRoller(props: {
           {presets.length === 0 && (
             <>
               <Divider />
-              <Text w='100%' pt='xs' fz='xs' c='gray.7' ta='center' fs='italic'>
+              <Text w='100%' pt='xs' fz='xs' c='text.7' ta='center' fs='italic'>
                 No custom presets found.
               </Text>
             </>
@@ -619,316 +619,324 @@ export default function DiceRoller(props: {
         transitionProps={{ duration: 200 }}
       >
         <Box onTouchStart={swipeHandlers.onTouchStart} onTouchEnd={swipeHandlers.onTouchEnd} style={{ height: '100%' }}>
-        <Stack justify='space-between' h='100%'>
-          <Stack gap={10}>
-            <Group wrap='nowrap' justify='space-between' align='start'>
-              <Stack gap={5}>
-                <Group wrap='nowrap' justify='end' gap={10}>
-                  <Button.Group>
-                    <Menu shadow='md' width={50}>
-                      <Menu.Target>
-                        <Button variant='default' w={50}>
-                          {currentDiceNum}
-                        </Button>
-                      </Menu.Target>
-                      <Menu.Dropdown>
-                        {Array.from({ length: 10 }, (_, i) => (
-                          <Menu.Item key={i} onClick={() => setCurrentDiceNum(i + 1)}>
-                            <Text ta='center'>{i + 1}</Text>
-                          </Menu.Item>
-                        ))}
-                      </Menu.Dropdown>
-                    </Menu>
-                    <Menu shadow='md' width={65}>
-                      <Menu.Target>
-                        <Button variant='default' w={65}>
-                          {currentDiceType}
-                        </Button>
-                      </Menu.Target>
-                      <Menu.Dropdown>
-                        <Menu.Item onClick={() => setCurrentDiceType('d4')}>
-                          <Text ta='center'>d4</Text>
-                        </Menu.Item>
-                        <Menu.Item onClick={() => setCurrentDiceType('d6')}>
-                          <Text ta='center'>d6</Text>
-                        </Menu.Item>
-                        <Menu.Item onClick={() => setCurrentDiceType('d8')}>
-                          <Text ta='center'>d8</Text>
-                        </Menu.Item>
-                        <Menu.Item onClick={() => setCurrentDiceType('d10')}>
-                          <Text ta='center'>d10</Text>
-                        </Menu.Item>
-                        <Menu.Item onClick={() => setCurrentDiceType('d12')}>
-                          <Text ta='center'>d12</Text>
-                        </Menu.Item>
-                        <Menu.Item onClick={() => setCurrentDiceType('d20')}>
-                          <Text ta='center'>d20</Text>
-                        </Menu.Item>
-                      </Menu.Dropdown>
-                    </Menu>
-                  </Button.Group>
-                  <Text>+</Text>
-                  <NumberInput
-                    hideControls
-                    placeholder='0'
-                    w={50}
-                    value={currentDiceBonus || ''}
-                    onChange={(value) => setCurrentDiceBonus(parseInt(`${value}`))}
-                  />
-                  <Box pl={5}>
-                    <Button
-                      size='xs'
-                      variant='filled'
-                      radius={'xl'}
-                      onClick={() => {
-                        const newDice: Dice[] = [];
-                        for (let i = 0; i < currentDiceNum; i++) {
-                          newDice.push({
-                            id: crypto.randomUUID(),
-                            type: currentDiceType,
-                            theme: diceTheme ?? character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme,
-                            bonus: i === currentDiceNum - 1 ? currentDiceBonus : 0,
-                            label: currentDiceLabel,
-                          });
-                        }
-                        setDice([...dice, ...newDice]);
-                        setCurrentDiceNum(1);
-                        //setCurrentDiceType('d20');
-                        setCurrentDiceBonus(0);
-                        setCurrentDiceLabel('');
-                      }}
-                    >
-                      Add
-                    </Button>
-                  </Box>
-                </Group>
-                <i>
-                  <TextInput
-                    pl={2}
-                    variant='unstyled'
-                    size='xs'
-                    placeholder='Roll label or description'
-                    value={currentDiceLabel}
-                    onChange={(e) => setCurrentDiceLabel(e.currentTarget.value)}
-                  />
-                </i>
-              </Stack>
-            </Group>
-
-            <Paper withBorder p={5} mb={5}>
-              <ScrollArea h={100} type='always' scrollbars='y'>
-                <Group gap={10}>
-                  {dice.map((die, i) => (
-                    <Badge
-                      key={i}
-                      color='gray.4'
-                      variant='light'
-                      size='lg'
-                      styles={{
-                        root: {
-                          textTransform: 'initial',
-                          userSelect: 'none',
-                        },
-                      }}
-                      style={{
-                        border: activeDie === die.id ? `1px solid ${theme.colors.gray[6]}` : undefined,
-                        cursor: 'pointer',
-                      }}
-                      p={0}
-                      onClick={() => {
-                        if (activeDie === die.id) {
-                          setActiveDie(null);
-                        } else {
-                          refreshCarousel();
-                          setActiveDie(die.id);
-                          setOpenedHistory(true);
-                        }
-                      }}
-                      leftSection={
-                        <Avatar size={24} src={findDiceTheme(die.theme).preview[die.type]} alt='Dice Icon' />
-                      }
-                      rightSection={
-                        <ActionIcon
-                          variant='subtle'
-                          color='gray'
-                          size='sm'
-                          aria-label='Remove Dice'
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDice(dice.filter((_, index) => index !== i));
-                            if (activeDie === die.id) setActiveDie(null);
-                          }}
-                        >
-                          <IconX style={{ width: '70%', height: '70%' }} stroke={1.5} />
-                        </ActionIcon>
-                      }
-                    >
-                      {die.type}
-                      {die.bonus ? `${sign(die.bonus)}` : ''}
-                    </Badge>
-                  ))}
-                  {dice.length === 0 && (
-                    <Text w='100%' py='xs' fz='xs' c='gray.7' ta='center' fs='italic'>
-                      Dice tray
-                      <br />
-                      Add some dice to roll
-                    </Text>
-                  )}
-                </Group>
-              </ScrollArea>
-            </Paper>
-
-            <Button
-              size='compact-sm'
-              fullWidth
-              loading={loadingRoll}
-              disabled={!loaded || dice.length === 0}
-              onClick={() => {
-                onRollDice();
-              }}
-            >
-              Roll Dice
-            </Button>
-          </Stack>
-          <Box>
-            {activeDie ? (
-              <>
-                {displayCarousel && (
-                  <Paper withBorder p={5}>
-                    <Stack>
-                      <Group align='start'>
-                        <Avatar
-                          size={40}
-                          src={(transitionDiceTheme ?? activeDieData.theme).preview[activeDieData.die?.type ?? '']}
-                          alt='Dice Icon'
-                        />
-                        <Stack gap={0} h={40}>
-                          <Title order={4}>{(transitionDiceTheme ?? activeDieData.theme).name}</Title>
-                          <Text fz='xs' fs='italic'>
-                            {activeDieData.die?.label
-                              ? `${activeDieData.die?.type}${activeDieData.die?.bonus ? `${sign(activeDieData.die?.bonus)}` : ''}, ${activeDieData.die?.label}`
-                              : `${activeDieData.die?.type}${activeDieData.die?.bonus ? `${sign(activeDieData.die?.bonus)}` : ''}`}
-                          </Text>
-                        </Stack>
-                      </Group>
-                      <Divider />
-
-                      {
-                        <Carousel
-                          slideSize='70%'
-                          slideGap='md'
-                          height={100}
-                          initialSlide={DICE_THEMES.findIndex((theme) => theme.theme === activeDieData.theme.theme)}
-                          onSlideChange={(index) => {
-                            setTransitionThemeIndex(index);
-                            handleDiceThemeChange(index);
-                          }}
-                          emblaOptions={{
-                            loop: true,
-                            dragFree: false,
-                            align: 'center',
-                          }}
-                        >
-                          {DICE_THEMES.map((theme, index) => (
-                            <Carousel.Slide key={index}>
-                              <Center>
-                                <Avatar size={90} src={theme.preview[activeDieData.die?.type ?? '']} alt='Dice Icon' />
-                              </Center>
-                            </Carousel.Slide>
+          <Stack justify='space-between' h='100%'>
+            <Stack gap={10}>
+              <Group wrap='nowrap' justify='space-between' align='start'>
+                <Stack gap={5}>
+                  <Group wrap='nowrap' justify='end' gap={10}>
+                    <Button.Group>
+                      <Menu shadow='md' width={50}>
+                        <Menu.Target>
+                          <Button variant='default' w={50}>
+                            {currentDiceNum}
+                          </Button>
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                          {Array.from({ length: 10 }, (_, i) => (
+                            <Menu.Item key={i} onClick={() => setCurrentDiceNum(i + 1)}>
+                              <Text ta='center'>{i + 1}</Text>
+                            </Menu.Item>
                           ))}
-                        </Carousel>
-                      }
-                    </Stack>
-                  </Paper>
-                )}
-              </>
-            ) : (
-              <>
-                {!openedHistory ? (
-                  <>
-                    <Paper withBorder p={5}>
-                      <Stack gap={5}>
-                        <Box>
-                          <Group wrap='nowrap' justify='space-between' ml={5}>
-                            <Title order={4}>Presets</Title>
+                        </Menu.Dropdown>
+                      </Menu>
+                      <Menu shadow='md' width={65}>
+                        <Menu.Target>
+                          <Button variant='default' w={65}>
+                            {currentDiceType}
+                          </Button>
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                          <Menu.Item onClick={() => setCurrentDiceType('d4')}>
+                            <Text ta='center'>d4</Text>
+                          </Menu.Item>
+                          <Menu.Item onClick={() => setCurrentDiceType('d6')}>
+                            <Text ta='center'>d6</Text>
+                          </Menu.Item>
+                          <Menu.Item onClick={() => setCurrentDiceType('d8')}>
+                            <Text ta='center'>d8</Text>
+                          </Menu.Item>
+                          <Menu.Item onClick={() => setCurrentDiceType('d10')}>
+                            <Text ta='center'>d10</Text>
+                          </Menu.Item>
+                          <Menu.Item onClick={() => setCurrentDiceType('d12')}>
+                            <Text ta='center'>d12</Text>
+                          </Menu.Item>
+                          <Menu.Item onClick={() => setCurrentDiceType('d20')}>
+                            <Text ta='center'>d20</Text>
+                          </Menu.Item>
+                        </Menu.Dropdown>
+                      </Menu>
+                    </Button.Group>
+                    <Text>+</Text>
+                    <NumberInput
+                      hideControls
+                      placeholder='0'
+                      w={50}
+                      value={currentDiceBonus || ''}
+                      onChange={(value) => setCurrentDiceBonus(parseInt(`${value}`))}
+                    />
+                    <Box pl={5}>
+                      <Button
+                        size='xs'
+                        variant='filled'
+                        radius={'xl'}
+                        onClick={() => {
+                          const newDice: Dice[] = [];
+                          for (let i = 0; i < currentDiceNum; i++) {
+                            newDice.push({
+                              id: crypto.randomUUID(),
+                              type: currentDiceType,
+                              theme: diceTheme ?? character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme,
+                              bonus: i === currentDiceNum - 1 ? currentDiceBonus : 0,
+                              label: currentDiceLabel,
+                            });
+                          }
+                          setDice([...dice, ...newDice]);
+                          setCurrentDiceNum(1);
+                          //setCurrentDiceType('d20');
+                          setCurrentDiceBonus(0);
+                          setCurrentDiceLabel('');
+                        }}
+                      >
+                        Add
+                      </Button>
+                    </Box>
+                  </Group>
+                  <i>
+                    <TextInput
+                      pl={2}
+                      variant='unstyled'
+                      size='xs'
+                      placeholder='Roll label or description'
+                      value={currentDiceLabel}
+                      onChange={(e) => setCurrentDiceLabel(e.currentTarget.value)}
+                    />
+                  </i>
+                </Stack>
+              </Group>
 
-                            <Group wrap='nowrap'>
-                              {dice.length > 0 && (
-                                <Button
-                                  size='compact-xs'
-                                  variant='light'
-                                  disabled={dice.length === 0}
-                                  onClick={() => {
-                                    closeDiceTray();
-                                    openContextModal({
-                                      modal: 'createDicePreset',
-                                      title: <Title order={3}>Create Preset</Title>,
-                                      innerProps: {
-                                        onConfirm: (name: string) => {
-                                          setPresets((prev) => [
-                                            ...prev,
-                                            {
-                                              id: crypto.randomUUID(),
-                                              name: name,
-                                              dice: dice,
-                                            },
-                                          ]);
-                                        },
-                                      },
-                                    });
-                                  }}
-                                >
-                                  Save tray to preset
-                                </Button>
-                              )}
-                            </Group>
-                          </Group>
-                        </Box>
-                        <Box>
-                          <ScrollArea h={`calc(min(40dvh, 350px))`} scrollbars='y'>
-                            {getPresetList()}
-                          </ScrollArea>
-                        </Box>
+              <Paper withBorder p={5} mb={5}>
+                <ScrollArea h={100} type='always' scrollbars='y'>
+                  <Group gap={10}>
+                    {dice.map((die, i) => (
+                      <Badge
+                        key={i}
+                        color='gray.4'
+                        variant='light'
+                        size='lg'
+                        styles={{
+                          root: {
+                            textTransform: 'initial',
+                            userSelect: 'none',
+                          },
+                        }}
+                        style={{
+                          border: activeDie === die.id ? `1px solid ${theme.colors.text[6]}` : undefined,
+                          cursor: 'pointer',
+                        }}
+                        p={0}
+                        onClick={() => {
+                          if (activeDie === die.id) {
+                            setActiveDie(null);
+                          } else {
+                            refreshCarousel();
+                            setActiveDie(die.id);
+                            setOpenedHistory(true);
+                          }
+                        }}
+                        leftSection={
+                          <Avatar size={24} src={findDiceTheme(die.theme).preview[die.type]} alt='Dice Icon' />
+                        }
+                        rightSection={
+                          <ActionIcon
+                            variant='subtle'
+                            color='gray'
+                            size='sm'
+                            aria-label='Remove Dice'
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDice(dice.filter((_, index) => index !== i));
+                              if (activeDie === die.id) setActiveDie(null);
+                            }}
+                          >
+                            <IconX style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                          </ActionIcon>
+                        }
+                      >
+                        {die.type}
+                        {die.bonus ? `${sign(die.bonus)}` : ''}
+                      </Badge>
+                    ))}
+                    {dice.length === 0 && (
+                      <Text w='100%' py='xs' fz='xs' c='text.7' ta='center' fs='italic'>
+                        Dice tray
+                        <br />
+                        Add some dice to roll
+                      </Text>
+                    )}
+                  </Group>
+                </ScrollArea>
+              </Paper>
+
+              <Button
+                size='compact-sm'
+                fullWidth
+                loading={loadingRoll}
+                disabled={!loaded || dice.length === 0}
+                onClick={() => {
+                  onRollDice();
+                }}
+              >
+                Roll Dice
+              </Button>
+            </Stack>
+            <Box>
+              {activeDie ? (
+                <>
+                  {displayCarousel && (
+                    <Paper withBorder p={5}>
+                      <Stack>
+                        <Group align='start'>
+                          <Avatar
+                            size={40}
+                            src={(transitionDiceTheme ?? activeDieData.theme).preview[activeDieData.die?.type ?? '']}
+                            alt='Dice Icon'
+                          />
+                          <Stack gap={0} h={40}>
+                            <Title order={4}>{(transitionDiceTheme ?? activeDieData.theme).name}</Title>
+                            <Text fz='xs' fs='italic'>
+                              {activeDieData.die?.label
+                                ? `${activeDieData.die?.type}${activeDieData.die?.bonus ? `${sign(activeDieData.die?.bonus)}` : ''}, ${activeDieData.die?.label}`
+                                : `${activeDieData.die?.type}${activeDieData.die?.bonus ? `${sign(activeDieData.die?.bonus)}` : ''}`}
+                            </Text>
+                          </Stack>
+                        </Group>
+                        <Divider />
+
+                        {
+                          <Carousel
+                            slideSize='70%'
+                            slideGap='md'
+                            height={100}
+                            initialSlide={DICE_THEMES.findIndex((theme) => theme.theme === activeDieData.theme.theme)}
+                            onSlideChange={(index) => {
+                              setTransitionThemeIndex(index);
+                              handleDiceThemeChange(index);
+                            }}
+                            emblaOptions={{
+                              loop: true,
+                              dragFree: false,
+                              align: 'center',
+                            }}
+                          >
+                            {DICE_THEMES.map((theme, index) => (
+                              <Carousel.Slide key={index}>
+                                <Center>
+                                  <Avatar
+                                    size={90}
+                                    src={theme.preview[activeDieData.die?.type ?? '']}
+                                    alt='Dice Icon'
+                                  />
+                                </Center>
+                              </Carousel.Slide>
+                            ))}
+                          </Carousel>
+                        }
                       </Stack>
                     </Paper>
-                  </>
-                ) : (
-                  <>
-                    {rollHistory.length !== 0 && (
+                  )}
+                </>
+              ) : (
+                <>
+                  {!openedHistory ? (
+                    <>
                       <Paper withBorder p={5}>
                         <Stack gap={5}>
                           <Box>
-                            <Group wrap='nowrap' justify='space-between' mx={5}>
-                              <Title order={4}>History</Title>
-                              <ActionIcon
-                                variant='subtle'
-                                aria-label='Clear History'
-                                size='sm'
-                                radius={'xl'}
-                                color='gray.9'
-                                onClick={() => {
-                                  setRollHistory([]);
-                                  setOpenedHistory(false);
-                                }}
-                              >
-                                <IconTrash style={{ width: '60%', height: '60%' }} stroke={1.5} />
-                              </ActionIcon>
+                            <Group wrap='nowrap' justify='space-between' ml={5}>
+                              <Title order={4}>Presets</Title>
+
+                              <Group wrap='nowrap'>
+                                {dice.length > 0 && (
+                                  <Button
+                                    size='compact-xs'
+                                    variant='light'
+                                    disabled={dice.length === 0}
+                                    onClick={() => {
+                                      closeDiceTray();
+                                      openContextModal({
+                                        modal: 'createDicePreset',
+                                        title: <Title order={3}>Create Preset</Title>,
+                                        innerProps: {
+                                          onConfirm: (name: string) => {
+                                            setPresets((prev) => [
+                                              ...prev,
+                                              {
+                                                id: crypto.randomUUID(),
+                                                name: name,
+                                                dice: dice,
+                                              },
+                                            ]);
+                                          },
+                                        },
+                                      });
+                                    }}
+                                  >
+                                    Save tray to preset
+                                  </Button>
+                                )}
+                              </Group>
                             </Group>
                           </Box>
                           <Box>
-                            <ScrollArea h={`calc(min(40dvh, 350px))`} scrollbars='y' viewportRef={rollHistoryViewport}>
-                              {getRollHistory()}
+                            <ScrollArea h={`calc(min(40dvh, 350px))`} scrollbars='y'>
+                              {getPresetList()}
                             </ScrollArea>
                           </Box>
                         </Stack>
                       </Paper>
-                    )}
-                  </>
-                )}
-              </>
-            )}
-          </Box>
-        </Stack>
+                    </>
+                  ) : (
+                    <>
+                      {rollHistory.length !== 0 && (
+                        <Paper withBorder p={5}>
+                          <Stack gap={5}>
+                            <Box>
+                              <Group wrap='nowrap' justify='space-between' mx={5}>
+                                <Title order={4}>History</Title>
+                                <ActionIcon
+                                  variant='subtle'
+                                  aria-label='Clear History'
+                                  size='sm'
+                                  radius={'xl'}
+                                  color='gray.9'
+                                  onClick={() => {
+                                    setRollHistory([]);
+                                    setOpenedHistory(false);
+                                  }}
+                                >
+                                  <IconTrash style={{ width: '60%', height: '60%' }} stroke={1.5} />
+                                </ActionIcon>
+                              </Group>
+                            </Box>
+                            <Box>
+                              <ScrollArea
+                                h={`calc(min(40dvh, 350px))`}
+                                scrollbars='y'
+                                viewportRef={rollHistoryViewport}
+                              >
+                                {getRollHistory()}
+                              </ScrollArea>
+                            </Box>
+                          </Stack>
+                        </Paper>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+            </Box>
+          </Stack>
         </Box>
       </Drawer>
       <Portal

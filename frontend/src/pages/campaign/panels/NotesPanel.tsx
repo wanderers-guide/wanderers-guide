@@ -110,7 +110,7 @@ export default function NotesPanel(props: {
                 }}
                 w={130}
                 leftSection={
-                  <ActionIcon variant='transparent' size='xs' color={isPhone ? 'white' : page.color}>
+                  <ActionIcon variant='transparent' size='xs' color={isPhone ? 'var(--bright-text-color)' : page.color}>
                     <Icon name={page.icon} size='1rem' />
                   </ActionIcon>
                 }

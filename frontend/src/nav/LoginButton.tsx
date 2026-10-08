@@ -17,21 +17,21 @@ export function LoginButton(props: { onClick: () => void }) {
         height: 32,
         paddingLeft: theme.spacing.sm,
         paddingRight: theme.spacing.sm,
-        color: theme.colors.gray[4],
+        color: theme.colors.text[4],
         fontWeight: 500,
         borderRadius: theme.radius.md,
         ...glassStyle(),
       }}
     >
       <Group gap={2} wrap='nowrap'>
-        <Text fz='sm' c='gray.2' fw={500} style={{ textWrap: 'nowrap' }}>
+        <Text fz='sm' c='text.2' fw={500} style={{ textWrap: 'nowrap' }}>
           Sign in{' '}
           <Text fz='sm' c='dimmed' span>
             |
           </Text>{' '}
           Register
         </Text>
-        <ActionIcon size='sm' color='gray.4' variant='transparent'>
+        <ActionIcon component='span' size='sm' color='gray.4' variant='transparent'>
           <IconLogin2 size={18} stroke={2} />
         </ActionIcon>
       </Group>

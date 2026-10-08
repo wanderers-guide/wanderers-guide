@@ -134,7 +134,7 @@ export default function StatBlockSection(props: {
 
   const ATTR = Object.keys(data.attributes).map((l) => (
     <Text fz='xs' span>
-      <Text fz='xs' fw={600} c='gray.4' span>
+      <Text fz='xs' fw={600} c='text.4' span>
         {compactLabels(toLabel(l))}
       </Text>{' '}
       <RichText fz='xs' span>
@@ -496,7 +496,7 @@ export default function StatBlockSection(props: {
       )}
       {isCreature(entity) && <RecallKnowledgeText entity={entity} traits={data.all_traits} />}
       <IndentedText ta='justify' fz='xs' pr={IMAGE_SIZE} span>
-        <Text fz='xs' fw={600} c='gray.4' span>
+        <Text fz='xs' fw={600} c='text.4' span>
           Perception
         </Text>{' '}
         <RichText ta='justify' fz='xs' span>
@@ -506,7 +506,7 @@ export default function StatBlockSection(props: {
       </IndentedText>
       {languagesDetails && (
         <IndentedText ta='justify' fz='xs' pr={IMAGE_SIZE} span>
-          <Text fz='xs' fw={600} c='gray.4' span>
+          <Text fz='xs' fw={600} c='text.4' span>
             Languages
           </Text>{' '}
           <RichText ta='justify' fz='xs' span>
@@ -515,7 +515,7 @@ export default function StatBlockSection(props: {
         </IndentedText>
       )}
       <IndentedText ta='justify' fz='xs' pr={isPhone ? 0 : IMAGE_SIZE} span>
-        <Text fz='xs' fw={600} c='gray.4' span>
+        <Text fz='xs' fw={600} c='text.4' span>
           Skills
         </Text>{' '}
         <RichText ta='justify' fz='xs' span>
@@ -528,7 +528,7 @@ export default function StatBlockSection(props: {
       </IndentedText>
       {(visibleInventory.length > 0 || statBlock?.items_note) && (
         <IndentedText ta='justify' fz='xs' span>
-          <Text fz='xs' fw={600} c='gray.4' span>
+          <Text fz='xs' fw={600} c='text.4' span>
             Items
           </Text>{' '}
           <RichText ta='justify' fz='xs' span>
@@ -552,26 +552,26 @@ export default function StatBlockSection(props: {
       )}
       <Divider />
       <IndentedText ta='justify' fz='xs' span>
-        <Text fz='xs' fw={600} c='gray.4' span>
+        <Text fz='xs' fw={600} c='text.4' span>
           AC
         </Text>{' '}
         <Text ta='justify' fz='xs' span>
           {data.ac};
         </Text>{' '}
         {getArmorShieldDisplay(data.armor_item, data.shield_item)}{' '}
-        <Text fz='xs' fw={600} c='gray.4' span>
+        <Text fz='xs' fw={600} c='text.4' span>
           Fort.
         </Text>{' '}
         <Text ta='justify' fz='xs' span>
           {data.proficiencies['SAVE_FORT'].total},
         </Text>{' '}
-        <Text fz='xs' fw={600} c='gray.4' span>
+        <Text fz='xs' fw={600} c='text.4' span>
           Ref.
         </Text>{' '}
         <Text ta='justify' fz='xs' span>
           {data.proficiencies['SAVE_REFLEX'].total},
         </Text>{' '}
-        <Text fz='xs' fw={600} c='gray.4' span>
+        <Text fz='xs' fw={600} c='text.4' span>
           Will
         </Text>{' '}
         <Text ta='justify' fz='xs' span>
@@ -593,7 +593,7 @@ export default function StatBlockSection(props: {
       )}
       {entity.details?.conditions && entity.details.conditions.length > 0 && (
         <IndentedText ta='justify' fz='xs' pr={IMAGE_SIZE} span>
-          <Text fz='xs' fw={600} c='gray.4' span>
+          <Text fz='xs' fw={600} c='text.4' span>
             Conditions
           </Text>{' '}
           <RichText ta='justify' fz='xs' span>
@@ -615,7 +615,7 @@ export default function StatBlockSection(props: {
       <Divider />
       {data.speeds.filter((s) => s.value.total !== 0).length > 0 && (
         <IndentedText ta='justify' fz='xs' span>
-          <Text fz='xs' fw={600} c='gray.4' span>
+          <Text fz='xs' fw={600} c='text.4' span>
             Speed
           </Text>{' '}
           <RichText ta='justify' fz='xs' span>

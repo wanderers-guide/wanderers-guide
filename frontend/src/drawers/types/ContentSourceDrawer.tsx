@@ -44,7 +44,7 @@ export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: 
     queryKey: [`find-content-source-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       const sources = await fetchContentSources([id]);
       return sources?.find((s) => s.id === id) ?? null;
@@ -148,11 +148,15 @@ export function ContentSourceDrawerContent(props: {
   const [_creatureDrawer, openCreatureDrawer] = useAtom(creatureDrawerState);
   const [_feedbackData, setFeedbackData] = useAtom(feedbackState);
 
-  const { data: content, isFetching, refetch } = useQuery({
+  const {
+    data: content,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-content-source-package-${id}`, { id, source: props.data.source }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id, source }] = queryKey;
       const _id = id ?? source?.id;
       return await fetchContentPackage([_id], { fetchSources: true, fetchCreatures: true });
@@ -177,9 +181,7 @@ export function ContentSourceDrawerContent(props: {
   }, [source]);
 
   if (!content || !source) {
-    return (
-      <DrawerLoadState loading={isFetching} onRetry={refetch} />
-    );
+    return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
   }
 
   const description =
@@ -261,11 +263,11 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value={'actions'} w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Actions
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {actions.length}
                     </Text>
                   </Badge>
@@ -294,11 +296,11 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value={'ancestries'} w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Ancestries
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {content.ancestries.length}
                     </Text>
                   </Badge>
@@ -327,11 +329,11 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value={'backgrounds'} w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Backgrounds
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {content.backgrounds.length}
                     </Text>
                   </Badge>
@@ -360,11 +362,11 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value={'classes'} w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Classes
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {content.classes.length}
                     </Text>
                   </Badge>
@@ -393,11 +395,11 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value={'class-archetypes'} w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Class Archetypes
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {content.classArchetypes.length}
                     </Text>
                   </Badge>
@@ -426,11 +428,11 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value={'archetypes'} w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Archetypes
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {content.archetypes.length}
                     </Text>
                   </Badge>
@@ -459,11 +461,11 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value={'versatile-heritages'} w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Versatile Heritages
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {content.versatileHeritages.length}
                     </Text>
                   </Badge>
@@ -492,11 +494,11 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value={'creatures'} w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Creatures
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {content.creatures.length}
                     </Text>
                   </Badge>
@@ -528,10 +530,14 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value='hazards' w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm'>Hazards</Text>
+                  <Text c='var(--bright-text-color)' fz='sm'>
+                    Hazards
+                  </Text>
                   {!!hazardQuery.data?.length && (
                     <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                      <Text c='gray.2' span inherit>{hazardQuery.data.length}</Text>
+                      <Text c='text.2' span inherit>
+                        {hazardQuery.data.length}
+                      </Text>
                     </Badge>
                   )}
                 </Group>
@@ -539,7 +545,9 @@ export function ContentSourceDrawerContent(props: {
               <Accordion.Panel>
                 <Divider color='dark.6' />
                 {hazardQuery.isError ? (
-                  <Button variant='subtle' size='compact-sm' onClick={() => hazardQuery.refetch()}>Retry</Button>
+                  <Button variant='subtle' size='compact-sm' onClick={() => hazardQuery.refetch()}>
+                    Retry
+                  </Button>
                 ) : (
                   hazardQuery.data?.map((record) => (
                     <HazardSelectionOption
@@ -562,11 +570,11 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value={'feats'} w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Feats
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {feats.length}
                     </Text>
                   </Badge>
@@ -595,11 +603,11 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value={'items'} w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Items
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {content.items.length}
                     </Text>
                   </Badge>
@@ -628,11 +636,11 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value={'languages'} w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Languages
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {content.languages.length}
                     </Text>
                   </Badge>
@@ -661,11 +669,11 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value={'modes'} w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Modes
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {modes.length}
                     </Text>
                   </Badge>
@@ -694,11 +702,11 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value={'physical-features'} w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Physical Features
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {physicalFeatures.length}
                     </Text>
                   </Badge>
@@ -727,11 +735,11 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value={'senses'} w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Senses
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {senses.length}
                     </Text>
                   </Badge>
@@ -760,11 +768,11 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value={'spells'} w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Spells
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {content.spells.length}
                     </Text>
                   </Badge>
@@ -793,11 +801,11 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value={'traits'} w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Traits
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {content.traits.length}
                     </Text>
                   </Badge>
@@ -826,11 +834,11 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value={'uncategorized'} w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm' fw={600}>
+                  <Text c='var(--bright-text-color)' fz='sm' fw={600}>
                     Uncategorized
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {uncategorizedAbilities.length}
                     </Text>
                   </Badge>

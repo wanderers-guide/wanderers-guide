@@ -111,13 +111,13 @@ If you need a different character, ask the user — they'll have a preferred pub
 
 **Always prefer Mantine theming over one-off CSS.** Two files own all shared styling:
 
-- **[frontend/src/App.tsx](frontend/src/App.tsx)** — Mantine theme via `createTheme(...)` (search for `generateTheme`). This is where the `dark`/`gray` color scales, `primaryColor`, `defaultRadius`, fonts, and per-component `vars` (Popover, Menu, HoverCard, …) are set. Add or tweak component-wide styling here, not in individual components.
+- **[frontend/src/utils/theme.ts](frontend/src/utils/theme.ts)** — shared Mantine theme via `createAppTheme(...)`, applied by `AppThemeProvider`. This is where the `dark`/`gray` color scales, `primaryColor`, `defaultRadius`, fonts, and per-component `vars` (Popover, Menu, HoverCard, …) are set. Add or tweak component-wide styling here, not in individual components.
 - **[frontend/src/index.css](frontend/src/index.css)** — global CSS variables (`--glass-bg-color`, `--imprint-bg-color`, `--imprint-border-color`, etc.) keyed off `data-mantine-color-scheme`. Add new shared tokens here so they exist on both light and dark.
 
 Rules of thumb:
-- **No one-off custom CSS.** If you find yourself writing inline `style={{ ... }}` with hand-tuned colors, paddings, or typography that don't reference a theme value, that's a smell — promote the value into `App.tsx` (theme) or `index.css` (CSS variable) instead.
+- **No one-off custom CSS.** If you find yourself writing inline `style={{ ... }}` with hand-tuned colors, paddings, or typography that don't reference a theme value, that's a smell — promote the value into `utils/theme.ts` (theme) or `index.css` (CSS variable) instead.
 - **Use `IMPRINT_BG_COLOR`/`IMPRINT_BG_COLOR_2`/`IMPRINT_BORDER_COLOR`** from `@constants/data` for cards (also documented in `wg-ui`).
-- **Component-wide overrides** (e.g. "all Popovers should use this dark color") go in `App.tsx`'s theme `components` map, not on individual `<Popover />` instances.
-- **Use Mantine's design tokens** — `theme.radius.md`, `c='gray.2'`, `c='dimmed'`, `gap={10}`, `px='sm'` — instead of literal pixel/hex values.
+- **Component-wide overrides** (e.g. "all Popovers should use this dark color") go in `utils/theme.ts`'s theme `components` map, not on individual `<Popover />` instances.
+- **Use Mantine's design tokens** — `theme.radius.md`, `c='text.2'`, `c='dimmed'`, `gap={10}`, `px='sm'` — instead of literal pixel/hex values.
 
 The `wg-ui` skill has the visual design patterns (cards, glass, hover, typography, responsive) — this skill just points you at *where* to make the change.

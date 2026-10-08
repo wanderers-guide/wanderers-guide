@@ -220,7 +220,7 @@ export function Component() {
                     },
                   },
                   input: {
-                    '--input-placeholder-color': theme.colors.gray[5],
+                    '--input-placeholder-color': theme.colors.text[5],
                   },
                 })}
               />
@@ -430,7 +430,7 @@ export function Component() {
                     },
                   },
                   input: {
-                    '--input-placeholder-color': theme.colors.gray[5],
+                    '--input-placeholder-color': theme.colors.text[5],
                   },
                 })}
               />

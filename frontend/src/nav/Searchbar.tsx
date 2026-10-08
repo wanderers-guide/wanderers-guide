@@ -11,9 +11,9 @@ export function SearchBar({ isSmall }: { isSmall?: boolean }) {
   const { hovered, ref } = useHover<HTMLButtonElement>();
 
   const isDark = colorScheme === 'dark';
-  const textColor = isDark ? theme.colors.gray[4] : theme.colors.gray[6];
-  const kbdBg = isDark ? theme.colors.dark[7] + '80' : theme.colors.gray[3] + '80';
-  const kbdColor = isDark ? theme.colors.dark[0] : theme.colors.dark[9];
+  const textColor = isDark ? theme.colors.text[4] : theme.colors.text[6];
+  const kbdBg = 'var(--imprint-bg-color-2)';
+  const kbdColor = 'var(--mantine-color-text-5)';
 
   return (
     <UnstyledButton

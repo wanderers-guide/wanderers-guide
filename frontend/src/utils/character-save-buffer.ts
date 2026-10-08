@@ -1,3 +1,4 @@
+import { COLOR_SCHEME_STORAGE_KEY } from '@constants/appearance';
 import type { Character } from '@schemas/content';
 import { z } from 'zod';
 import { isEqual } from 'lodash-es';
@@ -414,7 +415,8 @@ export function clearSessionDataPreservingDrafts(): { status: 'cleared' } | Stor
   try {
     for (let index = localStorage.length - 1; index >= 0; index--) {
       const key = localStorage.key(index);
-      if (key && !key.startsWith('autosave-character-')) localStorage.removeItem(key);
+      if (key && key !== COLOR_SCHEME_STORAGE_KEY && !key.startsWith('autosave-character-'))
+        localStorage.removeItem(key);
     }
     return { status: 'cleared' };
   } catch (error) {

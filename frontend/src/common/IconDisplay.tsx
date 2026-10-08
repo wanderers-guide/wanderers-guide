@@ -76,7 +76,7 @@ export function SelectIcon(props: {
           <TextInput
             defaultValue={iconValue.value}
             label={
-              <Text fz='xs' c='gray.4'>
+              <Text fz='xs' c='text.4'>
                 Image URL
               </Text>
             }
@@ -95,7 +95,7 @@ export function SelectIcon(props: {
       {iconValue.type === 'icon' && (
         <Group wrap='nowrap' align='flex-start' pt={2}>
           <Box pt={4}>
-            <Text fz='xs' c='gray.2'>
+            <Text fz='xs' c='text.2'>
               Icon
             </Text>
             <UnstyledButton
@@ -114,7 +114,7 @@ export function SelectIcon(props: {
             radius='xl'
             size='xs'
             label={
-              <Text fz='xs' c='gray.2'>
+              <Text fz='xs' c='text.2'>
                 Color
               </Text>
             }

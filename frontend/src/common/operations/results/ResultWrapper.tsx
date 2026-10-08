@@ -12,7 +12,7 @@ export default function ResultWrapper(props: { label: string; disabled?: boolean
         pt={15}
         pb={10}
         style={{
-          border: '1px solid ' + theme.colors.dark[3],
+          border: '1px solid ' + 'light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-3))',
           borderRadius: theme.radius.md,
           position: 'relative',
         }}

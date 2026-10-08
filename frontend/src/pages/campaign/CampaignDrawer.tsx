@@ -1,3 +1,4 @@
+import { colorSchemeAtom } from '@atoms/appearance';
 import {
   Box,
   Drawer,
@@ -35,6 +36,7 @@ import { useAtomValue } from 'jotai';
 
 export default function CampaignDrawer(props: { opened: boolean; onClose: () => void; campaignId: number }) {
   const theme = useMantineTheme();
+  const scheme = useAtomValue(colorSchemeAtom);
   const session = useAtomValue(sessionState);
   const isTablet = useMediaQuery(tabletQuery());
   const isWideDesktop = useMediaQuery(wideDesktopQuery());
@@ -72,7 +74,7 @@ export default function CampaignDrawer(props: { opened: boolean; onClose: () => 
           color={
             character.hp_current === 0
               ? 'black'
-              : interpolateHealth(character.hp_current / (character.meta_data?.calculated_stats?.hp_max ?? 0))
+              : interpolateHealth(character.hp_current / (character.meta_data?.calculated_stats?.hp_max ?? 0), scheme)
           }
           style={{
             cursor: 'default',
@@ -110,9 +112,9 @@ export default function CampaignDrawer(props: { opened: boolean; onClose: () => 
                 size='sm'
                 variant='light'
                 style={{
-                  color: theme.colors.gray[4],
+                  color: theme.colors.text[4],
                   ...glassStyle(),
-                  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                  backgroundColor: 'var(--art-control-bg-color)',
                 }}
               >
                 {(characters?.length || 0) + ' players'}

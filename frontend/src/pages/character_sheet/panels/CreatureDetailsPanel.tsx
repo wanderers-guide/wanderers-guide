@@ -142,8 +142,8 @@ export default function CreatureDetailsPanel(props: {
                         cursor: 'pointer',
                       },
                       root: {
-                        border: `1px solid ${theme.colors.dark[4]}`,
-                        backgroundColor: theme.colors.dark[6],
+                        border: `1px solid ${'light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4))'}`,
+                        backgroundColor: 'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))',
                       },
                     }}
                     onClick={() => {
@@ -158,7 +158,7 @@ export default function CreatureDetailsPanel(props: {
                   </Pill>
                 ))}
                 {languages.length === 0 && (
-                  <Text ta='center' c='gray.2' fs='italic'>
+                  <Text ta='center' c='text.2' fs='italic'>
                     No languages found
                   </Text>
                 )}
@@ -181,8 +181,8 @@ export default function CreatureDetailsPanel(props: {
                         cursor: 'pointer',
                       },
                       root: {
-                        border: `1px solid ${theme.colors.dark[4]}`,
-                        backgroundColor: theme.colors.dark[6],
+                        border: `1px solid ${'light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4))'}`,
+                        backgroundColor: 'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))',
                       },
                     }}
                     onClick={() => {
@@ -197,7 +197,7 @@ export default function CreatureDetailsPanel(props: {
                   </Pill>
                 ))}
                 {traits.length === 0 && (
-                  <Text ta='center' c='gray.2' fs='italic'>
+                  <Text ta='center' c='text.2' fs='italic'>
                     No traits found
                   </Text>
                 )}
@@ -249,7 +249,7 @@ export default function CreatureDetailsPanel(props: {
             >
               <Accordion.Item className={classes.item} value={'attacks'} w='100%'>
                 <Accordion.Control>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Attacks
                   </Text>
                 </Accordion.Control>
@@ -265,7 +265,7 @@ export default function CreatureDetailsPanel(props: {
                       }}
                     >
                       <Box>
-                        <Text c='gray.0' fz='sm'>
+                        <Text c='text.0' fz='sm'>
                           Simple Weapons
                         </Text>
                       </Box>
@@ -285,7 +285,7 @@ export default function CreatureDetailsPanel(props: {
                       }}
                     >
                       <Box>
-                        <Text c='gray.0' fz='sm'>
+                        <Text c='text.0' fz='sm'>
                           Martial Weapons
                         </Text>
                       </Box>
@@ -305,7 +305,7 @@ export default function CreatureDetailsPanel(props: {
                       }}
                     >
                       <Box>
-                        <Text c='gray.0' fz='sm'>
+                        <Text c='text.0' fz='sm'>
                           Advanced Weapons
                         </Text>
                       </Box>
@@ -325,7 +325,7 @@ export default function CreatureDetailsPanel(props: {
                       }}
                     >
                       <Box>
-                        <Text c='gray.0' fz='sm'>
+                        <Text c='text.0' fz='sm'>
                           Unarmed Attacks
                         </Text>
                       </Box>
@@ -340,7 +340,7 @@ export default function CreatureDetailsPanel(props: {
               </Accordion.Item>
               <Accordion.Item className={classes.item} value={'defenses'}>
                 <Accordion.Control>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Defenses
                   </Text>
                 </Accordion.Control>
@@ -357,7 +357,7 @@ export default function CreatureDetailsPanel(props: {
                         }}
                       >
                         <Box>
-                          <Text c='gray.0' fz='sm'>
+                          <Text c='text.0' fz='sm'>
                             Light Barding
                           </Text>
                         </Box>
@@ -377,7 +377,7 @@ export default function CreatureDetailsPanel(props: {
                         }}
                       >
                         <Box>
-                          <Text c='gray.0' fz='sm'>
+                          <Text c='text.0' fz='sm'>
                             Heavy Barding
                           </Text>
                         </Box>
@@ -396,7 +396,7 @@ export default function CreatureDetailsPanel(props: {
                       }}
                     >
                       <Box>
-                        <Text c='gray.0' fz='sm'>
+                        <Text c='text.0' fz='sm'>
                           Light Armor
                         </Text>
                       </Box>
@@ -416,7 +416,7 @@ export default function CreatureDetailsPanel(props: {
                       }}
                     >
                       <Box>
-                        <Text c='gray.0' fz='sm'>
+                        <Text c='text.0' fz='sm'>
                           Medium Armor
                         </Text>
                       </Box>
@@ -436,7 +436,7 @@ export default function CreatureDetailsPanel(props: {
                       }}
                     >
                       <Box>
-                        <Text c='gray.0' fz='sm'>
+                        <Text c='text.0' fz='sm'>
                           Heavy Armor
                         </Text>
                       </Box>
@@ -456,7 +456,7 @@ export default function CreatureDetailsPanel(props: {
                       }}
                     >
                       <Box>
-                        <Text c='gray.0' fz='sm'>
+                        <Text c='text.0' fz='sm'>
                           Unarmored Defense
                         </Text>
                       </Box>
@@ -471,7 +471,7 @@ export default function CreatureDetailsPanel(props: {
               </Accordion.Item>
               <Accordion.Item className={classes.item} value={'spellcasting'}>
                 <Accordion.Control>
-                  <Text c='white' fz='sm'>
+                  <Text c='var(--bright-text-color)' fz='sm'>
                     Spellcasting
                   </Text>
                 </Accordion.Control>
@@ -487,12 +487,12 @@ export default function CreatureDetailsPanel(props: {
                       }}
                     >
                       <Box>
-                        <Text c='gray.0' fz='sm'>
+                        <Text c='text.0' fz='sm'>
                           Spell Attack
                         </Text>
                       </Box>
                       <Group>
-                        <Text c='gray.0'>{displayFinalProfValue(props.id, 'SPELL_ATTACK')}</Text>
+                        <Text c='text.0'>{displayFinalProfValue(props.id, 'SPELL_ATTACK')}</Text>
                         <Badge variant='default'>
                           {compileProficiencyType(getVariable<VariableProf>(props.id, 'SPELL_ATTACK')?.value)}
                         </Badge>
@@ -508,12 +508,12 @@ export default function CreatureDetailsPanel(props: {
                       }}
                     >
                       <Box>
-                        <Text c='gray.0' fz='sm'>
+                        <Text c='text.0' fz='sm'>
                           Spell DC
                         </Text>
                       </Box>
                       <Group>
-                        <Text c='gray.0'>{displayFinalProfValue(props.id, 'SPELL_DC', true)}</Text>
+                        <Text c='text.0'>{displayFinalProfValue(props.id, 'SPELL_DC', true)}</Text>
                         <Badge variant='default'>
                           {compileProficiencyType(getVariable<VariableProf>(props.id, 'SPELL_DC')?.value)}
                         </Badge>
@@ -526,7 +526,7 @@ export default function CreatureDetailsPanel(props: {
               {weaponProfs.length > 0 && (
                 <Accordion.Item className={classes.item} value={'weapons'}>
                   <Accordion.Control>
-                    <Text c='white' fz='sm'>
+                    <Text c='var(--bright-text-color)' fz='sm'>
                       Weapons
                     </Text>
                   </Accordion.Control>
@@ -544,7 +544,7 @@ export default function CreatureDetailsPanel(props: {
                           }}
                         >
                           <Box>
-                            <Text c='gray.0' fz='sm'>
+                            <Text c='text.0' fz='sm'>
                               {pluralize(variableToLabel(weapon))}
                             </Text>
                           </Box>
@@ -560,7 +560,7 @@ export default function CreatureDetailsPanel(props: {
               {weaponGroupProfs.length > 0 && (
                 <Accordion.Item className={classes.item} value={'weapon-groups'}>
                   <Accordion.Control>
-                    <Text c='white' fz='sm'>
+                    <Text c='var(--bright-text-color)' fz='sm'>
                       Weapon Groups
                     </Text>
                   </Accordion.Control>
@@ -578,7 +578,7 @@ export default function CreatureDetailsPanel(props: {
                           }}
                         >
                           <Box>
-                            <Text c='gray.0' fz='sm'>
+                            <Text c='text.0' fz='sm'>
                               {variableToLabel(weapon)}
                             </Text>
                           </Box>
@@ -595,7 +595,7 @@ export default function CreatureDetailsPanel(props: {
               {armorProfs.length > 0 && (
                 <Accordion.Item className={classes.item} value={'armor'}>
                   <Accordion.Control>
-                    <Text c='white' fz='sm'>
+                    <Text c='var(--bright-text-color)' fz='sm'>
                       Armor
                     </Text>
                   </Accordion.Control>
@@ -613,7 +613,7 @@ export default function CreatureDetailsPanel(props: {
                           }}
                         >
                           <Box>
-                            <Text c='gray.0' fz='sm'>
+                            <Text c='text.0' fz='sm'>
                               {variableToLabel(armor)}
                             </Text>
                           </Box>
@@ -629,7 +629,7 @@ export default function CreatureDetailsPanel(props: {
               {armorGroupProfs.length > 0 && (
                 <Accordion.Item className={classes.item} value={'armor-groups'}>
                   <Accordion.Control>
-                    <Text c='white' fz='sm'>
+                    <Text c='var(--bright-text-color)' fz='sm'>
                       Armor Groups
                     </Text>
                   </Accordion.Control>
@@ -647,7 +647,7 @@ export default function CreatureDetailsPanel(props: {
                           }}
                         >
                           <Box>
-                            <Text c='gray.0' fz='sm'>
+                            <Text c='text.0' fz='sm'>
                               {variableToLabel(armor)}
                             </Text>
                           </Box>
@@ -671,12 +671,12 @@ export default function CreatureDetailsPanel(props: {
                 }}
               >
                 <Box>
-                  <Text c='gray.0' fz='sm'>
+                  <Text c='text.0' fz='sm'>
                     Class DC
                   </Text>
                 </Box>
                 <Group>
-                  <Text c='gray.0'>{displayFinalProfValue(props.id, 'CLASS_DC', true)}</Text>
+                  <Text c='text.0'>{displayFinalProfValue(props.id, 'CLASS_DC', true)}</Text>
                   <Badge variant='default'>
                     {compileProficiencyType(getVariable<VariableProf>(props.id, 'CLASS_DC')?.value)}
                   </Badge>

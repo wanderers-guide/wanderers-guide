@@ -61,14 +61,14 @@ export function SelectSpellSlotModalContents(props: {
         <Stack align='center' justify='flex-start' gap={10} style={{ height: '100%' }}>
           <Box>
             <Text>{`${rankNumber(slot.rank)} Rank`}</Text>
-            <Divider c={'gray.0'} />
+            <Divider c={'text.0'} />
           </Box>
 
           <Text>
             {slot.spell_id ? (
               <Text fw={600}>{props.allSpells.find((s) => s.id === slot.spell_id)!.name}</Text>
             ) : (
-              <Text c='gray.3' fs='italic' fz='sm'>
+              <Text c='text.3' fs='italic' fz='sm'>
                 {'No Spell Prepared'}
               </Text>
             )}

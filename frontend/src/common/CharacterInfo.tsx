@@ -1,3 +1,5 @@
+import { useAtomValue } from 'jotai';
+import { colorSchemeAtom } from '@atoms/appearance';
 import classes from '@css/UserInfoIcons.module.css';
 import {
   Anchor,
@@ -93,7 +95,7 @@ export const CharacterInfo = forwardRef(
                 <Text
                   fz={props.character && props.character.name.length >= 16 ? '0.9rem' : 'lg'}
                   fw={500}
-                  c='gray.2'
+                  c='text.2'
                   className={classes.name}
                 >
                   {truncate(props.character?.name, {
@@ -175,7 +177,7 @@ export const CharacterInfo = forwardRef(
                     </Button>
                     {props.character?.variants?.dual_class && props.onClickClass2 && (
                       <>
-                        <Text fz='xs' c='gray.2'>
+                        <Text fz='xs' c='text.2'>
                           /
                         </Text>
                         <Button
@@ -211,6 +213,7 @@ export const CharacterInfo = forwardRef(
 );
 
 export function CharacterDetailedInfo(props: { character: Character | null; nameCutOff?: number }) {
+  const scheme = useAtomValue(colorSchemeAtom);
   const theme = useMantineTheme();
   const isPhone = useMediaQuery(phoneQuery());
 
@@ -288,7 +291,7 @@ export function CharacterDetailedInfo(props: { character: Character | null; name
                 sections={[
                   {
                     value: currentHealth === 0 ? 100 : Math.ceil((currentHealth / maxHealth) * 100),
-                    color: interpolateHealth(currentHealth / maxHealth),
+                    color: interpolateHealth(currentHealth / maxHealth, scheme),
                   },
                 ]}
               />
@@ -301,7 +304,7 @@ export function CharacterDetailedInfo(props: { character: Character | null; name
                 <Text
                   fz={props.character && props.character.name.length >= 16 ? '0.9rem' : 'lg'}
                   fw={500}
-                  c='gray.2'
+                  c='text.2'
                   className={classes.name}
                 >
                   {truncate(props.character?.name, {

@@ -1618,11 +1618,11 @@ export function GenericSelectionOption(props: {
           )}
           <Text fz='sm'>{props.option.name}</Text>
           {props.selected || (hovered && !disabled) ? (
-            <Text c='gray.2' fw={600} fz='sm'>
+            <Text c='text.2' fw={600} fz='sm'>
               {nextTotal}
             </Text>
           ) : (
-            <Text c='gray.6' fz='sm'>
+            <Text c='text.6' fz='sm'>
               {currentTotal}
             </Text>
           )}
@@ -2350,7 +2350,7 @@ export function ClassSelectionOption(props: {
                     '--badge-dot-size': 0,
                   },
                 }}
-                c='gray.6'
+                c='text.6'
               >
                 {classHp.ui ?? '-'} HP
               </Badge>
@@ -2363,7 +2363,7 @@ export function ClassSelectionOption(props: {
                     '--badge-dot-size': 0,
                   },
                 }}
-                c='gray.6'
+                c='text.6'
               >
                 {keyAttribute.ui ?? 'Varies'}
               </Badge>
@@ -2487,7 +2487,7 @@ export function AncestrySelectionOption(props: {
                     '--badge-dot-size': 0,
                   },
                 }}
-                c='gray.6'
+                c='text.6'
               >
                 {ancestryHp.ui} HP
               </Badge>
@@ -2500,7 +2500,7 @@ export function AncestrySelectionOption(props: {
                     '--badge-dot-size': 0,
                   },
                 }}
-                c='gray.6'
+                c='text.6'
               >
                 +
                 {attributes.flatMap((attribute, index) =>
@@ -2517,7 +2517,7 @@ export function AncestrySelectionOption(props: {
                       '--badge-dot-size': 0,
                     },
                   }}
-                  c='gray.6'
+                  c='text.6'
                 >
                   -
                   {flawAttributes.flatMap((attribute, index) =>
@@ -2622,7 +2622,7 @@ export function BackgroundSelectionOption(props: {
                       '--badge-dot-size': 0,
                     },
                   }}
-                  c='gray.6'
+                  c='text.6'
                 >
                   {attribute.ui}
                 </Badge>
@@ -2968,7 +2968,7 @@ export function TraitSelectionOption(props: {
             size={12}
             offset={-10}
             position='middle-end'
-            color={theme.colors.gray[5]}
+            color={theme.colors.text[5]}
             withBorder
           >
             <Box pl={8}>
@@ -3166,7 +3166,7 @@ export function CreatureSelectionOption(props: {
                     textTransform: 'initial',
                   },
                 }}
-                c='gray.6'
+                c='text.6'
               >
                 {props.creature.family_type}
               </Badge>
@@ -3180,7 +3180,7 @@ export function CreatureSelectionOption(props: {
                   '--badge-dot-size': 0,
                 },
               }}
-              c='gray.6'
+              c='text.6'
             >
               AC {props.creature.stats?.ac}
             </Badge> */}
@@ -3193,7 +3193,7 @@ export function CreatureSelectionOption(props: {
                   '--badge-dot-size': 0,
                 },
               }}
-              c='gray.6'
+              c='text.6'
             >
               {props.creature.stats?.hp.max} HP
             </Badge> */}
@@ -3302,7 +3302,7 @@ export function HazardSelectionOption(props: {
     <BaseSelectionOption
       leftSection={
         <Stack gap={0} pl='xs'>
-          <Text size='sm' fw={500} c='gray.2'>
+          <Text size='sm' fw={500} c='text.2'>
             {props.hazard.name}
           </Text>
           <Text size='xs' c='dimmed'>

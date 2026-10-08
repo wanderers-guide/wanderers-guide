@@ -395,7 +395,7 @@ export default function SettingsPanel(props: {
                   />
                 ))}
                 {(!user?.subscribed_content_sources || user?.subscribed_content_sources?.length === 0) && (
-                  <Text c='gray.2' fz='sm' ta='center' fs='italic' py={20}>
+                  <Text c='text.2' fz='sm' ta='center' fs='italic' py={20}>
                     No subscribed bundles found.{' '}
                     <Anchor fz='sm' href='/homebrew'>
                       Go add some!

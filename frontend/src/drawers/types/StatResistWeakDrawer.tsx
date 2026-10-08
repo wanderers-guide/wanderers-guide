@@ -52,7 +52,7 @@ export function StatResistWeakDrawerContent(props: { data: { id: StoreID } }) {
             <Accordion.Item value='description'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='gray.2' fw={700} fz='sm'>
+                  <Text c='text.2' fw={700} fz='sm'>
                     Description
                   </Text>
                 </Group>
@@ -67,11 +67,11 @@ A single effect can activate more than one resistance at a time, but subtracts e
             <Accordion.Item value='options'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='gray.2' fw={700} fz='sm'>
+                  <Text c='text.2' fw={700} fz='sm'>
                     Active
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {resists.length}
                     </Text>
                   </Badge>
@@ -81,7 +81,7 @@ A single effect can activate more than one resistance at a time, but subtracts e
                 <List>
                   {resists.map((opt, index) => (
                     <List.Item key={index}>
-                      <Text c='gray.2' size='md' span>
+                      <Text c='text.2' size='md' span>
                         {opt}
                       </Text>
                     </List.Item>
@@ -119,7 +119,7 @@ A single effect can activate more than one resistance at a time, but subtracts e
             <Accordion.Item value='description'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='gray.2' fw={700} fz='sm'>
+                  <Text c='text.2' fw={700} fz='sm'>
                     Description
                   </Text>
                 </Group>
@@ -135,11 +135,11 @@ Some weaknesses can apply when a creature wouldn’t normally take damage, as de
             <Accordion.Item value='options'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='gray.2' fw={700} fz='sm'>
+                  <Text c='text.2' fw={700} fz='sm'>
                     Active
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {weaks.length}
                     </Text>
                   </Badge>
@@ -149,7 +149,7 @@ Some weaknesses can apply when a creature wouldn’t normally take damage, as de
                 <List>
                   {weaks.map((opt, index) => (
                     <List.Item key={index}>
-                      <Text c='gray.2' size='md' span>
+                      <Text c='text.2' size='md' span>
                         {opt}
                       </Text>
                     </List.Item>
@@ -187,7 +187,7 @@ Some weaknesses can apply when a creature wouldn’t normally take damage, as de
             <Accordion.Item value='description'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='gray.2' fw={700} fz='sm'>
+                  <Text c='text.2' fw={700} fz='sm'>
                     Description
                   </Text>
                 </Group>
@@ -202,11 +202,11 @@ If you have immunity to effects with a certain trait (such as ${convertToHardcod
             <Accordion.Item value='options'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='gray.2' fw={700} fz='sm'>
+                  <Text c='text.2' fw={700} fz='sm'>
                     Active
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                    <Text c='gray.2' span inherit>
+                    <Text c='text.2' span inherit>
                       {immuneVar?.value.length}
                     </Text>
                   </Badge>
@@ -216,7 +216,7 @@ If you have immunity to effects with a certain trait (such as ${convertToHardcod
                 <List>
                   {immuneVar?.value.map((opt, index) => (
                     <List.Item key={index}>
-                      <Text c='gray.2' size='md' span>
+                      <Text c='text.2' size='md' span>
                         {displayResistWeak(props.data.id, opt)}
                       </Text>
                     </List.Item>

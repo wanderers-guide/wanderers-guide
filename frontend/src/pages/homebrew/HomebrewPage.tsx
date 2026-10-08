@@ -97,7 +97,7 @@ export function Component() {
                       boxShadow: `0 0 0 2px color-mix(in srgb, ${theme.colors[theme.primaryColor][9]} 30%, transparent)`,
                     },
                   },
-                  input: { '--input-placeholder-color': theme.colors.gray[5] },
+                  input: { '--input-placeholder-color': theme.colors.text[5] },
                 })}
               />
             )}
@@ -165,7 +165,7 @@ export function Component() {
                     borderRadius: theme.radius.md,
                     padding: '2px 4px',
                   },
-                  input: { '--input-placeholder-color': theme.colors.gray[5] },
+                  input: { '--input-placeholder-color': theme.colors.text[5] },
                 })}
               />
               <Tabs
@@ -263,7 +263,7 @@ function BrowseSection(props: { searchQuery: string }) {
         {!isFetching && bundles.length === 0 && (
           <BlurBox w={'100%'} h={200}>
             <Stack mt={50} gap={10}>
-              <Text ta='center' c='gray.2' fs='italic'>
+              <Text ta='center' c='text.2' fs='italic'>
                 No homebrew bundles found.
               </Text>
             </Stack>
@@ -350,7 +350,7 @@ function SubscriptionsSection(props: { searchQuery: string }) {
         {!isLoading && bundles.length === 0 && (
           <BlurBox w={'100%'} h={200}>
             <Stack mt={50} gap={10}>
-              <Text ta='center' c='gray.2' fs='italic'>
+              <Text ta='center' c='text.2' fs='italic'>
                 No subscribed bundles found. Go add some!
               </Text>
             </Stack>
@@ -411,7 +411,7 @@ function CreationsSection(props: { searchQuery: string }) {
         }}
       >
         <Stack gap={10}>
-          <Title ta='center' c='gray.0' order={3}>
+          <Title ta='center' c='text.0' order={3}>
             In Progress
           </Title>
           <Center>
@@ -535,7 +535,7 @@ function CreationsSection(props: { searchQuery: string }) {
         {!isFetching && bundles.filter((c) => !c.is_published).length === 0 && (
           <BlurBox w={'100%'} h={100}>
             <Stack mt={30} gap={10}>
-              <Text ta='center' c='gray.2' fs='italic'>
+              <Text ta='center' c='text.2' fs='italic'>
                 No bundles in progress.
               </Text>
             </Stack>
@@ -550,7 +550,7 @@ function CreationsSection(props: { searchQuery: string }) {
         }}
       >
         <Stack gap={10}>
-          <Title ta='center' c='gray.0' order={3}>
+          <Title ta='center' c='text.0' order={3}>
             Published
           </Title>
           <Center>
@@ -586,7 +586,7 @@ function CreationsSection(props: { searchQuery: string }) {
         {!isFetching && bundles.filter((c) => c.is_published).length === 0 && (
           <BlurBox w={'100%'} h={100}>
             <Stack mt={30} gap={10}>
-              <Text ta='center' c='gray.2' fs='italic'>
+              <Text ta='center' c='text.2' fs='italic'>
                 No published bundles.
               </Text>
             </Stack>

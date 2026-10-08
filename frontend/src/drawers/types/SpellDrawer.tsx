@@ -112,7 +112,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
   if (cast && !isActionCost(cast)) {
     CR.push(
       <>
-        <Text key={0} fw={600} c='gray.2' span>
+        <Text key={0} fw={600} c='text.2' span>
           Cast
         </Text>{' '}
         {cast}
@@ -122,7 +122,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
   if (spell.requirements) {
     CR.push(
       <>
-        <Text key={1} fw={600} c='gray.2' span>
+        <Text key={1} fw={600} c='text.2' span>
           Requirements
         </Text>{' '}
         <RichText span>{spell.requirements}</RichText>
@@ -134,7 +134,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
   if (spell.cost) {
     CT.push(
       <>
-        <Text key={0} fw={600} c='gray.2' span>
+        <Text key={0} fw={600} c='text.2' span>
           Cost
         </Text>{' '}
         {spell.cost}
@@ -144,7 +144,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
   if (spell.trigger) {
     CT.push(
       <>
-        <Text key={1} fw={600} c='gray.2' span>
+        <Text key={1} fw={600} c='text.2' span>
           Trigger
         </Text>{' '}
         {spell.trigger}
@@ -156,7 +156,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
   if (spell.range) {
     RAT.push(
       <>
-        <Text key={0} fw={600} c='gray.2' span>
+        <Text key={0} fw={600} c='text.2' span>
           Range
         </Text>{' '}
         {spell.range}
@@ -166,7 +166,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
   if (spell.area) {
     RAT.push(
       <>
-        <Text key={1} fw={600} c='gray.2' span>
+        <Text key={1} fw={600} c='text.2' span>
           Area
         </Text>{' '}
         {spell.area}
@@ -176,7 +176,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
   if (spell.targets) {
     RAT.push(
       <>
-        <Text key={2} fw={600} c='gray.2' span>
+        <Text key={2} fw={600} c='text.2' span>
           Targets
         </Text>{' '}
         {spell.targets}
@@ -188,7 +188,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
   if (spell.defense) {
     DD.push(
       <>
-        <Text key={0} fw={600} c='gray.2' span>
+        <Text key={0} fw={600} c='text.2' span>
           Defense
         </Text>{' '}
         {spell.defense}
@@ -198,7 +198,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
   if (spell.duration) {
     DD.push(
       <>
-        <Text key={1} fw={600} c='gray.2' span>
+        <Text key={1} fw={600} c='text.2' span>
           Duration
         </Text>{' '}
         {spell.duration}
@@ -221,7 +221,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
         </Box>
         {spell.traditions && spell.traditions.length > 0 && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Traditions
             </Text>{' '}
             {spell.traditions.join(', ')}
@@ -257,7 +257,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
             <Divider />
             {spell.heightened.text.map((text, index) => (
               <IndentedText key={index} ta='justify'>
-                <Text fw={600} c='gray.2' span>
+                <Text fw={600} c='text.2' span>
                   Heightened {text.amount}
                 </Text>{' '}
                 <RichText span>{text.text}</RichText>

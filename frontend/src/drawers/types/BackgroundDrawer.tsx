@@ -25,11 +25,15 @@ export function BackgroundDrawerTitle(props: {
 
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const { data: _background, isFetching, refetch } = useQuery({
+  const {
+    data: _background,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-background-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       return await fetchContentById<Background>('background', id);
     },
@@ -77,7 +81,7 @@ export function BackgroundDrawerContent(props: {
     queryKey: [`find-background-details-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       const background = await fetchContentById<Background>('background', id);
       return {
@@ -89,9 +93,7 @@ export function BackgroundDrawerContent(props: {
   const [_drawer, openDrawer] = useAtom(drawerState);
 
   if (!data || !data.background) {
-    return (
-      <DrawerLoadState loading={isFetching} onRetry={refetch} />
-    );
+    return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
   }
 
   return (
@@ -197,10 +199,10 @@ export function BackgroundInitialOverview(props: {
                   borderRadius: theme.radius.md,
                 }}
               >
-                <Text c='gray.2' ta='center'>
+                <Text c='text.2' ta='center'>
                   Attribute Boost
                 </Text>
-                <Text c='gray.4' fw={700} ta='center' style={{ display: 'flex', justifyContent: 'center' }}>
+                <Text c='text.4' fw={700} ta='center' style={{ display: 'flex', justifyContent: 'center' }}>
                   {attribute.ui}
                 </Text>
               </Box>

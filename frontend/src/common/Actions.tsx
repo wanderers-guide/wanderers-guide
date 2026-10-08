@@ -11,12 +11,13 @@ function ActionStructure(props: ActionStructureProps) {
   const defaultMx = props.symbol === 2 ? 12 : props.symbol === 3 ? 17 : 8;
   const mx = props.mx || defaultMx;
   return (
-    <Text pos='relative' mx={mx}>
+    <Text component='span' pos='relative' mx={mx}>
       <Text
+        component='span'
         {...props}
         fz={size}
         ff='ActionIcons, sans-serif'
-        c={props.c ?? 'gray.5'}
+        c={props.c ?? 'text.5'}
         style={{
           position: 'absolute',
           top: -1,

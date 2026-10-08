@@ -1,3 +1,4 @@
+import { ColorSchemeToggle } from '@common/ColorSchemeToggle';
 import { clearSessionDataPreservingDrafts } from '@utils/character-save-buffer';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { glassStyle } from '@utils/colors';
@@ -317,6 +318,7 @@ export default function Layout(props: { children: React.ReactNode }) {
               </Group>
             </Group>
           </Group>
+          <ColorSchemeToggle />
         </Group>
       </AppShell.Header>
 

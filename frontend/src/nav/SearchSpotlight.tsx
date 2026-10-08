@@ -25,7 +25,15 @@ import {
   IconSwords,
   IconUsers,
 } from '@tabler/icons-react';
-import { AbilityBlockType, Character, ContentSource, ContentType, Creature, HazardSearchResultSchema, Item } from '@schemas/content';
+import {
+  AbilityBlockType,
+  Character,
+  ContentSource,
+  ContentType,
+  Creature,
+  HazardSearchResultSchema,
+  Item,
+} from '@schemas/content';
 import { DrawerType } from '@schemas/index';
 import { isPlayable } from '@utils/character';
 import { determineCompanionType } from '@utils/creature';
@@ -541,7 +549,7 @@ async function fetchCharacters(
           radius={40}
           variant='transparent'
           color='dark.3'
-          bg={theme.colors.dark[6]}
+          bg={'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))'}
         />
       ),
       highlightColor: theme.colors[theme.primaryColor][2],

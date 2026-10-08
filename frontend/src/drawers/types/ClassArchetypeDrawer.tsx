@@ -37,11 +37,15 @@ export function ClassArchetypeDrawerTitle(props: {
 
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const { data: _archetype, isFetching, refetch } = useQuery({
+  const {
+    data: _archetype,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-class-archetype-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       return await fetchContentById<ClassArchetype>('class-archetype', id);
     },
@@ -89,7 +93,7 @@ export function ClassArchetypeDrawerContent(props: {
     queryKey: [`find-class-archetype-details-${id}`, { id, sources: getDefaultSourcesKey('INFO') }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       const archetype = await fetchContentById<ClassArchetype>('class-archetype', id);
       const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('INFO'));
@@ -129,11 +133,11 @@ export function ClassArchetypeDrawerContent(props: {
     <Accordion.Item key={level} value={level}>
       <Accordion.Control>
         <Group wrap='nowrap' justify='space-between' gap={0}>
-          <Text c='gray.2' fw={700} fz='md'>
+          <Text c='text.2' fw={700} fz='md'>
             Level {level}
           </Text>
           <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-            <Text c='gray.2' span inherit>
+            <Text c='text.2' span inherit>
               {adjustments[level].length}
             </Text>
           </Badge>
@@ -239,9 +243,7 @@ export function ClassArchetypeDrawerContent(props: {
   ));
 
   if (!data || !data.archetype || !data.abilityBlocks) {
-    return (
-      <DrawerLoadState loading={isFetching} onRetry={refetch} />
-    );
+    return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
   }
 
   return (
@@ -332,7 +334,7 @@ export function ClassArchetypeDrawerContent(props: {
         </Accordion>
 
         {adjSections.length === 0 && (
-          <Text c='gray.2' fz='sm' ta='center' fs='italic' py={10}>
+          <Text c='text.2' fz='sm' ta='center' fs='italic' py={10}>
             No adjustments found.
           </Text>
         )}

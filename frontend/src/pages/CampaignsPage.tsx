@@ -90,7 +90,7 @@ export function Component() {
               {!isPhone && <IconFlag size='1.8rem' stroke={1.5} />}
               <Title size={28}>
                 Campaigns
-                <Text pl={10} fz='xl' fw={500} c='gray.2' span>
+                <Text pl={10} fz='xl' fw={500} c='text.2' span>
                   {data && reachedCampaignLimit ? `(${data.length}/${CAMPAIGN_SLOT_CAP})` : ''}
                 </Text>
               </Title>
@@ -131,7 +131,7 @@ export function Component() {
                       boxShadow: `0 0 0 2px color-mix(in srgb, ${theme.colors[theme.primaryColor][9]} 30%, transparent)`,
                     },
                   },
-                  input: { '--input-placeholder-color': theme.colors.gray[5] },
+                  input: { '--input-placeholder-color': theme.colors.text[5] },
                 })}
               />
             )}
@@ -188,7 +188,7 @@ export function Component() {
                     borderRadius: theme.radius.md,
                     padding: '2px 4px',
                   },
-                  input: { '--input-placeholder-color': theme.colors.gray[5] },
+                  input: { '--input-placeholder-color': theme.colors.text[5] },
                 })}
               />
             </Box>
@@ -336,7 +336,7 @@ function CampaignCard(props: { campaign: Campaign }) {
       <Box p='sm' style={{ position: 'relative', zIndex: 1 }}>
         <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
           <HoverCard.Target>
-            <Title order={4} c='gray.2' className={classes.name}>
+            <Title order={4} c='text.2' className={classes.name}>
               {truncate(props.campaign?.name || 'My Campaign', { length: 30 })}
             </Title>
           </HoverCard.Target>

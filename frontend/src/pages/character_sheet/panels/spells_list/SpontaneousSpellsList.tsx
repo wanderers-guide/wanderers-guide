@@ -91,7 +91,7 @@ export default function SpontaneousSpellsList(props: {
     <Accordion.Item value={props.index} data-wg-name={props.index.toLowerCase()}>
       <Accordion.Control h={40}>
         <Group wrap='nowrap' justify='space-between' gap={0}>
-          <Text c='gray.2' fw={700} fz='sm'>
+          <Text c='text.2' fw={700} fz='sm'>
             {toLabel(props.source!.name)} Spells
           </Text>
 
@@ -156,10 +156,10 @@ export default function SpontaneousSpellsList(props: {
                 }}
               >
                 <Group wrap='nowrap' gap={10}>
-                  <Text fw={600} c='gray.2' fz='sm' span>
+                  <Text fw={600} c='text.2' fz='sm' span>
                     Spell Attack
                   </Text>
-                  <Text c='gray.2' fz='sm' span>
+                  <Text c='text.2' fz='sm' span>
                     {sign(spellStats.spell_attack.total[0])}
                     {!isPhone &&
                       ` / ${sign(spellStats.spell_attack.total[1])} /
@@ -177,10 +177,10 @@ export default function SpontaneousSpellsList(props: {
                 }}
               >
                 <Group wrap='nowrap' gap={10}>
-                  <Text fw={600} c='gray.2' fz='sm' span>
+                  <Text fw={600} c='text.2' fz='sm' span>
                     Spell DC
                   </Text>
-                  <Text c='gray.2' fz='sm' span>
+                  <Text c='text.2' fz='sm' span>
                     {spellStats.spell_dc.total}
                   </Text>
                 </Group>
@@ -193,7 +193,7 @@ export default function SpontaneousSpellsList(props: {
                   <div key={index} data-wg-name={`rank-group-${index}`}>
                     <Group wrap='nowrap' justify='space-between' gap={0}>
                       <Group wrap='nowrap'>
-                        <Text c='gray.2' fw={700} fz='sm' miw={30}>
+                        <Text c='text.2' fw={700} fz='sm' miw={30}>
                           {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
                         </Text>
                         {rank !== '0' && (
@@ -232,7 +232,7 @@ export default function SpontaneousSpellsList(props: {
                         )}
                       </Group>
                       <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                        <Text c='gray.2' span inherit>
+                        <Text c='text.2' span inherit>
                           {spells[rank]?.length ?? 0}
                         </Text>
                       </Badge>
@@ -264,7 +264,7 @@ export default function SpontaneousSpellsList(props: {
                         />
                       ))}
                       {(!spells[rank] || spells[rank].length === 0) && (
-                        <Text c='gray.3' fz='sm' fs='italic' ta='center' py={5}>
+                        <Text c='text.3' fz='sm' fs='italic' ta='center' py={5}>
                           No spells known
                         </Text>
                       )}

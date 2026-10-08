@@ -83,7 +83,7 @@ export function ItemRunesDescription({ item }: { item: Item }) {
               {index > 0 && <Divider my='sm' />}
               <Group align='start' justify='space-between' pb={2}>
                 <Box>
-                  <Text fw={600} c='gray.2' span>
+                  <Text fw={600} c='text.2' span>
                     {rune.name}
                   </Text>
                 </Box>
@@ -118,7 +118,7 @@ export function ItemRunesDescription({ item }: { item: Item }) {
               {index > 0 && <Divider my='sm' />}
               <Group align='start' justify='space-between' pb={2}>
                 <Box>
-                  <Text fw={600} c='gray.2' span>
+                  <Text fw={600} c='text.2' span>
                     {rune.name}
                   </Text>
                 </Box>
@@ -167,7 +167,7 @@ export function ItemUpgradesDescription(props: { item: Item }) {
           {index > 0 && <Divider my='sm' />}
           <Group align='start' justify='space-between' pb={2}>
             <Box>
-              <Text fw={600} c='gray.2' span>
+              <Text fw={600} c='text.2' span>
                 {slot.name}
               </Text>
             </Box>

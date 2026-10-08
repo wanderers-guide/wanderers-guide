@@ -431,7 +431,7 @@ const ListSection = (props: {
         />
         <Button
           color='dark.6'
-          style={{ borderColor: theme.colors.dark[4] }}
+          style={{ borderColor: 'light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4))' }}
           radius='md'
           fw={500}
           rightSection={<IconPlus size='1.0rem' />}
@@ -513,7 +513,7 @@ const ListSection = (props: {
             />
           ))}
           {props.spells.length === 0 && (
-            <Text c='gray.3' fz='sm' fs='italic' ta='center' pt={20}>
+            <Text c='text.3' fz='sm' fs='italic' ta='center' pt={20}>
               No {isRituals ? 'rituals' : 'spells'} found
             </Text>
           )}

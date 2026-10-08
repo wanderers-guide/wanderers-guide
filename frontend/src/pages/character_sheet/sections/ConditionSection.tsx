@@ -54,7 +54,7 @@ export function ConditionSection(props: {
   return (
     <Box w={props.w}>
       <Group wrap='nowrap' gap={5} justify='center'>
-        <Text ta='center' fz='md' fw={500} c='gray.0'>
+        <Text ta='center' fz='md' fw={500} c='text.0'>
           Conditions
         </Text>
         <ActionIcon
@@ -166,7 +166,7 @@ export function ConditionPills<T extends LivingEntity>(props: {
         />
       ))}
       {(props.entity?.details?.conditions ?? []).length === 0 && props.displayNoneActive && (
-        <Text c='gray.6' fz='xs' fs='italic'>
+        <Text c='text.6' fz='xs' fs='italic'>
           None active
         </Text>
       )}
@@ -211,7 +211,7 @@ export default function MainConditionSection(props: {
               <HeroPointIcon size={75} color={IMPRINT_BG_COLOR_2} />
             </Box>
             <Group justify='flex-start' style={{ flexDirection: 'column' }} h={100} gap={15}>
-              <Text ta='center' fz='md' fw={500} c='gray.0' style={{ whiteSpace: 'nowrap' }}>
+              <Text ta='center' fz='md' fw={500} c='text.0' style={{ whiteSpace: 'nowrap' }}>
                 Hero Points
               </Text>
               <Group justify='center'>

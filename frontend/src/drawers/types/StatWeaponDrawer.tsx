@@ -41,7 +41,7 @@ export function StatWeaponDrawerContent(props: { data: { id: StoreID; item: Item
                       <Kbd style={{ cursor: 'pointer' }}>{stats.attack_bonus.parts.get(part)}</Kbd>
                     </HoverCard.Target>
                     <HoverCard.Dropdown py={5} px={10}>
-                      <Text c='gray.0' size='xs'>
+                      <Text c='text.0' size='xs'>
                         {part}
                       </Text>
                     </HoverCard.Dropdown>
@@ -65,7 +65,7 @@ export function StatWeaponDrawerContent(props: { data: { id: StoreID; item: Item
                       <Kbd style={{ cursor: 'pointer' }}>{stats.damage.dice}</Kbd>
                     </HoverCard.Target>
                     <HoverCard.Dropdown py={5} px={10}>
-                      <Text c='gray.0' size='xs'>
+                      <Text c='text.0' size='xs'>
                         {'This is the amount of dice you roll when rolling for damage.'}
                       </Text>
                     </HoverCard.Dropdown>
@@ -78,7 +78,7 @@ export function StatWeaponDrawerContent(props: { data: { id: StoreID; item: Item
                       <Kbd style={{ cursor: 'pointer' }}>{stats.damage.die}</Kbd>
                     </HoverCard.Target>
                     <HoverCard.Dropdown py={5} px={10}>
-                      <Text c='gray.0' size='xs'>
+                      <Text c='text.0' size='xs'>
                         {'This is the type of die you roll for damage, such as d4, d6, d8, etc.'}
                       </Text>
                     </HoverCard.Dropdown>
@@ -96,7 +96,7 @@ export function StatWeaponDrawerContent(props: { data: { id: StoreID; item: Item
                       <Kbd style={{ cursor: 'pointer' }}>{stats.damage.bonus.parts.get(part)}</Kbd>
                     </HoverCard.Target>
                     <HoverCard.Dropdown py={5} px={10}>
-                      <Text c='gray.0' size='xs'>
+                      <Text c='text.0' size='xs'>
                         {part}
                       </Text>
                     </HoverCard.Dropdown>
@@ -112,7 +112,7 @@ export function StatWeaponDrawerContent(props: { data: { id: StoreID; item: Item
                     <Kbd style={{ cursor: 'pointer' }}>{stats.damage.damageType}</Kbd>
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
-                    <Text c='gray.0' size='xs'>
+                    <Text c='text.0' size='xs'>
                       {
                         'The type of damage this weapon deals. The acronyms for bludgeoning, slashing, and piercing are B, S, and P, respectively. Some types of damage, such as vitality or spirit damage, have special rules associated with them (see Player Core pg. 407).'
                       }
@@ -132,11 +132,11 @@ export function StatWeaponDrawerContent(props: { data: { id: StoreID; item: Item
                           <Kbd style={{ cursor: 'pointer' }}>{parseOtherDamage([part], '')}</Kbd>
                         </HoverCard.Target>
                         <HoverCard.Dropdown py={5} px={10}>
-                          <Text c='gray.0' size='xs'>
+                          <Text c='text.0' size='xs'>
                             {'This weapon deals additional damage from the following:'}
                           </Text>
                           <Divider my={2} />
-                          <Text c='gray.0' size='xs'>
+                          <Text c='text.0' size='xs'>
                             {part.source ?? 'Unknown source'}
                           </Text>
                         </HoverCard.Dropdown>
@@ -157,7 +157,7 @@ export function StatWeaponDrawerContent(props: { data: { id: StoreID; item: Item
                         <Kbd style={{ cursor: 'pointer' }}>{stats.damage.extra}</Kbd>
                       </HoverCard.Target>
                       <HoverCard.Dropdown py={5} px={10}>
-                        <Text c='gray.0' size='xs'>
+                        <Text c='text.0' size='xs'>
                           {'This weapon deals extra damage from a custom adjustment to the item.'}
                         </Text>
                       </HoverCard.Dropdown>

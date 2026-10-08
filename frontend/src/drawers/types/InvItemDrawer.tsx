@@ -138,7 +138,7 @@ export function InvItemDrawerContent(props: {
   if (_invItemPrice && priceToString(_invItemPrice) !== '—') {
     price = (
       <>
-        <Text key={1} fw={600} c='gray.2' span>
+        <Text key={1} fw={600} c='text.2' span>
           Price
         </Text>{' '}
         {priceToString(_invItemPrice)}
@@ -150,7 +150,7 @@ export function InvItemDrawerContent(props: {
   if (invItem.item.usage) {
     UBH.push(
       <>
-        <Text key={0} fw={600} c='gray.2' span>
+        <Text key={0} fw={600} c='text.2' span>
           Usage
         </Text>{' '}
         {invItem.item.usage.replace(/-/g, ' ')}
@@ -165,7 +165,7 @@ export function InvItemDrawerContent(props: {
   ) {
     UBH.push(
       <>
-        <Text key={1} fw={600} c='gray.2' span>
+        <Text key={1} fw={600} c='text.2' span>
           Bulk
         </Text>{' '}
         {labelizeBulk(invItem.is_formula ? '0' : invItem.item.bulk)}
@@ -175,7 +175,7 @@ export function InvItemDrawerContent(props: {
   if (invItem.item.hands && !invItem.item.usage?.trim()) {
     UBH.push(
       <>
-        <Text key={1} fw={600} c='gray.2' span>
+        <Text key={1} fw={600} c='text.2' span>
           Hands
         </Text>{' '}
         {invItem.item.hands}
@@ -187,7 +187,7 @@ export function InvItemDrawerContent(props: {
   if (invItem.item.craft_requirements) {
     craftReq = (
       <>
-        <Text key={1} fw={600} c='gray.2' span>
+        <Text key={1} fw={600} c='text.2' span>
           Craft Requirements
         </Text>{' '}
         {invItem.item.craft_requirements}
@@ -236,7 +236,7 @@ export function InvItemDrawerContent(props: {
         {isItemWithRunes(invItem.item) && (
           <Accordion variant='separated' my={5}>
             <Accordion.Item value='runes'>
-              <Accordion.Control icon={getIconMap('1.0rem', theme.colors.gray[6])['RUNE']}>Runes</Accordion.Control>
+              <Accordion.Control icon={getIconMap('1.0rem', theme.colors.text[6])['RUNE']}>Runes</Accordion.Control>
               <Accordion.Panel>
                 <ItemRunesDescription item={invItem.item} />
               </Accordion.Panel>
@@ -247,7 +247,7 @@ export function InvItemDrawerContent(props: {
         {isItemWithUpgrades(invItem.item) && (
           <Accordion variant='separated' my={5}>
             <Accordion.Item value='upgrades'>
-              <Accordion.Control icon={getIconMap('1.0rem', theme.colors.gray[6])['UPGRADE']}>
+              <Accordion.Control icon={getIconMap('1.0rem', theme.colors.text[6])['UPGRADE']}>
                 Upgrades
               </Accordion.Control>
               <Accordion.Panel>
@@ -502,7 +502,7 @@ function InvItemSections(props: {
     quantitySection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
         <Group wrap='nowrap'>
-          <Text fw={600} c='gray.2' span>
+          <Text fw={600} c='text.2' span>
             Quantity
           </Text>{' '}
           <NumberInput
@@ -561,7 +561,7 @@ function InvItemSections(props: {
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md' style={{ position: 'relative' }}>
         <Group gap={5}>
           <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Hit Points
             </Text>{' '}
             <TextInput
@@ -603,10 +603,10 @@ function InvItemSections(props: {
               </Text>
             </Stack>
             <Stack gap={0}>
-              <Text ta='left' fw={500} c='gray.4' fz={10}>
+              <Text ta='left' fw={500} c='text.4' fz={10}>
                 {healthStats.hardness}
               </Text>
-              <Text ta='left' fw={500} c='gray.4' fz={10}>
+              <Text ta='left' fw={500} c='text.4' fz={10}>
                 {healthStats.bt}
               </Text>
             </Stack>
@@ -666,21 +666,21 @@ function InvItemSections(props: {
           }}
         >
           <Group wrap='nowrap' gap={10} style={{ overflow: 'hidden' }}>
-            <Text fw={600} c='gray.2' span style={{ overflow: 'hidden' }}>
+            <Text fw={600} c='text.2' span style={{ overflow: 'hidden' }}>
               Attack
             </Text>
-            <Text c='gray.2' span>
+            <Text c='text.2' span>
               {sign(weaponStats.attack_bonus.total[0])}{' '}
-              <Text c='gray.5' span>
+              <Text c='text.5' span>
                 / {sign(weaponStats.attack_bonus.total[1])} / {sign(weaponStats.attack_bonus.total[2])}
               </Text>
             </Text>
           </Group>
           <Group wrap='nowrap' gap={10} style={{ overflow: 'hidden' }} maw={300}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Damage
             </Text>
-            <EllipsisText c='gray.2' span>
+            <EllipsisText c='text.2' span>
               {weaponStats.damage.dice}
               {weaponStats.damage.die}
               {damageBonus} {weaponStats.damage.damageType}
@@ -834,10 +834,10 @@ function InvItemSections(props: {
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
         <Group gap={10}>
           <Group wrap='nowrap' mr={5}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Grade
             </Text>{' '}
-            <Text c='gray.2' span>
+            <Text c='text.2' span>
               {toLabel(props.invItem.item.meta_data?.starfinder?.grade)}
             </Text>
           </Group>
@@ -880,18 +880,18 @@ function InvItemSections(props: {
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
         <Group gap={0}>
           <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Range
             </Text>
-            <Text c='gray.2' span>
+            <Text c='text.2' span>
               {props.invItem.item.meta_data?.range} ft.
             </Text>
           </Group>
           <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Reload
             </Text>
-            <Text c='gray.2' span>
+            <Text c='text.2' span>
               {props.invItem.item.meta_data?.reload ?? '—'}
             </Text>
           </Group>
@@ -906,18 +906,18 @@ function InvItemSections(props: {
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
         <Group gap={0}>
           <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Capacity
             </Text>
-            <Text c='gray.2' span>
+            <Text c='text.2' span>
               {props.invItem.item.meta_data?.starfinder?.capacity ?? '—'}
             </Text>
           </Group>
           <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Ammo Usage
             </Text>
-            <Text c='gray.2' span>
+            <Text c='text.2' span>
               {props.invItem.item.meta_data?.starfinder?.usage ?? '—'}
             </Text>
           </Group>
@@ -952,10 +952,10 @@ function InvItemSections(props: {
         <Group gap={0}>
           {props.invItem.item.meta_data?.category && (
             <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
-              <Text fw={600} c='gray.2' span>
+              <Text fw={600} c='text.2' span>
                 Category
               </Text>
-              <Text c='gray.2' span>
+              <Text c='text.2' span>
                 {/* TitleCase it again in cases like 'unarmored defense' */}
                 {titleCase(toLabel(props.invItem.item.meta_data?.category))}
               </Text>
@@ -963,7 +963,7 @@ function InvItemSections(props: {
           )}
           {effectiveGroup && (
             <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
-              <Text fw={600} c='gray.2' span>
+              <Text fw={600} c='text.2' span>
                 Group
               </Text>
               <HoverCard
@@ -976,7 +976,7 @@ function InvItemSections(props: {
                 withArrow
               >
                 <HoverCard.Target>
-                  <Text c='gray.2' style={{ cursor: groupDesc ? 'pointer' : undefined }} span>
+                  <Text c='text.2' style={{ cursor: groupDesc ? 'pointer' : undefined }} span>
                     {toLabel(effectiveGroup)}
                   </Text>
                 </HoverCard.Target>
@@ -999,10 +999,10 @@ function InvItemSections(props: {
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md' style={{ position: 'relative' }}>
         <Group gap={0}>
           <Group wrap='nowrap' mr={20} style={{ flexGrow: 1 }}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               AC Bonus
             </Text>{' '}
-            <Text c='gray.2' span>
+            <Text c='text.2' span>
               {sign(ac ?? 0)}
             </Text>
           </Group>
@@ -1023,12 +1023,12 @@ function InvItemSections(props: {
                 </Stack>
                 <Stack gap={0}>
                   {dexCap !== undefined && (
-                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                    <Text ta='left' fw={500} c='text.4' fz={10}>
                       {sign(dexCap)}
                     </Text>
                   )}
                   {strength !== undefined && (
-                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                    <Text ta='left' fw={500} c='text.4' fz={10}>
                       {sign(strength)}
                     </Text>
                   )}
@@ -1051,12 +1051,12 @@ function InvItemSections(props: {
                 </Stack>
                 <Stack gap={0}>
                   {!!checkPenalty && (
-                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                    <Text ta='left' fw={500} c='text.4' fz={10}>
                       {sign(checkPenalty)}
                     </Text>
                   )}
                   {!!speedPenalty && (
-                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                    <Text ta='left' fw={500} c='text.4' fz={10}>
                       {sign(speedPenalty)} ft.
                     </Text>
                   )}

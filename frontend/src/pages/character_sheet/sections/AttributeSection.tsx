@@ -58,7 +58,7 @@ export default function AttributeSection(props: {
                   radius='xl'
                   size='compact-xs'
                   fw={400}
-                  c='gray.0'
+                  c='text.0'
                   noBorder
                   style={{
                     flex: 1,
@@ -78,7 +78,7 @@ export default function AttributeSection(props: {
                   }}
                 >
                   {displayAttributeValue(props.id, attribute, {
-                    c: 'gray.0',
+                    c: 'text.0',
                     ta: 'center',
                     fz: 'xs',
                   })}

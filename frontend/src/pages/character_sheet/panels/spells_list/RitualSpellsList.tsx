@@ -58,11 +58,11 @@ export default function RitualSpellsList(props: {
       <Accordion.Control h={40}>
         <Group wrap='nowrap' justify='space-between' gap={0}>
           <Group gap={10}>
-            <Text c='gray.2' fw={700} fz='sm'>
+            <Text c='text.2' fw={700} fz='sm'>
               Rituals
             </Text>
             <Badge variant='outline' color='gray.5' size='xs'>
-              <Text c='gray.2' span inherit>
+              <Text c='text.2' span inherit>
                 {props.spellIds.length}
               </Text>
             </Badge>
@@ -121,7 +121,7 @@ export default function RitualSpellsList(props: {
               ))}
 
           {props.spellIds.length === 0 && (
-            <Text c='gray.3' fz='sm' fs='italic' ta='center' py={5}>
+            <Text c='text.3' fz='sm' fs='italic' ta='center' py={5}>
               No rituals known
             </Text>
           )}

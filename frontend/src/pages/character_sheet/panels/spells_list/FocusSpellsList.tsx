@@ -68,9 +68,7 @@ export default function FocusSpellsList(props: {
   // would shrink the focus-point max (#30). getFocusPoints only reads `rank`, which the
   // focus entries already carry.
   const allFocusSpells = useMemo(() => {
-    return props.extra.charData.focus.filter((f) =>
-      props.extra.charData.sources.map((s) => s.name).includes(f.source)
-    );
+    return props.extra.charData.focus.filter((f) => props.extra.charData.sources.map((s) => s.name).includes(f.source));
   }, [props.extra.charData]);
 
   // If there are no spells to display, and there are filters, return null
@@ -86,7 +84,7 @@ export default function FocusSpellsList(props: {
     <Accordion.Item value={props.index}>
       <Accordion.Control h={40}>
         <Group wrap='nowrap' justify='space-between' gap={0}>
-          <Text c='gray.2' fw={700} fz='sm'>
+          <Text c='text.2' fw={700} fz='sm'>
             {toLabel(props.source!.name)} Focus Spells
           </Text>
 
@@ -157,10 +155,10 @@ export default function FocusSpellsList(props: {
                 }}
               >
                 <Group wrap='nowrap' gap={10}>
-                  <Text fw={600} c='gray.2' fz='sm' span>
+                  <Text fw={600} c='text.2' fz='sm' span>
                     Spell Attack
                   </Text>
-                  <Text c='gray.2' fz='sm' span>
+                  <Text c='text.2' fz='sm' span>
                     {sign(spellStats.spell_attack.total[0])}
                     {!isPhone &&
                       ` / ${sign(spellStats.spell_attack.total[1])} /
@@ -178,10 +176,10 @@ export default function FocusSpellsList(props: {
                 }}
               >
                 <Group wrap='nowrap' gap={10}>
-                  <Text fw={600} c='gray.2' fz='sm' span>
+                  <Text fw={600} c='text.2' fz='sm' span>
                     Spell DC
                   </Text>
-                  <Text c='gray.2' fz='sm' span>
+                  <Text c='text.2' fz='sm' span>
                     {spellStats.spell_dc.total}
                   </Text>
                 </Group>
@@ -193,11 +191,11 @@ export default function FocusSpellsList(props: {
                 .map((rank, index) => (
                   <div key={index} data-wg-name={`rank-group-${index}`}>
                     <Group wrap='nowrap' justify='space-between' gap={0}>
-                      <Text c='gray.2' fw={700} fz='sm'>
+                      <Text c='text.2' fw={700} fz='sm'>
                         {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
                       </Text>
                       <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                        <Text c='gray.2' span inherit>
+                        <Text c='text.2' span inherit>
                           {spells[rank].length}
                         </Text>
                       </Badge>

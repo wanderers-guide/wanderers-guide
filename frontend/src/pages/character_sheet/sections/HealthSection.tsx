@@ -1,3 +1,4 @@
+import { colorSchemeAtom } from '@atoms/appearance';
 import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
@@ -12,7 +13,7 @@ import {
 } from '@variables/variable-helpers';
 import { evaluate } from 'mathjs';
 import { useNavigate } from 'react-router-dom';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { SetterOrUpdater } from '@utils/type-fixing';
 import { confirmHealth, confirmPool, handleTakeBreather } from '../entity-handler';
 import { StoreID } from '@schemas/variables';
@@ -24,6 +25,7 @@ export default function HealthSection(props: {
   setEntity: SetterOrUpdater<LivingEntity | null>;
 }) {
   const theme = useMantineTheme();
+  const scheme = useAtomValue(colorSchemeAtom);
 
   const [_drawer, openDrawer] = useAtom(drawerState);
 
@@ -68,12 +70,12 @@ export default function HealthSection(props: {
         <Group justify='space-between' style={{ flexDirection: 'column' }} h='100%' gap={0}>
           <Group wrap='nowrap' justify='space-between' align='flex-start' w='100%' gap={0} grow>
             <Box>
-              <Text ta='center' fz='md' fw={500} c='gray.0'>
+              <Text ta='center' fz='md' fw={500} c='text.0'>
                 Hit Points
               </Text>
               <Group wrap='nowrap' justify='center' align='center' gap={10}>
                 <ClickEditText
-                  color={interpolateHealth(currentHealth / maxHealth)}
+                  color={interpolateHealth(currentHealth / maxHealth, scheme)}
                   size='xl'
                   value={`${currentHealth}`}
                   height={50}
@@ -85,14 +87,14 @@ export default function HealthSection(props: {
                   }}
                 />
                 <Box>
-                  <Text size='md' c='gray.4' style={{ cursor: 'default' }}>
+                  <Text size='md' c='text.4' style={{ cursor: 'default' }}>
                     /
                   </Text>
                 </Box>
                 <Box>
                   <Anchor
                     size='lg'
-                    c='gray.2'
+                    c='text.2'
                     style={{ cursor: 'pointer' }}
                     onClick={() => {
                       openDrawer({
@@ -110,7 +112,7 @@ export default function HealthSection(props: {
             </Box>
 
             <Box>
-              <Text ta='center' fz='sm' fw={500} c='gray.0'>
+              <Text ta='center' fz='sm' fw={500} c='text.0'>
                 Temp. HP
               </Text>
               <ClickEditText
@@ -146,12 +148,12 @@ export default function HealthSection(props: {
           {staminaVariant && (
             <Group wrap='nowrap' justify='space-between' align='flex-start' w='100%' gap={0} grow>
               <Box>
-                <Text ta='center' fz='sm' fw={500} c='gray.0'>
+                <Text ta='center' fz='sm' fw={500} c='text.0'>
                   Stamina
                 </Text>
                 <Group wrap='nowrap' justify='center' align='center' gap={10}>
                   <ClickEditText
-                    color={interpolateHealth(maxStamina > 0 ? currentStamina / maxStamina : 0)}
+                    color={interpolateHealth(maxStamina > 0 ? currentStamina / maxStamina : 0, scheme)}
                     size='lg'
                     value={`${currentStamina}`}
                     height={40}
@@ -163,14 +165,14 @@ export default function HealthSection(props: {
                     }}
                   />
                   <Box>
-                    <Text size='md' c='gray.4' style={{ cursor: 'default' }}>
+                    <Text size='md' c='text.4' style={{ cursor: 'default' }}>
                       /
                     </Text>
                   </Box>
                   <Box>
                     <Anchor
                       size='md'
-                      c='gray.2'
+                      c='text.2'
                       style={{ cursor: 'pointer' }}
                       onClick={() => {
                         openDrawer({
@@ -188,12 +190,12 @@ export default function HealthSection(props: {
               </Box>
 
               <Box>
-                <Text ta='center' fz='sm' fw={500} c='gray.0'>
+                <Text ta='center' fz='sm' fw={500} c='text.0'>
                   Resolve
                 </Text>
                 <Group wrap='nowrap' justify='center' align='center' gap={10}>
                   <ClickEditText
-                    color={currentResolve > 0 ? theme.colors.guide[4] : theme.colors.gray[5]}
+                    color={currentResolve > 0 ? theme.colors.guideInk[4] : theme.colors.text[5]}
                     size='lg'
                     value={`${currentResolve}`}
                     height={40}
@@ -205,14 +207,14 @@ export default function HealthSection(props: {
                     }}
                   />
                   <Box>
-                    <Text size='md' c='gray.4' style={{ cursor: 'default' }}>
+                    <Text size='md' c='text.4' style={{ cursor: 'default' }}>
                       /
                     </Text>
                   </Box>
                   <Box>
                     <Anchor
                       size='md'
-                      c='gray.2'
+                      c='text.2'
                       style={{ cursor: 'pointer' }}
                       onClick={() => {
                         openDrawer({

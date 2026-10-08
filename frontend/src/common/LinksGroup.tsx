@@ -67,10 +67,10 @@ export function LinksGroup({ icon: Icon, label, initiallyOpened, links, onLinkCh
             </ThemeIcon>
             <Box ml='md'>{label}</Box>
             <Badge ml='md' variant='default'>
-              <Text fz='xs' c='gray.2' span>
+              <Text fz='xs' c='text.2' span>
                 {links?.filter((link) => link.enabled).length}
               </Text>
-              <Text fz='xs' c='gray.2' span>
+              <Text fz='xs' c='text.2' span>
                 /{links?.length}
               </Text>
             </Badge>

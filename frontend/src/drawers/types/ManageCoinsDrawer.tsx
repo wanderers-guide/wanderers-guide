@@ -222,7 +222,7 @@ export function ManageCoinsDrawerContent(props: {
         <Accordion.Item value={'description'} w='100%'>
           <Accordion.Control>
             <Group wrap='nowrap' justify='space-between' gap={0}>
-              <Text c='white' fz='sm'>
+              <Text c='var(--bright-text-color)' fz='sm'>
                 Description
               </Text>
             </Group>
@@ -252,7 +252,7 @@ export function ManageCoinsDrawerContent(props: {
         <Accordion.Item value={'other-currency'} w='100%'>
           <Accordion.Control>
             <Group wrap='nowrap' justify='space-between' gap={0}>
-              <Text c='white' fz='sm'>
+              <Text c='var(--bright-text-color)' fz='sm'>
                 Other Currencies
               </Text>
             </Group>

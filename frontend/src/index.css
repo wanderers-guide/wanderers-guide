@@ -17,6 +17,14 @@
   /* Give reading surfaces a stable tint without changing the text or control color scales. */
   --glass-bg-color: rgba(26, 27, 30, 0.76);
   --glass-border-color: rgba(255, 255, 255, 0.125);
+  --portal-bg-color: rgb(37, 38, 43);
+  --reading-bg-color: rgb(26, 27, 30);
+  --tiny-input-bg-color: rgba(255, 255, 255, 0.08);
+  --imprint-button-text-color: var(--mantine-color-white);
+  --bright-text-color: var(--mantine-color-white);
+  --art-control-bg-color: rgba(0, 0, 0, 0.5);
+  --art-control-subtle-bg-color: rgba(0, 0, 0, 0.25);
+  --art-control-subtle-hover-color: rgba(0, 0, 0, 0.35);
   --avatar-placeholder-bg: var(--mantine-color-dark-6);
   --imprint-bg-color: rgba(222, 226, 230, 0.06);
   --imprint-bg-color-2: rgba(222, 226, 230, 0.12);
@@ -51,16 +59,12 @@
   font-family: ActionIcons, sans-serif;
   font-size: 1.7em;
   line-height: 0.7;
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-text-5);
 }
 
 strong {
   font-weight: 600;
-  color: var(--mantine-color-gray-4);
-}
-
-.inverted {
-  filter: invert(100%);
+  color: var(--mantine-color-text-4);
 }
 
 ::placeholder {
@@ -114,4 +118,31 @@ button.mantine-Tabs-tab:not([data-orientation='vertical']) {
 }
 button.mantine-Tabs-tab span.mantine-Tabs-tabLabel {
   flex: unset !important;
+}
+
+/* Pale glass remains readable over either bright or dark illustrations. */
+[data-mantine-color-scheme='light'] {
+  --glass-backdrop-filter: blur(16px) saturate(120%);
+  --glass-bg-color: rgba(248, 250, 253, 0.88);
+  --glass-border-color: rgba(47, 67, 89, 0.18);
+  --portal-bg-color: rgb(250, 251, 253);
+  --reading-bg-color: rgb(248, 250, 253);
+  --tiny-input-bg-color: rgba(29, 48, 75, 0.055);
+  --imprint-button-text-color: var(--mantine-color-text-2);
+  --bright-text-color: var(--mantine-color-text-2);
+  --art-control-bg-color: rgba(248, 250, 253, 0.92);
+  --art-control-subtle-bg-color: rgba(248, 250, 253, 0.92);
+  --art-control-subtle-hover-color: rgba(248, 250, 253, 0.98);
+  --avatar-placeholder-bg: rgba(29, 48, 75, 0.08);
+  --imprint-bg-color: rgba(29, 48, 75, 0.045);
+  --imprint-bg-color-2: rgba(29, 48, 75, 0.09);
+  --imprint-bg-color-hover: rgba(29, 48, 75, 0.04);
+  --imprint-bg-color-hover-2: rgba(29, 48, 75, 0.065);
+  --imprint-border-color: rgba(47, 67, 89, 0.2);
+  --content-divider-color: rgba(47, 67, 89, 0.35);
+}
+
+[data-mantine-color-scheme='light'] ::placeholder,
+[data-mantine-color-scheme='light'] .tiptap p.is-empty.is-editor-empty::before {
+  color: var(--mantine-color-text-6) !important;
 }

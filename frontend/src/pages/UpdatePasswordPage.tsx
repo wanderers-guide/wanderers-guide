@@ -52,7 +52,7 @@ export function Component() {
             Update Password
           </Button>
           {error && (
-            <Text c='red' ta='center' size='sm'>
+            <Text c='redInk' ta='center' size='sm'>
               {error}
             </Text>
           )}

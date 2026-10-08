@@ -12,6 +12,11 @@ export default defineConfig({
     // defaultCommandTimeout: 25000,
     setupNodeEvents(on, config) {
       registerCampaignFixtures(on, config);
+      // Keep the real viewport inside the browser window for uncropped visual captures.
+      on('before:browser:launch', (browser, launchOptions) => {
+        if (browser.family === 'chromium' && browser.isHeadless) launchOptions.args.push('--window-size=1600,1100');
+        return launchOptions;
+      });
     },
   },
 });

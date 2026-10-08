@@ -177,7 +177,7 @@ export default function InspirationPanel(props: {
             ))}
             {sessionIdeas.length === 0 && (
               <Box bg={IMPRINT_BG_COLOR} bdrs='md' px='sm' pb='sm' h={props.panelHeight - 50}>
-                <Text w='100%' pt='xl' fz='sm' c='gray.3' ta='center' fs='italic'>
+                <Text w='100%' pt='xl' fz='sm' c='text.3' ta='center' fs='italic'>
                   No session ideas found, try generating some!
                 </Text>
               </Box>
@@ -218,7 +218,7 @@ export default function InspirationPanel(props: {
             ))}
             {npcs.length === 0 && (
               <Box bg={IMPRINT_BG_COLOR} bdrs='md' px='sm' pb='sm' h={props.panelHeight - 50}>
-                <Text w='100%' pt='xl' fz='sm' c='gray.3' ta='center' fs='italic'>
+                <Text w='100%' pt='xl' fz='sm' c='text.3' ta='center' fs='italic'>
                   No NPCs found, try generating some!
                 </Text>
               </Box>
