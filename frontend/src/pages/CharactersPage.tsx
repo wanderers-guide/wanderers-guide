@@ -668,7 +668,7 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
 
             <Menu.Label>Danger zone</Menu.Label>
             <Menu.Item
-              color='red'
+              color='red.6'
               leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
               onClick={(e) => {
                 e.stopPropagation();

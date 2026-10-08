@@ -220,6 +220,29 @@ describe(`Actual app surfaces ${prefix}`, { testIsolation: false }, () => {
           .some((filter) => name.startsWith(filter)))
   ))
     it(name, () => {
+      if (name === 'scene:campaign-party')
+        cy.intercept('POST', '**/functions/v1/find-character', (req) =>
+          req.continue((res) => {
+            if (!req.body.campaign_id || res.body.status !== 'success' || !Array.isArray(res.body.data)) return;
+            res.body.data = res.body.data.map((character) => ({
+              ...character,
+              notes: {
+                ...character.notes,
+                pages: [
+                  ...(character.notes?.pages ?? []),
+                  {
+                    id: 'local-review-shared-note',
+                    name: 'Shared field notes',
+                    contents: '<p>The eastern gate is open.</p>',
+                    shared: true,
+                    color: '#228be6',
+                    icon: 'journal',
+                  },
+                ],
+              },
+            }));
+          })
+        );
       cy.get('body', { log: false }).then((body) => body.find('[data-visual-dock]').css('visibility', 'visible'));
       cy.get('[data-testid="review-case"]', { timeout: 30000 })
         .clear()
@@ -243,6 +266,8 @@ describe(`Actual app surfaces ${prefix}`, { testIsolation: false }, () => {
         .last()
         .find('.mantine-Loader-root:visible,.mantine-LoadingOverlay-root:visible', { timeout: 120000 })
         .should('not.exist');
+      if (name === 'scene:campaign-party')
+        cy.contains(selector, 'The Shattered Observatory', { timeout: 120000 }).should('be.visible');
       if (name === 'drawer:stat-hp:stamina') {
         cy.contains(selector + ' .mantine-Accordion-control', 'Stamina Breakdown').should('be.visible');
         cy.contains(selector + ' .mantine-Accordion-control', 'Resolve Breakdown').should('be.visible');

@@ -15,6 +15,14 @@ const review = (name, fn) =>
   !filter || filter.split(',').some((value) => name.includes(value)) ? it(name, { retries: 1 }, fn) : it.skip(name, fn);
 function login(role, url, siteTheme, profileOverrides = {}, catalogTransform) {
   recordedCatalogReads(catalogTransform);
+  // A transformed visual catalog must replace any persisted copy from an earlier case.
+  if (catalogTransform)
+    cy.intercept('POST', '**/functions/v1/get-content-versions', (req) =>
+      req.reply({
+        status: 'success',
+        data: req.body.ids.map((id) => ({ id, updated_at: 'local-review-transformed-catalog' })),
+      })
+    );
   // Exercise the existing local dice fallback without creating an external room.
   cy.intercept('https://api.dddice.com/**', { statusCode: 503, body: {} });
   const actor = accounts[role];
@@ -316,8 +324,7 @@ describe('Actual navigation and populated panels', () => {
       ),
     }));
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 120000 }).should('be.visible');
-    if (phone) cy.contains('main button', /^Builder$/).click();
-    else cy.contains('main [role=tab]', /^Builder$/).click();
+    cy.contains('main button', /^Builder$/).click();
     settled('main');
     cy.contains('main .mantine-Accordion-control', /^Initial Stats/)
       .scrollIntoView()
@@ -334,6 +341,30 @@ describe('Actual navigation and populated panels', () => {
       captureScrolls('navigation/builder/conditional-' + label.toLowerCase(), 'body');
       reviewPortals('navigation/builder/conditional-' + label.toLowerCase(), 'body');
     }
+  });
+  review('dice history contrast', () => {
+    cy.intercept('POST', '**/functions/v1/update-character', { status: 'fail', data: { review: 'Write skipped' } });
+    cy.intercept('POST', '**/functions/v1/find-character', (req) =>
+      req.continue((res) => {
+        if (req.body.id !== scenes.casterId || res.body.status !== 'success') return;
+        res.body.data.roll_history = {
+          rolls: [1, 11, 20].map((result, index) => ({
+            type: 'd20',
+            label: 'Local review roll',
+            result,
+            bonus: 2,
+            timestamp: 1791396000000 + index * 1000,
+          })),
+        };
+      })
+    );
+    login('owner', '/sheet/' + scenes.casterId);
+    cy.contains('Hit Points', { timeout: 120000 }).should('be.visible');
+    settled('main');
+    cy.get('[aria-label="Dice Roller"]:visible').click();
+    cy.contains('.mantine-Drawer-content:visible button', /^View History$/).click();
+    cy.contains('.mantine-Drawer-content:visible', 'Local review roll').should('be.visible');
+    captureScrolls('navigation/dice-history-contrast');
   });
   review('content cleaning log modal', () => {
     login('admin', '/content-cleaning-source');
@@ -419,6 +450,8 @@ describe('Actual navigation and populated panels', () => {
     settled('main');
     reviewPanels('navigation/homebrew', 'main');
     reviewPortals('navigation/homebrew', 'main');
+    // The existing custom-pack import menu is only shown on desktop.
+    if (phone) return;
     cy.contains('main button', /^Create Bundle$/)
       .parent()
       .find('button')

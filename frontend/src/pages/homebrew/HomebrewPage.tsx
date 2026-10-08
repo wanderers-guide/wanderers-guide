@@ -705,7 +705,7 @@ function ContentSourceCard(props: {
 
               <Menu.Dropdown>
                 <Menu.Item
-                  color='red'
+                  color='red.6'
                   leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
                   onClick={(e) => {
                     e.stopPropagation();

@@ -181,11 +181,11 @@ export default function DiceRoller(props: {
         timestamp: number;
       }[]
     ) => {
-      const numColor = 'gray.6';
-      const mathColor = 'gray.7';
-      const maxColor = 'green.5';
-      const minColor = 'red.5';
-      const resultColor = 'blue.5';
+      const numColor = 'text.6';
+      const mathColor = 'text.7';
+      const maxColor = 'greenInk.5';
+      const minColor = 'redInk.5';
+      const resultColor = 'blueInk.5';
 
       const dieType = parseInt(dice[0].type.slice(1));
       const bonus = dice.reduce((a, b) => a + b.bonus, 0);
