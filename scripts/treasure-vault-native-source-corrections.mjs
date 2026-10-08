@@ -9,7 +9,7 @@ export const SOURCE_CORRECTION_PATH = '20261008110000_treasure_vault_source_corr
 export const SOURCE_CORRECTION_UPGRADE_ORIGINAL_SHA256 = '85b7129db881a3a90b1d58e8009af9836d43d024f87894b65542ec72d065a830';
 export const SOURCE_CORRECTION_UPGRADE_RELEASE_ORIGINAL_SHA256 = '54ad7e19ecc11d42400d60343e51784863b56c7ecdbd32d9ef746472ff33bf24';
 export const CATALOG_COMPATIBILITY_IDS = Object.freeze([11728, 11730]);
-export const CATALOG_COMPATIBILITY_TERMINAL_BODY_SHA256 = 'c55d729fca4f5b25a0c725305b5d2939e49c28e3e5ecb706a909e530708bb126';
+export const CATALOG_COMPATIBILITY_TERMINAL_BODY_SHA256 = 'daea9d6e1e03e4adbb63c5ab1e06ad540f09b032ae32a1a0b85e421f43d07ded';
 export const CATALOG_COMPATIBILITY_UPGRADE_PATH = '20261008105800_treasure_vault_terminal_catalog_compatibility.sql';
 const rejectedSourceControls = [...Array.from({length:6},(_,index)=>'mixed-successor-'+(index+1)),...[11937,11944,12325].map(id=>'unreviewed-field-'+id),'pending-curator'];
 const catalogHelperDrifts = ['original', 'source'].flatMap(predecessor => ['body', 'metadata', 'acl'].map(field => `catalog-${predecessor}-helper-${field}`));
@@ -100,7 +100,7 @@ export function catalogCompatibilityCtes(patches) {
   const spec = JSON.stringify({ patches }).replaceAll('$', '\\u0024');
   return `global_catalog_compatibility_settings as materialized(select $catalog_compatibility103$${spec}$catalog_compatibility103$::jsonb as spec),
 global_catalog_compatibility as materialized(select coalesce(count(*)=2 and bool_and(r.id is not null and (${rowExpression})=p->'after'),false) as passed
-  from global_catalog_compatibility_settings s cross join lateral jsonb_array_elements(s.spec->'patches') p left join public.item r on r.id=(p->>'id')::bigint),
+  from global_catalog_compatibility_settings s cross join lateral jsonb_array_elements(s.spec->'patches') p left join public.item r on r.uuid=(p#>>'{after,uuid}')::bigint),
 `;
 }
 

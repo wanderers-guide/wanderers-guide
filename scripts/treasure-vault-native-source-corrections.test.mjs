@@ -31,6 +31,18 @@ test('the independent Bagpipes pair changes only the exact top-level group', () 
   assert.doesNotMatch(catalogCompatibilityCtes(catalogPatches), /update public\.|delete from|insert into/i);
 });
 
+test('the complete Bagpipes pair requires globally unique UUID matches without relaxing either full row', () => {
+  const ctes = catalogCompatibilityCtes(catalogPatches);
+  assert.match(ctes, /left join public\.item r on r\.uuid=\(p#>>'\{after,uuid\}'\)::bigint/);
+  assert.match(ctes, /count\(\*\)=2 and bool_and\(r\.id is not null and \(\(to_jsonb\(r\)-'updated_at'-'search_tsv'\)\|\|jsonb_build_object\('uuid',r\.uuid::text\)\)=p->'after'\)/);
+  assert.doesNotMatch(ctes, /left join public\.item r on r\.id=|r\.content_source_id\s*=/);
+  assert.ok(sourceCorrectionCtes(patches).includes("left join public.item r on r.id=(p->>'id')::bigint"), 'The separate three-record correction mask remains unchanged');
+  for (const id of [11728, 11730]) {
+    assert.ok(SOURCE_CORRECTION_CONTROL_NAMES.includes(`catalog-duplicate-uuid-${id}:helper`));
+    assert.ok(SOURCE_CORRECTION_CONTROL_NAMES.includes(`catalog-duplicate-uuid-${id}`));
+  }
+});
+
 test('independent complete masks allow exactly four states and never partial members', () => {
   const accepted = [];
   for (let sourceMask = 0; sourceMask < 8; sourceMask++) for (let pairMask = 0; pairMask < 4; pairMask++) {
