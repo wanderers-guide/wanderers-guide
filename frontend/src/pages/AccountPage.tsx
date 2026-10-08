@@ -681,7 +681,9 @@ function ProfileSection() {
                         { value: 1, label: '100%' },
                         { value: 1.5, label: '150%' },
                       ]}
-                      styles={{ markLabel: { fontSize: 'var(--mantine-font-size-xs)' } }}
+                      styles={{
+                        markLabel: { fontSize: 'var(--mantine-font-size-xs)', color: 'var(--mantine-color-text)' },
+                      }}
                       mb='xl'
                       onChange={(value) => {
                         setUser((prev) => {
