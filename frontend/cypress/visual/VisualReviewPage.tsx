@@ -113,6 +113,13 @@ function equipmentSample(
   item: z.infer<typeof ItemSchema>,
   state?: string
 ): z.infer<typeof ItemSchema> {
+  if (state === 'shield')
+    return sample(
+      ItemSchema,
+      fixture.characters.casterId.inventory?.items
+        .filter((entry) => entry.item.group === 'SHIELD')
+        .map((entry) => entry.item)
+    );
   if (state === 'upgrades') {
     const armor = sample(
       ItemSchema,
@@ -733,6 +740,22 @@ function DrawerSurface({ fixture, caseId, onClose }: { fixture: Fixture; caseId:
       return;
     }
     const table = type.replaceAll('-', '_');
+    if (type === 'versatile-heritage' && state === 'feats') {
+      const heritage = z.object({ id: z.number() }).passthrough().parse(fixture.catalog[table]?.[0]);
+      const feat = sample(
+        AbilityBlockSchema,
+        fixture.catalog.ability_block?.filter((row) => z.object({ name: z.string() }).parse(row).name === 'Nimble Elf')
+      );
+      const reviewHeritage = { ...heritage, trait_id: feat.traits?.[0] };
+      openDrawer(
+        mapToDrawerData('versatile-heritage', reviewHeritage, {
+          id: heritage.id,
+          readOnly: true,
+          showOperations: true,
+        })
+      );
+      return;
+    }
     const row = z
       .object({ id: z.number() })
       .passthrough()

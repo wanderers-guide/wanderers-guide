@@ -240,6 +240,7 @@ describe('Conditional editor and navigation states', { testIsolation: false }, (
         .closest('button')
         .scrollIntoView()
         .click();
+      if (type === 'Custom') cy.contains('.mantine-Modal-content:visible button', /^Operations$/).click();
       reviewPortals('select-options/' + type.toLowerCase().replaceAll(' ', '-'));
       cy.get('.mantine-Modal-content:visible svg.tabler-icon-circle-minus')
         .last()

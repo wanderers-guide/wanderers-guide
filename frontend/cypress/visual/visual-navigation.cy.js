@@ -74,6 +74,14 @@ function panel(label, name) {
       }
     });
   }
+  if (name === 'navigation/campaign/Encounters')
+    cy.get('main input[placeholder="HP"]', { timeout: 120000 }).should(($inputs) => {
+      expect($inputs.length, 'populated local combatants').to.be.greaterThan(1);
+      expect(
+        [...$inputs].every((input) => input.value !== ''),
+        'combatant statistics have loaded'
+      ).to.eq(true);
+    });
   captureScrolls(name, 'body');
   reviewPortals(name, 'body');
   cy.get('body').then(($body) => {
@@ -123,13 +131,18 @@ describe('Actual navigation and populated panels', () => {
         cy.contains('main .mantine-Text-root', new RegExp('^' + label + '$'))
           .parent()
           .children('.mantine-Text-root')
-          .first()
+          .first({ timeout: 120000 })
           .should(($counter) => expect($counter.text()).to.match(/^\d+$/));
       settled('main');
       captureScrolls('navigation/appearance/' + name, 'body');
       cy.get('main .mantine-ColorSwatch-root:visible').first().scrollIntoView().click();
-      cy.get('.mantine-Popover-dropdown:visible .mantine-ColorPicker-root').should('be.visible');
-      captureScrolls('navigation/appearance/' + name + '/accent-picker');
+      cy.get('.mantine-Popover-dropdown:visible .mantine-ColorPicker-wrapper').should('be.visible');
+      captureScrolls('navigation/appearance/' + name + '/accent-picker', '.mantine-Popover-dropdown:visible');
+      capture('navigation/appearance/' + name + '/accent-picker/open', {
+        id: 'AccountPage:Popover:612',
+        kind: 'Popover',
+        opened: true,
+      });
       cy.get('main .mantine-ColorSwatch-root:visible').first().click();
       cy.document().then((doc) =>
         expect(doc.documentElement.scrollWidth, 'appearance variant fits viewport').to.be.at.most(
@@ -167,7 +180,7 @@ describe('Actual navigation and populated panels', () => {
             capture('navigation/rich-text/color-' + index + '-palette');
             cy.get('[aria-label="Color picker"]:visible').click();
             capture('navigation/rich-text/color-' + index + '-picker');
-            cy.contains('.mantine-Popover-dropdown:visible button', /^Cancel$/).click();
+            cy.get('.mantine-Popover-dropdown:visible [aria-label="Save"]').click();
           });
         }
         cy.get('[aria-label="Dice Roller"]:visible').click();
