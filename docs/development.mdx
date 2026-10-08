@@ -517,7 +517,7 @@ complete preservation snapshots, shared-helper compatibility, permission checks,
 concurrent writers and alternate allocations still run. The receipt explicitly
 records reduced negative coverage and never claims an exhaustive pass.
 It runs the fast contract tests before pulling images or creating
-a fixture. These include passing the complete captured 108-file chronology through
+a fixture. These include passing the complete captured migration chronology through
 the alternate allocation guard, so a stale migration count fails immediately.
 The chronology also checks the exact three-record source correction, its old-helper
 upgrade, replay, conflicting proposals, partial states and late rollback. Those
