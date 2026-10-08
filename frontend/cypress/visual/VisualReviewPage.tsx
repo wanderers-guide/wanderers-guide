@@ -897,12 +897,12 @@ function ConditionalHintsScene({ fixture, onClose }: { fixture: Fixture; onClose
         <GroupLinkSwitch label='Player Core' id={1} url={null} enabled onLinkChange={() => {}} />
         <LinkSwitch label='Optional rule' info='Information about this rule.' enabled onLinkChange={() => {}} />
         <CharacterDetailedInfo character={character} />
-        <ContentSourceInfo source={sample(ContentSourceSchema, fixture.catalog['content-source'])} />
+        <ContentSourceInfo source={sample(ContentSourceSchema, fixture.catalog.content_source)} />
         {ready && (
           <Group gap='xl'>
-            <Text>Arcana {displayFinalProfValue(id, 'SKILL_ARCANA')}</Text>
-            <Text>Hit point bonus {displayFinalVariableValue(id, 'MAX_HEALTH_BONUS')}</Text>
-            <Text>Speed {displayFinalSpeedValue(id, 'SPEED', character)}</Text>
+            <Text component='div'>Arcana {displayFinalProfValue(id, 'SKILL_ARCANA')}</Text>
+            <Text component='div'>Hit point bonus {displayFinalVariableValue(id, 'MAX_HEALTH_BONUS')}</Text>
+            <Text component='div'>Speed {displayFinalSpeedValue(id, 'SPEED', character)}</Text>
           </Group>
         )}
       </Stack>
