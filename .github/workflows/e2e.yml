@@ -305,10 +305,21 @@ jobs:
       - name: Tech Core spell import safety tests
         run: node scripts/tech-core-spells-native.mjs --output="${{ runner.temp }}/tech-core-spells"
 
+      - name: Tech Core general spell import safety tests
+        run: node scripts/tech-core-general-spells-native.mjs --output="${{ runner.temp }}/tech-core-general-spells" --matrix=focused --execute-owned-native
+
       - name: Upload Tech Core spell safety evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: tech-core-spells-native-${{ github.sha }}
           path: ${{ runner.temp }}/tech-core-spells/receipt.json
+          if-no-files-found: warn
+
+      - name: Upload Tech Core general spell safety evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tech-core-general-spells-native-${{ github.sha }}
+          path: ${{ runner.temp }}/tech-core-general-spells/receipt.json
           if-no-files-found: warn

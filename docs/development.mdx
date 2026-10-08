@@ -204,6 +204,23 @@ This reuses the owner-verified fixture and cleans up only the containers it crea
 It does not update production or certify the rest of the book. The ordinary E2E stack
 separately exercises content triggers; this native fixture disables those triggers.
 
+Tech Core's next 76 general spells have a separate finite schema, helper, rendered-field,
+and ten-occurrence indexing regression suite:
+`node --import=tsx --test scripts/tech-core-general-spells.test.mjs` from `frontend`.
+The native safety runner uses the current catalog and applies the six introductory
+spells as prerequisites. To construct its plan without starting containers, run
+`node scripts/tech-core-general-spells-native.mjs --output=/absolute/private/evidence-directory`.
+Add `--execute-owned-native` for its focused isolated PostgreSQL checks; only the
+fixture's own uniquely identified resources are created and cleaned up. The focused
+matrix has 86 rejection cases and two closed-submission controls, plus positive
+import, runtime binding, complete readback, rollback and no-op replay checks.
+`--matrix=exhaustive` explicitly selects a finite matrix totaling 1,555 rejections;
+it is not the CI default. Both modes retain exact source and reference guards,
+including Tech Core's null source dependency and Tech's current creature-trait flag.
+CI runs the focused native batch sequentially after the six-spell native suite.
+Neither local test plan nor native success establishes a complete book audit or
+production import; ordinary content-trigger and browser checks remain separate.
+
 The broad PF2e matrix is part of `test:rules`: **1,211 comparisons across 469 engine
 calculations**, grouped into 49 named scenarios and a coverage guard. It loads four
 official sources from the checked-in dump, uses fixed content identities, and freezes

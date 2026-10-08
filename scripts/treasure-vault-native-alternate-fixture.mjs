@@ -67,7 +67,7 @@ export function createAuthenticAlternateFixtureDriver({root,inputs,migrations,in
           if(projection){await stop.checkpoint('alternate projection '+migration.path);projection.verify();}
         }
       }
-      assert.equal(chronology.length,110);evidence.historical14=positives.complete();
+      assert.equal(chronology.length,111);evidence.historical14=positives.complete();
       assert.equal(evidence.historical023_fresh_import_capsule?.passed,true);
       assert.equal(evidence.shared_history.own_stage.length,39);assert.equal(evidence.shared_history.terminal.length,2);
       assert.equal(other.query('select count(*) from public.content_update;'),'0');

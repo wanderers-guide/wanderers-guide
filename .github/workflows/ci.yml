@@ -60,7 +60,7 @@ jobs:
 
       - name: Tech Core spell and conditional regression tests
         run: |
-          node --import=tsx --test scripts/tech-core-introductory-spells.test.mjs scripts/spell-targets.test.mjs scripts/list-id-conditionals.test.mjs
+          node --import=tsx --test scripts/tech-core-introductory-spells.test.mjs scripts/tech-core-general-spells.test.mjs scripts/spell-targets.test.mjs scripts/list-id-conditionals.test.mjs
 
       - name: Rules and content audit regression tests
         run: |

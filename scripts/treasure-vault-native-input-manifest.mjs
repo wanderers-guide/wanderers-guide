@@ -30,8 +30,8 @@ export async function captureNativeInputManifest({root}) {
     return text;
   }
   const migrationFiles=(await readdir(root+'/supabase/migrations')).filter(path=>migrationName.test(path)).sort();
-  assert.equal(migrationFiles.length,110,'Complete reviewed chronology is mandatory');
-  assert.equal(migrationFiles.at(-1),'20261008160000_tech_core_introductory_spells.sql','Exact reviewed Tech Core chronology successor');
+  assert.equal(migrationFiles.length,111,'Complete reviewed chronology is mandatory');
+  assert.equal(migrationFiles.at(-1),'20261008190000_tech_core_general_spells.sql','Exact reviewed Tech Core chronology successor');
   const requirements=JSON.parse(await capture('supabase/release/requirements.json'));
   assert.deepEqual(requirements['20261008105800_treasure_vault_terminal_catalog_compatibility.sql'],{check:'treasure-vault-terminal-catalog-compatibility.sql',order:'before-functions'});
   const registeredCiPaths=['.github/workflows/e2e.yml','supabase/release/war-of-immortals-index.sql','supabase/release/war-of-immortals-index-regression.sql'];

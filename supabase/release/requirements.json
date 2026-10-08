@@ -412,5 +412,9 @@
   "20261008160000_tech_core_introductory_spells.sql": {
     "check": "tech-core-introductory-spells.sql",
     "order": "before-functions"
+  },
+  "20261008190000_tech_core_general_spells.sql": {
+    "check": "tech-core-general-spells.sql",
+    "order": "before-functions"
   }
 }

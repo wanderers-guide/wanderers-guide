@@ -86,10 +86,11 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
   const workflow=assertRegisteredCiWorkflowRecipe(read(workflowPath));
   const requirements=JSON.parse(read('supabase/release/requirements.json'));
   const chronology=inputManifest.migrations;
-  assert.equal(chronology.length,110);
-  assert.equal(chronology.at(-1).path,'20261008160000_tech_core_introductory_spells.sql');
-  assert.equal(Object.keys(requirements).length,103,'Exact reviewed registered requirement inventory');
+  assert.equal(chronology.length,111);
+  assert.equal(chronology.at(-1).path,'20261008190000_tech_core_general_spells.sql');
+  assert.equal(Object.keys(requirements).length,104,'Exact reviewed registered requirement inventory');
   assert.deepEqual(requirements['20261008160000_tech_core_introductory_spells.sql'],{check:'tech-core-introductory-spells.sql',order:'before-functions'});
+  assert.deepEqual(requirements['20261008190000_tech_core_general_spells.sql'],{check:'tech-core-general-spells.sql',order:'before-functions'});
   assert.deepEqual(requirements['20261008105800_treasure_vault_terminal_catalog_compatibility.sql'],{check:'treasure-vault-terminal-catalog-compatibility.sql',order:'before-functions'});
   const names=chronology.map(row=>row.path);
   assert.deepEqual([...names].sort(),names);assert.equal(new Set(names).size,names.length);
@@ -99,7 +100,7 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
     assert.ok(requirement&&typeof requirement==='object');assert.match(requirement.check,releaseName);
   }
   const checkNames=[...new Set(Object.values(requirements).map(row=>row.check))].sort();
-  assert.equal(checkNames.length,66,'Exact reviewed distinct registered check inventory');
+  assert.equal(checkNames.length,67,'Exact reviewed distinct registered check inventory');
   const checks=checkNames.map(name=>({path:'supabase/release/'+name,sql:read('supabase/release/'+name)}));
   const replays=chronology.filter(row=>replayPrefixes.some(prefix=>row.path.startsWith(prefix))).map(row=>{
     const sql=read('supabase/migrations/'+row.path);assert.equal(sha(sql),row.sha256);
