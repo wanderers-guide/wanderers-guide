@@ -179,7 +179,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
         <Text key={2} fw={600} c='gray.2' span>
           Targets
         </Text>{' '}
-        {spell.targets}
+        <RichText span>{spell.targets}</RichText>
       </>
     );
   }

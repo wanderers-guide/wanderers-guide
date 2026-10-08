@@ -145,6 +145,7 @@ export async function createOperationEngine({
   renderRichText = false,
   renderPerceptionDrawer = false,
   renderCastSpellDrawer = false,
+  renderSpellDrawer = false,
   renderBindingEditor = false,
   inspectInitialStats = false,
   resolveArchetypeFixtures = false,
@@ -156,7 +157,7 @@ export async function createOperationEngine({
       absWorkingDir: frontend,
       stdin: {
         contents: `${
-          renderRichText || renderPerceptionDrawer || renderCastSpellDrawer || renderBindingEditor
+          renderRichText || renderPerceptionDrawer || renderCastSpellDrawer || renderSpellDrawer || renderBindingEditor
             ? `
           import React from 'react';
           import { renderToStaticMarkup } from 'react-dom/server';
@@ -179,6 +180,34 @@ export async function createOperationEngine({
                 { theme: { colors: { guide: DEFAULT_THEME.colors.blue } } },
                 React.createElement(CastQueryClientProvider, { client },
                   React.createElement(CastSpellDrawerContent, { data }))));
+            } finally { client.clear(); }
+          }
+          `
+              : ''
+          }
+          ${
+            renderSpellDrawer
+              ? `
+          import { QueryClient as SpellQueryClient, QueryClientProvider as SpellQueryClientProvider } from '@tanstack/react-query';
+          import { SpellDrawerTitle, SpellDrawerContent } from '@drawers/types/SpellDrawer';
+          import { getCachedContent as getSpellDrawerFixtures } from '@content/content-store';
+          /** Render the actual spell drawer with explicit cached content, without remote reads. */
+          export function renderSpellDrawer(data) {
+            const client = new SpellQueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
+            const spell = data.spell ?? getSpellDrawerFixtures('spell').find(row => row.id === data.id);
+            if (spell) {
+              client.setQueryData(['find-spell-' + data.id, { id: data.id }], spell);
+              const traitIds = spell.traits ?? [];
+              client.setQueryData(['find-traits-' + traitIds.join('_'), { traitIds }],
+                getSpellDrawerFixtures('trait').filter(row => traitIds.includes(row.id)));
+            }
+            try {
+              return renderToStaticMarkup(React.createElement(MantineProvider,
+                { theme: { colors: { guide: DEFAULT_THEME.colors.blue } } },
+                React.createElement(SpellQueryClientProvider, { client },
+                  React.createElement(React.Fragment, null,
+                    React.createElement(SpellDrawerTitle, { data }),
+                    React.createElement(SpellDrawerContent, { data })))));
             } finally { client.clear(); }
           }
           `
@@ -264,8 +293,8 @@ export async function createOperationEngine({
       write: false,
       platform: 'node',
       format: 'esm',
-      ...(renderCastSpellDrawer ? { loader: { '.css': 'empty', '.module.css': 'empty' } } : {}),
-      ...(renderRichText || renderPerceptionDrawer || renderCastSpellDrawer || renderBindingEditor
+      ...(renderCastSpellDrawer || renderSpellDrawer ? { loader: { '.css': 'empty', '.module.css': 'empty' } } : {}),
+      ...(renderRichText || renderPerceptionDrawer || renderCastSpellDrawer || renderSpellDrawer || renderBindingEditor
         ? {
             banner: {
               js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
@@ -277,6 +306,18 @@ export async function createOperationEngine({
         {
           name: 'fixture-content',
           setup(pluginBuild) {
+            if (renderSpellDrawer) {
+              // Server rendering has no DOM for DOMPurify; these drawer fixtures intentionally omit artwork.
+              pluginBuild.onResolve({ filter: /^dompurify$/ }, () => ({
+                path: 'empty-artwork',
+                namespace: 'browser-sanitizer',
+              }));
+              pluginBuild.onLoad({ filter: /.*/, namespace: 'browser-sanitizer' }, () => ({
+                contents:
+                  "export default { sanitize(value) { if (value !== '') throw new Error('Spell drawer SSR does not cover nonempty artwork'); return ''; } };",
+                loader: 'ts',
+              }));
+            }
             if (exportJson) {
               pluginBuild.onResolve({ filter: /^@export\/export-to-json$/ }, () => ({
                 path: 'download',
