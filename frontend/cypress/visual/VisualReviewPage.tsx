@@ -244,6 +244,7 @@ function ReviewSurface({
   if (caseId === 'scene:inspiration') return <InspirationScene fixture={fixture} onClose={onClose} />;
   if (caseId === 'scene:conditional-hints') return <ConditionalHintsScene fixture={fixture} onClose={onClose} />;
   if (caseId === 'scene:creature-live') return <CreatureScene fixture={fixture} />;
+  if (caseId === 'scene:creature-source') return <CreatureScene fixture={fixture} includeSourceId />;
   if (caseId.startsWith('panel:')) return <ConditionalPanelScene fixture={fixture} caseId={caseId} onClose={onClose} />;
   if (caseId === 'scene:campaign-party')
     return (
@@ -1060,18 +1061,19 @@ function ConditionalPanelScene({
 }
 
 /** Use the same live creature preview as companions and encounter combatants. */
-function CreatureScene({ fixture }: { fixture: Fixture }): null {
+function CreatureScene({ fixture, includeSourceId = false }: { fixture: Fixture; includeSourceId?: boolean }): null {
   const open = useSetAtom(creatureDrawerState);
   useEffect(() => {
     open({
       data: {
+        id: includeSourceId ? sample(CreatureSchema, fixture.catalog.creature).id : undefined,
         creature: sample(CreatureSchema, fixture.catalog.creature),
         STORE_ID: 'CREATURE_LOCAL_VISUAL',
         updateCreature: () => {},
       },
     });
     return () => open(null);
-  }, [fixture, open]);
+  }, [fixture, includeSourceId, open]);
   return null;
 }
 

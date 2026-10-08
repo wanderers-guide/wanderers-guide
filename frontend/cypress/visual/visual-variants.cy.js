@@ -175,6 +175,36 @@ describe('Conditional editor and navigation states', { testIsolation: false }, (
       .last()
       .should(($el) => expect($el[0].scrollWidth).to.be.at.most($el[0].clientWidth + 1));
   });
+  review('creature view and source feedback', () => {
+    cy.window().then((win) => win.localStorage.setItem('creature-drawer-view', JSON.stringify({ view: 'SHEET' })));
+    open('scene:creature-source');
+    const inspectHint = (label, text, id, state) => {
+      cy.get('[aria-label="' + label + '"]:visible')
+        .last()
+        .trigger('mouseover')
+        .trigger('mouseenter');
+      cy.contains('.mantine-HoverCard-dropdown:visible', text, { timeout: 10000 }).should('be.visible');
+      capture('creature-source/' + state, { id, kind: 'HoverCard', opened: true });
+      cy.get('[aria-label="' + label + '"]:visible')
+        .last()
+        .trigger('mouseout')
+        .trigger('mouseleave');
+      cy.window().then((win) =>
+        Cypress.automation('remote:debugger:protocol', {
+          command: 'Input.dispatchMouseEvent',
+          params: { type: 'mouseMoved', x: win.innerWidth - 2, y: win.innerHeight - 2 },
+        })
+      );
+      cy.get('.mantine-HoverCard-dropdown:visible').should('not.exist');
+    };
+    inspectHint('Help and Feedback', 'Something wrong?', 'DrawerCreatureBase:HoverCard:108', 'source-feedback');
+    inspectHint('Switch View Mode', 'Open Stat Block View', 'CreatureDrawer:HoverCard:670', 'sheet-view-switch');
+    cy.get('[aria-label="Switch View Mode"]:visible').last().click();
+    inspectHint('Switch View Mode', 'Open Sheet View', 'CreatureDrawer:HoverCard:670', 'block-view-switch');
+    captureScrolls('creature-source/stat-block');
+    reviewPortals('creature-source/stat-block');
+    cy.get('[aria-label="Switch View Mode"]:visible').last().click();
+  });
   review('creature panels', () => {
     open('scene:creature-live');
     for (const label of [
