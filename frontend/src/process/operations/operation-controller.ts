@@ -14,7 +14,7 @@ import {
   OperationCharacterResultPackage,
   OperationCreatureResultPackage,
 } from '@schemas/content';
-import { getRootSelection, resetSelections, setSelections } from './selection-tree';
+import { getRootSelection, resetSelections, setSelections, SelectionTreeNode } from './selection-tree';
 import { Operation, OperationOptions, OperationResult, OperationSelect } from '@schemas/operations';
 import {
   clearDeferredOperations,
@@ -140,6 +140,7 @@ async function _executeOps(
 ) {
   const execute = async (): Promise<OperationResult[]> => {
     const selectionNode = getRootSelection().children[primarySource];
+    if (primarySource === 'ancestry') clearConflictingBoostSelections(operations, selectionNode);
     let results = await runOperations(
       varId,
       { path: `${primarySource}_${selectionNode?.value}`, node: selectionNode },
@@ -1401,12 +1402,67 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
   return merged;
 }
 
+/** Include fixed boosts only from selected CUSTOM branches, never from inactive alternatives. */
+function getActiveBoostOperations(operations: Operation[], node?: SelectionTreeNode): Operation[] {
+  return operations.flatMap((operation) => {
+    if (operation.type !== 'select' || operation.data.optionType !== 'CUSTOM') return [operation];
+    const selectedNode = node?.children[operation.id];
+    const selected = operation.data.optionsPredefined?.find((option) => option.id === selectedNode?.value);
+    if (selected?.type !== 'CUSTOM') return [];
+    return getActiveBoostOperations(selected.operations ?? [], selectedNode?.children[selected.id]);
+  });
+}
+
+/** Ignore a saved free boost that now conflicts with a fixed boost after a branch change. */
+function clearConflictingBoostSelections(operations: Operation[], node?: SelectionTreeNode): void {
+  const fixedBoosts = new Set(
+    getActiveBoostOperations(operations, node).flatMap((operation) =>
+      operation.type === 'adjValue' &&
+      operation.data.variable.startsWith('ATTRIBUTE_') &&
+      isAttributeValue(operation.data.value) &&
+      operation.data.value.value === 1
+        ? [operation.data.variable]
+        : []
+    )
+  );
+  const walk = (current: Operation[], parent?: SelectionTreeNode): void => {
+    for (const operation of current) {
+      if (operation.type !== 'select') continue;
+      const selectedNode = parent?.children[operation.id];
+      if (!selectedNode?.value) continue;
+      if (operation.data.optionType === 'CUSTOM') {
+        const selected = operation.data.optionsPredefined?.find((option) => option.id === selectedNode.value);
+        if (selected?.type === 'CUSTOM') walk(selected.operations ?? [], selectedNode.children[selected.id]);
+      } else if (
+        operation.data.optionType === 'ADJ_VALUE' &&
+        operation.data.optionsFilters?.type === 'ADJ_VALUE' &&
+        operation.data.optionsFilters.group === 'ATTRIBUTE' &&
+        isAttributeValue(operation.data.optionsFilters.value) &&
+        operation.data.optionsFilters.value.value === 1
+      ) {
+        if (fixedBoosts.has(selectedNode.value)) selectedNode.value = null;
+        else fixedBoosts.add(selectedNode.value);
+      }
+    }
+  };
+  walk(operations, node);
+}
+
 function limitBoostOptions(operations: Operation[], operationResults: OperationResult[]): OperationResult[] {
   operationResults = cloneDeep(operationResults);
   const unselectedOptions: string[] = [];
+  const allResults: OperationResult[] = [];
+  const collect = (results: OperationResult[]): void => {
+    for (const result of results) {
+      if (!result) continue;
+      allResults.push(result);
+      collect(result.result?.results ?? []);
+    }
+  };
+  collect(operationResults);
 
   // Pull from all selections already made
-  for (const opR of operationResults) {
+  for (const opR of allResults) {
     const selectedOption = opR?.result?.source?.variable;
     const amount = opR?.result?.source?.value?.value;
     if (selectedOption && +amount === 1 && selectedOption.startsWith('ATTRIBUTE_')) {
@@ -1415,7 +1471,8 @@ function limitBoostOptions(operations: Operation[], operationResults: OperationR
   }
 
   // Pull from all hardset attribute boosts
-  for (const op of operations) {
+  const activeOperations = [...operations, ...allResults.flatMap((result) => result?.result?.source?.operations ?? [])];
+  for (const op of activeOperations) {
     if (op.type === 'adjValue') {
       // setValue isn't a boost
       // @ts-ignore
@@ -1427,7 +1484,7 @@ function limitBoostOptions(operations: Operation[], operationResults: OperationR
   }
 
   // Limit all boosts to only be selectable if they haven't been given yet
-  for (const opR of operationResults) {
+  for (const opR of allResults) {
     if (opR?.selection?.options) {
       opR.selection.options = opR.selection.options.filter((option) => {
         if (
@@ -1538,15 +1595,23 @@ export function getAdjustedAncestryOperations(varId: StoreID, character: Charact
   let operations = cloneDeep(inputOps);
   if (character.options?.alternate_ancestry_boosts) {
     // Remove all ancestry boost/flaws operations
-    const newOps = operations.filter(
-      (op) =>
-        !(
-          op.type === 'adjValue' &&
-          getAllAttributeVariables(varId)
-            .map((v) => v.name)
-            .includes(op.data.variable)
-        ) && !(op.type === 'select' && op.data.title === 'Select an Attribute')
-    );
+    const attributes = new Set(getAllAttributeVariables(varId).map((variable) => variable.name));
+    /** Retain size and other branch effects while replacing every ancestry attribute adjustment. */
+    const removeBoosts = (current: Operation[]): Operation[] =>
+      current.flatMap((operation): Operation[] => {
+        if (operation.type === 'adjValue' && attributes.has(operation.data.variable)) return [];
+        if (operation.type === 'select' && operation.data.title === 'Select an Attribute') return [];
+        if (operation.type === 'select' && operation.data.optionType === 'CUSTOM') {
+          operation.data.optionsPredefined = operation.data.optionsPredefined?.map((option) =>
+            option.type === 'CUSTOM' ? { ...option, operations: removeBoosts(option.operations ?? []) } : option
+          );
+        } else if (operation.type === 'conditional') {
+          operation.data.trueOperations = removeBoosts(operation.data.trueOperations ?? []);
+          operation.data.falseOperations = removeBoosts(operation.data.falseOperations ?? []);
+        }
+        return [operation];
+      });
+    const newOps = removeBoosts(operations);
 
     newOps.push({
       id: 'eadjpcd7-5jad-4f7c-a712-95d5e272bcf3-1',
