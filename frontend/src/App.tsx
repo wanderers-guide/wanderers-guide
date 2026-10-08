@@ -106,14 +106,20 @@ export default function App() {
   useEffect(() => {
     resetContentStore();
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setContentCacheActor(session?.user.id ?? null);
-      setSession(session);
-      // Clear stale account chrome quietly; character drafts remain account-scoped.
-      if (!session && getCachedPublicUser()) {
-        clearUserData();
-      }
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        setContentCacheActor(session?.user.id ?? null);
+        setSession(session);
+        // Clear stale account chrome quietly; character drafts remain account-scoped.
+        if (!session && getCachedPublicUser()) {
+          clearUserData();
+        }
+      })
+      .catch(() => {
+        // A failed initial read may offer sign-in, but must not strand the route.
+        setSession((current) => (current === undefined ? null : current));
+      });
 
     const {
       data: { subscription },
