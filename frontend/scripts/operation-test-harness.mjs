@@ -138,6 +138,9 @@ export async function fetchContentPackage(requestedSources) {
   return {...content, defaultSources: structuredClone(sources)};
 }
 export function importFromContentPackage() {}
+/** Fail closed if a drawer tries an unseeded lookup instead of its explicit local fixture. */
+function rejectUnseededContentRead() { throw new Error('Unseeded content read in drawer fixture'); }
+export { rejectUnseededContentRead as fetchAllPrereqs };
 `;
 
 /** Bundle the workspace's actual engine with a local content boundary; register cleanup with test.after(). */
@@ -190,14 +193,16 @@ export async function createOperationEngine({
               ? `
           import { QueryClient as SpellQueryClient, QueryClientProvider as SpellQueryClientProvider } from '@tanstack/react-query';
           import { SpellDrawerTitle, SpellDrawerContent } from '@drawers/types/SpellDrawer';
+          import { ActionDrawerTitle, ActionDrawerContent } from '@drawers/types/ActionDrawer';
+          import { FeatDrawerTitle, FeatDrawerContent } from '@drawers/types/FeatDrawer';
           import { getCachedContent as getSpellDrawerFixtures } from '@content/content-store';
-          /** Render the actual spell drawer with explicit cached content, without remote reads. */
-          export function renderSpellDrawer(data) {
+          /** Render actual content drawers with explicit cached content, without remote reads. */
+          function renderCachedDrawer(data, kind, Title, Content) {
             const client = new SpellQueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
-            const spell = data.spell ?? getSpellDrawerFixtures('spell').find(row => row.id === data.id);
-            if (spell) {
-              client.setQueryData(['find-spell-' + data.id, { id: data.id }], spell);
-              const traitIds = spell.traits ?? [];
+            const row = data[kind] ?? getSpellDrawerFixtures(kind === 'spell' ? 'spell' : 'ability-block').find(row => row.id === data.id);
+            if (row) {
+              client.setQueryData(['find-' + kind + '-' + data.id, { id: data.id }], row);
+              const traitIds = row.traits ?? [];
               client.setQueryData(['find-traits-' + traitIds.join('_'), { traitIds }],
                 getSpellDrawerFixtures('trait').filter(row => traitIds.includes(row.id)));
             }
@@ -206,9 +211,21 @@ export async function createOperationEngine({
                 { theme: { colors: { guide: DEFAULT_THEME.colors.blue } } },
                 React.createElement(SpellQueryClientProvider, { client },
                   React.createElement(React.Fragment, null,
-                    React.createElement(SpellDrawerTitle, { data }),
-                    React.createElement(SpellDrawerContent, { data })))));
+                    React.createElement(Title, { data }),
+                    React.createElement(Content, { data })))));
             } finally { client.clear(); }
+          }
+          /** Render the actual catalog spell title and rules against cached fixtures. */
+          export function renderSpellDrawer(data) {
+            return renderCachedDrawer(data, 'spell', SpellDrawerTitle, SpellDrawerContent);
+          }
+          /** Render the actual action title and rules against cached fixtures. */
+          export function renderActionDrawer(data) {
+            return renderCachedDrawer(data, 'action', ActionDrawerTitle, ActionDrawerContent);
+          }
+          /** Render the actual feat title and rules against cached fixtures. */
+          export function renderFeatDrawer(data) {
+            return renderCachedDrawer(data, 'feat', FeatDrawerTitle, FeatDrawerContent);
           }
           `
               : ''
@@ -307,6 +324,16 @@ export async function createOperationEngine({
           name: 'fixture-content',
           setup(pluginBuild) {
             if (renderSpellDrawer) {
+              // Stat-line fixtures do not open the operation editor or its remote lookup controls.
+              pluginBuild.onResolve({ filter: /^@drawers\/ShowOperationsButton$/ }, () => ({
+                path: 'unopened-operation-editor',
+                namespace: 'drawer-editor-boundary',
+              }));
+              pluginBuild.onLoad({ filter: /.*/, namespace: 'drawer-editor-boundary' }, () => ({
+                contents:
+                  "export default function ShowOperationsButton() { throw new Error('Drawer stat-line fixtures do not cover the operation editor'); }",
+                loader: 'ts',
+              }));
               // Server rendering has no DOM for DOMPurify; these drawer fixtures intentionally omit artwork.
               pluginBuild.onResolve({ filter: /^dompurify$/ }, () => ({
                 path: 'empty-artwork',
