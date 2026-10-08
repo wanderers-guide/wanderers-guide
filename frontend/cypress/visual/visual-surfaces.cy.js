@@ -234,7 +234,8 @@ describe(`Actual app surfaces ${prefix}`, { testIsolation: false }, () => {
         return;
       }
       const selector =
-        name.startsWith('drawer:') || name.startsWith('scene:')
+        name.startsWith('drawer:') ||
+        (name.startsWith('scene:') && !['scene:inspiration', 'scene:conditional-hints'].includes(name))
           ? '.mantine-Drawer-content:visible'
           : '.mantine-Modal-content:visible';
       cy.get(selector, { timeout: 30000 }).last().should('be.visible').and('have.css', 'opacity', '1');

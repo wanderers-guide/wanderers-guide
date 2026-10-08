@@ -670,15 +670,18 @@ function ProfileSection() {
                       UI Size
                     </Text>
                     <Slider
+                      aria-label='UI size'
                       min={0.75}
                       max={1.5}
                       step={0.01}
                       value={user.site_theme?.zoom ?? 1}
+                      label={(value) => `${Math.round(value * 100)}%`}
                       marks={[
-                        { value: 0.75, label: 'Small' },
-                        { value: 1, label: 'Default' },
-                        { value: 1.5, label: 'Large' },
+                        { value: 0.75, label: '75%' },
+                        { value: 1, label: '100%' },
+                        { value: 1.5, label: '150%' },
                       ]}
+                      styles={{ markLabel: { fontSize: 'var(--mantine-font-size-xs)' } }}
                       mb='xl'
                       onChange={(value) => {
                         setUser((prev) => {

@@ -156,8 +156,17 @@ describe('Actual navigation and populated panels', () => {
           doc.documentElement.clientWidth + 1
         )
       );
+      cy.get('main .mantine-Slider-markLabel').should(($labels) => {
+        const bounds = [...$labels].map((label) => label.getBoundingClientRect());
+        for (let index = 1; index < bounds.length; index++)
+          expect(bounds[index].left, 'size labels do not overlap').to.be.at.least(bounds[index - 1].right);
+      });
       if (name === 'dyslexia font') cy.get('main').should('have.css', 'font-family').and('include', 'OpenDyslexic');
-      cy.get('[aria-label="Switch to dark mode"]').focus().should('have.focus');
+      cy.get('main').then(($main) => {
+        for (let parent = $main[0].parentElement; parent; parent = parent.parentElement)
+          if (parent.scrollHeight > parent.clientHeight) parent.scrollTop = 0;
+      });
+      cy.get('[aria-label="Switch to dark mode"]').should('be.visible').focus().should('have.focus');
       capture('navigation/appearance/' + name + '/keyboard-focus');
       if (phone && name === 'large UI') {
         cy.get('.mantine-Burger-root:visible').click();
