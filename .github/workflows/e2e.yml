@@ -279,3 +279,30 @@ jobs:
             .agents/legacy/treasure-vault-native-*.json.log
           include-hidden-files: true
           if-no-files-found: warn
+
+  tech-core-content:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Pull pinned native fixture images
+        run: |
+          docker pull supabase/postgres:15.6.1.146
+          docker pull supabase/gotrue:v2.158.1
+
+      - name: Tech Core spell import safety tests
+        run: node scripts/tech-core-spells-native.mjs --output="${{ runner.temp }}/tech-core-spells"
+
+      - name: Upload Tech Core spell safety evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tech-core-spells-native-${{ github.sha }}
+          path: ${{ runner.temp }}/tech-core-spells/receipt.json
+          if-no-files-found: warn

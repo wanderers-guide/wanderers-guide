@@ -179,6 +179,17 @@ catalog tuples, repeated content links, formula suppression, and preservation of
 existing saved inventory snapshots. These local fixture comparisons are not a
 whole-book rules audit or a production database check.
 
+Tech Core's introductory spell checks run with
+`node --import=tsx --test scripts/tech-core-introductory-spells.test.mjs` from `frontend`.
+They verify the six exact spell records, citations, ranks, repeated links, and automatic
+Starfinder condition links through the real schema and text renderer.
+From the repository root, run
+`node scripts/tech-core-spells-native.mjs --output=/absolute/private/evidence-directory`
+for the isolated PostgreSQL import, conflict, pending-submission, replay, and rollback checks.
+This reuses the owner-verified fixture and cleans up only the containers it creates.
+It does not update production or certify the rest of the book. The ordinary E2E stack
+separately exercises content triggers; this native fixture disables those triggers.
+
 The broad PF2e matrix is part of `test:rules`: **1,211 comparisons across 469 engine
 calculations**, grouped into 49 named scenarios and a coverage guard. It loads four
 official sources from the checked-in dump, uses fixed content identities, and freezes

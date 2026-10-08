@@ -57,6 +57,7 @@ jobs:
       - name: Rules and content audit regression tests
         run: |
           npm run test:rules
+          node --import=tsx --test scripts/tech-core-introductory-spells.test.mjs
           npm run test:infra
           npm run test:audit:content
 

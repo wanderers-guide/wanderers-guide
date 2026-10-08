@@ -62,15 +62,17 @@ test('Construction only: actual workflow/footer bytes and every registered repla
   assert.equal(captured.manifest.schema,'wg-tv-native-checked-in-input-manifest-v1');
   assert.deepEqual(captured.manifest.registered_ci_paths,[workflowPath,...footerPaths]);
   assert.deepEqual(captured.manifest.external_private_inputs,[]);
-  assert.equal(captured.migrations.length,108);
-  assert.equal(captured.migrations.at(-1).path,'20261008110000_treasure_vault_source_corrections.sql');
+  assert.equal(captured.migrations.length,109);
+  assert.equal(captured.migrations.at(-1).path,'20261008160000_tech_core_introductory_spells.sql');
   const {plan}=createNativeRegisteredCiReplayControls(constructorContext);
-  assert.equal(plan.registered_requirements,101);assert.equal(plan.checks.length,64);assert.equal(plan.replays.length,89);assert.equal(plan.expected_native_statements,371);
+  assert.equal(plan.registered_requirements,102);assert.equal(plan.checks.length,65);assert.equal(plan.replays.length,89);assert.equal(plan.expected_native_statements,374);
   assert.equal(plan.passed,false);assert.equal(constructorContext.receipt.registered_ci_replays,undefined);
   assert.equal(plan.workflow.sha256,sha(captured.readRelative(workflowPath)));
   assert.ok(plan.workflow.exact_bytes);assert.deepEqual(plan.index_footer.paths,footerPaths);assert.equal(plan.index_footer.read_only,false);
   assert.ok(plan.checks.some(row=>row.path==='supabase/release/weapon-stat-fields.sql'));
   assert.equal(plan.checks.filter(row=>row.path==='supabase/release/content-selection-rules.sql').length,1);
+  assert.equal(plan.checks.filter(row=>row.path==='supabase/release/tech-core-introductory-spells.sql').length,1);
+  assert.equal(plan.replays.some(row=>row.path==='20261008160000_tech_core_introductory_spells.sql'),false,'New Tech Core migration does not expand the reviewed replay date groups');
   assert.equal(plan.replays.some(row=>row.path==='20261005000000_repair_content_selection_rules.sql'),false,'Preserve the exact reviewed replay date groups');
   assert.deepEqual(['20260927','20260928','20260929','20260930','20261001','20261002'].map(prefix=>plan.replays.filter(row=>row.path.startsWith(prefix)).length),[25,3,15,3,27,16]);
 });
@@ -91,9 +93,18 @@ test('Construction only: changed CI commands/layout and missing/drifted captured
     assert.throws(()=>assertRegisteredCiWorkflowRecipe(changed));
     assert.throws(()=>createNativeRegisteredCiReplayControls({...constructorContext,inputManifest:withText(workflowPath,changed)}));
   }
-  for(const path of [workflowPath,...footerPaths])assert.throws(()=>createNativeRegisteredCiReplayControls({...constructorContext,inputManifest:{...captured,
+  for(const path of [workflowPath,...footerPaths,'supabase/release/tech-core-introductory-spells.sql'])assert.throws(()=>createNativeRegisteredCiReplayControls({...constructorContext,inputManifest:{...captured,
     manifest:{...captured.manifest,entries:captured.manifest.entries.filter(row=>row.path!==path)}}}),/must be captured/);
   assert.throws(()=>createNativeRegisteredCiReplayControls({...constructorContext,inputManifest:withText(footerPaths[0],captured.readRelative(footerPaths[0])+'\n',{recomputeHash:false})}));
+  const requirementsPath='supabase/release/requirements.json';
+  for(const mutate of [
+    requirements=>{delete requirements['20261008160000_tech_core_introductory_spells.sql'];},
+    requirements=>{requirements['20261008160000_tech_core_introductory_spells.sql'].check='weapon-stat-fields.sql';},
+    requirements=>{requirements['20261008160000_tech_core_introductory_spells.sql'].order='after-functions';},
+  ]){
+    const requirements=JSON.parse(captured.readRelative(requirementsPath));mutate(requirements);
+    assert.throws(()=>createNativeRegisteredCiReplayControls({...constructorContext,inputManifest:withText(requirementsPath,JSON.stringify(requirements))}));
+  }
 });
 
 test('Reader models require exact nonempty two-column true results, not blank/false/null/status labels',()=>{
@@ -102,9 +113,9 @@ test('Reader models require exact nonempty two-column true results, not blank/fa
     'first|NULL\n', 'first|true\n', 'first| t\n', 'first|t \n', 'first|T\n', 'first|t|extra\n', 'BEGIN\nfirst|t\n'])assert.throws(()=>assertRegisteredCiRows(value,'model'));
 });
 
-test('Orchestration model sends exact371 statements in CI order; footer uses direct cat bytes and ordinary session',async()=>{
+test('Orchestration model sends exact374 statements in CI order; footer uses direct cat bytes and ordinary session',async()=>{
   const model=executionModel(),proof=await model.family.run();
-  assert.equal(proof.passed,true);assert.equal(model.calls.length,371);
+  assert.equal(proof.passed,true);assert.equal(model.calls.length,374);
   const expected=[];
   const verify=round=>{for(const check of model.family.plan.checks)expected.push({name:'registered-ci:verify-'+round+':'+check.path,sql:'BEGIN READ ONLY;\n'+captured.readRelative(check.path)+'\nROLLBACK;\n'});};
   verify(0);for(const pass of [1,2]){for(const replay of model.family.plan.replays)expected.push({name:'registered-ci:pass-'+pass+':'+replay.path,sql:captured.readRelative('supabase/migrations/'+replay.path)});verify(pass);}
@@ -125,7 +136,7 @@ test('Orchestration models do not complete on result rejection, transport failur
   ]){const model=executionModel(options);await assert.rejects(()=>model.family.run());assert.equal(model.receipt.registered_ci_replays.passed,false);}
 });
 
-test('Receipt models require fresh completed371-stage evidence and all eight native obligations',async()=>{
+test('Receipt models require fresh completed374-stage evidence and all eight native obligations',async()=>{
   const model=executionModel(),proof=await model.family.run(),baseline=otherFamilyModel({proof,calls:model.calls});
   assert.equal(REQUIRED_NATIVE_OBLIGATIONS.length,8);
   assert.equal(assertRequiredNativeEvidence(baseline).length,8);
@@ -135,6 +146,7 @@ test('Receipt models require fresh completed371-stage evidence and all eight nat
     row=>{row.alternate_fixture.stages[0].status=3;},row=>{row.alternate_fixture.stages[0].signal='SIGTERM';},row=>{row.alternate_fixture.stages[0].passed=false;},
     row=>{row.alternate_fixture.registered_ci_replays.stages[0].full_state_preserved=false;},row=>{row.alternate_fixture.registered_ci_replays.workflow.recipe_step_sha256='f'.repeat(64);},
     row=>{row.alternate_fixture.registered_ci_replays.workflow.sha256='f'.repeat(64);},row=>{row.alternate_fixture.registered_ci_replays.stages[0].ids=[''];},
+    row=>{row.alternate_fixture.registered_ci_replays.checks.find(check=>check.path==='supabase/release/tech-core-introductory-spells.sql').path='supabase/release/unreviewed.sql';},
     row=>{row.registered_ci_replays={passed:true};},row=>{row.alternate_fixture.cleaned_only_owned_containers_and_volumes=false;},
     row=>{row.fresh_native_ledger_verified.catalog=2348;},row=>{row.native_writer_controls.pop();},row=>{row.shared_helper_pending_alias_verified.both_terminals_complete=false;},
     row=>{delete row.source_corrections;},row=>{row.source_corrections.passed=false;},row=>{row.source_corrections.controls.pop();},row=>{row.source_corrections.controls[0].actual_signal='SIGTERM';},row=>{row.source_corrections.controls.find(control=>control.name==='pending-curator').actual_exit_status=0;},row=>{row.source_corrections.controls.find(control=>control.name==='pending-curator').sqlstate='57014';},
@@ -144,7 +156,7 @@ test('Receipt models require fresh completed371-stage evidence and all eight nat
 test('Integration source model executes recipe once after alternate chronology, never through focused negative selection',()=>{
   const alternate=captured.readRelative('scripts/treasure-vault-native-alternate-fixture.mjs');
   assert.equal(alternate.split('await registeredCi.run();').length,2);
-  const chronologyEnd=alternate.indexOf('assert.equal(chronology.length,108)'),run=alternate.indexOf('await registeredCi.run();'),verify=alternate.indexOf('evidence.final_input_verification=');
+  const chronologyEnd=alternate.indexOf('assert.equal(chronology.length,109)'),run=alternate.indexOf('await registeredCi.run();'),verify=alternate.indexOf('evidence.final_input_verification=');
   assert.ok(chronologyEnd>=0&&run>chronologyEnd&&verify>run);
   assert.doesNotMatch(alternate,/selectedNegativeFiles/);
   assert.ok(alternate.includes("await stop.checkpoint('alternate after '+name);return result.stdout;"),'Exact CI reader receives raw stdout');
