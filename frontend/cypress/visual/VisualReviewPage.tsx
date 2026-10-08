@@ -1024,9 +1024,17 @@ function ConditionalPanelScene({
     };
   }, [content, id]);
   const panelHeight = Math.min(640, window.innerHeight - 160);
-  const panelWidth = Math.min(1100, window.innerWidth - 48);
+  const phone = window.innerWidth < 600;
+  const panelWidth = Math.min(1100, window.innerWidth - (phone ? 24 : 48));
   return (
-    <Modal opened onClose={onClose} title='Conditional panel review' size='90vw'>
+    <Modal
+      opened
+      onClose={onClose}
+      title='Conditional panel review'
+      size={phone ? '100%' : '90vw'}
+      xOffset={phone ? 0 : undefined}
+      padding={phone ? 12 : undefined}
+    >
       <Provider store={atomStore}>
         <QueryClientProvider client={client}>
           {ready && caseId === 'panel:details' && (
