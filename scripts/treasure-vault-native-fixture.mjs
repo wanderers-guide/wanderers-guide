@@ -435,8 +435,8 @@ export function createOwnedNativeFixture({ root, receipt, log, bootstrapRead,thr
     return readNativeContentStateRows(sql(buildNativeContentStateQuery()));
   }
   function savedCopyFixture(userId) {
-    const rows = queryJson('select coalesce(jsonb_agg(to_jsonb(i) order by id),\'[]\'::jsonb) from public.item i where id in(12020,12212,12426);');
-    assert.equal(rows.length, 3);
+    const rows = queryJson('select coalesce(jsonb_agg(to_jsonb(i) order by id),\'[]\'::jsonb) from public.item i where id in(11937,11944,12020,12212,12325,12426);');
+    assert.equal(rows.length, 6);
     const inventory = {coins:{cp:0,sp:150,gp:0,pp:0},items:rows.map(item => ({id:randomUUID(),item,is_formula:false,is_equipped:true,is_invested:false,is_implanted:false,container_contents:[]}))};
     const custom = [{id:randomUUID(),type:'addBonusToValue',data:{variable:'SKILL_ARCANA',value:1,type:'circumstance',text:'Owned saved-copy preservation'}}];
     const id = queryJson(`insert into public."character"(user_id,name,inventory,operation_data,custom_operations,meta_data) values(${q(userId)}::uuid,'Owned Native Saved Copies',${q(JSON.stringify(inventory))}::json,'{"selections":{"native-preservation":"unchanged"}}'::json,array(select value::json from jsonb_array_elements(${q(JSON.stringify(custom))}::jsonb)),'{}'::json) returning to_jsonb(id);`);
