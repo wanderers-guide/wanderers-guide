@@ -430,7 +430,8 @@ export function reviewPortals(name, selector = '.mantine-Modal-content:visible,.
 export function recordedCatalogReads(transform) {
   const file = Cypress.env('recordedCatalogFile');
   if (!file) return;
-  cy.readFile(file, { log: false }).then((catalog) => {
+  // Complete catalog recordings can exceed 10 MB; allow for disk reads on a busy review host.
+  cy.readFile(file, { log: false, timeout: 60000 }).then((catalog) => {
     const reviewedCatalog = transform ? transform(catalog) : catalog;
     for (const [type, records] of Object.entries(reviewedCatalog))
       cy.intercept('POST', `**/functions/v1/find-${type}`, (req) => {

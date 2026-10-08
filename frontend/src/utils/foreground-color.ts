@@ -1,7 +1,7 @@
 import Color from 'colorjs.io';
 
 /** Readable ink over pale glass, including darker nested imprint panels over illustrations. */
-export function readableLightColor(color: string, surfaceColor = 'rgb(190, 196, 204)'): string {
+export function readableLightColor(color: string, surfaceColor = 'rgb(160, 166, 172)'): string {
   const ink = new Color(color).to('oklch');
   ink.alpha = 1;
   const surface = new Color(surfaceColor);

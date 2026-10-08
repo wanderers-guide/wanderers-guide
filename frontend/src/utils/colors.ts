@@ -8,7 +8,7 @@ export function glassStyle(options?: { bg?: boolean; border?: boolean }): CSSPro
   return {
     backdropFilter: 'var(--glass-backdrop-filter)',
     WebkitBackdropFilter: 'var(--glass-backdrop-filter)',
-    ...(options?.bg ? { backgroundColor: 'var(--glass-bg-color)' } : {}),
+    ...(options?.bg ? { backgroundColor: 'var(--glass-bg-color)', boxShadow: 'var(--glass-shadow)' } : {}),
     ...(options?.border ? { border: '1px solid var(--glass-border-color)', borderRadius: '12px' } : {}),
   };
 }

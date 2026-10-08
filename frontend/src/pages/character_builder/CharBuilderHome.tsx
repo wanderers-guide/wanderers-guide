@@ -1022,6 +1022,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
               }}
             >
               <Image
+                className='artwork-preview'
                 radius='md'
                 h='auto'
                 fit='contain'

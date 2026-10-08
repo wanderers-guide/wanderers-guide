@@ -610,7 +610,7 @@ function SectionPanels(props: {
       <Box>
         <BlurBox p='sm' mih={props.panelHeight}>
           <Tabs
-            color='dark.6'
+            color='var(--campaign-tab-color)'
             variant='pills'
             radius='xl'
             keepMounted={false}

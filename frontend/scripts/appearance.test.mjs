@@ -132,19 +132,15 @@ test('logout preserves appearance and every account-scoped draft while removing 
 });
 test('light foregrounds and health values retain readable contrast over the darkest pale glass', () => {
   const api = load();
-  const backdrop = new api.Color('rgb(200,205,212)');
-  const nestedBackdrop = new api.Color('rgb(190,196,204)');
+  // A black illustration under 74% glass, including the darker nested imprint tint.
+  const nestedBackdrop = new api.Color('rgb(160,166,172)');
   for (const accent of ['#199bd4', '#ffffff', '#ffff00', '#ff5252', '#000000', '#ae3ec9']) {
     const light = api.createAppTheme({ scheme: 'light', accent });
     for (const [name, shades] of Object.entries(light.colors).filter(
       ([name]) => name === 'text' || name.endsWith('Ink')
     )) {
       for (const shade of shades)
-        assert.ok(
-          new api.Color(shade).contrast(name === 'text' || name === 'darkInk' ? backdrop : nestedBackdrop, 'WCAG21') >=
-            4.5 - 0.005,
-          `${name}: ${shade}`
-        );
+        assert.ok(new api.Color(shade).contrast(nestedBackdrop, 'WCAG21') >= 4.5 - 0.005, `${name}: ${shade}`);
     }
   }
   for (const percentage of [0, 0.1, 0.25, 0.5, 0.75, 1])

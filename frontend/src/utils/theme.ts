@@ -50,7 +50,7 @@ function createInkColors(scheme: ColorScheme, accentColors: MantineColorsTuple):
           'rgba(52, 58, 64, 0.62)',
           'rgba(33, 37, 41, 0.57)',
         ]
-      : ['#161e29', '#1b2431', '#222c3b', '#2c394b', '#344152', '#3d4b5c', '#414f61', '#445365', '#465569', '#48586c'];
+      : ['#161e29', '#1b2431', '#222c3b', '#253244', '#283547', '#293648', '#2a3749', '#2b384a', '#2c394b', '#2d3a4c'];
   const darkInk: MantineColorsTuple =
     scheme === 'dark'
       ? [
@@ -316,7 +316,7 @@ export const appCssVariablesResolver: CSSVariablesResolver = (theme) => {
       '--mantine-color-anchor': 'var(--mantine-color-guideInk-7)',
       '--mantine-color-error': 'var(--mantine-color-redInk-7)',
       '--mantine-color-text': 'rgb(34, 44, 59)',
-      '--mantine-color-dimmed': 'rgb(72, 88, 108)',
+      '--mantine-color-dimmed': 'rgb(45, 58, 76)',
       '--mantine-color-body': 'rgb(231, 237, 244)',
     },
     dark: {

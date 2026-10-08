@@ -87,8 +87,8 @@ export function Component() {
                 }
                 styles={(theme) => ({
                   wrapper: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.18)',
-                    border: '1px solid rgba(255, 255, 255, 0.07)',
+                    backgroundColor: 'var(--search-bg-color)',
+                    border: '1px solid var(--search-border-color)',
                     borderRadius: theme.radius.md,
                     padding: '2px 4px',
                     transition: 'border-color 150ms ease, box-shadow 150ms ease',
@@ -160,8 +160,8 @@ export function Component() {
                 }
                 styles={(theme) => ({
                   wrapper: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.18)',
-                    border: '1px solid rgba(255, 255, 255, 0.07)',
+                    backgroundColor: 'var(--search-bg-color)',
+                    border: '1px solid var(--search-border-color)',
                     borderRadius: theme.radius.md,
                     padding: '2px 4px',
                   },
