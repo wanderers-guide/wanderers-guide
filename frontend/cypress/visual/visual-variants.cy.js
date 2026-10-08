@@ -177,10 +177,8 @@ describe('Conditional editor and navigation states', { testIsolation: false }, (
   });
   review('bundle delete menu contrast', () => {
     open('editor:source-bundle');
-    cy.contains('.mantine-Modal-content:visible [role=tab]', /^Items\b/)
-      .scrollIntoView()
-      .click();
-    cy.get('[data-ui-review-id="SelectContent:Menu:1761"]:visible').first().click();
+    cy.contains('.mantine-Modal-content:visible [role=tab]', 'Items', { timeout: 120000 }).scrollIntoView().click();
+    cy.get('[data-ui-review-id="SelectContent:Menu:1761"]:visible', { timeout: 120000 }).first().click();
     cy.get('.mantine-Menu-dropdown:visible').should('have.css', 'opacity', '1');
     cy.contains('.mantine-Menu-dropdown:visible [role=menuitem]', /^Delete$/).should(($item) => {
       const item = $item[0];

@@ -267,7 +267,8 @@ describe('Actual navigation and populated panels', () => {
     cy.get('body').type('{esc}');
     panel('Settings', 'navigation/campaign-conditional/Settings');
     for (const label of ['Homebrew', 'Variant Rules', 'Options']) {
-      cy.contains('main [role=tab]:visible', label).scrollIntoView().click();
+      // Phone portal inspection can leave these tabs above the scroll viewport.
+      cy.contains('main [role=tab]', label).scrollIntoView().should('be.visible').click();
       captureScrolls('navigation/campaign-conditional/settings-' + label, 'body');
       reviewPortals('navigation/campaign-conditional/settings-' + label, 'body');
     }
