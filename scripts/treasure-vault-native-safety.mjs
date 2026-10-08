@@ -11,6 +11,7 @@ import { createAuthenticSharedHistoryControls } from './treasure-vault-native-hi
 import { createAuthenticDualExporter } from './treasure-vault-native-ledger.mjs';
 import { createNativeStopController, finalizeNativeStopReceipt } from './treasure-vault-native-stop.mjs';
 import { captureNativeInputManifest } from './treasure-vault-native-input-manifest.mjs';
+import { HISTORICAL_CONTENT_FIXTURE } from './historical-content-fixture.mjs';
 import { createHistoricalPositiveProjections } from './treasure-vault-native-positive-projections.mjs';
 import { createHistorical023FreshImportCapsule } from './treasure-vault-native-fresh-equipment.mjs';
 import { createSharedHelperPendingAliasControls } from './treasure-vault-native-pending-aliases.mjs';
@@ -19,7 +20,7 @@ import { runAlternateAllocations } from './treasure-vault-native-allocations.mjs
 import { createAuthenticAlternateFixtureDriver } from './treasure-vault-native-alternate-fixture.mjs';
 import { APPROVED_REGISTERED_CI_REPLAY_STEP_SHA256 } from './treasure-vault-native-registered-ci-replays.mjs';
 import { nativeDiagnostic, createNativeReceiptLogger } from './treasure-vault-native-diagnostics.mjs';
-import { createNativeSourceCorrectionControls, SOURCE_CORRECTION_UPGRADE_PATH, SOURCE_CORRECTION_PATH, SOURCE_CORRECTION_CONTROL_NAMES } from './treasure-vault-native-source-corrections.mjs';
+import { createNativeSourceCorrectionControls, SOURCE_CORRECTION_UPGRADE_PATH, SOURCE_CORRECTION_PATH, SOURCE_CORRECTION_CONTROL_NAMES, SOURCE_CORRECTION_REJECTION_CONTROL_NAMES, CATALOG_COMPATIBILITY_UPGRADE_PATH } from './treasure-vault-native-source-corrections.mjs';
 
 const sha = value => createHash('sha256').update(value).digest('hex');
 const completionPath = '20261002100000_treasure_vault_complete_catalog.sql';
@@ -33,7 +34,7 @@ const displayPath = '20261002101000_treasure_vault_complete_display.sql';
 export const REQUIRED_NATIVE_OBLIGATIONS = Object.freeze([
   {name:'fresh-postgresql-dual-ledger',implemented:true,reason:'Fresh actual-row PostgreSQL derivation and exact loader verifier, never an embedded prior receipt.'},
   {name:'historical023-fresh-four-insert-bootstrap',implemented:true,reason:'Genuine own-stage rollback import, independent four typed literals and explicit native identity consumption.'},
-  {name:'alternate101-allocation-and-full-token-prefix',implemented:true,reason:'Second authentic108 positive chronology and full11 allocated bindings; the separate lexical prefix proof is not a fabricated physical allocation.'},
+  {name:'alternate101-allocation-and-full-token-prefix',implemented:true,reason:'Second authentic110 positive chronology and full11 allocated bindings; the separate lexical prefix proof is not a fabricated physical allocation.'},
   {name:'concurrent-writer-and-count-phantom-ordering',implemented:true,reason:'Actual persistent two-session positive bodies, observed native locks/PIDs and exact55P03/script-exit3.'},
   {name:'shared-helper-all-pending-alias-routes',implemented:true,reason:'Mandatory structural pending-route matrix at both terminals using real GoTrue, full rollback and exact script evidence.'},
   {name:'historical14-exact-approved-positive-projection',implemented:true,reason:'Independent complete before/after approved leaf projections, actual allocations and full unrelated/saved/source preservation.'},
@@ -49,6 +50,11 @@ function requiredNativeObligations(releaseScope){
 
 /** Fail closed unless every required fresh native family actually completed. */
 export function assertRequiredNativeEvidence(receipt) {
+  assert.deepEqual(receipt.input_manifest.historical_git_inputs,[HISTORICAL_CONTENT_FIXTURE]);
+  for(const fixtureReceipt of [receipt,receipt.alternate_fixture]) {
+    assert.deepEqual(fixtureReceipt?.bootstrap?.content_input,{kind:'pinned-git-predecessor',...HISTORICAL_CONTENT_FIXTURE});
+    assert.equal(fixtureReceipt.bootstrap.dump_sha256,HISTORICAL_CONTENT_FIXTURE.sha256);
+  }
   const releaseScope=receipt.plan?.negative_scope?.mode==='release';
   if(releaseScope){
     assert.deepEqual(receipt.plan.negative_scope,{mode:'release',reduced_negative_coverage:true,policy:'representative-release-hazards-v1'});
@@ -106,10 +112,11 @@ export function assertRequiredNativeEvidence(receipt) {
   assert.ok(metadata.filter(row=>!privileged.includes(row)).every(row=>row.setup_login==='postgres'));
   const ci=receipt.alternate_fixture.registered_ci_replays;
   assert.equal(ci?.schema,'wg-tv-native-registered-ci-replays-v3');assert.equal(ci.passed,true);
-  assert.equal(ci.registered_requirements,102);assert.equal(ci.checks.length,65);assert.equal(ci.replays.length,89);
-  assert.equal(ci.passes,2);assert.equal(ci.registered_verification_rounds,3);assert.equal(ci.expected_native_statements,374);
-  assert.equal(ci.stages.length,374);assert.equal(new Set(ci.stages.map(row=>row.label)).size,374);
+  assert.equal(ci.registered_requirements,103);assert.equal(ci.checks.length,66);assert.equal(ci.replays.length,89);
+  assert.equal(ci.passes,2);assert.equal(ci.registered_verification_rounds,3);assert.equal(ci.expected_native_statements,377);
+  assert.equal(ci.stages.length,377);assert.equal(new Set(ci.stages.map(row=>row.label)).size,377);
   assert.equal(ci.checks.filter(row=>row.path==='supabase/release/tech-core-introductory-spells.sql').length,1);
+  assert.equal(ci.checks.filter(row=>row.path==='supabase/release/treasure-vault-terminal-catalog-compatibility.sql').length,1);
   assert.equal(ci.workflow.path,'.github/workflows/e2e.yml');assert.equal(ci.workflow.exact_bytes,true);
   const workflow=receipt.input_manifest.entries.find(row=>row.path===ci.workflow.path);
   assert.ok(workflow);assert.equal(ci.workflow.sha256,workflow.sha256);
@@ -117,14 +124,14 @@ export function assertRequiredNativeEvidence(receipt) {
   assert.equal(ci.registered_release_read_only_transactions,true);assert.equal(ci.full_state_after_each_statement,true);
   assert.match(ci.baseline_sha256,/^[a-f0-9]{64}$/);
   const nativeCiStages=receipt.alternate_fixture.stages.filter(row=>row.name.startsWith('registered-ci:'));
-  assert.equal(nativeCiStages.length,374);assert.equal(new Set(nativeCiStages.map(row=>row.name)).size,374);
+  assert.equal(nativeCiStages.length,377);assert.equal(new Set(nativeCiStages.map(row=>row.name)).size,377);
   const actualStages=new Map(receipt.alternate_fixture.stages.map(row=>[row.name,row]));
   for(const row of ci.stages){
     assert.equal(row.full_state_preserved,true);
     const actual=actualStages.get('registered-ci:'+row.label);assert.ok(actual);
     assert.equal(actual.sql_sha256,row.sql_sha256);assert.equal(actual.status,0);assert.equal(actual.signal,null);assert.equal(actual.passed,true);
   }
-  assert.deepEqual(ci.stages.filter(row=>row.kind==='release').map(row=>row.round),[...Array(65).fill(0),...Array(65).fill(1),...Array(65).fill(2)]);
+  assert.deepEqual(ci.stages.filter(row=>row.kind==='release').map(row=>row.round),[...Array(66).fill(0),...Array(66).fill(1),...Array(66).fill(2)]);
   assert.ok(ci.stages.filter(row=>row.kind==='release').every(row=>row.read_only===true&&row.strict_boolean_checks>0&&Array.isArray(row.ids)&&row.ids.length===row.strict_boolean_checks&&row.ids.every(id=>typeof id==='string'&&id.trim())));
   assert.deepEqual(ci.stages.filter(row=>row.kind==='migration').map(row=>row.pass),[...Array(89).fill(1),...Array(89).fill(2)]);
   assert.deepEqual(ci.stages.filter(row=>row.kind==='footer').map(row=>({paths:row.paths,read_only:row.read_only,schema_temp_scope:row.schema_temp_scope,mutations_rolled_back:row.mutations_rolled_back})),
@@ -133,11 +140,12 @@ export function assertRequiredNativeEvidence(receipt) {
   const source = receipt.source_corrections;
   assert.equal(source?.passed, true);assert.equal(source.native_executed, true);
   assert.deepEqual(source.owner_ids, [11937,11944,12325]);
+  assert.deepEqual(source.catalog_owner_ids,[11728,11730]);
   assert.deepEqual(source.controls.map(row=>row.name), SOURCE_CORRECTION_CONTROL_NAMES);
   assert.equal(new Set(source.controls.map(row => row.name)).size, source.controls.length);
   assert.ok(source.controls.every(row => row.passed === true && row.full_state_preserved === true && row.no_transport_error === true && row.actual_signal === null));
   for (const row of source.controls) {
-    const rejects = /^(?:changed-old-helper-rejection|mixed-successor-[1-6]|unreviewed-field-(?:11937|11944|12325)|pending-curator|late-failure-full-rollback)$/.test(row.name);
+    const rejects = SOURCE_CORRECTION_REJECTION_CONTROL_NAMES.includes(row.name);
     assert.equal(row.actual_exit_status, rejects ? 3 : 0, row.name + ': exact native script status');
     if (rejects) assert.equal(row.sqlstate, 'P0001', row.name + ': exact guard SQLSTATE');
   }
@@ -148,11 +156,11 @@ export function assertRequiredNativeEvidence(receipt) {
 /** Pure plan: explicit membership/chronology, never glob-skip unknown or future migrations. */
 export function buildNativeVerificationPlan({inputs,files,selectedNegativeFiles = null,releaseScope=false}) {
   assert.equal(inputs.input_provenance.mode, 'checked-in-default');
-  assert.equal(files.length, 109, 'Exact reviewed complete CI chronology');
+  assert.equal(files.length, 110, 'Exact reviewed complete CI chronology');
   assert.deepEqual([...files].sort(), files);
   assert.equal(new Set(files).size, files.length);
   assert.ok(files.includes('20261001010000_repair_weapon_stat_fields.sql'));
-  for (const path of [inputs.helper.path,completionPath,displayPath,SOURCE_CORRECTION_UPGRADE_PATH,SOURCE_CORRECTION_PATH,'20261008160000_tech_core_introductory_spells.sql']) assert.ok(files.includes(path));
+  for (const path of [inputs.helper.path,completionPath,displayPath,CATALOG_COMPATIBILITY_UPGRADE_PATH,SOURCE_CORRECTION_UPGRADE_PATH,SOURCE_CORRECTION_PATH,'20261008160000_tech_core_introductory_spells.sql']) assert.ok(files.includes(path));
   const firstWrapper = inputs.actualWrapperMetadata.map(row => row.path).sort()[0];
   assert.ok(inputs.helper.path < firstWrapper);
   assert.equal(inputs.actualWrapperMetadata.length, 39);
@@ -176,7 +184,9 @@ export async function executeNativeBase({root,inputs,migrations,inputManifest,ou
   assert.equal(typeof output, 'string');
   assert.equal(typeof stop.checkpoint, 'function');
   assert.equal(typeof inputManifest.verify,'function');
-  const fixture = createOwnedNativeFixture({root,receipt,log,bootstrapRead:inputManifest.readRelative,throwIfRequested:stop.throwIfRequested});
+  assert.deepEqual(inputManifest.manifest.historical_git_inputs,[HISTORICAL_CONTENT_FIXTURE]);
+  const fixture = createOwnedNativeFixture({root,receipt,log,bootstrapRead:inputManifest.readRelative,
+    contentDump:inputManifest.readHistoricalBootstrap(),contentDumpProvenance:HISTORICAL_CONTENT_FIXTURE,throwIfRequested:stop.throwIfRequested});
   let phase = 'fixture-bootstrap';
   async function stage(name, statement) {
     await stop.checkpoint('before '+name);
@@ -245,6 +255,11 @@ export async function executeNativeBase({root,inputs,migrations,inputManifest,ou
         assert.equal(history.status().recognized, false);
         await phases.readOnly(inputs.helper);
         await phases.replay(inputs.helper, 'installer-replay');
+      } else if (migration.path === CATALOG_COMPATIBILITY_UPGRADE_PATH) {
+        await sourceCorrections.beforeCatalogUpgrade();
+        await stage(migration.path,migration.sql);
+        await phases.readOnly(inputs.catalogCompatibility);
+        await phases.replay(inputs.catalogCompatibility);
       } else if (migration.path === SOURCE_CORRECTION_UPGRADE_PATH) {
         await sourceCorrections.beforeUpgrade();
         await stage(migration.path, migration.sql);

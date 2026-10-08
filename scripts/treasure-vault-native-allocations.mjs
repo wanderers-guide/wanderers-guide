@@ -81,15 +81,16 @@ export function proveWholeHelperTokenBoundary() {
 
 /**
  * Two authentic fixtures, not a delete/reinsert/sequence-remap capsule. The driver
- * owns startup/cleanup and exact109 chronology; callbacks below own the evidence.
+ * owns startup/cleanup and exact110 chronology; callbacks below own the evidence.
  * Importing/constructing this module executes no SQL or creates any resource.
  */
 export async function runAlternateAllocations({inputs,fixture,withAlternateFixture,primaryChronology,receipt}) {
   assert.equal(typeof withAlternateFixture,'function','A reviewed second authentic fixture driver is mandatory');
-  assert.equal(primaryChronology.length,109,'The primary complete chronology is explicit');
+  assert.equal(primaryChronology.length,110,'The primary complete chronology is explicit');
   assert.deepEqual(primaryChronology.map(row=>row.path),primaryChronology.map(row=>row.path).sort());
-  assert.equal(new Set(primaryChronology.map(row=>row.path)).size,109);
+  assert.equal(new Set(primaryChronology.map(row=>row.path)).size,110);
   assert.equal(primaryChronology.at(-1).path,'20261008160000_tech_core_introductory_spells.sql','Exact reviewed Tech Core chronology successor');
+  assert.equal(primaryChronology.filter(row=>row.path==='20261008105800_treasure_vault_terminal_catalog_compatibility.sql').length,1,'Exact reviewed catalog compatibility successor');
   for(const row of primaryChronology){assert.match(row.path,/^[0-9]{14}_[a-z0-9_]+\.sql$/);assert.match(row.sha256,/^[a-f0-9]{64}$/);}
   const primaryBefore=fixture.snapshot();
   const primary=verifyAllocationPhase({inputs,fixture,phase:'101',sourceCorrected:true});

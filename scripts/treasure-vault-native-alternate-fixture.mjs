@@ -7,6 +7,7 @@ import {createHistoricalPositiveProjections} from './treasure-vault-native-posit
 import {createHistorical023FreshImportCapsule} from './treasure-vault-native-fresh-equipment.mjs';
 import {createNativeRegisteredCiReplayControls} from './treasure-vault-native-registered-ci-replays.mjs';
 import {nativeDiagnostic} from './treasure-vault-native-diagnostics.mjs';
+import {HISTORICAL_CONTENT_FIXTURE} from './historical-content-fixture.mjs';
 
 const sha=value=>createHash('sha256').update(value).digest('hex');
 
@@ -25,7 +26,8 @@ export function createAuthenticAlternateFixtureDriver({root,inputs,migrations,in
       negative_suite_repeated:false};
     receipt.alternate_fixture=evidence;
     let other;
-    try {other=createOwnedNativeFixture({root,receipt:evidence,log:row=>log({fixture:'alternate',...row}),bootstrapRead:inputManifest.readRelative,throwIfRequested:stop.throwIfRequested});}
+    try {other=createOwnedNativeFixture({root,receipt:evidence,log:row=>log({fixture:'alternate',...row}),bootstrapRead:inputManifest.readRelative,
+      contentDump:inputManifest.readHistoricalBootstrap(),contentDumpProvenance:HISTORICAL_CONTENT_FIXTURE,throwIfRequested:stop.throwIfRequested});}
     catch(error){evidence.failure=nativeDiagnostic(error,{remember:true,summary:'Alternate fixture failed before safe diagnostics were available'});throw error;}
     async function stage(name,sql) {
       await stop.checkpoint('alternate before '+name);
@@ -65,7 +67,7 @@ export function createAuthenticAlternateFixtureDriver({root,inputs,migrations,in
           if(projection){await stop.checkpoint('alternate projection '+migration.path);projection.verify();}
         }
       }
-      assert.equal(chronology.length,109);evidence.historical14=positives.complete();
+      assert.equal(chronology.length,110);evidence.historical14=positives.complete();
       assert.equal(evidence.historical023_fresh_import_capsule?.passed,true);
       assert.equal(evidence.shared_history.own_stage.length,39);assert.equal(evidence.shared_history.terminal.length,2);
       assert.equal(other.query('select count(*) from public.content_update;'),'0');

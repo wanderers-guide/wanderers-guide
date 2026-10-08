@@ -165,6 +165,16 @@ Run the character rules and item drawer regressions with `npm --prefix frontend 
 These bundle the actual operation engine and drawer components against explicit local fixtures;
 selected rules content comes from the checked-in sanitized data dump. They need no running
 database or authentication account.
+
+Historical content-repair tests explicitly use the reviewed pre-repair Git snapshot
+through `readHistoricalContentRows`; ordinary `readContentRows` calls still read the
+current checked-in catalog. The shared historical reader verifies the pinned commit,
+blob identity, byte length, and SHA-256 before parsing it. It never replaces
+`data/data.sql` or falls back to a private export. A shallow checkout must fetch
+the pinned commit declared in `scripts/historical-content-fixture.mjs`, as CI does.
+Missing or changed historical inputs fail the test. Current catalog behavior and
+historical migration coverage are separate requirements.
+
 Run `node --import=tsx --test scripts/list-id-conditionals.test.mjs` from `frontend`
 for numeric content-ID membership, unchanged name and mode comparisons, and conditional
 focus grants through character reload, branch replacement, and removal.
@@ -473,9 +483,14 @@ guard and safety-runner regressions. These use local files and bounded models,
 not a running database, production credentials or private audit exports.
 
 Run `npm run test:content:native -- --release` with Docker running to rehearse the Treasure
-Vault repairs against the complete checked-in sanitized catalog and actual
-schema. It requires locally available PostgreSQL 15.6 and GoTrue images and a
-local Docker engine. It creates uniquely owned offline containers without
+Vault repairs against the explicit historical sanitized catalog and actual
+checked-in schema. Its input manifest separately records and verifies the current
+working-tree catalog and the immutable historical Git input. The historical fixture
+starts before the repairs so insertion, allocation, rollback, and own-stage checks
+remain exercised. The ordinary E2E job instead starts from the current dump, installs
+the actual content triggers, and runs the complete chronology and registered replays.
+Both modes must pass. The native runner requires locally available PostgreSQL 15.6
+and GoTrue images and a local Docker engine. It creates uniquely owned offline containers without
 published ports. Each new test PostgreSQL container is limited to 1 GiB of memory,
 no swap and one CPU, with fresh limit checks recorded in its receipt. These limits
 apply per container, not to the whole machine; existing containers are unchanged.
@@ -522,6 +537,10 @@ the alternate allocation guard, so a stale migration count fails immediately.
 The chronology also checks the exact three-record source correction, its old-helper
 upgrade, replay, conflicting proposals, partial states and late rollback. Those
 controls preserve the other catalog rows and saved-item copies.
+The two reviewed Bagpipes classifications have a separate, complete-pair
+comparison allowance. It recognizes only their exact approved GENERAL rows and
+does not change content, hide fields from hashing, or broaden the three-record
+correction. Mixed or otherwise edited rows remain rejected.
 Its owned database does not share a runner with the browser/API
 stack. The ordinary E2E job keeps its two-hour budget and runs independently;
 both jobs must pass before release. Local fixture limits remain the same.

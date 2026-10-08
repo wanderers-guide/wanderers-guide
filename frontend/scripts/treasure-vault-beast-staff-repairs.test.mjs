@@ -10,7 +10,7 @@ import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { AbilityBlockSchema, InventorySchema, ItemSchema, SpellSchema, TraitSchema } from '../src/schemas/content.ts';
 import uploadUtils from '../../supabase/functions/_shared/upload-utils.ts';
-import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
+import { createOperationEngine, readHistoricalContentRows } from './operation-test-harness.mjs';
 import { content as emptyContent, inventoryItem, summoner } from './fixtures/eidolon.mjs';
 
 const { uniqueId } = uploadUtils;
@@ -23,7 +23,7 @@ const release = await readReviewedHistoricalSql(
   'utf8'
 );
 const spec = JSON.parse(migration.split('$beast$')[1]);
-const rows = await readContentRows([
+const rows = await readHistoricalContentRows([
   ...spec.items.map(({ id }) => ({ table: 'item', id })),
   ...spec.dependencies.map(({ table, id }) => ({ table, id })),
   ...spec.sources.map(({ id }) => ({ table: 'content_source', id })),

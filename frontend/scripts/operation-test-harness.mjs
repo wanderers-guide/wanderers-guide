@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
+import { readHistoricalContentDump } from '../../scripts/historical-content-fixture.mjs';
 
 const frontend = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -34,13 +35,26 @@ function parseContentArray(value) {
  * @param {Array<{ table: string, id: number } | { table: string, sourceIds: number[] }>} targets
  */
 export async function readContentRows(targets) {
+  return parseContentRows(targets, await readFile(join(frontend, '../data/data.sql'), 'utf8'));
+}
+
+/**
+ * Opt in to the immutable pre-repair catalog for assertions about historical migration stages.
+ * Current catalog and character behavior tests must keep using readContentRows instead.
+ * @param {Array<{ table: string, id: number } | { table: string, sourceIds: number[] }>} targets
+ */
+export async function readHistoricalContentRows(targets) {
+  return parseContentRows(targets, await readHistoricalContentDump());
+}
+
+/** Decode both explicit content inputs through the same PostgreSQL COPY parser. */
+function parseContentRows(targets, text) {
   const wanted = new Set(targets.filter((target) => 'id' in target).map(({ table, id }) => `${table}:${id}`));
   const sources = new Map();
   for (const target of targets.filter((target) => 'sourceIds' in target)) {
     sources.set(target.table, new Set([...(sources.get(target.table) ?? []), ...target.sourceIds]));
   }
   const rows = [];
-  const text = await readFile(join(frontend, '../data/data.sql'), 'utf8');
   const arrayColumns = new Set([
     'operations',
     'feature_adjustments',
@@ -275,7 +289,7 @@ export async function createOperationEngine({
           export { convertToHardcodedLink, buildHrefFromContentData } from '@content/hardcoded-links';
           export { detectSpells, detectSpellheartSpells, getKnownSpellsByRank } from '@spells/spell-utils';
           export { getInventorySpellIds, getMissingSpellIds, mergeSpellDependencies, filterSpellCatalog } from '@spells/item-spell-dependencies';
-          export { filterByTraitType } from '@items/inv-utils';
+          export { filterByTraitType, isItemWeapon, isItemStave } from '@items/inv-utils';
           export { meetsPrerequisites } from '@variables/prereq-detection';
           export { applyConditions, compiledConditions, getConditionByName } from '@conditions/condition-handler';
           export { getSpellStats, getItemCastingSource, getSpellheartStats, resolveSpellheartCasting } from '@spells/spell-handler';

@@ -1,4 +1,29 @@
--- Accept the exact source-corrected terminal without changing historical data proofs.
+-- Preserve the original source upgrade and recognize the exact catalog successor.
+do $source_upgrade_successor$
+begin
+  if (exists(select 1 from pg_catalog.pg_proc p
+  where p.oid=pg_catalog.to_regprocedure('public.treasure_vault_terminal_status_v1()')
+    and pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to((p.prosrc)::text,'UTF8')),'hex')='c55d729fca4f5b25a0c725305b5d2939e49c28e3e5ecb706a909e530708bb126'
+    and p.prokind='f' and p.prolang=(select l.oid from pg_catalog.pg_language l where l.lanname='sql')
+    and p.provolatile='s' and p.prosecdef is false and p.proisstrict is false and p.proleakproof is false
+    and p.proparallel='u' and p.procost=100 and p.prorows=1
+    and p.pronargs=0 and p.pronargdefaults=0 and p.proretset is true
+    and p.prorettype=pg_catalog.to_regtype('record')
+    and p.proallargtypes=array[pg_catalog.to_regtype('boolean')::oid,pg_catalog.to_regtype('boolean')::oid]
+    and p.proargmodes=array['t','t']::"char"[] and p.proargnames=array['recognized','passed']::text[]
+    and p.proconfig=array['search_path=""']::text[] and p.proowner=pg_catalog.to_regrole('postgres')
+    and (select count(*)=3
+      and count(*) filter(where a.grantee=pg_catalog.to_regrole('postgres'))=1
+      and count(*) filter(where a.grantee=pg_catalog.to_regrole('service_role'))=1
+      and count(*) filter(where a.grantee=pg_catalog.to_regrole('supabase_read_only_user'))=1
+      and bool_and((a.privilege_type='EXECUTE' and a.is_grantable is false
+      and a.grantor=pg_catalog.to_regrole('postgres')
+      and a.grantee in(pg_catalog.to_regrole('postgres'),pg_catalog.to_regrole('service_role'),pg_catalog.to_regrole('supabase_read_only_user'))) is true)
+      from pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a)
+    and pg_catalog.has_function_privilege('postgres',p.oid,'EXECUTE')
+    and pg_catalog.has_function_privilege('service_role',p.oid,'EXECUTE')
+    and pg_catalog.has_function_privilege('supabase_read_only_user',p.oid,'EXECUTE'))) is true then return;end if;
+  execute $source_upgrade_original$-- Accept the exact source-corrected terminal without changing historical data proofs.
 do $terminal_source_upgrade$
 declare previous_body text;corrected_body text;
 begin
@@ -88,3 +113,5 @@ as $source_definition$||pg_catalog.quote_literal(corrected_body)||';';
     raise exception 'Treasure Vault source-correction helper readback failed';
   end if;
 end $terminal_source_upgrade$;
+$source_upgrade_original$;
+end $source_upgrade_successor$;

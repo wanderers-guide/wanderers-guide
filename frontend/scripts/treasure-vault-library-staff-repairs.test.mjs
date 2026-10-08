@@ -4,7 +4,7 @@ import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 import { createHash } from 'node:crypto';
 import { before, after, test } from 'node:test';
 import { ItemSchema, InventorySchema, SpellSchema, AbilityBlockSchema, TraitSchema } from '../src/schemas/content.ts';
-import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
+import { createOperationEngine, readHistoricalContentRows } from './operation-test-harness.mjs';
 import { content as emptyContent, inventoryItem, summoner } from './fixtures/eidolon.mjs';
 
 const migration = await readReviewedHistoricalSql(
@@ -17,7 +17,7 @@ const release = await readReviewedHistoricalSql(
 );
 const spec = JSON.parse(migration.split('$library$')[1]);
 assert.deepEqual(JSON.parse(release.split('$library$')[1]), spec);
-const rows = await readContentRows([
+const rows = await readHistoricalContentRows([
   ...spec.items.map(({ id }) => ({ table: 'item', id })),
   ...spec.dependencies.map(({ table, id }) => ({ table: table.replace('-', '_'), id })),
   ...spec.sources.map(({ id }) => ({ table: 'content_source', id })),

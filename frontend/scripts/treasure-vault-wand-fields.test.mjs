@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { test } from 'node:test';
 import { ItemSchema, SpellSchema } from '../src/schemas/content.ts';
-import { readContentRows } from './operation-test-harness.mjs';
+import { readHistoricalContentRows } from './operation-test-harness.mjs';
 
 const { uniqueId } = createRequire(import.meta.url)('../../supabase/functions/_shared/upload-utils.ts');
 
@@ -18,7 +18,10 @@ const predicate = await readReviewedHistoricalSql(
 );
 const patches = JSON.parse(migration.split('$patches$')[1]);
 const noisome = JSON.parse(migration.split('$noisome$')[1]);
-const rows = await readContentRows([...patches.map(({ id }) => ({ table: 'item', id })), { table: 'spell', id: 5322 }]);
+const rows = await readHistoricalContentRows([
+  ...patches.map(({ id }) => ({ table: 'item', id })),
+  { table: 'spell', id: 5322 },
+]);
 const row = (table, id) => rows.find((entry) => entry.table === table && entry.row.id === id).row;
 const md5 = (value) => createHash('md5').update(value).digest('hex');
 const noisomeTuple = (row) => ({

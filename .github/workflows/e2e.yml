@@ -24,6 +24,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Fetch pinned historical content fixture
+        run: git fetch --no-tags --depth=1 origin b5dd54c018ecd414be4dc5659a7c28e7ad4633b7
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -246,6 +249,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Fetch pinned historical content fixture
+        run: git fetch --no-tags --depth=1 origin b5dd54c018ecd414be4dc5659a7c28e7ad4633b7
 
       - uses: actions/setup-node@v4
         with:

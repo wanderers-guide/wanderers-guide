@@ -397,6 +397,10 @@
     "check": "war-of-immortals-bespell-tradition.sql",
     "order": "before-functions"
   },
+  "20261008105800_treasure_vault_terminal_catalog_compatibility.sql": {
+    "check": "treasure-vault-terminal-catalog-compatibility.sql",
+    "order": "before-functions"
+  },
   "20261008105900_treasure_vault_terminal_source_corrections.sql": {
     "check": "treasure-vault-terminal-source-corrections.sql",
     "order": "before-functions"
