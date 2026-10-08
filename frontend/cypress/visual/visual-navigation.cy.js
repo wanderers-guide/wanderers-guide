@@ -75,7 +75,10 @@ function panel(label, name) {
     });
   }
   if (name === 'navigation/campaign/Encounters') {
-    if (phone) cy.contains('main .mantine-Text-root', /^\d+ AC$/, { timeout: 120000 }).should('be.visible');
+    if (phone)
+      cy.contains('main .mantine-Text-root', /^\d+ AC$/, { timeout: 120000 })
+        .scrollIntoView()
+        .should('be.visible');
     else
       cy.get('main input[placeholder="HP"]', { timeout: 120000 }).should(($inputs) => {
         expect($inputs.length, 'populated local combatants').to.be.greaterThan(1);
