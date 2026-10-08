@@ -110,6 +110,23 @@ describe('Conditional editor and navigation states', { testIsolation: false }, (
           expect((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05), 'actual filled badge contrast').to.be.at.least(4.5);
         });
   });
+  review('nested spell rank modal', () => {
+    open('spells:list');
+    cy.get('.mantine-Modal-content:visible')
+      .last()
+      .contains('button', /^Add Spell$/)
+      .click();
+    cy.get('.mantine-Modal-content:visible').last().find('input[placeholder*="Search"]').first().type('Heal');
+    cy.contains('.mantine-Modal-content:visible', /^Heal$/).should('be.visible');
+    cy.get('.mantine-Modal-content:visible')
+      .last()
+      .contains('button', /^Add Spell$/)
+      .first()
+      .click();
+    cy.contains('.mantine-Modal-content:visible', /Select Heal.*Rank/).should('be.visible');
+    captureScrolls('spells/nested-rank');
+    cy.get('.mantine-Modal-close:visible').last().click();
+  });
   review('creature panels', () => {
     open('scene:creature-live');
     for (const label of [

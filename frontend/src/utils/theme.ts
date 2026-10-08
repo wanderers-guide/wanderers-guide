@@ -186,6 +186,9 @@ export function createAppTheme({
         styles: { dropdown: { backgroundColor: 'var(--portal-bg-color)' } },
       },
       Tooltip: { defaultProps: { zIndex: 1500 } },
+      Select: {
+        styles: { dropdown: { minWidth: 'min(140px, calc(100vw - 32px))' } },
+      },
       Accordion: {
         vars: () => ({
           item: {

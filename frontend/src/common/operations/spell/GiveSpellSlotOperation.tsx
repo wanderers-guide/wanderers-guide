@@ -23,7 +23,7 @@ export function GiveSpellSlotOperation(props: {
 
   return (
     <OperationWrapper onRemove={props.onRemove} title='Give Spell Slots'>
-      <Stack w='100%'>
+      <Stack w='100%' miw={0}>
         <TextInput
           ff='Ubuntu Mono, monospace'
           size='xs'

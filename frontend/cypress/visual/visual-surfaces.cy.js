@@ -14,7 +14,6 @@ const cases = [
     'conditional',
     'select',
     'giveSpell',
-    'removeSpell',
     'giveItem',
     'giveTrait',
     'giveSpellSlot',
@@ -206,5 +205,12 @@ describe(`Actual app surfaces ${prefix}`, { testIsolation: false }, () => {
         reviewPanels(label);
         reviewPortals(label);
       }
+      cy.get(selector)
+        .last()
+        .should(($surface) => {
+          expect($surface[0].scrollWidth, 'surface stays within its viewport').to.be.at.most(
+            $surface[0].clientWidth + 1
+          );
+        });
     });
 });

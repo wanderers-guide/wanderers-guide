@@ -156,7 +156,11 @@ export function capture(name, interaction) {
     );
   });
 }
-export function captureScrolls(name, selector = '.mantine-Modal-content:visible,.mantine-Drawer-content:visible') {
+export function captureScrolls(
+  name,
+  selector = '.mantine-Modal-content:visible,.mantine-Drawer-content:visible',
+  includeHorizontal = true
+) {
   settled(selector);
   cy.window().then((win) => win.scrollTo(0, 0));
   cy.get(selector)
@@ -190,6 +194,19 @@ export function captureScrolls(name, selector = '.mantine-Modal-content:visible,
           capture(name + `/scroll-${i}-${step}`);
         }
         cy.wrap(el, { log: false }).scrollTo('top', { duration: 0 });
+      }
+      if (includeHorizontal) {
+        const horizontalViews = [root, ...root.querySelectorAll('*')].filter(
+          (el) =>
+            el.clientWidth > 100 &&
+            el.scrollWidth > el.clientWidth + 2 &&
+            /auto|scroll/.test(win.getComputedStyle(el).overflowX)
+        );
+        for (const [i, el] of horizontalViews.entries()) {
+          cy.wrap(el, { log: false }).scrollTo('right', { duration: 0 });
+          captureScrolls(name + '/horizontal-' + i, selector, false);
+          cy.wrap(el, { log: false }).scrollTo('left', { duration: 0 });
+        }
       }
     });
 }
@@ -229,10 +246,7 @@ export function reviewPanels(
       const key = (el) =>
         [
           el.classList.contains('mantine-SegmentedControl-label')
-            ? 'choice-' +
-              [...root.querySelectorAll('.mantine-SegmentedControl-root')].indexOf(
-                el.closest('.mantine-SegmentedControl-root')
-              )
+            ? 'choice-' + (el.closest('[data-ui-review-source]')?.getAttribute('data-ui-review-source') ?? 'control')
             : 'panel',
           el.closest('[data-ui-review-id]')?.getAttribute('data-ui-review-id') ?? 'control',
           el.getAttribute('data-value') ?? el.textContent,

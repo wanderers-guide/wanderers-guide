@@ -6,11 +6,17 @@ const phone = Cypress.config('viewportWidth') < 600;
 const filter = Cypress.env('reviewFilter');
 const review = (name, fn) =>
   !filter || filter.split(',').some((value) => name.includes(value)) ? it(name, fn) : it.skip(name, fn);
-function login(role, url) {
+function login(role, url, siteTheme) {
   recordedCatalogReads();
+  // Exercise the existing local dice fallback without creating an external room.
+  cy.intercept('https://api.dddice.com/**', { statusCode: 503, body: {} });
   const actor = accounts[role];
   cy.intercept('POST', '**/functions/v1/get-user', (req) => {
-    if (!req.body.id || req.body.id === actor.userId) req.reply({ status: 'success', data: actor.profile });
+    if (!req.body.id || req.body.id === actor.userId)
+      req.reply({
+        status: 'success',
+        data: { ...actor.profile, ...(siteTheme ? { site_theme: { ...actor.profile.site_theme, ...siteTheme } } : {}) },
+      });
     else req.continue();
   });
   cy.intercept('POST', '**/auth/v1/token*').as('reviewSignIn');
@@ -56,6 +62,26 @@ function panel(label, name) {
   );
 }
 describe('Actual navigation and populated panels', () => {
+  for (const [name, siteTheme] of [
+    ['yellow accent', { color: '#fab005' }],
+    ['dark accent', { color: '#25262b' }],
+    ['dyslexia font', { dyslexia_font: true }],
+    ['large UI', { zoom: 1.5 }],
+  ])
+    review('appearance ' + name, () => {
+      login('owner', '/account', siteTheme);
+      cy.contains('main', 'Appearance', { timeout: 120000 }).should('be.visible');
+      cy.contains('button', /^Appearance$/).click();
+      captureScrolls('navigation/appearance/' + name, 'main');
+      cy.document().then((doc) =>
+        expect(doc.documentElement.scrollWidth, 'appearance variant fits viewport').to.be.at.most(
+          doc.documentElement.clientWidth + 1
+        )
+      );
+      if (name === 'dyslexia font') cy.get('main').should('have.css', 'font-family').and('include', 'OpenDyslexic');
+      cy.get('[aria-label="Switch to dark mode"]').focus().should('have.focus');
+      capture('navigation/appearance/' + name + '/keyboard-focus');
+    });
   for (const id of ['casterId', 'variantId', 'playerId'])
     review('sheet ' + id, () => {
       login(id === 'playerId' ? 'player' : 'owner', '/sheet/' + scenes[id]);
@@ -72,11 +98,30 @@ describe('Actual navigation and populated panels', () => {
         panel(label, 'navigation/sheet-' + id + '/' + label);
       if (phone) panel('Extras', 'navigation/sheet-' + id + '/Extras');
       if (id === 'casterId') {
+        if (!phone) {
+          cy.get('[aria-label="Text color"]:visible').each(($control, index) => {
+            cy.wrap($control).scrollIntoView().click();
+            capture('navigation/rich-text/color-' + index + '-palette');
+            cy.get('[aria-label="Color picker"]:visible').click();
+            capture('navigation/rich-text/color-' + index + '-picker');
+            cy.contains('.mantine-Popover-dropdown:visible button', /^Cancel$/).click();
+          });
+        }
         cy.get('[aria-label="Dice Roller"]:visible').click();
         cy.contains('.mantine-Drawer-content:visible', 'Dice Roller').should('be.visible');
         captureScrolls('navigation/dice-roller');
         reviewPanels('navigation/dice-roller');
         reviewPortals('navigation/dice-roller');
+        cy.get('.mantine-Drawer-content:visible').last().contains('button', /^Add$/).click();
+        cy.get('.mantine-Drawer-content:visible')
+          .last()
+          .contains('button', /^Roll Dice$/)
+          .should('not.be.disabled')
+          .click();
+        cy.wait(1500, { log: false });
+        cy.get('canvas').last().click({ force: true });
+        cy.contains('button', /^View Presets$/).should('be.visible');
+        captureScrolls('navigation/dice-roller/history');
         cy.get('.mantine-Drawer-close:visible').last().click();
       }
     });
@@ -99,6 +144,13 @@ describe('Actual navigation and populated panels', () => {
   review('builder books', () => {
     login('owner', '/builder/' + scenes.casterId);
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 120000 }).should('be.visible');
+    if (phone) {
+      cy.contains('main button', /^Preview$/).click();
+      cy.get('.mantine-Drawer-content:visible').should('be.visible');
+      captureScrolls('navigation/builder/statistics-preview');
+      reviewPortals('navigation/builder/statistics-preview');
+      cy.get('.mantine-Drawer-close:visible').last().click();
+    }
     cy.contains('[role=tab]:visible', /^Books$/).click();
     for (const label of [
       'Pathfinder Core',
@@ -118,6 +170,38 @@ describe('Actual navigation and populated panels', () => {
         .scrollIntoView()
         .click();
     }
+  });
+  review('content cleaning log modal', () => {
+    login('admin', '/content-cleaning-source');
+    cy.contains('main', 'Content Cleaning', { timeout: 120000 }).should('be.visible');
+    cy.readFile(Cypress.env('recordedCatalogFile'), { log: false }).then((catalog) => {
+      const record = catalog.item.find((row) => row.content_source_id === 1);
+      const source = catalog['content-source'].find((row) => row.id === 1);
+      expect(record, 'local catalog item').to.exist;
+      cy.intercept('POST', '**/functions/v1/find-item', {
+        status: 'success',
+        data: [{ ...record, meta_data: { ...record.meta_data, cleaning: { updatedAt: '2026-10-07T12:00:00Z' } } }],
+      });
+      cy.window().then((win) => {
+        win.localStorage.setItem('cleaning-status-item_' + record.id, 'done');
+        win.localStorage.setItem(
+          'cleaning-log-item_' + record.id,
+          JSON.stringify([
+            { type: 'thought', message: 'Reviewing the item fields.', timestamp: '2026-10-07T12:00:00Z' },
+            { type: 'done', message: 'Cleaned successfully', timestamp: '2026-10-07T12:00:02Z' },
+          ])
+        );
+      });
+      cy.get('input[placeholder="Select content source"]').type(source.name);
+      cy.contains('[role=option]:visible', source.name).click();
+      cy.contains('main button', /^Fetch$/).click();
+      cy.contains('main button', /^View$/).click();
+      cy.contains('.mantine-Modal-content:visible', 'Cleaning Log').should('be.visible');
+      captureScrolls('navigation/cleaning/log-modal');
+      reviewPanels('navigation/cleaning/log-modal');
+      reviewPortals('navigation/cleaning/log-modal');
+      cy.get('.mantine-Modal-close:visible').last().click();
+    });
   });
   review('header navigation and global search', () => {
     login('owner', '/characters');

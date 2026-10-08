@@ -39,7 +39,7 @@ export function DefineCastingSourceOperation(props: {
             setName(labelToVariable(e.target.value, false));
           }}
         />
-        <Group wrap='nowrap' align='flex-start'>
+        <Group align='flex-start'>
           <Box>
             <Text fz='xs' fw={600}>
               Casting Type:
