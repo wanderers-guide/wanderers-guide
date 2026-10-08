@@ -203,6 +203,18 @@ export function captureScrolls(
           el.scrollTop = 0;
     });
   capture(name + '/upper');
+  // Standalone routes scroll the document without an explicit overflow container.
+  if (selector === 'body')
+    cy.document().then((doc) => {
+      const win = doc.defaultView;
+      const range = doc.scrollingElement.scrollHeight - win.innerHeight;
+      const steps = Math.ceil(range / (win.innerHeight * 0.75));
+      for (let step = 1; step <= steps; step++) {
+        cy.window().then((live) => live.scrollTo(0, Math.min(range, step * live.innerHeight * 0.75)));
+        capture(name + `/document-scroll-${step}`);
+      }
+      cy.window().then((live) => live.scrollTo(0, 0));
+    });
   cy.get(selector)
     .last()
     .then(($root) => {
