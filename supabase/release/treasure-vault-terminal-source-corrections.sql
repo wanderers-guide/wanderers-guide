@@ -1,5 +1,5 @@
--- Only inspect definition and grants; this check does not alter or cache content.
-select 'treasure-vault-terminal-status' as id,coalesce((exists(select 1 from pg_catalog.pg_proc p
+-- Only inspect the exact source-corrected helper definition and unchanged grants.
+select 'treasure-vault-terminal-source-corrections' as id,coalesce((exists(select 1 from pg_catalog.pg_proc p
   where p.oid=pg_catalog.to_regprocedure('public.treasure_vault_terminal_status_v1()')
     and pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to((p.prosrc)::text,'UTF8')),'hex')='18134f9ceb5b974368dcfba9e6a145c839b63a762014424005872665b4dce869'
     and p.prokind='f' and p.prolang=(select l.oid from pg_catalog.pg_language l where l.lanname='sql')

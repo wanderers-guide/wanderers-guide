@@ -227,7 +227,7 @@ export async function createOperationEngine({
           export * from '@variables/variable-helpers';
           export { saveCalculatedStats } from '@variables/calculated-stats';
           export { convertToHardcodedLink, buildHrefFromContentData } from '@content/hardcoded-links';
-          export { detectSpells, getKnownSpellsByRank } from '@spells/spell-utils';
+          export { detectSpells, detectSpellheartSpells, getKnownSpellsByRank } from '@spells/spell-utils';
           export { getInventorySpellIds, getMissingSpellIds, mergeSpellDependencies, filterSpellCatalog } from '@spells/item-spell-dependencies';
           export { filterByTraitType } from '@items/inv-utils';
           export { meetsPrerequisites } from '@variables/prereq-detection';

@@ -56,7 +56,7 @@ test('alternate allocation accepts the actual complete captured chronology befor
   const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
   const captured=await captureNativeInputManifest({root});
   const primaryChronology=captured.manifest.chronology;
-  assert.equal(primaryChronology.length,106);
+  assert.equal(primaryChronology.length,108);
   const boundary=new Error('validated chronology reached the first snapshot');
   let snapshots=0;
   const fixture={snapshot(){snapshots++;throw boundary;}};
