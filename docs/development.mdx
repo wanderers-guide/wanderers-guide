@@ -489,7 +489,18 @@ working-tree catalog and the immutable historical Git input. The historical fixt
 starts before the repairs so insertion, allocation, rollback, and own-stage checks
 remain exercised. The ordinary E2E job instead starts from the current dump, installs
 the actual content triggers, and runs the complete chronology and registered replays.
-Both modes must pass. The native runner requires locally available PostgreSQL 15.6
+Both modes must pass.
+
+The historical native fixture adds
+only the exact captured Tech Core source and Junk trait immediately before the
+introductory spell migration. It includes Station only when the captured chronology
+also contains the general spell batch. Earlier historical ledgers stay unchanged.
+The supplement retains content triggers and checks full rows, unrelated tuples,
+sequences, an injected late rollback and exact replay in both owned fixtures.
+Full schema and role preservation also use the existing postcommit snapshots.
+These fixture checks do not add or change prerequisites in production.
+
+The native runner requires locally available PostgreSQL 15.6
 and GoTrue images and a local Docker engine. It creates uniquely owned offline containers without
 published ports. Each new test PostgreSQL container is limited to 1 GiB of memory,
 no swap and one CPU, with fresh limit checks recorded in its receipt. These limits

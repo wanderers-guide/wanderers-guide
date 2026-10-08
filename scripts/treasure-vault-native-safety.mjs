@@ -11,6 +11,7 @@ import { createAuthenticSharedHistoryControls } from './treasure-vault-native-hi
 import { createAuthenticDualExporter } from './treasure-vault-native-ledger.mjs';
 import { createNativeStopController, finalizeNativeStopReceipt } from './treasure-vault-native-stop.mjs';
 import { captureNativeInputManifest } from './treasure-vault-native-input-manifest.mjs';
+import { createNativeTechCorePrerequisites, TECH_CORE_PREREQUISITE_BOUNDARY } from './treasure-vault-native-tech-core-prerequisites.mjs';
 import { HISTORICAL_CONTENT_FIXTURE } from './historical-content-fixture.mjs';
 import { createHistoricalPositiveProjections } from './treasure-vault-native-positive-projections.mjs';
 import { createHistorical023FreshImportCapsule } from './treasure-vault-native-fresh-equipment.mjs';
@@ -54,6 +55,28 @@ export function assertRequiredNativeEvidence(receipt) {
   for(const fixtureReceipt of [receipt,receipt.alternate_fixture]) {
     assert.deepEqual(fixtureReceipt?.bootstrap?.content_input,{kind:'pinned-git-predecessor',...HISTORICAL_CONTENT_FIXTURE});
     assert.equal(fixtureReceipt.bootstrap.dump_sha256,HISTORICAL_CONTENT_FIXTURE.sha256);
+    const prerequisite = fixtureReceipt.tech_core_prerequisites;
+    const station = receipt.input_manifest.chronology.some(row=>row.path==='20261008190000_tech_core_general_spells.sql');
+    assert.equal(prerequisite?.passed,true);
+    assert.ok(['absent','exact-replay'].includes(prerequisite.mode));
+    assert.deepEqual(prerequisite.keys,['content_source:900','trait:5225',...(station?['trait:5236']:[])]);
+    assert.equal(prerequisite.station_included,station);
+    assert.equal(prerequisite.explicit_ids,true);assert.equal(prerequisite.sequence_reset,false);
+    assert.equal(prerequisite.trigger_suppression,false);
+    assert.equal(prerequisite.absent_source_timestamp_restored,prerequisite.mode==='absent');
+    assert.equal(prerequisite.full_preexisting_tuple_and_sequence_guard,true);
+    assert.deepEqual(prerequisite.source,receipt.input_manifest.entries.find(row=>row.path==='data/data.sql'));
+    const stages=fixtureReceipt.stages.filter(row=>row.name==='late-tech-core-prerequisites');
+    assert.equal(stages.length,1);assert.equal(stages[0].passed,true);
+    assert.equal(stages[0].status,0);assert.equal(stages[0].signal,null);
+    assert.match(prerequisite.sql_sha256,/^[a-f0-9]{64}$/);assert.equal(stages[0].sql_sha256,prerequisite.sql_sha256);
+    assert.deepEqual(prerequisite.controls.map(row=>row.name),['injected-late-rollback','exact-replay']);
+    assert.ok(prerequisite.controls.every(row=>row.passed===true&&row.actual_signal===null&&row.no_transport_error===true&&row.full_state_preserved===true));
+    assert.equal(prerequisite.controls[0].actual_exit_status,3);assert.equal(prerequisite.controls[0].sqlstate,'P0001');
+    assert.match(prerequisite.controls[0].sql_sha256,/^[a-f0-9]{64}$/);assert.notEqual(prerequisite.controls[0].sql_sha256,prerequisite.sql_sha256);
+    assert.equal(prerequisite.controls[1].actual_exit_status,0);assert.equal(prerequisite.controls[1].sql_sha256,prerequisite.sql_sha256);
+    const replays=fixtureReceipt.stages.filter(row=>row.name==='late-tech-core-prerequisites-replay');
+    assert.equal(replays.length,1);assert.equal(replays[0].passed,true);assert.equal(replays[0].status,0);assert.equal(replays[0].signal,null);assert.equal(replays[0].sql_sha256,prerequisite.sql_sha256);
   }
   const releaseScope=receipt.plan?.negative_scope?.mode==='release';
   if(releaseScope){
@@ -203,6 +226,7 @@ export async function executeNativeBase({root,inputs,migrations,inputManifest,ou
     const userId = fixture.signup();
     fixture.savedCopyFixture(userId);
     await fixture.enableEngineTransport();
+    const techCorePrerequisites = createNativeTechCorePrerequisites({inputManifest});
     const phases = createNativePhaseRunner({fixture,receipt,stage,selectedNegativeFiles,releaseScope,checkpoint:stop.checkpoint,log});
     const negatives = createNativeNegativeGroups({inputs,userId,reserveProposalId:fixture.reserveProposalId,reserveContentId:fixture.reserveContentId,readState:fixture.readState,queryJson:fixture.queryJson});
     const history = createAuthenticSharedHistoryControls({inputs,query:fixture.query,sql:fixture.sql,sqlAsAdmin:fixture.sqlAsAdmin,stateDigest:fixture.stateDigest,receipt,stage,checkpoint:stop.checkpoint});
@@ -224,6 +248,7 @@ export async function executeNativeBase({root,inputs,migrations,inputManifest,ou
       phase = migration.path;
       const chronologyStarted=Date.now();
       log({kind:'chronology-start',path:migration.path});
+      if (migration.path === TECH_CORE_PREREQUISITE_BOUNDARY) await techCorePrerequisites.run({fixture,stage,receipt,checkpoint:stop.checkpoint});
       if (migration.path === completionPath) {
         await phases.negatives(negatives.beforeCompletion());
         await stop.checkpoint('actual writer family before100');

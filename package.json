@@ -12,7 +12,7 @@
     "test:api": "cd supabase && deno test --no-check --allow-net --allow-env --allow-read functions/_tests/",
     "test:api:boundaries": "node supabase/tests/api-boundaries.mjs && node supabase/tests/account-handler-boundaries.mjs",
     "test:release": "node --test scripts/release.test.mjs scripts/production-health.test.mjs",
-    "test:content:contracts": "node --test scripts/historical-content-fixture.test.mjs scripts/treasure-vault-native-contract.test.mjs scripts/treasure-vault-native-ordering-contract.test.mjs scripts/treasure-vault-native-family-contract.test.mjs scripts/treasure-vault-native-registered-ci-replays.test.mjs scripts/treasure-vault-native-file-transport.test.mjs scripts/treasure-vault-native-engine.test.mjs scripts/treasure-vault-native-engine-dispatch.test.mjs scripts/treasure-vault-native-source-corrections.test.mjs",
+    "test:content:contracts": "node --test scripts/historical-content-fixture.test.mjs scripts/treasure-vault-native-contract.test.mjs scripts/treasure-vault-native-ordering-contract.test.mjs scripts/treasure-vault-native-family-contract.test.mjs scripts/treasure-vault-native-registered-ci-replays.test.mjs scripts/treasure-vault-native-file-transport.test.mjs scripts/treasure-vault-native-engine.test.mjs scripts/treasure-vault-native-engine-dispatch.test.mjs scripts/treasure-vault-native-source-corrections.test.mjs scripts/treasure-vault-native-tech-core-prerequisites.test.mjs",
     "test:content:native": "node scripts/treasure-vault-native-safety.mjs",
     "release:check": "node scripts/release.mjs check-local",
     "release:manifest": "node scripts/release.mjs manifest",
