@@ -138,6 +138,27 @@ describe('Conditional editor and navigation states', { testIsolation: false }, (
     captureScrolls('spells/nested-rank');
     cy.get('.mantine-Modal-close:visible').last().click();
   });
+  review('conditional row controls', () => {
+    open('operation:conditional');
+    cy.get('.mantine-Modal-content:visible svg.tabler-icon-circle-plus')
+      .first()
+      .closest('button')
+      .scrollIntoView()
+      .click();
+    captureScrolls('conditional/second-condition');
+    reviewPortals('conditional/second-condition');
+  });
+  review('heightening row controls', () => {
+    open('editor:spell');
+    cy.contains('.mantine-Modal-content:visible button', /^Heightened$/)
+      .scrollIntoView()
+      .click();
+    cy.contains('.mantine-Modal-content:visible button', /^Add Heightening$/)
+      .scrollIntoView()
+      .click();
+    captureScrolls('spells/heightening-row');
+    reviewPortals('spells/heightening-row');
+  });
   review('bundle categories', () => {
     open('editor:source-bundle');
     cy.get('.mantine-Modal-content:visible [role=tab]', { timeout: 120000 }).then(($tabs) => {
@@ -166,6 +187,9 @@ describe('Conditional editor and navigation states', { testIsolation: false }, (
       'Health, Conditions, Saves',
     ]) {
       cy.get('[aria-label="Panel Grid"]:visible').last().click();
+      cy.get('.phone-panel-picker:visible .mantine-Button-label').each(($label) =>
+        expect($label[0].scrollWidth, 'creature panel label fits').to.be.at.most($label[0].clientWidth + 1)
+      );
       cy.contains('.mantine-Popover-dropdown:visible button', label).click();
       captureScrolls('creature-panels/' + label);
       reviewPanels('creature-panels/' + label);
@@ -209,12 +233,14 @@ describe('Conditional editor and navigation states', { testIsolation: false }, (
       open('operation:select');
       cy.get('.mantine-Modal-content:visible input[placeholder="Type"]').click();
       cy.contains('[role=option]:visible', new RegExp('^' + type + '$')).click();
-      cy.contains('.mantine-Modal-content:visible .mantine-SegmentedControl-label', /^Predefined$/).click();
+      if (type !== 'Custom')
+        cy.contains('.mantine-Modal-content:visible .mantine-SegmentedControl-label', /^Predefined$/).click();
       cy.get('.mantine-Modal-content:visible svg.tabler-icon-circle-plus')
         .last()
         .closest('button')
         .scrollIntoView()
         .click();
+      reviewPortals('select-options/' + type.toLowerCase().replaceAll(' ', '-'));
       cy.get('.mantine-Modal-content:visible svg.tabler-icon-circle-minus')
         .last()
         .closest('button')

@@ -13,8 +13,8 @@ const phone = Cypress.config('viewportWidth') < 600;
 const filter = Cypress.env('reviewFilter');
 const review = (name, fn) =>
   !filter || filter.split(',').some((value) => name.includes(value)) ? it(name, fn) : it.skip(name, fn);
-function login(role, url, siteTheme, profileOverrides = {}) {
-  recordedCatalogReads();
+function login(role, url, siteTheme, profileOverrides = {}, catalogTransform) {
+  recordedCatalogReads(catalogTransform);
   // Exercise the existing local dice fallback without creating an external room.
   cy.intercept('https://api.dddice.com/**', { statusCode: 503, body: {} });
   const actor = accounts[role];
@@ -58,6 +58,9 @@ function login(role, url, siteTheme, profileOverrides = {}) {
 function panel(label, name) {
   if (phone) {
     cy.get('[aria-label="Panel Grid"]:visible').last().click();
+    cy.get('.phone-panel-picker:visible .mantine-Button-label').each(($label) =>
+      expect($label[0].scrollWidth, 'phone panel label fits').to.be.at.most($label[0].clientWidth + 1)
+    );
     capture(name + '/grid');
     cy.contains('.mantine-Popover-dropdown:visible button', label).click();
   } else {
@@ -85,7 +88,11 @@ function panel(label, name) {
 }
 /** Open and inspect the existing confirmation, then cancel without applying its action. */
 function cancelConfirmation(name, title) {
-  cy.get('.mantine-Modal-content:visible').last().contains('.mantine-Title-root', title).should('be.visible');
+  cy.get('body', { log: false }).then((body) => body.find('[data-visual-dock]').css('visibility', 'hidden'));
+  cy.get('.mantine-Modal-content:visible', { timeout: 30000 })
+    .last()
+    .contains('.mantine-Title-root', title, { timeout: 30000 })
+    .should('be.visible');
   captureScrolls('confirmations/' + name);
   cy.get('.mantine-Modal-content:visible')
     .last()
@@ -98,6 +105,7 @@ function openReviewSurface(name) {
   cy.contains('Hit Points', { timeout: 120000 }).should('be.visible');
   cy.get('[data-testid="review-case"]').clear().type(name, { parseSpecialCharSequences: false });
   cy.get('[data-testid="open-review-surface"]').click();
+  cy.get('body', { log: false }).then((body) => body.find('[data-visual-dock]').css('visibility', 'hidden'));
   settled('.mantine-Modal-content:visible');
 }
 describe('Actual navigation and populated panels', () => {
@@ -228,6 +236,75 @@ describe('Actual navigation and populated panels', () => {
         .click();
     }
   });
+  review('surface gaps builder conditional choices', () => {
+    const choice = (group) => ({
+      id: 'local-review-choice-' + group,
+      type: 'select',
+      data: {
+        title: 'Review ' + group + ' choice',
+        description: 'A local review example for this existing selection surface.',
+        modeType: 'PREDEFINED',
+        optionType: 'CUSTOM',
+        optionsPredefined: ['Explorer', 'Scholar'].map((title) => ({
+          id: 'local-review-' + group + '-' + title,
+          type: 'CUSTOM',
+          title,
+          description: 'A local review option.',
+          operations: [],
+        })),
+      },
+    });
+    cy.intercept('POST', '**/functions/v1/update-character', { status: 'fail', data: { review: 'Write skipped' } });
+    cy.intercept('POST', '**/functions/v1/find-character', (req) =>
+      req.continue((res) => {
+        if (req.body.id !== scenes.casterId || res.body.status !== 'success') return;
+        const character = res.body.data;
+        res.body.data = {
+          ...character,
+          options: { ...character.options, custom_operations: true },
+          custom_operations: [choice('custom')],
+          inventory: {
+            ...character.inventory,
+            items: character.inventory.items.map((entry, index) =>
+              index === 0
+                ? {
+                    ...entry,
+                    is_equipped: true,
+                    is_invested: true,
+                    item: { ...entry.item, operations: [choice('item')] },
+                  }
+                : entry
+            ),
+          },
+        };
+      })
+    );
+    login('owner', '/builder/' + scenes.casterId, undefined, {}, (catalog) => ({
+      ...catalog,
+      'content-source': catalog['content-source'].map((source) =>
+        source.id === 1 ? { ...source, operations: [choice('book')] } : source
+      ),
+    }));
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 120000 }).should('be.visible');
+    if (phone) cy.contains('main button', /^Builder$/).click();
+    else cy.contains('main [role=tab]', /^Builder$/).click();
+    settled('main');
+    cy.contains('main .mantine-Accordion-control', /^Initial Stats/)
+      .scrollIntoView()
+      .click();
+    for (const [label, group] of [
+      ['Books', 'book'],
+      ['Items', 'item'],
+      ['Custom', 'custom'],
+    ]) {
+      cy.contains('main .mantine-Accordion-control', new RegExp('^' + label))
+        .scrollIntoView()
+        .click();
+      cy.contains('main', 'Review ' + group + ' choice').should('be.visible');
+      captureScrolls('navigation/builder/conditional-' + label.toLowerCase(), 'body');
+      reviewPortals('navigation/builder/conditional-' + label.toLowerCase(), 'body');
+    }
+  });
   review('content cleaning log modal', () => {
     login('admin', '/content-cleaning-source');
     cy.contains('main', 'Content Cleaning', { timeout: 120000 }).should('be.visible');
@@ -280,7 +357,48 @@ describe('Actual navigation and populated panels', () => {
     cy.get('.mantine-Spotlight-search input,.mantine-Spotlight-search').filter('input').type('heal');
     cy.contains('.mantine-Spotlight-action:visible', 'Heal', { timeout: 30000 }).should('be.visible');
     capture('navigation/search/results');
+    reviewPortals('navigation/search', '.mantine-Spotlight-content:visible');
     cy.get('body').type('{esc}');
+  });
+  review('surface gaps character menus', () => {
+    login('owner', '/characters');
+    cy.contains('main', 'Characters', { timeout: 120000 }).should('be.visible');
+    settled('main');
+    reviewPortals('navigation/character-list', 'main');
+    cy.get('main [aria-label="Import Character"]:visible').click();
+    cy.contains('.mantine-Menu-item:visible', 'Import from JSON').should('be.visible');
+    capture('navigation/character-list/import-menu', { id: 'CharactersPage:Menu:247', kind: 'Menu', opened: true });
+    cy.get('main [aria-label="Import Character"]:visible').click();
+    cy.get('main [aria-label="Options"]:visible').first().click();
+    cy.contains('.mantine-Menu-item:visible', 'Delete Character').should('be.visible');
+    capture('navigation/character-list/options-menu', { id: 'CharactersPage:Menu:601', kind: 'Menu', opened: true });
+    cy.get('main [aria-label="Options"]:visible').first().click();
+  });
+  review('surface gaps campaign cards', () => {
+    login('gm', '/campaigns');
+    cy.contains('main', 'Campaigns', { timeout: 120000 }).should('be.visible');
+    settled('main');
+    captureScrolls('navigation/campaign-list', 'main');
+    reviewPortals('navigation/campaign-list', 'main');
+  });
+  review('surface gaps homebrew navigation', () => {
+    login('owner', '/homebrew');
+    cy.contains('main', 'Homebrew', { timeout: 120000 }).should('be.visible');
+    settled('main');
+    reviewPanels('navigation/homebrew', 'main');
+    reviewPortals('navigation/homebrew', 'main');
+    cy.contains('main button', /^Create Bundle$/)
+      .parent()
+      .find('button')
+      .last()
+      .click();
+    cy.contains('.mantine-Menu-item:visible', 'Import from Custom Pack').should('be.visible');
+    capture('navigation/homebrew/import-menu', { id: 'HomebrewPage:Menu:466', kind: 'Menu', opened: true });
+    cy.contains('main button', /^Create Bundle$/)
+      .parent()
+      .find('button')
+      .last()
+      .click();
   });
   review('confirmation delete account', () => {
     login('player', '/account');

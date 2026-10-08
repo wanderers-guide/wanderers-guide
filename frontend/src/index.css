@@ -6,6 +6,19 @@
   --glass-backdrop-filter: blur(16px) saturate(140%);
 }
 
+/* Long panel names stay readable in the two-column phone picker. */
+.phone-panel-picker .mantine-Button-root {
+  height: auto;
+  min-height: var(--button-height);
+  padding-block: 6px;
+}
+
+.phone-panel-picker .mantine-Button-label {
+  white-space: normal;
+  overflow: visible;
+  line-height: 1.2;
+}
+
 /* Keep mobile text fields readable and prevent automatic focus zoom in iOS browsers. */
 @media (max-width: 64em) {
   .mantine-Input-input {

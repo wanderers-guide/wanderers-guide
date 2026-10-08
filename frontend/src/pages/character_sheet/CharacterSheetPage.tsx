@@ -521,7 +521,7 @@ function SectionPanels(props: {
                 {openedPhonePanel ? <IconX size='2rem' stroke={2} /> : <IconLayoutGrid size='2rem' stroke={1.5} />}
               </ActionIcon>
             </Popover.Target>
-            <Popover.Dropdown>
+            <Popover.Dropdown className='phone-panel-picker'>
               <Box>
                 <Stack>
                   {/* "Health, Attributes, Saves" restores the top stat sections */}

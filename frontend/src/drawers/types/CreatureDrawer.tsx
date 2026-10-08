@@ -532,7 +532,7 @@ export function CreatureDrawerContent(props: {
                         )}
                       </ActionIcon>
                     </Popover.Target>
-                    <Popover.Dropdown w={'calc(min(95dvw, 430px))'}>
+                    <Popover.Dropdown className='phone-panel-picker' w={'calc(min(95dvw, 430px))'}>
                       <Box>
                         <Stack>
                           <Button

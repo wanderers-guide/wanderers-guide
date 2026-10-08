@@ -226,10 +226,25 @@ export function captureScrolls(
             el.scrollWidth > el.clientWidth + 2 &&
             /auto|scroll/.test(win.getComputedStyle(el).overflowX)
         );
-        for (const [i, el] of horizontalViews.entries()) {
-          cy.wrap(el, { log: false }).scrollTo('right', { duration: 0 });
+        for (const i of horizontalViews.keys()) {
+          cy.get(selector)
+            .last()
+            .then(($current) => {
+              const live = [$current[0], ...$current[0].querySelectorAll('*')].filter(
+                (node) =>
+                  node.clientWidth > 100 &&
+                  node.scrollWidth > node.clientWidth + 2 &&
+                  /auto|scroll/.test(win.getComputedStyle(node).overflowX)
+              )[i];
+              if (live) live.scrollLeft = live.scrollWidth - live.clientWidth;
+            });
           captureScrolls(name + '/horizontal-' + i, selector, false);
-          cy.wrap(el, { log: false }).scrollTo('left', { duration: 0 });
+          cy.get(selector)
+            .last()
+            .then(($current) => {
+              for (const node of [$current[0], ...$current[0].querySelectorAll('*')])
+                if (/auto|scroll/.test(win.getComputedStyle(node).overflowX)) node.scrollLeft = 0;
+            });
         }
       }
     });
@@ -251,7 +266,7 @@ export function reviewPanels(
           el.textContent.trim()
         )
       );
-      const choices = /^(editor-|operation-)/.test(name)
+      const choices = /^(editor-|operation-|panel-)/.test(name)
         ? [...root.querySelectorAll('.mantine-SegmentedControl-label')]
         : [];
       const targets = [
@@ -293,9 +308,24 @@ export function reviewPanels(
       if (!el) return;
       const id = key(el);
       seen.add(id);
-      cy.wrap(el, { log: false }).scrollIntoView().click({ force: true });
+      const modalDepth = [...root.ownerDocument.querySelectorAll('.mantine-Modal-content')].filter(
+        (node) => node.getClientRects().length
+      ).length;
+      const alreadyOpen = el.getAttribute('aria-expanded') === 'true' || el.getAttribute('aria-selected') === 'true';
+      cy.wrap(el, { log: false }).scrollIntoView();
+      // Inspect initially open panels before another accordion or tab can hide their nested controls.
+      if (!alreadyOpen) cy.wrap(el, { log: false }).click({ force: true });
       captureScrolls(`${name}/panel-${slug(id)}`, selector);
       if (Cypress.env('reviewInteractions')) reviewPortals(name, selector);
+      cy.get('body').then(($body) => {
+        if ($body.find('.mantine-Modal-content:visible').length > modalDepth) {
+          // Nested editor dialogs must not hide the parent editor's remaining tabs.
+          cy.get('.mantine-Modal-close:visible').last().click();
+          cy.get('body').should(($current) =>
+            expect($current.find('.mantine-Modal-content:visible').length, 'parent dialog restored').to.eq(modalDepth)
+          );
+        }
+      });
       reviewPanels(name, selector, seen, count + 1);
     });
 }
@@ -328,6 +358,13 @@ export function reviewPortals(name, selector = '.mantine-Modal-content:visible,.
           else cy.wrap(el, { log: false }).trigger('mouseover').trigger('mouseenter').trigger('mousemove');
           const overlay = kind === 'Tooltip' ? '.mantine-Tooltip-tooltip' : `.mantine-${kind}-dropdown`;
           cy.wait(kind === 'HoverCard' ? 1400 : 800, { log: false });
+          if (kind === 'Menu')
+            cy.get('body').then(($body) => {
+              // Some native menus open on hover rather than click.
+              if (!$body.find(overlay + ':visible').length && el.isConnected)
+                cy.wrap(el, { log: false }).trigger('mouseover').trigger('mouseenter').trigger('mousemove');
+            });
+          if (kind === 'Menu') cy.wait(800, { log: false });
           cy.get('body').then(($body) => {
             if (!$body.find(overlay + ':visible').length) {
               cy.writeFile(
@@ -339,10 +376,10 @@ export function reviewPortals(name, selector = '.mantine-Modal-content:visible,.
             }
             capture(`${name}/portal-${slug(id)}`, { id, kind, opened: true });
             if (kind === 'Menu' || kind === 'Popover') cy.wrap(el, { log: false }).click();
-            else
-              cy.wrap(el, { log: false })
-                .trigger('mouseout', { relatedTarget: el.ownerDocument.body })
-                .trigger('mouseleave');
+            // Hover-triggered menus need a leave event as well as click-menu cleanup.
+            cy.wrap(el, { log: false })
+              .trigger('mouseout', { relatedTarget: el.ownerDocument.body })
+              .trigger('mouseleave');
             // Move the native pointer to the viewport edge without clicking a page action.
             cy.window().then((win) =>
               Cypress.automation('remote:debugger:protocol', {
@@ -350,6 +387,7 @@ export function reviewPortals(name, selector = '.mantine-Modal-content:visible,.
                 params: { type: 'mouseMoved', x: win.innerWidth - 2, y: win.innerHeight - 2 },
               })
             );
+            cy.wait(500, { log: false });
             cy.get(overlay + ':visible', { timeout: 5000 }).should('not.exist');
           });
         });
@@ -357,11 +395,12 @@ export function reviewPortals(name, selector = '.mantine-Modal-content:visible,.
 }
 
 /** Only visual reads are replayed from successful isolated-local API responses. Functional tests use the live API. */
-export function recordedCatalogReads() {
+export function recordedCatalogReads(transform) {
   const file = Cypress.env('recordedCatalogFile');
   if (!file) return;
   cy.readFile(file, { log: false }).then((catalog) => {
-    for (const [type, records] of Object.entries(catalog))
+    const reviewedCatalog = transform ? transform(catalog) : catalog;
+    for (const [type, records] of Object.entries(reviewedCatalog))
       cy.intercept('POST', `**/functions/v1/find-${type}`, (req) => {
         const body = req.body ?? {};
         let rows = records;
