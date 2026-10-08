@@ -176,12 +176,8 @@ describe(`App routes ${scheme}-${Cypress.config('viewportWidth')}`, () => {
             scene.setup?.(win);
           },
         });
-      if (scene.ready)
-        cy.get('body').then(($body) => {
-          cy.contains($body.find('main').length ? 'main' : 'body', scene.ready, { timeout: 120000 }).should(
-            'be.visible'
-          );
-        });
+      // Standalone routes can replace the previous app layout after lazy loading.
+      if (scene.ready) cy.contains('body', scene.ready, { timeout: 120000 }).should('be.visible');
       if (scene.name.startsWith('builder-'))
         cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 120000 }).should('be.visible');
       if (scene.loading) {
