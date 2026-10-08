@@ -378,7 +378,8 @@ export function CreateItemModal(props: {
                 />
               </Group>
             </Group>
-            <Group wrap='nowrap' align='flex-start'>
+            {/* Keep selected rarity labels readable when traits wrap on phones. */}
+            <Group align='flex-start'>
               <Select
                 label='Rarity'
                 required
@@ -388,14 +389,15 @@ export function CreateItemModal(props: {
                   { value: 'RARE', label: 'Rare' },
                   { value: 'UNIQUE', label: 'Unique' },
                 ]}
-                w={140}
+                w={160}
+                miw={160}
                 {...form.getInputProps('rarity')}
               />
               <TraitsInput
                 label='Traits'
                 traits={traits.map((trait) => trait.id)}
                 onTraitChange={(traits) => setTraits(traits)}
-                style={{ flex: 1 }}
+                style={{ flex: '1 1 128px', minWidth: 0 }}
               />
             </Group>
             <Group wrap='nowrap'>

@@ -131,9 +131,10 @@ export function CreateBackgroundModal(props: {
         <LoadingOverlay visible={loading || isFetching} />
         <form onSubmit={form.onSubmit(onSubmit)}>
           <Stack gap={10}>
-            <Group wrap='nowrap' justify='space-between'>
-              <Group wrap='nowrap'>
-                <TextInput label='Name' required {...form.getInputProps('name')} />
+            {/* Reserve enough width for full rarity labels and wrap extra fields on phones. */}
+            <Group justify='space-between'>
+              <Group style={{ flex: '1 1 160px', minWidth: 0 }}>
+                <TextInput w='100%' label='Name' required {...form.getInputProps('name')} />
               </Group>
               <Select
                 label='Rarity'
@@ -144,7 +145,8 @@ export function CreateBackgroundModal(props: {
                   { value: 'RARE', label: 'Rare' },
                   { value: 'UNIQUE', label: 'Unique' },
                 ]}
-                w={140}
+                w={160}
+                miw={160}
                 {...form.getInputProps('rarity')}
               />
             </Group>

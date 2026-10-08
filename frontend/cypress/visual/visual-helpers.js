@@ -249,7 +249,12 @@ export function reviewPanels(
             ? 'choice-' + (el.closest('[data-ui-review-source]')?.getAttribute('data-ui-review-source') ?? 'control')
             : 'panel',
           el.closest('[data-ui-review-id]')?.getAttribute('data-ui-review-id') ?? 'control',
-          el.getAttribute('data-value') ?? el.textContent,
+          // Repeated game-content rows share one UI template; preserve every distinct control.
+          name.startsWith('navigation/') &&
+          el.classList.contains('mantine-Accordion-control') &&
+          el.closest('[data-ui-review-id]')
+            ? 'representative-content-row'
+            : (el.getAttribute('data-value') ?? el.textContent),
         ].join('-');
       const el = targets.find(
         (el) =>
@@ -307,6 +312,8 @@ export function reviewPortals(name, selector = '.mantine-Modal-content:visible,.
               cy.wrap(el, { log: false })
                 .trigger('mouseout', { relatedTarget: el.ownerDocument.body })
                 .trigger('mouseleave');
+            // Moving the real pointer outside also closes menus configured with trigger='hover'.
+            cy.get('body').click(0, 0, { force: true });
             cy.get(overlay + ':visible', { timeout: 5000 }).should('not.exist');
           });
         });
@@ -390,5 +397,29 @@ export function reviewInputs(name, selector = '.mantine-Modal-content:visible,.m
           else cy.wrap(el, { log: false }).type('{esc}', { force: true });
           cy.get('[role=listbox]:visible,.mantine-ColorInput-dropdown:visible', { timeout: 5000 }).should('not.exist');
         });
+    });
+}
+
+/** Verify the longest native rarity label without saving the local editing form. */
+export function reviewRarity(name) {
+  cy.get('.mantine-Modal-content:visible')
+    .last()
+    .then(($root) => {
+      const label = [...$root[0].querySelectorAll('label')].find((el) => /^Rarity/.test(el.textContent));
+      if (!label?.htmlFor) return;
+      cy.get('input[id="' + label.htmlFor + '"]')
+        .scrollIntoView()
+        .click();
+      cy.contains('[role=option]:visible', /^Uncommon$/).click();
+      cy.get('input[id="' + label.htmlFor + '"]').should(($input) => {
+        const input = $input[0],
+          style = getComputedStyle(input);
+        const context = input.ownerDocument.createElement('canvas').getContext('2d');
+        context.font = style.fontWeight + ' ' + style.fontSize + ' ' + style.fontFamily;
+        expect(context.measureText(input.value).width, 'full selected rarity fits').to.be.at.most(
+          input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) + 1
+        );
+      });
+      capture(name + '/rarity-uncommon');
     });
 }

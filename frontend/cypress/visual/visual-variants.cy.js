@@ -127,6 +127,20 @@ describe('Conditional editor and navigation states', { testIsolation: false }, (
     captureScrolls('spells/nested-rank');
     cy.get('.mantine-Modal-close:visible').last().click();
   });
+  review('bundle categories', () => {
+    open('editor:source-bundle');
+    cy.get('.mantine-Modal-content:visible [role=tab]').then(($tabs) => {
+      const labels = [...$tabs].map((el) => el.textContent.trim());
+      for (const label of labels) {
+        cy.contains('.mantine-Modal-content:visible [role=tab]', label).scrollIntoView().click();
+        captureScrolls('bundle-categories/' + label);
+        reviewPortals('bundle-categories/' + label, '.mantine-Modal-content:visible .mantine-Tabs-panel:visible');
+      }
+    });
+    cy.get('.mantine-Modal-content:visible')
+      .last()
+      .should(($el) => expect($el[0].scrollWidth).to.be.at.most($el[0].clientWidth + 1));
+  });
   review('creature panels', () => {
     open('scene:creature-live');
     for (const label of [

@@ -40,7 +40,7 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useDebouncedState } from '@mantine/hooks';
+import { useDebouncedState, useMediaQuery } from '@mantine/hooks';
 import { showNotification } from '@mantine/notifications';
 import { IconChevronDown, IconDatabaseImport, IconRefreshDot, IconSearch } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -63,6 +63,7 @@ import {
   VersatileHeritage,
 } from '@schemas/content';
 import { Operation } from '@schemas/operations';
+import { phoneQuery } from '@utils/mobile-responsive';
 import { pluralize, toLabel } from '@utils/strings';
 import * as JsSearch from 'js-search';
 import { useEffect, useRef, useState } from 'react';
@@ -215,10 +216,10 @@ export function ContentSourceEditor(props: {
   };
 
   return (
-    <form onSubmit={form.onSubmit(onSubmit)}>
+    <form style={{ flex: '0 1 350px', minWidth: 0, maxWidth: '100%' }} onSubmit={form.onSubmit(onSubmit)}>
       <LoadingOverlay visible={isFetching} />
       <Center maw={350}>
-        <Stack gap={10}>
+        <Stack gap={10} miw={0}>
           <Group wrap='nowrap' justify='space-between'>
             <TextInput label='Name' required {...form.getInputProps('name')} />
             <TextInput label='Contact Info' {...form.getInputProps('contact_info')} />
@@ -391,6 +392,7 @@ export function CreateContentSourceModal(props: {
   onClose: () => void;
 }) {
   const theme = useMantineTheme();
+  const isPhone = useMediaQuery(phoneQuery());
 
   const { data, isFetching, isError, refetch } = useQuery({
     queryKey: [`find-content-source-details-${props.sourceId}`],
@@ -473,8 +475,16 @@ export function CreateContentSourceModal(props: {
             }}
             onCancel={() => {}}
           />
-          <Center style={{ flex: 1 }}>
-            <Tabs w='100%' variant='outline' defaultValue='feats' orientation='vertical' keepMounted={false}>
+          {/* Content moves below the editor on narrow screens instead of stretching the dialog. */}
+          <Center style={{ flex: '1 1 500px', minWidth: 0 }}>
+            <Tabs
+              w='100%'
+              variant='outline'
+              defaultValue='feats'
+              orientation={isPhone ? 'horizontal' : 'vertical'}
+              keepMounted={false}
+              styles={{ panel: { minWidth: 0, flex: 1 } }}
+            >
               <Tabs.List>
                 <Tabs.Tab
                   value='actions'
@@ -1123,9 +1133,9 @@ function ContentList<
     <>
       <LoadingOverlay visible={loading} />
       <Stack mx='md' gap={10}>
-        <Group wrap='nowrap'>
+        <Group>
           <TextInput
-            style={{ flex: 1 }}
+            style={{ flex: '1 1 160px', minWidth: 0 }}
             leftSection={<IconSearch size='0.9rem' />}
             placeholder={`Search ${pluralize((props.abilityBlockType ?? props.type).replace('-', ' ').toLowerCase())}`}
             onChange={(event) => setSearchQuery(event.target.value)}

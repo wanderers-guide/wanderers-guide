@@ -178,3 +178,66 @@ test('secondary light controls with explicit neutral shades keep a pale fill', (
   assert.equal(Number(new api.Color(colors.hover).alpha), 0.16);
   assert.equal(colors.color, 'var(--mantine-color-text-6)');
 });
+
+/** Native filled colors must choose the readable black/white label, including indigo rarity badges. */
+test('filled light controls choose an accessible foreground across native palettes', () => {
+  const api = load();
+  for (const accent of ['#199bd4', '#ffffff', '#ffff00', '#ff5252', '#000000', '#ae3ec9']) {
+    const theme = api.mergeMantineTheme(api.DEFAULT_THEME, api.createAppTheme({ scheme: 'light', accent }));
+    for (const [name, shades] of Object.entries(theme.colors).filter(
+      ([name]) => name !== 'dark' && name !== 'text' && !name.endsWith('Ink')
+    )) {
+      for (let shade = 0; shade < shades.length; shade++) {
+        const resolved = theme.variantColorResolver({ theme, color: name + '.' + shade, variant: 'filled' });
+        const foreground = resolved.color === 'var(--mantine-color-black)' ? theme.black : theme.white;
+        assert.ok(
+          new api.Color(foreground).contrast(new api.Color(shades[shade]), 'WCAG21') >= 4.5,
+          name + '.' + shade
+        );
+        const hoverShade = shade === 9 ? 8 : shade + 1;
+        const hoverForeground = resolved.hoverColor === 'var(--mantine-color-black)' ? theme.black : theme.white;
+        assert.ok(
+          new api.Color(hoverForeground).contrast(new api.Color(shades[hoverShade]), 'WCAG21') >= 4.5,
+          name + '.' + shade + ' hover'
+        );
+      }
+    }
+  }
+});
+
+/** Stored encounter/note colors need readable secondary controls; CSS variables remain contextual. */
+test('custom light control colors stay readable without parsing contextual CSS values', () => {
+  const api = load();
+  const theme = api.mergeMantineTheme(api.DEFAULT_THEME, api.createAppTheme({ scheme: 'light' }));
+  for (const color of ['#359fdf', '#fff', '#ff00ff', 'rgb(53, 159, 223)', 'white']) {
+    for (const variant of ['light', 'subtle', 'outline', 'transparent']) {
+      const resolved = theme.variantColorResolver({ theme, color, variant });
+      assert.ok(new api.Color(resolved.color).contrast(new api.Color('rgb(190,196,204)'), 'WCAG21') >= 4.5);
+    }
+  }
+  for (const color of ['var(--custom-color)', 'currentColor'])
+    assert.doesNotThrow(() => theme.variantColorResolver({ theme, color, variant: 'light' }));
+});
+
+/** Native gradient controls retain their colors with a readable white label across the whole fill. */
+test('light gradients keep readable labels across default, native and stored custom colors', () => {
+  const api = load();
+  for (const accent of ['#199bd4', '#ffffff', '#ffff00', '#ff5252', '#000000', '#ae3ec9']) {
+    const theme = api.mergeMantineTheme(api.DEFAULT_THEME, api.createAppTheme({ scheme: 'light', accent }));
+    for (const gradient of [
+      undefined,
+      { from: 'green', to: 'guide' },
+      { from: 'guide', to: 'teal' },
+      { from: '#359fdf', to: '#fab005' },
+    ]) {
+      const resolved = theme.variantColorResolver({ theme, color: 'guide', variant: 'gradient', gradient });
+      const colors = [...resolved.background.matchAll(/rgb\([^)]+\)/g)].map((match) => new api.Color(match[0]));
+      assert.equal(colors.length, 2);
+      for (let step = 0; step <= 100; step++) {
+        const value = colors[0].mix(colors[1], step / 100, { space: 'srgb' });
+        assert.ok(value.contrast(new api.Color(theme.white), 'WCAG21') >= 4.5, 'gradient label contrast');
+      }
+      assert.equal(resolved.hover, resolved.background);
+    }
+  }
+});

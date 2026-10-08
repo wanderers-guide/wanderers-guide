@@ -142,7 +142,14 @@ const cases = [
 const scheme = Cypress.env('reviewScheme') ?? 'light';
 const width = Cypress.config('viewportWidth');
 const prefix = `${scheme}-${width}`;
-import { captureScrolls, reviewPanels, reviewPortals, reviewInputs, recordedCatalogReads } from './visual-helpers.js';
+import {
+  captureScrolls,
+  reviewPanels,
+  reviewPortals,
+  reviewInputs,
+  reviewRarity,
+  recordedCatalogReads,
+} from './visual-helpers.js';
 describe(`Actual app surfaces ${prefix}`, { testIsolation: false }, () => {
   before(() => {
     recordedCatalogReads();
@@ -201,6 +208,7 @@ describe(`Actual app surfaces ${prefix}`, { testIsolation: false }, () => {
       const label = name.replaceAll(':', '-');
       captureScrolls(label);
       if (Cypress.env('reviewInputs')) reviewInputs(label);
+      if (name.startsWith('editor:')) reviewRarity(label);
       if (Cypress.env('reviewInteractions')) {
         reviewPanels(label);
         reviewPortals(label);

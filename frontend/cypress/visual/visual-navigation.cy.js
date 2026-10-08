@@ -1,4 +1,11 @@
-import { capture, captureScrolls, reviewPanels, reviewPortals, recordedCatalogReads } from './visual-helpers.js';
+import {
+  capture,
+  captureScrolls,
+  reviewPanels,
+  reviewPortals,
+  recordedCatalogReads,
+  settled,
+} from './visual-helpers.js';
 const accounts = Cypress.env('fixtureAccounts'),
   scenes = Cypress.env('fixtureScenes'),
   scheme = Cypress.env('reviewScheme') ?? 'light';
@@ -11,6 +18,19 @@ function login(role, url, siteTheme) {
   // Exercise the existing local dice fallback without creating an external room.
   cy.intercept('https://api.dddice.com/**', { statusCode: 503, body: {} });
   const actor = accounts[role];
+  cy.session(['visual-navigation', role, scheme], () => {
+    cy.intercept('POST', '**/auth/v1/token*').as('reviewSignIn');
+    cy.visit('/login?redirect=characters', {
+      onBeforeLoad(win) {
+        win.localStorage.setItem('wg-color-scheme', JSON.stringify(scheme));
+      },
+    });
+    cy.get('input[name=email]:visible').type(actor.email, { log: false });
+    cy.get('input[name=password]:visible').type(actor.password, { log: false });
+    cy.contains('button', 'Sign in with Email').click();
+    cy.wait('@reviewSignIn', { timeout: 120000 }).its('response.statusCode').should('eq', 200);
+    cy.location('pathname', { timeout: 30000 }).should('eq', '/characters');
+  });
   cy.intercept('POST', '**/functions/v1/get-user', (req) => {
     if (!req.body.id || req.body.id === actor.userId)
       req.reply({
@@ -18,18 +38,14 @@ function login(role, url, siteTheme) {
         data: { ...actor.profile, ...(siteTheme ? { site_theme: { ...actor.profile.site_theme, ...siteTheme } } : {}) },
       });
     else req.continue();
-  });
-  cy.intercept('POST', '**/auth/v1/token*').as('reviewSignIn');
-  cy.visit('/login?redirect=characters', {
+  }).as('navigationProfile');
+  cy.visit('/', {
     onBeforeLoad(win) {
       win.localStorage.setItem('wg-color-scheme', JSON.stringify(scheme));
     },
   });
-  cy.get('input[name=email]:visible').type(actor.email, { log: false });
-  cy.get('input[name=password]:visible').type(actor.password, { log: false });
-  cy.contains('button', 'Sign in with Email').click();
-  cy.wait('@reviewSignIn', { timeout: 120000 }).its('response.statusCode').should('eq', 200);
-  cy.location('pathname', { timeout: 30000 }).should('eq', '/characters');
+  // Enter protected routes only after the restored local session has loaded its display profile.
+  cy.wait('@navigationProfile', { timeout: 120000 }).its('response.statusCode').should('eq', 200);
   cy.window().then((win) => {
     win.history.pushState({}, '', url);
     win.dispatchEvent(new win.PopStateEvent('popstate'));
@@ -40,16 +56,17 @@ function panel(label, name) {
     cy.get('[aria-label="Panel Grid"]:visible').last().click();
     capture(name + '/grid');
     cy.contains('.mantine-Popover-dropdown:visible button', label).click();
-  } else
+  } else {
+    cy.get('[role=tab]:visible', { timeout: 30000 }).should('exist');
     cy.get('body').then(($body) => {
       const tabs = $body.find('[role=tab]:visible').toArray();
-      if (tabs.some((el) => el.textContent.trim() === label))
-        cy.contains('[role=tab]:visible', new RegExp('^' + label + '$')).click();
+      if (tabs.some((el) => el.textContent.includes(label))) cy.contains('[role=tab]:visible', label).click();
       else {
         cy.get('[aria-label="Tab Options"]:visible').trigger('mouseover').trigger('mouseenter');
-        cy.contains('.mantine-Menu-item:visible', new RegExp('^' + label + '$')).click();
+        cy.contains('.mantine-Menu-item:visible', label).click();
       }
     });
+  }
   captureScrolls(name, 'body');
   cy.get('body').then(($body) => {
     reviewPanels(name, $body.find('.mantine-Tabs-panel:visible').length ? '.mantine-Tabs-panel:visible' : 'body');
@@ -72,6 +89,11 @@ describe('Actual navigation and populated panels', () => {
       login('owner', '/account', siteTheme);
       cy.contains('main', 'Appearance', { timeout: 120000 }).should('be.visible');
       cy.contains('button', /^Appearance$/).click();
+      for (const label of ['Characters', 'Bundles', 'Campaigns'])
+        cy.contains('main', label)
+          .parent()
+          .should(($box) => expect($box.text()).to.match(/\d/));
+      settled('main');
       captureScrolls('navigation/appearance/' + name, 'main');
       cy.document().then((doc) =>
         expect(doc.documentElement.scrollWidth, 'appearance variant fits viewport').to.be.at.most(
@@ -206,6 +228,7 @@ describe('Actual navigation and populated panels', () => {
   review('header navigation and global search', () => {
     login('owner', '/characters');
     cy.contains('main', 'Characters', { timeout: 120000 }).should('be.visible');
+    settled('main');
     if (phone) {
       cy.get('.mantine-Burger-root:visible').click();
       capture('navigation/header/mobile-menu');

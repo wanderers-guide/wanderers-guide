@@ -2,6 +2,10 @@ import {
   createTheme,
   DEFAULT_THEME,
   defaultVariantColorsResolver,
+  darken,
+  getContrastColor,
+  getGradient,
+  getPrimaryShade,
   parseThemeColor,
   rgba,
   v8CssVariablesResolver,
@@ -130,16 +134,60 @@ export function createAppTheme({
     cursorType: 'pointer',
     primaryColor: 'guide',
     autoContrast: scheme === 'light',
-    luminanceThreshold: scheme === 'light' ? 0.2 : DEFAULT_THEME.luminanceThreshold,
+    // Choose the higher-contrast black/white foreground for native filled controls.
+    luminanceThreshold: scheme === 'light' ? 0.179 : DEFAULT_THEME.luminanceThreshold,
     variantColorResolver: (input) => {
       const resolved = defaultVariantColorsResolver(input);
-      if (scheme !== 'light' || !['light', 'subtle', 'outline', 'transparent'].includes(input.variant)) return resolved;
+      if (scheme !== 'light') return resolved;
       const parsed = parseThemeColor({
         color: input.color ?? input.theme.primaryColor,
         theme: input.theme,
         colorScheme: 'light',
       });
-      if (!parsed.isThemeColor) return resolved;
+      // Resolve stored custom colors as well as theme colors, leaving contextual CSS variables native.
+      const concreteColor = (color: string): string | undefined => {
+        const value = parseThemeColor({ color, theme: input.theme, colorScheme: 'light' });
+        if (
+          value.isThemeColor ||
+          ['white', 'black', 'bright', 'dimmed'].includes(value.color) ||
+          /^#(?:[\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i.test(value.value) ||
+          /^(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(/i.test(value.value)
+        )
+          return value.value;
+        return undefined;
+      };
+      if (input.variant === 'gradient') {
+        const from = concreteColor(input.gradient?.from || input.theme.defaultGradient.from);
+        const to = concreteColor(input.gradient?.to || input.theme.defaultGradient.to);
+        if (!from || !to) return resolved;
+        const background = getGradient(
+          {
+            ...input.gradient,
+            from: readableLightColor(from, input.theme.white),
+            to: readableLightColor(to, input.theme.white),
+          },
+          input.theme
+        );
+        return { ...resolved, background, hover: background };
+      }
+      if (input.variant === 'filled') {
+        // Native buttons change the fill on hover, so choose its label independently.
+        const shade = parsed.shade ?? getPrimaryShade(input.theme, 'light');
+        const hover = parsed.isThemeColor
+          ? input.theme.colors[parsed.color][shade === 9 ? 8 : shade + 1]
+          : darken(parsed.value, 0.1);
+        return {
+          ...resolved,
+          hoverColor: getContrastColor({ color: hover, theme: input.theme, autoContrast: input.autoContrast }),
+        };
+      }
+      if (!['light', 'subtle', 'outline', 'transparent'].includes(input.variant)) return resolved;
+      if (!parsed.isThemeColor) {
+        const value = concreteColor(parsed.value);
+        if (!value) return resolved;
+        const foreground = readableLightColor(value);
+        return { ...resolved, color: foreground, hoverColor: foreground };
+      }
       const role = parsed.color === 'gray' ? 'text' : parsed.color === 'dark' ? 'darkInk' : parsed.color + 'Ink';
       if (!input.theme.colors[role]) return resolved;
       const foreground = 'var(--mantine-color-' + role + '-' + (parsed.shade ?? 6) + ')';

@@ -18,7 +18,7 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import { useDisclosure, useMediaQuery, useViewportSize } from '@mantine/hooks';
+import { useDisclosure, useMediaQuery, useResizeObserver, useViewportSize } from '@mantine/hooks';
 import {
   IconAsset,
   IconBook,
@@ -57,6 +57,9 @@ export default function Layout(props: { children: React.ReactNode }) {
   const [userMenuOpened, setUserMenuOpened] = useState(false);
 
   const { width } = useViewportSize();
+  // ResizeObserver reports logical width after the viewer's existing UI zoom.
+  const [headerRef, headerRect] = useResizeObserver<HTMLDivElement>();
+  const headerWidth = headerRect.width || width;
 
   useEffect(() => {
     if (!session) return;
@@ -93,12 +96,12 @@ export default function Layout(props: { children: React.ReactNode }) {
           borderRadius: 0,
         }}
       >
-        <Group h='100%' px='md' wrap='nowrap'>
+        <Group ref={headerRef} h='100%' px='md' wrap='nowrap'>
           <Burger opened={opened} onClick={toggle} hiddenFrom='md' size='sm' />
-          <Group style={{ flex: 1 }}>
+          <Group style={{ flex: 1, minWidth: 0 }} wrap='nowrap'>
             <WanderersGuideLogo size={30} />
             <Group gap={0} style={{ flex: 1 }} visibleFrom='md' justify='space-between' wrap='nowrap'>
-              {width >= 1050 ? (
+              {headerWidth >= 1050 ? (
                 <Group gap={0} wrap='nowrap'>
                   <UnstyledButton
                     component='a'
@@ -134,7 +137,7 @@ export default function Layout(props: { children: React.ReactNode }) {
               ) : (
                 <Box></Box>
               )}
-              <Group>
+              <Group wrap='nowrap'>
                 <SearchBar />
 
                 {!session ? (

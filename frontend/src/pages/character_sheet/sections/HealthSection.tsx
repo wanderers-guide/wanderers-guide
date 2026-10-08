@@ -116,7 +116,7 @@ export default function HealthSection(props: {
                 Temp. HP
               </Text>
               <ClickEditText
-                color={tempHealth ? `blue` : `gray.5`}
+                color={tempHealth ? 'blueInk' : 'text.5'}
                 size='xl'
                 value={tempHealth ? `${tempHealth}` : `—`}
                 height={50}

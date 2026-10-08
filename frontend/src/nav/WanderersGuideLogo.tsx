@@ -34,9 +34,10 @@ export default function WanderersGuideLogo(props: { size: number }) {
   }, [color]);
 
   return (
-    <Group gap={5} wrap='nowrap'>
+    <Group gap={5} wrap='nowrap' miw={0}>
       <LogoIcon color={color} size={props.size} />
       <Image
+        miw={0}
         radius='md'
         h={props.size}
         w={5.6 * props.size} // Maintain aspect ratio of original logo
