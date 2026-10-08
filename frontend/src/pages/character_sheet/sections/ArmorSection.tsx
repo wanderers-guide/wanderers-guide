@@ -105,10 +105,10 @@ export default function ArmorSection(props: {
                   transform: 'translate(-50%, -50%)',
                 }}
               >
-                <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.1em'>
+                <Text ta='center' fz='lg' c='text.0' fw={500} lh='1.1em'>
                   {displayFinalAcValue(props.id, bestArmor?.item)}
                 </Text>
-                <Text ta='center' c='gray.2' fz='xs'>
+                <Text ta='center' c='text.2' fz='xs'>
                   AC
                 </Text>
               </Stack>
@@ -150,7 +150,7 @@ export default function ArmorSection(props: {
                       transform: 'translate(-50%, -50%)',
                     }}
                   >
-                    <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.1em' pr={5}>
+                    <Text ta='center' fz='lg' c='text.0' fw={500} lh='1.1em' pr={5}>
                       {sign(bestShield.item.meta_data?.ac_bonus ?? 0)}
                     </Text>
                     <Text ta='center' fz={8} style={{ whiteSpace: 'nowrap' }}>
@@ -187,7 +187,7 @@ export default function ArmorSection(props: {
                   radius='xl'
                   size='compact-xs'
                   fw={400}
-                  c='gray.0'
+                  c='text.0'
                   noBorder
                   style={{
                     flex: 1,
@@ -204,7 +204,7 @@ export default function ArmorSection(props: {
                   noBorder
                   onClick={() => handleSaveOpen(save)}
                 >
-                  <Text c='gray.0' fz='xs' pr={15}>
+                  <Text c='text.0' fz='xs' pr={15}>
                     {displayFinalProfValue(props.id, save.name)}
                   </Text>
                   <Badge
@@ -219,7 +219,7 @@ export default function ArmorSection(props: {
                       transform: 'translate(-50%, -50%)',
                     }}
                   >
-                    <Text c='gray.0' fz={8}>
+                    <Text c='text.0' fz={8}>
                       {compileProficiencyType(save?.value)}
                     </Text>
                   </Badge>

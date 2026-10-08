@@ -9,8 +9,9 @@ interface ImprintButtonProps extends ButtonProps {
   noBorder?: boolean;
 }
 
+/** Quiet inset action with readable foreground in both glass themes. */
 const ImprintButton = forwardRef<HTMLButtonElement, ImprintButtonProps>((props, forwardedRef) => {
-  const { multiplier = 1, href, ...rest } = props;
+  const { multiplier = 1, href, noBorder, ...rest } = props;
   const { hovered, ref: hoverRef } = useHover();
   const ref = useMergedRef(hoverRef, forwardedRef);
 
@@ -22,11 +23,12 @@ const ImprintButton = forwardRef<HTMLButtonElement, ImprintButtonProps>((props, 
     <Button
       ref={ref}
       {...(href ? { component: 'a' as const, href } : {})}
+      c='var(--imprint-button-text-color)'
       onClick={rest.onClick}
       {...rest}
       bg={bgColor}
       style={{
-        border: props.noBorder ? 'none' : `1px solid var(--imprint-border-color)`,
+        border: noBorder ? 'none' : `1px solid var(--imprint-border-color)`,
         ...rest.style,
       }}
     >

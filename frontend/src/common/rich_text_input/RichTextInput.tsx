@@ -87,10 +87,10 @@ export default function RichTextInput(props: RichTextInputProps) {
   return (
     <Box>
       {props.label && (
-        <Text fz='sm' c='gray.4' fw={500}>
+        <Text fz='sm' c='text.4' fw={500}>
           {props.label}{' '}
           {props.required && (
-            <Text fz='sm' fw={500} c='red' span>
+            <Text fz='sm' fw={500} c='redInk' span>
               *
             </Text>
           )}
@@ -109,7 +109,9 @@ export default function RichTextInput(props: RichTextInputProps) {
             borderTopLeftRadius: 0,
             borderTopRightRadius: 0,
             display: 'flex',
-            '--rich-text-editor-max-height': props.maxHeight ? `${props.maxHeight - (props.readOnly ? 0 : 50)}px` : undefined,
+            '--rich-text-editor-max-height': props.maxHeight
+              ? `${props.maxHeight - (props.readOnly ? 0 : 50)}px`
+              : undefined,
             '--rich-text-editor-height': props.height ? `${props.height - (props.readOnly ? 0 : 50)}px` : undefined,
           },
         }}

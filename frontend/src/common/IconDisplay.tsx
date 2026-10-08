@@ -21,6 +21,7 @@ import { GUIDE_BLUE } from '@constants/data';
 import { usePrevious } from '@mantine/hooks';
 import useRefresh from '@utils/use-refresh';
 
+/** Edit artwork or an icon with color controls that expand naturally when they wrap. */
 export function SelectIcon(props: {
   strValue: string;
   setValue: (
@@ -52,7 +53,7 @@ export function SelectIcon(props: {
   }, [props.strValue]);
 
   return (
-    <Group h={65} align='flex-start'>
+    <Group mih={65} align='flex-start'>
       {displaySegmented && !props.iconOnly && (
         <SegmentedControl
           defaultValue={iconValue.type}
@@ -76,7 +77,7 @@ export function SelectIcon(props: {
           <TextInput
             defaultValue={iconValue.value}
             label={
-              <Text fz='xs' c='gray.4'>
+              <Text fz='xs' c='text.4'>
                 Image URL
               </Text>
             }
@@ -95,7 +96,7 @@ export function SelectIcon(props: {
       {iconValue.type === 'icon' && (
         <Group wrap='nowrap' align='flex-start' pt={2}>
           <Box pt={4}>
-            <Text fz='xs' c='gray.2'>
+            <Text fz='xs' c='text.2'>
               Icon
             </Text>
             <UnstyledButton
@@ -103,7 +104,14 @@ export function SelectIcon(props: {
                 setOpenedModal(true);
               }}
             >
-              <ActionIcon variant='light' aria-label='Icon' size='lg' radius='xl' color={iconValue.color}>
+              <ActionIcon
+                component='span'
+                variant='light'
+                aria-label='Icon'
+                size='lg'
+                radius='xl'
+                color={iconValue.color}
+              >
                 <Icon name={iconValue.value} style={{ width: '70%', height: '70%' }} stroke={1.5} />
               </ActionIcon>
             </UnstyledButton>
@@ -114,7 +122,7 @@ export function SelectIcon(props: {
             radius='xl'
             size='xs'
             label={
-              <Text fz='xs' c='gray.2'>
+              <Text fz='xs' c='text.2'>
                 Color
               </Text>
             }

@@ -276,10 +276,17 @@ export default function RichText(props: RichTextProps) {
         },
         table(innerProps) {
           const { children, className } = innerProps;
+          // Keep intrinsic table width inside its scroller, including Mantine ScrollArea's table layout.
           return (
-            <Table striped withTableBorder className={className}>
-              {children}
-            </Table>
+            <Table.ScrollContainer
+              minWidth={0}
+              type='native'
+              style={{ maxWidth: '100%', minWidth: 0, contain: 'inline-size' }}
+            >
+              <Table striped withTableBorder className={className}>
+                {children}
+              </Table>
+            </Table.ScrollContainer>
           );
         },
         thead(innerProps) {

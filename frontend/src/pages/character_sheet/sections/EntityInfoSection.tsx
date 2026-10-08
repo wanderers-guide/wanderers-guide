@@ -148,7 +148,7 @@ export default function EntityInfoSection(props: {
             </Stack>
             <Stack gap={0}>
               <Box maw={80}>
-                <Text fz='xs' ta='center' c='gray.2'>
+                <Text fz='xs' ta='center' c='text.2'>
                   Lvl. {props.entity ? getEntityLevel(props.entity) : '?'}
                 </Text>
               </Box>

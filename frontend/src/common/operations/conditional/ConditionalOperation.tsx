@@ -150,7 +150,7 @@ export default function ConditionalOperation(props: {
                   title={
                     <Group gap={8} wrap='nowrap'>
                       <IconCaretRightFilled size='1.1rem' />
-                      <Text fz='sm' c='gray.0'>
+                      <Text fz='sm' c='text.0'>
                         If
                       </Text>
                       <Badge
@@ -183,7 +183,7 @@ export default function ConditionalOperation(props: {
                   title={
                     <Group gap={8} wrap='nowrap'>
                       <IconCaretRightFilled size='1.1rem' />
-                      <Text fz='sm' c='gray.0'>
+                      <Text fz='sm' c='text.0'>
                         If
                       </Text>
                       <Badge

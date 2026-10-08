@@ -125,11 +125,11 @@ function StatSpeedSection(props: {
     <Accordion.Item value={variable.name}>
       <Accordion.Control>
         <Group wrap='nowrap' justify='space-between' gap={0}>
-          <Text c='gray.2' fw={700} fz='sm'>
+          <Text c='text.2' fw={700} fz='sm'>
             {variable.name === 'SPEED' ? `Normal` : `${toLabel(variable.name)}`}
           </Text>
           <Box mr='sm'>
-            <Text fz='md' c='gray.4' fw={600} span>
+            <Text fz='md' c='text.4' fw={600} span>
               {finalData.total} feet
             </Text>
           </Box>
@@ -150,7 +150,7 @@ function StatSpeedSection(props: {
                           <Kbd style={{ cursor: 'pointer' }}>{finalData.value}</Kbd>
                         </HoverCard.Target>
                         <HoverCard.Dropdown py={5} px={10}>
-                          <Text c='gray.0' size='xs'>
+                          <Text c='text.0' size='xs'>
                             This is your base value in the speed.
                           </Text>
                         </HoverCard.Dropdown>
@@ -164,7 +164,7 @@ function StatSpeedSection(props: {
                             <Kbd style={{ cursor: 'pointer' }}>{bonus.value}</Kbd>
                           </HoverCard.Target>
                           <HoverCard.Dropdown py={5} px={10}>
-                            <Text c='gray.0' size='xs'>
+                            <Text c='text.0' size='xs'>
                               {key.startsWith('untyped ')
                                 ? `Additional untyped modifiers:`
                                 : `Your ${key}. Use the greatest from the following:`}
@@ -190,12 +190,12 @@ function StatSpeedSection(props: {
                         +
                         <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
                           <HoverCard.Target>
-                            <Kbd style={{ cursor: 'pointer' }} c='guide.5'>
+                            <Kbd style={{ cursor: 'pointer' }} c='guideInk.5'>
                               *
                             </Kbd>
                           </HoverCard.Target>
                           <HoverCard.Dropdown py={5} px={10}>
-                            <Text c='gray.0' size='xs'>
+                            <Text c='text.0' size='xs'>
                               You have some conditionals! These will only apply situationally:
                               <Divider pb={5} />
                               <List size='xs'>

@@ -63,7 +63,7 @@ export function Component() {
               height={200}
               width={300}
               style={{
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                backgroundColor: 'var(--art-control-bg-color)',
               }}
             />
           </Box>
@@ -74,21 +74,21 @@ export function Component() {
             description='The official up-to-date, online resource and compendium for Pathfinder and Starfinder.'
             iconSize={50}
             url='https://2e.aonprd.com/'
-            iconURL='https://i.imgur.com/GH6MDmW.png'
+            iconURL='/partners/archives-of-nethys.png'
           />
           <UnderSection
             title='Paizo Inc.'
             description='The creators of Pathfinder and Starfinder. Please support them by purchasing your own rulebooks.'
             iconSize={50}
             url='https://paizo.com/'
-            iconURL='https://i.imgur.com/H0eCdBX.png'
+            iconURL='/partners/paizo.png'
           />
           <UnderSection
             title='Discord'
             description='Join the community on Discord to chat with other players and ask questions.'
             iconSize={40}
             url={DISCORD_URL}
-            iconURL='https://i.imgur.com/qE8Q9xv.jpg'
+            iconURL='/partners/discord.jpg'
           />
         </SimpleGrid>
       </Stack>
@@ -139,7 +139,7 @@ function UnderSection(props: { title: string; description: string; url: string; 
           onClick={() => window.open(props.url, '_blank')}
         />
         <Stack gap={5}>
-          <Anchor ta='center' c='gray.0' fz='lg' fw={500} target='_blank' href={props.url}>
+          <Anchor ta='center' c='text.0' fz='lg' fw={500} target='_blank' href={props.url}>
             <span style={{ position: 'relative' }}>
               {props.title}
               <ActionIcon

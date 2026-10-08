@@ -3,5 +3,5 @@
 }
 
 .icon {
-  color: light-dark(var(--mantine-color-red-6), var(--mantine-color-red-7));
+  color: light-dark(var(--mantine-color-redInk-6), var(--mantine-color-red-7));
 }

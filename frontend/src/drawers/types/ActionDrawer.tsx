@@ -129,7 +129,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
         </Box>
         {action.prerequisites && action.prerequisites.length > 0 && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Prerequisites
             </Text>{' '}
             {action.prerequisites.join(', ')}
@@ -137,7 +137,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
         )}
         {action.frequency && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Frequency
             </Text>{' '}
             {action.frequency}
@@ -145,7 +145,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
         )}
         {action.trigger && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Trigger
             </Text>{' '}
             {action.trigger}
@@ -153,7 +153,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
         )}
         {action.cost && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Cost
             </Text>{' '}
             {action.cost}
@@ -161,7 +161,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
         )}
         {action.requirements && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Requirements
             </Text>{' '}
             <RichText span>{action.requirements}</RichText>
@@ -169,7 +169,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
         )}
         {action.access && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Access
             </Text>{' '}
             {action.access}
@@ -179,7 +179,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
         <RichText ta='justify'>{action.description}</RichText>
         {action.special && (
           <Text ta='justify' style={{ textIndent: TEXT_INDENT_AMOUNT }}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Special
             </Text>{' '}
             <RichText span>{action.special}</RichText>

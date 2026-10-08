@@ -14,7 +14,11 @@ dist
 .idea
 .DS_Store
 
-cypress
+cypress/*
+!cypress/visual
+cypress/visual/*
+!cypress/visual/*.ts
+!cypress/visual/*.tsx
 coverage
 *.log
 

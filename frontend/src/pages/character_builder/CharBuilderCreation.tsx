@@ -531,12 +531,12 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             }}
           >
             <Box>
-              <Text c='gray.0' fz='sm'>
+              <Text c='text.0' fz='sm'>
                 Hit Points
               </Text>
             </Box>
             <Box>
-              <Text c='gray.0'>{displayFinalHealthValue('CHARACTER')}</Text>
+              <Text c='text.0'>{displayFinalHealthValue('CHARACTER')}</Text>
             </Box>
           </StatButton>
           <StatButton
@@ -548,12 +548,12 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             }}
           >
             <Box>
-              <Text c='gray.0' fz='sm'>
+              <Text c='text.0' fz='sm'>
                 Class DC
               </Text>
             </Box>
             <Group>
-              <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'CLASS_DC', true)}</Text>
+              <Text c='text.0'>{displayFinalProfValue('CHARACTER', 'CLASS_DC', true)}</Text>
               <Badge variant='default'>
                 {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'CLASS_DC')?.value)}
               </Badge>
@@ -568,12 +568,12 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             }}
           >
             <Box>
-              <Text c='gray.0' fz='sm'>
+              <Text c='text.0' fz='sm'>
                 Perception
               </Text>
             </Box>
             <Group>
-              <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'PERCEPTION')}</Text>
+              <Text c='text.0'>{displayFinalProfValue('CHARACTER', 'PERCEPTION')}</Text>
               <Badge variant='default'>
                 {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'PERCEPTION')?.value)}
               </Badge>
@@ -598,7 +598,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
           >
             <Accordion.Item className={classes.item} value={'skills'}>
               <Accordion.Control>
-                <Text c='white' fz='sm'>
+                <Text c='var(--bright-text-color)' fz='sm'>
                   Skills
                 </Text>
               </Accordion.Control>
@@ -617,12 +617,12 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                         }}
                       >
                         <Box>
-                          <Text c='gray.0' fz='sm'>
+                          <Text c='text.0' fz='sm'>
                             {truncate(variableToLabel(skill), { length: 15 })}
                           </Text>
                         </Box>
                         <Group wrap='nowrap'>
-                          <Text c='gray.0'>{displayFinalProfValue('CHARACTER', skill.name)}</Text>
+                          <Text c='text.0'>{displayFinalProfValue('CHARACTER', skill.name)}</Text>
                           <Badge variant='default'>{compileProficiencyType(skill?.value)}</Badge>
                         </Group>
                       </StatButton>
@@ -632,7 +632,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             </Accordion.Item>
             <Accordion.Item className={classes.item} value={'saves'}>
               <Accordion.Control>
-                <Text c='white' fz='sm'>
+                <Text c='var(--bright-text-color)' fz='sm'>
                   Saves
                 </Text>
               </Accordion.Control>
@@ -647,12 +647,12 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c='text.0' fz='sm'>
                         Fortitude
                       </Text>
                     </Box>
                     <Group>
-                      <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SAVE_FORT')}</Text>
+                      <Text c='text.0'>{displayFinalProfValue('CHARACTER', 'SAVE_FORT')}</Text>
                       <Badge variant='default'>
                         {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SAVE_FORT')?.value)}
                       </Badge>
@@ -667,12 +667,12 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c='text.0' fz='sm'>
                         Reflex
                       </Text>
                     </Box>
                     <Group>
-                      <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SAVE_REFLEX')}</Text>
+                      <Text c='text.0'>{displayFinalProfValue('CHARACTER', 'SAVE_REFLEX')}</Text>
                       <Badge variant='default'>
                         {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SAVE_REFLEX')?.value)}
                       </Badge>
@@ -687,12 +687,12 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c='text.0' fz='sm'>
                         Will
                       </Text>
                     </Box>
                     <Group>
-                      <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SAVE_WILL')}</Text>
+                      <Text c='text.0'>{displayFinalProfValue('CHARACTER', 'SAVE_WILL')}</Text>
                       <Badge variant='default'>
                         {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SAVE_WILL')?.value)}
                       </Badge>
@@ -703,7 +703,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             </Accordion.Item>
             <Accordion.Item className={classes.item} value={'attacks'}>
               <Accordion.Control>
-                <Text c='white' fz='sm'>
+                <Text c='var(--bright-text-color)' fz='sm'>
                   Attacks
                 </Text>
               </Accordion.Control>
@@ -718,7 +718,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c='text.0' fz='sm'>
                         Simple Weapons
                       </Text>
                     </Box>
@@ -737,7 +737,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c='text.0' fz='sm'>
                         Martial Weapons
                       </Text>
                     </Box>
@@ -756,7 +756,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c='text.0' fz='sm'>
                         Advanced Weapons
                       </Text>
                     </Box>
@@ -775,7 +775,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c='text.0' fz='sm'>
                         Unarmed Attacks
                       </Text>
                     </Box>
@@ -790,7 +790,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             </Accordion.Item>
             <Accordion.Item className={classes.item} value={'defenses'}>
               <Accordion.Control>
-                <Text c='white' fz='sm'>
+                <Text c='var(--bright-text-color)' fz='sm'>
                   Defenses
                 </Text>
               </Accordion.Control>
@@ -805,7 +805,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c='text.0' fz='sm'>
                         Light Armor
                       </Text>
                     </Box>
@@ -824,7 +824,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c='text.0' fz='sm'>
                         Medium Armor
                       </Text>
                     </Box>
@@ -843,7 +843,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c='text.0' fz='sm'>
                         Heavy Armor
                       </Text>
                     </Box>
@@ -862,7 +862,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c='text.0' fz='sm'>
                         Unarmored Defense
                       </Text>
                     </Box>
@@ -877,7 +877,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             </Accordion.Item>
             <Accordion.Item className={classes.item} value={'spellcasting'}>
               <Accordion.Control>
-                <Text c='white' fz='sm'>
+                <Text c='var(--bright-text-color)' fz='sm'>
                   Spellcasting
                 </Text>
               </Accordion.Control>
@@ -892,12 +892,12 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c='text.0' fz='sm'>
                         Spell Attack
                       </Text>
                     </Box>
                     <Group>
-                      <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_ATTACK')}</Text>
+                      <Text c='text.0'>{displayFinalProfValue('CHARACTER', 'SPELL_ATTACK')}</Text>
                       <Badge variant='default'>
                         {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SPELL_ATTACK')?.value)}
                       </Badge>
@@ -912,12 +912,12 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c='text.0' fz='sm'>
                         Spell DC
                       </Text>
                     </Box>
                     <Group>
-                      <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_DC', true)}</Text>
+                      <Text c='text.0'>{displayFinalProfValue('CHARACTER', 'SPELL_DC', true)}</Text>
                       <Badge variant='default'>
                         {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SPELL_DC')?.value)}
                       </Badge>
@@ -928,7 +928,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             </Accordion.Item>
             <Accordion.Item className={classes.item} value={'languages'}>
               <Accordion.Control>
-                <Text c='white' fz='sm'>
+                <Text c='var(--bright-text-color)' fz='sm'>
                   Languages
                 </Text>
               </Accordion.Control>
@@ -945,7 +945,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                       }}
                     >
                       <Box>
-                        <Text c='gray.0' fz='sm'>
+                        <Text c='text.0' fz='sm'>
                           {props.content.languages.find((lang) => lang.id === parseInt(languageId))?.name}
                         </Text>
                       </Box>
@@ -957,7 +957,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             </Accordion.Item>
             <Accordion.Item className={classes.item} value={'resist-weaks'}>
               <Accordion.Control>
-                <Text c='white' fz='sm'>
+                <Text c='var(--bright-text-color)' fz='sm'>
                   Resist & Weaks
                 </Text>
               </Accordion.Control>
@@ -971,7 +971,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                       }}
                     >
                       <Box>
-                        <Text c='gray.0' fz='sm'>
+                        <Text c='text.0' fz='sm'>
                           {displayResistWeak('CHARACTER', opt)}
                         </Text>
                       </Box>
@@ -997,7 +997,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                       }}
                     >
                       <Box>
-                        <Text c='gray.0' fz='sm'>
+                        <Text c='text.0' fz='sm'>
                           {displayResistWeak('CHARACTER', opt)}
                         </Text>
                       </Box>
@@ -1023,7 +1023,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                       }}
                     >
                       <Box>
-                        <Text c='gray.0' fz='sm'>
+                        <Text c='text.0' fz='sm'>
                           {displayResistWeak('CHARACTER', opt)}
                         </Text>
                       </Box>
@@ -1062,12 +1062,12 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
 function AttributeModPart(props: { attribute: string; variableName: string }) {
   return (
     <Box>
-      <Text c='gray.0' ta='center' fz={11}>
+      <Text c='text.0' ta='center' fz={11}>
         {props.attribute}
       </Text>
-      <Text c='gray.0' ta='center'>
+      <Text c='text.0' ta='center'>
         {displayAttributeValue('CHARACTER', props.variableName, {
-          c: 'gray.0',
+          c: 'text.0',
           ta: 'center',
         })}
       </Text>
@@ -1165,7 +1165,7 @@ function LevelSection(props: {
   ) {
     if (props.level === 0) {
       return (
-        <Text fz='sm' mt={10} ta='center' c='gray.2' fs='italic'>
+        <Text fz='sm' mt={10} ta='center' c='text.2' fs='italic'>
           Select an ancestry, background, and class to get started.
         </Text>
       );
@@ -1185,7 +1185,7 @@ function LevelSection(props: {
     >
       <Accordion.Control>
         <Group wrap='nowrap' justify='space-between' gap={0}>
-          <Text c='gray.2' fw={700} fz='sm'>
+          <Text c='text.2' fw={700} fz='sm'>
             {props.level === 0 ? (
               <>
                 Initial Stats{' '}
@@ -1201,13 +1201,13 @@ function LevelSection(props: {
             <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
               <Text
                 fz='sm'
-                c={choiceCounts.current === choiceCounts.max ? 'gray.5' : theme.colors[theme.primaryColor][5]}
+                c={choiceCounts.current === choiceCounts.max ? 'text.5' : 'guideInk.5'}
                 fw={choiceCounts.current === choiceCounts.max ? undefined : 600}
                 span
               >
                 {choiceCounts.current}
               </Text>
-              <Text fz='sm' c='gray.2' span>
+              <Text fz='sm' c='text.2' span>
                 /{choiceCounts.max}
               </Text>
             </Badge>
@@ -2108,7 +2108,7 @@ function CustomAccordionItem(props: {
           }}
         />
         {selections.length === 0 && (
-          <Text c='gray.6' fz='sm' ta='center' fs='italic'>
+          <Text c='text.6' fz='sm' ta='center' fs='italic'>
             No selections found for the {props.operationResults.characterResults.length} executed operation(s).
           </Text>
         )}

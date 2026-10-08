@@ -61,7 +61,8 @@ describe('Incomplete content recovery', () => {
           };
         },
       });
-      if (surface === 'builder') cy.contains('button', 'Builder').click();
+      // The initial character read must finish before its loading overlay permits navigation.
+      if (surface === 'builder') cy.contains('button', 'Builder').click({ timeout: 30000 });
       cy.wait(['@catalog', '@catalog'], { requestTimeout: 45000 });
       cy.contains("Couldn't load game content").should('not.exist');
       cy.contains('button', 'Retry').should('not.exist');

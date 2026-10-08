@@ -95,7 +95,7 @@ export default function StaffSpellsList(props: {
     <Accordion.Item value={props.index}>
       <Accordion.Control h={40}>
         <Group wrap='nowrap' justify='space-between' gap={0}>
-          <Text c='gray.2' fw={700} fz='sm'>
+          <Text c='text.2' fw={700} fz='sm'>
             {props.staff.item.name}
           </Text>
 
@@ -228,11 +228,11 @@ export default function StaffSpellsList(props: {
                 .map((rank, index) => (
                   <div key={index} data-wg-name={`rank-group-${index}`}>
                     <Group wrap='nowrap' justify='space-between' gap={0}>
-                      <Text c='gray.2' fw={700} fz='sm'>
+                      <Text c='text.2' fw={700} fz='sm'>
                         {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
                       </Text>
                       <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                        <Text c='gray.2' span inherit>
+                        <Text c='text.2' span inherit>
                           {props.hasFilters
                             ? detectedSpells[rank].filter((s) => s.spell).length
                             : detectedSpells[rank].length}

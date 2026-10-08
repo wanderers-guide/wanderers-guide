@@ -107,7 +107,7 @@ export default function TraitsDisplay(props: {
                   // @ts-ignore
                   '--badge-dot-size': trait.meta_data?.important ? undefined : 0,
                   textTransform: 'initial',
-                  color: theme.colors.dark[1],
+                  color: theme.colors.darkInk[1],
                   cursor: props.interactable ? 'pointer' : undefined,
                 },
               }}
@@ -182,7 +182,7 @@ export function SkillDisplay(props: { skill: string | string[]; interactable?: b
               // @ts-ignore
               '--badge-dot-size': 0,
               textTransform: 'initial',
-              color: theme.colors.dark[2],
+              color: theme.colors.darkInk[2],
             },
           }}
         >
@@ -455,7 +455,7 @@ export function TraitOverview(props: { name: string; description: string; import
             // @ts-ignore
             '--badge-dot-size': props.important ? undefined : 0,
             textTransform: 'initial',
-            color: theme.colors.dark[0],
+            color: theme.colors.darkInk[0],
           },
         }}
       >

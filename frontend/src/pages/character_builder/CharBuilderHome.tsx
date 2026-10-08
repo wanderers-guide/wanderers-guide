@@ -496,7 +496,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
                   />
                 ))}
                 {(!user?.subscribed_content_sources || user?.subscribed_content_sources?.length === 0) && (
-                  <Text c='gray.2' fz='sm' ta='center' fs='italic' py={20}>
+                  <Text c='text.2' fz='sm' ta='center' fs='italic' py={20}>
                     No subscribed bundles found.{' '}
                     <Anchor fz='sm' href='/homebrew'>
                       Go add some!
@@ -1022,6 +1022,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
               }}
             >
               <Image
+                className='artwork-preview'
                 radius='md'
                 h='auto'
                 fit='contain'
@@ -1081,7 +1082,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
                               },
                             });
                           }}
-                          c='gray.5'
+                          c='text.5'
                           ta='center'
                           size='xs'
                         >

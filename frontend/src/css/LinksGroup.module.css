@@ -19,7 +19,7 @@
   padding-left: var(--mantine-spacing-md);
   margin-left: var(--mantine-spacing-xl);
   font-size: var(--mantine-font-size-sm);
-  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
+  color: light-dark(var(--mantine-color-text-5), var(--mantine-color-dark-0));
   border-left: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-3));
 
   @mixin hover {

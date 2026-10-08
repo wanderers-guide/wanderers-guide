@@ -499,14 +499,12 @@ function SectionPanels(props: {
             onChange={setOpenedPhonePanel}
             styles={(t) => ({
               dropdown: {
-                // Force the dropdown to span the full viewport width.
-                // `left: 0 !important` overrides Mantine's floating-ui positioning
-                // which would otherwise anchor it relative to the target button.
+                // Leave room for Floating UI to keep the phone picker inside the viewport.
                 ...glassStyle(),
-                backgroundColor: 'rgba(0,0,0,0.4)',
+                backgroundColor: 'light-dark(var(--portal-bg-color), rgba(0,0,0,0.4))',
                 border: `1px solid ` + IMPRINT_BORDER_COLOR,
-                width: '100dvw',
-                left: '0 !important',
+                width: 'calc(100dvw - 24px)',
+                maxWidth: 'calc(100dvw - 24px)',
                 borderRadius: t.radius.lg,
                 padding: t.spacing.sm,
               },
@@ -523,7 +521,7 @@ function SectionPanels(props: {
                 {openedPhonePanel ? <IconX size='2rem' stroke={2} /> : <IconLayoutGrid size='2rem' stroke={1.5} />}
               </ActionIcon>
             </Popover.Target>
-            <Popover.Dropdown>
+            <Popover.Dropdown className='phone-panel-picker'>
               <Box>
                 <Stack>
                   {/* "Health, Attributes, Saves" restores the top stat sections */}
@@ -766,7 +764,7 @@ function SectionPanels(props: {
                     ref={tabOptionsRef}
                     style={{
                       backgroundColor: hoveredTabOptions || openedTabOption ? IMPRINT_BG_COLOR : 'transparent',
-                      color: openedTabOption ? theme.colors.gray[0] : undefined,
+                      color: openedTabOption ? theme.colors.text[0] : undefined,
                       border: openedTabOption ? `1px solid ` + IMPRINT_BORDER_COLOR : `1px solid transparent`,
                     }}
                   >
@@ -785,7 +783,7 @@ function SectionPanels(props: {
                       }}
                       style={{
                         backgroundColor: activeTab === tab ? IMPRINT_BG_COLOR : undefined,
-                        color: activeTab === tab ? theme.colors.gray[0] : undefined,
+                        color: activeTab === tab ? theme.colors.text[0] : undefined,
                       }}
                     >
                       {toLabel(tab)}

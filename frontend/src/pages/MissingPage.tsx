@@ -19,7 +19,7 @@ export function Component() {
               fontWeight: 900,
               fontSize: rem(100),
               lineHeight: 1,
-              color: theme.colors.dark[2],
+              color: theme.colors.darkInk[2],
             }}
           >
             404
@@ -36,7 +36,7 @@ export function Component() {
             You found a secret place.
           </Title>
           <Text
-            c='gray.2'
+            c='text.2'
             size='xs'
             ta='center'
             my='lg'

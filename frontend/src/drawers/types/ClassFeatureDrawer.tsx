@@ -99,7 +99,7 @@ export function ClassFeatureDrawerContent(props: {
         </Box>
         {classFeature.prerequisites && classFeature.prerequisites.length > 0 && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Prerequisites
             </Text>{' '}
             {classFeature.prerequisites.join(', ')}
@@ -107,7 +107,7 @@ export function ClassFeatureDrawerContent(props: {
         )}
         {classFeature.frequency && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Frequency
             </Text>{' '}
             {classFeature.frequency}
@@ -115,7 +115,7 @@ export function ClassFeatureDrawerContent(props: {
         )}
         {classFeature.trigger && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Trigger
             </Text>{' '}
             {classFeature.trigger}
@@ -123,7 +123,7 @@ export function ClassFeatureDrawerContent(props: {
         )}
         {classFeature.cost && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Cost
             </Text>{' '}
             {classFeature.cost}
@@ -131,7 +131,7 @@ export function ClassFeatureDrawerContent(props: {
         )}
         {classFeature.requirements && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Requirements
             </Text>{' '}
             <RichText span>{classFeature.requirements}</RichText>
@@ -139,7 +139,7 @@ export function ClassFeatureDrawerContent(props: {
         )}
         {classFeature.access && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Access
             </Text>{' '}
             {classFeature.access}
@@ -149,7 +149,7 @@ export function ClassFeatureDrawerContent(props: {
         <RichText ta='justify'>{classFeature.description}</RichText>
         {classFeature.special && (
           <Text ta='justify' style={{ textIndent: TEXT_INDENT_AMOUNT }}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Special
             </Text>{' '}
             <RichText span>{classFeature.special}</RichText>

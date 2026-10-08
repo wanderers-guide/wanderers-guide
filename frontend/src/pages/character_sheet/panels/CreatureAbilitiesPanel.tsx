@@ -103,7 +103,7 @@ export default function CreatureAbilitiesPanel(props: {
             onChange={(event) => setSearchQuery(event.target.value)}
             styles={{
               input: {
-                backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
+                backgroundColor: 'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-7))',
                 borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
               },
             }}
@@ -111,7 +111,7 @@ export default function CreatureAbilitiesPanel(props: {
         </Group>
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
           {entityAbilityBlocks.length === 0 && (
-            <Text c='gray.2' fz='sm' ta='center' fs='italic' py={20}>
+            <Text c='text.2' fz='sm' ta='center' fs='italic' py={20}>
               No abilities found.
             </Text>
           )}

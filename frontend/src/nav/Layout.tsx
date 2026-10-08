@@ -1,3 +1,4 @@
+import { ColorSchemeToggle } from '@common/ColorSchemeToggle';
 import { clearSessionDataPreservingDrafts } from '@utils/character-save-buffer';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { glassStyle } from '@utils/colors';
@@ -17,7 +18,7 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import { useDisclosure, useMediaQuery, useViewportSize } from '@mantine/hooks';
+import { useDisclosure, useMediaQuery, useResizeObserver, useViewportSize } from '@mantine/hooks';
 import {
   IconAsset,
   IconBook,
@@ -56,6 +57,9 @@ export default function Layout(props: { children: React.ReactNode }) {
   const [userMenuOpened, setUserMenuOpened] = useState(false);
 
   const { width } = useViewportSize();
+  // ResizeObserver reports logical width after the viewer's existing UI zoom.
+  const [headerRef, headerRect] = useResizeObserver<HTMLDivElement>();
+  const headerWidth = headerRect.width || width;
 
   useEffect(() => {
     if (!session) return;
@@ -92,12 +96,12 @@ export default function Layout(props: { children: React.ReactNode }) {
           borderRadius: 0,
         }}
       >
-        <Group h='100%' px='md' wrap='nowrap'>
+        <Group ref={headerRef} h='100%' px='md' wrap='nowrap'>
           <Burger opened={opened} onClick={toggle} hiddenFrom='md' size='sm' />
-          <Group style={{ flex: 1 }}>
+          <Group style={{ flex: 1, minWidth: 0 }} wrap='nowrap'>
             <WanderersGuideLogo size={30} />
             <Group gap={0} style={{ flex: 1 }} visibleFrom='md' justify='space-between' wrap='nowrap'>
-              {width >= 1050 ? (
+              {headerWidth >= 1050 ? (
                 <Group gap={0} wrap='nowrap'>
                   <UnstyledButton
                     component='a'
@@ -133,7 +137,7 @@ export default function Layout(props: { children: React.ReactNode }) {
               ) : (
                 <Box></Box>
               )}
-              <Group>
+              <Group wrap='nowrap'>
                 <SearchBar />
 
                 {!session ? (
@@ -193,7 +197,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                         leftSection={
                           <IconUsers
                             style={{ width: rem(16), height: rem(16) }}
-                            color={theme.colors.blue[5]}
+                            color={theme.colors.blueInk[5]}
                             stroke={1.5}
                           />
                         }
@@ -210,7 +214,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                         leftSection={
                           <IconAsset
                             style={{ width: rem(16), height: rem(16) }}
-                            color={theme.colors.yellow[6]}
+                            color={theme.colors.yellowInk[6]}
                             stroke={1.5}
                           />
                         }
@@ -227,7 +231,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                         leftSection={
                           <IconFlag
                             style={{ width: rem(16), height: rem(16) }}
-                            color={theme.colors.violet[4]}
+                            color={theme.colors.violetInk[4]}
                             stroke={1.5}
                           />
                         }
@@ -244,7 +248,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                         leftSection={
                           <IconSwords
                             style={{ width: rem(16), height: rem(16) }}
-                            color={theme.colors.teal[6]}
+                            color={theme.colors.tealInk[6]}
                             stroke={1.5}
                           />
                         }
@@ -263,7 +267,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                           leftSection={
                             <IconLayersIntersect
                               style={{ width: rem(16), height: rem(16) }}
-                              color={theme.colors.pink[6]}
+                              color={theme.colors.pinkInk[6]}
                               stroke={1.5}
                             />
                           }
@@ -317,6 +321,7 @@ export default function Layout(props: { children: React.ReactNode }) {
               </Group>
             </Group>
           </Group>
+          <ColorSchemeToggle />
         </Group>
       </AppShell.Header>
 
@@ -327,6 +332,8 @@ export default function Layout(props: { children: React.ReactNode }) {
           ...glassStyle(),
           borderRadius: 0,
           backgroundColor: 'color-mix(in srgb, var(--mantine-color-body) 80%, transparent)',
+          // CSS zoom can leave part of the translated, collapsed navbar inside the viewport.
+          visibility: opened ? undefined : 'hidden',
         }}
       >
         {session ? (

@@ -54,26 +54,28 @@ export function SlotSelect(props: {
   };
 
   return (
-    <Grid w={400}>
-      {new Array(RANKS).fill(0).map((_, i) => (
-        <Grid.Col span={1} key={i} p={1}>
-          {i === 0 ? (
-            <Stack pt={20} gap={1} h={640} justify='space-around'>
-              {new Array(LEVELS).fill(0).map((_, i) => (
-                <>
-                  {i !== 0 && (
-                    <Text key={i} fz={10} ta='center' style={{ textWrap: 'nowrap' }}>
-                      Lvl. {i}
-                    </Text>
-                  )}
-                </>
-              ))}
-            </Stack>
-          ) : (
-            <>{getColumn(LEVELS, i)}</>
-          )}
-        </Grid.Col>
-      ))}
-    </Grid>
+    <Box miw={0} maw='100%' style={{ overflowX: 'auto' }}>
+      <Grid w={400} m={0}>
+        {new Array(RANKS).fill(0).map((_, i) => (
+          <Grid.Col span={1} key={i} p={1}>
+            {i === 0 ? (
+              <Stack pt={20} gap={1} h={640} justify='space-around'>
+                {new Array(LEVELS).fill(0).map((_, i) => (
+                  <>
+                    {i !== 0 && (
+                      <Text key={i} fz={10} ta='center' style={{ textWrap: 'nowrap' }}>
+                        Lvl. {i}
+                      </Text>
+                    )}
+                  </>
+                ))}
+              </Stack>
+            ) : (
+              <>{getColumn(LEVELS, i)}</>
+            )}
+          </Grid.Col>
+        ))}
+      </Grid>
+    </Box>
   );
 }

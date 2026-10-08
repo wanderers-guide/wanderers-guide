@@ -139,7 +139,7 @@ export function StatProfDrawerContent(props: { data: { id: StoreID; variableName
                     <Kbd style={{ cursor: 'pointer' }}>{parts.profValue}</Kbd>
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
-                    <Text c='gray.0' size='xs'>
+                    <Text c='text.0' size='xs'>
                       You're {proficiencyTypeToLabel(compileProficiencyType(variable.value)).toLowerCase()} in this
                       proficiency, resulting in a{' '}
                       {sign(getProficiencyTypeValue(compileProficiencyType(variable.value)))} bonus.
@@ -152,7 +152,7 @@ export function StatProfDrawerContent(props: { data: { id: StoreID; variableName
                     <Kbd style={{ cursor: 'pointer' }}>{parts.level}</Kbd>
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
-                    <Text c='gray.0' size='xs'>
+                    <Text c='text.0' size='xs'>
                       {profWithoutLevel ? (
                         <>
                           {compileProficiencyType(variable.value) === 'U' ? (
@@ -197,7 +197,7 @@ export function StatProfDrawerContent(props: { data: { id: StoreID; variableName
                         <Kbd style={{ cursor: 'pointer' }}>{parts.attributeMod}</Kbd>
                       </HoverCard.Target>
                       <HoverCard.Dropdown py={5} px={10}>
-                        <Text c='gray.0' size='xs'>
+                        <Text c='text.0' size='xs'>
                           This proficiency is associated with the {toLabel(variable.value.attribute ?? '')} attribute,
                           so you add your {toLabel(variable.value.attribute ?? '')} modifier.
                         </Text>
@@ -213,7 +213,7 @@ export function StatProfDrawerContent(props: { data: { id: StoreID; variableName
                         <Kbd style={{ cursor: 'pointer' }}>{bonus.value}</Kbd>
                       </HoverCard.Target>
                       <HoverCard.Dropdown py={5} px={10}>
-                        <Text c='gray.0' size='xs'>
+                        <Text c='text.0' size='xs'>
                           {key.startsWith('untyped ')
                             ? `Additional untyped modifiers:`
                             : `Your ${key}. Use the greatest from the following:`}
@@ -239,12 +239,12 @@ export function StatProfDrawerContent(props: { data: { id: StoreID; variableName
                     +
                     <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
                       <HoverCard.Target>
-                        <Kbd style={{ cursor: 'pointer' }} c='guide.5'>
+                        <Kbd style={{ cursor: 'pointer' }} c='guideInk.5'>
                           *
                         </Kbd>
                       </HoverCard.Target>
                       <HoverCard.Dropdown py={5} px={10}>
-                        <Text c='gray.0' size='xs'>
+                        <Text c='text.0' size='xs'>
                           You have some conditionals! These will only apply situationally:
                           <Divider pb={5} />
                           <List size='xs'>
@@ -435,7 +435,7 @@ function SkillActionsSection(props: { variableName: string }) {
     ],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { variableName }] = queryKey;
       const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('PAGE'));
       return abilityBlocks.filter((block) => {

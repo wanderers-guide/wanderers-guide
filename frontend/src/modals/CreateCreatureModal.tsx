@@ -18,6 +18,7 @@ import {
   Modal,
   Paper,
   ScrollArea,
+  SimpleGrid,
   Select,
   Stack,
   Tabs,
@@ -207,16 +208,17 @@ export function CreateCreatureModal(props: {
         onReset();
       }}
       title={
-        <Group wrap='nowrap' gap={10} justify='space-between'>
+        <Group gap={10} justify='space-between'>
           <Group wrap='nowrap' gap={10}>
             <Title order={3}>{editing ? 'Edit' : 'Create'} Creature</Title>
           </Group>
-          <Group wrap='nowrap' justify='space-between' pr='lg'>
-            <Group wrap='nowrap'>
+          <Group justify='space-between' pr='lg' miw={0}>
+            <Group>
               <TextInput
                 label='Name'
                 size='xs'
                 required
+                style={{ flex: '1 1 170px' }}
                 {...form.getInputProps('name')}
                 onPaste={(e) => {
                   const text = e.clipboardData.getData('text/plain');
@@ -253,6 +255,9 @@ export function CreateCreatureModal(props: {
         </Group>
       }
       styles={{
+        header: {
+          alignItems: 'flex-start',
+        },
         title: {
           width: '100%',
         },
@@ -280,8 +285,8 @@ export function CreateCreatureModal(props: {
               </Tabs.List>
 
               <Tabs.Panel value='builder'>
-                <Group wrap='nowrap' gap={5} align='flex-start' grow>
-                  <Stack gap={0}>
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={5}>
+                  <Stack gap={0} miw={0}>
                     <Group wrap='nowrap' justify='space-between' py={5}>
                       <Text fz='md'>Input Stat Block</Text>
                       <Button
@@ -337,8 +342,8 @@ export function CreateCreatureModal(props: {
                         scrollbars='y'
                         px='sm'
                         style={{
-                          backgroundColor: theme.colors.dark[6],
-                          border: `1px solid ${theme.colors.dark[4]}`,
+                          backgroundColor: 'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))',
+                          border: `1px solid ${'light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4))'}`,
                           borderRadius: theme.radius.md,
                         }}
                       >
@@ -356,7 +361,7 @@ export function CreateCreatureModal(props: {
                       </ScrollArea>
                     </Box>
                   </Stack>
-                  <Stack gap={0}>
+                  <Stack gap={0} miw={0}>
                     <Group wrap='nowrap' justify='space-between' py={5}>
                       <Text fz='md'>Resulting Stat Block</Text>
                     </Group>
@@ -365,8 +370,8 @@ export function CreateCreatureModal(props: {
                       scrollbars='y'
                       p='sm'
                       style={{
-                        backgroundColor: theme.colors.dark[6],
-                        border: `1px solid ${theme.colors.dark[4]}`,
+                        backgroundColor: 'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))',
+                        border: `1px solid ${'light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4))'}`,
                         borderRadius: theme.radius.md,
                       }}
                     >
@@ -381,7 +386,7 @@ export function CreateCreatureModal(props: {
                       )}
                     </ScrollArea>
                   </Stack>
-                </Group>
+                </SimpleGrid>
                 <Text fz='xs' ta='center' fs='italic' pt={5}>
                   Properly format the input stat block until the result looks the same!
                 </Text>
@@ -434,8 +439,8 @@ export function CreateCreatureModal(props: {
                           <ActionSymbol
                             pl={5}
                             gap={5}
-                            textProps={{ size: 'xs', c: 'guide' }}
-                            c='guide'
+                            textProps={{ size: 'xs', c: 'guideInk' }}
+                            c='guideInk'
                             cost={ability.actions}
                             size={'1.2rem'}
                           />
@@ -528,8 +533,8 @@ export function CreateCreatureModal(props: {
                           <ActionSymbol
                             pl={5}
                             gap={5}
-                            textProps={{ size: 'xs', c: 'guide' }}
-                            c='guide'
+                            textProps={{ size: 'xs', c: 'guideInk' }}
+                            c='guideInk'
                             cost={ability.actions}
                             size={'1.2rem'}
                           />

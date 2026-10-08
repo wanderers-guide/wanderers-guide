@@ -135,8 +135,8 @@ export default function GenerateEncounterModal({
           py={15}
           pr={5}
           style={{
-            backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
-            borderColor: theme.colors['dark'][8],
+            backgroundColor: 'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-7))',
+            borderColor: 'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-8))',
           }}
         >
           <ScrollArea h={315} scrollbars='y' pr={10}>
@@ -182,8 +182,8 @@ function EncounterCard(props: { encounter: Encounter; onClick: () => void }) {
   return (
     <Box
       style={{
-        backgroundColor: theme.colors.dark[7],
-        border: `2px solid ${theme.colors.dark[7]}`,
+        backgroundColor: 'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-7))',
+        border: `2px solid ${'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-7))'}`,
         borderRadius: theme.radius.md,
       }}
       p='xs'
@@ -215,8 +215,8 @@ function EncounterCard(props: { encounter: Encounter; onClick: () => void }) {
                   cursor: 'pointer',
                 },
                 root: {
-                  border: `1px solid ${theme.colors.dark[4]}`,
-                  backgroundColor: theme.colors.dark[6],
+                  border: `1px solid ${'light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4))'}`,
+                  backgroundColor: 'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))',
                 },
               }}
               onClick={() => {

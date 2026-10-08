@@ -88,7 +88,7 @@ export function ContentSourceInfo(props: { source: ContentSource; nameCutOff?: n
         <Group gap={0} wrap='nowrap' justify='space-between'>
           <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
             <HoverCard.Target>
-              <Text c='gray.0' fz={props.source.name.length >= 20 ? '0.9rem' : 'lg'} fw={500} className={classes.name}>
+              <Text c='text.0' fz={props.source.name.length >= 20 ? '0.9rem' : 'lg'} fw={500} className={classes.name}>
                 {truncate(props.source.name, {
                   length: props.nameCutOff ?? 24,
                 })}
@@ -100,7 +100,7 @@ export function ContentSourceInfo(props: { source: ContentSource; nameCutOff?: n
               </Text>
             </HoverCard.Target>
             <HoverCard.Dropdown py={5} px={10}>
-              <Text c='gray.0' size='sm'>
+              <Text c='text.0' size='sm'>
                 {props.source.name}
               </Text>
             </HoverCard.Dropdown>
@@ -127,7 +127,7 @@ export function ContentSourceInfo(props: { source: ContentSource; nameCutOff?: n
               radius={55}
               variant='transparent'
               color='dark.3'
-              bg={theme.colors.dark[6]}
+              bg={'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))'}
             />
           </Box>
 
@@ -137,10 +137,10 @@ export function ContentSourceInfo(props: { source: ContentSource; nameCutOff?: n
                 <Box>
                   <Group wrap='nowrap' gap={10}>
                     {getIconFromContentType(stat.type, '1rem')}
-                    <Text fz='xs' c='gray.2'>
+                    <Text fz='xs' c='text.2'>
                       {stat.label}
                     </Text>
-                    <Text fz='xs' fw={700} c='gray.2'>
+                    <Text fz='xs' fw={700} c='text.2'>
                       {stat.value}
                     </Text>
                   </Group>

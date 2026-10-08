@@ -1,3 +1,4 @@
+import { colorSchemeAtom } from '@atoms/appearance';
 import { clearSessionDataPreservingDrafts } from '@utils/character-save-buffer';
 import {
   Title,
@@ -127,6 +128,7 @@ function SettingRow({
 }
 
 function ProfileSection() {
+  const [colorScheme, setColorScheme] = useAtom(colorSchemeAtom);
   const theme = useMantineTheme();
   const [loading, setLoading] = useState(false);
   const [_user, setUser] = useAtom(userState);
@@ -356,8 +358,8 @@ function ProfileSection() {
                     radius={80}
                     mt={-30}
                     style={{
-                      backgroundColor: theme.colors.dark[7],
-                      border: `2px solid ${theme.colors.dark[7] + 'D3'}`,
+                      backgroundColor: 'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-7))',
+                      border: `2px solid ${'var(--reading-bg-color)'}`,
                       cursor: 'pointer',
                     }}
                   />
@@ -421,7 +423,7 @@ function ProfileSection() {
           )}
 
           {/* Stats */}
-          <Group justify='center' gap={40} mb='md' wrap='nowrap'>
+          <Group justify='center' gap='xl' mb='md'>
             <Box>
               <Text ta='center' fz='xl' fw={600}>
                 {characters ? characters.length : '...'}
@@ -497,6 +499,10 @@ function ProfileSection() {
               fullWidth
               component='a'
               href={PATREON_AUTH_URL}
+              h='auto'
+              mih='var(--button-height)'
+              py={5}
+              styles={{ label: { whiteSpace: 'normal', textAlign: 'center' } }}
             >
               {user.patreon?.tier ? `Patreon Connected` : 'Connect to Patreon'}
             </Button>
@@ -579,6 +585,7 @@ function ProfileSection() {
             defaultValue=''
             variant='contained'
             styles={{
+              label: { whiteSpace: 'normal', overflow: 'visible', textOverflow: 'clip' },
               control: {
                 backgroundColor: 'var(--mantine-color-default-hover)',
                 '&:hover': { backgroundColor: 'var(--mantine-color-default-hover)' },
@@ -593,6 +600,14 @@ function ProfileSection() {
               <Accordion.Control icon={<IconPalette size='0.9rem' />}>Appearance</Accordion.Control>
               <Accordion.Panel>
                 <Stack gap={0}>
+                  <SettingRow label='Light Mode'>
+                    <Switch
+                      size='sm'
+                      aria-label='Light mode'
+                      checked={colorScheme === 'light'}
+                      onChange={(event) => setColorScheme(event.currentTarget.checked ? 'light' : 'dark')}
+                    />
+                  </SettingRow>
                   <SettingRow label='Theme Color' description='Primary accent color for the site'>
                     <Popover position='bottom-end' withArrow shadow='md'>
                       <Popover.Target>
@@ -655,15 +670,20 @@ function ProfileSection() {
                       UI Size
                     </Text>
                     <Slider
+                      aria-label='UI size'
                       min={0.75}
                       max={1.5}
                       step={0.01}
                       value={user.site_theme?.zoom ?? 1}
+                      label={(value) => `${Math.round(value * 100)}%`}
                       marks={[
-                        { value: 0.75, label: 'Small' },
-                        { value: 1, label: 'Default' },
-                        { value: 1.5, label: 'Large' },
+                        { value: 0.75, label: '75%' },
+                        { value: 1, label: '100%' },
+                        { value: 1.5, label: '150%' },
                       ]}
+                      styles={{
+                        markLabel: { fontSize: 'var(--mantine-font-size-xs)', color: 'var(--mantine-color-text)' },
+                      }}
                       mb='xl'
                       onChange={(value) => {
                         setUser((prev) => {

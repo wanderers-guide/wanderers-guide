@@ -15,6 +15,17 @@ const { build } = require('esbuild');
 const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
 const { MantineProvider } = require('@mantine/core');
+const themePath = `${root}/src/utils/theme.ts`;
+const themeOutput = path.join(directory, 'theme.cjs');
+await build({
+  stdin: { contents: `export {createAppTheme} from ${JSON.stringify(themePath)}`, resolveDir: root },
+  bundle: true,
+  platform: 'node',
+  format: 'cjs',
+  outfile: themeOutput,
+  define: { 'import.meta.env': JSON.stringify({ VITE_ENV: 'test' }) },
+});
+const { createAppTheme } = require(themeOutput);
 const sourcePath = `${root}/src/pages/character_sheet/panels/InventoryPanel.tsx`;
 const source = fs.readFileSync(sourcePath, 'utf8');
 const imports = new Map();
@@ -96,37 +107,38 @@ const bag = inventoryItem(
     container_contents: [inventoryItem({ ...magicWeapon, id: 902, name: 'Contained weapon' })],
   }
 );
-for (const width of [390, 1200]) {
-  test(`inventory at ${width}px keeps view, invest, equip and container controls as sibling buttons`, () => {
-    const html = renderToStaticMarkup(
-      React.createElement(
-        MantineProvider,
-        { forceColorScheme: 'dark' },
-        React.createElement(InventoryPanel, {
-          id: 'CHARACTER',
-          entity: summoner([spear, staff, bag]),
-          setEntity: () => {},
-          content: {},
-          panelWidth: width,
-          panelHeight: 900,
-        })
-      )
-    );
-    let buttonDepth = 0;
-    for (const match of html.matchAll(/<\/?button\b[^>]*>/g)) {
-      if (match[0].startsWith('</')) buttonDepth--;
-      else {
-        assert.equal(buttonDepth, 0, `Nested button found: ${match[0]}`);
-        buttonDepth++;
+for (const width of [390, 1200])
+  for (const scheme of ['dark', 'light']) {
+    test(`${scheme} inventory at ${width}px keeps view, invest, equip and container controls as sibling buttons`, () => {
+      const html = renderToStaticMarkup(
+        React.createElement(
+          MantineProvider,
+          { forceColorScheme: scheme, theme: createAppTheme({ scheme }) },
+          React.createElement(InventoryPanel, {
+            id: 'CHARACTER',
+            entity: summoner([spear, staff, bag]),
+            setEntity: () => {},
+            content: {},
+            panelWidth: width,
+            panelHeight: 900,
+          })
+        )
+      );
+      let buttonDepth = 0;
+      for (const match of html.matchAll(/<\/?button\b[^>]*>/g)) {
+        if (match[0].startsWith('</')) buttonDepth--;
+        else {
+          assert.equal(buttonDepth, 0, `Nested button found: ${match[0]}`);
+          buttonDepth++;
+        }
       }
-    }
-    assert.equal(buttonDepth, 0);
-    assert.match(html, /View \+2 striking spear/);
-    assert.match(html, /View Contained weapon/);
-    assert.match(html, /View Item/);
-    assert.match(html, /Share runes/);
-    assert.match(html, /Invest/);
-    assert.match(html, /Equip/);
-    assert.match(html, /aria-expanded="false"/);
-  });
-}
+      assert.equal(buttonDepth, 0);
+      assert.match(html, /View \+2 striking spear/);
+      assert.match(html, /View Contained weapon/);
+      assert.match(html, /View Item/);
+      assert.match(html, /Share runes/);
+      assert.match(html, /Invest/);
+      assert.match(html, /Equip/);
+      assert.match(html, /aria-expanded="false"/);
+    });
+  }

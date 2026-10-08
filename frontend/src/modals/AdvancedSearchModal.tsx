@@ -372,7 +372,7 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
         <Group align='center' gap='xs'>
           <Text>Filters</Text>
           {filterRecords.length === 0 && (
-            <Text fz='xs' fs='italic' c='gray.6'>
+            <Text fz='xs' fs='italic' c='text.6'>
               — None —
             </Text>
           )}
@@ -381,7 +381,7 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
           <Pill
             key={index}
             size='sm'
-            c='dark.1'
+            c='darkInk.1'
             withRemoveButton={props.presetFilters?.[record.key] === undefined}
             onRemove={() => {
               if (record.key.endsWith('_min')) {
@@ -1079,11 +1079,11 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
                 {results && !isResultsStale ? (
                   <>
                     {results.length === 0 ? (
-                      <Text fz='xs' fs='italic' c='gray.6'>
+                      <Text fz='xs' fs='italic' c='text.6'>
                         — None —
                       </Text>
                     ) : (
-                      <Pill c='dark.1' size='md'>
+                      <Pill c='darkInk.1' size='md'>
                         {results.length.toLocaleString()}
                         {isOverMaxResults ? '+' : ''}
                       </Pill>
@@ -1093,7 +1093,7 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
                   <Pill size='md'>
                     <ActionIcon
                       variant='transparent'
-                      c='dark.1'
+                      c='darkInk.1'
                       size='md'
                       style={{
                         pointerEvents: 'none',
@@ -1112,7 +1112,7 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
                   <Stack align='center' justify='center' gap={0}>
                     <ActionIcon
                       variant='transparent'
-                      c='dark'
+                      c='darkInk'
                       size={100}
                       style={{
                         pointerEvents: 'none',
@@ -1120,7 +1120,7 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
                     >
                       <IconLineDotted size='5rem' stroke={1.5} />
                     </ActionIcon>
-                    <Text fz='sm' fs='italic' c='gray.6'>
+                    <Text fz='sm' fs='italic' c='text.6'>
                       Please select a content type to search for.
                     </Text>
                   </Stack>
@@ -1134,7 +1134,7 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
                       <Stack align='center' justify='center' gap={0}>
                         <ActionIcon
                           variant='transparent'
-                          c='dark'
+                          c='darkInk'
                           size={100}
                           style={{
                             pointerEvents: 'none',
@@ -1142,7 +1142,7 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
                         >
                           <IconBoomFilled size='5rem' stroke={1.5} />
                         </ActionIcon>
-                        <Text fz='sm' fs='italic' c='gray.6'>
+                        <Text fz='sm' fs='italic' c='text.6'>
                           No results found, try adjusting your filters.
                         </Text>
                       </Stack>

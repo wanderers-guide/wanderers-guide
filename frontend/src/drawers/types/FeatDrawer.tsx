@@ -151,7 +151,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
             <Text
               style={{
                 textDecoration: 'underline',
-                textDecorationColor: theme.colors.red[4],
+                textDecorationColor: theme.colors.redInk[4],
               }}
               span
             >
@@ -165,7 +165,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
             <Text
               style={{
                 textDecoration: 'underline',
-                textDecorationColor: theme.colors.yellow[2],
+                textDecorationColor: theme.colors.yellowInk[2],
               }}
               span
             >
@@ -202,7 +202,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
         </Box>
         {prereqUI && prereqUI.length > 0 && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Prerequisites
             </Text>{' '}
             {prereqUI.flatMap((node, index) => (index < prereqUI.length - 1 ? [node, '; '] : [node]))}
@@ -210,7 +210,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
         )}
         {feat.frequency && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Frequency
             </Text>{' '}
             {feat.frequency}
@@ -218,7 +218,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
         )}
         {feat.trigger && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Trigger
             </Text>{' '}
             {feat.trigger}
@@ -226,7 +226,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
         )}
         {feat.cost && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Cost
             </Text>{' '}
             {feat.cost}
@@ -234,7 +234,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
         )}
         {feat.requirements && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Requirements
             </Text>{' '}
             <RichText span>{feat.requirements}</RichText>
@@ -242,7 +242,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
         )}
         {feat.access && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Access
             </Text>{' '}
             {feat.access}
@@ -252,7 +252,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
         <RichText ta='justify'>{feat.description}</RichText>
         {feat.special && (
           <Text ta='justify' style={{ textIndent: TEXT_INDENT_AMOUNT }}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Special
             </Text>{' '}
             <RichText span>{feat.special}</RichText>
@@ -296,7 +296,7 @@ export function PrerequisiteForSection(props: { name: string }) {
     <Box pt='sm'>
       <Divider />
       <IndentedText>
-        <Text fw={600} c='gray.2' span>
+        <Text fw={600} c='text.2' span>
           Prerequisite for
         </Text>{' '}
         {listToLabel(

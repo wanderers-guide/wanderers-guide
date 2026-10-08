@@ -48,7 +48,7 @@ export function StatHealthDrawerContent(props: { data: { id: StoreID } }) {
                   <Kbd style={{ cursor: 'pointer' }}>{staminaVariant ? halfClassHp : parts.classHp}</Kbd>
                 </HoverCard.Target>
                 <HoverCard.Dropdown py={5} px={10}>
-                  <Text c='gray.0' size='xs'>
+                  <Text c='text.0' size='xs'>
                     {staminaVariant
                       ? `This is the base hit points from your class, halved for the stamina variant. You gain this amount every level (the other half becomes stamina points).`
                       : `This is the base hit points from your class. You gain this amount every level.`}
@@ -63,7 +63,7 @@ export function StatHealthDrawerContent(props: { data: { id: StoreID } }) {
                       <Kbd style={{ cursor: 'pointer' }}>{parts.conMod}</Kbd>
                     </HoverCard.Target>
                     <HoverCard.Dropdown py={5} px={10}>
-                      <Text c='gray.0' size='xs'>
+                      <Text c='text.0' size='xs'>
                         You add your Constitution modifier to the hit points you gain every level.
                       </Text>
                     </HoverCard.Dropdown>
@@ -76,7 +76,7 @@ export function StatHealthDrawerContent(props: { data: { id: StoreID } }) {
                   <Kbd style={{ cursor: 'pointer' }}>{parts.level}</Kbd>
                 </HoverCard.Target>
                 <HoverCard.Dropdown py={5} px={10}>
-                  <Text c='gray.0' size='xs'>
+                  <Text c='text.0' size='xs'>
                     This is your current level.
                   </Text>
                 </HoverCard.Dropdown>
@@ -87,7 +87,7 @@ export function StatHealthDrawerContent(props: { data: { id: StoreID } }) {
                   <Kbd style={{ cursor: 'pointer' }}>{parts.ancestryHp}</Kbd>
                 </HoverCard.Target>
                 <HoverCard.Dropdown py={5} px={10}>
-                  <Text c='gray.0' size='xs'>
+                  <Text c='text.0' size='xs'>
                     This is the base hit points from your ancestry. You gain this amount once at level 1.
                   </Text>
                 </HoverCard.Dropdown>
@@ -100,7 +100,7 @@ export function StatHealthDrawerContent(props: { data: { id: StoreID } }) {
                       <Kbd style={{ cursor: 'pointer' }}>{parts.bonusHp}</Kbd>
                     </HoverCard.Target>
                     <HoverCard.Dropdown py={5} px={10}>
-                      <Text c='gray.0' size='xs'>
+                      <Text c='text.0' size='xs'>
                         This is additional hit points you've gained from various sources.
                       </Text>
                     </HoverCard.Dropdown>
@@ -115,7 +115,7 @@ export function StatHealthDrawerContent(props: { data: { id: StoreID } }) {
                       <Kbd style={{ cursor: 'pointer' }}>{bonus.value}</Kbd>
                     </HoverCard.Target>
                     <HoverCard.Dropdown py={5} px={10}>
-                      <Text c='gray.0' size='xs'>
+                      <Text c='text.0' size='xs'>
                         {key.startsWith('untyped ')
                           ? `Additional untyped modifiers:`
                           : `Your ${key}. Use the greatest from the following:`}
@@ -141,12 +141,12 @@ export function StatHealthDrawerContent(props: { data: { id: StoreID } }) {
                   +
                   <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
                     <HoverCard.Target>
-                      <Kbd style={{ cursor: 'pointer' }} c='guide.5'>
+                      <Kbd style={{ cursor: 'pointer' }} c='guideInk.5'>
                         *
                       </Kbd>
                     </HoverCard.Target>
                     <HoverCard.Dropdown py={5} px={10}>
-                      <Text c='gray.0' size='xs'>
+                      <Text c='text.0' size='xs'>
                         You have some conditionals! These will only apply situationally:
                         <Divider pb={5} />
                         <List size='xs'>
@@ -181,7 +181,7 @@ export function StatHealthDrawerContent(props: { data: { id: StoreID } }) {
                     <Kbd style={{ cursor: 'pointer' }}>{halfClassHp}</Kbd>
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
-                    <Text c='gray.0' size='xs'>
+                    <Text c='text.0' size='xs'>
                       This is half the base hit points from your class. You gain this amount of stamina points every
                       level.
                     </Text>
@@ -193,7 +193,7 @@ export function StatHealthDrawerContent(props: { data: { id: StoreID } }) {
                     <Kbd style={{ cursor: 'pointer' }}>{parts.conMod}</Kbd>
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
-                    <Text c='gray.0' size='xs'>
+                    <Text c='text.0' size='xs'>
                       You add your Constitution modifier to the stamina points you gain every level.
                     </Text>
                   </HoverCard.Dropdown>
@@ -204,7 +204,7 @@ export function StatHealthDrawerContent(props: { data: { id: StoreID } }) {
                     <Kbd style={{ cursor: 'pointer' }}>{parts.level}</Kbd>
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
-                    <Text c='gray.0' size='xs'>
+                    <Text c='text.0' size='xs'>
                       This is your current level.
                     </Text>
                   </HoverCard.Dropdown>
@@ -231,7 +231,7 @@ export function StatHealthDrawerContent(props: { data: { id: StoreID } }) {
                     </Kbd>
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
-                    <Text c='gray.0' size='xs'>
+                    <Text c='text.0' size='xs'>
                       Your maximum resolve points equal your class's key attribute modifier. Spend 1 resolve point to
                       Take a Breather (10 minutes) and restore all your stamina points.
                     </Text>

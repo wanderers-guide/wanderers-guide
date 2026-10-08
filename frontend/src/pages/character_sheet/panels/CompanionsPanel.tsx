@@ -72,7 +72,7 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
         }}
       >
         <Stack mt={20} gap={10}>
-          <Text ta='center' c='gray.2' fs='italic' fz='sm'>
+          <Text ta='center' c='text.2' fs='italic' fz='sm'>
             No companions found, want to add one?
           </Text>
           <Group justify='center'>
@@ -292,19 +292,19 @@ function CompanionCard(props: {
 
           {props.computed && !boundSaves && (
             <Group gap={5} wrap='nowrap'>
-              <Text fz='xs' c='gray.6'>
+              <Text fz='xs' c='text.6'>
                 {props.computed.ac} AC
               </Text>
-              <Text fz='xs' c='gray.7'>
+              <Text fz='xs' c='text.7'>
                 |
               </Text>
-              <Text fz='xs' c='gray.6'>
+              <Text fz='xs' c='text.6'>
                 Fort. {sign(props.computed.fort)},
               </Text>
-              <Text fz='xs' c='gray.6'>
+              <Text fz='xs' c='text.6'>
                 Ref. {sign(props.computed.reflex)},
               </Text>
-              <Text fz='xs' c='gray.6'>
+              <Text fz='xs' c='text.6'>
                 Will {sign(props.computed.will)}
               </Text>
             </Group>
@@ -538,7 +538,7 @@ function AddCompanionSection() {
       })}
     >
       <Group gap={0} align='center' justify='center'>
-        <Text c='gray.2' mx={10}>
+        <Text c='text.2' mx={10}>
           Add
         </Text>
         <Select
@@ -585,7 +585,7 @@ function AddCompanionSection() {
             input: {
               borderTopRightRadius: 0,
               borderBottomRightRadius: 0,
-              '--input-placeholder-color': theme.colors.gray[6],
+              '--input-placeholder-color': theme.colors.text[6],
               backgroundColor: IMPRINT_BG_COLOR,
               borderColor: IMPRINT_BORDER_COLOR,
             },
@@ -620,7 +620,7 @@ function AddCompanionSection() {
             input: {
               borderTopLeftRadius: 0,
               borderBottomLeftRadius: 0,
-              '--input-placeholder-color': theme.colors.gray[6],
+              '--input-placeholder-color': theme.colors.text[6],
               backgroundColor: IMPRINT_BG_COLOR,
               borderColor: IMPRINT_BORDER_COLOR,
             },

@@ -86,7 +86,7 @@ export function StatAcDrawerContent(props: { data: { id: StoreID; inventory?: In
                     <Kbd style={{ cursor: 'pointer' }}>{parts.profBonus}</Kbd>
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
-                    <Text c='gray.0' size='xs'>
+                    <Text c='text.0' size='xs'>
                       Your proficiency bonus from wearing {armorName}.
                     </Text>
                   </HoverCard.Dropdown>
@@ -99,7 +99,7 @@ export function StatAcDrawerContent(props: { data: { id: StoreID; inventory?: In
                     <Kbd style={{ cursor: 'pointer' }}>{parts.dexBonus}</Kbd>
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
-                    <Text c='gray.0' size='xs'>
+                    <Text c='text.0' size='xs'>
                       Your Armor Class is associated with the Dexterity attribute, so you add your Dexterity modifier
                       (with a maximum benefit determined by the armor's Dex Cap).
                     </Text>
@@ -113,7 +113,7 @@ export function StatAcDrawerContent(props: { data: { id: StoreID; inventory?: In
                     <Kbd style={{ cursor: 'pointer' }}>{parts.armorBonus}</Kbd>
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
-                    <Text c='gray.0' size='xs'>
+                    <Text c='text.0' size='xs'>
                       The item bonus provided by the armor you're wearing.
                     </Text>
                   </HoverCard.Dropdown>
@@ -127,7 +127,7 @@ export function StatAcDrawerContent(props: { data: { id: StoreID; inventory?: In
                       <Kbd style={{ cursor: 'pointer' }}>{acBonusParts.baseValue}</Kbd>
                     </HoverCard.Target>
                     <HoverCard.Dropdown py={5} px={10}>
-                      <Text c='gray.0' size='xs'>
+                      <Text c='text.0' size='xs'>
                         An additional base modifier adjusting your Armor Class.
                       </Text>
                     </HoverCard.Dropdown>
@@ -142,7 +142,7 @@ export function StatAcDrawerContent(props: { data: { id: StoreID; inventory?: In
                       <Kbd style={{ cursor: 'pointer' }}>{bonus.value}</Kbd>
                     </HoverCard.Target>
                     <HoverCard.Dropdown py={5} px={10}>
-                      <Text c='gray.0' size='xs'>
+                      <Text c='text.0' size='xs'>
                         {key.startsWith('untyped ')
                           ? `Additional untyped modifiers:`
                           : `Your ${key}. Use the greatest from the following:`}
@@ -168,12 +168,12 @@ export function StatAcDrawerContent(props: { data: { id: StoreID; inventory?: In
                   +
                   <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
                     <HoverCard.Target>
-                      <Kbd style={{ cursor: 'pointer' }} c='guide.5'>
+                      <Kbd style={{ cursor: 'pointer' }} c='guideInk.5'>
                         *
                       </Kbd>
                     </HoverCard.Target>
                     <HoverCard.Dropdown py={5} px={10}>
-                      <Text c='gray.0' size='xs'>
+                      <Text c='text.0' size='xs'>
                         You have some conditionals! These will only apply situationally:
                         <Divider pb={5} />
                         <List size='xs'>

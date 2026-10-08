@@ -498,7 +498,7 @@ export default function InventoryPanel(props: {
                 </Box>
               ))}
             {invItems.length === 0 && (
-              <Text c='gray.2' fz='sm' ta='center' fs='italic' py={20}>
+              <Text c='text.2' fz='sm' ta='center' fs='italic' py={20}>
                 Your inventory is empty,{' '}
                 <Anchor fz='sm' fs='italic' onClick={() => openAddItemDrawer()}>
                   add some items
@@ -566,7 +566,7 @@ export function CoinSection(props: {
     <Group gap={15} wrap='nowrap' justify={props.justify}>
       {(pp || props.displayAll) && (
         <Group wrap='nowrap' gap={5}>
-          <Text c='gray.4' fz='md' fw={600}>
+          <Text c='text.4' fz='md' fw={600}>
             {pp.toLocaleString()}
           </Text>
           <Avatar src={PlatinumCoin} alt='Platinum Coins' radius='xs' size='xs' />
@@ -574,7 +574,7 @@ export function CoinSection(props: {
       )}
       {(gp || props.displayAll) && (
         <Group wrap='nowrap' gap={5}>
-          <Text c='gray.4' fz='md' fw={600}>
+          <Text c='text.4' fz='md' fw={600}>
             {gp.toLocaleString()}
           </Text>
           <Avatar src={GoldCoin} alt='Gold Coins' radius='xs' size='xs' />
@@ -582,7 +582,7 @@ export function CoinSection(props: {
       )}
       {(sp || (!pp && !gp && !cp)) && ( // Always show silver coins, even if 0
         <Group wrap='nowrap' gap={5}>
-          <Text c='gray.4' fz='md' fw={600}>
+          <Text c='text.4' fz='md' fw={600}>
             {sp.toLocaleString()}
           </Text>
           <Avatar src={SilverCoin} alt='Silver Coins' radius='xs' size='xs' />
@@ -590,7 +590,7 @@ export function CoinSection(props: {
       )}
       {(cp || props.displayAll) && (
         <Group wrap='nowrap' gap={5}>
-          <Text c='gray.4' fz='md' fw={600}>
+          <Text c='text.4' fz='md' fw={600}>
             {cp.toLocaleString()}
           </Text>
           <Avatar src={CopperCoin} alt='Copper Coins' radius='xs' size='xs' />
@@ -627,16 +627,16 @@ function InvItemOption(props: {
 
   const itemLabel = (
     <Group wrap='nowrap' gap={props.isPhone ? 5 : 10}>
-      <ItemIcon item={props.invItem.item} size='1.0rem' color={theme.colors.gray[6]} />
-      <Text c='gray.0' fz='sm' truncate>
+      <ItemIcon item={props.invItem.item} size='1.0rem' color={theme.colors.text[6]} />
+      <Text c='text.0' fz='sm' truncate>
         {props.invItem.item.name}
       </Text>
       {isItemWeapon(props.invItem.item) && weaponStats && (
         <Group wrap='nowrap' gap={10} maw={300}>
-          <Text c='gray.5' fz='xs' fs='italic' span>
+          <Text c='text.5' fz='xs' fs='italic' span>
             {sign(weaponStats.attack_bonus.total[0])}
           </Text>
-          <EllipsisText c='gray.5' fz='xs' fs='italic' span>
+          <EllipsisText c='text.5' fz='xs' fs='italic' span>
             {truncate(
               `${weaponStats.damage.dice}${weaponStats.damage.die}${weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``} ${weaponStats.damage.damageType}${parseOtherDamage(weaponStats.damage.other)}${weaponStats.damage.extra ? ` + ${weaponStats.damage.extra}` : ''}`,
               { length: props.isPhone ? 15 : 45 }

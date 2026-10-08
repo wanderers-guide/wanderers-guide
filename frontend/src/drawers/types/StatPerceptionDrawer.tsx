@@ -149,7 +149,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                   <Accordion.Item value='description'>
                     <Accordion.Control>
                       <Group wrap='nowrap' justify='space-between' gap={0}>
-                        <Text c='gray.2' fw={700} fz='sm'>
+                        <Text c='text.2' fw={700} fz='sm'>
                           Description
                         </Text>
                       </Group>
@@ -167,11 +167,11 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                   <Accordion.Item value='options'>
                     <Accordion.Control>
                       <Group wrap='nowrap' justify='space-between' gap={0}>
-                        <Text c='gray.2' fw={700} fz='sm'>
+                        <Text c='text.2' fw={700} fz='sm'>
                           Active
                         </Text>
                         <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                          <Text c='gray.2' span inherit>
+                          <Text c='text.2' span inherit>
                             {senses.precise.length}
                           </Text>
                         </Badge>
@@ -196,7 +196,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                                 {displaySense(sense)}
                               </Anchor>
                             ) : (
-                              <Text c='gray.2' size='md' span>
+                              <Text c='text.2' size='md' span>
                                 {displaySense(sense)}
                               </Text>
                             )}
@@ -235,7 +235,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                   <Accordion.Item value='description'>
                     <Accordion.Control>
                       <Group wrap='nowrap' justify='space-between' gap={0}>
-                        <Text c='gray.2' fw={700} fz='sm'>
+                        <Text c='text.2' fw={700} fz='sm'>
                           Description
                         </Text>
                       </Group>
@@ -255,11 +255,11 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                   <Accordion.Item value='options'>
                     <Accordion.Control>
                       <Group wrap='nowrap' justify='space-between' gap={0}>
-                        <Text c='gray.2' fw={700} fz='sm'>
+                        <Text c='text.2' fw={700} fz='sm'>
                           Active
                         </Text>
                         <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                          <Text c='gray.2' span inherit>
+                          <Text c='text.2' span inherit>
                             {senses.imprecise.length}
                           </Text>
                         </Badge>
@@ -284,7 +284,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                                 {displaySense(sense)}
                               </Anchor>
                             ) : (
-                              <Text c='gray.2' size='md' span>
+                              <Text c='text.2' size='md' span>
                                 {displaySense(sense)}
                               </Text>
                             )}
@@ -323,7 +323,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                   <Accordion.Item value='description'>
                     <Accordion.Control>
                       <Group wrap='nowrap' justify='space-between' gap={0}>
-                        <Text c='gray.2' fw={700} fz='sm'>
+                        <Text c='text.2' fw={700} fz='sm'>
                           Description
                         </Text>
                       </Group>
@@ -340,11 +340,11 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                   <Accordion.Item value='options'>
                     <Accordion.Control>
                       <Group wrap='nowrap' justify='space-between' gap={0}>
-                        <Text c='gray.2' fw={700} fz='sm'>
+                        <Text c='text.2' fw={700} fz='sm'>
                           Active
                         </Text>
                         <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                          <Text c='gray.2' span inherit>
+                          <Text c='text.2' span inherit>
                             {senses.vague.length}
                           </Text>
                         </Badge>
@@ -369,7 +369,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                                 {displaySense(sense)}
                               </Anchor>
                             ) : (
-                              <Text c='gray.2' size='md' span>
+                              <Text c='text.2' size='md' span>
                                 {displaySense(sense)}
                               </Text>
                             )}
@@ -410,7 +410,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                     <Kbd style={{ cursor: 'pointer' }}>{parts.profValue}</Kbd>
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
-                    <Text c='gray.0' size='xs'>
+                    <Text c='text.0' size='xs'>
                       You're {proficiencyTypeToLabel(compileProficiencyType(variable.value)).toLowerCase()} in this
                       proficiency, resulting in a{' '}
                       {sign(getProficiencyTypeValue(compileProficiencyType(variable.value)))} bonus.
@@ -423,7 +423,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                     <Kbd style={{ cursor: 'pointer' }}>{parts.level}</Kbd>
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
-                    <Text c='gray.0' size='xs'>
+                    <Text c='text.0' size='xs'>
                       {profWithoutLevel ? (
                         <>
                           {compileProficiencyType(variable.value) === 'U' ? (
@@ -468,7 +468,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                         <Kbd style={{ cursor: 'pointer' }}>{parts.attributeMod}</Kbd>
                       </HoverCard.Target>
                       <HoverCard.Dropdown py={5} px={10}>
-                        <Text c='gray.0' size='xs'>
+                        <Text c='text.0' size='xs'>
                           This proficiency is associated with the {toLabel(variable.value.attribute ?? '')} attribute,
                           so you add your {toLabel(variable.value.attribute ?? '')} modifier.
                         </Text>
@@ -484,7 +484,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                         <Kbd style={{ cursor: 'pointer' }}>{bonus.value}</Kbd>
                       </HoverCard.Target>
                       <HoverCard.Dropdown py={5} px={10}>
-                        <Text c='gray.0' size='xs'>
+                        <Text c='text.0' size='xs'>
                           {key.startsWith('untyped ')
                             ? `Additional untyped modifiers:`
                             : `Your ${key}. Use the greatest from the following:`}
@@ -510,12 +510,12 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                     +
                     <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
                       <HoverCard.Target>
-                        <Kbd style={{ cursor: 'pointer' }} c='guide.5'>
+                        <Kbd style={{ cursor: 'pointer' }} c='guideInk.5'>
                           *
                         </Kbd>
                       </HoverCard.Target>
                       <HoverCard.Dropdown py={5} px={10}>
-                        <Text c='gray.0' size='xs'>
+                        <Text c='text.0' size='xs'>
                           You have some conditionals! These will only apply situationally:
                           <Divider pb={5} />
                           <List size='xs'>

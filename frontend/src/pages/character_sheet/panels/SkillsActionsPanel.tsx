@@ -196,10 +196,10 @@ export default function SkillsActionsPanel(props: {
         invItem: invItem,
         leftSection: (
           <Group wrap='nowrap' gap={10} maw={300}>
-            <Text c='gray.5' fz='xs' fs='italic' span>
+            <Text c='text.5' fz='xs' fs='italic' span>
               {sign(weaponStats.attack_bonus.total[0])}
             </Text>
-            <EllipsisText c='gray.5' fz='xs' fs='italic' span>
+            <EllipsisText c='text.5' fz='xs' fs='italic' span>
               {weaponStats.damage.dice}
               {weaponStats.damage.die}
               {weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``}{' '}
@@ -447,12 +447,12 @@ export default function SkillsActionsPanel(props: {
                   }}
                 >
                   <Box>
-                    <Text c='gray.0' fz='sm'>
+                    <Text c='text.0' fz='sm'>
                       {variableToLabel(skill)}
                     </Text>
                   </Box>
                   <Group wrap='nowrap'>
-                    <Text c='gray.0'>{displayFinalProfValue(props.id, skill.name)}</Text>
+                    <Text c='text.0'>{displayFinalProfValue(props.id, skill.name)}</Text>
                     <Badge variant='default'>{compileProficiencyType(skill?.value)}</Badge>
                   </Group>
                 </StatButton>
@@ -511,7 +511,7 @@ export default function SkillsActionsPanel(props: {
                 setActionTypeFilter('ALL');
               }}
             >
-              <Text c='gray.2'>All</Text>
+              <Text c='text.2'>All</Text>
             </ActionIcon>
             <ActionIcon
               variant='subtle'
@@ -855,11 +855,11 @@ function ActionAccordionItem(props: {
     >
       <Accordion.Control>
         <Group wrap='nowrap' justify='space-between' gap={0}>
-          <Text c='gray.2' fw={700} fz='sm'>
+          <Text c='text.2' fw={700} fz='sm'>
             {props.title}
           </Text>
           <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-            <Text c='gray.2' span inherit>
+            <Text c='text.2' span inherit>
               {props.actions.length}
             </Text>
           </Badge>
@@ -901,8 +901,8 @@ function ActionSelectionOption(props: {
         py='sm'
         style={{
           cursor: 'pointer',
-          borderBottom: '1px solid ' + theme.colors.dark[6],
-          // backgroundColor: hovered ? theme.colors.dark[6] : 'transparent',
+          borderBottom: '1px solid ' + 'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))',
+          // backgroundColor: hovered ? 'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))' : 'transparent',
           position: 'relative',
         }}
         onClick={() => props.onClick(props.action)}

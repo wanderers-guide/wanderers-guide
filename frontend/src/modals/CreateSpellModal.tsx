@@ -277,7 +277,8 @@ export function CreateSpellModal(props: {
                 />
               )}
             </Group>
-            <Group wrap='nowrap' align='flex-start'>
+            {/* Keep selected rarity labels readable when traits wrap on phones. */}
+            <Group align='flex-start'>
               <Select
                 label='Rarity'
                 required
@@ -287,14 +288,15 @@ export function CreateSpellModal(props: {
                   { value: 'RARE', label: 'Rare' },
                   { value: 'UNIQUE', label: 'Unique' },
                 ]}
-                w={140}
+                w={160}
+                miw={160}
                 {...form.getInputProps('rarity')}
               />
               <TraitsInput
                 label='Traits'
                 traits={traits.map((trait) => trait.id)}
                 onTraitChange={(traits) => setTraits(traits)}
-                style={{ flex: 1 }}
+                style={{ flex: '1 1 128px', minWidth: 0 }}
               />
             </Group>
             <TagsInput

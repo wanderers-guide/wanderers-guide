@@ -1,13 +1,13 @@
 .input {
   input {
-    background-color: rgba(255, 255, 255, 0.08);
-    color: var(--mantine-color-gray-0);
+    background-color: var(--tiny-input-bg-color);
+    color: var(--mantine-color-text-0);
     min-height: 20px;
     height: 20px;
-    text-align: center; 
+    text-align: center;
   }
   input::placeholder {
-    color: var(--mantine-color-gray-5);
-    text-align: center; 
+    color: var(--mantine-color-text-5);
+    text-align: center;
   }
 }

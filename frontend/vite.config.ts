@@ -1,3 +1,4 @@
+import { visualReviewPlugin } from './cypress/visual/review-plugin';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -72,8 +73,10 @@ const manifestForPlugin: Partial<VitePWAOptions> = {
 };
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode, command }) => ({
   base: './',
+  // A visual worktree may share installed packages, but must not share optimized modules.
+  cacheDir: mode === 'visual' ? path.resolve(__dirname, '../.agents/legacy/visual-vite') : undefined,
   define: {
     __WG_RELEASE__: JSON.stringify(releaseRevision()),
   },
@@ -108,6 +111,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    ...(command === 'serve' && mode === 'visual' ? [visualReviewPlugin()] : []),
     react(),
     visualizer({
       emitFile: false,
@@ -130,4 +134,4 @@ export default defineConfig({
     // in a single pass; 'safari15' preserves the original iOS 15 support intent.
     target: ['es2020', 'safari15'],
   },
-});
+}));

@@ -72,11 +72,15 @@ import { titleCase } from 'title-case';
 export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
 
-  const { data: _item, isFetching, refetch } = useQuery({
+  const {
+    data: _item,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-item-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       const item = await fetchContentById<Item>('item', id);
 
@@ -119,11 +123,15 @@ export function ItemDrawerContent(props: {
   const [_drawer, openDrawer] = useAtom(drawerState);
   const theme = useMantineTheme();
 
-  const { data: _item, isFetching, refetch } = useQuery({
+  const {
+    data: _item,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-item-with-base-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       const item = await fetchContentById<Item>('item', id);
 
@@ -146,9 +154,7 @@ export function ItemDrawerContent(props: {
   const item = _item ?? props.data.item;
 
   if (!item) {
-    return (
-      <DrawerLoadState loading={isFetching} onRetry={refetch} />
-    );
+    return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
   }
 
   let price = null;
@@ -163,7 +169,7 @@ export function ItemDrawerContent(props: {
   if (_itemPrice && priceToString(_itemPrice) !== '—') {
     price = (
       <>
-        <Text key={1} fw={600} c='gray.2' span>
+        <Text key={1} fw={600} c='text.2' span>
           Price
         </Text>{' '}
         {priceToString(_itemPrice)}
@@ -175,7 +181,7 @@ export function ItemDrawerContent(props: {
   if (item.usage) {
     UBH.push(
       <>
-        <Text key={0} fw={600} c='gray.2' span>
+        <Text key={0} fw={600} c='text.2' span>
           Usage
         </Text>{' '}
         {item.usage.replace(/-/g, ' ')}
@@ -190,7 +196,7 @@ export function ItemDrawerContent(props: {
   ) {
     UBH.push(
       <>
-        <Text key={1} fw={600} c='gray.2' span>
+        <Text key={1} fw={600} c='text.2' span>
           Bulk
         </Text>{' '}
         {labelizeBulk(item.bulk)}
@@ -200,7 +206,7 @@ export function ItemDrawerContent(props: {
   if (item.hands && !item.usage?.trim()) {
     UBH.push(
       <>
-        <Text key={1} fw={600} c='gray.2' span>
+        <Text key={1} fw={600} c='text.2' span>
           Hands
         </Text>{' '}
         {item.hands}
@@ -249,7 +255,7 @@ export function ItemDrawerContent(props: {
         {isItemWithRunes(item) && (
           <Accordion variant='separated' my={5}>
             <Accordion.Item value='runes'>
-              <Accordion.Control icon={getIconMap('1.0rem', theme.colors.gray[6])['RUNE']}>Runes</Accordion.Control>
+              <Accordion.Control icon={getIconMap('1.0rem', theme.colors.text[6])['RUNE']}>Runes</Accordion.Control>
               <Accordion.Panel>
                 <ItemRunesDescription item={item} />
               </Accordion.Panel>
@@ -260,7 +266,7 @@ export function ItemDrawerContent(props: {
         {isItemWithUpgrades(item) && (
           <Accordion variant='separated' my={5}>
             <Accordion.Item value='upgrades'>
-              <Accordion.Control icon={getIconMap('1.0rem', theme.colors.gray[6])['UPGRADE']}>
+              <Accordion.Control icon={getIconMap('1.0rem', theme.colors.text[6])['UPGRADE']}>
                 Upgrades
               </Accordion.Control>
               <Accordion.Panel>
@@ -323,9 +329,16 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
   let quantitySection = null;
   if (hasQuantity && props.item.meta_data?.quantity !== 1) {
     quantitySection = (
-      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+      <Paper
+        shadow='xs'
+        my={5}
+        py={5}
+        px={10}
+        bg='light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))'
+        radius='md'
+      >
         <Group wrap='nowrap'>
-          <Text fw={600} c='gray.2' span>
+          <Text fw={600} c='text.2' span>
             Quantity
           </Text>{' '}
           <Text span>{props.item.meta_data?.quantity}</Text>
@@ -337,10 +350,18 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
   let healthSection = null;
   if (hasHealth) {
     healthSection = (
-      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md' style={{ position: 'relative' }}>
+      <Paper
+        shadow='xs'
+        my={5}
+        py={5}
+        px={10}
+        bg='light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))'
+        radius='md'
+        style={{ position: 'relative' }}
+      >
         <Group wrap='nowrap' justify='space-between'>
           <Group wrap='nowrap'>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Hit Points
             </Text>{' '}
             <Group>
@@ -357,10 +378,10 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
               </Text>
             </Stack>
             <Stack gap={0}>
-              <Text ta='left' fw={500} c='gray.4' fz={10}>
+              <Text ta='left' fw={500} c='text.4' fz={10}>
                 {health.hardness}
               </Text>
-              <Text ta='left' fw={500} c='gray.4' fz={10}>
+              <Text ta='left' fw={500} c='text.4' fz={10}>
                 {health.bt}
               </Text>
             </Stack>
@@ -404,24 +425,31 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
     const damageBonus = weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``;
 
     attackAndDamageSection = (
-      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+      <Paper
+        shadow='xs'
+        my={5}
+        py={5}
+        px={10}
+        bg='light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))'
+        radius='md'
+      >
         <Group grow gap={0}>
           <Group wrap='nowrap' gap={10} style={{ overflow: 'hidden' }}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Attack
             </Text>
-            <Text c='gray.2' span>
+            <Text c='text.2' span>
               {sign(weaponStats.attack_bonus.total[0])}{' '}
-              <Text c='gray.5' span>
+              <Text c='text.5' span>
                 / {sign(weaponStats.attack_bonus.total[1])} / {sign(weaponStats.attack_bonus.total[2])}
               </Text>
             </Text>
           </Group>
           <Group wrap='nowrap' gap={10} style={{ overflow: 'hidden' }} maw={300}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Damage
             </Text>
-            <EllipsisText c='gray.2' span>
+            <EllipsisText c='text.2' span>
               {weaponStats.damage.dice}
               {weaponStats.damage.die}
               {damageBonus} {weaponStats.damage.damageType}
@@ -466,7 +494,14 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
     const rightLabel = strikingLabel || resilientLabel;
 
     runesSection = (
-      <Paper shadow='xs' my={5} py={10} px={10} bg='dark.6' radius='md'>
+      <Paper
+        shadow='xs'
+        my={5}
+        py={10}
+        px={10}
+        bg='light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))'
+        radius='md'
+      >
         <Group gap={5}>
           {potencyLabel && (
             <Badge
@@ -547,7 +582,14 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
   let materialSection = null;
   if (isItemWithMaterial(props.item)) {
     materialSection = (
-      <Paper shadow='xs' my={5} py={10} px={10} bg='dark.6' radius='md'>
+      <Paper
+        shadow='xs'
+        my={5}
+        py={10}
+        px={10}
+        bg='light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))'
+        radius='md'
+      >
         <Group gap={5}>
           {materialType && (
             <Badge
@@ -573,13 +615,20 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
   let upgradeSection = null;
   if (isItemWithGradeImprovement(props.item)) {
     upgradeSection = (
-      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+      <Paper
+        shadow='xs'
+        my={5}
+        py={5}
+        px={10}
+        bg='light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))'
+        radius='md'
+      >
         <Group gap={10}>
           <Group wrap='nowrap' mr={5}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Grade
             </Text>{' '}
-            <Text c='gray.2' span>
+            <Text c='text.2' span>
               {toLabel(props.item.meta_data?.starfinder?.grade)}
             </Text>
           </Group>
@@ -619,21 +668,28 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
   let rangeAndReloadSection = null;
   if (isItemRangedWeapon(props.item)) {
     rangeAndReloadSection = (
-      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+      <Paper
+        shadow='xs'
+        my={5}
+        py={5}
+        px={10}
+        bg='light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))'
+        radius='md'
+      >
         <Group wrap='nowrap' grow>
           <Group wrap='nowrap' gap={10}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Range
             </Text>
-            <Text c='gray.2' span>
+            <Text c='text.2' span>
               {props.item.meta_data?.range} ft.
             </Text>
           </Group>
           <Group wrap='nowrap' gap={10}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Reload
             </Text>
-            <Text c='gray.2' span>
+            <Text c='text.2' span>
               {props.item.meta_data?.reload ?? '—'}
             </Text>
           </Group>
@@ -645,21 +701,28 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
   let capacityAndUsageSection = null;
   if (props.item.meta_data?.starfinder?.capacity || props.item.meta_data?.starfinder?.usage) {
     capacityAndUsageSection = (
-      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+      <Paper
+        shadow='xs'
+        my={5}
+        py={5}
+        px={10}
+        bg='light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))'
+        radius='md'
+      >
         <Group wrap='nowrap' grow>
           <Group wrap='nowrap' gap={10}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Capacity
             </Text>
-            <Text c='gray.2' span>
+            <Text c='text.2' span>
               {props.item.meta_data?.starfinder?.capacity ?? '—'}
             </Text>
           </Group>
           <Group wrap='nowrap' gap={10}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               Ammo Usage
             </Text>
-            <Text c='gray.2' span>
+            <Text c='text.2' span>
               {props.item.meta_data?.starfinder?.usage ?? '—'}
             </Text>
           </Group>
@@ -690,14 +753,21 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
     }
 
     categoryAndGroupSection = (
-      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+      <Paper
+        shadow='xs'
+        my={5}
+        py={5}
+        px={10}
+        bg='light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))'
+        radius='md'
+      >
         <Group wrap='nowrap' grow>
           {props.item.meta_data?.category && (
             <Group wrap='nowrap' gap={10}>
-              <Text fw={600} c='gray.2' span>
+              <Text fw={600} c='text.2' span>
                 Category
               </Text>
-              <Text c='gray.2' span>
+              <Text c='text.2' span>
                 {/* TitleCase it again in cases like 'unarmored defense' */}
                 {titleCase(toLabel(props.item.meta_data?.category))}
               </Text>
@@ -705,7 +775,7 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
           )}
           {effectiveGroup && (
             <Group wrap='nowrap' gap={10}>
-              <Text fw={600} c='gray.2' span>
+              <Text fw={600} c='text.2' span>
                 Group
               </Text>
               <HoverCard
@@ -718,7 +788,7 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
                 withArrow
               >
                 <HoverCard.Target>
-                  <Text c='gray.2' style={{ cursor: groupDesc ? 'pointer' : undefined }} span>
+                  <Text c='text.2' style={{ cursor: groupDesc ? 'pointer' : undefined }} span>
                     {toLabel(effectiveGroup)}
                   </Text>
                 </HoverCard.Target>
@@ -738,13 +808,21 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
   let armorSection = null;
   if (hasArmor) {
     armorSection = (
-      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md' style={{ position: 'relative' }}>
+      <Paper
+        shadow='xs'
+        my={5}
+        py={5}
+        px={10}
+        bg='light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))'
+        radius='md'
+        style={{ position: 'relative' }}
+      >
         <Group wrap='nowrap'>
           <Group wrap='nowrap' mr={20}>
-            <Text fw={600} c='gray.2' span>
+            <Text fw={600} c='text.2' span>
               AC Bonus
             </Text>{' '}
-            <Text c='gray.2' span>
+            <Text c='text.2' span>
               {sign(ac ?? 0)}
             </Text>
           </Group>
@@ -765,12 +843,12 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
                 </Stack>
                 <Stack gap={0}>
                   {dexCap !== undefined && (
-                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                    <Text ta='left' fw={500} c='text.4' fz={10}>
                       {sign(dexCap)}
                     </Text>
                   )}
                   {strength !== undefined && (
-                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                    <Text ta='left' fw={500} c='text.4' fz={10}>
                       {sign(strength)}
                     </Text>
                   )}
@@ -793,12 +871,12 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
                 </Stack>
                 <Stack gap={0}>
                   {!!checkPenalty && (
-                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                    <Text ta='left' fw={500} c='text.4' fz={10}>
                       {sign(checkPenalty)}
                     </Text>
                   )}
                   {!!speedPenalty && (
-                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                    <Text ta='left' fw={500} c='text.4' fz={10}>
                       {sign(speedPenalty)} ft.
                     </Text>
                   )}

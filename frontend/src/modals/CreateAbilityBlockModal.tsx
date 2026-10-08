@@ -242,7 +242,8 @@ export function CreateAbilityBlockModal(props: {
               )}
             </Group>
 
-            <Group wrap='nowrap' align='flex-start'>
+            {/* Keep rarity labels readable beside wrapping trait controls. */}
+            <Group align='flex-start'>
               <Select
                 label='Rarity'
                 required
@@ -252,14 +253,15 @@ export function CreateAbilityBlockModal(props: {
                   { value: 'RARE', label: 'Rare' },
                   { value: 'UNIQUE', label: 'Unique' },
                 ]}
-                w={140}
+                w={160}
+                miw={160}
                 {...form.getInputProps('rarity')}
               />
               <TraitsInput
                 label='Other Traits'
                 traits={traits.map((trait) => trait.id)}
                 onTraitChange={(traits) => setTraits(traits)}
-                style={{ flex: 1 }}
+                style={{ flex: '1 1 128px', minWidth: 0 }}
               />
             </Group>
 

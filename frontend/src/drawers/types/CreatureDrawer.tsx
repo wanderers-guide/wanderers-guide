@@ -511,7 +511,7 @@ export function CreatureDrawerContent(props: {
                     zIndex={1000}
                     styles={(t) => ({
                       dropdown: {
-                        backgroundColor: 'rgba(20, 21, 23)',
+                        backgroundColor: 'light-dark(var(--portal-bg-color), rgb(20, 21, 23))',
                         borderRadius: t.radius.lg,
                         padding: t.spacing.sm,
                       },
@@ -532,7 +532,7 @@ export function CreatureDrawerContent(props: {
                         )}
                       </ActionIcon>
                     </Popover.Target>
-                    <Popover.Dropdown w={'calc(min(95dvw, 430px))'}>
+                    <Popover.Dropdown className='phone-panel-picker' w={'calc(min(95dvw, 430px))'}>
                       <Box>
                         <Stack>
                           <Button
@@ -662,7 +662,7 @@ export function CreatureDrawerContent(props: {
                   </ActionIcon>
                 </HoverCard.Target>
                 <HoverCard.Dropdown py={5} px={10}>
-                  <Text c='gray.0' size='sm'>
+                  <Text c='text.0' size='sm'>
                     Rest
                   </Text>
                 </HoverCard.Dropdown>
@@ -702,7 +702,7 @@ export function CreatureDrawerContent(props: {
                   )}
                 </HoverCard.Target>
                 <HoverCard.Dropdown py={5} px={10}>
-                  <Text c='gray.0' size='sm'>
+                  <Text c='text.0' size='sm'>
                     {view === 'BLOCK' ? 'Open Sheet View' : 'Open Stat Block View'}
                   </Text>
                 </HoverCard.Dropdown>
@@ -770,7 +770,7 @@ export function RecallKnowledgeText(props: { entity: Creature; traits: Trait[] }
   if (sourceText) {
     return (
       <Text fz='xs' span>
-        <Text fz='xs' fw={600} c='gray.4' span>
+        <Text fz='xs' fw={600} c='text.4' span>
           Recall Knowledge
         </Text>{' '}
         <RichText fz='xs' span>
@@ -816,7 +816,7 @@ export function RecallKnowledgeText(props: { entity: Creature; traits: Trait[] }
 
   return (
     <Text fz='xs' span>
-      <Text fz='xs' fw={600} c='gray.4' span>
+      <Text fz='xs' fw={600} c='text.4' span>
         Recall Knowledge
       </Text>{' '}
       (

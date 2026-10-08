@@ -78,7 +78,7 @@ export default function PreparedSpellsList(props: {
     <Accordion.Item value={props.index} data-wg-name={props.index.toLowerCase()}>
       <Accordion.Control h={40}>
         <Group wrap='nowrap' justify='space-between' gap={0}>
-          <Text c='gray.2' fw={700} fz='sm'>
+          <Text c='text.2' fw={700} fz='sm'>
             {toLabel(props.source!.name)} Spells
           </Text>
 
@@ -147,10 +147,10 @@ export default function PreparedSpellsList(props: {
                 }}
               >
                 <Group wrap='nowrap' gap={10}>
-                  <Text fw={600} c='gray.2' fz='sm' span>
+                  <Text fw={600} c='text.2' fz='sm' span>
                     Spell Attack
                   </Text>
-                  <Text c='gray.2' fz='sm' span>
+                  <Text c='text.2' fz='sm' span>
                     {sign(spellStats.spell_attack.total[0])}
                     {!isPhone &&
                       ` / ${sign(spellStats.spell_attack.total[1])} /
@@ -168,10 +168,10 @@ export default function PreparedSpellsList(props: {
                 }}
               >
                 <Group wrap='nowrap' gap={10}>
-                  <Text fw={600} c='gray.2' fz='sm' span>
+                  <Text fw={600} c='text.2' fz='sm' span>
                     Spell DC
                   </Text>
-                  <Text c='gray.2' fz='sm' span>
+                  <Text c='text.2' fz='sm' span>
                     {spellStats.spell_dc.total}
                   </Text>
                 </Group>
@@ -185,11 +185,11 @@ export default function PreparedSpellsList(props: {
                 .map((rank, index) => (
                   <div key={index} data-wg-name={`rank-group-${index}`}>
                     <Group wrap='nowrap' justify='space-between' gap={0}>
-                      <Text c='gray.2' fw={700} fz='sm'>
+                      <Text c='text.2' fw={700} fz='sm'>
                         {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
                       </Text>
                       <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                        <Text c='gray.2' span inherit>
+                        <Text c='text.2' span inherit>
                           {props.hasFilters ? slots[rank].filter((s) => s.spell).length : slots[rank].length}
                         </Text>
                       </Badge>

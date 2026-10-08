@@ -31,12 +31,12 @@ Use the available `mcp__mantine__*` tools to look up components, props, and docs
 
 ### Where shared styling lives
 
-**Prefer top-level theming over one-off custom styles.** Two files own all shared styling — make changes there instead of hand-tuning values inline:
+**Prefer top-level theming over one-off custom styles.** These files own shared styling — make changes there instead of hand-tuning values inline:
 
-- **[frontend/src/App.tsx](frontend/src/App.tsx)** — Mantine theme via `createTheme(...)` (search for `generateTheme`). Color scales (`dark`, `gray`), `primaryColor`, `defaultRadius`, fonts, and per-component `vars` (Popover, Menu, HoverCard, …) live here. Component-wide overrides ("all Popovers should use color X") go in the theme's `components` map.
+- **[frontend/src/utils/theme.ts](frontend/src/utils/theme.ts)** — shared Mantine theme via `createAppTheme(...)`, applied by `common/AppThemeProvider.tsx` on app routes and standalone stat blocks. Color scales (`dark`, `gray`), `primaryColor`, `defaultRadius`, fonts, and per-component `vars` (Popover, Menu, HoverCard, …) live here. Component-wide overrides ("all Popovers should use color X") go in the theme's `components` map.
 - **[frontend/src/index.css](frontend/src/index.css)** — global CSS variables (`--glass-bg-color`, `--imprint-bg-color`, `--imprint-border-color`, …) keyed off `data-mantine-color-scheme` so they exist on both light and dark.
 
-If you're writing inline `style={{ ... }}` with hand-tuned colors/paddings/typography that don't reference a theme value, promote the value into `App.tsx` or `index.css` instead. Use Mantine tokens — `theme.radius.md`, `c='gray.2'`, `c='dimmed'`, `gap={10}`, `px='sm'` — instead of literal pixel/hex values.
+If you're writing inline `style={{ ... }}` with hand-tuned colors/paddings/typography that don't reference a theme value, promote the value into `utils/theme.ts` or `index.css` instead. Use Mantine tokens — `theme.radius.md`, `c='text.2'`, `c='dimmed'`, `gap={10}`, `px='sm'` — instead of literal pixel/hex values.
 
 ## Design Patterns
 
@@ -76,7 +76,7 @@ The base shadow goes outside the conditional spread so it's always applied; the 
 - Avoid `variant='default'` inside cards (too dark in dark mode).
 
 ### Typography & Hierarchy
-- Names/titles: `c='gray.2'` to pop against dimmed supporting text.
+- Names/titles: `c='text.2'` to pop against dimmed supporting text.
 - Supporting details (ancestry, class, etc): `c='dimmed'`.
 - Establish hierarchy through color weight/opacity, not just font size.
 

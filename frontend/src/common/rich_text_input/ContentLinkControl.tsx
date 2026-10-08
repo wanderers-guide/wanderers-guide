@@ -65,9 +65,10 @@ export default function ContentLinkControl() {
       const contentData = getContentDataFromHref(url);
       if (!contentData || contentData.type === 'condition') return;
 
-      const content = contentData.type === 'hazard'
-        ? await fetchHazardById(parseInt(contentData.id))
-        : await fetchContentById(convertToContentType(contentData.type), parseInt(contentData.id));
+      const content =
+        contentData.type === 'hazard'
+          ? await fetchHazardById(parseInt(contentData.id))
+          : await fetchContentById(convertToContentType(contentData.type), parseInt(contentData.id));
       if (content) {
         setContent(content);
       }
@@ -100,7 +101,7 @@ export default function ContentLinkControl() {
           {selectedContentType ? (
             <>
               <Menu.Label>
-                <Title order={6} c='gray.4'>
+                <Title order={6} c='text.4'>
                   Linked {selectedContentType}
                 </Title>
                 <Box>{selectedContentName}</Box>
@@ -110,7 +111,7 @@ export default function ContentLinkControl() {
           ) : (
             <>
               <Menu.Label>
-                <Title order={6} c='gray.4'>
+                <Title order={6} c='text.4'>
                   Select a Category
                 </Title>
               </Menu.Label>

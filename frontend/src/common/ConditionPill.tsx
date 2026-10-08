@@ -17,7 +17,7 @@ export default function ConditionPill(props: { text: string; amount?: number; on
     //   <Pill>{props.text}</Pill>
     // </Indicator>
     <Button.Group>
-      <ImprintButton radius='xl' size='compact-xs' c='gray.0' fw={400} noBorder onClick={props.onClick}>
+      <ImprintButton radius='xl' size='compact-xs' c='text.0' fw={400} noBorder onClick={props.onClick}>
         {props.text}
       </ImprintButton>
       {props.amount !== undefined && (
@@ -32,7 +32,7 @@ export default function ConditionPill(props: { text: string; amount?: number; on
           w={30}
           onClick={props.onClick}
         >
-          <Text c='gray.0' fz='xs'>
+          <Text c='text.0' fz='xs'>
             {props.amount}
           </Text>
         </ImprintButton>

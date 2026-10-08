@@ -25,7 +25,7 @@ export function SendNotificationOperation(props: {
               radius='xl'
               size='sm'
               label={
-                <Text fz='sm' c='gray.2'>
+                <Text fz='sm' c='text.2'>
                   Color
                 </Text>
               }

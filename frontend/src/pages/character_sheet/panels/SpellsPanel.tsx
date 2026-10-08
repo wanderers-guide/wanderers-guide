@@ -422,7 +422,7 @@ function ActionFilter(props: {
           setActionTypeFilter('ALL');
         }}
       >
-        <Text c='gray.2'>All</Text>
+        <Text c='text.2'>All</Text>
       </ActionIcon>
       <ActionIcon
         variant='subtle'

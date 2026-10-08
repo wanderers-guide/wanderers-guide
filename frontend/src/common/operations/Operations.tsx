@@ -236,7 +236,7 @@ export function OperationSection(props: {
                   </ActionIcon>
                 </HoverCard.Target>
                 <HoverCard.Dropdown py={5} px={10}>
-                  <Text c='gray.0' size='sm'>
+                  <Text c='text.0' size='sm'>
                     Copy Operations
                   </Text>
                 </HoverCard.Dropdown>
@@ -255,7 +255,7 @@ export function OperationSection(props: {
                   </ActionIcon>
                 </HoverCard.Target>
                 <HoverCard.Dropdown py={5} px={10}>
-                  <Text c='gray.0' size='sm'>
+                  <Text c='text.0' size='sm'>
                     Paste Operations
                   </Text>
                 </HoverCard.Dropdown>
@@ -359,7 +359,7 @@ export function OperationSection(props: {
           </Paper>
         ))}
         {(props.operations ?? []).length === 0 && (
-          <Text size='sm' c='gray.7' ta='center' fs='italic'>
+          <Text size='sm' c='text.7' ta='center' fs='italic'>
             No operations
           </Text>
         )}

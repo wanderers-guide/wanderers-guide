@@ -209,9 +209,9 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
                           position: 'absolute',
                           top: 5,
                           right: 5,
-                          color: theme.colors.gray[4],
+                          color: theme.colors.text[4],
                           ...glassStyle(),
-                          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                          backgroundColor: 'var(--art-control-bg-color)',
                         }}
                       >
                         {(characters?.length || 0) + ' players'}
@@ -222,14 +222,14 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
                           <BlurBox px='xs' py={5}>
                             <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
                               <HoverCard.Target>
-                                <Title c='gray.2' order={4} className={classes.name}>
+                                <Title c='text.2' order={4} className={classes.name}>
                                   {truncate(campaign?.name || 'My Campaign', {
                                     length: 30,
                                   })}
                                 </Title>
                               </HoverCard.Target>
                               <HoverCard.Dropdown py={5} px={10}>
-                                <Text c='gray.2' size='md'>
+                                <Text c='text.2' size='md'>
                                   {campaign?.name || 'My Campaign'}
                                 </Text>
                               </HoverCard.Dropdown>
@@ -252,8 +252,8 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
                           radius='md'
                           size='xs'
                           variant='light'
-                          bgColor='rgba(0, 0, 0, 0.25)'
-                          bgColorHover='rgba(0, 0, 0, 0.35)'
+                          bgColor='var(--art-control-subtle-bg-color)'
+                          bgColorHover='var(--art-control-subtle-hover-color)'
                           color='gray.4'
                           onClick={() => {
                             setTimeout(() => setRevealedKey(false), 5000);
@@ -279,8 +279,8 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
                           color='gray.4'
                           radius='md'
                           size={30}
-                          bgColor='rgba(0, 0, 0, 0.25)'
-                          bgColorHover='rgba(0, 0, 0, 0.35)'
+                          bgColor='var(--art-control-subtle-bg-color)'
+                          bgColorHover='var(--art-control-subtle-hover-color)'
                           onClick={async () => {
                             if (!campaign) return;
 
@@ -514,14 +514,14 @@ function SectionPanels(props: {
             )}
           </BlurBox>
         ) : (
-          <Box pb={35}>
+          <BlurBox p='sm' pb={35}>
             <NotesPanel
               campaign={props.campaign}
               setCampaign={props.setCampaign}
               panelHeight={props.panelHeight}
               panelWidth={props.panelWidth}
             />
-          </Box>
+          </BlurBox>
         )}
 
         <Box style={getAnchorStyles({ r: 20, b: 20 })}>
@@ -537,7 +537,7 @@ function SectionPanels(props: {
                 {openedPhonePanel ? <IconX size='2rem' stroke={2} /> : <IconLayoutGrid size='2rem' stroke={1.5} />}
               </ActionIcon>
             </Popover.Target>
-            <Popover.Dropdown w={'100dvw'}>
+            <Popover.Dropdown className='phone-panel-picker' w='calc(100dvw - 24px)' maw='calc(100dvw - 24px)'>
               <Box>
                 <Stack>
                   <Button
@@ -610,7 +610,7 @@ function SectionPanels(props: {
       <Box>
         <BlurBox p='sm' mih={props.panelHeight}>
           <Tabs
-            color='dark.6'
+            color='var(--campaign-tab-color)'
             variant='pills'
             radius='xl'
             keepMounted={false}
@@ -623,7 +623,10 @@ function SectionPanels(props: {
                 <Tabs.Tab
                   value='notes'
                   style={{
-                    border: activeTab === 'notes' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                    border:
+                      activeTab === 'notes'
+                        ? `1px solid ` + 'light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4))'
+                        : `1px solid transparent`,
                   }}
                   leftSection={getTabIcon('notes')}
                 >
@@ -634,7 +637,10 @@ function SectionPanels(props: {
                 <Tabs.Tab
                   value='encounters'
                   style={{
-                    border: activeTab === 'encounters' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                    border:
+                      activeTab === 'encounters'
+                        ? `1px solid ` + 'light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4))'
+                        : `1px solid transparent`,
                   }}
                   leftSection={getTabIcon('encounters')}
                 >
@@ -645,7 +651,10 @@ function SectionPanels(props: {
                 <Tabs.Tab
                   value='shops'
                   style={{
-                    border: activeTab === 'shops' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                    border:
+                      activeTab === 'shops'
+                        ? `1px solid ` + 'light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4))'
+                        : `1px solid transparent`,
                   }}
                   leftSection={getTabIcon('shops')}
                 >
@@ -656,7 +665,10 @@ function SectionPanels(props: {
                 <Tabs.Tab
                   value='inspiration'
                   style={{
-                    border: activeTab === 'inspiration' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                    border:
+                      activeTab === 'inspiration'
+                        ? `1px solid ` + 'light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4))'
+                        : `1px solid transparent`,
                   }}
                   leftSection={getTabIcon('inspiration')}
                 >
@@ -667,7 +679,10 @@ function SectionPanels(props: {
                 <Tabs.Tab
                   value='settings'
                   style={{
-                    border: activeTab === 'settings' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                    border:
+                      activeTab === 'settings'
+                        ? `1px solid ` + 'light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4))'
+                        : `1px solid transparent`,
                   }}
                   leftSection={getTabIcon('settings')}
                 >

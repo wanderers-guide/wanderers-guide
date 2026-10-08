@@ -43,13 +43,13 @@ function PerceptionSection(props: { id: StoreID }) {
         <PerceptionIcon size={80} color={perceptionHovered ? IMPRINT_BG_COLOR_HOVER_2 : IMPRINT_BG_COLOR_2} />
       </Box>
       <Stack gap={10}>
-        <Text ta='center' fz='sm' fw={500} c='gray.0'>
+        <Text ta='center' fz='sm' fw={500} c='text.0'>
           Perception
         </Text>
-        <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em'>
+        <Text ta='center' fz='lg' c='text.0' fw={500} lh='1.5em'>
           {displayFinalProfValue(props.id, 'PERCEPTION')}
         </Text>
-        <Text fz={10} c='gray.2' ta='center' truncate>
+        <Text fz={10} c='text.2' ta='center' truncate>
           {displayPrimaryVisionSense(props.id)}
         </Text>
       </Stack>
@@ -100,18 +100,18 @@ function SpeedSection(props: { id: StoreID; entity: LivingEntity | null }) {
         <SpeedIcon size={75} color={speedHovered ? IMPRINT_BG_COLOR_HOVER_2 : IMPRINT_BG_COLOR_2} />
       </Box>
       <Stack gap={10}>
-        <Text ta='center' fz='sm' fw={500} c='gray.0'>
+        <Text ta='center' fz='sm' fw={500} c='text.0'>
           Speed
         </Text>
-        <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em' pl={15}>
+        <Text ta='center' fz='lg' c='text.0' fw={500} lh='1.5em' pl={15}>
           {displayFinalSpeedValue(props.id, displaySpeed?.name || 'SPEED', props.entity)}
-          <Text fz='xs' c='gray.2' span>
+          <Text fz='xs' c='text.2' span>
             {' '}
             ft.
           </Text>
         </Text>
         {hasOthers.length > 1 ? (
-          <Text fz={10} c='gray.2' ta='center'>
+          <Text fz={10} c='text.2' ta='center'>
             And Others
           </Text>
         ) : (
@@ -149,10 +149,10 @@ function ClassDcSection(props: { id: StoreID }) {
         <BoxIcon size={50} color={classDcHovered ? IMPRINT_BG_COLOR_HOVER_2 : IMPRINT_BG_COLOR_2} />
       </Box>
       <Stack gap={10}>
-        <Text ta='center' fz='sm' fw={500} c='gray.0'>
+        <Text ta='center' fz='sm' fw={500} c='text.0'>
           Class DC
         </Text>
-        <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em'>
+        <Text ta='center' fz='lg' c='text.0' fw={500} lh='1.5em'>
           {displayFinalProfValue(props.id, 'CLASS_DC', true)}
         </Text>
       </Stack>
