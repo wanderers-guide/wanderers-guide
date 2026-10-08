@@ -89,7 +89,7 @@ import {
   resetVariables,
   setVariable,
 } from '@variables/variable-manager';
-import type { VariableListStr } from '@schemas/variables';
+import type { VariableBool, VariableListStr } from '@schemas/variables';
 import { ContentPackageSchema } from '@schemas/content';
 
 const LoaderSchema = z.object({ caseId: z.string(), characterId: z.string() });
@@ -863,11 +863,16 @@ function ConditionalHintsScene({ fixture, onClose }: { fixture: Fixture; onClose
   const id = 'VISUAL_REVIEW_HINTS';
   const [ready, setReady] = useState(false);
   useEffect(() => {
+    const organizedPlay = getVariable<VariableBool>('CHARACTER', 'ORGANIZED_PLAY')?.value ?? false;
+    setVariable('CHARACTER', 'ORGANIZED_PLAY', true, 'Local visual review');
     importVariableStore(id, exportVariableStore('CHARACTER'));
     for (const variable of ['SKILL_ARCANA', 'MAX_HEALTH_BONUS', 'SPEED'])
       addVariableBonus(id, variable, 1, 'circumstance', 'A situational modifier.', 'Local review');
     setReady(true);
-    return () => resetVariables(id);
+    return () => {
+      resetVariables(id);
+      setVariable('CHARACTER', 'ORGANIZED_PLAY', organizedPlay, 'Local visual review');
+    };
   }, []);
   const character = CharacterSchema.parse({
     ...fixture.characters.casterId,
