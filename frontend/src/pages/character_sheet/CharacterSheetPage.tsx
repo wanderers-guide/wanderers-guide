@@ -499,14 +499,12 @@ function SectionPanels(props: {
             onChange={setOpenedPhonePanel}
             styles={(t) => ({
               dropdown: {
-                // Force the dropdown to span the full viewport width.
-                // `left: 0 !important` overrides Mantine's floating-ui positioning
-                // which would otherwise anchor it relative to the target button.
+                // Leave room for Floating UI to keep the phone picker inside the viewport.
                 ...glassStyle(),
-                backgroundColor: 'rgba(0,0,0,0.4)',
+                backgroundColor: 'light-dark(var(--portal-bg-color), rgba(0,0,0,0.4))',
                 border: `1px solid ` + IMPRINT_BORDER_COLOR,
-                width: '100dvw',
-                left: '0 !important',
+                width: 'calc(100dvw - 24px)',
+                maxWidth: 'calc(100dvw - 24px)',
                 borderRadius: t.radius.lg,
                 padding: t.spacing.sm,
               },

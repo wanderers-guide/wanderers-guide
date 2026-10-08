@@ -423,7 +423,7 @@ function ProfileSection() {
           )}
 
           {/* Stats */}
-          <Group justify='center' gap={40} mb='md' wrap='nowrap'>
+          <Group justify='center' gap='xl' mb='md'>
             <Box>
               <Text ta='center' fz='xl' fw={600}>
                 {characters ? characters.length : '...'}
@@ -499,6 +499,10 @@ function ProfileSection() {
               fullWidth
               component='a'
               href={PATREON_AUTH_URL}
+              h='auto'
+              mih='var(--button-height)'
+              py={5}
+              styles={{ label: { whiteSpace: 'normal', textAlign: 'center' } }}
             >
               {user.patreon?.tier ? `Patreon Connected` : 'Connect to Patreon'}
             </Button>
@@ -581,6 +585,7 @@ function ProfileSection() {
             defaultValue=''
             variant='contained'
             styles={{
+              label: { whiteSpace: 'normal', overflow: 'visible', textOverflow: 'clip' },
               control: {
                 backgroundColor: 'var(--mantine-color-default-hover)',
                 '&:hover': { backgroundColor: 'var(--mantine-color-default-hover)' },

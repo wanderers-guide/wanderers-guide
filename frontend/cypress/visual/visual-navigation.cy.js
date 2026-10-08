@@ -90,11 +90,13 @@ describe('Actual navigation and populated panels', () => {
       cy.contains('main', 'Appearance', { timeout: 120000 }).should('be.visible');
       cy.contains('button', /^Appearance$/).click();
       for (const label of ['Characters', 'Bundles', 'Campaigns'])
-        cy.contains('main', label)
+        cy.contains('main .mantine-Text-root', new RegExp('^' + label + '$'))
           .parent()
-          .should(($box) => expect($box.text()).to.match(/\d/));
+          .children('.mantine-Text-root')
+          .first()
+          .should(($counter) => expect($counter.text()).to.match(/^\d+$/));
       settled('main');
-      captureScrolls('navigation/appearance/' + name, 'main');
+      captureScrolls('navigation/appearance/' + name, 'body');
       cy.document().then((doc) =>
         expect(doc.documentElement.scrollWidth, 'appearance variant fits viewport').to.be.at.most(
           doc.documentElement.clientWidth + 1
@@ -167,11 +169,13 @@ describe('Actual navigation and populated panels', () => {
     login('owner', '/builder/' + scenes.casterId);
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 120000 }).should('be.visible');
     if (phone) {
+      cy.contains('main button', /^Builder$/).click();
       cy.contains('main button', /^Preview$/).click();
       cy.get('.mantine-Drawer-content:visible').should('be.visible');
       captureScrolls('navigation/builder/statistics-preview');
       reviewPortals('navigation/builder/statistics-preview');
       cy.get('.mantine-Drawer-close:visible').last().click();
+      cy.contains('main button', /^Home$/).click();
     }
     cy.contains('[role=tab]:visible', /^Books$/).click();
     for (const label of [

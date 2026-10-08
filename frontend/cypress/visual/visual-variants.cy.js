@@ -17,6 +17,15 @@ function open(name) {
     .last()
     .should('be.visible');
 }
+function closeReviewModals() {
+  cy.get('body').then(($body) => {
+    const close = $body.find('.mantine-Modal-close:visible').last();
+    if (!close.length) return;
+    cy.wrap(close).click();
+    cy.wait(250, { log: false });
+    closeReviewModals();
+  });
+}
 function cancelConfirm(name) {
   captureScrolls('confirmations/' + name);
   cy.get('.mantine-Modal-content:visible')
@@ -117,10 +126,10 @@ describe('Conditional editor and navigation states', { testIsolation: false }, (
       .contains('button', /^Add Spell$/)
       .click();
     cy.get('.mantine-Modal-content:visible').last().find('input[placeholder*="Search"]').first().type('Heal');
-    cy.contains('.mantine-Modal-content:visible', /^Heal$/).should('be.visible');
+    cy.contains('.mantine-Modal-content:visible', /Heal/).should('be.visible');
     cy.get('.mantine-Modal-content:visible')
       .last()
-      .contains('button', /^Add Spell$/)
+      .contains('button', /^Select$/)
       .first()
       .click();
     cy.contains('.mantine-Modal-content:visible', /Select Heal.*Rank/).should('be.visible');
@@ -129,12 +138,14 @@ describe('Conditional editor and navigation states', { testIsolation: false }, (
   });
   review('bundle categories', () => {
     open('editor:source-bundle');
-    cy.get('.mantine-Modal-content:visible [role=tab]').then(($tabs) => {
+    cy.get('.mantine-Modal-content:visible [role=tab]', { timeout: 120000 }).then(($tabs) => {
       const labels = [...$tabs].map((el) => el.textContent.trim());
       for (const label of labels) {
         cy.contains('.mantine-Modal-content:visible [role=tab]', label).scrollIntoView().click();
         captureScrolls('bundle-categories/' + label);
-        reviewPortals('bundle-categories/' + label, '.mantine-Modal-content:visible .mantine-Tabs-panel:visible');
+        cy.get('.mantine-Modal-content:visible .mantine-Tabs-panel').last().scrollIntoView();
+        captureScrolls('bundle-categories/' + label + '/content');
+        reviewPortals('bundle-categories/' + label, '.mantine-Modal-content:visible .mantine-Tabs-panel');
       }
     });
     cy.get('.mantine-Modal-content:visible')
@@ -176,11 +187,15 @@ describe('Conditional editor and navigation states', { testIsolation: false }, (
   review('remove operation confirmation', () => {
     open('operation:adjValue');
     cy.get('.mantine-Modal-content:visible .mantine-CloseButton-root').last().click();
-    cy.contains('Remove Operation').should('be.visible');
+    cy.get('.mantine-Modal-content:visible')
+      .last()
+      .contains('.mantine-Title-root', 'Remove Operation')
+      .should('be.visible');
     cancelConfirm('operation');
   });
   review('existing rest confirmation', () => {
-    cy.get('.mantine-Modal-close:visible').last().click();
+    closeReviewModals();
+    cy.get('.mantine-Modal-content:visible').should('not.exist');
     cy.contains('button', /^Rest$/)
       .first()
       .click();

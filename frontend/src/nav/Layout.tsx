@@ -332,6 +332,8 @@ export default function Layout(props: { children: React.ReactNode }) {
           ...glassStyle(),
           borderRadius: 0,
           backgroundColor: 'color-mix(in srgb, var(--mantine-color-body) 80%, transparent)',
+          // CSS zoom can leave part of the translated, collapsed navbar inside the viewport.
+          visibility: opened ? undefined : 'hidden',
         }}
       >
         {session ? (

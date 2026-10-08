@@ -29,6 +29,15 @@ export function capture(name, interaction) {
   let previousDockVisibility;
   cy.document().then(async (doc) => {
     await doc.fonts.ready;
+    if (name.startsWith('pages/builder-caster') && width === 390) {
+      for (const el of doc.querySelectorAll('.mantine-Text-root[data-ui-review-source="common/RichText.tsx"]')) {
+        const viewport = el.closest('.mantine-ScrollArea-viewport');
+        if (!viewport || !el.getClientRects().length) continue;
+        expect(el.getBoundingClientRect().width, 'rules paragraphs fit their scroll viewport').to.be.at.most(
+          viewport.getBoundingClientRect().width + 1
+        );
+      }
+    }
     await Promise.all(
       [...doc.images]
         .filter((img) => img.getClientRects().length && !img.complete)
@@ -292,11 +301,13 @@ export function reviewPortals(name, selector = '.mantine-Modal-content:visible,.
           reviewedPortals.set(name, seen);
           if (seen.has(id)) return;
           seen.add(id);
+          // The sheet hides its fixed header while scrolling; its menu is reviewed separately at the top.
+          if (el.closest('header') && el.getBoundingClientRect().bottom <= 0) return;
           cy.wrap(el, { log: false }).scrollIntoView();
           if (kind === 'Menu' || kind === 'Popover') cy.wrap(el, { log: false }).click();
           else cy.wrap(el, { log: false }).trigger('mouseover').trigger('mouseenter').trigger('mousemove');
           const overlay = kind === 'Tooltip' ? '.mantine-Tooltip-tooltip' : `.mantine-${kind}-dropdown`;
-          cy.wait(800, { log: false });
+          cy.wait(kind === 'HoverCard' ? 1400 : 800, { log: false });
           cy.get('body').then(($body) => {
             if (!$body.find(overlay + ':visible').length) {
               cy.writeFile(
@@ -312,8 +323,13 @@ export function reviewPortals(name, selector = '.mantine-Modal-content:visible,.
               cy.wrap(el, { log: false })
                 .trigger('mouseout', { relatedTarget: el.ownerDocument.body })
                 .trigger('mouseleave');
-            // Moving the real pointer outside also closes menus configured with trigger='hover'.
-            cy.get('body').click(0, 0, { force: true });
+            // Move the native pointer to the viewport edge without clicking a page action.
+            cy.window().then((win) =>
+              Cypress.automation('remote:debugger:protocol', {
+                command: 'Input.dispatchMouseEvent',
+                params: { type: 'mouseMoved', x: win.innerWidth - 2, y: win.innerHeight - 2 },
+              })
+            );
             cy.get(overlay + ':visible', { timeout: 5000 }).should('not.exist');
           });
         });
