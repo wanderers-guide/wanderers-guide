@@ -117,7 +117,11 @@ must override it with their own creator application's ID. Client secrets remain
 server-only.
 Keep `PATREON_CLIENT_ID` and `PATREON_CLIENT_SECRET` for existing grants. New
 links record their issuing client so token refresh uses the correct credentials.
-The Account button shows a saved Patreon connection independently of paid tier.
+The Account settings contain a collapsed Patreon section whose header shows the
+saved connection independently of paid tier. Expand it to view Membership and
+the explicit Connect to Patreon or Reconnect action. Clicking the section header
+only opens settings; it does not start OAuth. GM sharing controls remain inside
+the Patreon section for Game Master members.
 A connected account without an entitled WG tier remains Non-Patron and receives
 no paid access from the connection alone.
 The authorization request needs only `identity identity[email]`: Patreon returns
@@ -128,8 +132,8 @@ together, using the repository's release inventory. Verify a real consenting
 patron can connect and receive their correct tier before declaring the incident
 resolved. Fixtures cannot verify client registration, secrets, approved redirects,
 or whether an existing v1 grant is accepted by v2. Some old grants may require a
-fresh connection using the existing Account button; provider failures retain
-stored links and group data while paid operations fail closed. They produce no
+fresh connection using Reconnect in Account's Patreon section; provider failures
+retain stored links and group data while paid operations fail closed. They produce no
 recovery messages. See [Patreon's migration guide](https://docs.patreon.com/#migrating-from-api-v1-to-api-v2).
 
 Regression coverage is included in `npm run test:api:boundaries`,
