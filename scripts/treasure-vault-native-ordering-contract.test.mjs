@@ -56,7 +56,7 @@ test('alternate allocation accepts the actual complete captured chronology befor
   const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
   const captured=await captureNativeInputManifest({root});
   const primaryChronology=captured.manifest.chronology;
-  assert.equal(primaryChronology.length,108);
+  assert.equal(primaryChronology.length,111);
   const boundary=new Error('validated chronology reached the first snapshot');
   let snapshots=0;
   const fixture={snapshot(){snapshots++;throw boundary;}};
@@ -66,6 +66,7 @@ test('alternate allocation accepts the actual complete captured chronology befor
     primaryChronology.slice(0,-1),
     [...primaryChronology,primaryChronology.at(-1)],
     [...primaryChronology.slice(0,-1),primaryChronology.at(-2)],
+    primaryChronology.map((row,index)=>index===primaryChronology.length-1?{...row,path:'20261008170000_unreviewed_successor.sql'}:row),
     [...primaryChronology].reverse(),
     primaryChronology.map((row,index)=>index===0?{...row,path:'invalid.sql'}:row),
     primaryChronology.map((row,index)=>index===0?{...row,sha256:'invalid'}:row),

@@ -165,7 +165,9 @@ export function CastSpellDrawerContent(props: {
         <Text fw={600} c='gray.2' span>
           Cost
         </Text>{' '}
-        {spell.cost}
+        <RichText span store={props.data.storeId}>
+          {spell.cost}
+        </RichText>
       </Fragment>
     );
   }
@@ -175,7 +177,9 @@ export function CastSpellDrawerContent(props: {
         <Text fw={600} c='gray.2' span>
           Trigger
         </Text>{' '}
-        {spell.trigger}
+        <RichText span store={props.data.storeId}>
+          {spell.trigger}
+        </RichText>
       </Fragment>
     );
   }
@@ -207,7 +211,9 @@ export function CastSpellDrawerContent(props: {
         <Text fw={600} c='gray.2' span>
           Targets
         </Text>{' '}
-        {spell.targets}
+        <RichText span store={props.data.storeId}>
+          {spell.targets}
+        </RichText>
       </Fragment>
     );
   }

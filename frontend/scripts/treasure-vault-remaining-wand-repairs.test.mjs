@@ -7,7 +7,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { AbilityBlockSchema, ItemSchema, SpellSchema, TraitSchema } from '../src/schemas/content.ts';
-import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
+import { createOperationEngine, readHistoricalContentRows } from './operation-test-harness.mjs';
 
 const migration = await readReviewedHistoricalSql(
   new URL('../../supabase/migrations/20261001120000_treasure_vault_remaining_wand_repairs.sql', import.meta.url),
@@ -24,7 +24,7 @@ const old = await readReviewedHistoricalSql(
 const oldDance = JSON.parse(old.split('$patches$')[1]).find(({ id }) => id === 12702);
 const patches = JSON.parse(migration.split('$patches$')[1]);
 const dependencies = JSON.parse(migration.split('$dependencies$')[1]);
-const rows = await readContentRows([
+const rows = await readHistoricalContentRows([
   ...patches.map(({ id }) => ({ table: 'item', id })),
   ...dependencies.map(({ table, id }) => ({ table: table.replaceAll('-', '_'), id })),
   ...[3, 16].map((id) => ({ table: 'content_source', id })),

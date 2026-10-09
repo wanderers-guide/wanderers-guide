@@ -165,6 +165,19 @@ Run the character rules and item drawer regressions with `npm --prefix frontend 
 These bundle the actual operation engine and drawer components against explicit local fixtures;
 selected rules content comes from the checked-in sanitized data dump. They need no running
 database or authentication account.
+
+Historical content-repair tests explicitly use the reviewed pre-repair Git snapshot
+through `readHistoricalContentRows`; ordinary `readContentRows` calls still read the
+current checked-in catalog. The shared historical reader verifies the pinned commit,
+blob identity, byte length, and SHA-256 before parsing it. It never replaces
+`data/data.sql` or falls back to a private export. A shallow checkout must fetch
+the pinned commit declared in `scripts/historical-content-fixture.mjs`, as CI does.
+Missing or changed historical inputs fail the test. Current catalog behavior and
+historical migration coverage are separate requirements.
+
+Run `node --import=tsx --test scripts/list-id-conditionals.test.mjs` from `frontend`
+for numeric content-ID membership, unchanged name and mode comparisons, and conditional
+focus grants through character reload, branch replacement, and removal.
 Run `npm --prefix frontend run test:contribution:authoring` for the actual Mantine
 conditional editor's source-qualified check controls. It mounts synthetic local
 content and runs Cypress Electron without a database, account or save endpoint.
@@ -178,6 +191,35 @@ The Treasure Vault equipment-prose cases in `test:rules` validate four exact rem
 catalog tuples, repeated content links, formula suppression, and preservation of
 existing saved inventory snapshots. These local fixture comparisons are not a
 whole-book rules audit or a production database check.
+
+Tech Core's introductory spell checks run with
+`node --import=tsx --test scripts/tech-core-introductory-spells.test.mjs scripts/spell-targets.test.mjs` from `frontend`.
+They verify the six exact spell records, citations, ranks, repeated links, and automatic
+Starfinder condition links through the real schema and text renderer, including spell Targets
+in both content and casting drawers, plus spell, feat, and action Trigger and Cost lines.
+From the repository root, run
+`node scripts/tech-core-spells-native.mjs --output=/absolute/private/evidence-directory`
+for the isolated PostgreSQL import, conflict, pending-submission, replay, and rollback checks.
+This reuses the owner-verified fixture and cleans up only the containers it creates.
+It does not update production or certify the rest of the book. The ordinary E2E stack
+separately exercises content triggers; this native fixture disables those triggers.
+
+Tech Core's next 76 general spells have a separate finite schema, helper, rendered-field,
+and ten-occurrence indexing regression suite:
+`node --import=tsx --test scripts/tech-core-general-spells.test.mjs` from `frontend`.
+The native safety runner uses the current catalog and applies the six introductory
+spells as prerequisites. To construct its plan without starting containers, run
+`node scripts/tech-core-general-spells-native.mjs --output=/absolute/private/evidence-directory`.
+Add `--execute-owned-native` for its focused isolated PostgreSQL checks; only the
+fixture's own uniquely identified resources are created and cleaned up. The focused
+matrix has 86 rejection cases and two closed-submission controls, plus positive
+import, runtime binding, complete readback, rollback and no-op replay checks.
+`--matrix=exhaustive` explicitly selects a finite matrix totaling 1,555 rejections;
+it is not the CI default. Both modes retain exact source and reference guards,
+including Tech Core's null source dependency and Tech's current creature-trait flag.
+CI runs the focused native batch sequentially after the six-spell native suite.
+Neither local test plan nor native success establishes a complete book audit or
+production import; ordinary content-trigger and browser checks remain separate.
 
 The broad PF2e matrix is part of `test:rules`: **1,211 comparisons across 469 engine
 calculations**, grouped into 49 named scenarios and a coverage guard. It loads four
@@ -458,9 +500,25 @@ guard and safety-runner regressions. These use local files and bounded models,
 not a running database, production credentials or private audit exports.
 
 Run `npm run test:content:native -- --release` with Docker running to rehearse the Treasure
-Vault repairs against the complete checked-in sanitized catalog and actual
-schema. It requires locally available PostgreSQL 15.6 and GoTrue images and a
-local Docker engine. It creates uniquely owned offline containers without
+Vault repairs against the explicit historical sanitized catalog and actual
+checked-in schema. Its input manifest separately records and verifies the current
+working-tree catalog and the immutable historical Git input. The historical fixture
+starts before the repairs so insertion, allocation, rollback, and own-stage checks
+remain exercised. The ordinary E2E job instead starts from the current dump, installs
+the actual content triggers, and runs the complete chronology and registered replays.
+Both modes must pass.
+
+The historical native fixture adds
+only the exact captured Tech Core source and Junk trait immediately before the
+introductory spell migration. It includes Station only when the captured chronology
+also contains the general spell batch. Earlier historical ledgers stay unchanged.
+The supplement retains content triggers and checks full rows, unrelated tuples,
+sequences, an injected late rollback and exact replay in both owned fixtures.
+Full schema and role preservation also use the existing postcommit snapshots.
+These fixture checks do not add or change prerequisites in production.
+
+The native runner requires locally available PostgreSQL 15.6
+and GoTrue images and a local Docker engine. It creates uniquely owned offline containers without
 published ports. Each new test PostgreSQL container is limited to 1 GiB of memory,
 no swap and one CPU, with fresh limit checks recorded in its receipt. These limits
 apply per container, not to the whole machine; existing containers are unchanged.
@@ -502,11 +560,15 @@ complete preservation snapshots, shared-helper compatibility, permission checks,
 concurrent writers and alternate allocations still run. The receipt explicitly
 records reduced negative coverage and never claims an exhaustive pass.
 It runs the fast contract tests before pulling images or creating
-a fixture. These include passing the complete captured 108-file chronology through
+a fixture. These include passing the complete captured migration chronology through
 the alternate allocation guard, so a stale migration count fails immediately.
 The chronology also checks the exact three-record source correction, its old-helper
 upgrade, replay, conflicting proposals, partial states and late rollback. Those
 controls preserve the other catalog rows and saved-item copies.
+The two reviewed Bagpipes classifications have a separate, complete-pair
+comparison allowance. It recognizes only their exact approved GENERAL rows and
+does not change content, hide fields from hashing, or broaden the three-record
+correction. Mixed or otherwise edited rows remain rejected.
 Its owned database does not share a runner with the browser/API
 stack. The ordinary E2E job keeps its two-hour budget and runs independently;
 both jobs must pass before release. Local fixture limits remain the same.

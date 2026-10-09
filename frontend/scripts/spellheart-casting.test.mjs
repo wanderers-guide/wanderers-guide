@@ -173,6 +173,8 @@ test('saved snapshot metadata wins; only exact cached identity may supply missin
     description: 'Unchanged saved custom description',
     meta_data: { ...item.meta_data },
   };
+  // Model an older saved item explicitly, even after the catalog gains printed casting metadata.
+  delete snapshot.meta_data.spellheart_casting;
   const canonical = {
     ...item,
     uuid: snapshot.uuid,
@@ -311,7 +313,9 @@ test('the actual Spellheart list uses the reactive official catalog and preserve
     'useMemo',
     `${compiled}; return processedSpellhearts;`
   );
-  const snapshot = { ...item, uuid: 159508880647118 };
+  const snapshot = { ...item, uuid: 159508880647118, meta_data: { ...item.meta_data } };
+  // A disabled source cannot fill missing metadata, but saved printed values remain authoritative.
+  delete snapshot.meta_data.spellheart_casting;
   const canonical = { ...snapshot, meta_data: { ...snapshot.meta_data, spellheart_casting: printed } };
   const inventory = { id: 'saved-owner', item: snapshot, is_equipped: true, container_contents: [] };
   const props = {

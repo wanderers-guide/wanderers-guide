@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import uploadUtils from '../../supabase/functions/_shared/upload-utils.ts';
-import { readContentRows } from './operation-test-harness.mjs';
+import { readHistoricalContentRows } from './operation-test-harness.mjs';
 import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 
 const { uniqueId } = uploadUtils;
@@ -49,8 +49,8 @@ const armors = [
 ];
 
 test('War armor copies use source-specific identities and leave Treasure Vault records intact', async () => {
-  const rows = await readContentRows(armors.map(({ id }) => ({ table: 'item', id })));
-  const sources = await readContentRows([
+  const rows = await readHistoricalContentRows(armors.map(({ id }) => ({ table: 'item', id })));
+  const sources = await readHistoricalContentRows([
     { table: 'content_source', id: 16 },
     { table: 'content_source', id: 400 },
   ]);

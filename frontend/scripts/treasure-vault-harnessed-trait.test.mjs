@@ -8,7 +8,7 @@ import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { AbilityBlockSchema, InventorySchema, TraitSchema } from '../src/schemas/content.ts';
 import uploadUtils from '../../supabase/functions/_shared/upload-utils.ts';
-import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
+import { createOperationEngine, readHistoricalContentRows } from './operation-test-harness.mjs';
 import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 
 const { uniqueId } = uploadUtils;
@@ -21,7 +21,7 @@ const release = await readReviewedHistoricalSql(
   'utf8'
 );
 const spec = JSON.parse(migration.split('$harnessed$')[1]);
-const rows = await readContentRows([
+const rows = await readHistoricalContentRows([
   { table: 'trait', id: 2886 },
   ...spec.dependencies.map(({ table, id }) => ({ table: table.replaceAll('-', '_'), id })),
   { table: 'content_source', id: 3 },

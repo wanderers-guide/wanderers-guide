@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
 import { AbilityBlockSchema, ContentSourceSchema, TraitSchema } from '../src/schemas/content.ts';
 import { OperationSchema } from '../src/schemas/operations.ts';
-import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
+import { createOperationEngine, readHistoricalContentRows } from './operation-test-harness.mjs';
 
 const migration = await readReviewedHistoricalSql(
   new URL('../../supabase/migrations/20261001220000_treasure_vault_winter_resistance.sql', import.meta.url),
@@ -14,7 +14,7 @@ const release = await readReviewedHistoricalSql(
   'utf8'
 );
 const spec = JSON.parse(migration.split('$winter$')[1]);
-const rows = await readContentRows([
+const rows = await readHistoricalContentRows([
   ...[51111, 29500, 20730].map((id) => ({ table: 'ability_block', id })),
   ...[3295, 3460, 3487, 3479, 1468, 1542, 1346].map((id) => ({ table: 'trait', id })),
   { table: 'content_source', id: 16 },

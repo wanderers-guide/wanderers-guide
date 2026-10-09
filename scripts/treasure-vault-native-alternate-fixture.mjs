@@ -7,6 +7,8 @@ import {createHistoricalPositiveProjections} from './treasure-vault-native-posit
 import {createHistorical023FreshImportCapsule} from './treasure-vault-native-fresh-equipment.mjs';
 import {createNativeRegisteredCiReplayControls} from './treasure-vault-native-registered-ci-replays.mjs';
 import {nativeDiagnostic} from './treasure-vault-native-diagnostics.mjs';
+import { createNativeTechCorePrerequisites, TECH_CORE_PREREQUISITE_BOUNDARY } from './treasure-vault-native-tech-core-prerequisites.mjs';
+import {HISTORICAL_CONTENT_FIXTURE} from './historical-content-fixture.mjs';
 
 const sha=value=>createHash('sha256').update(value).digest('hex');
 
@@ -25,7 +27,8 @@ export function createAuthenticAlternateFixtureDriver({root,inputs,migrations,in
       negative_suite_repeated:false};
     receipt.alternate_fixture=evidence;
     let other;
-    try {other=createOwnedNativeFixture({root,receipt:evidence,log:row=>log({fixture:'alternate',...row}),bootstrapRead:inputManifest.readRelative,throwIfRequested:stop.throwIfRequested});}
+    try {other=createOwnedNativeFixture({root,receipt:evidence,log:row=>log({fixture:'alternate',...row}),bootstrapRead:inputManifest.readRelative,
+      contentDump:inputManifest.readHistoricalBootstrap(),contentDumpProvenance:HISTORICAL_CONTENT_FIXTURE,throwIfRequested:stop.throwIfRequested});}
     catch(error){evidence.failure=nativeDiagnostic(error,{remember:true,summary:'Alternate fixture failed before safe diagnostics were available'});throw error;}
     async function stage(name,sql) {
       await stop.checkpoint('alternate before '+name);
@@ -40,6 +43,7 @@ export function createAuthenticAlternateFixtureDriver({root,inputs,migrations,in
       evidence.starting_input_verification=await inputManifest.verify();
       await other.initialize(stage);const userId=other.signup();other.savedCopyFixture(userId);
       await other.enableEngineTransport();
+      const techCorePrerequisites=createNativeTechCorePrerequisites({inputManifest});
       const phases=createNativePhaseRunner({fixture:other,receipt:evidence,stage,checkpoint:stop.checkpoint,log:row=>log({fixture:'alternate',...row})});
       const history=createAuthenticSharedHistoryControls({inputs,query:other.query,sql:other.sql,stateDigest:other.stateDigest,receipt:evidence,stage,checkpoint:stop.checkpoint});
       const positives=createHistoricalPositiveProjections({inputs,fixture:other,receipt:evidence});
@@ -49,6 +53,7 @@ export function createAuthenticAlternateFixtureDriver({root,inputs,migrations,in
         await stop.checkpoint('alternate chronology '+migration.path);
         assert.equal(sha(migration.sql),migration.sha256);chronology.push({path:migration.path,sha256:migration.sha256});
         await beforeStage({path:migration.path,fixture:other});
+        if(migration.path===TECH_CORE_PREREQUISITE_BOUNDARY)await techCorePrerequisites.run({fixture:other,stage,receipt:evidence,checkpoint:stop.checkpoint});
         if(migration.path===inputs.helper.path) {
           await stage('alternate-helper-install',inputs.helper.sql);assert.equal(history.status().recognized,false);
           await phases.readOnly(inputs.helper);await phases.replay(inputs.helper,'alternate-installer-replay');
@@ -65,7 +70,7 @@ export function createAuthenticAlternateFixtureDriver({root,inputs,migrations,in
           if(projection){await stop.checkpoint('alternate projection '+migration.path);projection.verify();}
         }
       }
-      assert.equal(chronology.length,108);evidence.historical14=positives.complete();
+      assert.equal(chronology.length,111);evidence.historical14=positives.complete();
       assert.equal(evidence.historical023_fresh_import_capsule?.passed,true);
       assert.equal(evidence.shared_history.own_stage.length,39);assert.equal(evidence.shared_history.terminal.length,2);
       assert.equal(other.query('select count(*) from public.content_update;'),'0');

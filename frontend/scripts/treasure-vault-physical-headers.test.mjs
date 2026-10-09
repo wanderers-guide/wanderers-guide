@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import { ItemSchema } from '../src/schemas/content.ts';
-import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
+import { createOperationEngine, readHistoricalContentRows } from './operation-test-harness.mjs';
 import { content as emptyContent, inventoryItem, summoner } from './fixtures/eidolon.mjs';
 
 const migration = await readFile(
@@ -61,7 +61,7 @@ function repair(row, patch) {
 
 let originals, proposed, rows, engine;
 before(async () => {
-  rows = await readContentRows([
+  rows = await readHistoricalContentRows([
     ...patches.map(({ id }) => ({ table: 'item', id })),
     { table: 'trait', sourceIds: [3, 16] },
     { table: 'content_source', id: 16 },
@@ -158,7 +158,11 @@ test('only the complete reviewed Mindlight scalar successor survives replay with
   const patch = successors[0];
   assert.equal(patch.id, 12212);
   assert.equal(patch.successor_migration, '20261002095000_treasure_vault_scalar_mechanics.sql');
-  assert.deepEqual(patch.successor_after, { bulk: '0.1', usage: 'wornheadwear', traits: [1526, 1527, 1504, 1517, 1514] });
+  assert.deepEqual(patch.successor_after, {
+    bulk: '0.1',
+    usage: 'wornheadwear',
+    traits: [1526, 1527, 1504, 1517, 1514],
+  });
   const original = originals.find((row) => row.id === patch.id);
   const successor = { ...structuredClone(original), ...structuredClone(patch.successor_after) };
   const saved = structuredClone(successor);
@@ -171,7 +175,8 @@ test('only the complete reviewed Mindlight scalar successor survives replay with
     { description: 'Unreviewed prose' },
     { price: { gp: 1 } },
     { usage: 'worn' },
-  ]) assert.throws(() => repair({ ...structuredClone(successor), ...change }, patch));
+  ])
+    assert.throws(() => repair({ ...structuredClone(successor), ...change }, patch));
 });
 
 test('actual bulk helpers use the corrected physical mass for single items, stacks, containers and formulas', () => {

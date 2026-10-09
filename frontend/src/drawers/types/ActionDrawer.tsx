@@ -148,7 +148,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
             <Text fw={600} c='gray.2' span>
               Trigger
             </Text>{' '}
-            {action.trigger}
+            <RichText span>{action.trigger}</RichText>
           </IndentedText>
         )}
         {action.cost && (
@@ -156,7 +156,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
             <Text fw={600} c='gray.2' span>
               Cost
             </Text>{' '}
-            {action.cost}
+            <RichText span>{action.cost}</RichText>
           </IndentedText>
         )}
         {action.requirements && (
