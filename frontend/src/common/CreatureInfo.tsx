@@ -21,7 +21,7 @@ import { truncate } from 'lodash-es';
 import { DisplayIcon } from './IconDisplay';
 import TraitsDisplay from './TraitsDisplay';
 import { StoreID, VariableStr } from '@schemas/variables';
-import { getAllAncestryTraitVariables, getVariable } from '@variables/variable-manager';
+import { getAllActorTraitVariables, getVariable } from '@variables/variable-manager';
 import { useQuery } from '@tanstack/react-query';
 import { fetchContentAll, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
 import { isTruthy } from '@utils/type-fixing';
@@ -44,7 +44,7 @@ export function CreatureDetailedInfo(props: { id: StoreID; creature: Creature })
       return await fetchContentAll<Trait>('trait', getDefaultSources('INFO'));
     },
   });
-  const traits = getAllAncestryTraitVariables(props.id)
+  const traits = getAllActorTraitVariables(props.id)
     .map((v) => {
       const trait = data?.find((trait) => trait.id === v.value);
       return trait;

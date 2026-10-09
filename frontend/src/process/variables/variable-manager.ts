@@ -1273,6 +1273,24 @@ export function getAllAncestryTraitVariables(id: StoreID): VariableNum[] {
   return variables as VariableNum[];
 }
 
+/**
+ * Body and explicitly granted ordinary traits for actor display and export.
+ * Class/archetype provenance and ancestry feat eligibility keep their separate getters.
+ */
+export function getAllActorTraitVariables(id: StoreID): VariableNum[] {
+  const traits = new Map<number, VariableNum>();
+  for (const variable of Object.values(getVariables(id))) {
+    if (
+      variable.type === 'num' &&
+      (variable.name.startsWith('TRAIT_ANCESTRY_') || variable.name.startsWith('TRAIT_ACTOR_')) &&
+      !traits.has(variable.value)
+    ) {
+      traits.set(variable.value, variable);
+    }
+  }
+  return [...traits.values()];
+}
+
 export function getAllClassTraitVariables(id: StoreID): VariableNum[] {
   const variables = [];
   for (const variable of Object.values(getVariables(id))) {

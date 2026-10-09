@@ -516,40 +516,12 @@ async function updateVariables(
   if (options && options.doOnlyValueCreation) {
     // Create variables based on the selected option
     if (operation.data.optionType === 'TRAIT') {
-      let isCharacterTrait = false;
-      if (selectedOption.meta_data?.class_trait) {
-        addVariable(
-          varId,
-          'num',
-          labelToVariable(`TRAIT_CLASS_${selectedOption.name}_IDS`),
-          selectedOption.id,
-          sourceLabel
-        );
-        isCharacterTrait = true;
-      } else if (selectedOption.meta_data?.archetype_trait) {
-        addVariable(
-          varId,
-          'num',
-          labelToVariable(`TRAIT_ARCHETYPE_${selectedOption.name}_IDS`),
-          selectedOption.id,
-          sourceLabel
-        );
-        isCharacterTrait = true;
-      } else if (
-        selectedOption.meta_data?.ancestry_trait ||
-        selectedOption.meta_data?.creature_trait ||
-        selectedOption.meta_data?.versatile_heritage_trait
-      ) {
-        addVariable(
-          varId,
-          'num',
-          labelToVariable(`TRAIT_ANCESTRY_${selectedOption.name}_IDS`),
-          selectedOption.id,
-          sourceLabel
-        );
-        isCharacterTrait = true;
-      }
-      if (isCharacterTrait) adjVariable(varId, 'TRAIT_NAMES', selectedOption.name.toUpperCase(), sourceLabel);
+      registerActorTrait(
+        varId,
+        { id: selectedOption.id, name: selectedOption.name, meta_data: selectedOption.meta_data },
+        'SELECTED',
+        sourceLabel
+      );
     }
     return;
   }
@@ -1303,6 +1275,36 @@ async function runGiveItem(
   return null;
 }
 
+/** Register explicit actor traits without treating ordinary traits as feat origins. */
+function registerActorTrait(
+  varId: StoreID,
+  trait: Pick<Trait, 'id' | 'name' | 'meta_data'>,
+  grantKind: 'DIRECT' | 'SELECTED',
+  sourceLabel?: string
+): void {
+  let variableName: string;
+  if (trait.meta_data?.class_trait) {
+    variableName = labelToVariable(`TRAIT_CLASS_${trait.name}_IDS`);
+  } else if (trait.meta_data?.archetype_trait) {
+    variableName = labelToVariable(`TRAIT_ARCHETYPE_${trait.name}_IDS`);
+  } else if (
+    trait.meta_data?.ancestry_trait ||
+    trait.meta_data?.creature_trait ||
+    trait.meta_data?.versatile_heritage_trait ||
+    (grantKind === 'DIRECT' && trait.meta_data?.companion_type_trait)
+  ) {
+    variableName = labelToVariable(`TRAIT_ANCESTRY_${trait.name}_IDS`);
+  } else if (trait.meta_data?.companion_type_trait) {
+    /* Companion-only trait selections retain their existing non-granting behavior. */
+    return;
+  } else {
+    /* IDs keep distinct ordinary traits apart even when their normalized names collide. */
+    variableName = `TRAIT_ACTOR_${trait.id}_IDS`;
+  }
+  addVariable(varId, 'num', variableName, trait.id, sourceLabel);
+  adjVariable(varId, 'TRAIT_NAMES', trait.name.toUpperCase(), sourceLabel);
+}
+
 async function runGiveTrait(
   varId: StoreID,
   operation: OperationGiveTrait,
@@ -1315,31 +1317,7 @@ async function runGiveTrait(
     return null;
   }
 
-  // Create variables because we run variable creation first
-  let isCharacterTrait = false;
-  if (trait.meta_data?.class_trait) {
-    addVariable(varId, 'num', labelToVariable(`TRAIT_CLASS_${trait.name}_IDS`), trait.id, sourceLabel);
-    isCharacterTrait = true;
-  } else if (trait.meta_data?.archetype_trait) {
-    addVariable(varId, 'num', labelToVariable(`TRAIT_ARCHETYPE_${trait.name}_IDS`), trait.id, sourceLabel);
-    isCharacterTrait = true;
-  } else if (
-    trait.meta_data?.ancestry_trait ||
-    trait.meta_data?.creature_trait ||
-    trait.meta_data?.versatile_heritage_trait ||
-    trait.meta_data?.companion_type_trait
-  ) {
-    addVariable(varId, 'num', labelToVariable(`TRAIT_ANCESTRY_${trait.name}_IDS`), trait.id, sourceLabel);
-    isCharacterTrait = true;
-  } else {
-    console.warn(
-      `Trait is not a class, archetype, ancestry, or creature trait so it can't be given to a character: ${trait.name} (${trait.id})`
-    );
-    displayError(
-      `Trait is not a class, archetype, ancestry, or creature trait so it can't be given to a character: ${trait.name} (${trait.id})`
-    );
-  }
-  if (isCharacterTrait) adjVariable(varId, 'TRAIT_NAMES', trait.name.toUpperCase(), sourceLabel);
+  registerActorTrait(varId, trait, 'DIRECT', sourceLabel);
 
   return null;
 }

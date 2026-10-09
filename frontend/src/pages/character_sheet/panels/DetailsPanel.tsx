@@ -35,7 +35,7 @@ import {
   getAllWeaponVariables,
   getAllArmorGroupVariables,
   getAllArmorVariables,
-  getAllAncestryTraitVariables,
+  getAllActorTraitVariables,
 } from '@variables/variable-manager';
 import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
 import { useAtom, useAtomValue } from 'jotai';
@@ -70,7 +70,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
     return lang;
   });
 
-  const traits = getAllAncestryTraitVariables('CHARACTER').map((v) => {
+  const traits = getAllActorTraitVariables('CHARACTER').map((v) => {
     const trait = props.content.traits.find((trait) => trait.id === v.value);
     return trait;
   });

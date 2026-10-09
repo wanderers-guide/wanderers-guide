@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'wg-drawer-tests-'));
 after(() => fs.rmSync(directory, { recursive: true, force: true }));
@@ -47,7 +48,8 @@ const special = {
     'async (_type,id) => { const result = globalThis.__wgRuneLookups.get(id); if (result instanceof Error) throw result; return result ?? null; }',
   FUNDAMENTAL_RUNES: '{potency_weapon_2:7951,striking_1:7862}',
   isItemWithRunes: 'item => !!item.meta_data?.runes',
-  isItemWeapon: 'item => item.group === "WEAPON"',
+  isItemWeapon:
+    'item => globalThis.__wgDrawerWeaponEngine ? globalThis.__wgDrawerWeaponEngine.isItemWeapon(item) : item.group === "WEAPON"',
   isItemArmor: '() => false',
   useMantineTheme: '() => ({colors:{gray:Array(10).fill("gray")}})',
   getVariable:
@@ -59,6 +61,7 @@ const special = {
   getAnchorStyles: '() => ({})',
   cloneDeep: 'x=>structuredClone(x)',
   getWeaponGroup: '() => ""',
+  getWeaponStats: '(...args) => globalThis.__wgDrawerWeaponEngine.getWeaponStats(...args)',
   getWeaponSpecialization: '() => ({})',
   getArmorSpecialization: '() => ({})',
   toLabel: 'x=>x',
@@ -137,6 +140,38 @@ for (const [name, Component, props, store] of tests) {
     assert.ok(!html.includes(otherStore + ' RESEARCH FIELD TEXT'));
   });
 }
+
+test('catalog and inventory drawers preserve real non-damaging grenade classification and omit damage', async (t) => {
+  const rows = await readContentRows([{ table: 'item', id: 21284 }]);
+  const flash = rows.find((entry) => entry.table === 'item').row;
+  const engine = await createOperationEngine();
+  t.after(async () => {
+    delete globalThis.__wgDrawerWeaponEngine;
+    await engine.cleanup();
+  });
+  engine.setFixtures(rows);
+  engine.resetVariables('CHARACTER');
+  engine.setVariable('CHARACTER', 'STARFINDER', true);
+  engine.setVariable('CHARACTER', 'PATHFINDER', false);
+  globalThis.__wgDrawerWeaponEngine = engine;
+  assert.equal(engine.isItemWeapon(flash), false);
+  const inventoryEntry = {
+    id: 'non-damaging-grenade',
+    item: flash,
+    is_equipped: true,
+    is_invested: false,
+    container_contents: [],
+  };
+  for (const [Component, data] of [
+    [ItemDrawerContent, { item: flash, storeID: 'CHARACTER' }],
+    [InvItemDrawerContent, { invItem: inventoryEntry, storeId: 'CHARACTER' }],
+  ]) {
+    const html = renderToStaticMarkup(React.createElement(Component, { data }));
+    const text = html.replace(/<[^>]*>/g, '');
+    assert.doesNotMatch(text, /Attack/);
+    assert.doesNotMatch(text, /Damage1|Damage0|Damage/, 'A grenade with no printed damage has no damage statistic');
+  }
+});
 
 test('embedded rune links prefer current catalog content and fall back to their snapshot', () => {
   const embedded = { ...item, description: 'EMBEDDED RUNE TEXT' };
