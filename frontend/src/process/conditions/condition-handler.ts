@@ -365,9 +365,12 @@ export function getAllConditions() {
   );
 }
 
-/** Return all-system prose reference names without changing character condition choices. */
+/** Keep game-filtered prose names while making canonical Glitching available in global views. */
 export function getConditionReferenceNames(): string[] {
-  return CONDITIONS.map((condition) => condition.name);
+  const names = getAllConditions().map((condition) => condition.name);
+  const glitching = getConditionByName('glitching')?.name;
+  if (glitching && !names.includes(glitching)) names.push(glitching);
+  return names;
 }
 
 export function applyConditions(id: StoreID, conditions: Condition[]) {

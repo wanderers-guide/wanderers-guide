@@ -145,12 +145,14 @@ function setGameContext(context) {
   }
 }
 
-test('global and Pathfinder prose link every Starfinder condition reference', () => {
+test('global and Pathfinder prose link Glitching without broadening Suppressed detection', () => {
   for (const context of ['GLOBAL', 'PATHFINDER', 'STARFINDER']) {
     setGameContext(context);
     assert.deepEqual(
       anchors(render('glitching 1; glitching 2; suppressed; stunned 1.')),
-      ['glitching', 'glitching', 'suppressed', 'stunned'],
+      context === 'STARFINDER'
+        ? ['glitching', 'glitching', 'suppressed', 'stunned']
+        : ['glitching', 'glitching', 'stunned'],
       context
     );
     assert.equal(engine.getConditionByName('glitching').name, 'Glitching');
@@ -173,25 +175,27 @@ test('character condition choices retain their current game filter and cloned ro
   }
 });
 
-test('condition reference names are system-independent fresh arrays, not mutable condition rows', () => {
-  setGameContext('STARFINDER');
-  const allNames = engine.getAllConditions().map((condition) => condition.name);
+test('fresh reference names add canonical Glitching once to the existing game-filtered names', () => {
   for (const context of ['GLOBAL', 'PATHFINDER', 'STARFINDER']) {
     setGameContext(context);
-    assert.deepEqual(engine.getConditionReferenceNames(), allNames, context);
+    const expected = engine.getAllConditions().map((condition) => condition.name);
+    const glitching = engine.getConditionByName('glitching').name;
+    if (!expected.includes(glitching)) expected.push(glitching);
+    assert.deepEqual(engine.getConditionReferenceNames(), expected, context);
+    assert.equal(engine.getConditionReferenceNames().filter((name) => name === glitching).length, 1);
     const changed = engine.getConditionReferenceNames();
     changed[0] = 'mutated reference copy';
-    assert.deepEqual(engine.getConditionReferenceNames(), allNames);
+    assert.deepEqual(engine.getConditionReferenceNames(), expected);
     assert.equal(engine.getConditionByName('glitching').name, 'Glitching');
   }
 });
 
-test('all-system prose still respects blacklists, authored links and literal code', () => {
+test('Glitching prose still respects blacklists, authored links and literal code', () => {
   setGameContext('GLOBAL');
   const text =
     '[glitching](link_condition_glitching); [glitching](https://example.test); `glitching`; **glitching** 2; suppressed.';
   const html = render(text);
-  assert.deepEqual(anchors(html), ['glitching', 'glitching', 'glitching', 'suppressed']);
+  assert.deepEqual(anchors(html), ['glitching', 'glitching', 'glitching']);
   assert.match(html, />glitching<\/code>/);
   assert.match(html, /<strong><a\b/);
   assert.match(html, /href="https:\/\/example.test"/);
@@ -202,5 +206,28 @@ test('all-system prose still respects blacklists, authored links and literal cod
   for (const context of ['GLOBAL', 'STARFINDER']) {
     setGameContext(context);
     assert.deepEqual(anchors(render('Glitching. Suppressed.')), []);
+  }
+});
+
+test('actual Pathfinder aeon-stone and rune suppression prose stays plain outside Starfinder', async () => {
+  const rows = await readContentRows([
+    { table: 'item', id: 17927 },
+    { table: 'ability_block', id: 26596 },
+  ]);
+  assert.equal(rows.length, 2);
+  assert.equal(rows.find(({ table }) => table === 'item').row.name, 'Aeon Stone (Amber Sphere)');
+  assert.equal(rows.find(({ table }) => table === 'ability_block').row.name, 'Weapon-Rune Shifter');
+  for (const context of ['GLOBAL', 'PATHFINDER', 'STARFINDER']) {
+    setGameContext(context);
+    for (const { row } of rows) {
+      const occurrences = [...row.description.matchAll(/\bsuppressed\b/g)].length;
+      assert.ok(occurrences > 0, row.name);
+      assert.equal(
+        anchors(render(row.description)).filter((label) => label === 'suppressed').length,
+        context === 'STARFINDER' ? occurrences : 0,
+        `${context}: ${row.name}`
+      );
+    }
+    assert.deepEqual(anchors(render('[suppressed](link_condition_suppressed)')), ['suppressed']);
   }
 });
