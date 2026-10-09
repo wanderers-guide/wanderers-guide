@@ -137,7 +137,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
         <Text key={0} fw={600} c='gray.2' span>
           Cost
         </Text>{' '}
-        {spell.cost}
+        <RichText span>{spell.cost}</RichText>
       </>
     );
   }
@@ -147,7 +147,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
         <Text key={1} fw={600} c='gray.2' span>
           Trigger
         </Text>{' '}
-        {spell.trigger}
+        <RichText span>{spell.trigger}</RichText>
       </>
     );
   }
@@ -179,7 +179,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
         <Text key={2} fw={600} c='gray.2' span>
           Targets
         </Text>{' '}
-        {spell.targets}
+        <RichText span>{spell.targets}</RichText>
       </>
     );
   }

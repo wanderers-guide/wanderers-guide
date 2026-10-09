@@ -6,6 +6,20 @@ let engine;
 let fixtureRows;
 let base;
 
+// Reviewed original weapon membership. Current Coda corrections and the chair scaffold are explicit below.
+const originalWeaponIds = [
+  11677, 11678, 11679, 11689, 11692, 11693, 11710, 11723, 11728, 11730, 11736, 11741, 11743, 11744, 11745, 11746, 11750,
+  11753, 11773, 11774, 11775, 11789, 11792, 11793, 11794, 11796, 11797, 11799, 11810, 11831, 11832, 11835, 11837, 11846,
+  11863, 11872, 11874, 11875, 11876, 11891, 11897, 11902, 11926, 11933, 11939, 11940, 11942, 11943, 11952, 11954, 12005,
+  12014, 12018, 12026, 12032, 12034, 12036, 12042, 12049, 12061, 12064, 12065, 12066, 12069, 12085, 12124, 12138, 12144,
+  12150, 12152, 12153, 12176, 12177, 12178, 12181, 12182, 12183, 12208, 12210, 12237, 12264, 12267, 12278, 12279, 12287,
+  12313, 12338, 12344, 12345, 12367, 12380, 12381, 12400, 12401, 12402, 12403, 12413, 12414, 12415, 12416, 12425, 12426,
+  12434, 12451, 12452, 12453, 12462, 12469, 12470, 12471, 12473, 12474, 12475, 12476, 12477, 12478, 12479, 12480, 12481,
+  12486, 12495, 12515, 12530, 12532, 12535, 12565, 12566, 12574, 12575, 12589, 12591, 12720, 12722, 12723, 12729, 12736,
+  12744, 12745, 12746, 12747, 13097, 13563, 13666, 13667, 13820, 14209, 14368, 14533, 14534, 14535, 14536, 14537, 14818,
+  15687, 15900, 15901, 16305, 16605, 17157, 18275, 19871, 19876, 19877, 23364,
+];
+
 /** Exercise the actual character operations and weapon attack consumers without updating saved content. */
 async function calculate(item, { division = true, ordinaryProficiency = null, gunProficiency = null } = {}) {
   const character = {
@@ -177,7 +191,22 @@ test('the complete dumped Treasure Vault weapon universe equals its explicit rec
   const weaponProfiles = weapons.filter(
     (item) => !['light', 'medium', 'heavy', 'unarmored_defense'].includes(item.meta_data?.category)
   );
-  assert.equal(weaponProfiles.length, 164);
+  const correctedCodaIds = [11728, 11730];
+  for (const id of correctedCodaIds) {
+    const item = fixtureRows.find((entry) => entry.table === 'item' && entry.row.id === id)?.row;
+    assert.equal(item?.group, 'GENERAL', `Reviewed Coda classification ${id}`);
+    assert.ok(item.traits.includes(1546), 'Coda classification does not remove Staff');
+  }
+  const pseudopod = weaponProfiles.find((item) => item.id === 23465);
+  assert.equal(pseudopod?.name, 'Animal Pseudopod');
+  assert.equal(String(pseudopod.uuid), '3341821474558316');
+  assert.equal(pseudopod.meta_data?.category, 'unarmed_attack');
+  assert.equal(pseudopod.meta_data?.unselectable, true, 'The chair attack remains a hidden scaffold');
+  assert.deepEqual(
+    weaponProfiles.map((item) => item.id).sort((a, b) => a - b),
+    [...originalWeaponIds.filter((id) => !correctedCodaIds.includes(id)), 23465].sort((a, b) => a - b),
+    'Current weapon membership changes only by the two Coda classifications and exact chair attack scaffold'
+  );
   for (const item of weapons) {
     const usage = String(item.usage ?? '')
       .trim()

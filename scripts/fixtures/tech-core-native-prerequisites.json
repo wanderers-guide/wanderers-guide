@@ -1,0 +1,78 @@
+[
+  {
+    "table": "content_source",
+    "row": {
+      "id": 900,
+      "created_at": "2026-10-07T21:51:13.845822+00:00",
+      "name": "Tech Core",
+      "foundry_id": null,
+      "url": "https://store.paizo.com/starfinder-tech-core/",
+      "description": "Starfinder Tech Core has everything you need to upgrade your Starfinder Second Edition game!\r\n\r\nThis 264-page rulebook introduces two tech-savvy classes, the artificially enhanced mechanic and the magic-hacking technomancer. It also features tactical starship combat, with new rules for building, crewing, and upgrading starships, plus hordes of sample foes, hazards, and plenty of GM tools for running your own tactical space battle.\r\n\r\nStarfinder Tech Core includes:\r\n\r\n    New archetypes including the nanite-controlling nanocyte and resourceful junkomancer.\r\n    New high-tech ancestries and versatile heritages, including robotic SROs, living holograms and cyborgs.\r\n    Rules for building and controlling your own tech companions!\r\n    New feats designed to interact with technology!\r\n    An arsenal of new gear including armor, weapons, upgrades, and augmentations—even magic items!\r\n    New high-tech spells.\r\n    Sample starship enemies and hazards.\r\n    and much, much more!\r\n\r\nBring your Starfinder game roaring into the future with this must-have sourcebook to all things technological!",
+      "operations": null,
+      "user_id": null,
+      "contact_info": null,
+      "require_key": false,
+      "is_published": true,
+      "required_content_sources": null,
+      "group": "starfinder-core",
+      "meta_data": {
+        "counts": {
+          "trait": 46,
+          "class": 2,
+          "feat": 5,
+          "ancestry": 3,
+          "heritage": 1,
+          "versatile_heritage": 1
+        }
+      },
+      "artwork_url": null,
+      "keys": null,
+      "deprecated": null,
+      "updated_at": "2026-10-08T05:10:24.650956+00:00"
+    }
+  },
+  {
+    "table": "trait",
+    "row": {
+      "id": 5225,
+      "created_at": "2026-10-08T04:30:41.323377+00:00",
+      "name": "Junk",
+      "description": "Spells with the junk trait use scrap, trash, and other debris found in any environment. While casting a junk spell requires no locus, it assumes the spellcaster always has access to discarded scraps or naturally occurring detritus. If the caster has absolutely nothing on their person or in their environment, they might be unable to cast a junk spell.",
+      "meta_data": {
+        "important": true,
+        "class_trait": false,
+        "unselectable": false,
+        "ancestry_trait": false,
+        "creature_trait": false,
+        "archetype_trait": false,
+        "companion_type_trait": false,
+        "versatile_heritage_trait": false
+      },
+      "content_source_id": 900,
+      "uuid": 8693519255012780,
+      "updated_at": "2026-10-08T04:30:41.323377+00:00"
+    }
+  },
+  {
+    "table": "trait",
+    "row": {
+      "id": 5236,
+      "created_at": "2026-10-08T04:38:40.516476+00:00",
+      "name": "Station",
+      "description": "Actions with the station trait can only be performed while helming a battle station. Most are granted by a specific battle station.",
+      "meta_data": {
+        "important": false,
+        "class_trait": false,
+        "unselectable": false,
+        "ancestry_trait": false,
+        "creature_trait": false,
+        "archetype_trait": false,
+        "companion_type_trait": false,
+        "versatile_heritage_trait": false
+      },
+      "content_source_id": 900,
+      "uuid": 2341035972402734,
+      "updated_at": "2026-10-08T04:38:40.516476+00:00"
+    }
+  }
+]

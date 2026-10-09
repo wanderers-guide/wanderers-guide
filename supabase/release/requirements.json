@@ -397,12 +397,24 @@
     "check": "war-of-immortals-bespell-tradition.sql",
     "order": "before-functions"
   },
+  "20261008105800_treasure_vault_terminal_catalog_compatibility.sql": {
+    "check": "treasure-vault-terminal-catalog-compatibility.sql",
+    "order": "before-functions"
+  },
   "20261008105900_treasure_vault_terminal_source_corrections.sql": {
     "check": "treasure-vault-terminal-source-corrections.sql",
     "order": "before-functions"
   },
   "20261008110000_treasure_vault_source_corrections.sql": {
     "check": "treasure-vault-source-corrections.sql",
+    "order": "before-functions"
+  },
+  "20261008160000_tech_core_introductory_spells.sql": {
+    "check": "tech-core-introductory-spells.sql",
+    "order": "before-functions"
+  },
+  "20261008190000_tech_core_general_spells.sql": {
+    "check": "tech-core-general-spells.sql",
     "order": "before-functions"
   }
 }

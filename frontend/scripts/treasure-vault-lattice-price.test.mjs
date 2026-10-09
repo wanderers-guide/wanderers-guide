@@ -6,7 +6,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { before, test } from 'node:test';
 import uploadUtils from '../../supabase/functions/_shared/upload-utils.ts';
 import { ItemSchema } from '../src/schemas/content.ts';
-import { readContentRows } from './operation-test-harness.mjs';
+import { readHistoricalContentRows } from './operation-test-harness.mjs';
 
 const { uniqueId } = uploadUtils;
 const migration = await readReviewedHistoricalSql(
@@ -21,7 +21,10 @@ const predicate = await readReviewedHistoricalSql(
   new URL('../../supabase/release/treasure-vault-lattice-price.sql', import.meta.url),
   'utf8'
 );
-const oldPredicate = await readReviewedHistoricalSql(new URL('../../supabase/release/war-of-immortals.sql', import.meta.url), 'utf8');
+const oldPredicate = await readReviewedHistoricalSql(
+  new URL('../../supabase/release/war-of-immortals.sql', import.meta.url),
+  'utf8'
+);
 const patches = JSON.parse(migration.split('$patches$')[1]);
 const expected = JSON.parse(predicate.split('$expected$')[1]);
 const md5 = (value) => createHash('md5').update(value).digest('hex');
@@ -252,7 +255,7 @@ function passes(items, sourceRows = sources) {
 
 before(async () => {
   assert.equal(oldSpecifications.length, 3, 'read actual old INSERT specification');
-  const rows = await readContentRows([
+  const rows = await readHistoricalContentRows([
     ...oldSpecifications.map(({ tvId }) => ({ table: 'item', id: tvId })),
     { table: 'content_source', id: 16 },
     { table: 'content_source', id: 400 },

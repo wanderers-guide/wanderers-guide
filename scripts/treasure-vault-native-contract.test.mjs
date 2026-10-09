@@ -17,10 +17,19 @@ import {main as nativeMain,executeNativeBase} from './treasure-vault-native-safe
 import {nativeDiagnostic,createNativeReceiptLogger} from './treasure-vault-native-diagnostics.mjs';
 import {createAuthenticAlternateFixtureDriver} from './treasure-vault-native-alternate-fixture.mjs';
 import {nativeDatabaseResourceLimits} from './treasure-vault-native-fixture.mjs';
+import {HISTORICAL_CONTENT_FIXTURE,readHistoricalContentDump} from './historical-content-fixture.mjs';
 import './treasure-vault-native-fixture-contract.test.mjs';
 
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+let diagnosticHistoricalDump;
+
+/** Real verified predecessor bytes, with only the diagnostic test's external transport replaced. */
+async function diagnosticHistoricalInput(verify) {
+  diagnosticHistoricalDump??=readHistoricalContentDump({repositoryRoot:root});
+  const dump=await diagnosticHistoricalDump;
+  return {manifest:{historical_git_inputs:[HISTORICAL_CONTENT_FIXTURE]},verify,readRelative:()=>'',readHistoricalBootstrap:()=>dump};
+}
 
 /** In-memory mutants originate only from actual checked-in inputs, never candidates or old receipts. */
 function buildCheckedInLoaderMutants(files,baseline) {
@@ -93,7 +102,7 @@ test('strict checked-in Treasure Vault loader identities',async(t)=>{
   const load=map=>loader.loadTreasureVaultDefaultNativeInputs({root,readText:read(map)});
   await t.test('actual-checked-in-default-layout',{timeout:60000},async()=>{
     captured=await captureNativeInputManifest({root});
-    assert.equal(captured.migrations.length,108);
+    assert.equal(captured.migrations.length,111);
     baseline=await loader.loadTreasureVaultDefaultNativeInputs({root,readText:captured.readCurrentText});
     assert.equal(baseline.input_provenance.mode,'checked-in-default');
     assert.deepEqual(baseline.input_provenance.external_private_input_files,[]);
@@ -302,6 +311,7 @@ test('native diagnostic receipts: actual log writer failure is safe and leaves t
 test('native diagnostic receipts: actual inner failure redacts name and message without replacing its control exception',async(t)=>{
   const secret='0c'.repeat(24),error=Object.assign(new Error('detail '+secret),{name:'name '+secret,code:'ERR_NATIVE_STOP',exitCode:143,signal:'SIGTERM'});
   const receipt={stages:[]},commands=[];
+  const inputManifest=await diagnosticHistoricalInput(async()=>({}));
   t.mock.method(crypto,'randomBytes',size=>Buffer.alloc(size,size===24?0x0c:0x0d));
   t.mock.method(childProcess,'spawnSync',(binary,args)=>{
     assert.equal(binary,'docker');assert.ok(args[0]==='ps'||args[0]==='volume');commands.push(args);
@@ -310,7 +320,7 @@ test('native diagnostic receipts: actual inner failure redacts name and message 
   syncBuiltinESMExports();
   try {
     await assert.rejects(executeNativeBase({root,inputs:{},migrations:[],output:'/unused-native-model',receipt,log:()=>{},
-      inputManifest:{verify:async()=>({}),readRelative:()=>''},stop:{checkpoint:async()=>{},throwIfRequested:()=>{throw error;}}}),actual=>actual===error);
+      inputManifest,stop:{checkpoint:async()=>{},throwIfRequested:()=>{throw error;}}}),actual=>actual===error);
     assert.deepEqual(receipt.failure,{phase:'fixture-bootstrap',name:'Error',message:'detail [owned-fixture-secret]'});
     assert.equal(JSON.stringify(receipt).includes(secret),false);assert.equal(receipt.passed,false);
     assert.equal(receipt.cleaned_only_owned_containers_and_volumes,true);assert.equal(commands.length,2);
@@ -323,6 +333,7 @@ test('native diagnostic receipts: an actual alternate failure stays safe across 
   const secret='0e'.repeat(24),primarySecret='primary-fixture-secret';
   const error=Object.assign(new Error('alternate detail '+secret),{name:'name '+secret,code:'ERR_NATIVE_STOP',exitCode:143,signal:'SIGTERM',cause:{secret}});
   const receipt={},commands=[];
+  const inputManifest=await diagnosticHistoricalInput(async()=>{throw error;});
   t.mock.method(crypto,'randomBytes',size=>Buffer.alloc(size,size===24?0x0e:0x0f));
   t.mock.method(childProcess,'spawnSync',(binary,args)=>{
     assert.equal(binary,'docker');assert.ok(args[0]==='ps'||args[0]==='volume');commands.push(args);
@@ -331,7 +342,7 @@ test('native diagnostic receipts: an actual alternate failure stays safe across 
   syncBuiltinESMExports();
   try {
     const run=createAuthenticAlternateFixtureDriver({root,inputs:{},migrations:[],receipt,log:()=>{},
-      inputManifest:{verify:async()=>{throw error;},readRelative:()=>''},stop:{checkpoint:async()=>{},throwIfRequested:()=>{}}});
+      inputManifest,stop:{checkpoint:async()=>{},throwIfRequested:()=>{}}});
     await assert.rejects(run({beforeStage:()=>{},afterPhase:()=>{}}),actual=>{
       assert.equal(actual,error);
       const primary=nativeDiagnostic(actual,{redact:text=>String(text).replaceAll(primarySecret,'[owned-fixture-secret]')});
@@ -349,11 +360,12 @@ test('native diagnostic receipts: an actual alternate failure stays safe across 
 
 test('native diagnostic receipts: alternate construction failures use a safe fallback before owning a secret redactor',async(t)=>{
   const secret='fake-alternate-construction-credential',error=Object.assign(new Error('detail '+secret),{name:'name '+secret,code:'ERR_NATIVE_STOP',exitCode:130,signal:'SIGINT'});
-  const receipt={};t.mock.method(crypto,'randomBytes',()=>{throw error;});
+  const receipt={},inputManifest=await diagnosticHistoricalInput(async()=>assert.fail('Failed construction cannot verify or initialize'));
+  t.mock.method(crypto,'randomBytes',()=>{throw error;});
   t.mock.method(childProcess,'spawnSync',()=>assert.fail('Construction cannot start a service or transport'));syncBuiltinESMExports();
   try {
     const run=createAuthenticAlternateFixtureDriver({root,inputs:{},migrations:[],receipt,log:()=>{},
-      inputManifest:{verify:async()=>assert.fail('Failed construction cannot verify or initialize'),readRelative:()=>''},stop:{checkpoint:async()=>{},throwIfRequested:()=>{}}});
+      inputManifest,stop:{checkpoint:async()=>{},throwIfRequested:()=>{}}});
     await assert.rejects(run({beforeStage:()=>{},afterPhase:()=>{}}),actual=>{
       assert.equal(actual,error);
       assert.deepEqual(nativeDiagnostic(actual,{redact:String}),{name:'Error',message:'Alternate fixture failed before safe diagnostics were available'});

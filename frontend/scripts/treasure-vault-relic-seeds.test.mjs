@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { before, after, test } from 'node:test';
 import { ItemSchema, InventorySchema, ContentSourceSchema } from '../src/schemas/content.ts';
-import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
+import { createOperationEngine, readHistoricalContentRows } from './operation-test-harness.mjs';
 import { content as emptyContent, inventoryItem, summoner, eidolon } from './fixtures/eidolon.mjs';
 
 const { uniqueId } = createRequire(import.meta.url)('../../supabase/functions/_shared/upload-utils.ts');
@@ -16,10 +16,10 @@ const release = await readFile(
   'utf8'
 );
 const spec = JSON.parse(migration.split('$seeds$')[1]);
-const dependencies = await readContentRows(spec.dependencies.map(({ table, id }) => ({ table, id })));
-const sources = await readContentRows(spec.sources.map(({ id }) => ({ table: 'content_source', id })));
-const source16Creatures = await readContentRows([{ table: 'creature', sourceIds: [16] }]);
-const source16Traits = await readContentRows([{ table: 'trait', sourceIds: [16] }]);
+const dependencies = await readHistoricalContentRows(spec.dependencies.map(({ table, id }) => ({ table, id })));
+const sources = await readHistoricalContentRows(spec.sources.map(({ id }) => ({ table: 'content_source', id })));
+const source16Creatures = await readHistoricalContentRows([{ table: 'creature', sourceIds: [16] }]);
+const source16Traits = await readHistoricalContentRows([{ table: 'trait', sourceIds: [16] }]);
 // Negative identities exist only in this offline fixture. Postgres allocates production IDs.
 const proposed = spec.items.map(({ row }, index) => ({
   ...structuredClone(row),

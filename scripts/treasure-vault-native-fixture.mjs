@@ -8,6 +8,7 @@ import {createOwnedUnixEngineWorker} from './treasure-vault-native-engine.mjs';
 import {nativeDatabaseResourceLimits,assertNativeDatabaseResourceLimits} from './treasure-vault-native-resources.mjs';
 export {nativeDatabaseResourceLimits,assertNativeDatabaseResourceLimits} from './treasure-vault-native-resources.mjs';
 import {nativeDiagnostic} from './treasure-vault-native-diagnostics.mjs';
+import {HISTORICAL_CONTENT_FIXTURE} from './historical-content-fixture.mjs';
 
 const sha = value => createHash('sha256').update(value).digest('hex');
 const q = value => "'" + String(value).replaceAll("'", "''") + "'";
@@ -224,9 +225,16 @@ export function normalizeNativeSnapshotValues({relations,sequenceNames,values}) 
  * owns the only reset path, inside a uniquely labelled database with no ports.
  * Auth schema/users come from the actual GoTrue service, never replacement SQL.
  */
-export function createOwnedNativeFixture({ root, receipt, log, bootstrapRead,throwIfRequested=()=>{} }) {
+export function createOwnedNativeFixture({ root, receipt, log, bootstrapRead,contentDump,contentDumpProvenance,throwIfRequested=()=>{} }) {
   assert.equal(typeof log, 'function');
   assert.equal(typeof bootstrapRead,'function','Exact starting captured bootstrap bytes are required');
+  if(contentDump===undefined)assert.equal(contentDumpProvenance,undefined,'Current catalog bootstrap cannot claim historical provenance');
+  else {
+    assert.equal(typeof contentDump,'string','Historical bootstrap is explicit UTF8 content');
+    assert.deepEqual(contentDumpProvenance,HISTORICAL_CONTENT_FIXTURE,'Only the exact reviewed historical Git input may override the current catalog');
+    assert.equal(Buffer.byteLength(contentDump),HISTORICAL_CONTENT_FIXTURE.bytes,'Historical bootstrap exact byte length');
+    assert.equal(sha(contentDump),HISTORICAL_CONTENT_FIXTURE.sha256,'Historical bootstrap exact SHA256');
+  }
   const owner = randomUUID(), db = 'wg-tv-native-db-' + owner, auth = 'wg-tv-native-auth-' + owner;
   const password = randomBytes(24).toString('hex'), jwt = randomBytes(32).toString('hex');
   const secrets = new Set([password, jwt]);
@@ -396,10 +404,12 @@ export function createOwnedNativeFixture({ root, receipt, log, bootstrapRead,thr
     await stage('ci-github-role', "do $$ begin if not exists(select from pg_roles where rolname='github') then create role github;end if;end $$;");
     await stage('ci-owned-public-reset', 'drop schema public cascade;create schema public;grant all on schema public to postgres;grant all on schema public to public;');
     await stage('ci-trigram-extension', "create extension if not exists pg_trgm with schema public;do $$ begin if(select n.nspname from pg_extension e join pg_namespace n on n.oid=e.extnamespace where e.extname='pg_trgm')<>'public' then alter extension pg_trgm set schema public;end if;end $$;");
-    const schema = bootstrapRead('data/schema.sql'), dump = bootstrapRead('data/data.sql');
-    receipt.bootstrap = {schema_sha256:sha(schema),dump_sha256:sha(dump),real_auth:true,generated_id_mapping:false,known_queue_imports:false};
+    const schema = bootstrapRead('data/schema.sql'), dump = contentDump??bootstrapRead('data/data.sql');
+    receipt.bootstrap = {schema_sha256:sha(schema),dump_sha256:sha(dump),
+      content_input:contentDump===undefined?{kind:'current-checked-in',path:'data/data.sql'}:{kind:'pinned-git-predecessor',...contentDumpProvenance},
+      real_auth:true,generated_id_mapping:false,known_queue_imports:false};
     await stage('ci-full-schema', schema.split('\n').filter(line => !/^\\(?:un)?restrict /.test(line) && !/^CREATE TRIGGER /.test(line)).join('\n'));
-    await stage('ci-full-canonical-dump', dump.split('\n').filter(line => !/^\\(?:un)?restrict /.test(line)).join('\n'));
+    await stage(contentDump===undefined?'ci-full-canonical-dump':'ci-full-pinned-historical-dump', dump.split('\n').filter(line => !/^\\(?:un)?restrict /.test(line)).join('\n'));
     assert.equal(query('select count(*) from public.content_update;'), '0');
     await stage('ci-role-grants', 'grant usage on schema public to anon,authenticated,service_role;grant select,insert,update,delete on all tables in schema public to anon,authenticated,service_role;grant usage,select on all sequences in schema public to anon,authenticated,service_role;alter default privileges in schema public grant select,insert,update,delete on tables to anon,authenticated,service_role;alter default privileges in schema public grant usage,select on sequences to anon,authenticated,service_role;');
     await stage('ci-auth-public-trigger', bootstrapRead('data/auth-trigger.sql'));

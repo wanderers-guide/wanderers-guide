@@ -21,6 +21,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Fetch pinned historical content fixture
+        working-directory: .
+        run: git fetch --no-tags --depth=1 origin b5dd54c018ecd414be4dc5659a7c28e7ad4633b7
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -53,6 +57,10 @@ jobs:
 
       - name: Typecheck
         run: npx tsc --noEmit -p tsconfig.json
+
+      - name: Tech Core spell and conditional regression tests
+        run: |
+          node --import=tsx --test scripts/tech-core-introductory-spells.test.mjs scripts/tech-core-general-spells.test.mjs scripts/spell-targets.test.mjs scripts/list-id-conditionals.test.mjs
 
       - name: Rules and content audit regression tests
         run: |

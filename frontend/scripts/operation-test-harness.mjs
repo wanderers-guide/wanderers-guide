@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
+import { readHistoricalContentDump } from '../../scripts/historical-content-fixture.mjs';
 
 const frontend = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -34,13 +35,26 @@ function parseContentArray(value) {
  * @param {Array<{ table: string, id: number } | { table: string, sourceIds: number[] }>} targets
  */
 export async function readContentRows(targets) {
+  return parseContentRows(targets, await readFile(join(frontend, '../data/data.sql'), 'utf8'));
+}
+
+/**
+ * Opt in to the immutable pre-repair catalog for assertions about historical migration stages.
+ * Current catalog and character behavior tests must keep using readContentRows instead.
+ * @param {Array<{ table: string, id: number } | { table: string, sourceIds: number[] }>} targets
+ */
+export async function readHistoricalContentRows(targets) {
+  return parseContentRows(targets, await readHistoricalContentDump());
+}
+
+/** Decode both explicit content inputs through the same PostgreSQL COPY parser. */
+function parseContentRows(targets, text) {
   const wanted = new Set(targets.filter((target) => 'id' in target).map(({ table, id }) => `${table}:${id}`));
   const sources = new Map();
   for (const target of targets.filter((target) => 'sourceIds' in target)) {
     sources.set(target.table, new Set([...(sources.get(target.table) ?? []), ...target.sourceIds]));
   }
   const rows = [];
-  const text = await readFile(join(frontend, '../data/data.sql'), 'utf8');
   const arrayColumns = new Set([
     'operations',
     'feature_adjustments',
@@ -138,6 +152,9 @@ export async function fetchContentPackage(requestedSources) {
   return {...content, defaultSources: structuredClone(sources)};
 }
 export function importFromContentPackage() {}
+/** Fail closed if a drawer tries an unseeded lookup instead of its explicit local fixture. */
+function rejectUnseededContentRead() { throw new Error('Unseeded content read in drawer fixture'); }
+export { rejectUnseededContentRead as fetchAllPrereqs };
 `;
 
 /** Bundle the workspace's actual engine with a local content boundary; register cleanup with test.after(). */
@@ -145,6 +162,7 @@ export async function createOperationEngine({
   renderRichText = false,
   renderPerceptionDrawer = false,
   renderCastSpellDrawer = false,
+  renderSpellDrawer = false,
   renderBindingEditor = false,
   inspectInitialStats = false,
   resolveArchetypeFixtures = false,
@@ -156,7 +174,7 @@ export async function createOperationEngine({
       absWorkingDir: frontend,
       stdin: {
         contents: `${
-          renderRichText || renderPerceptionDrawer || renderCastSpellDrawer || renderBindingEditor
+          renderRichText || renderPerceptionDrawer || renderCastSpellDrawer || renderSpellDrawer || renderBindingEditor
             ? `
           import React from 'react';
           import { renderToStaticMarkup } from 'react-dom/server';
@@ -180,6 +198,48 @@ export async function createOperationEngine({
                 React.createElement(CastQueryClientProvider, { client },
                   React.createElement(CastSpellDrawerContent, { data }))));
             } finally { client.clear(); }
+          }
+          `
+              : ''
+          }
+          ${
+            renderSpellDrawer
+              ? `
+          import { QueryClient as SpellQueryClient, QueryClientProvider as SpellQueryClientProvider } from '@tanstack/react-query';
+          import { SpellDrawerTitle, SpellDrawerContent } from '@drawers/types/SpellDrawer';
+          import { ActionDrawerTitle, ActionDrawerContent } from '@drawers/types/ActionDrawer';
+          import { FeatDrawerTitle, FeatDrawerContent } from '@drawers/types/FeatDrawer';
+          import { getCachedContent as getSpellDrawerFixtures } from '@content/content-store';
+          /** Render actual content drawers with explicit cached content, without remote reads. */
+          function renderCachedDrawer(data, kind, Title, Content) {
+            const client = new SpellQueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
+            const row = data[kind] ?? getSpellDrawerFixtures(kind === 'spell' ? 'spell' : 'ability-block').find(row => row.id === data.id);
+            if (row) {
+              client.setQueryData(['find-' + kind + '-' + data.id, { id: data.id }], row);
+              const traitIds = row.traits ?? [];
+              client.setQueryData(['find-traits-' + traitIds.join('_'), { traitIds }],
+                getSpellDrawerFixtures('trait').filter(row => traitIds.includes(row.id)));
+            }
+            try {
+              return renderToStaticMarkup(React.createElement(MantineProvider,
+                { theme: { colors: { guide: DEFAULT_THEME.colors.blue } } },
+                React.createElement(SpellQueryClientProvider, { client },
+                  React.createElement(React.Fragment, null,
+                    React.createElement(Title, { data }),
+                    React.createElement(Content, { data })))));
+            } finally { client.clear(); }
+          }
+          /** Render the actual catalog spell title and rules against cached fixtures. */
+          export function renderSpellDrawer(data) {
+            return renderCachedDrawer(data, 'spell', SpellDrawerTitle, SpellDrawerContent);
+          }
+          /** Render the actual action title and rules against cached fixtures. */
+          export function renderActionDrawer(data) {
+            return renderCachedDrawer(data, 'action', ActionDrawerTitle, ActionDrawerContent);
+          }
+          /** Render the actual feat title and rules against cached fixtures. */
+          export function renderFeatDrawer(data) {
+            return renderCachedDrawer(data, 'feat', FeatDrawerTitle, FeatDrawerContent);
           }
           `
               : ''
@@ -229,7 +289,7 @@ export async function createOperationEngine({
           export { convertToHardcodedLink, buildHrefFromContentData } from '@content/hardcoded-links';
           export { detectSpells, detectSpellheartSpells, getKnownSpellsByRank } from '@spells/spell-utils';
           export { getInventorySpellIds, getMissingSpellIds, mergeSpellDependencies, filterSpellCatalog } from '@spells/item-spell-dependencies';
-          export { filterByTraitType } from '@items/inv-utils';
+          export { filterByTraitType, isItemWeapon, isItemStave } from '@items/inv-utils';
           export { meetsPrerequisites } from '@variables/prereq-detection';
           export { applyConditions, compiledConditions, getConditionByName } from '@conditions/condition-handler';
           export { getSpellStats, getItemCastingSource, getSpellheartStats, resolveSpellheartCasting } from '@spells/spell-handler';
@@ -264,8 +324,8 @@ export async function createOperationEngine({
       write: false,
       platform: 'node',
       format: 'esm',
-      ...(renderCastSpellDrawer ? { loader: { '.css': 'empty', '.module.css': 'empty' } } : {}),
-      ...(renderRichText || renderPerceptionDrawer || renderCastSpellDrawer || renderBindingEditor
+      ...(renderCastSpellDrawer || renderSpellDrawer ? { loader: { '.css': 'empty', '.module.css': 'empty' } } : {}),
+      ...(renderRichText || renderPerceptionDrawer || renderCastSpellDrawer || renderSpellDrawer || renderBindingEditor
         ? {
             banner: {
               js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
@@ -277,6 +337,28 @@ export async function createOperationEngine({
         {
           name: 'fixture-content',
           setup(pluginBuild) {
+            if (renderSpellDrawer) {
+              // Stat-line fixtures do not open the operation editor or its remote lookup controls.
+              pluginBuild.onResolve({ filter: /^@drawers\/ShowOperationsButton$/ }, () => ({
+                path: 'unopened-operation-editor',
+                namespace: 'drawer-editor-boundary',
+              }));
+              pluginBuild.onLoad({ filter: /.*/, namespace: 'drawer-editor-boundary' }, () => ({
+                contents:
+                  "export default function ShowOperationsButton() { throw new Error('Drawer stat-line fixtures do not cover the operation editor'); }",
+                loader: 'ts',
+              }));
+              // Server rendering has no DOM for DOMPurify; these drawer fixtures intentionally omit artwork.
+              pluginBuild.onResolve({ filter: /^dompurify$/ }, () => ({
+                path: 'empty-artwork',
+                namespace: 'browser-sanitizer',
+              }));
+              pluginBuild.onLoad({ filter: /.*/, namespace: 'browser-sanitizer' }, () => ({
+                contents:
+                  "export default { sanitize(value) { if (value !== '') throw new Error('Spell drawer SSR does not cover nonempty artwork'); return ''; } };",
+                loader: 'ts',
+              }));
+            }
             if (exportJson) {
               pluginBuild.onResolve({ filter: /^@export\/export-to-json$/ }, () => ({
                 path: 'download',

@@ -6,7 +6,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { readContentRows } from './operation-test-harness.mjs';
+import { readHistoricalContentRows } from './operation-test-harness.mjs';
 import { assertReviewedTransition } from './war-of-immortals-test-support.mjs';
 
 const sql = await readFile(
@@ -34,7 +34,7 @@ const md5 = (text) => createHash('md5').update(text).digest('hex');
 const render = (text) => renderToStaticMarkup(React.createElement(Markdown, { remarkPlugins: [remarkGfm] }, text));
 
 test('Dragonprism Staff escaped tokens render as content links without changing its spell list', async () => {
-  const [{ row: staff }, { row: greater }] = await readContentRows([
+  const [{ row: staff }, { row: greater }] = await readHistoricalContentRows([
     { table: 'item', id: 11940 },
     { table: 'item', id: 11939 },
   ]);
@@ -86,7 +86,7 @@ test('Dragonprism Staff links point to the intended existing content', async () 
     [4869, 'Summon Dragon'],
     [4583, 'Dragon Form'],
   ]);
-  const rows = await readContentRows([
+  const rows = await readHistoricalContentRows([
     { table: 'ability_block', id: 19624 },
     ...[...targets.keys()].map((id) => ({ table: 'spell', id })),
   ]);

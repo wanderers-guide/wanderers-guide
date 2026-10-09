@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
+import {HISTORICAL_CONTENT_FIXTURE} from './historical-content-fixture.mjs';
 
 const sha=text=>createHash('sha256').update(text).digest('hex');
 const migrationName=/^[0-9]{14}_[a-z0-9_]+\.sql$/;
@@ -69,6 +70,10 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
   for(const name of ['assertOwned','snapshot'])assert.equal(typeof fixture[name],'function');
   assert.equal(typeof stage,'function');assert.equal(typeof checkpoint,'function');
   const manifest=inputManifest.manifest;
+  assert.equal(manifest.schema,'wg-tv-native-checked-in-input-manifest-v2');
+  assert.deepEqual(manifest.historical_git_inputs,[HISTORICAL_CONTENT_FIXTURE]);
+  assert.equal(manifest.current_catalog_path,'data/data.sql');
+  assert.equal(manifest.historical_bootstrap_mode,'pinned-git-predecessor');
   assert.equal(manifest.external_private_inputs.length,0);
   const captured=new Map(manifest.entries.map(row=>[row.path,row]));
   assert.equal(captured.size,manifest.entries.length);
@@ -81,7 +86,12 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
   const workflow=assertRegisteredCiWorkflowRecipe(read(workflowPath));
   const requirements=JSON.parse(read('supabase/release/requirements.json'));
   const chronology=inputManifest.migrations;
-  assert.equal(chronology.length,108);
+  assert.equal(chronology.length,111);
+  assert.equal(chronology.at(-1).path,'20261008190000_tech_core_general_spells.sql');
+  assert.equal(Object.keys(requirements).length,104,'Exact reviewed registered requirement inventory');
+  assert.deepEqual(requirements['20261008160000_tech_core_introductory_spells.sql'],{check:'tech-core-introductory-spells.sql',order:'before-functions'});
+  assert.deepEqual(requirements['20261008190000_tech_core_general_spells.sql'],{check:'tech-core-general-spells.sql',order:'before-functions'});
+  assert.deepEqual(requirements['20261008105800_treasure_vault_terminal_catalog_compatibility.sql'],{check:'treasure-vault-terminal-catalog-compatibility.sql',order:'before-functions'});
   const names=chronology.map(row=>row.path);
   assert.deepEqual([...names].sort(),names);assert.equal(new Set(names).size,names.length);
   for(const name of names)assert.match(name,migrationName);
@@ -90,13 +100,13 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
     assert.ok(requirement&&typeof requirement==='object');assert.match(requirement.check,releaseName);
   }
   const checkNames=[...new Set(Object.values(requirements).map(row=>row.check))].sort();
-  assert.ok(checkNames.length,'Nonempty exact registered check inventory');
+  assert.equal(checkNames.length,67,'Exact reviewed distinct registered check inventory');
   const checks=checkNames.map(name=>({path:'supabase/release/'+name,sql:read('supabase/release/'+name)}));
   const replays=chronology.filter(row=>replayPrefixes.some(prefix=>row.path.startsWith(prefix))).map(row=>{
     const sql=read('supabase/migrations/'+row.path);assert.equal(sha(sql),row.sha256);
     assert.equal(sql,row.sql);return{path:row.path,sql,sha256:row.sha256};
   });
-  assert.ok(replays.length);assert.deepEqual(replays.map(row=>row.path),replays.map(row=>row.path).sort());
+  assert.equal(replays.length,89);assert.deepEqual(replays.map(row=>row.path),replays.map(row=>row.path).sort());
   // In these disjoint date groups, lexical date-prefix expansion and a single
   // sorted chronology have the same order as the proposed Bash glob loop.
   const globOrder=replayPrefixes.flatMap(prefix=>replays.filter(row=>row.path.startsWith(prefix)).map(row=>row.path));
