@@ -4,7 +4,7 @@ import path from 'node:path';
 import os from 'node:os';
 import assert from 'node:assert/strict';
 import { after, test } from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'wg-drawer-tests-'));
@@ -205,5 +205,121 @@ test('unavailable fundamental runes do not crash the item and leave other rune d
     delete globalThis.__wgRuneLookups;
     delete globalThis.__wgRuneQuery;
     delete globalThis.__wgRuneItems;
+  }
+});
+
+test('upgrade descriptions display alphabetically without changing saved slots or snapshots', async (t) => {
+  let networkAttempts = 0;
+  t.mock.method(globalThis, 'fetch', () => {
+    networkAttempts += 1;
+    throw new Error('Item upgrade rendering must not make network requests');
+  });
+  const actualOutput = path.join(directory, 'actual-upgrade-description.mjs');
+  await build({
+    absWorkingDir: root,
+    stdin: {
+      contents: `
+        import React from 'react';
+        import { renderToStaticMarkup } from 'react-dom/server';
+        import { MantineProvider, DEFAULT_THEME } from '@mantine/core';
+        import { Provider } from 'jotai';
+        import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+        import { ItemUpgradesDescription } from './src/common/ItemRunesDescription.tsx';
+        export { ItemSchema } from './src/schemas/content';
+        export function renderUpgrades(item) {
+          const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+          try {
+            return renderToStaticMarkup(React.createElement(MantineProvider,
+              { theme: { colors: { guide: DEFAULT_THEME.colors.blue } } },
+              React.createElement(Provider, null,
+                React.createElement(QueryClientProvider, { client },
+                  React.createElement(ItemUpgradesDescription, { item })))));
+          } finally { client.clear(); }
+        }
+      `,
+      resolveDir: root,
+      loader: 'tsx',
+    },
+    tsconfig: path.join(root, 'tsconfig.json'),
+    bundle: true,
+    platform: 'node',
+    format: 'esm',
+    outfile: actualOutput,
+    jsx: 'automatic',
+    banner: {
+      js: `import { createRequire } from 'node:module'; const require = createRequire(${JSON.stringify(`${root}/package.json`)});`,
+    },
+    define: {
+      'import.meta.env': JSON.stringify({
+        MODE: 'test',
+        PROD: false,
+        VITE_SUPABASE_URL: 'https://item-render.invalid',
+        VITE_SUPABASE_KEY: 'synthetic-not-a-credential',
+      }),
+      __WG_RELEASE__: JSON.stringify('item-render-test'),
+    },
+  });
+  const { renderUpgrades, ItemSchema } = await import(pathToFileURL(actualOutput).href);
+  const savedUpgrade = (id, name, grade, level, price, description) => ({
+    id,
+    created_at: '2026-10-08T00:00:00Z',
+    name,
+    price: { gp: price },
+    bulk: 'L',
+    level,
+    rarity: 'COMMON',
+    traits: [],
+    description,
+    group: 'GENERAL',
+    hands: null,
+    size: 'MEDIUM',
+    craft_requirements: null,
+    usage: 'installed',
+    meta_data: {
+      bulk: { held_or_stowed: 'L' },
+      charges: { current: id % 3, max: 5 },
+      starfinder: { capacity: '5', usage: 1, grade },
+    },
+    operations: [],
+    content_source_id: 900,
+    version: '1.0',
+  });
+  const savedItem = savedUpgrade(91000, 'Saved Host', 'SUPERIOR', 11, 14000, 'SAVED HOST DESCRIPTION');
+  savedItem.meta_data.starfinder.slots = [
+    {
+      id: 91003,
+      name: 'Zulu Upgrade',
+      upgrade: savedUpgrade(91003, 'Zulu Upgrade', 'SUPERIOR', 11, 14000, 'SAVED ZULU DESCRIPTION'),
+    },
+    {
+      id: 91001,
+      name: 'Alpha Upgrade',
+      upgrade: savedUpgrade(91001, 'Alpha Upgrade', 'ELITE', 14, 44000, 'SAVED ALPHA DESCRIPTION'),
+    },
+    {
+      id: 91002,
+      name: 'Middle Upgrade',
+      upgrade: savedUpgrade(91002, 'Middle Upgrade', 'TACTICAL', 5, 500, 'SAVED MIDDLE DESCRIPTION'),
+    },
+  ];
+  assert.equal(ItemSchema.safeParse(savedItem).success, true, 'the saved item fixture must satisfy the actual schema');
+  const before = structuredClone(savedItem);
+  const slots = savedItem.meta_data.starfinder.slots;
+  const originalSlots = [...slots];
+  const originalSnapshots = slots.map((slot) => slot.upgrade);
+  const html = renderUpgrades(savedItem);
+  assert.equal(networkAttempts, 0);
+  const headings = [...html.matchAll(/<span\b[^>]*>(Alpha Upgrade|Middle Upgrade|Zulu Upgrade)<\/span>/g)].map(
+    (match) => match[1]
+  );
+  assert.deepEqual(headings, ['Alpha Upgrade', 'Middle Upgrade', 'Zulu Upgrade']);
+  for (const description of ['SAVED ALPHA DESCRIPTION', 'SAVED MIDDLE DESCRIPTION', 'SAVED ZULU DESCRIPTION']) {
+    assert.ok(html.includes(description), `${description} must come from its saved snapshot`);
+  }
+  assert.deepEqual(savedItem, before, 'rendering must preserve the complete saved item and its upgrade order');
+  assert.equal(savedItem.meta_data.starfinder.slots, slots, 'the saved slots array must keep its identity');
+  for (let index = 0; index < originalSlots.length; index += 1) {
+    assert.equal(slots[index], originalSlots[index], `saved slot ${index} must keep its identity and position`);
+    assert.equal(slots[index].upgrade, originalSnapshots[index], `saved snapshot ${index} must keep its identity`);
   }
 });
