@@ -1,7 +1,7 @@
 import { fetchAbilityBlockByName, fetchCreatureByName, fetchSpellByName, fetchTraitByName } from './content-store';
 import { convertToHardcodedLink } from './hardcoded-links';
 import { Hazard } from '@schemas/content';
-import type { Link, PhrasingContent, Root, RootContent } from 'mdast';
+import type { Link, PhrasingContent, Root, RootContent, Text } from 'mdast';
 
 type HazardReference = {
   type: 'spell' | 'action' | 'trait' | 'creature';
@@ -33,6 +33,78 @@ const HAZARD_REFERENCES: HazardReference[] = [
   { type: 'trait', name: 'unholy', pattern: /\bunholy\b/gi },
 ];
 
+type HazardProseContext = { text: string; offsets: Map<Text, number> };
+const TRAIT_LIST_LABELS = new Set([
+  ...HAZARD_REFERENCES.filter(({ type }: HazardReference): boolean => type === 'trait').map(
+    ({ name }: HazardReference): string => name
+  ),
+  'magical',
+  'aura',
+  'occult',
+]);
+
+/** Read formatted prose, but never protected labels; a WG trait href is only an opaque list slot. */
+function hazardProseContext(children: PhrasingContent[]): HazardProseContext {
+  const context: HazardProseContext = { text: '', offsets: new Map<Text, number>() };
+  const collect = (nodes: PhrasingContent[]): void => {
+    for (const node of nodes) {
+      if (node.type === 'text') {
+        context.offsets.set(node, context.text.length);
+        context.text += node.value;
+      } else if (node.type === 'emphasis' || node.type === 'strong' || node.type === 'delete') {
+        collect(node.children);
+      } else {
+        context.text += node.type === 'link' && /^link_trait_\d+$/.test(node.url) ? '\u0001' : '\u0000';
+      }
+    }
+  };
+  collect(children);
+  return context;
+}
+
+/** Disambiguate only Air/Spirit in the reviewed trait, damage, defense, and elemental-result contexts. */
+function isEligibleHazardReference(name: string, prose: string, start: number, end: number): boolean {
+  if (name !== 'air' && name !== 'spirit') return true;
+  const before = prose.slice(0, start);
+  const after = prose.slice(end);
+  if (/^[\s-]+(?:traits?|effects?)\b/i.test(after)) return true;
+  if (name === 'spirit' && /^[\s-]+damage\b/i.test(after)) return true;
+  if (name === 'air' && /^\s*\(\s*gust of wind\s*\)/i.test(after)) return true;
+
+  const open = before.lastIndexOf('(');
+  const close = prose.indexOf(')', end);
+  if (open > before.lastIndexOf(')') && close >= end && !prose.slice(start, close).includes('(')) {
+    const leftEntry = prose
+      .slice(open + 1, start)
+      .split(',')
+      .at(-1)
+      ?.trim();
+    const rightEntry = prose.slice(end, close).split(',')[0].trim();
+    const entries = prose
+      .slice(open + 1, close)
+      .split(',')
+      .map((entry: string): string => entry.trim().toLowerCase());
+    if (
+      !leftEntry &&
+      !rightEntry &&
+      entries.every((entry: string): boolean => entry === '\u0001' || TRAIT_LIST_LABELS.has(entry))
+    )
+      return true;
+  }
+
+  // Defense clauses cannot borrow a remote number or a qualifier across protected content.
+  const clause = before.split(/[.;\n\u0000\u0001]/).at(-1) ?? '';
+  const endsEntry = /^\s*(?:\d+\s*)?(?:[,;.]|$)/.test(after);
+  if (
+    endsEntry &&
+    /\b(?:immune|immunity|immunities|resistant|resistance|resistances|weakness|weaknesses)\s+(?:to\s+)?$/i.test(clause)
+  )
+    return true;
+  const defenseList = /\b(?:immunities|resistances|weaknesses)\s*:?\s*(.*)$/i.exec(clause)?.[1];
+  if (endsEntry && defenseList !== undefined && /^(?:[^,]*,)*\s*$/.test(defenseList)) return true;
+  return name === 'spirit' && /^\s*\d+\s*(?:,|[.;]|$)/.test(after) && /^(?:\s*[a-z-]+\s+\d+\s*,)*\s*$/i.test(clause);
+}
+
 /** Resolve only named references present in this hazard, without delaying its stat block. */
 export async function preloadHazardReferences(hazard: Hazard): Promise<boolean> {
   const details = hazard.details;
@@ -41,11 +113,22 @@ export async function preloadHazardReferences(hazard: Hazard): Promise<boolean> 
     details.description,
     details.disable,
     details.defenses?.immunities,
+    details.defenses?.hp_note,
+    details.defenses?.weaknesses,
+    details.defenses?.resistances,
+    ...(details.passive_abilities ?? []).map(({ text }) => text),
     details.activation.name,
     ...(details.activation.traits ?? []),
     details.activation.trigger,
+    details.activation.requirements,
     details.activation.effect,
     details.routine?.text,
+    ...(details.secondary_activities ?? []).flatMap((activity) => [
+      ...(activity.traits ?? []),
+      activity.trigger,
+      activity.requirements,
+      activity.effect,
+    ]),
     details.reset,
   ]
     .filter((part): part is string => typeof part === 'string')
@@ -80,10 +163,19 @@ export function remarkHazardReferences(): (tree: Root) => void {
 }
 
 /** Match every eligible prose occurrence while keeping authored and newly created links opaque. */
-function linkInlineHazardReferences(children: PhrasingContent[]): PhrasingContent[] {
+function linkInlineHazardReferences(
+  children: PhrasingContent[],
+  context: HazardProseContext = hazardProseContext(children)
+): PhrasingContent[] {
+  // Earlier reference passes split Text nodes. Keep each slice's original context offset.
+  const slice = (node: Text, start: number, end: number = node.value.length): Text => {
+    const part: Text = { type: 'text', value: node.value.slice(start, end) };
+    context.offsets.set(part, context.offsets.get(node)! + start);
+    return part;
+  };
   return children.flatMap((node: PhrasingContent): PhrasingContent[] => {
     if (node.type === 'emphasis' || node.type === 'strong' || node.type === 'delete') {
-      return [{ ...node, children: linkInlineHazardReferences(node.children) }];
+      return [{ ...node, children: linkInlineHazardReferences(node.children, context) }];
     }
     if (node.type !== 'text') return [node];
 
@@ -95,17 +187,19 @@ function linkInlineHazardReferences(children: PhrasingContent[]): PhrasingConten
           let cursor = 0;
           for (const match of part.value.matchAll(pattern)) {
             const displayText = match[0];
+            const start = context.offsets.get(part)! + match.index;
+            if (!isEligibleHazardReference(name, context.text, start, start + displayText.length)) continue;
             const generated = convertToHardcodedLink(type, name, displayText);
             // Extract only the helper's generated href, never parse or rewrite authored Markdown.
             const href = generated === displayText ? undefined : /^\[[^\]]+\]\(([^)]+)\)$/.exec(generated)?.[1];
             if (!href) continue;
-            if (match.index > cursor) output.push({ type: 'text', value: part.value.slice(cursor, match.index) });
+            if (match.index > cursor) output.push(slice(part, cursor, match.index));
             const link: Link = { type: 'link', url: href, children: [{ type: 'text', value: displayText }] };
             output.push(link);
             cursor = match.index + displayText.length;
           }
           if (cursor === 0) return [part];
-          if (cursor < part.value.length) output.push({ type: 'text', value: part.value.slice(cursor) });
+          if (cursor < part.value.length) output.push(slice(part, cursor));
           return output;
         });
       },

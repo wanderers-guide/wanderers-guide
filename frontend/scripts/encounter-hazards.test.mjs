@@ -163,6 +163,55 @@ test('hazards without listed HP never acquire HP from damage or healing controls
   assert.equal(updateHazardHp(combatant, 10), combatant);
 });
 
+test('per-cube HP notes and ordered manual abilities survive encounters without a scalar HP counter', () => {
+  const catalog = hazardByName('Primal Chaos Aura');
+  catalog.details.defenses = {
+    hp_note: '6 per 5-foot cube',
+    weaknesses: 'fire 5',
+    resistances: 'physical 5',
+  };
+  catalog.details.activation.requirements = 'The chamber is open.';
+  catalog.details.passive_abilities = [
+    { name: 'Colony', text: 'The colony spans multiple cubes.' },
+    { name: 'Colony', text: 'Damage affects one cube.' },
+  ];
+  catalog.details.secondary_activities = [
+    { name: 'Grow', actions: 'ONE-ACTION', traits: ['Acid'], effect: 'A cube grows.' },
+    { name: 'Burst', actions: 'FREE-ACTION', trigger: 'A creature moves.', effect: 'A cube bursts.' },
+  ];
+  const before = structuredClone(catalog);
+  const first = createHazardCombatant(catalog, 'first-colony');
+  const second = createHazardCombatant(catalog, 'second-colony');
+  for (const combatant of [first, second]) {
+    assert.deepEqual(combatant.hazard, before);
+    assert.equal('hp_current' in combatant.hazard_state, false);
+    assert.equal(getHazardCurrentHp(combatant), undefined);
+    assert.equal(updateHazardHp(combatant, 6), combatant);
+    assert.equal(updateHazardHp(combatant, 0), combatant);
+    assert.equal(getHazardCurrentHp({ ...combatant, hazard_state: { hp_current: 99 } }), undefined);
+    assert.equal(getHazardInitiativeModifier(combatant.hazard), 11);
+    assert.equal(getHazardXpMultiplier(combatant.hazard), 1);
+  }
+  const encounter = encounterWith([first, second]);
+  assert.deepEqual(EncounterSchema.parse(JSON.parse(JSON.stringify(encounter))), encounter);
+  first.hazard.details.passive_abilities[0].text = 'Changed first snapshot.';
+  first.hazard.details.secondary_activities.reverse();
+  first.hazard.details.defenses.hp_note = 'Changed first note.';
+  assert.deepEqual(second.hazard, before);
+  assert.deepEqual(catalog, before);
+});
+
+test('an HP qualification never changes a separately listed aggregate maximum or manual disabled state', () => {
+  const catalog = hazardByName('Boneburst');
+  catalog.details.defenses.hp_note = 'The listed HP applies to the whole hazard.';
+  const combatant = createHazardCombatant(catalog, 'qualified-hp');
+  assert.equal(getHazardCurrentHp(combatant), 90);
+  assert.equal(getHazardCurrentHp(updateHazardHp(combatant, 999)), 90);
+  assert.equal(getHazardCurrentHp(updateHazardHp(combatant, 0)), 0);
+  assert.equal(updateHazardHp(combatant, 0).hazard_state.disabled, false);
+  assert.deepEqual(combatant.hazard.details.defenses, catalog.details.defenses);
+});
+
 test('only complex hazards use their explicitly listed leading signed initiative modifier', () => {
   const modifiers = new Map([
     ['Boneburst', 38],
