@@ -33,7 +33,7 @@ import {
   getProfValueParts,
 } from '@variables/variable-helpers';
 import {
-  getAllAncestryTraitVariables,
+  getAllActorTraitVariables,
   getVariable,
   getAllAttributeVariables,
   getAllSkillVariables,
@@ -117,7 +117,7 @@ async function fillPDF(form: PDFForm, character: Character) {
     filterBasicClassFeatures: true,
   });
 
-  const traits = getAllAncestryTraitVariables(STORE_ID).map((v) => {
+  const traits = getAllActorTraitVariables(STORE_ID).map((v) => {
     const trait = content.traits.find((trait) => trait.id === v.value);
     return trait;
   });

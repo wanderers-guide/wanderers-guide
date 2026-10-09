@@ -421,9 +421,10 @@ export function addVariableBonus(
   value: string | number | undefined,
   type: string | undefined,
   text: string,
-  source: string
+  source: string,
+  armorGradeKey?: string
 ): void {
-  mutateVariable(id, () => applyAddVariableBonus(id, name, value, type, text, source));
+  mutateVariable(id, () => applyAddVariableBonus(id, name, value, type, text, source, armorGradeKey));
 }
 
 /** Record variable creation even if another source has already created it. */
@@ -809,6 +810,7 @@ export function getVariableBonuses(
   text: string;
   source: string;
   timestamp: number;
+  armor_grade_key?: string;
 }[] {
   const rawBonuses = cloneDeep(getVariableStore(id).bonuses[name]) ?? [];
 
@@ -833,7 +835,8 @@ function applyAddVariableBonus(
   value: string | number | undefined,
   type: string | undefined,
   text: string,
-  source: string
+  source: string,
+  armorGradeKey?: string
 ) {
   if (!getVariableStore(id).bonuses[name]) {
     getVariableStore(id).bonuses[name] = [];
@@ -842,7 +845,12 @@ function applyAddVariableBonus(
   // If there's already a bonus with the same value, type, text, and source, don't add it
   if (
     getVariableStore(id).bonuses[name].some(
-      (bonus) => bonus.value === value && bonus.type === type && bonus.text === text && bonus.source === source
+      (bonus) =>
+        bonus.value === value &&
+        bonus.type === type &&
+        bonus.text === text &&
+        bonus.source === source &&
+        bonus.armor_grade_key === armorGradeKey
     )
   ) {
     return;
@@ -854,6 +862,7 @@ function applyAddVariableBonus(
     text,
     source,
     timestamp: Date.now(),
+    ...(armorGradeKey === undefined ? {} : { armor_grade_key: armorGradeKey }),
   });
 }
 
@@ -1262,6 +1271,24 @@ export function getAllAncestryTraitVariables(id: StoreID): VariableNum[] {
     }
   }
   return variables as VariableNum[];
+}
+
+/**
+ * Body and explicitly granted ordinary traits for actor display and export.
+ * Class/archetype provenance and ancestry feat eligibility keep their separate getters.
+ */
+export function getAllActorTraitVariables(id: StoreID): VariableNum[] {
+  const traits = new Map<number, VariableNum>();
+  for (const variable of Object.values(getVariables(id))) {
+    if (
+      variable.type === 'num' &&
+      (variable.name.startsWith('TRAIT_ANCESTRY_') || variable.name.startsWith('TRAIT_ACTOR_')) &&
+      !traits.has(variable.value)
+    ) {
+      traits.set(variable.value, variable);
+    }
+  }
+  return [...traits.values()];
 }
 
 export function getAllClassTraitVariables(id: StoreID): VariableNum[] {

@@ -8,7 +8,7 @@ import { useAtom } from 'jotai';
 import React, { ReactNode, useRef } from 'react';
 import IndentedText from './IndentedText';
 import { IconQuote } from '@tabler/icons-react';
-import { getAllConditions } from '@conditions/condition-handler';
+import { getConditionReferenceNames } from '@conditions/condition-handler';
 import { compileExpressions } from '@variables/variable-utils';
 import { StoreID } from '@schemas/variables';
 import { isString } from 'lodash-es';
@@ -52,8 +52,8 @@ export default function RichText(props: RichTextProps) {
   // Convert the string output from editor table format to be read by react-markdown
   convertedChildren = convertedChildren?.replace(/\|\n\n\|/g, '|\n|');
 
-  const conditions = getAllConditions()
-    .map((c) => c.name.toLowerCase())
+  const conditions = getConditionReferenceNames()
+    .map((name) => name.toLowerCase())
     .filter((c) => !conditionBlacklist?.includes(c) && c !== 'persistent damage');
 
   // Replace arrow up emoji with the actual arrow up unicode character

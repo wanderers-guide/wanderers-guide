@@ -365,6 +365,14 @@ export function getAllConditions() {
   );
 }
 
+/** Keep game-filtered prose names while making canonical Glitching available in global views. */
+export function getConditionReferenceNames(): string[] {
+  const names = getAllConditions().map((condition) => condition.name);
+  const glitching = getConditionByName('glitching')?.name;
+  if (glitching && !names.includes(glitching)) names.push(glitching);
+  return names;
+}
+
 export function applyConditions(id: StoreID, conditions: Condition[]) {
   compiledConditions(conditions).forEach((condition) => {
     applyCondition(id, condition);

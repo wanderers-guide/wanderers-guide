@@ -65,6 +65,7 @@ jobs:
       - name: Rules and content audit regression tests
         run: |
           npm run test:rules
+          npm run test:armor:grades
           npm run test:infra
           npm run test:audit:content
 

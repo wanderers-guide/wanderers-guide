@@ -5,6 +5,7 @@ import RichText from '@common/RichText';
 import ShowInjectedText from '@drawers/ShowInjectedText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { priceToString } from '@items/currency-handler';
+import { getArmorGradeView, getEffectiveItemPrice } from '@items/armor-grade-view';
 import {
   FUNDAMENTAL_RUNES,
   compileTraits,
@@ -127,12 +128,13 @@ export function InvItemDrawerContent(props: {
   );
 
   let price = null;
-  const _invItemPrice = invItem.item.price
+  const effectivePrice = getEffectiveItemPrice(invItem.item);
+  const _invItemPrice = effectivePrice
     ? {
-        cp: Number(invItem.item.price.cp) || undefined,
-        sp: Number(invItem.item.price.sp) || undefined,
-        gp: Number(invItem.item.price.gp) || undefined,
-        pp: Number(invItem.item.price.pp) || undefined,
+        cp: Number(effectivePrice.cp) || undefined,
+        sp: Number(effectivePrice.sp) || undefined,
+        gp: Number(effectivePrice.gp) || undefined,
+        pp: Number(effectivePrice.pp) || undefined,
       }
     : undefined;
   if (_invItemPrice && priceToString(_invItemPrice) !== '—') {
@@ -244,7 +246,8 @@ export function InvItemDrawerContent(props: {
           </Accordion>
         )}
 
-        {isItemWithUpgrades(invItem.item) && (
+        {(isItemWithUpgrades(invItem.item) ||
+          (invItem.item.meta_data?.starfinder?.built_in_upgrades?.length ?? 0) > 0) && (
           <Accordion variant='separated' my={5}>
             <Accordion.Item value='upgrades'>
               <Accordion.Control icon={getIconMap('1.0rem', theme.colors.gray[6])['UPGRADE']}>
@@ -463,7 +466,8 @@ function InvItemSections(props: {
     enabled: !!materialType,
   });
 
-  const ac = props.invItem.item.meta_data?.ac_bonus;
+  const armorGradeView = getArmorGradeView(props.invItem.item);
+  const ac = armorGradeView.kind === 'final' ? armorGradeView.acBonus : props.invItem.item.meta_data?.ac_bonus;
   let dexCap = props.invItem.item.meta_data?.dex_cap;
   let strength = props.invItem.item.meta_data?.strength;
   if (!dexCap && dexCap !== 0) {
@@ -829,7 +833,7 @@ function InvItemSections(props: {
   }
 
   let upgradeSection = null;
-  if (isItemWithGradeImprovement(props.invItem.item)) {
+  if (armorGradeView.kind === 'final' || isItemWithGradeImprovement(props.invItem.item)) {
     upgradeSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
         <Group gap={10}>
@@ -838,9 +842,22 @@ function InvItemSections(props: {
               Grade
             </Text>{' '}
             <Text c='gray.2' span>
-              {toLabel(props.invItem.item.meta_data?.starfinder?.grade)}
+              {toLabel(
+                armorGradeView.kind === 'final' ? armorGradeView.grade : props.invItem.item.meta_data?.starfinder?.grade
+              )}
             </Text>
           </Group>
+
+          {armorGradeView.kind === 'final' && (
+            <Group gap={5}>
+              <Text fw={600} c='gray.2' span>
+                Upgrade Slots
+              </Text>
+              <Text c='gray.2' span>
+                {armorGradeView.upgradeSlots}
+              </Text>
+            </Group>
+          )}
 
           {isItemWithUpgrades(props.invItem.item) && (
             <>

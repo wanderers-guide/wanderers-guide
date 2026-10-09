@@ -26,18 +26,28 @@ export function parseOtherDamage(
   });
 }
 
+/** Calculate attack and damage statistics without adding dice to an explicitly damage-free base profile. */
 export function getWeaponStats(id: StoreID, item: Item) {
   // Get adjustments from Starfinder item grade
   const gradeImprovements = getGradeImprovements(item);
   const sharedRunes = getSharedEidolonRunes(id, item);
 
-  // Get the number of dice for the weapon
-  let dice =
-    Number(item.meta_data?.damage?.dice ?? 1) +
-    Math.max(Math.min(Number(item.meta_data?.runes?.striking ?? 0), 4), sharedRunes.striking) +
-    (gradeImprovements.damage_dice - 1);
+  const damage = item.meta_data?.damage;
+  /** Explicit zero/empty dice and empty printed die/type mean no base damage, not an unknown profile. */
+  const hasNoBaseDamage: boolean =
+    (damage?.dice === 0 || (typeof damage?.dice === 'string' && ['', '0'].includes(damage.dice.trim()))) &&
+    (damage?.die === null || (typeof damage?.die === 'string' && damage.die.trim() === '')) &&
+    typeof damage?.damageType === 'string' &&
+    damage.damageType.trim() === '';
+
+  // Minimum dice, striking and grade improve existing damage, never create base damage where none was printed.
+  let dice = hasNoBaseDamage
+    ? 0
+    : Number(item.meta_data?.damage?.dice ?? 1) +
+      Math.max(Math.min(Number(item.meta_data?.runes?.striking ?? 0), 4), sharedRunes.striking) +
+      (gradeImprovements.damage_dice - 1);
   const minDice = getVariable<VariableNum>(id, 'MINIMUM_WEAPON_DAMAGE_DICE')?.value ?? 1;
-  if (dice < minDice) dice = minDice;
+  if (!hasNoBaseDamage && dice < minDice) dice = minDice;
 
   //
   const baseDie = item.meta_data?.damage?.die ?? '';

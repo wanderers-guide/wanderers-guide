@@ -9,6 +9,7 @@ import {
 } from '@variables/variable-helpers';
 import { getVariable, getVariableBonuses } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
+import { getArmorGradeBonusKey, getArmorGradeView } from './armor-grade-view';
 
 function getProfTotal(id: StoreID, item?: Item) {
   const category = item?.meta_data?.category ?? 'light';
@@ -42,8 +43,16 @@ function getProfTotal(id: StoreID, item?: Item) {
 /** Armor potency increases the armor's item bonus before it competes with other item bonuses. */
 function getAcModifiers(id: StoreID, item?: Item) {
   const proficiency = getProfTotal(id, item);
-  const bonuses: ModifierBonus[] = getVariableBonuses(id, 'AC_BONUS');
+  const activeBonuses = getVariableBonuses(id, 'AC_BONUS');
+  const bonuses: ModifierBonus[] = activeBonuses.filter((bonus) => bonus.armor_grade_key === undefined);
   let armorItemBonus = item?.meta_data?.ac_bonus ?? 0;
+  if (item) {
+    const view = getArmorGradeView(item);
+    const key = getArmorGradeBonusKey(item);
+    if (view.kind === 'final' && activeBonuses.some((bonus) => bonus.armor_grade_key === key)) {
+      armorItemBonus = view.acBonus;
+    }
+  }
   const potency = Math.min(item?.meta_data?.runes?.potency ?? 0, 4);
   // Equipment operations grant invested armor runes under the item's source name. Only combine an
   // active grant, so merely owning an uninvested rune does not activate its magic here.

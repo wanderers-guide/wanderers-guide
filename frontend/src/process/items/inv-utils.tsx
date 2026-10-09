@@ -1,6 +1,6 @@
-import { fetchContentAll, getContentFast, getDefaultSources } from '@content/content-store';
+import { fetchContentAll, getCachedContent, getContentFast, getDefaultSources } from '@content/content-store';
 import { isPlayingStarfinder } from '@content/system-handler';
-import { ContentPackage, ContentSource, Inventory, InventoryItem, Item, LivingEntity } from '@schemas/content';
+import { ContentPackage, ContentSource, Inventory, InventoryItem, Item, LivingEntity, Trait } from '@schemas/content';
 import { Operation } from '@schemas/operations';
 import { StoreID, VariableBool } from '@schemas/variables';
 import { getTraitIdByType, hasTraitType, TraitType } from '@utils/traits';
@@ -8,6 +8,7 @@ import { getFinalAcValue, getFinalVariableValue } from '@variables/variable-help
 import { addVariableBonus, getAllSkillVariables, getAllSpeedVariables, getVariable } from '@variables/variable-manager';
 import { cloneDeep, uniq } from 'lodash-es';
 import { getArmorStrengthModifier } from './armor-handler';
+import { getArmorGradeView, getEffectiveItemLevel } from './armor-grade-view';
 
 /**
  * Get all items in the inventory, including items in containers, as a single array
@@ -254,7 +255,10 @@ export function getBestShield(id: StoreID, inv?: Inventory) {
   return bestShield;
 }
 
-export function getItemOperations(item: Item, content: ContentPackage) {
+export function getItemOperations(item: Item, content: ContentPackage, ancestors = new Set<number>()) {
+  if (ancestors.has(item.id)) return [];
+  const nextAncestors = new Set(ancestors).add(item.id);
+  const armorGrade = getArmorGradeView(item);
   const baseOps = cloneDeep(item.operations) ?? [];
 
   if (isItemWithRunes(item)) {
@@ -320,14 +324,14 @@ export function getItemOperations(item: Item, content: ContentPackage) {
       for (const property of item.meta_data.runes.property) {
         const propertyRune = content.items.find((i) => i.id === property.id);
         if (propertyRune) {
-          baseOps.push(...getItemOperations(propertyRune, content));
+          baseOps.push(...getItemOperations(propertyRune, content, nextAncestors));
         }
       }
     }
   }
 
   if (isItemWithGradeImprovement(item)) {
-    if (isItemArmor(item)) {
+    if (isItemArmor(item) && armorGrade.kind === 'legacy') {
       const improvements = getGradeImprovements(item);
       if (improvements.ac_bonus > 0) {
         const ops: Operation[] = [
@@ -346,25 +350,37 @@ export function getItemOperations(item: Item, content: ContentPackage) {
       }
     }
 
-    if (isItemWithUpgrades(item)) {
+    if (armorGrade.kind === 'legacy' && isItemWithUpgrades(item)) {
       for (const slot of item.meta_data?.starfinder?.slots ?? []) {
         const upgrade = content.items.find((i) => i.id === slot.id);
         if (upgrade) {
-          baseOps.push(...getItemOperations(upgrade, content));
+          baseOps.push(...getItemOperations(upgrade, content, nextAncestors));
         }
       }
     }
   }
 
+  if (armorGrade.kind === 'final') {
+    const installed = [
+      ...(item.meta_data?.starfinder?.built_in_upgrades ?? []),
+      ...(item.meta_data?.starfinder?.slots ?? []),
+    ];
+    for (const slot of installed) {
+      const upgrade =
+        slot.upgrade?.id === slot.id ? slot.upgrade : content.items.find((candidate) => candidate.id === slot.id);
+      if (upgrade) baseOps.push(...getItemOperations(upgrade, content, nextAncestors));
+    }
+  }
+
   if (isItemArmor(item)) {
-    let value = 0;
-    if (hasTraitType('RESILIENT-4', compileTraits(item))) {
+    let value = armorGrade.kind === 'final' ? armorGrade.resilience : 0;
+    if (armorGrade.kind === 'legacy' && hasTraitType('RESILIENT-4', compileTraits(item))) {
       value = 4;
-    } else if (hasTraitType('RESILIENT-3', compileTraits(item))) {
+    } else if (armorGrade.kind === 'legacy' && hasTraitType('RESILIENT-3', compileTraits(item))) {
       value = 3;
-    } else if (hasTraitType('RESILIENT-2', compileTraits(item))) {
+    } else if (armorGrade.kind === 'legacy' && hasTraitType('RESILIENT-2', compileTraits(item))) {
       value = 2;
-    } else if (hasTraitType('RESILIENT-1', compileTraits(item))) {
+    } else if (armorGrade.kind === 'legacy' && hasTraitType('RESILIENT-1', compileTraits(item))) {
       value = 1;
     }
 
@@ -552,6 +568,8 @@ export function isItemFundamentalRune(item: Item) {
  * @returns - Whether the item has improved its grade
  */
 export function isItemWithGradeImprovement(item: Item) {
+  const view = getArmorGradeView(item);
+  if (view.kind !== 'legacy') return view.kind === 'final';
   return item.meta_data?.starfinder?.grade && item.meta_data.starfinder.grade !== 'COMMERCIAL';
 }
 
@@ -669,7 +687,7 @@ export function isItemMetaDefense(item: Item) {
  * @returns - Item type label
  */
 export function determineItemMetaType(item: Item, includeLevel?: boolean): string {
-  let type = `Item ${includeLevel ? item.level : ''}`.trim();
+  let type = `Item ${includeLevel ? getEffectiveItemLevel(item) : ''}`.trim();
   if (isItemMetaAttack(item)) {
     type = `Attack`;
   } else if (isItemMetaDefense(item)) {
@@ -704,6 +722,13 @@ export function isItemArchaic(item: Item) {
  * @param item
  */
 export function compileTraits(item: Item) {
+  const view = getArmorGradeView(item);
+  const finalResilience =
+    view.kind === 'final'
+      ? getCachedContent<Trait>('trait').filter(
+          (trait) => trait.content_source_id === 579 && /^Resilient \+[123]$/.test(trait.name)
+        )
+      : [];
   const traits = cloneDeep(item.traits ?? []);
   if (item.meta_data?.base_item_content) {
     traits.push(...(item.meta_data.base_item_content.traits ?? []));
@@ -727,6 +752,17 @@ export function compileTraits(item: Item) {
     for (const slot of item.meta_data?.starfinder?.slots ?? []) {
       // TODO, Could run compileTraits() on the upgrade, but that -could- result in endless loops
       traits.push(...(slot.upgrade?.traits ?? []));
+    }
+  }
+  if (view.kind === 'final') {
+    // Normalize inherited printing traits too, without modifying any saved source array.
+    for (let index = traits.length - 1; index >= 0; index--) {
+      if (finalResilience.some((trait) => trait.id === traits[index])) traits.splice(index, 1);
+    }
+    const trait = finalResilience.find((candidate) => candidate.name === `Resilient +${view.resilience}`);
+    if (trait) traits.push(trait.id);
+    for (const slot of item.meta_data?.starfinder?.built_in_upgrades ?? []) {
+      if (slot.upgrade?.id === slot.id) traits.push(...(slot.upgrade.traits ?? []));
     }
   }
 
@@ -865,6 +901,18 @@ export function getGradeImprovements(item: Item) {
     bt_bonus: 0,
     trait_ids: [] as number[],
   };
+
+  const armorGrade = getArmorGradeView(item);
+  if (armorGrade.kind !== 'legacy') {
+    if (armorGrade.kind === 'final') {
+      improvements.grade = armorGrade.grade;
+      improvements.level = armorGrade.level;
+      improvements.total_price = armorGrade.priceDelta;
+      improvements.upgrade_slots = armorGrade.upgradeSlots;
+      improvements.ac_bonus = armorGrade.acDelta;
+    }
+    return improvements;
+  }
 
   if (!isItemWithGradeImprovement(item)) {
     return improvements;

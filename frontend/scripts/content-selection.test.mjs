@@ -94,6 +94,7 @@ const special = {
   fetchHazards: 'async (...args) => { globalThis.__selectionHazards = args; return []; }',
   fetchContentSources: 'async () => []',
   filterByTraitType: '() => []',
+  compileTraits: 'item => globalThis.__selectionCompileTraits(item)',
   hashData: 'value => JSON.stringify(value)',
   toLabel: 'value => String(value)',
   labelToVariable: 'value => globalThis.__selectionLabels(value)',
@@ -138,7 +139,7 @@ const output = join(directory, 'selection.mjs');
 await build({
   absWorkingDir: root,
   stdin: {
-    contents: `export {SelectContentButton, selectContent, SelectionOptions, HazardSelectionOption, FeatSelectionOption} from './src/common/select/SelectContent'; export {default as ManageSpellsModal} from './src/modals/ManageSpellsModal'; export {default as AddItemsModal} from './src/modals/AddItemsModal'; export {AdvancedSearchModal} from './src/modals/AdvancedSearchModal'; export {default as SpellsPanel} from './src/pages/character_sheet/panels/SpellsPanel';`,
+    contents: `export {SelectContentButton, selectContent, SelectionOptions, HazardSelectionOption, FeatSelectionOption, ItemSelectionOption} from './src/common/select/SelectContent'; export {default as ManageSpellsModal} from './src/modals/ManageSpellsModal'; export {default as AddItemsModal} from './src/modals/AddItemsModal'; export {AdvancedSearchModal} from './src/modals/AdvancedSearchModal'; export {default as SpellsPanel} from './src/pages/character_sheet/panels/SpellsPanel';`,
     resolveDir: root,
   },
   bundle: true,
@@ -151,6 +152,8 @@ await build({
       name: 'selection-render-boundaries',
       setup(b) {
         b.onResolve({ filter: /.*/ }, (args) => {
+          if (args.path === '@items/armor-grade-view')
+            return { path: join(root, 'src/process/items/armor-grade-view.ts') };
           if (
             args.path === 'react' ||
             args.path === 'react/jsx-runtime' ||
@@ -191,6 +194,7 @@ const {
   SelectionOptions,
   HazardSelectionOption,
   FeatSelectionOption,
+  ItemSelectionOption,
   ManageSpellsModal,
   AddItemsModal,
   AdvancedSearchModal,
@@ -199,6 +203,70 @@ const {
 const charm = { id: 1, name: 'Charm', rank: 1 };
 const command = { id: 2, name: 'Command', rank: 1 };
 const picker = { type: 'spell', searchQuery: 'Charm', limitSelectedOptions: false };
+
+const finalArmor = {
+  id: 990761,
+  name: 'Synthetic selected-grade armor',
+  group: 'ARMOR',
+  level: 9,
+  price: { sp: 6500 },
+  traits: [991001],
+  rarity: 'COMMON',
+  size: 'MEDIUM',
+  meta_data: { ac_bonus: 4, dex_cap: 2, starfinder: { base_grade: 'ADVANCED', base_upgrade_slots: 0, grade: 'ELITE' } },
+};
+
+test('item selection sorts by effective grade level without changing raw item or non-item ordering', () => {
+  const host = new RenderHost();
+  const legacy = { id: 990762, name: 'Synthetic legacy item', level: 10 };
+  host.data = [finalArmor, legacy];
+  const original = structuredClone(host.data);
+  const props = { type: 'item', searchQuery: '', limitSelectedOptions: false };
+  assert.deepEqual(
+    host.render(SelectionOptions, props).props.options.map((item) => item.id),
+    [legacy.id, finalArmor.id]
+  );
+  assert.deepEqual(
+    host.render(SelectionOptions, { ...props, overrideOptions: host.data }).props.options.map((item) => item.id),
+    [finalArmor.id, legacy.id]
+  );
+  assert.deepEqual(
+    host.render(SelectionOptions, { ...props, type: 'creature' }).props.options.map((item) => item.id),
+    [finalArmor.id, legacy.id]
+  );
+  assert.deepEqual(host.data, original);
+});
+
+test('item selection displays the effective level and actual selected resilience without rewriting the printing', async (t) => {
+  const engine = await createOperationEngine();
+  t.after(() => engine.cleanup());
+  const previousCompile = globalThis.__selectionCompileTraits;
+  globalThis.__selectionCompileTraits = engine.compileTraits;
+  t.after(() => {
+    globalThis.__selectionCompileTraits = previousCompile;
+  });
+  engine.setFixtures(
+    [1, 2].map((tier) => ({
+      table: 'trait',
+      row: {
+        id: 991000 + tier,
+        name: `Resilient +${tier}`,
+        content_source_id: 579,
+      },
+    }))
+  );
+  const host = new RenderHost();
+  const original = structuredClone(finalArmor);
+  const tree = host.render(ItemSelectionOption, { item: finalArmor });
+  assert.equal(tree.props.level, 14);
+  assert.deepEqual(tree.props.rightSection.props.traitIds, [991002]);
+  const legacy = { ...finalArmor, level: 9, meta_data: {} };
+  const legacyTree = host.render(ItemSelectionOption, { item: legacy });
+  assert.equal(legacyTree.props.level, 9);
+  assert.deepEqual(legacyTree.props.rightSection.props.traitIds, [991001]);
+  assert.deepEqual(finalArmor, original);
+});
+
 test('deprecated legacy feats stay visible for saved selections and disappear from new choices', () => {
   const host = new RenderHost();
   const feat = { id: 22108, name: 'Heal Companion', type: 'feat', meta_data: { deprecated: true } };
