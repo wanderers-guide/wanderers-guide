@@ -131,6 +131,7 @@ export const VariableStoreSchema = z.object({
         text: z.string(),
         source: z.string(),
         timestamp: z.number(),
+        armor_grade_key: z.string().optional(),
       })
     )
   ),

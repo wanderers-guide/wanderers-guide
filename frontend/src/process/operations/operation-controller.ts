@@ -27,6 +27,7 @@ import {
 } from './operation-runner';
 import {
   addVariable,
+  addVariableBonus,
   areVariableEffectScopesActive,
   getVariableEffectScopes,
   finishVariableEffects,
@@ -67,6 +68,7 @@ import { setCalculatedStatsInStore } from '@variables/calculated-stats';
 import { getEntityLevel } from '@utils/entity-utils';
 import { defineDefaultSources, importFromContentPackage } from '@content/content-store';
 import { setEidolonRunesInStore } from '@items/eidolon-runes';
+import { getArmorGradeBonusKey, getArmorGradeView } from '@items/armor-grade-view';
 import { getExecutableModes, resolveActiveModeKeys } from '@common/modes/mode-rules';
 
 let executionQueue: Promise<void> = Promise.resolve();
@@ -1030,6 +1032,18 @@ async function executeCharacterOperations(
         undefined,
         character.level
       );
+      const armorGrade = getArmorGradeView(invItem.item);
+      if (!options && armorGrade.kind === 'final') {
+        addVariableBonus(
+          'CHARACTER',
+          'AC_BONUS',
+          armorGrade.acDelta,
+          'item',
+          '',
+          invItem.item.name,
+          getArmorGradeBonusKey(invItem.item)
+        );
+      }
 
       if (results.length > 0) {
         itemResults.push({
@@ -1256,6 +1270,18 @@ async function executeCreatureOperations(
         undefined,
         getEntityLevel(creature)
       );
+      const armorGrade = getArmorGradeView(invItem.item);
+      if (!options && armorGrade.kind === 'final') {
+        addVariableBonus(
+          id,
+          'AC_BONUS',
+          armorGrade.acDelta,
+          'item',
+          '',
+          invItem.item.name,
+          getArmorGradeBonusKey(invItem.item)
+        );
+      }
 
       if (results.length > 0) {
         itemResults.push({

@@ -87,6 +87,7 @@ await build({
         b.onResolve({ filter: /.*/ }, (args) => {
           if (args.path === '@common/ItemIcon') return { path: `${root}/src/common/ItemIcon.tsx` };
           if (args.path === '@drawers/ShowInjectedText') return { path: `${root}/src/drawers/ShowInjectedText.tsx` };
+          if (args.path === '@items/armor-grade-view') return { path: `${root}/src/process/items/armor-grade-view.ts` };
           if (args.path.includes('/node_modules/react/')) return { path: args.path, external: true };
           if (args.path === 'react' || args.path.startsWith('react/'))
             return { path: require.resolve(args.path), external: true };

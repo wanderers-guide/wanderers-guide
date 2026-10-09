@@ -168,7 +168,17 @@ interface Item {
   size: Size;
   craft_requirements?: string;
   usage?: string;
-  meta_data?: Record<string, any>; // TODO
+  meta_data?: Record<string, any> & {
+    starfinder?: {
+      grade?: 'COMMERCIAL' | 'TACTICAL' | 'ADVANCED' | 'SUPERIOR' | 'ELITE' | 'ULTIMATE' | 'PARAGON' | null;
+      base_grade?: 'COMMERCIAL' | 'TACTICAL' | 'ADVANCED' | 'SUPERIOR' | 'ELITE' | 'ULTIMATE' | 'PARAGON';
+      base_upgrade_slots?: number;
+      slots?: { name: string; id: number; upgrade?: Item }[];
+      built_in_upgrades?: { name: string; id: number; upgrade?: Item }[];
+      capacity?: string;
+      usage?: number | null;
+    };
+  };
   operations?: Operation[];
   content_source_id: number;
   version: string;

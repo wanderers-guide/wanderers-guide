@@ -299,6 +299,9 @@ export async function createOperationEngine({
           export { findDefaultPresets } from '@common/dice/dice-utils';
           export { getWeaponStats } from '@items/weapon-handler';
           export { getAcParts } from '@items/armor-handler';
+          export * from '@items/armor-grade-view';
+          export { preserveItemUpgradeSelections } from '@items/upgrade-selection';
+          export { getGradeImprovements, getItemOperations } from '@items/inv-utils';
           export * from '@items/eidolon-runes';
           export { handleAddItem, handleDeleteItem, handleUpdateItem, handleMoveItem, addExtraItems, handleUpdateItemCharges } from '@items/inv-handlers';
           export { isItemInvestable, isItemBroken, getFlatInvItems, getItemBulk, getInvBulk, getBulkLimit, getBulkLimitImmobile, applyEquipmentPenalties, getBestArmor, getBestShield, getEquippedWeapons, reachedInvestedLimit, reachedImplantLimit, compileTraits } from '@items/inv-utils';

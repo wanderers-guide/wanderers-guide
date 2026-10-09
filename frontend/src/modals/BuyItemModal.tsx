@@ -2,6 +2,7 @@ import { Text, Stack, Button, Group, Modal, Title, Box } from '@mantine/core';
 import { Inventory, Item } from '@schemas/content';
 import { CoinSection } from '@pages/character_sheet/panels/InventoryPanel';
 import { convertToCp, purchase } from '@items/currency-handler';
+import { getEffectiveItemPrice } from '@items/armor-grade-view';
 import { ContextModalProps } from '@mantine/modals';
 
 export default function BuyItemModal({
@@ -13,10 +14,17 @@ export default function BuyItemModal({
   item: Item;
   onConfirm: (coins: { cp: number; sp: number; gp: number; pp: number }) => void;
 }>) {
-  const _buyPrice = innerProps.item.price ? { cp: Number(innerProps.item.price.cp) || undefined, sp: Number(innerProps.item.price.sp) || undefined, gp: Number(innerProps.item.price.gp) || undefined, pp: Number(innerProps.item.price.pp) || undefined } : undefined;
-  const resultingCoins = innerProps.inventory
-    ? purchase(_buyPrice ?? {}, innerProps.inventory.coins)
-    : null;
+  // Quote and debit the same derived price without replacing the raw item being purchased.
+  const effectivePrice = getEffectiveItemPrice(innerProps.item);
+  const _buyPrice = effectivePrice
+    ? {
+        cp: Number(effectivePrice.cp) || undefined,
+        sp: Number(effectivePrice.sp) || undefined,
+        gp: Number(effectivePrice.gp) || undefined,
+        pp: Number(effectivePrice.pp) || undefined,
+      }
+    : undefined;
+  const resultingCoins = innerProps.inventory ? purchase(_buyPrice ?? {}, innerProps.inventory.coins) : null;
 
   return (
     <Stack style={{ position: 'relative' }} gap={10}>
@@ -24,13 +32,7 @@ export default function BuyItemModal({
         {convertToCp(_buyPrice) > 0 && (
           <Group wrap='nowrap' gap={10}>
             <Text>This item costs: </Text>
-            <CoinSection
-              cp={_buyPrice?.cp}
-              sp={_buyPrice?.sp}
-              gp={_buyPrice?.gp}
-              pp={_buyPrice?.pp}
-              justify='center'
-            />
+            <CoinSection cp={_buyPrice?.cp} sp={_buyPrice?.sp} gp={_buyPrice?.gp} pp={_buyPrice?.pp} justify='center' />
           </Group>
         )}
         {resultingCoins ? (

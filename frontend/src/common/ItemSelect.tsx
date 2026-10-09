@@ -1,9 +1,10 @@
 import { fetchContentAll, getDefaultSources, getDefaultSourcesKey } from '@content/content-store';
-import { Autocomplete, TagsInput } from '@mantine/core';
+import { Autocomplete, MultiSelect, TagsInput } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Item } from '@schemas/content';
 import { isTruthy } from '@utils/type-fixing';
 import { uniq } from 'lodash-es';
+import { preserveItemUpgradeSelections, type UpgradeReference } from '@items/upgrade-selection';
 
 function cleanName(name?: string) {
   if (!name) return name;
@@ -45,20 +46,59 @@ export function ItemSelect(props: {
   );
 }
 
-export function ItemMultiSelect(props: {
+type ItemMultiSelectProps = {
   label?: string;
   placeholder?: string;
-  valueName?: string[];
   disabled?: boolean;
   filter: (item: Item) => boolean;
-  onChange: (items?: Item[], names?: string[]) => void;
-}) {
+} & (
+  | {
+      referenceMode: true;
+      valueReferences?: UpgradeReference[];
+      onReferenceChange: (references: UpgradeReference[]) => void;
+    }
+  | {
+      referenceMode?: false;
+      valueName?: string[];
+      onChange: (items?: Item[], names?: string[]) => void;
+    }
+);
+
+export function ItemMultiSelect(props: ItemMultiSelectProps) {
   const { data, isFetching } = useQuery({
     queryKey: [`get-items`, { sources: getDefaultSourcesKey('INFO') }],
     queryFn: async () => {
       return await fetchContentAll<Item>('item', getDefaultSources('INFO'));
     },
   });
+
+  if (props.referenceMode) {
+    const catalog = (data ?? []).filter(props.filter);
+    const options = new Map(
+      catalog.map((item) => [`catalog:${item.id}`, { value: `catalog:${item.id}`, label: item.name }])
+    );
+    const values = (props.valueReferences ?? []).map((reference, index) => {
+      const value = `owned:${index}:${reference.id}`;
+      options.set(value, { value, label: reference.name });
+      return value;
+    });
+    return (
+      <MultiSelect
+        disabled={props.disabled}
+        label={props.label}
+        placeholder={props.placeholder}
+        data={[...options.values()]}
+        value={values}
+        readOnly={isFetching || !data}
+        searchable
+        selectFirstOptionOnChange
+        limit={1000}
+        onChange={(selectedKeys) => {
+          props.onReferenceChange(preserveItemUpgradeSelections(selectedKeys, props.valueReferences, catalog));
+        }}
+      />
+    );
+  }
 
   const names = props.valueName?.map((name) => cleanName(name));
 
