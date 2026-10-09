@@ -2855,7 +2855,7 @@
       "post": {
         "tags": ["Users"],
         "summary": "Complete Patreon OAuth flow",
-        "description": "Receives the OAuth `code` from Patreon's redirect, exchanges it for tokens, and stores them on the caller's `public_user.patreon` field.",
+        "description": "Requires a signed-in, non-anonymous, active account. Exchanges the one-use OAuth code once, reads Patreon API v2 identity and current entitled tiers for the Wanderer's Guide campaign, and stores the validated link on the caller's public_user.patreon field. New Game Masters receive a group code in the same write; reconnecting preserves existing group codes. Provider and persistence failures return a safe error and retain existing linked data. The browser quietly returns to Account on success, rejection, cancellation or timeout, without recovery messages. Production requires matching v2 client configuration in the frontend and edge functions.",
         "operationId": "handlePatreonRedirect",
         "requestBody": {
           "required": true,
@@ -2865,7 +2865,7 @@
                 "type": "object",
                 "required": ["code", "redirectOrigin"],
                 "properties": {
-                  "code": { "type": "string" },
+                  "code": { "type": "string", "minLength": 1, "maxLength": 2048 },
                   "redirectOrigin": { "type": "string", "format": "uri" }
                 }
               }
@@ -2874,7 +2874,7 @@
         },
         "responses": {
           "200": {
-            "description": "JSend envelope.",
+            "description": "Patreon connected only after a confirmed account write; validation and provider failures use fail/error envelopes.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2883,15 +2883,18 @@
                       "type": "object",
                       "properties": {
                         "status": { "type": "string", "enum": ["success"] },
-                        "data": { "type": "object", "additionalProperties": true }
+                        "data": { "type": "string", "const": "Patreon connected" }
                       }
                     },
-                    { "$ref": "#/components/schemas/JSendError" }
+                    { "$ref": "#/components/schemas/JSendError" },
+                    { "$ref": "#/components/schemas/JSendFail" }
                   ]
                 }
               }
             }
-          }
+          },
+          "401": { "description": "A valid non-anonymous account session is required.", "$ref": "#/components/responses/JSendFail" },
+          "503": { "description": "Authentication is temporarily unavailable.", "$ref": "#/components/responses/JSendError" }
         }
       }
     },

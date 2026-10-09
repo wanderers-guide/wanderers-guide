@@ -110,6 +110,15 @@ service. Do not reset an existing database to repair a runtime timeout.
 - **TLS / public hostname.** Stand up a reverse proxy (Caddy, Traefik,
   nginx) in front of `frontend:80` and `kong:8000`.
 - **Edge function secrets.** Add to the `functions` service environment.
+- **Patreon linking.** Configure `PATREON_V2_CLIENT_ID` and
+  `PATREON_V2_CLIENT_SECRET` for a v2 application registered under your creator
+  account. Compose passes the public ID into the frontend build as
+  `VITE_PATREON_CLIENT_ID`; rebuild the frontend after changing it. Keep the old
+  `PATREON_CLIENT_ID` and `PATREON_CLIENT_SECRET` for refreshing existing grants.
+  Register your site's `/auth/patreon/redirect` URL with Patreon. Leave these
+  variables empty if Patreon linking is unused. See the
+  [development guide](/development#patreon-api-v2-configuration) for migration
+  and release verification.
 
 ## Known limitations of this skeleton
 
