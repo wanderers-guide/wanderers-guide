@@ -308,7 +308,24 @@ test('captured global official inventory permits only absent or exact terminal i
       spec.aliases.some((a) => a.citation_ids.includes(Number(/[?&]id=(\d+)/.exec(url.toLowerCase())?.[1])));
     if (alias || citation) assert.ok(terminalIds.has(String(row.uuid)) && row.content_source_id === 16);
   }
-  assert.equal(all.filter((r) => r.row.content_source_id === 16).length, known.length ? 1113 : 1109);
+  const displaySql = await readFile(
+    new URL('../../supabase/migrations/20261002101000_treasure_vault_complete_display.sql', import.meta.url),
+    'utf8'
+  );
+  const display = JSON.parse(displaySql.split('$display101$')[1]);
+  const fixed = display.catalog.filter((entry) => entry.table === 'item' && entry.after.content_source_id === 16);
+  const allocated = [...display.prerequisites, ...display.inserts].filter(
+    (entry) => entry.table === 'item' && entry.row.content_source_id === 16
+  );
+  const currentBook = all.filter(({ row }) => row.content_source_id === 16).map(({ row }) => row);
+  assert.deepEqual(
+    currentBook.map((row) => String(row.uuid)).sort(),
+    [...fixed.map((entry) => String(entry.after.uuid)), ...allocated.map((entry) => String(entry.uuid))].sort(),
+    'Current complete book includes exactly the immutable catalog and its explicitly allocated additions'
+  );
+  for (const entry of fixed) {
+    assert.equal(currentBook.find((row) => String(row.uuid) === String(entry.after.uuid))?.id, entry.id);
+  }
 });
 
 test('SQL guards queue/status/type identities before replay and captures full baselines with strict insert/count CAS plus final readback', () => {

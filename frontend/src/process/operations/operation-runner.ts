@@ -87,6 +87,23 @@ import {
   resolveLanguageOverride,
 } from './language-operations';
 
+/** Numeric content identities must remain distinct when evaluating list membership. */
+const CONTENT_ID_LIST_VARIABLES: ReadonlySet<string> = new Set([
+  'SENSE_IDS',
+  'MODE_IDS',
+  'CLASS_IDS',
+  'ANCESTRY_IDS',
+  'BACKGROUND_IDS',
+  'HERITAGE_IDS',
+  'CLASS_ARCHETYPE_IDS',
+  'FEAT_IDS',
+  'SPELL_IDS',
+  'LANGUAGE_IDS',
+  'CLASS_FEATURE_IDS',
+  'PHYSICAL_FEATURE_IDS',
+  'EXTRA_ITEM_IDS',
+]);
+
 // import { hideNotification, showNotification } from '@mantine/notifications';
 // import { displayError } from '@utils/notifications';
 // Disable these for now as we move to web worker processing for operations
@@ -1687,7 +1704,9 @@ async function runConditional(
       } catch (e) {}
       let checkValue: string[] = [];
       const normalize = (value: string): string =>
-        labelToVariable(value, true, { preserveNumbers: variable.name === 'ACTIVE_MODES' });
+        labelToVariable(value, true, {
+          preserveNumbers: variable.name === 'ACTIVE_MODES' || CONTENT_ID_LIST_VARIABLES.has(variable.name),
+        });
       try {
         if (typeof check.value === 'string') {
           checkValue = JSON.parse(check.value.toUpperCase());

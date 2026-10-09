@@ -10,7 +10,7 @@ import {
   TraitSchema,
   ContentSourceSchema,
 } from '../src/schemas/content.ts';
-import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
+import { createOperationEngine, readHistoricalContentRows } from './operation-test-harness.mjs';
 import { content as emptyContent, inventoryItem, summoner } from './fixtures/eidolon.mjs';
 
 const migration = await readReviewedHistoricalSql(
@@ -22,7 +22,7 @@ const release = await readReviewedHistoricalSql(
   'utf8'
 );
 const spec = JSON.parse(migration.split('$noisome$')[1]);
-const rows = await readContentRows([
+const rows = await readHistoricalContentRows([
   ...spec.items.map(({ id }) => ({ table: 'item', id })),
   ...spec.dependencies.map(({ table, id }) => ({ table: table.replace('-', '_'), id })),
   ...spec.sources.map(({ id }) => ({ table: 'content_source', id })),

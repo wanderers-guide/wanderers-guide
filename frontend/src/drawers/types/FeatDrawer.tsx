@@ -221,7 +221,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
             <Text fw={600} c='gray.2' span>
               Trigger
             </Text>{' '}
-            {feat.trigger}
+            <RichText span>{feat.trigger}</RichText>
           </IndentedText>
         )}
         {feat.cost && (
@@ -229,7 +229,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
             <Text fw={600} c='gray.2' span>
               Cost
             </Text>{' '}
-            {feat.cost}
+            <RichText span>{feat.cost}</RichText>
           </IndentedText>
         )}
         {feat.requirements && (

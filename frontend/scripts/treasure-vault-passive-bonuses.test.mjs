@@ -8,7 +8,7 @@ import { after, before, test } from 'node:test';
 import { build } from 'esbuild';
 import { ContentTypeSchema, ContentUpdateSchema, ItemSchema } from '../src/schemas/content.ts';
 import { OperationSchema } from '../src/schemas/operations.ts';
-import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
+import { createOperationEngine, readHistoricalContentRows } from './operation-test-harness.mjs';
 
 const frontend = fileURLToPath(new URL('../', import.meta.url));
 const migration = await readReviewedHistoricalSql(
@@ -201,7 +201,7 @@ const bonuses = (variable) => engine.getVariableBonuses('CHARACTER', variable);
 const bonusTotal = (variable) => engine.getProfValueParts('CHARACTER', variable).breakdown.bonusValue;
 
 before(async () => {
-  fixtureRows = await readContentRows([
+  fixtureRows = await readHistoricalContentRows([
     ...patches.map(({ id }) => ({ table: 'item', id })),
     ...dependencies.map(({ table, id }) => ({ table: table.replaceAll('-', '_'), id })),
     ...[1459, 1568, 1519, 1454].map((id) => ({ table: 'trait', id })),

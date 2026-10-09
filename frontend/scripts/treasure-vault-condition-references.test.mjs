@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { before, after, test } from 'node:test';
 import { ItemSchema, InventorySchema } from '../src/schemas/content.ts';
-import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
+import { createOperationEngine, readHistoricalContentRows } from './operation-test-harness.mjs';
 
 const migration = await readFile(
   new URL('../../supabase/migrations/20261001130000_treasure_vault_condition_references.sql', import.meta.url),
@@ -73,7 +73,7 @@ const conditions = new Set([
 ]);
 const deferredIds = [12000, 12138, 12300, 12486, 12552, 12553];
 const coveredIds = [...Array.from({ length: 14 }, (_, index) => 12605 + index), 12662, 12663, 12697, 12702];
-const rows = await readContentRows([
+const rows = await readHistoricalContentRows([
   ...[...expectedIds, ...deferredIds, ...coveredIds].map((id) => ({ table: 'item', id })),
   { table: 'content_source', id: 16 },
   ...prose.dependencies.map(({ table, id }) => ({ table, id })),

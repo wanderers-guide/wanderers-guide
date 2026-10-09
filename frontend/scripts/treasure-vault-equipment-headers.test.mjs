@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import { ItemSchema, TraitSchema, InventorySchema, ContentSourceSchema } from '../src/schemas/content.ts';
-import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
+import { createOperationEngine, readHistoricalContentRows } from './operation-test-harness.mjs';
 import { content as emptyContent, inventoryItem, summoner } from './fixtures/eidolon.mjs';
 
 const migration = await readFile(
@@ -24,7 +24,7 @@ const predecessor = JSON.parse(
 );
 const spec = JSON.parse(migration.split('$headers$')[1]);
 const prose = JSON.parse(migration.split('$prose$')[1]);
-const rows = await readContentRows([
+const rows = await readHistoricalContentRows([
   ...spec.items.map(({ id }) => ({ table: 'item', id })),
   ...spec.dependencies.map(({ id }) => ({ table: 'trait', id })),
   ...spec.sources.map(({ id }) => ({ table: 'content_source', id })),

@@ -8,6 +8,18 @@ import {assertNativeRestoration,createNativePhaseRunner} from './treasure-vault-
 import {metadataAuthorityInspectionSql,assertMetadataAuthorityResult,assertMetadataRejectionSetup} from './treasure-vault-native-metadata.mjs';
 import {nativeStrictReleaseEdges} from './treasure-vault-native-negatives.mjs';
 import {disposeNativeOwnedContainer} from './treasure-vault-native-fixture.mjs';
+import {HISTORICAL_CONTENT_FIXTURE} from './historical-content-fixture.mjs';
+
+test('historical native bootstrap rejects undeclared, partial or mutated fixture inputs before Docker startup',()=>{
+  const construct=options=>createOwnedNativeFixture({root:'/unused-model-root',receipt:{},log:()=>assert.fail('No constructor commands'),
+    bootstrapRead:()=>assert.fail('No constructor SQL reads'),...options});
+  for(const options of [
+    {contentDump:'partial historical content'},
+    {contentDumpProvenance:HISTORICAL_CONTENT_FIXTURE},
+    {contentDump:'partial historical content',contentDumpProvenance:HISTORICAL_CONTENT_FIXTURE},
+    {contentDump:'partial historical content',contentDumpProvenance:{...HISTORICAL_CONTENT_FIXTURE,commit:'0'.repeat(40)}},
+  ])assert.throws(()=>construct(options),{name:'AssertionError'});
+});
 
 /** External log/removal boundary models only; no container or PostgreSQL starts. */
 function cleanupLogModel({database=true,raw,write=()=>{},redact=value=>String(value).split('\n').map(line=>line.slice(0,1000)).join('\n').slice(-12000),metadataError=false}={}) {
