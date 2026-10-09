@@ -291,7 +291,7 @@ export async function createOperationEngine({
           export { getInventorySpellIds, getMissingSpellIds, mergeSpellDependencies, filterSpellCatalog } from '@spells/item-spell-dependencies';
           export { filterByTraitType, isItemWeapon, isItemStave } from '@items/inv-utils';
           export { meetsPrerequisites } from '@variables/prereq-detection';
-          export { applyConditions, compiledConditions, getConditionByName } from '@conditions/condition-handler';
+          export { applyConditions, compiledConditions, getConditionByName, getAllConditions, getConditionReferenceNames } from '@conditions/condition-handler';
           export { getSpellStats, getItemCastingSource, getSpellheartStats, resolveSpellheartCasting } from '@spells/spell-handler';
           export * from '@spells/innate-spells';
           export { SpellheartCastingSchema, ItemSchema, InventoryItemSchema } from '@schemas/content';

@@ -135,3 +135,72 @@ test('result-tier containers do not nest paragraph elements or lose emphasized t
   assert.match(html, /<em><a\b/);
   assert.doesNotMatch(html, /<p\b[^>]*>(?:(?!<\/p>)[\s\S])*<p\b/);
 });
+
+/** Recreate the global catalog or a character's game flags without a browser. */
+function setGameContext(context) {
+  engine.resetVariables('CHARACTER');
+  if (context !== 'GLOBAL') {
+    engine.setVariable('CHARACTER', 'PATHFINDER', context === 'PATHFINDER');
+    engine.setVariable('CHARACTER', 'STARFINDER', context === 'STARFINDER');
+  }
+}
+
+test('global and Pathfinder prose link every Starfinder condition reference', () => {
+  for (const context of ['GLOBAL', 'PATHFINDER', 'STARFINDER']) {
+    setGameContext(context);
+    assert.deepEqual(
+      anchors(render('glitching 1; glitching 2; suppressed; stunned 1.')),
+      ['glitching', 'glitching', 'suppressed', 'stunned'],
+      context
+    );
+    assert.equal(engine.getConditionByName('glitching').name, 'Glitching');
+  }
+});
+
+test('character condition choices retain their current game filter and cloned rows', () => {
+  let commonNames;
+  for (const context of ['GLOBAL', 'PATHFINDER', 'STARFINDER']) {
+    setGameContext(context);
+    const choices = engine.getAllConditions();
+    const names = choices.map((condition) => condition.name);
+    assert.equal(names.includes('Glitching'), context === 'STARFINDER', context);
+    assert.equal(names.includes('Suppressed'), context === 'STARFINDER', context);
+    const shared = names.filter((name) => !['Glitching', 'Suppressed'].includes(name));
+    if (commonNames) assert.deepEqual(shared, commonNames, context);
+    else commonNames = shared;
+    choices[0].name = 'mutated test copy';
+    assert.notEqual(engine.getAllConditions()[0].name, 'mutated test copy');
+  }
+});
+
+test('condition reference names are system-independent fresh arrays, not mutable condition rows', () => {
+  setGameContext('STARFINDER');
+  const allNames = engine.getAllConditions().map((condition) => condition.name);
+  for (const context of ['GLOBAL', 'PATHFINDER', 'STARFINDER']) {
+    setGameContext(context);
+    assert.deepEqual(engine.getConditionReferenceNames(), allNames, context);
+    const changed = engine.getConditionReferenceNames();
+    changed[0] = 'mutated reference copy';
+    assert.deepEqual(engine.getConditionReferenceNames(), allNames);
+    assert.equal(engine.getConditionByName('glitching').name, 'Glitching');
+  }
+});
+
+test('all-system prose still respects blacklists, authored links and literal code', () => {
+  setGameContext('GLOBAL');
+  const text =
+    '[glitching](link_condition_glitching); [glitching](https://example.test); `glitching`; **glitching** 2; suppressed.';
+  const html = render(text);
+  assert.deepEqual(anchors(html), ['glitching', 'glitching', 'glitching', 'suppressed']);
+  assert.match(html, />glitching<\/code>/);
+  assert.match(html, /<strong><a\b/);
+  assert.match(html, /href="https:\/\/example.test"/);
+  assert.doesNotMatch(html, /\[glitching|link_condition_|<a\b[^>]*>(?:(?!<\/a>)[\s\S])*<a\b/);
+  assert.deepEqual(anchors(render(text, ['glitching', 'suppressed'])), ['glitching', 'glitching']);
+  assert.deepEqual(anchors(render('```text\nglitching; suppressed\n```')), []);
+  // This fix changes reference availability, not the established case matcher.
+  for (const context of ['GLOBAL', 'STARFINDER']) {
+    setGameContext(context);
+    assert.deepEqual(anchors(render('Glitching. Suppressed.')), []);
+  }
+});

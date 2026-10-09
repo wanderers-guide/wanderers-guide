@@ -365,6 +365,11 @@ export function getAllConditions() {
   );
 }
 
+/** Return all-system prose reference names without changing character condition choices. */
+export function getConditionReferenceNames(): string[] {
+  return CONDITIONS.map((condition) => condition.name);
+}
+
 export function applyConditions(id: StoreID, conditions: Condition[]) {
   compiledConditions(conditions).forEach((condition) => {
     applyCondition(id, condition);
