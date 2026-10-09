@@ -117,6 +117,9 @@ must override it with their own creator application's ID. Client secrets remain
 server-only.
 Keep `PATREON_CLIENT_ID` and `PATREON_CLIENT_SECRET` for existing grants. New
 links record their issuing client so token refresh uses the correct credentials.
+The Account button shows a saved Patreon connection independently of paid tier.
+A connected account without an entitled WG tier remains Non-Patron and receives
+no paid access from the connection alone.
 The authorization request needs only `identity identity[email]`: Patreon returns
 memberships to the app creator's campaign without access to unrelated memberships.
 

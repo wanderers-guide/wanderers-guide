@@ -13,6 +13,14 @@ describe('Quiet Patreon account linking', () => {
   for (const scenario of [
     { name: 'success', query: 'code=fixture-code', connected: true, width: 1280 },
     { name: 'phone success', query: 'code=fixture-code', connected: true, width: 390 },
+    { name: 'connected without a paid tier', query: 'code=fixture-code', connected: true, noTier: true, width: 1280 },
+    {
+      name: 'phone connected without a paid tier',
+      query: 'code=fixture-code',
+      connected: true,
+      noTier: true,
+      width: 390,
+    },
     { name: 'provider rejection', query: 'code=fixture-code', connected: false, width: 1280 },
     { name: 'network failure', query: 'code=fixture-code', connected: false, width: 1280, http: 503 },
     { name: 'cancelled authorization', query: 'error=access_denied', connected: false, width: 1280 },
@@ -55,7 +63,13 @@ describe('Quiet Patreon account linking', () => {
           });
           return;
         }
-        if (endpoint === 'get-user') data = { ...profile, patreon: linked ? { tier: 'WANDERER' } : undefined };
+        if (endpoint === 'get-user')
+          data = {
+            ...profile,
+            patreon: linked
+              ? { patreon_user_id: 'fixture-patreon-user', tier: scenario.noTier ? undefined : 'WANDERER' }
+              : undefined,
+          };
         else if (endpoint === 'report-client-error') data = null;
         else if (
           !endpoint?.startsWith('find-') &&
@@ -97,6 +111,12 @@ describe('Quiet Patreon account linking', () => {
         'be.visible'
       );
       cy.get('.mantine-Notification-root').should('not.exist');
+      if (scenario.noTier) {
+        cy.contains('Non-Patron').should('be.visible');
+        cy.reload();
+        cy.contains('Patreon Connected').should('be.visible');
+        cy.contains('Non-Patron').should('be.visible');
+      }
       cy.then(() => expect(exchanges).to.equal(scenario.query.includes('code=') ? 1 : 0));
       cy.screenshot(`patreon-${scenario.name.replaceAll(' ', '-')}`, { capture: 'viewport' });
     });
