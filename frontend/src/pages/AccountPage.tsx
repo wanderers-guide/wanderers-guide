@@ -229,6 +229,8 @@ function ProfileSection() {
   }
 
   // Determine patron tier
+  // A saved Patreon identity remains connected even when it has no paid WG tier.
+  const isPatreonConnected = Boolean(user.patreon?.patreon_user_id || user.patreon?.tier);
   let patronTier = toLabel(user.patreon?.tier) || 'Non-Patron';
   let patronColor: MantineColor = 'gray';
   if (patronTier === 'Non-Patron') patronColor = 'gray';
@@ -492,13 +494,13 @@ function ProfileSection() {
           <Box pt='sm'>
             <Button
               size='sm'
-              variant={user.patreon?.tier ? 'outline' : 'gradient'}
+              variant={isPatreonConnected ? 'outline' : 'gradient'}
               leftSection={<IconBrandPatreon size={18} />}
               fullWidth
               component='a'
               href={PATREON_AUTH_URL}
             >
-              {user.patreon?.tier ? `Patreon Connected` : 'Connect to Patreon'}
+              {isPatreonConnected ? 'Patreon Connected' : 'Connect to Patreon'}
             </Button>
           </Box>
 

@@ -25,7 +25,15 @@ import {
   IconSwords,
   IconUsers,
 } from '@tabler/icons-react';
-import { AbilityBlockType, Character, ContentSource, ContentType, Creature, HazardSearchResultSchema, Item } from '@schemas/content';
+import {
+  AbilityBlockType,
+  Character,
+  ContentSource,
+  ContentType,
+  Creature,
+  HazardSearchResultSchema,
+  Item,
+} from '@schemas/content';
 import { DrawerType } from '@schemas/index';
 import { isPlayable } from '@utils/character';
 import { determineCompanionType } from '@utils/creature';
@@ -87,15 +95,21 @@ export default function SearchSpotlight() {
 
   useEffect(() => {
     if (query) {
-      activateQueryPipeline(defaultActions, query, navigate, openDrawer, openCreatureDrawer, theme, session).then(
-        (result) => {
-          if (query === currentQuery.current) {
-            setQueryResult(result);
-          } else {
-            setQuery(currentQuery.current);
-          }
+      activateQueryPipeline(
+        defaultActions,
+        query,
+        navigate,
+        openDrawer,
+        openCreatureDrawer,
+        theme,
+        session ?? null
+      ).then((result) => {
+        if (query === currentQuery.current) {
+          setQueryResult(result);
+        } else {
+          setQuery(currentQuery.current);
         }
-      );
+      });
     }
   }, [query]);
 
