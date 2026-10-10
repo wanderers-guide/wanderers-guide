@@ -292,6 +292,31 @@ export function sharedAncestryPendingSetup({ source, data, userId }) {
   return `insert into public.content_update(id,type,content_source_id,action,data,upvotes,downvotes,status,user_id) values((select coalesce(max(id),0)+1 from public.content_update),'ancestry',${source},'UPDATE',${quote(JSON.stringify(data))}::jsonb,'{}'::json[],'{}'::json[],'{"state":"PENDING"}'::jsonb,${quote(userId)}::uuid);`;
 }
 
+/** Match the real JSON column while preserving every other source metadata field. */
+export const SHARED_RIVAL_COUNT_SETUP =
+  "update public.content_source set meta_data=jsonb_set(meta_data::jsonb,'{counts,feat}','79'::jsonb,false)::json where id=493;";
+
+/** Populate all real non-generated feat columns without consuming a sequence. */
+export function sharedAncestryRivalWitnessInsert({ columns, originalFeat }) {
+  const quote = (text) => "'" + text.replaceAll("'", "''") + "'";
+  return `insert into public.ability_block(${columns}) select ${columns} from jsonb_populate_record(null::public.ability_block,${quote(JSON.stringify(originalFeat))}::jsonb||jsonb_build_object('id',(select max(id)+1 from public.ability_block),'uuid',(select max(uuid)+1 from public.ability_block),'name','Shared ancestry count witness'));`;
+}
+
+/** Retain the complete real ancestry shape when introducing an adversarial duplicate. */
+export function sharedAncestryDuplicateInsert({ columns, row }) {
+  const quote = (text) => "'" + text.replaceAll("'", "''") + "'";
+  // Reviewed rows omit cache timestamps; let the real NOT NULL default supply it.
+  const insertedColumns = columns
+    .split(",")
+    .filter((column) => column !== '"updated_at"')
+    .join(",");
+  return `insert into public.ancestry(${insertedColumns}) select ${insertedColumns} from jsonb_populate_record(null::public.ancestry,${quote(JSON.stringify(row))}::jsonb||jsonb_build_object('id',(select max(id)+1 from public.ancestry)));`;
+}
+
+/** Fail at the final trait so the actual migration must undo eleven earlier writes. */
+export const SHARED_LATE_REJECTION_SETUP =
+  "create function public.wg_shared_late_rejection() returns trigger language plpgsql as $$begin if new.id=1474 then raise exception 'Shared ancestry late test rejection';end if;return new;end$$;create trigger wg_shared_late_rejection before update on public.trait for each row execute function public.wg_shared_late_rejection();";
+
 /** Native rejection capsules roll back, then the exact registered move runs once. */
 export async function runNativeSharedAncestries({
   inputs,
@@ -312,7 +337,6 @@ export async function runNativeSharedAncestries({
     migration_sha256: hash(batch.sql),
     release_sql_sha256: hash(batch.releaseSql),
   });
-  const quote = (text) => "'" + text.replaceAll("'", "''") + "'";
   async function rejected(name, setup) {
     await checkpoint("shared ancestry " + name);
     const before = fixture.snapshot();
@@ -392,10 +416,7 @@ export async function runNativeSharedAncestries({
       sharedAncestryPendingSetup({ source, data, userId }),
     );
   }
-  await rejected(
-    "rival-count-without-real-feat",
-    "update public.content_source set meta_data=jsonb_set(meta_data,'{counts,feat}','79'::jsonb,false) where id=493;",
-  );
+  await rejected("rival-count-without-real-feat", SHARED_RIVAL_COUNT_SETUP);
   await checkpoint("shared ancestry rival-count-with-real-feat");
   const rivalBefore = fixture.snapshot();
   const featColumns = fixture
@@ -411,7 +432,7 @@ export async function runNativeSharedAncestries({
     .replace(/^begin;\n/m, "")
     .replace(/commit;\n$/, "");
   const rival = fixture.sql(
-    `begin;insert into public.ability_block(${featColumns}) select ${featColumns} from jsonb_populate_record(null::public.ability_block,${quote(JSON.stringify(originalFeat))}::jsonb||jsonb_build_object('id',(select max(id)+1 from public.ability_block),'uuid',(select max(uuid)+1 from public.ability_block),'name','Shared ancestry count witness'));update public.content_source set meta_data=jsonb_set(meta_data,'{counts,feat}','79'::jsonb,false) where id=493;select row_to_json(s) from ${inputs.helper.signature} s;${positiveWriter}select row_to_json(s) from ${inputs.helper.signature} s;rollback;`,
+    `begin;${sharedAncestryRivalWitnessInsert({ columns: featColumns, originalFeat })}${SHARED_RIVAL_COUNT_SETUP}select row_to_json(s) from ${inputs.helper.signature} s;${positiveWriter}select row_to_json(s) from ${inputs.helper.signature} s;rollback;`,
     true,
   );
   assert.equal(rival.error == null, true);
@@ -448,17 +469,18 @@ export async function runNativeSharedAncestries({
     .join(",");
   await rejected(
     "duplicate-common-identity",
-    `insert into public.ancestry(${columns}) select ${columns} from jsonb_populate_record(null::public.ancestry,${quote(JSON.stringify(halfling.after))}::jsonb||jsonb_build_object('id',(select max(id)+1 from public.ancestry)));`,
+    sharedAncestryDuplicateInsert({ columns, row: halfling.after }),
   );
   const rollbackBefore = fixture.snapshot();
   const writer = batch.sql.replace(/^begin;\n/m, "").replace(/commit;\n$/, "");
   const late = fixture.sql(
-    `begin;create function public.wg_shared_late_rejection() returns trigger language plpgsql as $$begin if new.id=1474 then raise exception 'Shared ancestry late test rejection';end if;return new;end$$;create trigger wg_shared_late_rejection before update on public.trait for each row execute function public.wg_shared_late_rejection();\n${writer}\nrollback;`,
+    `begin;${SHARED_LATE_REJECTION_SETUP}\n${writer}\nrollback;`,
     true,
   );
   assert.equal(late.error == null, true);
   assert.equal(late.signal, null);
   assert.equal(late.status, 3);
+  assert.match(late.stderr, /ERROR:\s+P0001:/);
   assert.match(late.stderr, /Shared ancestry late test rejection/);
   assert.deepEqual(
     fixture.snapshot(),

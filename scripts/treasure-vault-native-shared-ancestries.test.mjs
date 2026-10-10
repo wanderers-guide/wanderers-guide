@@ -17,6 +17,8 @@ import {
   sharedAncestryRelease,
   SHARED_NATIVE_CONTROLS,
   sharedAncestryPendingSetup,
+  SHARED_RIVAL_COUNT_SETUP,
+  sharedAncestryDuplicateInsert,
 } from "./treasure-vault-native-shared-ancestries.mjs";
 import {
   extractReviewedTerminalHelper,
@@ -84,6 +86,53 @@ test("queued ancestry fixtures satisfy every required database column before tes
     assert.ok(setup.includes(",'UPDATE',"));
     assert.ok(setup.includes("'{}'::json[],'{}'::json[]"));
     assert.ok(setup.includes("'" + JSON.stringify(data) + "'::jsonb"));
+  }
+});
+
+test("the rival count fixture respects the source column's actual JSON type", async () => {
+  const table = (await read("data/schema.sql"))
+    .split("CREATE TABLE public.content_source (\n")[1]
+    .split("\n);")[0];
+  assert.match(table, /meta_data json[,\n]/);
+  assert.ok(SHARED_RIVAL_COUNT_SETUP.includes("jsonb_set(meta_data::jsonb,"));
+  assert.ok(SHARED_RIVAL_COUNT_SETUP.includes("false)::json where id=493;"));
+});
+
+test("the duplicate fixture supplies required ancestry fields and uses the real cache timestamp default", async () => {
+  const table = (await read("data/schema.sql"))
+    .split("CREATE TABLE public.ancestry (\n")[1]
+    .split("\n);")[0];
+  const definitions = table.split("\n").map((line) => line.trim());
+  assert.match(
+    definitions.find((line) => line.startsWith("updated_at ")),
+    /DEFAULT .* NOT NULL/,
+  );
+  const columns = definitions
+    .filter((line) => line.length > 0 && !line.includes("GENERATED"))
+    .map((line) => line.split(/\s+/)[0]);
+  const row = patches.find(
+    (patch) => patch.table === "ancestry" && patch.id === 7,
+  ).after;
+  assert.equal(Object.hasOwn(row, "updated_at"), false);
+  const setup = sharedAncestryDuplicateInsert({
+    columns: columns.map((column) => '"' + column + '"').join(","),
+    row,
+  });
+  const inserted = setup
+    .match(/^insert into public\.ancestry\(([^)]+)\)/)[1]
+    .split(",")
+    .map((column) => column.slice(1, -1));
+  assert.equal(inserted.includes("updated_at"), false);
+  assert.equal(inserted.includes("search_tsv"), false);
+  for (const definition of definitions.filter(
+    (line) =>
+      line.includes("NOT NULL") &&
+      !line.includes("DEFAULT") &&
+      !line.includes("GENERATED"),
+  )) {
+    const column = definition.split(/\s+/)[0];
+    assert.ok(inserted.includes(column), column);
+    assert.ok(Object.hasOwn(row, column), column);
   }
 });
 
