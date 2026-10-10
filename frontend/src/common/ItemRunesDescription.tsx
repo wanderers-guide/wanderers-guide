@@ -156,8 +156,8 @@ export function ItemUpgradesDescription(props: { item: Item }) {
     return <></>;
   }
 
-  const slots = item.meta_data?.starfinder?.slots || [];
-  slots.sort((a, b) => a.name.localeCompare(b.name));
+  // Sort the display copy without changing saved upgrade order or snapshots.
+  const slots = [...(item.meta_data?.starfinder?.slots || [])].sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <>
