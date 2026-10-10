@@ -25,6 +25,7 @@ async function calculate({
   homebrew = false,
   catalogRune,
   snapshot = rune,
+  properties,
   flags = {},
   bonus = 0,
 } = {}) {
@@ -38,7 +39,9 @@ async function calculate({
   item.meta_data.runes = {
     potency: 1,
     resilient: 0,
-    property: [{ id: rune.id, name: rune.name, ...(snapshot ? { rune: structuredClone(snapshot) } : {}) }],
+    property: properties ?? [
+      { id: rune.id, name: rune.name, ...(snapshot ? { rune: structuredClone(snapshot) } : {}) },
+    ],
   };
   const character = {
     id: 990000,
@@ -140,4 +143,10 @@ test("missing and mismatched snapshots never apply another item's operations", a
     assert.equal((await calculate({ snapshot })).perception, 9);
   }
   assert.equal((await calculate({ snapshot: null, catalogRune: runes[0] })).perception, 10);
+});
+
+test('legacy property rune names preserve the rest of the character calculation', async () => {
+  const result = await calculate({ properties: ['Flaming'] });
+  assert.equal(result.perception, 9, 'legacy names must not cancel trained perception');
+  assert.equal(result.ac, 26, 'armor potency still applies');
 });

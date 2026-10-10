@@ -322,7 +322,7 @@ export function getItemOperations(item: Item, content: ContentPackage): Operatio
         // The editor saves the rune itself, even when its source is outside the character's catalog.
         const propertyRune =
           content.items.find((i) => i.id === property.id) ??
-          (property.rune?.id === property.id && property.rune.group === 'RUNE' ? property.rune : undefined);
+          (property.rune?.id === property.id && property.rune?.group === 'RUNE' ? property.rune : undefined);
         if (propertyRune) {
           baseOps.push(...getItemOperations(propertyRune, content));
         }
