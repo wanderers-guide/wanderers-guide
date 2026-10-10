@@ -102,7 +102,7 @@ test('strict checked-in Treasure Vault loader identities',async(t)=>{
   const load=map=>loader.loadTreasureVaultDefaultNativeInputs({root,readText:read(map)});
   await t.test('actual-checked-in-default-layout',{timeout:60000},async()=>{
     captured=await captureNativeInputManifest({root});
-    assert.equal(captured.migrations.length,111);
+    assert.equal(captured.migrations.length,113);
     baseline=await loader.loadTreasureVaultDefaultNativeInputs({root,readText:captured.readCurrentText});
     assert.equal(baseline.input_provenance.mode,'checked-in-default');
     assert.deepEqual(baseline.input_provenance.external_private_input_files,[]);

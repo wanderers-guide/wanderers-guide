@@ -7,7 +7,7 @@ global_catalog_compatibility as materialized(select coalesce(count(*)=2 and bool
   from global_catalog_compatibility_settings s cross join lateral jsonb_array_elements(s.spec->'patches') p left join public.item r on r.uuid=(p#>>'{after,uuid}')::bigint),
 terminal_function as materialized(select (exists(select 1 from pg_catalog.pg_proc p
   where p.oid=pg_catalog.to_regprocedure('public.treasure_vault_terminal_status_v1()')
-    and pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to((p.prosrc)::text,'UTF8')),'hex')='daea9d6e1e03e4adbb63c5ab1e06ad540f09b032ae32a1a0b85e421f43d07ded'
+    and pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to((p.prosrc)::text,'UTF8')),'hex')='fbdf75894b97980ba3382a2a74ee2dd8f28929a129b21ca423942e0aeba544b2'
     and p.prokind='f' and p.prolang=(select l.oid from pg_catalog.pg_language l where l.lanname='sql')
     and p.provolatile='s' and p.prosecdef is false and p.proisstrict is false and p.proleakproof is false
     and p.proparallel='u' and p.procost=100 and p.prorows=1

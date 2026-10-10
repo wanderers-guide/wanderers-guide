@@ -416,5 +416,13 @@
   "20261008190000_tech_core_general_spells.sql": {
     "check": "tech-core-general-spells.sql",
     "order": "before-functions"
+  },
+  "20261010000000_shared_ancestry_release_compatibility.sql": {
+    "check": "shared-ancestry-release-compatibility.sql",
+    "order": "before-functions"
+  },
+  "20261010000100_shared_ancestries.sql": {
+    "check": "shared-ancestries.sql",
+    "order": "before-functions"
   }
 }
