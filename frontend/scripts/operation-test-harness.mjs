@@ -291,7 +291,7 @@ export async function createOperationEngine({
           export { getInventorySpellIds, getMissingSpellIds, mergeSpellDependencies, filterSpellCatalog } from '@spells/item-spell-dependencies';
           export { filterByTraitType, isItemWeapon, isItemStave } from '@items/inv-utils';
           export { meetsPrerequisites } from '@variables/prereq-detection';
-          export { applyConditions, compiledConditions, getConditionByName } from '@conditions/condition-handler';
+          export { applyConditions, compiledConditions, getConditionByName, getAllConditions, getConditionReferenceNames } from '@conditions/condition-handler';
           export { getSpellStats, getItemCastingSource, getSpellheartStats, resolveSpellheartCasting } from '@spells/spell-handler';
           export * from '@spells/innate-spells';
           export { SpellheartCastingSchema, ItemSchema, InventoryItemSchema } from '@schemas/content';
@@ -299,6 +299,9 @@ export async function createOperationEngine({
           export { findDefaultPresets } from '@common/dice/dice-utils';
           export { getWeaponStats } from '@items/weapon-handler';
           export { getAcParts } from '@items/armor-handler';
+          export * from '@items/armor-grade-view';
+          export { preserveItemUpgradeSelections } from '@items/upgrade-selection';
+          export { getGradeImprovements, getItemOperations } from '@items/inv-utils';
           export * from '@items/eidolon-runes';
           export { handleAddItem, handleDeleteItem, handleUpdateItem, handleMoveItem, addExtraItems, handleUpdateItemCharges } from '@items/inv-handlers';
           export { isItemInvestable, isItemBroken, getFlatInvItems, getItemBulk, getInvBulk, getBulkLimit, getBulkLimitImmobile, applyEquipmentPenalties, getBestArmor, getBestShield, getEquippedWeapons, reachedInvestedLimit, reachedImplantLimit, compileTraits } from '@items/inv-utils';

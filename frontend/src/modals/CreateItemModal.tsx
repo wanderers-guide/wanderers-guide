@@ -9,6 +9,8 @@ import { DISCORD_URL } from '@constants/urls';
 import { fetchContentById, fetchTraits } from '@content/content-store';
 import { toHTML } from '@content/content-utils';
 import { isItemFundamentalRune } from '@items/inv-utils';
+import { ARMOR_GRADES, getArmorGradeView } from '@items/armor-grade-view';
+import { ItemUpgradesDescription } from '@common/ItemRunesDescription';
 import {
   Accordion,
   ActionIcon,
@@ -52,7 +54,7 @@ import {
 import { toLabel } from '@utils/strings';
 import useRefresh from '@utils/use-refresh';
 import { labelToVariable } from '@variables/variable-utils';
-import { merge, truncate } from 'lodash-es';
+import { cloneDeep, merge, truncate } from 'lodash-es';
 import { useState } from 'react';
 
 /**
@@ -92,8 +94,10 @@ export function CreateItemModal(props: {
 
       const [_key, { editId, editItem }] = queryKey as [string, { editId?: number; editItem?: Item }];
 
-      const item = editId ? await fetchContentById<Item>('item', editId) : editItem;
-      if (!item) return null;
+      const sourceItem = editId ? await fetchContentById<Item>('item', editId) : editItem;
+      if (!sourceItem) return null;
+      // Form normalization must not mutate the catalog row or an owned-item snapshot on cancel.
+      const item = cloneDeep(sourceItem);
 
       // Remove base item if it's the same as the item being edited
       if (item.meta_data?.base_item && labelToVariable(item.name) === labelToVariable(item.meta_data.base_item)) {
@@ -101,8 +105,33 @@ export function CreateItemModal(props: {
         item.meta_data.base_item_content = undefined;
       }
 
-      const mergeData = merge(form.values, item);
-      const damageData = merge(form.values.meta_data?.damage, item.meta_data?.damage);
+      const mergeData = merge(cloneDeep(form.values), item);
+      const damageData = merge(cloneDeep(form.values.meta_data?.damage), item.meta_data?.damage);
+      // Merge must not carry final-armor metadata from a previously edited item into this row.
+      const starfinder = mergeData.meta_data?.starfinder;
+      const sourceStarfinder = item.meta_data?.starfinder;
+      if (starfinder) {
+        if (Object.prototype.hasOwnProperty.call(sourceStarfinder ?? {}, 'grade')) {
+          starfinder.grade = sourceStarfinder?.grade;
+        } else {
+          delete starfinder.grade;
+        }
+        if (Object.prototype.hasOwnProperty.call(sourceStarfinder ?? {}, 'base_grade')) {
+          starfinder.base_grade = sourceStarfinder?.base_grade;
+        } else {
+          delete starfinder.base_grade;
+        }
+        if (Object.prototype.hasOwnProperty.call(sourceStarfinder ?? {}, 'base_upgrade_slots')) {
+          starfinder.base_upgrade_slots = sourceStarfinder?.base_upgrade_slots;
+        } else {
+          delete starfinder.base_upgrade_slots;
+        }
+        if (Object.prototype.hasOwnProperty.call(sourceStarfinder ?? {}, 'built_in_upgrades')) {
+          starfinder.built_in_upgrades = cloneDeep(sourceStarfinder?.built_in_upgrades);
+        } else {
+          delete starfinder.built_in_upgrades;
+        }
+      }
 
       form.setInitialValues({
         ...mergeData,
@@ -268,9 +297,10 @@ export function CreateItemModal(props: {
           property: propertyRunes,
         },
         starfinder: {
+          // Preserve authored baselines, fixed upgrades and invalid saved metadata unchanged.
+          ...values.meta_data?.starfinder,
           capacity: values.meta_data?.starfinder?.capacity,
           usage: values.meta_data?.starfinder?.usage,
-          grade: values.meta_data?.starfinder?.grade,
           slots: upgradeSlots,
         },
         category: weaponCategory ? weaponCategory : armorCategory,
@@ -281,6 +311,13 @@ export function CreateItemModal(props: {
       onReset();
     }, 1000);
   };
+
+  const armorGradeView = getArmorGradeView({ ...form.values, level: Number(form.values.level) });
+  const gradeOptions = ARMOR_GRADES.map((value) => ({ value, label: toLabel(value) }));
+  const availableGrades =
+    armorGradeView.kind === 'final'
+      ? gradeOptions.slice(gradeOptions.findIndex((option) => option.value === armorGradeView.baseGrade))
+      : gradeOptions;
 
   const onReset = () => {
     form.reset();
@@ -807,34 +844,40 @@ export function CreateItemModal(props: {
                           <Stack gap={10}>
                             <Select
                               label='Grade'
-                              clearable
-                              data={[
-                                { value: 'COMMERCIAL', label: 'Commercial' },
-                                { value: 'TACTICAL', label: 'Tactical' },
-                                { value: 'ADVANCED', label: 'Advanced' },
-                                { value: 'SUPERIOR', label: 'Superior' },
-                                { value: 'ELITE', label: 'Elite' },
-                                { value: 'ULTIMATE', label: 'Ultimate' },
-                                { value: 'PARAGON', label: 'Paragon' },
-                              ]}
+                              clearable={armorGradeView.kind !== 'final'}
+                              allowDeselect={armorGradeView.kind !== 'final'}
+                              data={availableGrades}
                               {...form.getInputProps('meta_data.starfinder.grade')}
+                              value={
+                                armorGradeView.kind === 'final'
+                                  ? armorGradeView.grade
+                                  : form.values.meta_data?.starfinder?.grade
+                              }
                             />
                             <ItemMultiSelect
                               label='Upgrade Slots'
                               placeholder='(limited by grade)'
-                              valueName={upgradeSlots?.map((slot) => slot.name)}
+                              referenceMode
+                              valueReferences={upgradeSlots}
                               filter={(item) => {
                                 return item.group === 'UPGRADE';
                               }}
-                              onChange={(items, names) => {
-                                // if ((items ?? []).length > (grade ?? 0)) {
-                                //   return;
-                                // }
-                                setUpgradeSlots(
-                                  items?.map((item) => ({ name: item.name, id: item.id, upgrade: item })) ?? []
-                                );
+                              onReferenceChange={(references) => {
+                                // Keep saved excess installations; only reject new over-capacity additions.
+                                const addsUpgrade = references.some((reference) => !upgradeSlots?.includes(reference));
+                                if (
+                                  armorGradeView.kind === 'final' &&
+                                  addsUpgrade &&
+                                  references.length > armorGradeView.upgradeSlots
+                                ) {
+                                  return;
+                                }
+                                setUpgradeSlots(references);
                               }}
                             />
+                            {(form.values.meta_data?.starfinder?.built_in_upgrades?.length ?? 0) > 0 && (
+                              <ItemUpgradesDescription item={form.values} builtInOnly />
+                            )}
                           </Stack>
                         </Stack>
                       </Accordion.Panel>

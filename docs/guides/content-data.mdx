@@ -28,6 +28,22 @@ Weapon `hands` is a top-level field holding the printed value, such as `1`, `2`,
 line. Magical equipment can have a real Usage line, which should be preserved.
 Weapon reload is stored in `meta_data.reload`; the thrown-weapon placeholder is `—`.
 
+Final Starfinder armor can opt in with the paired `meta_data.starfinder.base_grade`
+and `base_upgrade_slots` fields. Store the printed starting-grade AC, level, price,
+and available upgrade capacity unchanged. The selected `grade` derives AC, price,
+level, capacity and resilience from the difference between selected and starting
+grades. An absent selected grade uses the starting grade without changing the row.
+Unmarked saved and playtest equipment retains its existing grade behavior.
+
+Fixed preinstalled upgrades belong in `built_in_upgrades`, using the same
+`name`, `id` and optional embedded `upgrade` fields as ordinary `slots`. Built-ins
+do not consume the printed available capacity and cannot be removed through the
+ordinary upgrade selector. Embedded IDs must match their references. Preserve exact
+configured snapshots, such as an energy type; do not infer a higher-grade version
+from a name or use the host armor's grade table for explicit upgrade variants.
+Passive upgrade operations follow the armor's normal equipment gates. Activations
+remain activations, not unconditional bonuses.
+
 Spellhearts may store explicit printed casting values in optional
 `meta_data.spellheart_casting`. Its `attack` and `dc` fields are finite integers;
 at least one is required. Missing fields are unknown and are never inferred from
@@ -362,7 +378,11 @@ an ordinary action verb is not necessarily a named rules action. Do not run a
 global word replacement over all fields.
 
 Condition links are added after Markdown parsing, leaving authored links and code
-untouched. Persistent damage also auto-links across emphasis and linked damage-type
+untouched. Glitching prose references are available in global catalog views and
+both games; other game-specific names and character condition choices retain their
+existing game filter. Global Starfinder Suppressed references are not added by this
+Glitching-specific rule.
+Persistent damage also auto-links across emphasis and linked damage-type
 lists. The condition and traits stay separately clickable without nested links or
 changed wording. The condition blacklist also applies to persistent damage.
 
