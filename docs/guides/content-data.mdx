@@ -119,6 +119,11 @@ Hazard prose links each named spell, action, energy trait, and source creature
 reference. Creature references use the existing read-only stat-block view and
 drawer history; returning to the hazard preserves the encounter instance.
 
+Hazard reference enrichment runs on parsed prose after its reference lookup.
+Existing content links, external links, images and literal code remain unchanged.
+Each eligible plain-text occurrence is linked separately. Conditions continue to
+use automatic condition links; other content does not opt into hazard enrichment.
+
 Creature rows can carry optional `meta_data.stat_block` annotations for source-specific stat lines, including listed senses and skills, trait labels, conditional defense and HP notes, and innate spell frequencies. `immunities_note` and `resistances_note` display conditional effects in their stat-block lists without treating them as unconditional mechanics. These annotations only affect display. Embedded attack items can use `meta_data.display_traits` for trait text that has no matching trait record and `meta_data.inventory_label` when an inventory label differs from the attack name. The underlying creature operations and abilities still hold the actual mechanics.
 
 ### Reviewing content submissions
