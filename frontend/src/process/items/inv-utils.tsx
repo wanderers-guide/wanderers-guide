@@ -254,7 +254,8 @@ export function getBestShield(id: StoreID, inv?: Inventory) {
   return bestShield;
 }
 
-export function getItemOperations(item: Item, content: ContentPackage) {
+/** Compile item effects, retaining attached rune snapshots when their book is not enabled. */
+export function getItemOperations(item: Item, content: ContentPackage): Operation[] {
   const baseOps = cloneDeep(item.operations) ?? [];
 
   if (isItemWithRunes(item)) {
@@ -318,7 +319,10 @@ export function getItemOperations(item: Item, content: ContentPackage) {
 
     if (item.meta_data?.runes?.property) {
       for (const property of item.meta_data.runes.property) {
-        const propertyRune = content.items.find((i) => i.id === property.id);
+        // The editor saves the rune itself, even when its source is outside the character's catalog.
+        const propertyRune =
+          content.items.find((i) => i.id === property.id) ??
+          (property.rune?.id === property.id && property.rune.group === 'RUNE' ? property.rune : undefined);
         if (propertyRune) {
           baseOps.push(...getItemOperations(propertyRune, content));
         }
