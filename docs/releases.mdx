@@ -316,7 +316,11 @@ production restore drill. Those steps require the chosen destination and recover
 
 ## Shared base ancestries
 
-Apply `20261010000000_shared_ancestry_release_compatibility.sql` before
+If production still has the original terminal helper, first apply
+`20261008105800_treasure_vault_terminal_catalog_compatibility.sql`. Its wrapper
+upgrades the exact original helper through the reviewed intermediate definition
+to the current successor without writing content. Then apply
+`20261010000000_shared_ancestry_release_compatibility.sql` before
 `20261010000100_shared_ancestries.sql`. The first upgrades only the exact reviewed
 terminal helper and retains its complete historical ledger, metadata and grants.
 The second moves Elf, Dwarf, Gnome, Goblin, Halfling and Orc and their canonical
