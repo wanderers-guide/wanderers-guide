@@ -16,6 +16,7 @@ import {
   sharedAncestryMigration,
   sharedAncestryRelease,
   SHARED_NATIVE_CONTROLS,
+  sharedAncestryPendingSetup,
 } from "./treasure-vault-native-shared-ancestries.mjs";
 import {
   extractReviewedTerminalHelper,
@@ -46,6 +47,45 @@ const upload = ts.transpileModule(
 const { uniqueId } = await import(
   "data:text/javascript;base64," + Buffer.from(upload).toString("base64")
 );
+
+test("queued ancestry fixtures satisfy every required database column before testing guard rejection", async () => {
+  const schema = await read("data/schema.sql");
+  const table = schema
+    .split("CREATE TABLE public.content_update (\n")[1]
+    .split("\n);")[0];
+  const required = table
+    .split("\n")
+    .filter((line) => line.includes("NOT NULL") && !line.includes("DEFAULT"))
+    .map((line) => line.trim().split(/\s+/)[0]);
+  assert.ok(
+    required.includes("action") &&
+      required.includes("upvotes") &&
+      required.includes("downvotes"),
+  );
+  for (const [source, data] of [
+    [3, { id: 7 }],
+    [3, { uuid: patches[4].before.uuid }],
+    [3, { uuid: patches[4].after.uuid }],
+    [3, { name: "Halfling" }],
+    [579, { name: "Halfling", content_source_id: 3 }],
+  ]) {
+    const setup = sharedAncestryPendingSetup({
+      source,
+      data,
+      userId: "00000000-0000-4000-8000-000000000001",
+    });
+    const columns = setup
+      .match(/^insert into public\.content_update\(([^)]+)\)/)[1]
+      .split(",");
+    assert.deepEqual(
+      required.filter((column) => !columns.includes(column)),
+      [],
+    );
+    assert.ok(setup.includes(",'UPDATE',"));
+    assert.ok(setup.includes("'{}'::json[],'{}'::json[]"));
+    assert.ok(setup.includes("'" + JSON.stringify(data) + "'::jsonb"));
+  }
+});
 
 test("the native receipt requires all35 independent shared ancestry controls", () => {
   assert.equal(SHARED_NATIVE_CONTROLS.length, 35);

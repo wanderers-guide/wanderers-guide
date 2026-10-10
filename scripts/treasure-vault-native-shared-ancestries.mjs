@@ -284,6 +284,14 @@ export function sharedAncestryRelease({ spec, state, signature }) {
   return `-- Full successor rows, pending routes and global identities are checked read-only.\nwith ${sharedAncestryCtes(spec).slice(0, -2)}\nselect 'shared-ancestries' as id,coalesce((${state}) and (select after from global_shared_state) and (select valid from global_shared_guard) and exists(select 1 from ${signature} where recognized is true and passed is true),false) as passed;\n`;
 }
 
+/** Construct a valid queued proposal so rejection reaches the ancestry guard. */
+export function sharedAncestryPendingSetup({ source, data, userId }) {
+  assert.ok(Number.isSafeInteger(source) && source > 0);
+  assert.match(userId, /^[a-f0-9-]{36}$/i);
+  const quote = (value) => "'" + value.replaceAll("'", "''") + "'";
+  return `insert into public.content_update(id,type,content_source_id,action,data,upvotes,downvotes,status,user_id) values((select coalesce(max(id),0)+1 from public.content_update),'ancestry',${source},'UPDATE',${quote(JSON.stringify(data))}::jsonb,'{}'::json[],'{}'::json[],'{"state":"PENDING"}'::jsonb,${quote(userId)}::uuid);`;
+}
+
 /** Native rejection capsules roll back, then the exact registered move runs once. */
 export async function runNativeSharedAncestries({
   inputs,
@@ -381,7 +389,7 @@ export async function runNativeSharedAncestries({
     // Manual adversarial IDs avoid sequence consumption in rolled-back capsules.
     await rejected(
       "pending-" + route,
-      `insert into public.content_update(id,type,content_source_id,data,status,user_id) values((select coalesce(max(id),0)+1 from public.content_update),'ancestry',${source},${quote(JSON.stringify(data))}::jsonb,'{"state":"PENDING"}'::jsonb,${quote(userId)}::uuid);`,
+      sharedAncestryPendingSetup({ source, data, userId }),
     );
   }
   await rejected(
