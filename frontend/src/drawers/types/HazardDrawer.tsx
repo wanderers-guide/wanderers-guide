@@ -2,13 +2,14 @@ import { ActionSymbol } from '@common/Actions';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { fetchHazardById, getHazardQueryKey } from '@content/hazards';
-import { linkHazardReferences, preloadHazardReferences } from '@content/hazard-links';
+import { remarkHazardReferences, preloadHazardReferences } from '@content/hazard-links';
 import DrawerLoadState from '@drawers/DrawerLoadState';
 import { Badge, Box, Divider, Group, Stack, Text, Title } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Hazard } from '@schemas/content';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
+import { Fragment, type ReactNode } from 'react';
 
 type HazardDrawerData = { id?: number; hazard?: Hazard; sourceId?: number };
 
@@ -57,7 +58,8 @@ export function HazardDrawerContent(props: { data: HazardDrawerData }) {
 
   if (!hazard) return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
 
-  const linkText = referencesReady ? linkHazardReferences : (text: string) => text;
+  // Only enrich parsed prose after the official reference preload; authored Markdown stays intact.
+  const remarkPlugins = referencesReady ? [remarkHazardReferences] : [];
   const { details } = hazard;
   const defenses = details.defenses;
   const defenseLines = defenses
@@ -72,16 +74,64 @@ export function HazardDrawerContent(props: { data: HazardDrawerData }) {
         [
           defenses.hardness !== undefined ? `**Hardness** ${defenses.hardness}` : null,
           defenses.hp !== undefined
-            ? `**HP** ${defenses.hp}${defenses.bt !== undefined ? ` (BT ${defenses.bt})` : ''}`
-            : defenses.bt !== undefined
-              ? `**BT** ${defenses.bt}`
-              : null,
+            ? `**HP** ${defenses.hp}${defenses.hp_note ? ` ${defenses.hp_note}` : ''}${defenses.bt !== undefined ? ` (BT ${defenses.bt})` : ''}`
+            : defenses.hp_note
+              ? `**HP** ${defenses.hp_note}${defenses.bt !== undefined ? ` (BT ${defenses.bt})` : ''}`
+              : defenses.bt !== undefined
+                ? `**BT** ${defenses.bt}`
+                : null,
         ]
           .filter(Boolean)
           .join('; '),
-        defenses.immunities ? `**Immunities** ${linkText(defenses.immunities)}` : '',
+        defenses.immunities ? `**Immunities** ${defenses.immunities}` : '',
+        defenses.weaknesses ? `**Weaknesses** ${defenses.weaknesses}` : '',
+        defenses.resistances ? `**Resistances** ${defenses.resistances}` : '',
       ].filter(Boolean)
     : [];
+
+  /** Keep primary and secondary source activities in the same wrapped stat-block layout. */
+  const renderActivity = (
+    activity: Hazard['details']['activation'] | NonNullable<Hazard['details']['secondary_activities']>[number],
+    primary: boolean = false
+  ): ReactNode => (
+    <>
+      <Group gap='xs' align='center' wrap='wrap'>
+        <Text fw={600}>{activity.name}</Text>
+        {activity.actions && <ActionSymbol cost={activity.actions} size='1.5rem' />}
+        {activity.traits?.length ? (
+          <RichText c='dimmed' span remarkPlugins={remarkPlugins}>
+            ({activity.traits.join(', ')})
+          </RichText>
+        ) : null}
+      </Group>
+      {(primary || activity.trigger) && (
+        <Text ta='justify'>
+          <Text fw={600} span>
+            Trigger
+          </Text>{' '}
+          <RichText span remarkPlugins={remarkPlugins}>
+            {activity.trigger}
+          </RichText>
+        </Text>
+      )}
+      {activity.requirements && (
+        <Text ta='justify'>
+          <Text fw={600} span>
+            Requirements
+          </Text>{' '}
+          <RichText span remarkPlugins={remarkPlugins}>
+            {activity.requirements}
+          </RichText>
+        </Text>
+      )}
+      <Box>
+        <Text fw={600}>Effect</Text>
+        <RichText ta='justify' remarkPlugins={remarkPlugins}>
+          {activity.effect}
+        </RichText>
+      </Box>
+    </>
+  );
 
   return (
     <Box>
@@ -102,58 +152,64 @@ export function HazardDrawerContent(props: { data: HazardDrawerData }) {
           <Text fw={600} span>
             Stealth
           </Text>{' '}
-          <RichText span>{linkText(details.stealth)}</RichText>
+          <RichText span remarkPlugins={remarkPlugins}>
+            {details.stealth}
+          </RichText>
         </Text>
-        <RichText ta='justify'>{linkText(details.description)}</RichText>
+        <RichText ta='justify' remarkPlugins={remarkPlugins}>
+          {details.description}
+        </RichText>
         <Text ta='justify'>
           <Text fw={600} span>
             Disable
           </Text>{' '}
-          <RichText span>{linkText(details.disable)}</RichText>
+          <RichText span remarkPlugins={remarkPlugins}>
+            {details.disable}
+          </RichText>
         </Text>
 
         {defenseLines.length > 0 && (
           <>
             <Divider />
-            <RichText ta='justify'>{defenseLines.join('\n\n')}</RichText>
+            <RichText ta='justify' remarkPlugins={remarkPlugins}>
+              {defenseLines.join('\n\n')}
+            </RichText>
           </>
         )}
 
-        <Divider />
-        <Group gap='xs' align='center' wrap='wrap'>
-          <Text fw={600}>{details.activation.name}</Text>
-          {details.activation.actions && <ActionSymbol cost={details.activation.actions} size='1.5rem' />}
-          {details.activation.traits?.length ? (
-            <RichText c='dimmed' span>
-              ({details.activation.traits.map(linkText).join(', ')})
+        {details.passive_abilities?.map((ability, index) => (
+          <Box key={index}>
+            <Text fw={600}>{ability.name}</Text>
+            <RichText ta='justify' remarkPlugins={remarkPlugins}>
+              {ability.text}
             </RichText>
-          ) : null}
-        </Group>
-        <Text ta='justify'>
-          <Text fw={600} span>
-            Trigger
-          </Text>{' '}
-          <RichText span>{linkText(details.activation.trigger)}</RichText>
-        </Text>
-        <Box>
-          <Text fw={600}>Effect</Text>
-          <RichText ta='justify'>{linkText(details.activation.effect)}</RichText>
-        </Box>
+          </Box>
+        ))}
+
+        <Divider />
+        {renderActivity(details.activation, true)}
 
         {details.routine && (
           <Box>
             <Text fw={600}>
               Routine ({details.routine.actions} {details.routine.actions === 1 ? 'action' : 'actions'})
             </Text>
-            <RichText ta='justify'>{linkText(details.routine.text)}</RichText>
+            <RichText ta='justify' remarkPlugins={remarkPlugins}>
+              {details.routine.text}
+            </RichText>
           </Box>
         )}
+        {details.secondary_activities?.map((activity, index) => (
+          <Fragment key={index}>{renderActivity(activity)}</Fragment>
+        ))}
         {details.reset && (
           <Text ta='justify'>
             <Text fw={600} span>
               Reset
             </Text>{' '}
-            <RichText span>{linkText(details.reset)}</RichText>
+            <RichText span remarkPlugins={remarkPlugins}>
+              {details.reset}
+            </RichText>
           </Text>
         )}
       </Stack>

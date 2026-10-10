@@ -102,6 +102,22 @@ empty picker ready for a replacement.
 
 Hazards use the creature table for source ownership and search, but they are not living entities. Creature queries default to `type='creature'`; hazard queries use `type='hazard'`. A hazard's stat block lives in structured `details` fields for stealth, disable, defenses, activation, routine, and reset. Official hazard corrections can be submitted from the hazard drawer for moderator review as content updates. They use a hazard-specific editor and remain separate from the creature editor.
 
+Optional stat-block fields retain printed rules without adding automated behavior.
+Defenses can include `hp_note`, `weaknesses`, and `resistances`; the primary activation
+can include `requirements`. Ordered `passive_abilities` hold `name` and `text`;
+ordered `secondary_activities` hold `name` and `effect`, with optional `actions`,
+`traits`, `trigger`, and `requirements`. The primary activation still requires its
+Trigger and Effect. Existing hazards need none of these additional fields.
+
+An HP note such as `6 per 5-foot cube` is displayed as printed. It does not supply
+an aggregate maximum or enable an encounter HP counter. Only numeric `defenses.hp`
+does that. Activity arrays retain their source order, and repeated names remain
+separate entries when edited. These fields use the same content-update review route
+and hazard reference linking as the rest of the stat block.
+
+Deploy readers and editors that support these fields before importing content that
+uses them. Older clients can discard unfamiliar fields when submitting an edit.
+
 Encounters offer separate **Add Creature** and **Add Hazard** selections. A hazard
 combatant stores `type='HAZARD'` and a `hazard` stat-block snapshot alongside optional
 `hazard_state.hp_current` and `hazard_state.disabled` values. Each instance has its
@@ -118,6 +134,14 @@ The character sheet's Extras tab is unchanged.
 Hazard prose links each named spell, action, energy trait, and source creature
 reference. Creature references use the existing read-only stat-block view and
 drawer history; returning to the hazard preserves the encounter instance.
+
+Hazard reference enrichment runs on parsed prose after its reference lookup.
+Existing content links, external links, images and literal code remain unchanged.
+Each eligible plain-text occurrence is linked separately. Conditions continue to
+use automatic condition links; other content does not opt into hazard enrichment.
+Ambiguous Air and Spirit mentions require an explicit trait, effect, damage,
+defense-list, or supported elemental-result context. Ordinary environmental air
+and narrative spirit actors stay plain, including when their words are capitalized.
 
 Creature rows can carry optional `meta_data.stat_block` annotations for source-specific stat lines, including listed senses and skills, trait labels, conditional defense and HP notes, and innate spell frequencies. `immunities_note` and `resistances_note` display conditional effects in their stat-block lists without treating them as unconditional mechanics. These annotations only affect display. Embedded attack items can use `meta_data.display_traits` for trait text that has no matching trait record and `meta_data.inventory_label` when an inventory label differs from the attack name. The underlying creature operations and abilities still hold the actual mechanics.
 

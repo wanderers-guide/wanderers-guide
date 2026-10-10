@@ -391,6 +391,16 @@ interface Creature extends LivingEntity {
   version: string;
 }
 
+/** Source-authored hazard activity rules, without automatic combat state or effects. */
+interface HazardActivity {
+  name: string;
+  actions?: ActionCost;
+  traits?: string[];
+  trigger?: string;
+  requirements?: string;
+  effect: string;
+}
+
 /** A read-only hazard stat block stored in the creature catalog table. */
 interface Hazard {
   id: number;
@@ -413,17 +423,17 @@ interface Hazard {
       ref?: number;
       hardness?: number;
       hp?: number;
+      /** Displayed HP qualification; does not define an aggregate HP counter. */
+      hp_note?: string;
       bt?: number;
       immunities?: string;
+      weaknesses?: string;
+      resistances?: string;
     };
-    activation: {
-      name: string;
-      actions?: ActionCost;
-      traits?: string[];
-      trigger: string;
-      effect: string;
-    };
+    passive_abilities?: { name: string; text: string }[];
+    activation: HazardActivity & { trigger: string };
     routine?: { actions: number; text: string };
+    secondary_activities?: HazardActivity[];
     reset?: string;
   };
   meta_data?: {

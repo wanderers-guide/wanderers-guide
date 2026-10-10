@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { mapToDrawerData } from '../src/drawers/drawer-utils.ts';
 import { prepareHazardContentUpdate } from '../src/process/content/hazard-content-update.ts';
+import { getContentUpdateChangedFields } from '../src/process/content/content-update-review.ts';
 
 function makeHazard() {
   return {
@@ -109,9 +110,59 @@ test('simple hazard correction does not invent optional defenses, routine, or re
 
   const result = prepareHazardContentUpdate(original, edited);
   assert.equal(result.success, true, JSON.stringify(result.error?.issues));
-  for (const field of ['defenses', 'routine', 'reset']) {
+  for (const field of ['defenses', 'routine', 'reset', 'passive_abilities', 'secondary_activities']) {
     assert.equal(field in result.data.details, false, field);
   }
+  assert.equal('requirements' in result.data.details.activation, false);
+});
+
+test('hazard corrections preserve every optional rule and independently edit duplicate-name entries', () => {
+  const original = makeHazard();
+  original.details.defenses = {
+    hp_note: '6 per 5-foot cube',
+    weaknesses: 'fire 5',
+    resistances: 'physical 5',
+  };
+  original.details.activation.requirements = 'The chamber is open.';
+  original.details.passive_abilities = [
+    { name: 'Colony', text: 'First passive.' },
+    { name: 'Colony', text: 'Second passive.' },
+  ];
+  original.details.secondary_activities = [
+    { name: 'Pulse', actions: 'ONE-ACTION', traits: ['Acid'], effect: 'First effect.' },
+    { name: 'Pulse', trigger: 'A creature moves.', requirements: 'A door is open.', effect: 'Second effect.' },
+  ];
+  const before = structuredClone(original);
+  const savedSnapshot = structuredClone(original);
+  const unchanged = prepareHazardContentUpdate(original, structuredClone(original));
+  assert.equal(unchanged.success, true);
+  assert.deepEqual(unchanged.data.details, original.details);
+
+  const edited = structuredClone(original);
+  edited.details.passive_abilities.reverse();
+  edited.details.secondary_activities.splice(0, 1);
+  edited.details.secondary_activities[0].effect = 'Revised second effect.';
+  const result = prepareHazardContentUpdate(original, edited);
+  assert.equal(result.success, true);
+  assert.deepEqual(result.data.details, edited.details);
+  assert.equal(result.data.details.secondary_activities.length, 1);
+  assert.equal(result.data.details.secondary_activities[0].trigger, 'A creature moves.');
+  assert.equal('hp' in result.data.details.defenses, false);
+  assert.deepEqual(original, before);
+  assert.deepEqual(savedSnapshot, before);
+  assert.deepEqual(getContentUpdateChangedFields(original, result.data), ['details']);
+
+  const removed = structuredClone(original);
+  delete removed.details.passive_abilities;
+  delete removed.details.secondary_activities;
+  delete removed.details.activation.requirements;
+  delete removed.details.defenses.hp_note;
+  delete removed.details.defenses.weaknesses;
+  delete removed.details.defenses.resistances;
+  const removal = prepareHazardContentUpdate(original, removed);
+  assert.equal(removal.success, true);
+  assert.deepEqual(removal.data.details, removed.details);
+  assert.deepEqual(getContentUpdateChangedFields(original, removal.data), ['details']);
 });
 
 test('hazard correction rejects invalid values and incomplete rules', () => {
