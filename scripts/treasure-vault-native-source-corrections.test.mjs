@@ -1,3 +1,4 @@
+import { originalSharedAncestryBody, sharedSpecFromBody, sharedAncestryUpgrade, wrapSharedUpgrade, SHARED_PREDECESSOR_SHA256, SHARED_TERMINAL_SHA256 } from './treasure-vault-native-shared-ancestries.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
@@ -7,7 +8,9 @@ import { extractReviewedTerminalHelper, extractReviewedDisplaySourceWrapper, ter
 
 const sha = value => createHash('sha256').update(value).digest('hex');
 const helperSql = await readFile(new URL('../supabase/migrations/20260927245900_treasure_vault_terminal_status.sql', import.meta.url), 'utf8');
-const body = helperSql.split('$terminal_definition$')[1].split('$$')[1];
+const actualBody = helperSql.split('$terminal_definition$')[1].split('$$')[1];
+const sharedSpec = sharedSpecFromBody(actualBody);
+const body = originalSharedAncestryBody(actualBody, sharedSpec);
 const displaySql = await readFile(new URL('../supabase/migrations/20261002101000_treasure_vault_complete_display.sql', import.meta.url), 'utf8');
 const patches = sourceCorrectionRows(JSON.parse(displaySql.split('$display101$')[1]));
 const catalogPatches = catalogCompatibilityRows(JSON.parse(displaySql.split('$display101$')[1]));
@@ -124,7 +127,7 @@ test('the display compatibility wrapper preserves the exact original101 body and
   for (const [migrationSql, releaseSql] of [
     [displaySql.replace('return;', 'null;'), displayReleaseSql],
     [displaySql.replace('lock table public.content_update in share mode;', 'null;'), displayReleaseSql],
-    [displaySql.replace(CATALOG_COMPATIBILITY_TERMINAL_BODY_SHA256, PREVIOUS_TERMINAL_BODY_SHA256), displayReleaseSql],
+    [displaySql.replace(SHARED_TERMINAL_SHA256, PREVIOUS_TERMINAL_BODY_SHA256), displayReleaseSql],
     [displaySql, displayReleaseSql.replace('case when c.passed or b.passed then', 'case when true then')],
     [displaySql.replace('$display_original_source$', '$display_original_source$\n-- unreviewed\n'), displayReleaseSql],
   ]) assert.throws(() => extractReviewedDisplaySourceWrapper({ migrationSql, releaseSql, helper }));
@@ -136,7 +139,10 @@ test('the late upgrade is reproducible and accepts only the exact reviewed prede
   const sourceState = terminalFunctionState(SOURCE_CORRECTION_TERMINAL_BODY_SHA256);
   const originalSql = terminalSourceCorrectionUpgrade({ state: sourceState, previousState, patches, signature: helper.signature });
   const originalReleaseSql = `-- Only inspect the exact source-corrected helper definition and unchanged grants.\nselect 'treasure-vault-terminal-source-corrections' as id,coalesce((${sourceState}),false) as passed;\n`;
-  assert.equal(actual, wrapSourceCorrectionUpgrade({ originalSql, originalReleaseSql, state: helper.state }).migration);
+  const oldState = terminalFunctionState(SHARED_PREDECESSOR_SHA256);
+  const oldCatalog = terminalCatalogCompatibilityUpgrade({state:oldState,previousState,sourceState,sourcePatches:patches,patches:catalogPatches,signature:helper.signature});
+  const upgrade = sharedAncestryUpgrade({spec:sharedSpec,previousState:oldState,state:helper.state,signature:helper.signature});
+  assert.equal(actual, wrapSharedUpgrade(wrapSourceCorrectionUpgrade({originalSql,originalReleaseSql,state:oldState}).migration,oldCatalog+upgrade,helper.state));
   assert.equal(actual.split('$source_upgrade_original$')[1], originalSql, 'Original source upgrade body remains byte-identical');
   assert.throws(() => wrapSourceCorrectionUpgrade({ originalSql: originalSql + '\n', originalReleaseSql, state: helper.state }));
   assert.throws(() => wrapSourceCorrectionUpgrade({ originalSql, originalReleaseSql: originalReleaseSql + '\n', state: helper.state }));
@@ -148,7 +154,10 @@ test('the late upgrade is reproducible and accepts only the exact reviewed prede
 test('the exact paired catalog upgrade is reproducible and does not write content or grants', async () => {
   const actual = await readFile(new URL('../supabase/migrations/20261008105800_treasure_vault_terminal_catalog_compatibility.sql', import.meta.url), 'utf8');
   const previousState = terminalFunctionState(PREVIOUS_TERMINAL_BODY_SHA256), sourceState = terminalFunctionState(SOURCE_CORRECTION_TERMINAL_BODY_SHA256);
-  assert.equal(actual, terminalCatalogCompatibilityUpgrade({ state: helper.state, previousState, sourceState, sourcePatches: patches, patches: catalogPatches, signature: helper.signature }));
+  const oldState = terminalFunctionState(SHARED_PREDECESSOR_SHA256);
+  const original = terminalCatalogCompatibilityUpgrade({state:oldState,previousState,sourceState,sourcePatches:patches,patches:catalogPatches,signature:helper.signature});
+  const upgrade = sharedAncestryUpgrade({spec:sharedSpec,previousState:oldState,state:helper.state,signature:helper.signature});
+  assert.equal(actual,wrapSharedUpgrade(original,upgrade,helper.state));
   assert.ok(actual.includes(previousState) && actual.includes(sourceState) && actual.includes(helper.state));
   assert.doesNotMatch(actual, /update public\.|delete from|insert into|grant |revoke /i);
 });

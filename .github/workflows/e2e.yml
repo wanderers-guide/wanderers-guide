@@ -257,6 +257,10 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install content schema test dependencies
+        working-directory: ./frontend
+        run: npm ci --legacy-peer-deps --no-audit --no-fund
+
       - name: Validate native contracts before fixture startup
         run: npm run test:content:contracts
 

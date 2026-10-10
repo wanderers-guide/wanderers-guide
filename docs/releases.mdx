@@ -313,3 +313,30 @@ Before declaring recovery ready:
 
 This release does not enable PITR, purchase a second project or claim an unperformed
 production restore drill. Those steps require the chosen destination and recovery policy.
+
+## Shared base ancestries
+
+If production still has the original terminal helper, first apply
+`20261008105800_treasure_vault_terminal_catalog_compatibility.sql`. Its wrapper
+upgrades the exact original helper through the reviewed intermediate definition
+to the current successor without writing content. Then apply
+`20261010000000_shared_ancestry_release_compatibility.sql` before
+`20261010000100_shared_ancestries.sql`. The first upgrades only the exact reviewed
+terminal helper and retains its complete historical ledger, metadata and grants.
+The second moves Elf, Dwarf, Gnome, Goblin, Halfling and Orc and their canonical
+traits from Player Core to Common Core. Existing IDs, descriptions, operations,
+languages, senses and saved characters remain unchanged. Source-derived UUIDs are
+recomputed using the existing upload rule. Human already belongs to Common Core.
+
+The compatibility proof accepts only all twelve original rows or all twelve
+complete successors. Partial moves, unrelated edits, duplicate identities and
+pending submissions under either source or UUID remain failures. Historical
+migration bodies and release predicates remain intact inside their wrappers.
+Existing Bagpipes classifications and the three source corrections retain their
+separate exact allowances.
+
+Rival Academies' reviewed feat-count successor is limited to 78 becoming 79. Every
+other source field must match, and the live feat count must independently be 79.
+This accounts for the published Lesson of Memory addition without rewriting book
+metadata or accepting arbitrary later changes. Preserve full preflight, backup,
+independent readback and the remote release report for the rollout.
