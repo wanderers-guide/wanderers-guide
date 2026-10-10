@@ -54,7 +54,7 @@ export function SelectStaffCastingModalContents(props: {
   const [character, setCharacter] = useAtom(characterState);
   const slots = (character && collectEntitySpellcasting('CHARACTER', character).slots) ?? [];
   const groupedSlots = groupBy(
-    slots.filter((slot) => !props.source || slot.source === props.source),
+    slots.filter((slot) => slot.spell_list_source === undefined && (!props.source || slot.source === props.source)),
     'rank'
   );
 

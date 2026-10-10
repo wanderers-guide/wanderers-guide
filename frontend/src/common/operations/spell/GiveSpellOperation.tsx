@@ -28,6 +28,7 @@ export function GiveSpellOperation(props: {
       spellId,
       type,
       castingSource,
+      ...(props.data.listSources === undefined ? {} : { listSources: props.data.listSources }),
       rank: rank ?? defaultRank,
       tradition,
       casts,

@@ -590,6 +590,9 @@ async function updateVariables(
         spellId: selectedOption.id,
         type: selectedOption._meta_data?.type,
         castingSource: selectedOption._meta_data?.castingSource,
+        ...(selectedOption._meta_data?.listSources === undefined
+          ? {}
+          : { listSources: selectedOption._meta_data.listSources }),
         rank: selectedOption._meta_data?.rank,
         tradition: selectedOption._meta_data?.tradition,
         casts: selectedOption._meta_data?.casts,
@@ -1370,6 +1373,7 @@ async function runGiveSpell(
           spellId: spell.id,
           type: operation.data.type,
           castingSource: operation.data.castingSource,
+          ...(operation.data.listSources === undefined ? {} : { listSources: operation.data.listSources }),
           rank: operation.data.rank,
           tradition: operation.data.tradition,
           casts: operation.data.casts,
@@ -1409,6 +1413,7 @@ async function runGiveSpellSlot(
       JSON.stringify({
         ...slot,
         source: operation.data.castingSource,
+        ...(operation.data.spellListSource === undefined ? {} : { spellListSource: operation.data.spellListSource }),
         opId: operation.id,
       }),
       sourceLabel

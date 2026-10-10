@@ -146,7 +146,7 @@
         }
       },
       "Operation": {
-        "description": "An entry in the operations engine. See the Content Model and Operations guides. Shape varies by `type`; treated as opaque JSON by the API. Filtered additional Lore selections may use optional `data.selectionAliases` to preserve an explicitly listed sibling choice across rank branches. Other selection kinds cannot use this field. Innate spell grants and spell selections accept an optional casting attribute, defaulting to ATTRIBUTE_CHA. A giveAbilityBlock grant of Additional Lore accepts optional data.grantedLore for that grant's subject.",
+        "description": "An entry in the operations engine. See the Content Model and Operations guides. Shape varies by `type`; treated as opaque JSON by the API. Filtered additional Lore selections may use optional `data.selectionAliases` to preserve an explicitly listed sibling choice across rank branches. Other selection kinds cannot use this field. Innate spell grants and spell selections accept an optional casting attribute, defaulting to ATTRIBUTE_CHA. A giveAbilityBlock grant of Additional Lore accepts optional data.grantedLore for that grant's subject. NORMAL giveSpell grants may add named list memberships with data.listSources. giveSpellSlot may restrict preparation to one named list with data.spellListSource. Unmarked grants and slots retain their existing behavior.",
         "type": "object",
         "additionalProperties": true
       },
@@ -157,6 +157,22 @@
           "book": { "type": "string", "description": "Book or product name, e.g. `Impossible Magic`." },
           "page": { "type": "string", "description": "Page reference, e.g. `154` or `154-155`." },
           "url": { "type": "string", "description": "Link to an external reference for this content (Archives of Nethys, Paizo, or elsewhere)." }
+        }
+      },
+      "SpellSlot": {
+        "type": "object",
+        "required": ["rank", "source"],
+        "properties": {
+          "rank": { "type": "number" },
+          "source": { "type": "string" },
+          "spell_id": { "type": "number" },
+          "exhausted": { "type": "boolean" },
+          "color": { "type": "string" },
+          "spell_list_source": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Optional named-list restriction authored by the spell-slot grant. Keeps this preparation separate from ordinary slots of the same rank and source. Missing fields retain ordinary behavior. Current list membership is computed from grants and saved spell lists; it is not persisted in the slot."
+          }
         }
       },
       "Trait": {
@@ -574,7 +590,11 @@
           "abilities_base": { "type": "array", "items": { "$ref": "#/components/schemas/AbilityBlock" } },
           "abilities_added": { "type": "array", "items": { "type": "integer" } },
           "inventory": { "$ref": "#/components/schemas/Inventory" },
-          "spells": { "type": "object", "additionalProperties": true },
+          "spells": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": { "slots": { "type": "array", "items": { "$ref": "#/components/schemas/SpellSlot" } } }
+          },
           "meta_data": {
             "type": "object",
             "additionalProperties": true,
@@ -710,7 +730,11 @@
           "details": { "type": "object", "additionalProperties": true },
           "notes": { "type": "object", "additionalProperties": true },
           "roll_history": { "type": "object", "additionalProperties": true },
-          "spells": { "type": "object", "additionalProperties": true },
+          "spells": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": { "slots": { "type": "array", "items": { "$ref": "#/components/schemas/SpellSlot" } } }
+          },
           "operation_data": { "type": "object", "additionalProperties": true },
           "meta_data": { "type": "object", "additionalProperties": true },
           "custom_operations": { "type": "array", "items": { "$ref": "#/components/schemas/Operation" } },

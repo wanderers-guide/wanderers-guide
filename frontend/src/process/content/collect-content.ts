@@ -20,6 +20,7 @@ import { cloneDeep, isEqual, uniqWith } from 'lodash-es';
 import { isCharacter, isCreature, isTruthy } from '@utils/type-fixing';
 import { getEntityLevel } from '@utils/entity-utils';
 import { getInnateSpellAttribute, getInnateSpellKey } from '@spells/innate-spells';
+import { getSpellSlotGroupKey, isSpellInSlotList } from '@spells/spell-slot-rules';
 
 /** Collect the entity's calculated abilities, including embedded class archetype features. */
 export function collectEntityAbilityBlocks(
@@ -189,13 +190,21 @@ export function collectEntitySpellcasting(id: StoreID, entity: LivingEntity) {
   let slots: SpellSlotRecord[] = [];
   let count = 0;
   for (const strS of spellSlots) {
-    const slot = JSON.parse(strS) as { lvl: number; rank: number; amt: number; source: string; opId: string };
+    const slot = JSON.parse(strS) as {
+      lvl: number;
+      rank: number;
+      amt: number;
+      source: string;
+      opId: string;
+      spellListSource?: string;
+    };
     for (let i = 0; i < slot.amt; i++) {
       if (slot.lvl !== getEntityLevel(entity)) continue;
       slots.push({
         id: `${id}-spell-slot-${count}`,
         rank: slot.rank,
         source: slot.source,
+        ...(slot.spellListSource === undefined ? {} : { spell_list_source: slot.spellListSource }),
         spell_id: undefined,
         exhausted: undefined,
         color: undefined,
@@ -215,11 +224,13 @@ export function collectEntitySpellcasting(id: StoreID, entity: LivingEntity) {
     const spellData = JSON.parse(strD) as GiveSpellData;
 
     if (spellData.type === 'NORMAL') {
-      list.push({
-        spell_id: spellData.spellId,
-        rank: spellData.rank ?? 0,
-        source: spellData.castingSource ?? '',
-      });
+      for (const source of [spellData.castingSource ?? '', ...(spellData.listSources ?? [])]) {
+        list.push({
+          spell_id: spellData.spellId,
+          rank: spellData.rank ?? 0,
+          source,
+        });
+      }
     } else if (spellData.type === 'FOCUS') {
       focus.push({
         spell_id: spellData.spellId,
@@ -246,6 +257,12 @@ export function collectEntitySpellcasting(id: StoreID, entity: LivingEntity) {
   list = uniqWith(list, isEqual);
   focus = uniqWith(focus, isEqual);
   innate = uniqWith(innate, isEqual);
+
+  // A removed or retrained list member cannot remain castable from a restricted slot.
+  // Only the computed view is emptied; the saved preparation is not rewritten here.
+  for (const slot of slots) {
+    if (slot.spell_id !== undefined && !isSpellInSlotList(slot, slot.spell_id, list)) slot.spell_id = undefined;
+  }
 
   // Fill current casts from saved character data
   innate = mergeInnateSpells(innate, entity.spells?.innate_casts ?? []);
@@ -293,7 +310,7 @@ function mergeSpellSlots(emptySlots: SpellSlotRecord[], characterSlots: SpellSlo
   // Preprocess character slots into a Map for quick lookup
   const slotMap = new Map();
   for (const slot of characterSlots) {
-    const key = `${slot.rank}-${slot.source}`;
+    const key = getSpellSlotGroupKey(slot);
     if (!slotMap.has(key)) {
       slotMap.set(key, []);
     }
@@ -302,7 +319,7 @@ function mergeSpellSlots(emptySlots: SpellSlotRecord[], characterSlots: SpellSlo
 
   // Iterate over empty slots and fill them with data from character slots
   return emptySlots.map((slot) => {
-    const key = `${slot.rank}-${slot.source}`;
+    const key = getSpellSlotGroupKey(slot);
     if (slotMap.has(key) && slotMap.get(key).length > 0) {
       const match = slotMap.get(key).shift(); // Get the first match and remove it from the array
       // Fill in the details from the matched slot

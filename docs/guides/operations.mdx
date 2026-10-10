@@ -302,6 +302,13 @@ and independently granted casting proficiency remain. Names stay synchronized wi
 including when two different spell records share a name. Spell-slot pools belong to their
 casting source and are not removed with an individual spell.
 
+A `NORMAL` grant may also provide `listSources: ["CACHE"]`. The spell remains in its
+normal casting source's list and is added to each named list at the granted rank.
+Filtered and predefined spell selections retain the same optional memberships.
+These lists do not introduce casting sources or duplicate spell ownership. Removing
+the grant removes its list memberships as well. Focus and innate grants do not use
+this field.
+
 ### `giveSpellSlot`
 
 Add spell slots to a casting source. Each slot is `{ lvl, rank, amt }` where `lvl` is the character level the slot becomes available, `rank` the spell rank it casts, and `amt` the count (or `null` for unlimited / cantrip).
@@ -319,6 +326,22 @@ Add spell slots to a casting source. Each slot is `{ lvl, rank, amt }` where `lv
 	},
 }
 ```
+
+An optional `data.spellListSource` on `giveSpellSlot` restricts its slots to a named
+list, such as `"CACHE"`. Preparation accepts only members of that exact list at the
+slot's rank or lower. A missing or empty list offers no spells. The usual cantrip,
+focus-spell and rank rules still apply. Omit this field for ordinary slots.
+
+Saved restricted slots retain `spell_list_source` alongside their source and rank.
+This prevents an ordinary preparation from moving into a restricted slot, or the
+reverse, when grants are added or removed. If a spell ceases to be a list member,
+the calculated slot is empty without changing the saved input. Unrelated ordinary
+slot edits, casts and staff expenditure retain the held restricted preparation,
+even when its slot grant is absent. Explicit preparation or clearing replaces only
+the edited restricted slot. Slots within a matching pool restore by their ordinal.
+Rest resets
+exhaustion without changing the restriction or preparation.
+Restricted slots cannot be expended to charge or cast from a staff.
 
 ### `giveItem`
 

@@ -287,7 +287,9 @@ export async function createOperationEngine({
           export * from '@variables/variable-helpers';
           export { saveCalculatedStats } from '@variables/calculated-stats';
           export { convertToHardcodedLink, buildHrefFromContentData } from '@content/hardcoded-links';
-          export { detectSpells, detectSpellheartSpells, getKnownSpellsByRank } from '@spells/spell-utils';
+          export { detectSpells, detectSpellheartSpells, getKnownSpellsByRank, isNormalSpell, isCantrip } from '@spells/spell-utils';
+          export { getSpellSlotGroupKey, isSpellInSlotList, retainRestrictedPreparations } from '@spells/spell-slot-rules';
+          export { updateItemCharges } from '@items/inv-handlers';
           export { getInventorySpellIds, getMissingSpellIds, mergeSpellDependencies, filterSpellCatalog } from '@spells/item-spell-dependencies';
           export { filterByTraitType, isItemWeapon, isItemStave } from '@items/inv-utils';
           export { meetsPrerequisites } from '@variables/prereq-detection';

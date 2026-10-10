@@ -131,6 +131,8 @@ export const SpellSlotSchema = z.object({
   rank: z.number(),
   source: z.string(),
   spell_id: z.number().optional(),
+  // Separate restricted preparations from ordinary slots with the same source/rank.
+  spell_list_source: z.string().min(1).optional(),
   exhausted: z.boolean().optional(),
   color: z.string().optional(),
 });

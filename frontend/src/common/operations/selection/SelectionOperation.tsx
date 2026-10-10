@@ -442,6 +442,9 @@ function SelectionFilteredSpell(props: {
       spellData: {
         type: type ?? 'NORMAL',
         castingSource: castingSource,
+        ...(props.filters?.spellData?.listSources === undefined
+          ? {}
+          : { listSources: props.filters.spellData.listSources }),
         rank: rank,
         tradition: tradition,
         casts: casts,

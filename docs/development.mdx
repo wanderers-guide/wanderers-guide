@@ -206,6 +206,12 @@ These bundle the actual operation engine and drawer components against explicit 
 selected rules content comes from the checked-in sanitized data dump. They need no running
 database or authentication account.
 
+Run restricted spell-list, preparation and save/restoration regressions with
+`npm --prefix frontend run test:spell-slots`. These use the public character controller
+and the actual preparation callbacks with explicit local content fixtures. They
+require no database or account, and retain ordinary prepared, spontaneous, focus
+and innate spell behavior checks.
+
 Historical content-repair tests explicitly use the reviewed pre-repair Git snapshot
 through `readHistoricalContentRows`; ordinary `readContentRows` calls still read the
 current checked-in catalog. The shared historical reader verifies the pinned commit,

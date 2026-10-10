@@ -226,35 +226,42 @@ export const handleUpdateItemCharges = (
   invItem: InventoryItem,
   charges: { current?: number; max?: number }
 ) => {
-  setEntity((char) => {
-    if (!char || !char.inventory) return null;
+  setEntity((char) => updateItemCharges(char, invItem, charges));
+};
 
-    return {
-      ...char,
-      inventory: {
-        ...char.inventory,
-        items: char.inventory.items.map((i) => {
-          if (i.id !== invItem.id) return i;
+/** Apply the existing charge update inside a larger, atomic entity update. */
+export const updateItemCharges = (
+  char: LivingEntity | null,
+  invItem: InventoryItem,
+  charges: { current?: number; max?: number }
+): LivingEntity | null => {
+  if (!char || !char.inventory) return null;
 
-          // If it's the item, update the charges
-          return {
-            ...i,
-            item: {
-              ...i.item,
-              meta_data: {
-                ...i.item.meta_data!,
-                charges: {
-                  ...i.item.meta_data?.charges,
-                  current: charges.current ?? i.item.meta_data?.charges?.current,
-                  max: charges.max ?? i.item.meta_data?.charges?.max,
-                },
+  return {
+    ...char,
+    inventory: {
+      ...char.inventory,
+      items: char.inventory.items.map((i) => {
+        if (i.id !== invItem.id) return i;
+
+        // If it's the item, update the charges
+        return {
+          ...i,
+          item: {
+            ...i.item,
+            meta_data: {
+              ...i.item.meta_data!,
+              charges: {
+                ...i.item.meta_data?.charges,
+                current: charges.current ?? i.item.meta_data?.charges?.current,
+                max: charges.max ?? i.item.meta_data?.charges?.max,
               },
             },
-          };
-        }),
-      },
-    };
-  });
+          },
+        };
+      }),
+    },
+  };
 };
 
 export function checkBulkLimit(

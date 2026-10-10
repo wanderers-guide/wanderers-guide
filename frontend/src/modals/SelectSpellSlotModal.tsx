@@ -41,6 +41,7 @@ export function SelectSpellSlotModalContents(props: {
   const items = slots
     .sort((a, b) => a.rank - b.rank)
     .filter((slot) => {
+      if (slot.spell_list_source !== undefined) return false;
       if (props.source) {
         return slot.source === props.source;
       } else {

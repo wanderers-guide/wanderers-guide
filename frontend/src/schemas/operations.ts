@@ -78,6 +78,8 @@ export type OperationSelectOptionType = z.infer<typeof OperationSelectOptionType
 export const SpellMetadataSchema = z.object({
   type: z.enum(['NORMAL', 'FOCUS', 'INNATE']),
   castingSource: z.string().optional(),
+  // Additional named lists retain the grant's normal casting source and ownership.
+  listSources: z.array(z.string().min(1)).optional(),
   rank: z.number().nullable().optional(),
   tradition: z.enum(['ARCANE', 'OCCULT', 'PRIMAL', 'DIVINE']).optional(),
   casts: z.number().nullable().optional(),
@@ -241,6 +243,8 @@ export const OperationGiveSpellSlotSchema = z.object({
   type: z.literal('giveSpellSlot'),
   data: z.object({
     castingSource: z.string(),
+    // Opt-in preparation restriction; absence retains ordinary spell-slot behavior.
+    spellListSource: z.string().min(1).optional(),
     slots: z.array(z.object({ lvl: z.number(), rank: z.number(), amt: z.number().nullable() })),
   }),
 });
