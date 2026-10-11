@@ -218,6 +218,12 @@ const original = CharacterSchema.parse({
   ],
 });
 
+/** Validate fixture rows without projecting nested JSON that the real character API preserves. */
+function validateFixtureCharacter<T extends Character>(row: T): T {
+  CharacterSchema.parse(row);
+  return row;
+}
+
 type DailyOption = {
   id: number;
   name: string;
@@ -271,7 +277,37 @@ function getDailyOptions(value: unknown): DailyOption[] {
 
 describe('Source-owned database spell choices', () => {
   let saved = structuredClone(original);
+  let saveResponses: { received: number; completed: number } = { received: 0, completed: 0 };
+  let holdFinalRankSaveResponse = false;
+  let releaseHeldRankSaveResponse: (() => void) | null = null;
+
+  /** Inspect only this synthetic character and actor's durable recovery records. */
+  const ownedSaveKeys = (win: Window): string[] => {
+    const prefix = `autosave-character-${original.id}-${actor}`;
+    const recoveryKey = `autosave-character-recovery-${original.id}-${actor}`;
+    return Object.keys(win.localStorage).filter(
+      (key) => key === prefix || key.startsWith(`${prefix}:`) || key === recoveryKey
+    );
+  };
+
+  /** Server-stub mutation is not the app's acknowledgement; wait for both transport and its journal. */
+  const waitForAcknowledgedSave = (): Cypress.Chainable<Cypress.AUTWindow> =>
+    cy.window({ timeout: 15000 }).should((win) => {
+      // The fixture starts without calculated metadata, which the real worker publishes asynchronously.
+      expect(saveResponses.received, 'an actual synthetic-character save was received').to.be.greaterThan(0);
+      expect(saved.meta_data?.calculated_stats?.ac, 'initial derived AC reached the server stub').to.be.a('number');
+      expect(saved.meta_data?.calculated_stats?.hp_max, 'initial derived HP reached the server stub').to.be.a('number');
+      expect(saveResponses.completed, 'all received synthetic save responses were delivered').to.equal(
+        saveResponses.received
+      );
+      expect(ownedSaveKeys(win).length, 'the app acknowledged every owned durable save record').to.equal(0);
+    });
+
   const visit = (page: 'builder' | 'sheet' = 'builder') => {
+    cy.window().then((win) => {
+      if ([`/builder/${original.id}`, `/sheet/${original.id}`].includes(win.location.pathname))
+        return waitForAcknowledgedSave();
+    });
     cy.visit(`/${page}/${original.id}`, {
       onBeforeLoad(win) {
         const fixtureWindow = win as unknown as FixtureWindow;
@@ -382,6 +418,9 @@ describe('Source-owned database spell choices', () => {
 
   beforeEach(() => {
     saved = structuredClone(original);
+    saveResponses = { received: 0, completed: 0 };
+    holdFinalRankSaveResponse = false;
+    releaseHeldRankSaveResponse = null;
     cy.intercept('**/auth/v1/**', () => {
       throw new Error('Database fixture must not contact authentication');
     });
@@ -410,8 +449,35 @@ describe('Source-owned database spell choices', () => {
       else if (endpoint === 'find-character') data = req.body.id !== undefined ? saved : [saved];
       else if (endpoint === 'update-character') {
         expect(req.body.id, 'only the synthetic character may be saved').to.equal(original.id);
-        saved = CharacterSchema.parse({ ...saved, ...req.body, updated_at: new Date().toISOString() });
+        const responses = saveResponses;
+        responses.received++;
+        req.on('after:response', () => {
+          responses.completed++;
+        });
+        const changes = { ...req.body };
+        delete changes.expected_updated_at;
+        saved = validateFixtureCharacter({ ...saved, ...changes, updated_at: new Date().toISOString() });
+        expect(saved, 'the concurrency token is not a stored character field').not.to.have.property(
+          'expected_updated_at'
+        );
         data = [saved];
+        // Hold one real response in the first case to prove the mutable stub is not an acknowledgement.
+        if (
+          holdFinalRankSaveResponse &&
+          req.body.operation_data?.selections?.[`character_${first}`] === `${pulse.id}:3`
+        ) {
+          holdFinalRankSaveResponse = false;
+          return new Promise<void>((resolve) => {
+            releaseHeldRankSaveResponse = () => {
+              releaseHeldRankSaveResponse = null;
+              try {
+                req.reply({ statusCode: 200, body: { status: 'success', data } });
+              } finally {
+                resolve();
+              }
+            };
+          });
+        }
       } else if (endpoint === 'find-content-source') data = req.body.id !== undefined ? source : [source];
       else if (endpoint === 'find-class') {
         if (typeof req.body.id === 'number') {
@@ -452,8 +518,11 @@ describe('Source-owned database spell choices', () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(function () {
+    cy.then(() => releaseHeldRankSaveResponse?.());
     cy.window().then((win) => (win as unknown as FixtureWindow).databaseWorkerControl?.restore());
+    // A failed case keeps its original failure; successful cases must settle before test isolation.
+    if (this.currentTest?.state !== 'failed') waitForAcknowledgedSave();
   });
 
   const customPanel = () =>
@@ -617,7 +686,38 @@ describe('Source-owned database spell choices', () => {
   };
 
   it('keeps both ranks searchable and switches an unsaved choice while its recalculation is held', () => {
+    const wireRow = {
+      ...original,
+      spells: {
+        ...original.spells!,
+        slots: [
+          { rank: 1, source: caster, spell_id: pulse.id, id: 'synthetic-rendered-slot', fixture_extra: { keep: true } },
+        ],
+        fixture_extra: { nested: ['retained'] },
+      },
+      meta_data: { ...original.meta_data, fixture_extra: { retained: true } },
+    };
+    const validated = validateFixtureCharacter(wireRow);
+    expect(validated, 'validation returns the unprojected wire row').to.equal(wireRow);
+    expect(validated.spells.slots[0], 'derived slot identity survives validation').to.have.property(
+      'id',
+      'synthetic-rendered-slot'
+    );
+    expect(validated.spells.slots[0].fixture_extra, 'unknown nested slot data survives validation').to.deep.equal({
+      keep: true,
+    });
+    expect(validated.spells.fixture_extra, 'unknown nested spell data survives validation').to.deep.equal({
+      nested: ['retained'],
+    });
+    expect(validated.meta_data.fixture_extra, 'unknown nested metadata survives validation').to.deep.equal({
+      retained: true,
+    });
+    expect(
+      CharacterSchema.parse(wireRow).spells!.slots[0],
+      'schema projection would drop the derived slot identity'
+    ).not.to.have.property('id');
     visit();
+    waitForAcknowledgedSave();
     cy.window().then((win) => {
       (win as unknown as FixtureWindow).databaseWorkerControl.hold = true;
     });
@@ -638,10 +738,34 @@ describe('Source-owned database spell choices', () => {
     rankSelect(1).should('not.be.disabled');
     rankSelect(3).should('be.disabled');
     cy.get('.mantine-Modal-header button').click();
+    cy.then(() => {
+      holdFinalRankSaveResponse = true;
+    });
     cy.window().then((win) => (win as unknown as FixtureWindow).databaseWorkerControl.release());
     cy.wrap(null, { timeout: 15000 }).should(() =>
       expect(fixtureSelections(saved)[`character_${first}`]).to.equal(`${pulse.id}:3`)
     );
+    cy.window().should((win) => {
+      expect(releaseHeldRankSaveResponse, 'the actual HTTP save response remains held').to.be.a('function');
+      expect(saveResponses.received, 'a mutable saved row does not imply response completion').to.be.greaterThan(
+        saveResponses.completed
+      );
+      const writerPrefix = `autosave-character-${original.id}-${actor}:writer:`;
+      const writerKeys = ownedSaveKeys(win).filter((key) => key.startsWith(writerPrefix));
+      expect(writerKeys, 'the current page retains its owned submission journal').to.have.length(1);
+      const journal: unknown = JSON.parse(win.localStorage.getItem(writerKeys[0]) ?? 'null');
+      expect(journal).to.have.property('actorId', actor);
+      expect(journal).to.have.nested.property('submission.body.id', original.id);
+      expect(journal).to.have.nested.property(
+        `submission.body.operation_data.selections.character_${first}`,
+        `${pulse.id}:3`
+      );
+    });
+    cy.then(() => {
+      if (!releaseHeldRankSaveResponse) throw new Error('No held synthetic save response');
+      releaseHeldRankSaveResponse();
+    });
+    waitForAcknowledgedSave();
     cy.reload();
     openCustom();
     reopen(0);
@@ -698,6 +822,7 @@ describe('Source-owned database spell choices', () => {
       cy.then(() => {
         initialIdentity = savedDailyIdentity() as string;
       });
+      waitForAcknowledgedSave();
       cy.reload();
       openCustom();
       reopen(3);
@@ -719,6 +844,18 @@ describe('Source-owned database spell choices', () => {
           'daily spell prepared through the actual slot picker'
         ).to.equal(true)
       );
+      cy.then(() => {
+        const selected = saved.spells!.slots.find(
+          (slot) => slot.source === caster && slot.rank === 1 && slot.spell_id === pulse.id
+        );
+        expect(selected, 'the actual prepared slot retains its runtime display identity')
+          .to.have.property('id')
+          .that.is.a('string');
+        const projected = CharacterSchema.parse(saved).spells!.slots.find(
+          (slot) => slot.source === caster && slot.rank === 1 && slot.spell_id === pulse.id
+        );
+        expect(projected, 'schema projection would drop the actual prepared slot identity').not.to.have.property('id');
+      });
       closePicker('Manage Spells - Technomancer');
 
       cy.contains('button', /^Rest$/)
@@ -750,6 +887,7 @@ describe('Source-owned database spell choices', () => {
       cy.then(() =>
         expect(savedDailyIdentity(), 'new choice does not reuse the expired identity').not.to.equal(initialIdentity)
       );
+      waitForAcknowledgedSave();
       cy.reload();
       openCustom();
       reopen(3);
