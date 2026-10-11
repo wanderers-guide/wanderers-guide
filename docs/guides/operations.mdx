@@ -325,15 +325,37 @@ references offer no choices. An invalid saved first choice excludes no rank;
 invalid saved choices remain stored but grant nothing and produce no notification.
 Database membership is frozen after independent grants settle, before these
 choices run, and is never saved as a new spell database. Missing execution context
-offers no choices. This does not add a daily-preparation or retraining lifecycle.
+offers no choices. Unmarked choices do not expire on Rest or retraining.
+
+`dailyPreparation: true` opts a database selection into daily expiration. Its saved
+identity includes the entity's `operation_data.daily_preparation` generation,
+actual entity ID, caster, stable selection owner, spell ID and known rank. Rest advances that generation; recalculation,
+reload and ordinary saves do not. A choice from an older preparation, including
+a late picker callback, grants nothing. The saved database, ordinary selections,
+base Cache grants and Expanded Cache selections remain unchanged. Restricted
+preparations of expired members remain saved but are not castable unless another
+current grant still supplies that membership. Clearing or canceling a picker does
+not begin a new preparation.
+
+Daily filters must specify one fixed integer rank from 1 to 10 (`level.min` equals
+`level.max`), a `knownSpellSource`, normal `spellData` with the same casting source,
+and a nonempty named `listSources`. They cannot use a paired-rank exclusion.
+Only ranks the entity can currently cast from that source are offered; another
+caster's slots cannot authorize them. Unavailable daily choices do not render
+empty future-rank pickers. A cantrip's storage rank remains zero, but its actual
+heightened rank (half the entity's level, rounded up) determines which daily
+rank choice offers it. This implements the feat's unrestricted wording as one
+choice per actual rank, not an additional rank-zero choice. It does not allow a
+cantrip to be prepared in a non-cantrip restricted slot.
 
 The operation editor preserves these fields through compatible edits. Explicit
 changes to the selection mode, option type, casting source, spell type or granted
-rank clear the opt-in fields when they no longer apply.
+rank clear the opt-in fields when they no longer apply. Daily selections use the
+existing picker and Rest action, without a separate preparation dialog or toast.
 
 ### `giveSpellSlot`
 
-Add spell slots to a casting source. Each slot is `{ lvl, rank, amt }` where `lvl` is the character level the slot becomes available, `rank` the spell rank it casts, and `amt` the count (or `null` for unlimited / cantrip).
+Add spell slots to a casting source. Each slot is `{ lvl, rank, amt }` where `lvl` is the character level the slot becomes available, `rank` the spell rank it casts, and `amt` the count. Use rank zero for cantrip preparations. A nullable amount is accepted for compatibility but does not create concrete slots; it does not mean unlimited slots.
 
 ```jsonc
 {

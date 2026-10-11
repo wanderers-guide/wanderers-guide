@@ -821,6 +821,7 @@ export const LivingEntitySchema = z.object({
     .object({
       selections: z.record(z.string(), z.string()).optional(),
       notes: z.record(z.string(), z.string()).optional(),
+      daily_preparation: z.string().uuid().optional(),
     })
     .nullable(),
   meta_data: LivingEntityMetaDataSchema.passthrough().nullable(),

@@ -90,6 +90,13 @@ export type SpellMetadata = z.infer<typeof SpellMetadataSchema>;
 export const GiveSpellDataSchema = SpellMetadataSchema.extend({ spellId: z.number() });
 export type GiveSpellData = z.infer<typeof GiveSpellDataSchema>;
 
+/** Calculated grants may carry an expiration marker; authored giveSpell data never does. */
+export const ComputedSpellDataSchema = GiveSpellDataSchema.extend({
+  // Execution-only marker for an opt-in daily selection, never a database entry.
+  preparation: z.union([z.literal('initial'), z.string().uuid()]).optional(),
+});
+export type ComputedSpellData = z.infer<typeof ComputedSpellDataSchema>;
+
 // ─── Condition Check ──────────────────────────────────────────────────────────
 
 export const ConditionCheckDataSchema = z.object({
@@ -340,6 +347,8 @@ export const OperationSelectFiltersSpellSchema = z
     spellData: SpellMetadataSchema.optional(),
     // Opt-in database choices use this casting source's independently known spells.
     knownSpellSource: z.string().min(1).optional(),
+    // Opt-in choices expire when this entity next rests, not when it recalculates.
+    dailyPreparation: z.literal(true).optional(),
     // A paired choice may exclude the rank of one earlier selector under the same owner.
     distinctRankFromSelections: z.array(z.string().uuid()).min(1).max(1).optional(),
   })
@@ -350,6 +359,27 @@ export const OperationSelectFiltersSpellSchema = z
         path: ['distinctRankFromSelections'],
         message: 'A rank pair requires a spell database source.',
       });
+    }
+    if (filters.dailyPreparation) {
+      const rank = filters.level.min;
+      if (
+        filters.knownSpellSource === undefined ||
+        filters.distinctRankFromSelections !== undefined ||
+        rank === undefined ||
+        rank === null ||
+        !Number.isInteger(rank) ||
+        rank < 1 ||
+        rank > 10 ||
+        filters.level.max !== rank ||
+        !filters.spellData?.listSources?.length ||
+        filters.spellData.listSources.some((source) => source.length === 0)
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['dailyPreparation'],
+          message: 'Daily choices require one rank from 1 to 10, a database source and a named spell list.',
+        });
+      }
     }
     if (
       filters.knownSpellSource !== undefined &&

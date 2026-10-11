@@ -1,17 +1,67 @@
 import { SpellListEntrySchema, type Spell, type SpellListEntry } from '@schemas/content';
 import { GiveSpellDataSchema, type GiveSpellData } from '@schemas/operations';
-import type { StoreID, VariableListStr } from '@schemas/variables';
+import type { StoreID, VariableListStr, VariableNum } from '@schemas/variables';
 import { collectNormalSpellList } from '@spells/spell-list-rules';
-import { getKnownSpellsByRank } from '@spells/spell-utils';
+import { getKnownSpellsByRank, isCantrip } from '@spells/spell-utils';
 import { getVariable, getVariables } from '@variables/variable-manager';
 import { cloneDeep } from 'lodash-es';
+import { z } from 'zod';
 
-type DatabaseContext = { saved: SpellListEntry[]; snapshot?: SpellListEntry[] };
+type DatabaseContext = {
+  saved: SpellListEntry[];
+  snapshot?: SpellListEntry[];
+  dailyPreparation?: string;
+  entityId?: number;
+};
 const databases = new WeakMap<ReturnType<typeof getVariables>, DatabaseContext>();
 
 /** Bind saved database entries to this execution's variable store, never to a global character. */
-export function bindSpellDatabase(id: StoreID, saved: SpellListEntry[]): void {
-  databases.set(getVariables(id), { saved: cloneDeep(saved) });
+export function bindSpellDatabase(
+  id: StoreID,
+  saved: SpellListEntry[],
+  dailyPreparation?: string,
+  entityId?: number
+): void {
+  databases.set(getVariables(id), {
+    saved: cloneDeep(saved),
+    dailyPreparation: dailyPreparation === undefined ? 'initial' : z.string().uuid().safeParse(dailyPreparation).data,
+    entityId,
+  });
+}
+
+/** Bind a daily callback to the entity, caster, owner and rank that actually offered it. */
+export function getDailySpellChoiceId(id: StoreID, source: string, owner: string, spell: Spell): string | undefined {
+  const context = databases.get(getVariables(id));
+  if (context?.dailyPreparation === undefined || context.entityId === undefined) return undefined;
+  return JSON.stringify(['DAILY', context.dailyPreparation, id, context.entityId, source, owner, spell.id, spell.rank]);
+}
+
+/** Read the preparation for this execution, not the active character's or an older job's. */
+export function getDailyPreparation(id: StoreID): string | undefined {
+  return databases.get(getVariables(id))?.dailyPreparation;
+}
+
+/** Read only current slots from this caster; another casting source cannot unlock a rank. */
+export function getDailySpellRank(id: StoreID, source: string, spell: Spell): number | undefined {
+  if (!databases.get(getVariables(id))?.snapshot) return undefined;
+  const level = getVariable<VariableNum>(id, 'LEVEL')?.value;
+  if (!Number.isInteger(level) || level === undefined || level < 1) return undefined;
+  const sources = getVariable<VariableListStr>(id, 'CASTING_SOURCES')?.value ?? [];
+  if (!sources.some((value) => value.split(':::')[0] === source)) return undefined;
+  const cantrip = isCantrip(spell);
+  const slotRank = cantrip ? 0 : spell.rank;
+  for (const value of getVariable<VariableListStr>(id, 'SPELL_SLOTS')?.value ?? []) {
+    try {
+      const slot = JSON.parse(value);
+      if (slot?.source === source && slot.lvl === level && slot.amt > 0 && slot.rank === slotRank) {
+        // Rank zero is a storage sentinel. A cantrip's actual rank is half this entity's level.
+        return cantrip ? Math.ceil(level / 2) : spell.rank;
+      }
+    } catch {
+      // Malformed optional slot data never makes a daily choice eligible.
+    }
+  }
+  return undefined;
 }
 
 /** Freeze independent membership before any database selector grants can authorize another choice. */

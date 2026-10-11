@@ -119,7 +119,9 @@ function hasRankedSpellOptions(type: SelectContentType, options: Record<string, 
   return (
     type === 'spell' &&
     !!options?.length &&
-    options.every((option) => option._select_uuid === `${option.id}:${option.rank}`)
+    options.every((option) =>
+      option._select_uuid === `${option.id}:${option.rank}` || option._meta_data?.dailyPreparation === true
+    )
   );
 }
 

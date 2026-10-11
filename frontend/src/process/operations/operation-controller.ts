@@ -145,7 +145,7 @@ async function _executeOps(
     if (primarySource === 'ancestry') clearConflictingBoostSelections(operations, selectionNode);
     let results = await runOperations(
       varId,
-      { path: `${primarySource}_${selectionNode?.value}`, node: selectionNode },
+      { path: `${primarySource}_${selectionNode?.value}`, node: selectionNode, choiceOwner: primarySource },
       operations,
       { ...cloneDeep(options), sourceLevel },
       sourceLabel
@@ -205,7 +205,12 @@ async function executeCharacterOperations(
   const { character, content, context } = data;
 
   resetVariables('CHARACTER');
-  bindSpellDatabase('CHARACTER', character.spells?.list ?? []);
+  bindSpellDatabase(
+    'CHARACTER',
+    character.spells?.list ?? [],
+    character.operation_data?.daily_preparation,
+    character.id
+  );
   clearDeferredOperations();
   defineSelectionTree(character);
   defineDefaultSources('INFO', content.defaultSources.INFO);
@@ -1187,7 +1192,7 @@ async function executeCreatureOperations(
   const { id, creature, content } = data;
 
   resetVariables(id);
-  bindSpellDatabase(id, creature.spells?.list ?? []);
+  bindSpellDatabase(id, creature.spells?.list ?? [], creature.operation_data?.daily_preparation, creature.id);
   clearDeferredOperations();
   defineSelectionTree(creature);
   defineDefaultSources('INFO', content.defaultSources.INFO);

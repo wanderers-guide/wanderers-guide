@@ -199,12 +199,16 @@ export async function runOperations(
         // Run the select operation but only the parts that create variables
         return await runSelect(
           varId,
-          { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
+          {
+            path: `${selectionTrack.path}_${subNode?.value}`,
+            node: subNode,
+            choiceOwner: `${selectionTrack.choiceOwner}/${operation.id}`,
+          },
           operation,
           options,
           sourceLabel,
           savedIdentity,
-          { node: selectionTrack.node, operations }
+          { node: selectionTrack.node, operations, path: selectionTrack.choiceOwner }
         );
       }
       return null;
@@ -223,12 +227,16 @@ export async function runOperations(
         // Run the select operation but only the parts that are conditionals
         return await runSelect(
           varId,
-          { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
+          {
+            path: `${selectionTrack.path}_${subNode?.value}`,
+            node: subNode,
+            choiceOwner: `${selectionTrack.choiceOwner}/${operation.id}`,
+          },
           operation,
           options,
           sourceLabel,
           savedIdentity,
-          { node: selectionTrack.node, operations }
+          { node: selectionTrack.node, operations, path: selectionTrack.choiceOwner }
         );
       }
 
@@ -283,12 +291,16 @@ export async function runOperations(
       const subNode = resolved.node;
       return await runSelect(
         varId,
-        { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
+        {
+          path: `${selectionTrack.path}_${subNode?.value}`,
+          node: subNode,
+          choiceOwner: `${selectionTrack.choiceOwner}/${operation.id}`,
+        },
         operation,
         options,
         sourceLabel,
         resolved,
-        { node: selectionTrack.node, operations }
+        { node: selectionTrack.node, operations, path: selectionTrack.choiceOwner }
       );
     }
     return null;
@@ -344,7 +356,9 @@ async function runSelect(
     databaseFilter.knownSpellSource !== undefined &&
     !finalizingDatabaseSelections
   ) {
-    const result: OperationResult = { selection: { id: operation.id, title: operation.data.title, options: [] } };
+    const result: OperationResult = databaseFilter.dailyPreparation
+      ? {}
+      : { selection: { id: operation.id, title: operation.data.title, options: [] } };
     if (!options?.doOnlyValueCreation) {
       const scopes: VariableEffectScope[] = getVariableEffectScopes(varId);
       const identity: string = JSON.stringify([
@@ -425,6 +439,9 @@ async function runSelect(
     );
   }
 
+  // Future daily ranks have no actionable choice. Other empty selectors keep their existing UI.
+  if (databaseFilter?.type === 'SPELL' && databaseFilter.dailyPreparation && optionList.length === 0) return null;
+
   let selected: ObjectWithUUID | undefined = undefined;
   let results: OperationResult[] = [];
 
@@ -496,7 +513,11 @@ async function runSelect(
           const subNode = selectionTrack.node?.children[option._select_uuid];
           results = await runOperations(
             varId,
-            { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
+            {
+              path: `${selectionTrack.path}_${subNode?.value}`,
+              node: subNode,
+              choiceOwner: `${selectionTrack.choiceOwner}/${option._select_uuid}`,
+            },
             subOperations,
             options,
             operation.data.optionType === 'CUSTOM' ? sourceLabel : (option.name ?? 'Unknown')
@@ -636,6 +657,9 @@ async function updateVariables(
           ? {}
           : { listSources: selectedOption._meta_data.listSources }),
         rank: selectedOption._meta_data?.rank,
+        ...(selectedOption._meta_data?.preparation === undefined
+          ? {}
+          : { preparation: selectedOption._meta_data.preparation }),
         tradition: selectedOption._meta_data?.tradition,
         casts: selectedOption._meta_data?.casts,
         attribute: selectedOption._meta_data?.attribute,
@@ -1344,7 +1368,11 @@ async function runGiveAbilityBlock(
           const subNode = selectionTrack.node?.children[operation.id];
           results = await runOperations(
             varId,
-            { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
+            {
+              path: `${selectionTrack.path}_${subNode?.value}`,
+              node: subNode,
+              choiceOwner: `${selectionTrack.choiceOwner}/${operation.id}/${abilityBlock.id}`,
+            },
             subOperations,
             { ...options, grantedLore: isAdditionalLore(abilityBlock) ? operation.data.grantedLore : undefined },
             abilityBlock.type === 'feat' || abilityBlock.type === 'class-feature'

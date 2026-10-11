@@ -13,7 +13,7 @@
     "test:infra": "node --import=tsx --test scripts/encounter-hazards.test.mjs scripts/encounter-difficulty.test.mjs scripts/operation-lifecycle.test.mjs scripts/session-recovery.test.mjs scripts/character-save-lifecycle.test.mjs scripts/encounter-character-writer.test.mjs scripts/content-cache.test.mjs scripts/content-selection.test.mjs scripts/browser-recovery.test.mjs scripts/character-health-merge.test.mjs scripts/operation-content-package.test.mjs scripts/public-user-requests.test.mjs scripts/theme-color.test.mjs scripts/hazard-schema.test.mjs scripts/hazard-links.test.mjs scripts/hazard-scope.test.mjs scripts/hazard-content-update.test.mjs scripts/creature-stat-block-schema.test.mjs scripts/innate-stat-block.test.mjs scripts/persistent-damage-links.test.mjs scripts/companion-json-export.test.mjs scripts/content-update-review.test.mjs scripts/patreon-callback.test.mjs",
     "test:contribution:authoring": "node --import=tsx scripts/contribution-authoring.test.mjs",
     "test:spell-slots": "node --import=tsx --test scripts/restricted-spell-slots.test.mjs scripts/restricted-spell-slot-schemas.test.mjs",
-    "test:spell-database": "node --import=tsx --test scripts/database-spell-selection.test.mjs",
+    "test:spell-database": "node --import=tsx --test scripts/database-spell-selection.test.mjs scripts/daily-spell-library.test.mjs",
     "preview": "vite preview",
     "start:local": "vite",
     "build:local": "tsc && vite build",

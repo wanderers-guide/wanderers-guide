@@ -304,6 +304,45 @@ const row = (id = 1) => ({
   content_sources: { enabled: [] },
   updated_at: 'version-1',
 });
+
+const DAILY_EPOCH_BEFORE = '68b3f22e-cd1e-4f11-a593-35b2d97c6f95';
+const DAILY_EPOCH_AFTER = '36d3974b-a48c-4c2a-827c-6e30149d8a31';
+
+/** Saved daily identities are opaque to the save hook; the real engine owns their interpretation. */
+function dailySaveRow(epoch = DAILY_EPOCH_BEFORE) {
+  return {
+    ...row(),
+    operation_data: {
+      daily_preparation: epoch,
+      selections: {
+        character_daily: `daily-opaque:${epoch}:9189:1`,
+        character_expanded: '9190:1',
+        character_ordinary: '4656',
+      },
+      notes: { character_daily: 'Preserve the saved choice note.' },
+    },
+    spells: {
+      list: [
+        { spell_id: 9189, rank: 1, source: 'TECHNOMANCER' },
+        { spell_id: 9190, rank: 1, source: 'TECHNOMANCER' },
+        { spell_id: 4656, rank: 2, source: 'WIZARD' },
+      ],
+      slots: [
+        {
+          source: 'TECHNOMANCER',
+          rank: 1,
+          spell_list_source: 'TECHNOMANCER_CACHE',
+          spell_id: 9189,
+          exhausted: true,
+        },
+        { source: 'WIZARD', rank: 2, spell_id: 4656, exhausted: true },
+      ],
+      innate_casts: [],
+      focus_point_current: 0,
+    },
+  };
+}
+
 beforeEach(() => {
   Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { onLine: true } });
   globalThis.localStorage = new Storage();
@@ -434,6 +473,148 @@ test('queued edits keep a durable latest snapshot and use the acknowledged serve
   saves[1].pending.resolve([{ ...row(), ...saves[1].body, updated_at: 'version-3' }]);
   await harness.flush();
   assert.deepEqual(getBufferedCharacterSave(1, 'owner'), { status: 'none' });
+  harness.unmount();
+});
+
+test('daily preparation and saved choices survive durable recovery, reopening and a confirmed reload', async () => {
+  const base = dailySaveRow();
+  const recovered = dailySaveRow(DAILY_EPOCH_AFTER);
+  recovered.spells.slots = recovered.spells.slots.map((slot) => ({ ...slot, exhausted: false }));
+  bufferCharacterSave(recovered, 'owner', base.updated_at, {
+    base,
+    requiresCalculation: true,
+    writerId: 'closed-daily-page',
+  });
+  let server = structuredClone(base);
+  const requests = async (type, body) => {
+    if (type === 'find-character') return JSON.parse(JSON.stringify(server));
+    server = { ...server, ...body, updated_at: 'daily-version-3' };
+    return JSON.parse(JSON.stringify([server]));
+  };
+  const options = {
+    type: 'EXECUTE_OPS',
+    data: { content: {}, context: 'CHARACTER-SHEET', onFinishLoading() {} },
+  };
+  const firstCalculation = deferred();
+  harness.options = options;
+  harness.calculate = () => firstCalculation.promise;
+  harness.request = requests;
+  harness.render();
+  await harness.flush();
+  assert.deepEqual(harness.character.operation_data, recovered.operation_data);
+  assert.deepEqual(harness.character.spells, recovered.spells);
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
+  const durable = getBufferedCharacterSave(1, 'owner', 'closed-daily-page');
+  assert.equal(durable.draft.requiresCalculation, true);
+  assert.deepEqual(durable.draft.body.operation_data, recovered.operation_data);
+  assert.deepEqual(durable.draft.body.spells, recovered.spells);
+  assert.equal(harness.notices.length, 0);
+  harness.unmount();
+
+  // Reopen before any save has completed, rebasing onto an independent server edit.
+  server = { ...server, notes: { text: 'Independent remote note' }, updated_at: 'daily-version-2' };
+  harness = new HookHost();
+  const nextCalculation = deferred();
+  harness.options = options;
+  harness.calculate = () => nextCalculation.promise;
+  harness.request = requests;
+  harness.render();
+  await harness.flush();
+  assert.deepEqual(harness.character.operation_data, recovered.operation_data);
+  assert.deepEqual(harness.character.spells, recovered.spells);
+  assert.equal(harness.character.notes.text, 'Independent remote note');
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
+  nextCalculation.resolve({ currentDailyGeneration: true });
+  await harness.flush();
+  const saves = harness.requests.filter(({ type }) => type === 'update-character');
+  assert.equal(saves.length, 1);
+  assert.equal(saves[0].body.expected_updated_at, 'daily-version-2');
+  assert.deepEqual(saves[0].body.operation_data, recovered.operation_data);
+  assert.deepEqual(saves[0].body.spells, recovered.spells);
+  assert.deepEqual(server.operation_data, recovered.operation_data);
+  assert.deepEqual(server.spells, recovered.spells);
+  assert.equal(getBufferedCharacterSave(1, 'owner', 'closed-daily-page').status, 'none');
+  assert.equal(harness.notices.length, 0);
+  harness.unmount();
+
+  harness = new HookHost();
+  harness.request = requests;
+  harness.render();
+  await harness.flush();
+  assert.deepEqual(harness.character.operation_data, recovered.operation_data);
+  assert.deepEqual(harness.character.spells, recovered.spells);
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
+  assert.equal(harness.notices.length, 0);
+  harness.unmount();
+});
+
+test('an older save acknowledgement cannot overwrite a newer Rest generation or daily, Expanded and ordinary input', async () => {
+  const base = dailySaveRow();
+  const saves = [];
+  harness.request = async (type, body) => {
+    if (type === 'find-character') return structuredClone(base);
+    const pending = deferred();
+    saves.push({ body: structuredClone(body), pending });
+    return pending.promise;
+  };
+  harness.render();
+  await harness.flush();
+  const earlier = structuredClone(base.operation_data);
+  earlier.selections.character_daily = `daily-opaque:${DAILY_EPOCH_BEFORE}:9191:1`;
+  harness.edit({ operation_data: earlier });
+  await harness.flush();
+  assert.equal(saves.length, 1);
+  assert.equal(saves[0].body.operation_data.daily_preparation, DAILY_EPOCH_BEFORE);
+
+  // Rest advances the epoch; the next choice and unrelated edits arrive while the old POST is pending.
+  const latest = dailySaveRow(DAILY_EPOCH_AFTER);
+  latest.operation_data.selections.character_daily = `daily-opaque:${DAILY_EPOCH_AFTER}:9192:1`;
+  latest.operation_data.selections.character_expanded = '9193:1';
+  latest.operation_data.selections.character_ordinary = '4657';
+  latest.spells.list.push({ spell_id: 4657, rank: 2, source: 'WIZARD' });
+  latest.spells.slots = latest.spells.slots.map((slot) => ({
+    ...slot,
+    exhausted: false,
+    ...(slot.source === 'WIZARD' ? { spell_id: 4657 } : {}),
+  }));
+  harness.edit({ operation_data: latest.operation_data, spells: latest.spells });
+  await harness.flush();
+  assert.equal(saves.length, 1, 'the old request must remain the sole in-flight write');
+  assert.deepEqual(getBufferedCharacterSave(1, 'owner').draft.body.operation_data, latest.operation_data);
+  assert.deepEqual(getBufferedCharacterSave(1, 'owner').draft.body.spells, latest.spells);
+  assert.deepEqual(getBufferedCharacterSave(1, 'owner').draft.submission.body.operation_data, earlier);
+
+  saves[0].pending.resolve(JSON.parse(JSON.stringify([{ ...base, ...saves[0].body, updated_at: 'daily-version-2' }])));
+  await harness.flush();
+  assert.deepEqual(harness.character.operation_data, latest.operation_data);
+  assert.deepEqual(harness.character.spells, latest.spells);
+  assert.equal(saves.length, 2);
+  assert.equal(saves[1].body.expected_updated_at, 'daily-version-2');
+  assert.deepEqual(saves[1].body.operation_data, latest.operation_data);
+  assert.deepEqual(saves[1].body.spells, latest.spells);
+  assert.deepEqual(getBufferedCharacterSave(1, 'owner').draft.body.operation_data, latest.operation_data);
+  assert.deepEqual(getBufferedCharacterSave(1, 'owner').draft.body.spells, latest.spells);
+  assert.equal(harness.notices.length, 0);
+
+  const accepted = { ...base, ...saves[1].body, updated_at: 'daily-version-3' };
+  saves[1].pending.resolve(JSON.parse(JSON.stringify([accepted])));
+  await harness.flush();
+  assert.deepEqual(harness.character.operation_data, latest.operation_data);
+  assert.deepEqual(harness.character.spells, latest.spells);
+  assert.equal(getBufferedCharacterSave(1, 'owner').status, 'none');
+  assert.equal(harness.value.saveState, 'saved');
+  harness.unmount();
+
+  harness = new HookHost();
+  harness.request = async (type) => {
+    assert.equal(type, 'find-character', 'a confirmed reload must not echo a new save');
+    return JSON.parse(JSON.stringify(accepted));
+  };
+  harness.render();
+  await harness.flush();
+  assert.deepEqual(harness.character.operation_data, latest.operation_data);
+  assert.deepEqual(harness.character.spells, latest.spells);
+  assert.equal(harness.notices.length, 0);
   harness.unmount();
 });
 

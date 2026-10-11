@@ -9,7 +9,7 @@ import {
   ClassArchetype,
 } from '@schemas/content';
 import { getContentFast } from '@content/content-store';
-import { GiveSpellData } from '@schemas/operations';
+import { ComputedSpellData } from '@schemas/operations';
 import { StoreID, VariableListStr, VariableNum } from '@schemas/variables';
 import { attemptToFindSense, compactSensesWithRange } from '@utils/senses';
 import { toLabel } from '@utils/strings';
@@ -218,7 +218,12 @@ export function collectEntitySpellcasting(id: StoreID, entity: LivingEntity) {
   slots = mergeSpellSlots(slots, entity.spells?.slots ?? []);
 
   // List of entity's spells
-  const parsedSpellDatas: GiveSpellData[] = spellDatas.map((value) => JSON.parse(value) as GiveSpellData);
+  const parsedSpellDatas: ComputedSpellData[] = spellDatas
+    .map((value) => JSON.parse(value) as ComputedSpellData)
+    .filter(
+      (data) =>
+        data.preparation === undefined || data.preparation === (entity.operation_data?.daily_preparation ?? 'initial')
+    );
   const list = collectNormalSpellList(entity.spells?.list ?? [], parsedSpellDatas);
   let focus: { spell_id: number; source: string; rank: number | undefined }[] = [];
   let innate: SpellInnateEntry[] = [];

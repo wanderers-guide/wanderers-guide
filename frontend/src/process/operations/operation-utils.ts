@@ -72,11 +72,16 @@ import { throwError } from '@utils/error-handling';
 import { GenericData } from '@schemas/index';
 import { getRootSelection, SelectionTreeNode } from './selection-tree';
 import { applyCustomSelectionRules } from './custom-selection-rules';
-import { getDatabaseSpells } from './database-spell-context';
+import {
+  getDatabaseSpells,
+  getDailyPreparation,
+  getDailySpellChoiceId,
+  getDailySpellRank,
+} from './database-spell-context';
 import { isNormalSpell } from '@spells/spell-utils';
 
 /** A rank pair is resolved only against current siblings beneath this exact saved owner. */
-export type SpellSelectionOwner = { node: SelectionTreeNode | undefined; operations: Operation[] };
+export type SpellSelectionOwner = { node: SelectionTreeNode | undefined; operations: Operation[]; path?: string };
 
 export function createDefaultOperation<T = Operation>(type: OperationType): T {
   if (type === 'giveAbilityBlock') {
@@ -559,7 +564,9 @@ async function getSpellList(
   owner?: SpellSelectionOwner
 ) {
   if (
-    (filters.knownSpellSource !== undefined || filters.distinctRankFromSelections !== undefined) &&
+    (filters.knownSpellSource !== undefined ||
+      filters.distinctRankFromSelections !== undefined ||
+      filters.dailyPreparation !== undefined) &&
     !OperationSelectFiltersSpellSchema.safeParse(filters).success
   )
     return [];
@@ -571,15 +578,21 @@ async function getSpellList(
     spells = getDatabaseSpells(id, filters.knownSpellSource, spells).filter(isNormalSpell);
   }
 
+  if (filters.dailyPreparation) {
+    spells = spells.filter((spell) => getDailySpellRank(id, filters.knownSpellSource!, spell) !== undefined);
+  }
+  const selectionRank = (spell: Spell): number =>
+    filters.dailyPreparation ? getDailySpellRank(id, filters.knownSpellSource!, spell)! : spell.rank;
+
   if (filters.rarity !== undefined) {
     spells = spells.filter((spell) => spell.rarity === filters.rarity);
   }
 
   if (filters.level.min !== undefined) {
-    spells = spells.filter((spell) => spell.rank >= filters.level.min!);
+    spells = spells.filter((spell) => selectionRank(spell) >= filters.level.min!);
   }
   if (filters.level.max !== undefined) {
-    spells = spells.filter((spell) => spell.rank <= filters.level.max!);
+    spells = spells.filter((spell) => selectionRank(spell) <= filters.level.max!);
   }
   if (filters.traits !== undefined) {
     const tDatas = await Promise.all(
@@ -651,14 +664,24 @@ async function getSpellList(
     if (selected) spells = spells.filter((spell) => spell.rank !== selected.rank);
   }
 
-  return spells.map((spell) => {
+  return spells.flatMap((spell) => {
+    const preparation = getDailyPreparation(id);
+    const identity = filters.dailyPreparation
+      ? owner?.path === undefined
+        ? undefined
+        : getDailySpellChoiceId(id, filters.knownSpellSource!, `${owner.path}/${operationUUID}`, spell)
+      : filters.knownSpellSource === undefined
+        ? `${spell.id}`
+        : `${spell.id}:${spell.rank}`;
+    if (identity === undefined) return [];
     return {
       ...spell,
-      _select_uuid: filters.knownSpellSource === undefined ? `${spell.id}` : `${spell.id}:${spell.rank}`,
+      _select_uuid: identity,
       _content_type: 'spell' as ContentType,
       _meta_data: {
         ...filters.spellData,
         ...(filters.knownSpellSource === undefined ? {} : { rank: spell.rank }),
+        ...(filters.dailyPreparation ? { dailyPreparation: true, preparation } : {}),
       },
     };
   });

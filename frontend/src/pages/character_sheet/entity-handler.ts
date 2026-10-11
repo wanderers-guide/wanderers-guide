@@ -207,6 +207,8 @@ export function handleRest(id: StoreID, entity: LivingEntity, setEntity?: Setter
   const newEntity = cloneDeep(entity);
   if (!newEntity) return;
 
+  newEntity.operation_data = { ...newEntity.operation_data, daily_preparation: crypto.randomUUID() };
+
   // Regen Health
   const conMod = getVariable<VariableAttr>(id, 'ATTRIBUTE_CON')?.value.value ?? 0;
   const level = getVariable<VariableNum>(id, 'LEVEL')!.value;

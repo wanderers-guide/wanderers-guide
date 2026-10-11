@@ -789,21 +789,31 @@ async function readBrowserFixture() {
     'SpellSchema',
     'TraitSchema',
     'OperationSchema',
-    `${javascript}\nreturn { original, pulse, wave, source, fixtureClass, classTrait, classFeature, first, second, predefined, predefinedChoice };`
+    `${javascript}\nreturn { original, pulse, wave, spark, daily, source, fixtureClass, classTrait, classFeature, first, second, predefined, predefinedChoice };`
   )(AbilityBlockSchema, CharacterSchema, ClassSchema, ContentSourceSchema, SpellSchema, TraitSchema, OperationSchema);
 }
 
 test('the isolated browser fixture uses valid saved data and actual source-owned selection schemas', async () => {
   const fixture = await readBrowserFixture();
   assert.equal(fixture.original.spells.list.filter((entry) => entry.spell_id === fixture.pulse.id).length, 2);
-  assert.equal(fixture.original.custom_operations[1].data.optionsFilters.distinctRankFromSelections[0], fixture.first);
+  const operations = fixture.original.custom_operations;
+  assert.equal(
+    operations.find((operation) => operation.id === fixture.second).data.optionsFilters.distinctRankFromSelections[0],
+    fixture.first
+  );
   assert.equal(fixture.original.operation_data.selections[`character_${fixture.predefined}`], fixture.predefinedChoice);
   assert.equal(fixture.original.operation_data.selections[`character_${fixture.first}`], undefined);
   assert.deepEqual(
     fixture.original.spells.list.map((entry) => entry.rank),
-    [1, 3, 2]
+    [1, 3, 2, 1]
   );
-  assert.equal(fixture.original.custom_operations[2].data.optionsPredefined[0].operation.data.rank, 1);
+  assert.equal(
+    operations.find((operation) => operation.id === fixture.predefined).data.optionsPredefined[0].operation.data.rank,
+    1
+  );
+  const daily = operations.find((operation) => operation.id === fixture.daily);
+  assert.equal(daily.data.optionsFilters.dailyPreparation, true);
+  assert.deepEqual(daily.data.optionsFilters.level, { min: 1, max: 1 });
   assert.deepEqual(fixture.original.details.class, fixture.fixtureClass);
   assert.equal(fixture.fixtureClass.trait_id, fixture.classTrait.id);
   assert.deepEqual(fixture.classFeature.traits, [fixture.classTrait.id]);
@@ -822,7 +832,7 @@ test('the browser fixture reaches Initial Stats through a real selected class fe
     classes: [fixture.fixtureClass],
     traits: [fixture.classTrait],
     sources: [fixture.source],
-    spells: [fixture.pulse, fixture.wave],
+    spells: [fixture.pulse, fixture.wave, fixture.spark],
     defaultSources: { PAGE: [fixture.source.id], INFO: [] },
   };
   engine.setFixtures([
@@ -831,6 +841,7 @@ test('the browser fixture reaches Initial Stats through a real selected class fe
     { table: 'ability_block', row: fixture.classFeature },
     { table: 'spell', row: fixture.pulse },
     { table: 'spell', row: fixture.wave },
+    { table: 'spell', row: fixture.spark },
     { table: 'content_source', row: fixture.source },
   ]);
   try {
@@ -846,7 +857,13 @@ test('the browser fixture reaches Initial Stats through a real selected class fe
     assert.equal(results.classFeatureResults.length, 1);
     assert.equal(results.classFeatureResults[0].baseSource.id, fixture.classFeature.id);
     assert.deepEqual(results.classFeatureResults[0].baseResults, []);
-    assert.equal(results.characterResults.length, 3);
+    assert.equal(results.characterResults.length, 4);
+    assert.deepEqual(
+      selectors(results, fixture.daily)[0]
+        .selection.options.map((option) => option.id)
+        .sort(),
+      [fixture.pulse.id, fixture.spark.id].sort()
+    );
     assert.deepEqual(
       selectors(results, fixture.first)[0]
         .selection.options.filter((option) => option.id === fixture.pulse.id)

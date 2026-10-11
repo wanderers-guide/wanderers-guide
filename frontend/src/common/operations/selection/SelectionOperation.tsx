@@ -122,6 +122,7 @@ export function SelectionOperation(props: {
       next.optionsFilters = { ...next.optionsFilters };
       delete next.optionsFilters.knownSpellSource;
       delete next.optionsFilters.distinctRankFromSelections;
+      delete next.optionsFilters.dailyPreparation;
     }
     props.onChange(next);
   };
@@ -450,6 +451,9 @@ function SelectionFilteredSpell(props: {
       traits: traits,
       traditions: traditions,
       ...(!keepsDatabase ? {} : { knownSpellSource: props.filters?.knownSpellSource }),
+      ...(!keepsDatabase || props.filters?.dailyPreparation === undefined
+        ? {}
+        : { dailyPreparation: props.filters.dailyPreparation }),
       ...(!keepsDatabase || props.filters?.distinctRankFromSelections === undefined
         ? {}
         : { distinctRankFromSelections: props.filters.distinctRankFromSelections }),
