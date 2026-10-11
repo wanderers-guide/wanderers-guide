@@ -314,7 +314,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
               size='compact-sm'
               radius='xl'
               onClick={() => {
-                pendingSelection.current = { previousId: selectedIdentity, nextId: undefined };
+                pendingSelection.current = { previousId: selectedIdentity, nextId: undefined, dailyPreparation: false };
                 setSelected(undefined);
                 props.onClear?.();
               }}

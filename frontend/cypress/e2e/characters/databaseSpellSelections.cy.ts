@@ -464,11 +464,14 @@ describe('Source-owned database spell choices', () => {
   const openCustom = () => {
     cy.contains('.mantine-Stepper-step', 'Builder', { timeout: 30000 }).click();
     cy.get('[data-wg-name="level-0"]', { timeout: 30000 })
+      .should('be.visible')
       .contains('.mantine-Accordion-control', 'Initial Stats')
-      .click();
+      .should('be.visible')
+      .click({ timeout: 30000 });
     cy.get('[data-wg-name="level-0"]')
       .contains('.mantine-Accordion-control', /^Custom/, { timeout: 30000 })
-      .click();
+      .should('be.visible')
+      .click({ timeout: 30000 });
     customPanel().find('.selection-choice-base').should('have.length', 4);
   };
   const selection = (index: number) => customPanel().find('.selection-choice-base').eq(index);
@@ -510,8 +513,13 @@ describe('Source-owned database spell choices', () => {
       expect(remaining, `closed ${title} picker`).to.have.length(0);
     });
   };
+  const fixtureSelections = (character: Character) => {
+    const selections = character.operation_data?.selections;
+    if (!selections) throw new Error('Synthetic character selections are missing');
+    return selections;
+  };
   const dailyIdentity = (character: Character) => {
-    const identity = character.operation_data!.selections[`character_${daily}`];
+    const identity = fixtureSelections(character)[`character_${daily}`];
     expect(identity, 'opaque daily identity in actual character data').to.be.a('string').and.not.be.empty;
     return identity as string;
   };
@@ -581,10 +589,8 @@ describe('Source-owned database spell choices', () => {
 
   const expectOtherSelections = () => {
     cy.then(() => {
-      expect(saved.operation_data!.selections[`character_${first}`], 'Expanded Cache stays saved').to.equal(
-        `${wave.id}:2`
-      );
-      expect(saved.operation_data!.selections[`character_${predefined}`], 'PREDEFINED UUID stays saved').to.equal(
+      expect(fixtureSelections(saved)[`character_${first}`], 'Expanded Cache stays saved').to.equal(`${wave.id}:2`);
+      expect(fixtureSelections(saved)[`character_${predefined}`], 'PREDEFINED UUID stays saved').to.equal(
         predefinedChoice
       );
     });
@@ -633,7 +639,7 @@ describe('Source-owned database spell choices', () => {
     cy.get('.mantine-Modal-header button').click();
     cy.window().then((win) => (win as unknown as FixtureWindow).databaseWorkerControl.release());
     cy.wrap(null, { timeout: 15000 }).should(() =>
-      expect(saved.operation_data!.selections[`character_${first}`]).to.equal(`${pulse.id}:3`)
+      expect(fixtureSelections(saved)[`character_${first}`]).to.equal(`${pulse.id}:3`)
     );
     cy.reload();
     openCustom();
@@ -646,14 +652,14 @@ describe('Source-owned database spell choices', () => {
   });
 
   it('limits only the second choice to a different rank from the first saved choice', () => {
-    saved.operation_data!.selections[`character_${first}`] = `${pulse.id}:3`;
+    fixtureSelections(saved)[`character_${first}`] = `${pulse.id}:3`;
     visit();
     selection(1).contains('button', 'Select a Spell').click();
     searchPulse();
     selectButtons().should('have.length', 1).should('not.be.disabled');
     rankSelect(1).click();
     cy.wrap(null, { timeout: 15000 }).should(() =>
-      expect(saved.operation_data!.selections[`character_${second}`]).to.equal(`${pulse.id}:1`)
+      expect(fixtureSelections(saved)[`character_${second}`]).to.equal(`${pulse.id}:1`)
     );
   });
 
@@ -662,12 +668,12 @@ describe('Source-owned database spell choices', () => {
     reopen(2);
     searchPulse();
     selectButtons().should('have.length', 1).should('be.disabled');
-    cy.then(() => expect(saved.operation_data!.selections[`character_${predefined}`]).to.equal(predefinedChoice));
+    cy.then(() => expect(fixtureSelections(saved)[`character_${predefined}`]).to.equal(predefinedChoice));
   });
 
   it('reopens the saved rank-aware picker on a phone without collapsing the alternate rank', () => {
     cy.viewport(390, 844);
-    saved.operation_data!.selections[`character_${first}`] = `${pulse.id}:3`;
+    fixtureSelections(saved)[`character_${first}`] = `${pulse.id}:3`;
     visit();
     reopen(0);
     searchPulse();
@@ -683,7 +689,7 @@ describe('Source-owned database spell choices', () => {
 
     it(`persists Daily Library, prepares its spell, and requires a new selection after visible Rest on ${viewport}`, () => {
       cy.viewport(phone ? 390 : 1280, phone ? 844 : 900);
-      saved.operation_data!.selections[`character_${first}`] = `${wave.id}:2`;
+      fixtureSelections(saved)[`character_${first}`] = `${wave.id}:2`;
       let initialIdentity: string;
       visit();
       chooseDaily(pulse.name);
@@ -757,7 +763,7 @@ describe('Source-owned database spell choices', () => {
 
     it(`expires a mounted optimistic daily choice and ignores its late native acknowledgement on ${viewport}`, () => {
       cy.viewport(phone ? 390 : 1280, phone ? 844 : 900);
-      saved.operation_data!.selections[`character_${first}`] = `${wave.id}:2`;
+      fixtureSelections(saved)[`character_${first}`] = `${wave.id}:2`;
       let initialIdentity: string;
       let preparation: string;
       visit();
