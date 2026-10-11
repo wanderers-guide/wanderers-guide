@@ -94,6 +94,17 @@ test('normal release wiring preserves legacy requirements and uses the complete 
     assert.equal(requirements[name].order, 'before-functions');
 });
 
+test('Incarnate alias uniqueness gates both complete compatibility branches', async () => {
+  const wrapper = await read('supabase/release/tech-core-general-spells-incarnate-compatibility.sql');
+  const aliasGuard = "and not exists(select 1 from public.trait t where t.id<>2584 and (t.uuid=3690091311596588 or (t.content_source_id in(3,15) and lower(pg_catalog.regexp_replace(coalesce(t.name,''),'^[[:space:]]+|[[:space:]]+$','','g'))='incarnate')))";
+  const footer = wrapper.slice(wrapper.lastIndexOf('\nselect o.id,'));
+  assert.ok(footer.includes(aliasGuard), 'The shared outer alias guard must reject duplicates even when original_checks passes');
+  assert.ok(footer.indexOf(aliasGuard) < footer.indexOf('and not exists(select 1 from public.content_update'), 'Alias and pending checks both gate the accepted original-or-successor state');
+  const migration = await read('supabase/migrations/20261011000100_incarnate_release_compatibility.sql');
+  assert.equal(sha256(migration), 'f4c2eeb9a230f14f96bef05f2278bf2bfa8cb3a4856147f1893e3a25481bd2a7');
+  assert.equal(migration.split(aliasGuard).length - 1, 2, 'The guard-only migration already rejects aliases in each exact state');
+});
+
 test('bounded construction model retains all original replay groups and adds exactly the recovery pair', async () => {
   // This finite registry model never reads the catalog/bootstrap dump or executes
   // SQL. It does not substitute for the complete native input-manifest gate.

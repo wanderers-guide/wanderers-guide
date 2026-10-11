@@ -163,18 +163,23 @@ from Rage of Elements (`15`) to Common Core (`3`). It does not move or edit
 content. The read-only compatibility wrapper preserves the complete original
 Tech Core predicate and its complete source-only successor: all 82 spells,
 92 dependencies, seven source projections and eight binding literals remain
-required. An additional normalized pending-edit guard applies to both states.
+required. Normalized identity-alias and pending-edit guards apply to both states,
+including when the complete original predicate passes without the successor guard.
 Other source moves, partial states, duplicate identities and unrelated edits fail.
 The historical migrations and original release queries remain unchanged.
 
 Before applying recovery, require isolated native PostgreSQL apply, idempotence,
 rollback, sequence, cache and negative-case tests against the reviewed SQL hashes.
 `npm run test:release` includes the inert native-fixture preparation contracts.
-The reviewed 358-case plan can also be inspected without Docker, SQL or network:
+The reviewed 360-case plan can also be inspected without Docker, SQL or network:
 
 ```bash
 node scripts/release-recovery-native.mjs --repository . --plan
 ```
+
+Require a native receipt bound to the current reviewed SQL hashes. A predecessor
+358-case receipt does not validate the shared outer alias guard or the two new
+original-state duplicate-name cases.
 
 Explicit `--execute-owned-native --output /private/tmp/<new-attempt>` runs one
 bounded, network-disabled fixture and removes only its verified owned container.

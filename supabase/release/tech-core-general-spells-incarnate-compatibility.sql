@@ -115,6 +115,7 @@ single_successor_guard as materialized(select exists(select 1 from public.trait 
    and (u.ref_id=2584 or pg_catalog.regexp_replace(coalesce(u.data->>'id',''),'^[[:space:]]+|[[:space:]]+$','','g')='2584' or pg_catalog.regexp_replace(coalesce(u.data->>'uuid',''),'^[[:space:]]+|[[:space:]]+$','','g')='3690091311596588'
     or (lower(pg_catalog.regexp_replace(coalesce(u.data->>'name',''),'^[[:space:]]+|[[:space:]]+$','','g'))='incarnate' and (u.content_source_id in(3,15) or pg_catalog.regexp_replace(coalesce(u.data->>'content_source_id',''),'^[[:space:]]+|[[:space:]]+$','','g') in('3','15'))))) as passed)
 select o.id, (o.passed or ((select passed from single_successor_guard) and s.passed))
+ and not exists(select 1 from public.trait t where t.id<>2584 and (t.uuid=3690091311596588 or (t.content_source_id in(3,15) and lower(pg_catalog.regexp_replace(coalesce(t.name,''),'^[[:space:]]+|[[:space:]]+$','','g'))='incarnate')))
  and not exists(select 1 from public.content_update u
  where upper(pg_catalog.regexp_replace(coalesce(u.status->>'state',''),'^[[:space:]]+|[[:space:]]+$','','g')) not in('APPROVED','REJECTED')
  and replace(lower(pg_catalog.regexp_replace(coalesce(u.type,''),'^[[:space:]]+|[[:space:]]+$','','g')),'_','-')='trait'

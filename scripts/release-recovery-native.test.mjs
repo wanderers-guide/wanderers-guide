@@ -9,14 +9,14 @@ import { prepare } from './release-recovery-native.mjs';
 const repository = process.env.WG_NATIVE_TEST_REPOSITORY ?? path.resolve(new URL('..', import.meta.url).pathname);
 const prepared = prepare(repository);
 
-test('the inert CLI can prepare all 358 cases without executing a server', () => {
+test('the inert CLI can prepare all 360 cases without executing a server', () => {
   const output = execFileSync(process.execPath, [new URL('./release-recovery-native.mjs', import.meta.url).pathname, '--repository', repository, '--plan'], { encoding: 'utf8', timeout: 5000 });
-  const plan = JSON.parse(output); assert.equal(plan.mode, 'inert-plan'); assert.equal(plan.cases, 358);
+  const plan = JSON.parse(output); assert.equal(plan.mode, 'inert-plan'); assert.equal(plan.cases, 360);
 });
 
 test('candidate SQL bytes and the immutable original query are exactly pinned', () => {
   assert.equal(prepared.pins.length, 9);
-  assert.equal(prepared.pins.find((pin) => pin.relative.endsWith('incarnate-compatibility.sql')).sha256, 'c3d7fa80c84da774829c5b900a3a1509012226d68be0a93800a7b11fe227ac75');
+  assert.equal(prepared.pins.find((pin) => pin.relative.endsWith('incarnate-compatibility.sql')).sha256, '6f1e5f5d111bfc02c2dfe5058b62fb28d92197c733c179d687947a53447b7b6e');
   assert.equal(prepared.pins.find((pin) => pin.relative === 'supabase/release/tech-core-general-spells.sql').sha256, '97c50a7cf4a529219ff96d86c755dc24c7aa9b287b15db8107bce3e681f3102e');
 });
 
@@ -51,11 +51,24 @@ test('recovery covers exact native identity, cache failure, late real-insert rol
   assert(prepared.cases.some((item) => item.name === 'heal-post-trigger-persisted-corruption'));
 });
 
+test('original-state duplicate aliases in either accepted source remain negative cases', () => {
+  for (const source of [3, 15]) {
+    const item = prepared.cases.find(({ name }) => name === 'incarnate-reject-original-duplicate-name-source' + source);
+    assert.equal(item.expected, false); assert.equal(item.check, 'wrapper');
+    assert.match(item.mutation, /^INSERT INTO public\."trait"/);
+    assert(!item.mutation.includes('UPDATE public.trait'), 'The exact original source15 row must remain unchanged');
+    const row = JSON.parse(item.mutation.split('$fixture_json$')[1]);
+    assert.equal(row.id, 999902); assert.equal(row.uuid, 8000000000999902);
+    assert.equal(row.name, '\tIncarnate\n'); assert.equal(row.content_source_id, source);
+  }
+  assert.equal(prepared.cases.find(({ name }) => name === 'incarnate-reject-successor-duplicate-name').expected, false);
+});
+
 test('explicit synthetic IDs never allocate sequences or substitute a shortened wrapper', () => {
   assert.equal(Object.keys(prepared.identity).length, 82);
   assert(prepared.seed.includes('800000')); assert(!/\b(?:nextval|setval)\s*\(/i.test(prepared.seed));
-  assert.equal(Buffer.byteLength(prepared.wrapper), 449444);
-  assert.equal(createHash('sha256').update(prepared.wrapper).digest('hex'), 'c3d7fa80c84da774829c5b900a3a1509012226d68be0a93800a7b11fe227ac75');
+  assert.equal(Buffer.byteLength(prepared.wrapper), 449678);
+  assert.equal(createHash('sha256').update(prepared.wrapper).digest('hex'), '6f1e5f5d111bfc02c2dfe5058b62fb28d92197c733c179d687947a53447b7b6e');
 });
 
 test('owned-container control is exact-ID only with uncertain-start name recovery and strict resources', () => {
