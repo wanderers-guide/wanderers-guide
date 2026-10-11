@@ -593,7 +593,7 @@ addCompatibility(
 );
 addCompatibility(
   "changed-unrelated-source",
-  "update public.content_source set description=coalesce(description,'')||' __native_mutation__' where id=900;",
+  "update public.content_source set name=name||' __native_mutation__' where id=900;",
   { guardRejects: false },
 );
 addCompatibility(
