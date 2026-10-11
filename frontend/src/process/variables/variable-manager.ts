@@ -31,6 +31,7 @@ import {
   compileExpressions,
   compileProficiencyType,
   getProficiencyTypeValue,
+  parseListStr,
   isProficiencyTypeGreaterOrEqual,
   nextProficiencyType,
 } from './variable-utils';
@@ -619,8 +620,7 @@ function baselineListContributions(store: VariableStore): Map<string, OwnedListC
 }
 
 function listContributionValues(value: unknown): string[] {
-  if (!isListStr(value)) return [];
-  return typeof value === 'string' ? JSON.parse(value) : value;
+  return parseListStr(value) ?? [];
 }
 
 /** A defensive execution-only view; saved stores contain no provenance. */

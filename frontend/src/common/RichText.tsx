@@ -1,4 +1,5 @@
 import Markdown from 'react-markdown';
+import type { Options as MarkdownOptions } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Anchor, Blockquote, Code, Divider, List, Table, Text, TextProps, Title, useMantineTheme } from '@mantine/core';
 import { getContentDataFromHref } from './rich_text_input/ContentLinkExtension';
@@ -18,10 +19,12 @@ interface RichTextProps extends TextProps {
   children: any;
   conditionBlacklist?: string[];
   store?: StoreID;
+  /** Optional prose transforms run in the existing parser before automatic condition links. */
+  remarkPlugins?: MarkdownOptions['remarkPlugins'];
 }
 
 export default function RichText(props: RichTextProps) {
-  const { children: content, store, conditionBlacklist, ...textProps } = props;
+  const { children: content, store, conditionBlacklist, remarkPlugins, ...textProps } = props;
   const theme = useMantineTheme();
   const [_drawer, openDrawer] = useAtom(drawerState);
 
@@ -64,6 +67,7 @@ export default function RichText(props: RichTextProps) {
       children={convertedChildren}
       remarkPlugins={[
         remarkGfm,
+        ...(remarkPlugins ?? []),
         [remarkConditionLinks, { conditions, persistentDamage: !conditionBlacklist?.includes('persistent damage') }],
       ]}
       components={{
