@@ -124,7 +124,7 @@ jobs:
           }
           verify_registered
           for pass in 1 2; do
-            for migration in supabase/migrations/20260927*.sql supabase/migrations/20260928*.sql supabase/migrations/20260929*.sql supabase/migrations/20260930*.sql supabase/migrations/20261001*.sql supabase/migrations/20261002*.sql; do
+            for migration in supabase/migrations/20260927*.sql supabase/migrations/20260928*.sql supabase/migrations/20260929*.sql supabase/migrations/20260930*.sql supabase/migrations/20261001*.sql supabase/migrations/20261002*.sql supabase/migrations/20261011000000_restore_heal_companion.sql supabase/migrations/20261011000100_incarnate_release_compatibility.sql; do
               docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"
             done
             verify_registered

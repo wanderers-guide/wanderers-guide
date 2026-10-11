@@ -548,6 +548,19 @@ manual dispatch, independently of code pushes. See [Release and recovery](/relea
 for the read-only production gate, including `release:verify:functions` before
 schema changes, migration baseline and rollout order.
 
+The recovery contracts in `npm run test:release` pin Heal Companion's original
+native identity and both full Incarnate release predicates. Run the saved feat's
+schema, grants and server-rendered drawer checks without a database:
+
+```bash
+cd frontend
+node --max-old-space-size=512 --import=tsx --test --test-concurrency=1 scripts/heal-companion-recovery.test.mjs
+```
+
+These also run in `test:rules`. They do not prove native SQL mutation, rollback,
+cache triggers, browser interactions or production readiness; the isolated native
+database matrix and full release gate are separate requirements.
+
 Run `npm run test:content:contracts` for the checked-in migration input, historical
 guard and safety-runner regressions. These use local files and bounded models,
 not a running database, production credentials or private audit exports.
@@ -694,6 +707,6 @@ receipt verifier, including the positive and negative actual feat-count witnesse
 primary runs the actual move after completing the historical digest and alternate
 allocation comparisons; the alternate runs it at its registered late chronology
 position before all registered release checks and historical replays. Both retain
-the original historical row hashes. The complete chronology now has 113 migrations
-and 106 registered requirements with 69 distinct queries, producing 386 registered
+the original historical row hashes. The complete chronology now has 115 migrations
+and 108 registered requirements with 70 distinct queries, producing 393 registered
 replay statements. No historical SQL body or negative coverage is removed.

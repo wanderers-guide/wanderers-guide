@@ -137,12 +137,12 @@ export function assertRequiredNativeEvidence(receipt) {
   const verifier=privileged.find(row=>row.name==='execute-supabase_read_only_user');assert.equal(verifier.execution_role,'supabase_read_only_user');assert.equal(verifier.sql_kind,'privilege');
   assert.ok(metadata.filter(row=>!privileged.includes(row)).every(row=>row.setup_login==='postgres'));
   const ci=receipt.alternate_fixture.registered_ci_replays;
-  assert.equal(ci?.schema,'wg-tv-native-registered-ci-replays-v3');assert.equal(ci.passed,true);
-  assert.equal(ci.registered_requirements,106);assert.equal(ci.checks.length,69);assert.equal(ci.replays.length,89);
-  assert.equal(ci.passes,2);assert.equal(ci.registered_verification_rounds,3);assert.equal(ci.expected_native_statements,386);
-  assert.equal(ci.stages.length,386);assert.equal(new Set(ci.stages.map(row=>row.label)).size,386);
+  assert.equal(ci?.schema,'wg-tv-native-registered-ci-replays-v4');assert.equal(ci.passed,true);
+  assert.equal(ci.registered_requirements,108);assert.equal(ci.checks.length,70);assert.equal(ci.replays.length,91);
+  assert.equal(ci.passes,2);assert.equal(ci.registered_verification_rounds,3);assert.equal(ci.expected_native_statements,393);
+  assert.equal(ci.stages.length,393);assert.equal(new Set(ci.stages.map(row=>row.label)).size,393);
   assert.equal(ci.checks.filter(row=>row.path==='supabase/release/tech-core-introductory-spells.sql').length,1);
-  assert.equal(ci.checks.filter(row=>row.path==='supabase/release/tech-core-general-spells.sql').length,1);
+  assert.equal(ci.checks.filter(row=>row.path==='supabase/release/tech-core-general-spells-incarnate-compatibility.sql').length,1);
   assert.equal(ci.checks.filter(row=>row.path==='supabase/release/treasure-vault-terminal-catalog-compatibility.sql').length,1);
   assert.equal(ci.workflow.path,'.github/workflows/e2e.yml');assert.equal(ci.workflow.exact_bytes,true);
   const workflow=receipt.input_manifest.entries.find(row=>row.path===ci.workflow.path);
@@ -151,16 +151,16 @@ export function assertRequiredNativeEvidence(receipt) {
   assert.equal(ci.registered_release_read_only_transactions,true);assert.equal(ci.full_state_after_each_statement,true);
   assert.match(ci.baseline_sha256,/^[a-f0-9]{64}$/);
   const nativeCiStages=receipt.alternate_fixture.stages.filter(row=>row.name.startsWith('registered-ci:'));
-  assert.equal(nativeCiStages.length,386);assert.equal(new Set(nativeCiStages.map(row=>row.name)).size,386);
+  assert.equal(nativeCiStages.length,393);assert.equal(new Set(nativeCiStages.map(row=>row.name)).size,393);
   const actualStages=new Map(receipt.alternate_fixture.stages.map(row=>[row.name,row]));
   for(const row of ci.stages){
     assert.equal(row.full_state_preserved,true);
     const actual=actualStages.get('registered-ci:'+row.label);assert.ok(actual);
     assert.equal(actual.sql_sha256,row.sql_sha256);assert.equal(actual.status,0);assert.equal(actual.signal,null);assert.equal(actual.passed,true);
   }
-  assert.deepEqual(ci.stages.filter(row=>row.kind==='release').map(row=>row.round),[...Array(69).fill(0),...Array(69).fill(1),...Array(69).fill(2)]);
+  assert.deepEqual(ci.stages.filter(row=>row.kind==='release').map(row=>row.round),[...Array(70).fill(0),...Array(70).fill(1),...Array(70).fill(2)]);
   assert.ok(ci.stages.filter(row=>row.kind==='release').every(row=>row.read_only===true&&row.strict_boolean_checks>0&&Array.isArray(row.ids)&&row.ids.length===row.strict_boolean_checks&&row.ids.every(id=>typeof id==='string'&&id.trim())));
-  assert.deepEqual(ci.stages.filter(row=>row.kind==='migration').map(row=>row.pass),[...Array(89).fill(1),...Array(89).fill(2)]);
+  assert.deepEqual(ci.stages.filter(row=>row.kind==='migration').map(row=>row.pass),[...Array(91).fill(1),...Array(91).fill(2)]);
   assert.deepEqual(ci.stages.filter(row=>row.kind==='footer').map(row=>({paths:row.paths,read_only:row.read_only,schema_temp_scope:row.schema_temp_scope,mutations_rolled_back:row.mutations_rolled_back})),
     [{paths:['supabase/release/war-of-immortals-index.sql','supabase/release/war-of-immortals-index-regression.sql'],read_only:false,schema_temp_scope:true,mutations_rolled_back:true}]);
   assert.equal(receipt.registered_ci_replays,undefined,'Generic CI replay runs only once, in the positive-only alternate fixture');
@@ -183,11 +183,11 @@ export function assertRequiredNativeEvidence(receipt) {
 /** Pure plan: explicit membership/chronology, never glob-skip unknown or future migrations. */
 export function buildNativeVerificationPlan({inputs,files,selectedNegativeFiles = null,releaseScope=false}) {
   assert.equal(inputs.input_provenance.mode, 'checked-in-default');
-  assert.equal(files.length, 113, 'Exact reviewed complete CI chronology');
+  assert.equal(files.length, 115, 'Exact reviewed complete CI chronology');
   assert.deepEqual([...files].sort(), files);
   assert.equal(new Set(files).size, files.length);
   assert.ok(files.includes('20261001010000_repair_weapon_stat_fields.sql'));
-  for (const path of [inputs.helper.path,completionPath,displayPath,CATALOG_COMPATIBILITY_UPGRADE_PATH,SOURCE_CORRECTION_UPGRADE_PATH,SOURCE_CORRECTION_PATH,'20261008160000_tech_core_introductory_spells.sql','20261008190000_tech_core_general_spells.sql']) assert.ok(files.includes(path));
+  for (const path of [inputs.helper.path,completionPath,displayPath,CATALOG_COMPATIBILITY_UPGRADE_PATH,SOURCE_CORRECTION_UPGRADE_PATH,SOURCE_CORRECTION_PATH,'20261008160000_tech_core_introductory_spells.sql','20261008190000_tech_core_general_spells.sql','20261011000000_restore_heal_companion.sql','20261011000100_incarnate_release_compatibility.sql']) assert.ok(files.includes(path));
   const firstWrapper = inputs.actualWrapperMetadata.map(row => row.path).sort()[0];
   assert.ok(inputs.helper.path < firstWrapper);
   assert.equal(inputs.actualWrapperMetadata.length, 39);

@@ -30,8 +30,9 @@ export async function captureNativeInputManifest({root}) {
     return text;
   }
   const migrationFiles=(await readdir(root+'/supabase/migrations')).filter(path=>migrationName.test(path)).sort();
-  assert.equal(migrationFiles.length,113,'Complete reviewed chronology is mandatory');
-  assert.equal(migrationFiles.at(-1),'20261010000100_shared_ancestries.sql','Exact reviewed Tech Core chronology successor');
+  assert.equal(migrationFiles.length,115,'Complete reviewed chronology is mandatory');
+  assert.equal(migrationFiles.at(-1),'20261011000100_incarnate_release_compatibility.sql','Exact reviewed release recovery chronology successor');
+  assert.deepEqual(migrationFiles.slice(-3),['20261010000100_shared_ancestries.sql','20261011000000_restore_heal_companion.sql','20261011000100_incarnate_release_compatibility.sql']);
   const requirements=JSON.parse(await capture('supabase/release/requirements.json'));
   assert.deepEqual(requirements['20261008105800_treasure_vault_terminal_catalog_compatibility.sql'],{check:'treasure-vault-terminal-catalog-compatibility.sql',order:'before-functions'});
   await capture('supabase/release/shared-ancestries.json');

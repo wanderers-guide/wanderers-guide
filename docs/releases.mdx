@@ -121,6 +121,78 @@ in `supabase/release/requirements.json`. If a ledger is introduced in a separate
 reviewed reconciliation, the gate also checks recorded post-baseline versions and
 rejects unknown versions. Absence of a ledger never substitutes for effect checks.
 
+### Legacy Heal Companion and Incarnate recovery
+
+`20261011000000_restore_heal_companion.sql` restores only the missing deprecated
+Heal Companion feat, ID `22108`, UUID `7476666523704164`. It retains the original
+source, citation, description and repaired Ranger operations. An exact existing
+row is a no-op; conflicting IDs, UUIDs, names or citation aliases, changed source
+dependencies and pending curator edits abort. It does not edit saved characters,
+moderation state or sequences. The insert must refresh source 14's cache token;
+a missing or disabled cache trigger, different readback or sequence change aborts
+the transaction. The original grant requirement remains, with an additional
+whole-row recovery requirement.
+
+Before production application, independently verify that the actual ability-block
+identity sequence safely allocates beyond the restored historical ID. This is
+an apply precondition, not established by the migration's unchanged-sequence
+postcondition or an isolated fixture's synthetic allocations. Run this bounded
+read-only witness using the approved connection and require `passed=true`:
+
+```sql
+begin read only;
+set local statement_timeout='20000ms';
+set local lock_timeout='3000ms';
+select 'heal-companion-identity-sequence' as id,
+  pg_catalog.pg_get_serial_sequence('public.ability_block','id')='public.ability_block_id_seq'
+  and p.seqincrement=1 and p.seqcache=1 and not p.seqcycle
+  and p.seqmax>s.last_value
+  and (s.last_value>22108 or (s.last_value=22108 and s.is_called)) as passed
+from public.ability_block_id_seq s
+join pg_catalog.pg_sequence p on p.seqrelid='public.ability_block_id_seq'::regclass;
+rollback;
+```
+
+Missing access, a different sequence configuration or a failed witness blocks
+application. Investigate separately; never advance, reset or replace a sequence
+to make this recovery pass.
+
+`20261011000100_incarnate_release_compatibility.sql` validates one exact Incarnate
+trait successor: ID `2584` retains every field and UUID while its source changes
+from Rage of Elements (`15`) to Common Core (`3`). It does not move or edit
+content. The read-only compatibility wrapper preserves the complete original
+Tech Core predicate and its complete source-only successor: all 82 spells,
+92 dependencies, seven source projections and eight binding literals remain
+required. An additional normalized pending-edit guard applies to both states.
+Other source moves, partial states, duplicate identities and unrelated edits fail.
+The historical migrations and original release queries remain unchanged.
+
+Before applying recovery, require isolated native PostgreSQL apply, idempotence,
+rollback, sequence, cache and negative-case tests against the reviewed SQL hashes.
+`npm run test:release` includes the inert native-fixture preparation contracts.
+The reviewed 358-case plan can also be inspected without Docker, SQL or network:
+
+```bash
+node scripts/release-recovery-native.mjs --repository . --plan
+```
+
+Explicit `--execute-owned-native --output /private/tmp/<new-attempt>` runs one
+bounded, network-disabled fixture and removes only its verified owned container.
+The runner requires the reviewed cached PostgreSQL 17 linux/arm64 image by full
+image ID, never pulls an image and never controls existing containers. That
+execution route is local, not a GitHub amd64 CI job. Independently pin and review
+the matching fixture image before extending native execution to another platform;
+do not replace the image identity with a mutable tag. The fixture uses actual
+content-table constraints and cache migrations, synthetic moderation data and
+explicit synthetic spell IDs resolved by real UUIDs. It is not a production,
+Supabase Auth or RLS proof. Preserve the SQL pins and native receipt for review.
+
+Use `ON_ERROR_STOP` and one transaction for each reviewed migration. Recheck the
+fresh mutation guards at execution, independently read back both effects, and
+rerun the full read-only release gate against the frozen candidate commit.
+A private proposal or partial gate is not release approval. Do not merge until
+all required checks pass; do not replay historical migrations to restore this row.
+
 ## Rollout order
 
 1. Freeze the reviewed commit and preserve the previous compatible release
