@@ -11,6 +11,10 @@ on:
         description: Run the exhaustive content failure matrix instead of representative release hazards
         type: boolean
         default: false
+      database-worker-diagnostic:
+        description: DIAGNOSTIC ONLY - run the eight synthetic worker cases, not the complete release suite
+        type: boolean
+        default: false
 
 concurrency:
   group: e2e-${{ github.workflow }}-${{ github.ref }}
@@ -141,6 +145,7 @@ jobs:
         run: npm ci --legacy-peer-deps --no-audit --no-fund
 
       - name: Conditional authoring browser regression tests
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs['database-worker-diagnostic'] != true }}
         working-directory: ./frontend
         run: |
           command -v xvfb-run
@@ -148,7 +153,7 @@ jobs:
           xvfb-run -a npm run test:contribution:authoring -- --screenshots-dir "$RUNNER_TEMP/contribution-authoring"
 
       - name: Upload conditional authoring screenshots
-        if: always()
+        if: ${{ always() && (github.event_name != 'workflow_dispatch' || inputs['database-worker-diagnostic'] != true) }}
         uses: actions/upload-artifact@v4
         with:
           name: contribution-authoring-screenshots
@@ -193,6 +198,13 @@ jobs:
       - name: API tests (Edge Functions)
         run: cd supabase && deno test --no-check --allow-net --allow-env --allow-read functions/_tests/
 
+      - name: Mark explicitly requested worker diagnostic
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs['database-worker-diagnostic'] }}
+        run: |
+          echo '::warning::DIAGNOSTIC ONLY: eight synthetic worker cases are not the complete release browser gate.'
+          echo '## Worker diagnostic only' >> "$GITHUB_STEP_SUMMARY"
+          echo 'The browser scope is exactly eight synthetic cases. This run is not release verification, regardless of its result.' >> "$GITHUB_STEP_SUMMARY"
+
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
@@ -202,7 +214,7 @@ jobs:
           # All other browser cases retain the compiled Docker app as their base URL.
           start: npm run dev -- --host 127.0.0.1 --port 5174 --strictPort
           wait-on: "http://localhost:5174"
-          command: npm run cy:run -- --browser chrome
+          command: ${{ github.event_name == 'workflow_dispatch' && inputs['database-worker-diagnostic'] && 'npm run cy:run -- --browser chrome --spec cypress/e2e/characters/databaseSpellSelections.cy.ts' || 'npm run cy:run -- --browser chrome' }}
         env:
           CYPRESS_BASE_URL: http://localhost:3000
           CYPRESS_TEST_EMAIL: test@wanderersguide.app
@@ -250,6 +262,7 @@ jobs:
         run: docker compose down -v
 
   content-native:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs['database-worker-diagnostic'] != true }}
     runs-on: ubuntu-latest
     # Routine releases use representative failures with complete preservation.
     # The exhaustive matrix is available through an explicit manual run.
@@ -299,6 +312,7 @@ jobs:
           if-no-files-found: warn
 
   tech-core-content:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs['database-worker-diagnostic'] != true }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 

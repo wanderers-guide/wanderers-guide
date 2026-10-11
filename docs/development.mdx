@@ -451,6 +451,14 @@ base URL. Both runtimes retain the same synthetic character and deny-by-default
 network guards. The worker fixture recognizes development and hashed production
 worker URLs; its regression checks run in `test:infra`.
 
+The temporary `database-worker-diagnostic` manual E2E input selects exactly those
+eight synthetic cases and adds bounded, payload-free fixture-stage diagnostics.
+The API denial stays strict and normal default browser and native jobs are
+unchanged. Explicit diagnostic runs omit the two native jobs; the separate full
+release run retains them. A diagnostic-only run is not complete release verification, even if
+it passes. Remove this temporary instrumentation after the original failure is
+diagnosed and the complete release suites pass.
+
 To scope to a single spec:
 
 ```bash

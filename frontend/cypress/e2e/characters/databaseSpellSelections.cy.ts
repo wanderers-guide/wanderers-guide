@@ -218,6 +218,63 @@ const original = CharacterSchema.parse({
   ],
 });
 
+type FixtureFailureStage =
+  | 'worker-constructor'
+  | 'worker-url-inspection'
+  | 'worker-descriptor'
+  | 'worker-message-observer'
+  | 'worker-message-setter'
+  | 'worker-post-message'
+  | 'worker-error'
+  | 'worker-messageerror'
+  | 'worker-response-error'
+  | 'worker-response-inspection';
+type FixtureFailure = { stage: FixtureFailureStage; message: string };
+
+/** [WG-WORKER-DIAGNOSTIC] Keep safe error identity, never raw payloads, URLs or stacks. */
+function getFixtureFailureMessage(value: unknown): string {
+  let name = 'unknown error';
+  let message: unknown;
+  try {
+    if (value !== null && typeof value === 'object') {
+      if (
+        'name' in value &&
+        typeof value.name === 'string' &&
+        [
+          'Error',
+          'EvalError',
+          'RangeError',
+          'ReferenceError',
+          'SyntaxError',
+          'TypeError',
+          'URIError',
+          'DataCloneError',
+          'InvalidStateError',
+          'SecurityError',
+          'NotSupportedError',
+          'QuotaExceededError',
+          'AbortError',
+        ].includes(value.name)
+      )
+        name = value.name;
+      if ('message' in value) message = value.message;
+    }
+  } catch {
+    return 'error identity unavailable';
+  }
+  if (
+    typeof message === 'string' &&
+    (message === 'Native worker message setter unavailable in fixture' ||
+      message === 'Maximum call stack size exceeded' ||
+      /^[A-Za-z_$][A-Za-z0-9_$]{0,63} is not defined$/.test(message) ||
+      /^Cannot read properties of (undefined|null) \(reading '(id|data|status|onmessage|prototype|postMessage|_meta_data|dailyPreparation|name|_select_uuid|set|call)'\)$/.test(
+        message
+      ))
+  )
+    return `${name}: ${message}`;
+  return `${name} (raw detail omitted)`;
+}
+
 type DailyOption = {
   id: number;
   name: string;
@@ -226,6 +283,7 @@ type DailyOption = {
 };
 type HeldAcknowledgement = { requestId: number; options: DailyOption[]; deliver: () => void };
 type WorkerControl = {
+  fixtureFailures: FixtureFailure[];
   hold: boolean;
   queued: Array<() => void>;
   holdAcknowledgements: boolean;
@@ -271,12 +329,14 @@ function getDailyOptions(value: unknown): DailyOption[] {
 
 describe('Source-owned database spell choices', () => {
   let saved = structuredClone(original);
+  let activeWorkerControl: WorkerControl | null = null;
   const visit = (page: 'builder' | 'sheet' = 'builder') => {
     cy.visit(`/${page}/${original.id}`, {
       onBeforeLoad(win) {
         const fixtureWindow = win as unknown as FixtureWindow;
         const NativeWorker = fixtureWindow.Worker;
         const control: WorkerControl = {
+          fixtureFailures: [],
           hold: false,
           queued: [],
           holdAcknowledgements: false,
@@ -302,44 +362,125 @@ describe('Source-owned database spell choices', () => {
           },
         };
         fixtureWindow.databaseWorkerControl = control;
+        const recordFixtureFailure = (stage: FixtureFailureStage, error: unknown): void => {
+          try {
+            if (control.fixtureFailures.length < 16)
+              control.fixtureFailures.push({ stage, message: getFixtureFailureMessage(error) });
+          } catch {
+            // Temporary observation must never replace the original error or packet delivery.
+          }
+        };
+        activeWorkerControl = control;
         fixtureWindow.Worker = class extends NativeWorker {
           private fixtureCalculation: boolean;
-          private fixtureRequests = new Set<number>();
+          private fixtureRequests: Set<number>;
           constructor(url: string | URL, options?: WorkerOptions) {
-            super(url, options);
-            this.fixtureCalculation = isOperationsWorkerURL(url, win.location.href);
+            try {
+              super(url, options);
+            } catch (error) {
+              try {
+                if (isOperationsWorkerURL(url, win.location.href)) recordFixtureFailure('worker-constructor', error);
+              } catch (inspectionError) {
+                recordFixtureFailure('worker-url-inspection', inspectionError);
+              }
+              throw error;
+            }
+            this.fixtureRequests = new Set<number>();
+            try {
+              this.fixtureCalculation = isOperationsWorkerURL(url, win.location.href);
+            } catch (error) {
+              recordFixtureFailure('worker-url-inspection', error);
+              throw error;
+            }
             if (this.fixtureCalculation) {
-              const descriptor = Object.getOwnPropertyDescriptor(NativeWorker.prototype, 'onmessage');
-              if (!descriptor?.set) throw new Error('Native worker message setter unavailable in fixture');
+              let descriptor: PropertyDescriptor;
+              try {
+                const nativeDescriptor = Object.getOwnPropertyDescriptor(NativeWorker.prototype, 'onmessage');
+                if (!nativeDescriptor?.set) throw new Error('Native worker message setter unavailable in fixture');
+                descriptor = nativeDescriptor;
+              } catch (error) {
+                recordFixtureFailure('worker-descriptor', error);
+                throw error;
+              }
               let listener: ((this: Worker, event: MessageEvent<unknown>) => unknown) | null = null;
-              Object.defineProperty(this, 'onmessage', {
-                configurable: true,
-                get: () => listener,
-                set: (next: typeof listener) => {
-                  listener = next;
-                  descriptor.set!.call(this, (event: MessageEvent<unknown>) => {
-                    const response = event.data as { id?: number; data?: unknown };
-                    if (response.id === undefined || !this.fixtureRequests.has(response.id)) {
-                      next?.call(this, event);
-                      return;
+              // Optional diagnostic listeners cannot make an otherwise valid constructor fail.
+              try {
+                this.addEventListener('error', (event: ErrorEvent) => {
+                  try {
+                    recordFixtureFailure('worker-error', event.error ?? { name: 'Error', message: event.message });
+                  } catch {
+                    // Do not change native event delivery if diagnostic event inspection fails.
+                  }
+                });
+              } catch (error) {
+                recordFixtureFailure('worker-message-observer', error);
+              }
+              try {
+                this.addEventListener('messageerror', () =>
+                  recordFixtureFailure('worker-messageerror', { name: 'DataCloneError' })
+                );
+              } catch (error) {
+                recordFixtureFailure('worker-message-observer', error);
+              }
+              try {
+                Object.defineProperty(this, 'onmessage', {
+                  configurable: true,
+                  get: () => listener,
+                  set: (next: typeof listener) => {
+                    listener = next;
+                    try {
+                      descriptor.set!.call(this, (event: MessageEvent<unknown>) => {
+                        let response: { id?: number; status?: unknown; message?: unknown; data?: unknown };
+                        let responseId: number | undefined;
+                        try {
+                          response = event.data as typeof response;
+                          responseId = response.id;
+                        } catch (error) {
+                          recordFixtureFailure('worker-response-inspection', error);
+                          throw error;
+                        }
+                        if (responseId === undefined || !this.fixtureRequests.has(responseId)) {
+                          next?.call(this, event);
+                          return;
+                        }
+                        let options: DailyOption[];
+                        try {
+                          if (response.status === 'error')
+                            recordFixtureFailure('worker-response-error', { name: 'Error', message: response.message });
+                          options = getDailyOptions(response.data);
+                        } catch (error) {
+                          recordFixtureFailure('worker-response-inspection', error);
+                          throw error;
+                        }
+                        const deliver = () => {
+                          control.offeredDailyOptions = options;
+                          next?.call(this, event);
+                        };
+                        if (control.holdAcknowledgements)
+                          control.acknowledgements.push({ requestId: responseId, options, deliver });
+                        else deliver();
+                      });
+                    } catch (error) {
+                      recordFixtureFailure('worker-message-setter', error);
+                      throw error;
                     }
-                    const options = getDailyOptions(response.data);
-                    const deliver = () => {
-                      control.offeredDailyOptions = options;
-                      next?.call(this, event);
-                    };
-                    if (control.holdAcknowledgements)
-                      control.acknowledgements.push({ requestId: response.id, options, deliver });
-                    else deliver();
-                  });
-                },
-              });
+                  },
+                });
+              } catch (error) {
+                recordFixtureFailure('worker-message-observer', error);
+                throw error;
+              }
             }
           }
           postMessage(message: unknown, options?: StructuredSerializeOptions | Transferable[]) {
             const send = () => {
-              if (Array.isArray(options)) super.postMessage(message, options);
-              else super.postMessage(message, options);
+              try {
+                if (Array.isArray(options)) super.postMessage(message, options);
+                else super.postMessage(message, options);
+              } catch (error) {
+                if (this.fixtureCalculation) recordFixtureFailure('worker-post-message', error);
+                throw error;
+              }
             };
             const packet = message as { id?: number; execution?: { data?: { character?: { id?: number } } } };
             if (
@@ -382,6 +523,7 @@ describe('Source-owned database spell choices', () => {
 
   beforeEach(() => {
     saved = structuredClone(original);
+    activeWorkerControl = null;
     cy.intercept('**/auth/v1/**', () => {
       throw new Error('Database fixture must not contact authentication');
     });
@@ -447,7 +589,29 @@ describe('Source-owned database spell choices', () => {
         ].includes(endpoint)
       )
         data = [];
-      else throw new Error(`Unexpected database fixture API: ${endpoint}`);
+      else if (endpoint === 'report-client-error') {
+        const code: unknown = req.body?.code;
+        const category =
+          typeof code === 'string' &&
+          [
+            'content_load_failed',
+            'calculation_failed',
+            'save_failed',
+            'auth_failed',
+            'update_failed',
+            'chunk_failed',
+            'unhandled_error',
+            'unhandled_rejection',
+          ].includes(code)
+            ? code
+            : 'unrecognized-category';
+        // [WG-WORKER-DIAGNOSTIC] This request remains forbidden, including when no stage was captured.
+        throw new Error(
+          `Unexpected database fixture API: report-client-error (category=${category}; fixtureFailures=${JSON.stringify(
+            activeWorkerControl?.fixtureFailures ?? []
+          )})`
+        );
+      } else throw new Error(`Unexpected database fixture API: ${endpoint}`);
       req.reply({ statusCode: 200, body: { status: 'success', data } });
     });
   });
