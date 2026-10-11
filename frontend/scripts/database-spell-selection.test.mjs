@@ -787,3 +787,58 @@ test('the isolated browser fixture uses valid saved data and actual source-owned
   );
   assert.equal(fixture.original.custom_operations[2].data.optionsPredefined[0].operation.data.rank, 1);
 });
+
+test('the actual browser storage guard replies only to the exact public background GET', async () => {
+  const text = await readFile(
+    new URL('../cypress/e2e/characters/databaseSpellSelections.cy.ts', import.meta.url),
+    'utf8'
+  );
+  const file = ts.createSourceFile(
+    'databaseSpellSelections.cy.ts',
+    text,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS
+  );
+  let handler;
+  const visit = (node) => {
+    if (
+      ts.isCallExpression(node) &&
+      node.expression.getText(file) === 'cy.intercept' &&
+      ts.isStringLiteral(node.arguments[0]) &&
+      node.arguments[0].text === '**/storage/v1/**'
+    )
+      handler = node.arguments[1];
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  assert.ok(handler);
+  const expression = ts.createPrinter().printNode(ts.EmitHint.Expression, handler, file);
+  const javascript = ts.transpileModule(`const handle = ${expression};`, {
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
+  }).outputText;
+  const handle = new Function(`${javascript}\nreturn handle;`)();
+  const url = 'https://fdrjqcyjklatdrmjdnys.supabase.co/storage/v1/object/public/backgrounds/default/4.webp';
+  let reply;
+  handle({
+    method: 'GET',
+    url,
+    reply: (value) => {
+      reply = value;
+    },
+  });
+  assert.equal(reply.statusCode, 200);
+  assert.equal(reply.headers['content-type'], 'image/svg+xml');
+  assert.match(reply.body, /^<svg /);
+  for (const request of [
+    { method: 'POST', url },
+    { method: 'DELETE', url },
+    { method: 'GET', url: url.replace('4.webp', '1.png') },
+    { method: 'GET', url: `${url}?unexpected=true` },
+    { method: 'GET', url: url.replace('https://fdrjqcyjklatdrmjdnys.supabase.co', 'http://127.0.0.1:54321') },
+  ])
+    assert.throws(
+      () => handle({ ...request, reply: () => assert.fail('Unexpected storage request was replied to') }),
+      /Unexpected database fixture storage request/
+    );
+});

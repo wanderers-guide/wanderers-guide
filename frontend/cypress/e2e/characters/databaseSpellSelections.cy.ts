@@ -195,8 +195,7 @@ describe('Source-owned database spell choices', () => {
         win.localStorage.setItem('user-data', JSON.stringify(profile));
       },
     });
-    cy.contains('.mantine-Accordion-control', /^Custom/, { timeout: 30000 }).click();
-    customPanel().find('.selection-choice-base').should('have.length', 3);
+    openCustom();
   };
 
   beforeEach(() => {
@@ -208,8 +207,19 @@ describe('Source-owned database spell choices', () => {
     cy.intercept('**/rest/v1/**', () => {
       throw new Error('Database fixture must not contact the database');
     });
-    cy.intercept('**/storage/v1/**', () => {
-      throw new Error('Database fixture must not contact storage');
+    cy.intercept('**/storage/v1/**', (req) => {
+      if (
+        req.method === 'GET' &&
+        req.url === 'https://fdrjqcyjklatdrmjdnys.supabase.co/storage/v1/object/public/backgrounds/default/4.webp'
+      ) {
+        req.reply({
+          statusCode: 200,
+          headers: { 'content-type': 'image/svg+xml' },
+          body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>',
+        });
+        return;
+      }
+      throw new Error(`Unexpected database fixture storage request: ${req.method} ${new URL(req.url).pathname}`);
     });
     cy.intercept('**/functions/v1/*', (req) => {
       expect(req.method, 'fixture API method').to.equal('POST');
@@ -259,6 +269,11 @@ describe('Source-owned database spell choices', () => {
       .contains('.mantine-Accordion-control', /^Custom/, { timeout: 30000 })
       .closest('.mantine-Accordion-item')
       .find('.mantine-Accordion-panel');
+  const openCustom = () => {
+    cy.contains('.mantine-Stepper-step', 'Builder', { timeout: 30000 }).click();
+    cy.contains('.mantine-Accordion-control', /^Custom/, { timeout: 30000 }).click();
+    customPanel().find('.selection-choice-base').should('have.length', 3);
+  };
   const selection = (index: number) => customPanel().find('.selection-choice-base').eq(index);
   const reopen = (index: number) => selection(index).find('button').eq(1).click();
   const searchPulse = () => cy.get('.mantine-Modal-body input[placeholder="Search spells"]').type('Fixture Pulse');
@@ -290,7 +305,7 @@ describe('Source-owned database spell choices', () => {
       expect(saved.operation_data!.selections[`character_${first}`]).to.equal(`${pulse.id}:3`)
     );
     cy.reload();
-    cy.contains('.mantine-Accordion-control', /^Custom/, { timeout: 30000 }).click();
+    openCustom();
     reopen(0);
     searchPulse();
     selectButtons().should('have.length', 2).eq(0).should('not.be.disabled');
@@ -318,5 +333,17 @@ describe('Source-owned database spell choices', () => {
     searchPulse();
     selectButtons().should('have.length', 1).should('be.disabled');
     cy.then(() => expect(saved.operation_data!.selections[`character_${predefined}`]).to.equal(predefinedChoice));
+  });
+
+  it('reopens the saved rank-aware picker on a phone without collapsing the alternate rank', () => {
+    cy.viewport(390, 844);
+    saved.operation_data!.selections[`character_${first}`] = `${pulse.id}:3`;
+    visit();
+    reopen(0);
+    searchPulse();
+    selectButtons().should('have.length', 2).eq(0).should('not.be.disabled');
+    selectButtons().eq(1).should('be.disabled');
+    cy.document().then((doc) => expect(doc.documentElement.scrollWidth).to.be.at.most(doc.documentElement.clientWidth));
+    cy.screenshot('database-spell-ranks-saved-phone');
   });
 });
