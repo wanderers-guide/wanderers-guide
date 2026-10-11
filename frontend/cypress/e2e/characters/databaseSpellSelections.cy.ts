@@ -279,6 +279,27 @@ function getFixtureFailureMessage(value: unknown): string {
   return `${name} (raw detail omitted)`;
 }
 
+type FixtureOrigin = 'compiled-3000' | 'source-5174' | 'other' | 'missing';
+
+/** Classify only known synthetic origins; never include a raw Origin header or page URL. */
+function getFixtureOrigin(value: unknown): FixtureOrigin {
+  if (value === undefined || value === null) return 'missing';
+  if (value === 'http://localhost:3000') return 'compiled-3000';
+  if (value === 'http://localhost:5174') return 'source-5174';
+  return 'other';
+}
+
+type SaveVisitObservation = {
+  visit: number;
+  origin: FixtureOrigin;
+  restored: boolean;
+  pageHidden: boolean;
+  saveFailureAfterPagehide: boolean;
+  observedSaveCalls: number;
+  saveFailures: string[];
+  requestFailures: string[];
+};
+
 type DailyOption = {
   id: number;
   name: string;
@@ -287,6 +308,7 @@ type DailyOption = {
 };
 type HeldAcknowledgement = { requestId: number; options: DailyOption[]; deliver: () => void };
 type WorkerControl = {
+  saveVisit: SaveVisitObservation;
   fixtureFailures: FixtureFailure[];
   saveFailures: string[];
   saveCalls: number;
@@ -336,14 +358,41 @@ function getDailyOptions(value: unknown): DailyOption[] {
 describe('Source-owned database spell choices', () => {
   let saved = structuredClone(original);
   let activeWorkerControl: WorkerControl | null = null;
+  let nextFixtureVisit = 0;
+  // Retain plain observations only, not outgoing windows, worker controls or delivery closures.
+  const saveVisitHistory: SaveVisitObservation[] = [];
+  const getSaveVisitHistory = (): string => {
+    try {
+      return JSON.stringify(
+        saveVisitHistory.map((observation) => ({
+          ...observation,
+          active: observation === activeWorkerControl?.saveVisit,
+          saveFailures: observation.saveFailures.slice(0, 16),
+        }))
+      );
+    } catch {
+      return 'unavailable';
+    }
+  };
   const visit = (page: 'builder' | 'sheet' = 'builder') => {
     cy.visit(`/${page}/${original.id}`, {
       onBeforeLoad(win) {
         const fixtureWindow = win as unknown as FixtureWindow;
         const NativeWorker = fixtureWindow.Worker;
-        const control: WorkerControl = {
-          fixtureFailures: [],
+        const saveVisit: SaveVisitObservation = {
+          visit: ++nextFixtureVisit,
+          origin: getFixtureOrigin(win.location.origin),
+          restored: false,
+          pageHidden: false,
+          saveFailureAfterPagehide: false,
+          observedSaveCalls: 0,
           saveFailures: [],
+          requestFailures: [],
+        };
+        const control: WorkerControl = {
+          saveVisit,
+          fixtureFailures: [],
+          saveFailures: saveVisit.saveFailures,
           saveCalls: 0,
           hold: false,
           queued: [],
@@ -367,6 +416,11 @@ describe('Source-owned database spell choices', () => {
             this.release();
             this.releaseAcknowledgements();
             fixtureWindow.Worker = NativeWorker;
+            try {
+              saveVisit.restored = true;
+            } catch {
+              // Temporary observation cannot change the existing release or restoration behavior.
+            }
           },
         };
         fixtureWindow.databaseWorkerControl = control;
@@ -379,11 +433,32 @@ describe('Source-owned database spell choices', () => {
           }
         };
         activeWorkerControl = control;
+        try {
+          if (saveVisitHistory.length === 16) saveVisitHistory.shift();
+          saveVisitHistory.push(saveVisit);
+        } catch {
+          // Temporary observation cannot change fixture setup.
+        }
+        try {
+          win.addEventListener('pagehide', () => {
+            saveVisit.pageHidden = true;
+          });
+        } catch {
+          // Optional observation cannot block the fixture or browser lifecycle.
+        }
         const originalConsoleError = win.console.error;
         win.console.error = function (...args: unknown[]) {
           try {
-            if (args[0] === 'Character save failed:' && control.saveFailures.length < 16)
+            if (args[0] === 'Character save failed:' && control.saveFailures.length < 16) {
               control.saveFailures.push(getFixtureFailureMessage(args[1]));
+              saveVisit.saveFailureAfterPagehide ||= saveVisit.pageHidden;
+            }
+            if (saveVisit.requestFailures.length < 16 && typeof args[0] === 'string') {
+              if (args[0] === "Request to 'update-character' failed:")
+                saveVisit.requestFailures.push('transport-error');
+              const http = /^Request to 'update-character' failed \(HTTP ([1-5][0-9]{2})\)$/.exec(args[0]);
+              if (http) saveVisit.requestFailures.push(`HTTP-${http[1]}`);
+            }
           } catch {
             // Temporary observation cannot change application error handling.
           }
@@ -571,6 +646,11 @@ describe('Source-owned database spell choices', () => {
       else if (endpoint === 'update-character') {
         expect(req.body.id, 'only the synthetic character may be saved').to.equal(original.id);
         if (activeWorkerControl) activeWorkerControl.saveCalls++;
+        try {
+          if (activeWorkerControl) activeWorkerControl.saveVisit.observedSaveCalls = activeWorkerControl.saveCalls;
+        } catch {
+          // This is current-interceptor attribution, not proof of the requesting page's ownership.
+        }
         saved = CharacterSchema.parse({ ...saved, ...req.body, updated_at: new Date().toISOString() });
         data = [saved];
       } else if (endpoint === 'find-content-source') data = req.body.id !== undefined ? source : [source];
@@ -626,9 +706,9 @@ describe('Source-owned database spell choices', () => {
             : 'unrecognized-category';
         // [WG-WORKER-DIAGNOSTIC] This request remains forbidden, including when no stage was captured.
         throw new Error(
-          `Unexpected database fixture API: report-client-error (category=${category}; saveCalls=${activeWorkerControl?.saveCalls ?? 0}; savedHasVersion=${Boolean(saved.updated_at)}; saveFailures=${JSON.stringify(activeWorkerControl?.saveFailures ?? [])}; fixtureFailures=${JSON.stringify(
+          `Unexpected database fixture API: report-client-error (category=${category}; requestOrigin=${getFixtureOrigin(req.headers.origin)}; activeOrigin=${activeWorkerControl?.saveVisit.origin ?? 'missing'}; activeVisit=${activeWorkerControl?.saveVisit.visit ?? 0}; saveCalls=${activeWorkerControl?.saveCalls ?? 0}; savedHasVersion=${Boolean(saved.updated_at)}; saveFailures=${JSON.stringify(activeWorkerControl?.saveFailures ?? [])}; fixtureFailures=${JSON.stringify(
             activeWorkerControl?.fixtureFailures ?? []
-          )})`
+          )}; saveHistory=${getSaveVisitHistory()})`
         );
       } else throw new Error(`Unexpected database fixture API: ${endpoint}`);
       req.reply({ statusCode: 200, body: { status: 'success', data } });
