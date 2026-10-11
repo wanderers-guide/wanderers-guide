@@ -8,6 +8,7 @@ import {
   type Character,
 } from '../../../src/schemas/content';
 import { OperationSchema } from '../../../src/schemas/operations';
+import { isOperationsWorkerURL } from '../../support/operations-worker-fixture';
 
 const actor = '00000000-0000-4000-8000-000000991902';
 const first = '6082549e-6035-451d-a2dd-f90766e54d55';
@@ -306,7 +307,7 @@ describe('Source-owned database spell choices', () => {
           private fixtureRequests = new Set<number>();
           constructor(url: string | URL, options?: WorkerOptions) {
             super(url, options);
-            this.fixtureCalculation = /\/operations\.worker\./.test(new URL(String(url), win.location.href).pathname);
+            this.fixtureCalculation = isOperationsWorkerURL(url, win.location.href);
             if (this.fixtureCalculation) {
               const descriptor = Object.getOwnPropertyDescriptor(NativeWorker.prototype, 'onmessage');
               if (!descriptor?.set) throw new Error('Native worker message setter unavailable in fixture');
@@ -761,77 +762,86 @@ describe('Source-owned database spell choices', () => {
       cy.screenshot(`daily-spell-library-after-rest-${viewport}`);
     });
 
-    it(`expires a mounted optimistic daily choice and ignores its late native acknowledgement on ${viewport}`, () => {
-      cy.viewport(phone ? 390 : 1280, phone ? 844 : 900);
-      fixtureSelections(saved)[`character_${first}`] = `${wave.id}:2`;
-      let initialIdentity: string;
-      let preparation: string;
-      visit();
-      cy.window().then((win) => {
-        (win as unknown as FixtureWindow).databaseWorkerControl.holdAcknowledgements = true;
-      });
-      chooseDaily(pulse.name);
-      cy.window().should((win) =>
-        expect((win as unknown as FixtureWindow).databaseWorkerControl.acknowledgements.length).to.be.greaterThan(0)
-      );
-      mountedCharacter().then(({ character }) => {
-        initialIdentity = dailyIdentity(character);
-      });
-      reopen(3);
-      searchPulse();
-      selectButtons().should('have.length', 1).should('be.disabled');
-      closePicker();
+    it(
+      `expires a mounted optimistic daily choice and ignores its late native acknowledgement on ${viewport}`,
+      // Source-module access must use the same app store as the mounted picker.
+      { baseUrl: Cypress.env('module_preview_url') ?? Cypress.config('baseUrl') },
+      () => {
+        cy.viewport(phone ? 390 : 1280, phone ? 844 : 900);
+        fixtureSelections(saved)[`character_${first}`] = `${wave.id}:2`;
+        let initialIdentity: string;
+        let preparation: string;
+        visit();
+        cy.window().then((win) => {
+          (win as unknown as FixtureWindow).databaseWorkerControl.holdAcknowledgements = true;
+        });
+        chooseDaily(pulse.name);
+        cy.window().should((win) =>
+          expect((win as unknown as FixtureWindow).databaseWorkerControl.acknowledgements.length).to.be.greaterThan(0)
+        );
+        mountedCharacter().then(({ character }) => {
+          initialIdentity = dailyIdentity(character);
+        });
+        reopen(3);
+        searchPulse();
+        selectButtons().should('have.length', 1).should('be.disabled');
+        closePicker();
 
-      restMountedBuilder();
-      cy.window().should((win) => {
-        const acknowledgements = (win as unknown as FixtureWindow).databaseWorkerControl.acknowledgements;
-        expect(
-          acknowledgements.some((acknowledgement) =>
-            acknowledgement.options.some((option) => option.id === pulse.id && option._select_uuid === initialIdentity)
-          ),
-          'the old native acknowledgement is still held'
-        ).to.equal(true);
-        expect(
-          acknowledgements.some((acknowledgement) =>
-            acknowledgement.options.some((option) => option.id === pulse.id && option._select_uuid !== initialIdentity)
-          ),
-          'the new generation native acknowledgement has arrived'
-        ).to.equal(true);
-      });
-      cy.window().then((win) => (win as unknown as FixtureWindow).databaseWorkerControl.deliverLatest());
-      dailySelect()
-        .contains('button', /^Daily Library$/)
-        .should('be.visible');
-      cy.wrap(null, { timeout: 15000 }).should(() => {
-        expect(saved.operation_data!.daily_preparation).to.be.a('string');
-        preparation = saved.operation_data!.daily_preparation!;
-      });
-      cy.window().then((win) => {
-        const control = (win as unknown as FixtureWindow).databaseWorkerControl;
-        expect(
-          control.offeredDailyOptions.some(
-            (option) => option.id === pulse.id && option._select_uuid !== initialIdentity
-          ),
-          'Rest offers a new opaque daily identity'
-        ).to.equal(true);
-        control.releaseAcknowledgements();
-      });
-      dailySelect()
-        .contains('button', /^Daily Library$/)
-        .should('be.visible');
-      cy.then(() =>
-        expect(
-          saved.operation_data!.daily_preparation,
-          'late native result cannot restore the old generation'
-        ).to.equal(preparation)
-      );
-      expectOtherSelections();
-      chooseDaily(spark.name);
-      waitForDailySave(spark.id);
-      reopen(3);
-      searchSpell(spark.name);
-      selectButtons().should('have.length', 1).should('be.disabled');
-      cy.screenshot(`daily-spell-library-mounted-rest-${viewport}`);
-    });
+        restMountedBuilder();
+        cy.window().should((win) => {
+          const acknowledgements = (win as unknown as FixtureWindow).databaseWorkerControl.acknowledgements;
+          expect(
+            acknowledgements.some((acknowledgement) =>
+              acknowledgement.options.some(
+                (option) => option.id === pulse.id && option._select_uuid === initialIdentity
+              )
+            ),
+            'the old native acknowledgement is still held'
+          ).to.equal(true);
+          expect(
+            acknowledgements.some((acknowledgement) =>
+              acknowledgement.options.some(
+                (option) => option.id === pulse.id && option._select_uuid !== initialIdentity
+              )
+            ),
+            'the new generation native acknowledgement has arrived'
+          ).to.equal(true);
+        });
+        cy.window().then((win) => (win as unknown as FixtureWindow).databaseWorkerControl.deliverLatest());
+        dailySelect()
+          .contains('button', /^Daily Library$/)
+          .should('be.visible');
+        cy.wrap(null, { timeout: 15000 }).should(() => {
+          expect(saved.operation_data!.daily_preparation).to.be.a('string');
+          preparation = saved.operation_data!.daily_preparation!;
+        });
+        cy.window().then((win) => {
+          const control = (win as unknown as FixtureWindow).databaseWorkerControl;
+          expect(
+            control.offeredDailyOptions.some(
+              (option) => option.id === pulse.id && option._select_uuid !== initialIdentity
+            ),
+            'Rest offers a new opaque daily identity'
+          ).to.equal(true);
+          control.releaseAcknowledgements();
+        });
+        dailySelect()
+          .contains('button', /^Daily Library$/)
+          .should('be.visible');
+        cy.then(() =>
+          expect(
+            saved.operation_data!.daily_preparation,
+            'late native result cannot restore the old generation'
+          ).to.equal(preparation)
+        );
+        expectOtherSelections();
+        chooseDaily(spark.name);
+        waitForDailySave(spark.id);
+        reopen(3);
+        searchSpell(spark.name);
+        selectButtons().should('have.length', 1).should('be.disabled');
+        cy.screenshot(`daily-spell-library-mounted-rest-${viewport}`);
+      }
+    );
   }
 });

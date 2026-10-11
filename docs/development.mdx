@@ -441,6 +441,16 @@ ES module loading for the test process. This lets Cypress 13 load the existing
 configuration with its TypeScript loader on Node 20. CI uses
 the same `cy:run` entry point; application and API runtime options are unchanged.
 
+`characters/databaseSpellSelections.cy.ts` keeps six cases on the compiled app,
+including Daily Library selection, reload, preparation and visible Rest. Its two
+mounted-Rest cases use source-module access to the same app's existing Jotai store.
+CI starts a separate Vite preview on port 5174 and sets
+`CYPRESS_module_preview_url=http://localhost:5174` for those two cases only.
+For a local Vite-only run, omit that override and use the normal development
+base URL. Both runtimes retain the same synthetic character and deny-by-default
+network guards. The worker fixture recognizes development and hashed production
+worker URLs; its regression checks run in `test:infra`.
+
 To scope to a single spec:
 
 ```bash
