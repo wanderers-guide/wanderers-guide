@@ -361,6 +361,7 @@ describe('Source-owned database spell choices', () => {
   let holdFinalRankSaveResponse = false;
   let releaseHeldRankSaveResponse: (() => void) | null = null;
   let activeWorkerControl: WorkerControl | null = null;
+  const visitRecordKeys = new WeakMap<Window, ReadonlySet<string>>();
 
   /** Inspect only this synthetic character and actor's durable recovery records. */
   const ownedSaveKeys = (win: Window): string[] => {
@@ -369,6 +370,152 @@ describe('Source-owned database spell choices', () => {
     return Object.keys(win.localStorage).filter(
       (key) => key === prefix || key.startsWith(`${prefix}:`) || key === recoveryKey
     );
+  };
+
+  /** Report only finite field names and equality flags, never storage keys, owners or character values. */
+  const getOwnedSaveDescriptor = (win: Window): string => {
+    try {
+      const fields = [
+        'name',
+        'level',
+        'experience',
+        'hp_current',
+        'hp_temp',
+        'hero_points',
+        'stamina_current',
+        'resolve_current',
+        'inventory',
+        'notes',
+        'details',
+        'roll_history',
+        'custom_operations',
+        'meta_data',
+        'options',
+        'variants',
+        'content_sources',
+        'operation_data',
+        'spells',
+        'companions',
+        'campaign_id',
+      ] as const;
+      const paths = [
+        ['operation_data', 'daily_preparation'],
+        ['operation_data', 'selections'],
+        ['meta_data', 'calculated_stats'],
+        ['meta_data', 'reset_hp'],
+        ['spells', 'slots'],
+        ['spells', 'list'],
+        ['spells', 'innate_casts'],
+        ['spells', 'focus_point_current'],
+      ] as const;
+      const isRecord = (value: unknown): value is Record<string, unknown> =>
+        value !== null && typeof value === 'object' && !Array.isArray(value);
+      const readPath = (value: unknown, path: readonly string[]): unknown => {
+        let current: unknown = value;
+        for (const key of path) current = isRecord(current) ? current[key] : undefined;
+        return current;
+      };
+      // Same JSON-wire/null semantics as characterSaveValuesEqual; this comparison never changes the journal.
+      const equal = (left: unknown, right: unknown): boolean => {
+        if (Cypress._.isEqual(left, right)) return true;
+        if (left == null || right == null) return left == null && right == null;
+        try {
+          return Cypress._.isEqual(JSON.parse(JSON.stringify(left)), JSON.parse(JSON.stringify(right)));
+        } catch {
+          return false;
+        }
+      };
+      const changedFields = (left: unknown, right: unknown): string[] =>
+        fields.filter((field) => !equal(readPath(left, [field]), readPath(right, [field])));
+      const slotIdCount = (value: unknown): number => {
+        const slots = readPath(value, ['spells', 'slots']);
+        return Array.isArray(slots) ? slots.filter((slot) => isRecord(slot) && Object.hasOwn(slot, 'id')).length : 0;
+      };
+      const withoutSlotIds = (value: unknown): unknown => {
+        if (!isRecord(value)) return value;
+        const spells = value.spells;
+        if (!isRecord(spells) || !Array.isArray(spells.slots)) return value;
+        return {
+          ...value,
+          spells: {
+            ...spells,
+            slots: spells.slots.map((slot: unknown) =>
+              isRecord(slot) ? Object.fromEntries(Object.entries(slot).filter(([key]) => key !== 'id')) : slot
+            ),
+          },
+        };
+      };
+      const prefix = `autosave-character-${original.id}-${actor}`;
+      const keys = ownedSaveKeys(win);
+      const initialKeys = visitRecordKeys.get(win);
+      const records = keys.slice(0, 8).map((key) => {
+        const kind = key.startsWith(`${prefix}:writer:`)
+          ? 'writer'
+          : key.startsWith(`${prefix}:retained:`)
+            ? 'retained'
+            : key === prefix
+              ? 'legacy'
+              : key === `autosave-character-recovery-${original.id}-${actor}`
+                ? 'recovery'
+                : 'other';
+        const raw = win.localStorage.getItem(key);
+        if (raw === null || raw.length > 524288) return { kind, inspection: raw === null ? 'missing' : 'oversize' };
+        let value: unknown;
+        try {
+          value = JSON.parse(raw);
+        } catch {
+          return { kind, inspection: 'invalid-json' };
+        }
+        if (!isRecord(value)) return { kind, inspection: 'not-object' };
+        const body = value.body;
+        const base = value.base;
+        const submission = value.submission;
+        const submittedBody = isRecord(submission) ? submission.body : undefined;
+        const expected = readPath(body, ['expected_updated_at']);
+        return {
+          kind,
+          inspection: 'parsed',
+          ownerProvenance: initialKeys
+            ? initialKeys.has(key)
+              ? 'present-at-visit-start'
+              : 'first-seen-this-visit'
+            : 'unavailable',
+          actorMatches: value.actorId === actor,
+          characterMatches: readPath(body, ['id']) === original.id,
+          writerMatchesKey:
+            kind === 'writer'
+              ? typeof value.writerId === 'string' && key === `${prefix}:writer:${encodeURIComponent(value.writerId)}`
+              : null,
+          version2: value.version === 2,
+          requiresCalculation: typeof value.requiresCalculation === 'boolean' ? value.requiresCalculation : null,
+          hasBase: isRecord(base),
+          hasExpectedVersion: typeof expected === 'string' && expected.length > 0,
+          hasSubmission: isRecord(submission),
+          expectedMatchesSaved: expected === saved.updated_at,
+          baseVersionMatchesSaved: readPath(base, ['updated_at']) === saved.updated_at,
+          submissionExpectedMatchesBody: isRecord(submission)
+            ? readPath(submission, ['expectedUpdatedAt']) === expected
+            : null,
+          restGenerationMatchesSaved: equal(
+            readPath(body, ['operation_data', 'daily_preparation']),
+            saved.operation_data?.daily_preparation
+          ),
+          bodyChangedFields: changedFields(body, saved),
+          bodyChangedSections: paths
+            .filter((path) => !equal(readPath(body, path), readPath(saved, path)))
+            .map((path) => path.join('.')),
+          bodyChangedFromBase: changedFields(body, base),
+          bodyChangedFromSubmission: isRecord(submission) ? changedFields(body, submittedBody) : null,
+          bodySlotIds: slotIdCount(body),
+          savedSlotIds: slotIdCount(saved),
+          submissionSlotIds: isRecord(submission) ? slotIdCount(submittedBody) : null,
+          bodyMatchesSavedWithoutSlotIds: changedFields(withoutSlotIds(body), withoutSlotIds(saved)).length === 0,
+        };
+      });
+      return JSON.stringify({ count: keys.length, truncated: keys.length > 8, records });
+    } catch {
+      return 'inspection-unavailable';
+    }
   };
 
   /** Server-stub mutation is not the app's acknowledgement; wait for both transport and its journal. */
@@ -381,7 +528,10 @@ describe('Source-owned database spell choices', () => {
       expect(saveResponses.completed, 'all received synthetic save responses were delivered').to.equal(
         saveResponses.received
       );
-      expect(ownedSaveKeys(win).length, 'the app acknowledged every owned durable save record').to.equal(0);
+      expect(
+        ownedSaveKeys(win).length,
+        `the app acknowledged every owned durable save record (descriptor=${getOwnedSaveDescriptor(win)})`
+      ).to.equal(0);
     });
   let nextFixtureVisit = 0;
   // Retain plain observations only, not outgoing windows, worker controls or delivery closures.
@@ -407,6 +557,11 @@ describe('Source-owned database spell choices', () => {
     cy.visit(`/${page}/${original.id}`, {
       onBeforeLoad(win) {
         const fixtureWindow = win as unknown as FixtureWindow;
+        try {
+          visitRecordKeys.set(win, new Set(ownedSaveKeys(win)));
+        } catch {
+          // Optional descriptor provenance cannot change fixture setup or storage behavior.
+        }
         const NativeWorker = fixtureWindow.Worker;
         const saveVisit: SaveVisitObservation = {
           visit: ++nextFixtureVisit,
