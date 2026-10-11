@@ -9,13 +9,24 @@ type ConditionRange = { start: number; end: number; condition: string };
 
 /** Link condition prose after Markdown parsing, never inside authored links or code. */
 export function remarkConditionLinks(options: ConditionLinkOptions): (tree: Root) => void {
-  const names = options.conditions.map((name: string) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  // Printed noun forms use canonical help, but cannot bypass its availability or blacklist.
+  const aliases: ReadonlyMap<string, string> = new Map(
+    options.conditions.includes('concealed')
+      ? [
+          ['concealment', 'concealed'],
+          ['Concealment', 'concealed'],
+        ]
+      : []
+  );
+  const names = [...options.conditions, ...aliases.keys()].map((name: string) =>
+    name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  );
   const conditions = names.length ? new RegExp(`\\b(${names.join('|')})\\b`, 'g') : null;
 
   return (tree: Root): void => {
     const visit = (node: Root | RootContent): void => {
       if (node.type === 'paragraph' || node.type === 'heading' || node.type === 'tableCell') {
-        node.children = linkInlineConditions(node.children, conditions, options.persistentDamage);
+        node.children = linkInlineConditions(node.children, conditions, options.persistentDamage, aliases);
       } else if ('children' in node) {
         for (const child of node.children) visit(child);
       }
@@ -28,7 +39,8 @@ export function remarkConditionLinks(options: ConditionLinkOptions): (tree: Root
 function linkInlineConditions(
   children: PhrasingContent[],
   conditions: RegExp | null,
-  persistentDamage: boolean
+  persistentDamage: boolean,
+  aliases: ReadonlyMap<string, string>
 ): PhrasingContent[] {
   const spans: TextSpan[] = [];
   const ranges = new Map<Text, ConditionRange[]>();
@@ -79,8 +91,13 @@ function linkInlineConditions(
         const selected = ranges.get(span.node) ?? [];
         const start = match.index;
         const end = start + match[0].length;
+        const alias: string | undefined = aliases.get(match[0]);
+        // Emphasis can split a word across nodes; alias boundaries must use complete prose.
+        if (alias && (/\w/.test(prose[span.start + start - 1] ?? '') || /\w/.test(prose[span.start + end] ?? ''))) {
+          continue;
+        }
         if (selected.some((range: ConditionRange) => range.start < end && range.end > start)) continue;
-        selected.push({ start, end, condition: match[0] });
+        selected.push({ start, end, condition: alias ?? match[0] });
         ranges.set(span.node, selected);
       }
     }
