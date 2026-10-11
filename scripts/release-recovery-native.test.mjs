@@ -4,10 +4,48 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
-import { prepare } from './release-recovery-native.mjs';
+import { assertNativeSqlResult, executeNativeSqlProcess, prepare } from './release-recovery-native.mjs';
 
 const repository = process.env.WG_NATIVE_TEST_REPOSITORY ?? path.resolve(new URL('..', import.meta.url).pathname);
 const prepared = prepare(repository);
+
+test('a numeric transport failure cannot masquerade as an expected SQL rejection', () => {
+  const result = { exit_code: 255, killed: true, signal: 'SIGTERM', process_error_code: null, stdout: 'partial output', stderr: 'ERROR: pending curator dependency' };
+  assert.throws(() => assertNativeSqlResult(result, 'pending curator dependency'), /process|psql/);
+});
+
+test('only a completed psql script rejection with the expected diagnostic is accepted', () => {
+  const complete = { killed: false, signal: null, process_error_code: null, stdout: '', stderr: 'ERROR: pending curator dependency' };
+  assert.doesNotThrow(() => assertNativeSqlResult({ ...complete, exit_code: 3 }, 'pending curator dependency'));
+  assert.doesNotThrow(() => assertNativeSqlResult({ ...complete, exit_code: 0, stderr: '' }));
+  for (const exit_code of [0, 1, 2, 143, 255, null]) assert.throws(() => assertNativeSqlResult({ ...complete, exit_code }, 'pending curator dependency'), /psql/);
+  assert.throws(() => assertNativeSqlResult({ ...complete, exit_code: 3, stderr: 'ERROR: unrelated failure' }, 'pending curator dependency'), /expected diagnostic/);
+  assert.throws(() => assertNativeSqlResult({ ...complete, exit_code: 3 }), /psql/);
+});
+
+test('a killed, signalled or incomplete process never passes even with the expected exit and text', () => {
+  const complete = { exit_code: 3, killed: false, signal: null, process_error_code: null, stdout: '', stderr: 'ERROR: pending curator dependency' };
+  for (const change of [{ killed: true }, { signal: 'SIGTERM' }, { signal: 'SIGKILL' }, { process_error_code: 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER' }, { killed: undefined }, { signal: undefined }, { process_error_code: undefined }]) {
+    assert.throws(() => assertNativeSqlResult({ ...complete, ...change }, 'pending curator dependency'), /process/);
+    assert.throws(() => assertNativeSqlResult({ ...complete, ...change, exit_code: 0 }), /process/);
+  }
+});
+
+test('the external command boundary retains termination flags and partial diagnostics before validation', async () => {
+  const errors = [null, { code: 3, killed: false, signal: null }, { code: 255, killed: true, signal: 'SIGTERM' }, { code: 143, killed: true, signal: 'SIGTERM' }, { code: 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER', killed: true, signal: 'SIGTERM' }, { code: 'ENOENT' }];
+  for (const error of errors) {
+    const result = await executeNativeSqlProcess('isolated-fixture', 'synthetic SQL', (_file, _args, _options, callback) => ({ stdin: { end() { callback(error, 'partial stdout', 'ERROR: pending curator dependency'); } } }));
+    assert.equal(result.stdout, 'partial stdout'); assert.equal(result.stderr, 'ERROR: pending curator dependency');
+    if (!error) { assert.equal(result.exit_code, 0); assertNativeSqlResult(result); }
+    else if (error.code === 3) { assert.equal(result.exit_code, 3); assertNativeSqlResult(result, 'pending curator dependency'); }
+    else {
+      assert.equal(result.killed, error.killed === true); assert.equal(result.signal, error.signal ?? null);
+      assert.equal(result.exit_code, typeof error.code === 'number' ? error.code : null);
+      assert.equal(result.process_error_code, typeof error.code === 'string' ? error.code : null);
+      assert.throws(() => assertNativeSqlResult(result, 'pending curator dependency'), /process/);
+    }
+  }
+});
 
 test('the inert CLI can prepare all 360 cases without executing a server', () => {
   const output = execFileSync(process.execPath, [new URL('./release-recovery-native.mjs', import.meta.url).pathname, '--repository', repository, '--plan'], { encoding: 'utf8', timeout: 5000 });

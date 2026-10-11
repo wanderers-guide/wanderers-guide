@@ -105,6 +105,25 @@ export function prepare(repository) {
   return { repository, files, pins, setup, seed, snapshot, recovery, recoveryWhole, healEffect, wrapper, compatibilityMigration, compatibilityWhole, heal, general, spells, cases, identity: Object.fromEntries(identity), fixture_limitations: ['Real content table/identity/PK/unique/content-FK DDL and cache triggers; auth.users is a minimal UUID FK target, not an Auth/RLS permission proof.', '82 native spell IDs are explicit synthetic positive fixture IDs resolved by the real query from real UUIDs; no production IDs are allocated.', 'Heal dependencies exercise their exact declared projections, not unguarded editorial fields.', 'All moderation payloads are synthetic; no live/private moderator values or database access.'] };
 }
 
+/** Validate the completed native psql command before accepting its SQL outcome. */
+export function assertNativeSqlResult(result, expectedError = null, phase = 'native SQL') {
+  assert.equal(result.killed, false, phase + ' process was killed');
+  assert.equal(result.signal, null, phase + ' process received a signal');
+  assert.equal(result.process_error_code, null, phase + ' process transport failed');
+  assert.equal(result.exit_code, expectedError ? 3 : 0, phase + ' unexpected psql exit: ' + result.stderr);
+  if (expectedError) assert(result.stderr.includes(expectedError), phase + ' expected diagnostic: ' + result.stderr);
+}
+
+/** Capture command termination, including failures, for the attempt's SQL receipt. */
+export function executeNativeSqlProcess(id, text, executeFile = execFile) {
+  return new Promise((resolve) => {
+    const child = executeFile('docker', ['exec', '-e', 'PGAPPNAME=wg-release-recovery-native', '-i', id, 'psql', '-h', '127.0.0.1', '-X', '-q', '-A', '-t', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres'], { timeout: 30000, maxBuffer: 8_000_000 }, (err, stdout, stderr) => {
+      resolve({ exit_code: err ? (Number.isInteger(err.code) ? err.code : null) : 0, killed: err?.killed === true, signal: err?.signal ?? null, process_error_code: typeof err?.code === 'string' ? err.code : null, stdout, stderr });
+    });
+    child.stdin.end(text);
+  });
+}
+
 export async function executeOwned(prepared, output) {
   output = path.resolve(output); fs.mkdirSync(output, { recursive: true, mode: 0o700 });
   const save = (name, value) => fs.writeFileSync(path.join(output, name), typeof value === 'string' ? value : JSON.stringify(value, null, 2) + '\n', { flag: 'wx', mode: 0o600 });
@@ -121,9 +140,9 @@ export async function executeOwned(prepared, output) {
   };
   async function sql(text, error = null) {
     const begin = Date.now(); const current = ++call;
-    const result = await new Promise((resolve, reject) => { const child = execFile('docker', ['exec', '-e', 'PGAPPNAME=wg-release-recovery-native', '-i', id, 'psql', '-h', '127.0.0.1', '-X', '-q', '-A', '-t', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres'], { timeout: 30000, maxBuffer: 8_000_000 }, (err, stdout, stderr) => { if (err && typeof err.code !== 'number') reject(err); else resolve({ exit_code: err ? err.code : 0, stdout, stderr }); }); child.stdin.end(text); });
+    const result = await executeNativeSqlProcess(id, text);
     save('SQL-' + String(current).padStart(4, '0') + '.json', { phase, query_sha256: sha(text), bytes: Buffer.byteLength(text), elapsed_ms: Date.now() - begin, expected_error: error, ...result });
-    if (error) { assert.notEqual(result.exit_code, 0, phase + ' must reject'); assert(result.stderr.includes(error), phase + ' expected diagnostic: ' + result.stderr); } else assert.equal(result.exit_code, 0, phase + ': ' + result.stderr);
+    assertNativeSqlResult(result, error, phase);
     return result.stdout.trim();
   }
   const snapshot = async () => JSON.parse(await sql(tx(prepared.snapshot, false, true)));

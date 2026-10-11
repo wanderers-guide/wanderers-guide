@@ -191,6 +191,10 @@ do not replace the image identity with a mutable tag. The fixture uses actual
 content-table constraints and cache migrations, synthetic moderation data and
 explicit synthetic spell IDs resolved by real UUIDs. It is not a production,
 Supabase Auth or RLS proof. Preserve the SQL pins and native receipt for review.
+Expected SQL rejections require psql's completed `ON_ERROR_STOP` script-error exit
+code `3` and the expected diagnostic. Timeouts, signals, buffer failures and other
+exit codes fail the attempt even if partial stderr contains that diagnostic.
+Each SQL receipt retains the process termination fields before validation.
 
 Use `ON_ERROR_STOP` and one transaction for each reviewed migration. Recheck the
 fresh mutation guards at execution, independently read back both effects, and
