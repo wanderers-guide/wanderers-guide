@@ -177,6 +177,41 @@ test('daily choices use castable ranks from their own casting source, not anothe
   );
 });
 
+test('daily choices reject malformed and nonpositive slot amounts authored through adjValue', async () => {
+  for (const amount of ['1', true, null, 0, -1]) {
+    const slot = OperationSchema.parse({
+      id: '1568d50d-691a-4a6d-9312-36adf375910b',
+      type: 'adjValue',
+      data: { variable: 'SPELL_SLOTS', value: JSON.stringify({ source, lvl: 8, rank: 1, amt: amount }) },
+    });
+    const input = character([slot, selector()]);
+    input.custom_operations = input.custom_operations.filter((operation) => operation.type !== 'giveSpellSlot');
+    assert.equal(findSelection((await calculate(input)).results), undefined, `slot amount ${JSON.stringify(amount)}`);
+  }
+});
+
+test('daily choices accept positive finite numeric slot amounts authored through adjValue', async () => {
+  for (const amount of [1, 1.5]) {
+    const slot = OperationSchema.parse({
+      id: '1568d50d-691a-4a6d-9312-36adf375910b',
+      type: 'adjValue',
+      data: { variable: 'SPELL_SLOTS', value: JSON.stringify({ source, lvl: 8, rank: 1, amt: amount }) },
+    });
+    const input = character([slot, selector()]);
+    input.custom_operations = input.custom_operations.filter((operation) => operation.type !== 'giveSpellSlot');
+    const options = findSelection((await calculate(input)).results).selection.options;
+    assert.deepEqual(
+      options.map((option) => option.id),
+      [spells[0].id, spells[1].id]
+    );
+    input.operation_data.selections[`character_${dailyId}`] = options[0]._select_uuid;
+    assert.deepEqual(
+      (await calculate(input)).casting.list.filter((entry) => entry.source === cache),
+      [{ spell_id: spells[0].id, rank: 1, source: cache }]
+    );
+  }
+});
+
 test('Rest invalidates daily membership immediately, before a stale calculation or picker can renew it', async () => {
   const input = character([selector()]);
   const offered = await calculate(input);
@@ -220,6 +255,73 @@ test('cantrips use their automatically heightened rank for the one-per-rank choi
     selected.casting.list.filter((entry) => entry.source === cache),
     [{ spell_id: spells[3].id, rank: 0, source: cache }]
   );
+});
+
+test('selected daily cantrips remain in Cache after leveling until Rest, without authorizing another owner', async () => {
+  const nextRankId = '1e362173-7cf2-444d-adcc-50419329caf0';
+  const input = character([
+    selector(dailyId, true, 4),
+    selector(nextRankId, true, 5),
+    {
+      id: 'cantrip-slots',
+      type: 'giveSpellSlot',
+      data: { castingSource: source, slots: [{ lvl: 8, rank: 0, amt: 5 }] },
+    },
+  ]);
+  const choice = findSelection((await calculate(input)).results).selection.options[0]._select_uuid;
+  input.operation_data.selections[`character_${dailyId}`] = choice;
+  input.level = 9;
+  for (const operation of input.custom_operations) {
+    if (operation.type === 'giveSpellSlot') operation.data.slots.forEach((slot) => (slot.lvl = 9));
+  }
+  const saved = JSON.parse(JSON.stringify(input));
+  assert.deepEqual(
+    (await calculate(saved)).casting.list.filter((entry) => entry.source === cache),
+    [{ spell_id: spells[3].id, rank: 0, source: cache }]
+  );
+  const copied = structuredClone(saved);
+  copied.custom_operations = copied.custom_operations.filter((operation) => operation.id !== dailyId);
+  copied.operation_data.selections[`character_${nextRankId}`] = choice;
+  assert.equal((await calculate(copied)).casting.list.filter((entry) => entry.source === cache).length, 0);
+
+  const unknown = structuredClone(saved);
+  unknown.spells.list = unknown.spells.list.filter((entry) => entry.spell_id !== spells[3].id);
+  assert.equal((await calculate(unknown)).casting.list.filter((entry) => entry.source === cache).length, 0);
+  const unavailable = structuredClone(saved);
+  unavailable.custom_operations = unavailable.custom_operations.filter((operation) => operation.id !== 'cantrip-slots');
+  assert.equal((await calculate(unavailable)).casting.list.filter((entry) => entry.source === cache).length, 0);
+
+  let rested;
+  engine.handleRest('CHARACTER', saved, (next) => {
+    rested = next;
+  });
+  const nextDay = await calculate(rested);
+  assert.equal(nextDay.casting.list.filter((entry) => entry.source === cache).length, 0);
+  assert.equal(findSelection(nextDay.results), undefined);
+  assert.equal(findSelection(nextDay.results, nextRankId).selection.options[0].id, spells[3].id);
+});
+
+test('editing the same daily selector rank cannot reuse its previous cantrip choice', async () => {
+  const input = character([
+    selector(dailyId, true, 4),
+    {
+      id: 'cantrip-slots',
+      type: 'giveSpellSlot',
+      data: { castingSource: source, slots: [{ lvl: 8, rank: 0, amt: 5 }] },
+    },
+  ]);
+  const choice = findSelection((await calculate(input)).results).selection.options[0]._select_uuid;
+  input.operation_data.selections[`character_${dailyId}`] = choice;
+  const daily = input.custom_operations.find((operation) => operation.id === dailyId);
+  daily.data.optionsFilters.level = { min: 1, max: 1 };
+  OperationSchema.parse(daily);
+  const changed = await calculate(JSON.parse(JSON.stringify(input)));
+  assert.equal(changed.casting.list.filter((entry) => entry.source === cache).length, 0);
+  assert.equal(
+    findSelection(changed.results).selection.options.some((option) => option.id === spells[3].id),
+    false
+  );
+  assert.notEqual(findSelection(changed.results).selection.options[0]._select_uuid, choice);
 });
 
 test('an initial daily choice belongs to its actual entity and casting source', async () => {

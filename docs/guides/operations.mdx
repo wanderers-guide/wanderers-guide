@@ -329,8 +329,9 @@ offers no choices. Unmarked choices do not expire on Rest or retraining.
 
 `dailyPreparation: true` opts a database selection into daily expiration. Its saved
 identity includes the entity's `operation_data.daily_preparation` generation,
-actual entity ID, caster, stable selection owner, spell ID and known rank. Rest advances that generation; recalculation,
-reload and ordinary saves do not. A choice from an older preparation, including
+actual entity ID, caster, stable selection owner, spell ID, known rank and fixed
+selector rank. Rest advances that generation; recalculation, reload and ordinary
+saves do not. A choice from an older preparation, including
 a late picker callback, grants nothing. The saved database, ordinary selections,
 base Cache grants and Expanded Cache selections remain unchanged. Restricted
 preparations of expired members remain saved but are not castable unless another
@@ -340,13 +341,18 @@ not begin a new preparation.
 Daily filters must specify one fixed integer rank from 1 to 10 (`level.min` equals
 `level.max`), a `knownSpellSource`, normal `spellData` with the same casting source,
 and a nonempty named `listSources`. They cannot use a paired-rank exclusion.
-Only ranks the entity can currently cast from that source are offered; another
-caster's slots cannot authorize them. Unavailable daily choices do not render
-empty future-rank pickers. A cantrip's storage rank remains zero, but its actual
-heightened rank (half the entity's level, rounded up) determines which daily
+New choices use ranks the entity can currently cast from that source; another
+caster's slots or nonnumeric slot amounts cannot authorize them. Unavailable
+daily choices do not render empty future-rank pickers. A cantrip's storage rank
+remains zero, but its actual heightened rank (half the entity's level, rounded up)
+determines which daily
 rank choice offers it. This implements the feat's unrestricted wording as one
 choice per actual rank, not an additional rank-zero choice. It does not allow a
 cantrip to be prepared in a non-cantrip restricted slot.
+A selected current-day cantrip stays with its original selection owner if leveling
+changes its automatic rank. It still requires independent database membership
+and an available cantrip slot from that caster, and expires on the next Rest.
+Changing its selector's fixed rank invalidates the previous choice.
 
 The operation editor preserves these fields through compatible edits. Explicit
 changes to the selection mode, option type, casting source, spell type or granted

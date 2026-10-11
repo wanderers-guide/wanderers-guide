@@ -30,10 +30,26 @@ export function bindSpellDatabase(
 }
 
 /** Bind a daily callback to the entity, caster, owner and rank that actually offered it. */
-export function getDailySpellChoiceId(id: StoreID, source: string, owner: string, spell: Spell): string | undefined {
+export function getDailySpellChoiceId(
+  id: StoreID,
+  source: string,
+  owner: string,
+  spell: Spell,
+  selectionRank: number
+): string | undefined {
   const context = databases.get(getVariables(id));
   if (context?.dailyPreparation === undefined || context.entityId === undefined) return undefined;
-  return JSON.stringify(['DAILY', context.dailyPreparation, id, context.entityId, source, owner, spell.id, spell.rank]);
+  return JSON.stringify([
+    'DAILY',
+    context.dailyPreparation,
+    id,
+    context.entityId,
+    source,
+    owner,
+    spell.id,
+    spell.rank,
+    selectionRank,
+  ]);
 }
 
 /** Read the preparation for this execution, not the active character's or an older job's. */
@@ -53,7 +69,13 @@ export function getDailySpellRank(id: StoreID, source: string, spell: Spell): nu
   for (const value of getVariable<VariableListStr>(id, 'SPELL_SLOTS')?.value ?? []) {
     try {
       const slot = JSON.parse(value);
-      if (slot?.source === source && slot.lvl === level && slot.amt > 0 && slot.rank === slotRank) {
+      if (
+        slot?.source === source &&
+        slot.lvl === level &&
+        Number.isFinite(slot.amt) &&
+        slot.amt > 0 &&
+        slot.rank === slotRank
+      ) {
         // Rank zero is a storage sentinel. A cantrip's actual rank is half this entity's level.
         return cantrip ? Math.ceil(level / 2) : spell.rank;
       }

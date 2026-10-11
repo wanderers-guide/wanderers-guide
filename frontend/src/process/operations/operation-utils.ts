@@ -78,7 +78,7 @@ import {
   getDailySpellChoiceId,
   getDailySpellRank,
 } from './database-spell-context';
-import { isNormalSpell } from '@spells/spell-utils';
+import { isCantrip, isNormalSpell } from '@spells/spell-utils';
 
 /** A rank pair is resolved only against current siblings beneath this exact saved owner. */
 export type SpellSelectionOwner = { node: SelectionTreeNode | undefined; operations: Operation[]; path?: string };
@@ -581,8 +581,25 @@ async function getSpellList(
   if (filters.dailyPreparation) {
     spells = spells.filter((spell) => getDailySpellRank(id, filters.knownSpellSource!, spell) !== undefined);
   }
-  const selectionRank = (spell: Spell): number =>
-    filters.dailyPreparation ? getDailySpellRank(id, filters.knownSpellSource!, spell)! : spell.rank;
+  const selectionRank = (spell: Spell): number => {
+    if (!filters.dailyPreparation) return spell.rank;
+    if (
+      isCantrip(spell) &&
+      owner?.path !== undefined &&
+      owner.node?.children[operationUUID]?.value ===
+        getDailySpellChoiceId(
+          id,
+          filters.knownSpellSource!,
+          `${owner.path}/${operationUUID}`,
+          spell,
+          filters.level.min!
+        )
+    ) {
+      // Automatic heightening does not expire this owner's current-day cantrip choice.
+      return filters.level.min!;
+    }
+    return getDailySpellRank(id, filters.knownSpellSource!, spell)!;
+  };
 
   if (filters.rarity !== undefined) {
     spells = spells.filter((spell) => spell.rarity === filters.rarity);
@@ -669,7 +686,13 @@ async function getSpellList(
     const identity = filters.dailyPreparation
       ? owner?.path === undefined
         ? undefined
-        : getDailySpellChoiceId(id, filters.knownSpellSource!, `${owner.path}/${operationUUID}`, spell)
+        : getDailySpellChoiceId(
+            id,
+            filters.knownSpellSource!,
+            `${owner.path}/${operationUUID}`,
+            spell,
+            filters.level.min!
+          )
       : filters.knownSpellSource === undefined
         ? `${spell.id}`
         : `${spell.id}:${spell.rank}`;
