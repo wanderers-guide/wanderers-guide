@@ -321,23 +321,49 @@ export const OperationSelectFiltersAbilityBlockSchema = z.object({
 });
 export type OperationSelectFiltersAbilityBlock = z.infer<typeof OperationSelectFiltersAbilityBlockSchema>;
 
-export const OperationSelectFiltersSpellSchema = z.object({
-  id: z.string(),
-  type: z.literal('SPELL'),
-  level: z.object({ min: z.number().nullable().optional(), max: z.number().nullable().optional() }),
-  // Trait IDs, or legacy trait names — matches the ability-block filter above.
-  traits: z.array(z.union([z.string(), z.number()])).optional(),
-  traditions: z.array(z.string()).optional(),
-  rarity: RaritySchema.optional(),
-  // Resolve the selected ability block's casting-source tradition before its conditional grants run.
-  traditionFromSelection: z
-    .object({
-      key: z.string(),
-      castingSource: z.string(),
-    })
-    .optional(),
-  spellData: SpellMetadataSchema.optional(),
-});
+export const OperationSelectFiltersSpellSchema = z
+  .object({
+    id: z.string(),
+    type: z.literal('SPELL'),
+    level: z.object({ min: z.number().nullable().optional(), max: z.number().nullable().optional() }),
+    // Trait IDs, or legacy trait names — matches the ability-block filter above.
+    traits: z.array(z.union([z.string(), z.number()])).optional(),
+    traditions: z.array(z.string()).optional(),
+    rarity: RaritySchema.optional(),
+    // Resolve the selected ability block's casting-source tradition before its conditional grants run.
+    traditionFromSelection: z
+      .object({
+        key: z.string(),
+        castingSource: z.string(),
+      })
+      .optional(),
+    spellData: SpellMetadataSchema.optional(),
+    // Opt-in database choices use this casting source's independently known spells.
+    knownSpellSource: z.string().min(1).optional(),
+    // A paired choice may exclude the rank of one earlier selector under the same owner.
+    distinctRankFromSelections: z.array(z.string().uuid()).min(1).max(1).optional(),
+  })
+  .superRefine((filters, context) => {
+    if (filters.distinctRankFromSelections && filters.knownSpellSource === undefined) {
+      context.addIssue({
+        code: 'custom',
+        path: ['distinctRankFromSelections'],
+        message: 'A rank pair requires a spell database source.',
+      });
+    }
+    if (
+      filters.knownSpellSource !== undefined &&
+      (filters.spellData?.type !== 'NORMAL' ||
+        filters.spellData.castingSource !== filters.knownSpellSource ||
+        filters.spellData.rank !== undefined)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['spellData'],
+        message: 'Database choices retain their source and selected known rank.',
+      });
+    }
+  });
 export type OperationSelectFiltersSpell = z.infer<typeof OperationSelectFiltersSpellSchema>;
 
 export const OperationSelectFiltersLanguageSchema = z.object({

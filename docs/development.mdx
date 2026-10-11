@@ -212,6 +212,13 @@ and the actual preparation callbacks with explicit local content fixtures. They
 require no database or account, and retain ordinary prepared, spontaneous, focus
 and innate spell behavior checks.
 
+Run source-owned spell database and paired-rank selection regressions with
+`npm --prefix frontend run test:spell-database`. They use the actual character and
+creature controllers, public schemas, filtered editor rendering and saved choice
+callbacks with credential-free local fixtures. The shared picker regressions in
+`test:infra` also verify ranked search identities and optimistic selection state.
+These tests do not import book content or establish production release readiness.
+
 Historical content-repair tests explicitly use the reviewed pre-repair Git snapshot
 through `readHistoricalContentRows`; ordinary `readContentRows` calls still read the
 current checked-in catalog. The shared historical reader verifies the pinned commit,

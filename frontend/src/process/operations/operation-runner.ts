@@ -68,7 +68,9 @@ import {
   determineFilteredSelectionList,
   determinePredefinedSelectionList,
   extendOperations,
+  SpellSelectionOwner,
 } from './operation-utils';
+import { snapshotSpellDatabase } from './database-spell-context';
 import { SelectionTrack, resolveSelectionNode } from './selection-tree';
 import { isEqual } from 'lodash-es';
 import {
@@ -201,7 +203,8 @@ export async function runOperations(
           operation,
           options,
           sourceLabel,
-          savedIdentity
+          savedIdentity,
+          { node: selectionTrack.node, operations }
         );
       }
       return null;
@@ -224,7 +227,8 @@ export async function runOperations(
           operation,
           options,
           sourceLabel,
-          savedIdentity
+          savedIdentity,
+          { node: selectionTrack.node, operations }
         );
       }
 
@@ -283,7 +287,8 @@ export async function runOperations(
         operation,
         options,
         sourceLabel,
-        resolved
+        resolved,
+        { node: selectionTrack.node, operations }
       );
     }
     return null;
@@ -328,8 +333,42 @@ async function runSelect(
   operation: OperationSelect,
   options?: OperationOptions,
   sourceLabel?: string,
-  savedIdentity?: { id: string; aliases?: string[] }
+  savedIdentity?: { id: string; aliases?: string[] },
+  owner?: SpellSelectionOwner
 ): Promise<OperationResult> {
+  const databaseFilter = operation.data.optionsFilters;
+  if (
+    operation.data.modeType === 'FILTERED' &&
+    operation.data.optionType === 'SPELL' &&
+    databaseFilter?.type === 'SPELL' &&
+    databaseFilter.knownSpellSource !== undefined &&
+    !finalizingDatabaseSelections
+  ) {
+    const result: OperationResult = { selection: { id: operation.id, title: operation.data.title, options: [] } };
+    if (!options?.doOnlyValueCreation) {
+      const scopes: VariableEffectScope[] = getVariableEffectScopes(varId);
+      const identity: string = JSON.stringify([
+        varId,
+        scopes.map((scope) => scope.key),
+        selectionTrack.path,
+        operation.id,
+      ]);
+      const key: number = databaseSelections.get(identity)?.key ?? qualifiedSequence++;
+      databaseSelections.set(identity, {
+        key,
+        varId,
+        selectionTrack,
+        operation,
+        options,
+        sourceLabel,
+        savedIdentity,
+        owner,
+        scopes,
+      });
+      Object.assign(result, { [qualifiedResultKey]: key });
+    }
+    return result;
+  }
   const grantedLore = getGrantedLoreVariable(options?.grantedLore);
   if (
     grantedLore &&
@@ -376,7 +415,7 @@ async function runSelect(
   let optionList: ObjectWithUUID[] = [];
 
   if (operation.data.modeType === 'FILTERED' && operation.data.optionsFilters) {
-    optionList = await determineFilteredSelectionList(varId, operation.id, operation.data.optionsFilters);
+    optionList = await determineFilteredSelectionList(varId, operation.id, operation.data.optionsFilters, owner);
   } else if (operation.data.modeType === 'PREDEFINED' && operation.data.optionsPredefined) {
     optionList = await determinePredefinedSelectionList(
       varId,
@@ -436,7 +475,10 @@ async function runSelect(
         therefore can't create that value.
         God I hope that doesn't become too big of a problem in the future 🤞
       */
-      if (!options?.doOnlyValueCreation) {
+      if (
+        !options?.doOnlyValueCreation &&
+        !(databaseFilter?.type === 'SPELL' && databaseFilter.knownSpellSource !== undefined)
+      ) {
         displayError(
           `Selected node "${selectionTrack.path}" not found, value: ${selectionTrack.node.value}, type: ${operation.data.optionType}`,
           true
@@ -824,6 +866,8 @@ export function clearDeferredOperations(): void {
   qualifiedSequence = 0;
   finalSkillSelections.clear();
   finalizingSkillSelections = false;
+  databaseSelections.clear();
+  finalizingDatabaseSelections = false;
 }
 
 const qualifiedResultKey = Symbol('qualified-operation-occurrence');
@@ -855,6 +899,58 @@ const finalSkillSelections = new Map<
   }
 >();
 let finalizingSkillSelections = false;
+
+const databaseSelections = new Map<
+  string,
+  {
+    key: number;
+    varId: StoreID;
+    scopes: VariableEffectScope[];
+    selectionTrack: SelectionTrack;
+    operation: OperationSelect;
+    options?: OperationOptions;
+    sourceLabel?: string;
+    savedIdentity?: { id: string; aliases?: string[] };
+    owner?: SpellSelectionOwner;
+  }
+>();
+let finalizingDatabaseSelections = false;
+
+/** Resolve opt-in spell choices against one independent database snapshot after all ordinary grants. */
+export async function resolveDatabaseSpellSelections(): Promise<void> {
+  const entries = [...databaseSelections.values()];
+  for (const id of new Set(entries.map((entry) => entry.varId))) {
+    const sources = new Set(
+      entries
+        .filter((entry) => entry.varId === id)
+        .flatMap((entry) => {
+          const filters = entry.operation.data.optionsFilters;
+          return filters?.type === 'SPELL' && filters.knownSpellSource !== undefined ? [filters.knownSpellSource] : [];
+        })
+    );
+    snapshotSpellDatabase(id, sources);
+  }
+  finalizingDatabaseSelections = true;
+  try {
+    for (const entry of entries) {
+      const result = await withVariableEffectScopes(entry.varId, entry.scopes, () =>
+        runSelect(
+          entry.varId,
+          entry.selectionTrack,
+          entry.operation,
+          { ...entry.options, doOnlyConditionals: false, doConditionals: true },
+          entry.sourceLabel,
+          entry.savedIdentity,
+          entry.owner
+        )
+      );
+      qualifiedResults.set(entry.key, result ?? null);
+    }
+  } finally {
+    databaseSelections.clear();
+    finalizingDatabaseSelections = false;
+  }
+}
 
 /** Bind Assurance after ordinary and conditional trainings, respecting removed grants and saved occurrence paths. */
 export async function resolveFinalSkillSelections(): Promise<void> {

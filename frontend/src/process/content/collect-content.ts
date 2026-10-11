@@ -21,6 +21,7 @@ import { isCharacter, isCreature, isTruthy } from '@utils/type-fixing';
 import { getEntityLevel } from '@utils/entity-utils';
 import { getInnateSpellAttribute, getInnateSpellKey } from '@spells/innate-spells';
 import { getSpellSlotGroupKey, isSpellInSlotList } from '@spells/spell-slot-rules';
+import { collectNormalSpellList } from '@spells/spell-list-rules';
 
 /** Collect the entity's calculated abilities, including embedded class archetype features. */
 export function collectEntityAbilityBlocks(
@@ -217,21 +218,12 @@ export function collectEntitySpellcasting(id: StoreID, entity: LivingEntity) {
   slots = mergeSpellSlots(slots, entity.spells?.slots ?? []);
 
   // List of entity's spells
-  let list = cloneDeep(entity.spells?.list ?? []);
+  const parsedSpellDatas: GiveSpellData[] = spellDatas.map((value) => JSON.parse(value) as GiveSpellData);
+  const list = collectNormalSpellList(entity.spells?.list ?? [], parsedSpellDatas);
   let focus: { spell_id: number; source: string; rank: number | undefined }[] = [];
   let innate: SpellInnateEntry[] = [];
-  for (const strD of spellDatas) {
-    const spellData = JSON.parse(strD) as GiveSpellData;
-
-    if (spellData.type === 'NORMAL') {
-      for (const source of [spellData.castingSource ?? '', ...(spellData.listSources ?? [])]) {
-        list.push({
-          spell_id: spellData.spellId,
-          rank: spellData.rank ?? 0,
-          source,
-        });
-      }
-    } else if (spellData.type === 'FOCUS') {
+  for (const spellData of parsedSpellDatas) {
+    if (spellData.type === 'FOCUS') {
       focus.push({
         spell_id: spellData.spellId,
         source: spellData.castingSource ?? '',
@@ -254,7 +246,6 @@ export function collectEntitySpellcasting(id: StoreID, entity: LivingEntity) {
     }
   }
   // Remove duplicates
-  list = uniqWith(list, isEqual);
   focus = uniqWith(focus, isEqual);
   innate = uniqWith(innate, isEqual);
 

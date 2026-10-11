@@ -2199,6 +2199,13 @@ function OperationResultSelector(props: {
         else for (const id of ids) props.onChange(id, '');
       }}
       selectedId={props.result!.result?.source?.id}
+      selectedOptionUUID={
+        props.result?.result?.source?._content_type === 'spell' &&
+        props.result.result.source._select_uuid ===
+          `${props.result.result.source.id}:${props.result.result.source.rank}`
+          ? props.result.result.source._select_uuid
+          : undefined
+      }
       options={{
         overrideOptions: props.result?.selection?.options.map((option) => ({
           ...option,

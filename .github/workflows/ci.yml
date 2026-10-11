@@ -66,6 +66,7 @@ jobs:
         run: |
           npm run test:rules
           npm run test:spell-slots
+          npm run test:spell-database
           npm run test:infra
           npm run test:audit:content
 

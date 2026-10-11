@@ -137,6 +137,7 @@ export async function fetchContent(type, data) { return getCachedContent(type).f
 export async function fetchContentAll(type, requestedSources) { return getCachedContent(type).filter(row => !Array.isArray(requestedSources) || requestedSources.length === 0 || requestedSources.includes(row.content_source_id)); }
 export async function fetchTraitByName(name) { return getCachedContent('trait').find(row => row.name.toLowerCase() === name.toLowerCase()) || null; }
 export async function fetchTraits(ids) { return getCachedContent('trait').filter(row => ids.includes(row.id)); }
+export async function fetchContentSources() { return getCachedContent('content-source'); }
 export async function fetchArchetypeByDedicationFeat() { return null; }
 export function getDefaultSources(view) { return sources[view]; }
 export function getDefaultSourcesKey(view) { const scope = getDefaultSources(view); return Array.isArray(scope) ? [...scope].sort((a,b) => a-b).join(',') : scope; }
@@ -164,6 +165,7 @@ export async function createOperationEngine({
   renderCastSpellDrawer = false,
   renderSpellDrawer = false,
   renderBindingEditor = false,
+  renderSelectionEditor = false,
   inspectInitialStats = false,
   resolveArchetypeFixtures = false,
   exportJson = false,
@@ -174,7 +176,12 @@ export async function createOperationEngine({
       absWorkingDir: frontend,
       stdin: {
         contents: `${
-          renderRichText || renderPerceptionDrawer || renderCastSpellDrawer || renderSpellDrawer || renderBindingEditor
+          renderRichText ||
+          renderPerceptionDrawer ||
+          renderCastSpellDrawer ||
+          renderSpellDrawer ||
+          renderBindingEditor ||
+          renderSelectionEditor
             ? `
           import React from 'react';
           import { renderToStaticMarkup } from 'react-dom/server';
@@ -275,6 +282,24 @@ export async function createOperationEngine({
           `
               : ''
           }
+          ${
+            renderSelectionEditor
+              ? `
+          import { QueryClient as EditorQueryClient, QueryClientProvider as EditorQueryClientProvider } from '@tanstack/react-query';
+          import { SelectionOperation } from '@common/operations/selection/SelectionOperation';
+          export function renderSelectionEditor(data) {
+            const client = new EditorQueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
+            client.setQueryData(['get-traits-all-accessible'], { traits: [], sources: [] });
+            try {
+              return renderToStaticMarkup(React.createElement(MantineProvider,
+                { theme: { colors: { guide: DEFAULT_THEME.colors.blue } } },
+                React.createElement(EditorQueryClientProvider, { client },
+                  React.createElement(SelectionOperation, { data, onChange() {}, onRemove() {} }))));
+            } finally { client.clear(); }
+          }
+          `
+              : ''
+          }
         `
             : ''
         }
@@ -326,8 +351,15 @@ export async function createOperationEngine({
       write: false,
       platform: 'node',
       format: 'esm',
-      ...(renderCastSpellDrawer || renderSpellDrawer ? { loader: { '.css': 'empty', '.module.css': 'empty' } } : {}),
-      ...(renderRichText || renderPerceptionDrawer || renderCastSpellDrawer || renderSpellDrawer || renderBindingEditor
+      ...(renderCastSpellDrawer || renderSpellDrawer || renderSelectionEditor
+        ? { loader: { '.css': 'empty', '.module.css': 'empty' } }
+        : {}),
+      ...(renderRichText ||
+      renderPerceptionDrawer ||
+      renderCastSpellDrawer ||
+      renderSpellDrawer ||
+      renderBindingEditor ||
+      renderSelectionEditor
         ? {
             banner: {
               js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
@@ -339,6 +371,46 @@ export async function createOperationEngine({
         {
           name: 'fixture-content',
           setup(pluginBuild) {
+            if (renderSelectionEditor) {
+              // Render the actual filtered fields, not the surrounding menu or unopened rich-text editor.
+              pluginBuild.onResolve({ filter: /^\.\.\/Operations$/ }, (args) =>
+                args.importer.includes('/common/operations/')
+                  ? { path: 'selection-wrapper', namespace: 'selection-render-fixture' }
+                  : undefined
+              );
+              pluginBuild.onLoad({ filter: /.*/, namespace: 'selection-render-fixture' }, () => ({
+                contents:
+                  'export function OperationWrapper({ children }) { return children; } export function OperationSection({ children }) { return children; }',
+                loader: 'ts',
+              }));
+              pluginBuild.onResolve({ filter: /^@common\/rich_text_input\/RichTextInput$/ }, () => ({
+                path: 'unopened-rich-text-editor',
+                namespace: 'selection-rich-text-fixture',
+              }));
+              pluginBuild.onLoad({ filter: /.*/, namespace: 'selection-rich-text-fixture' }, () => ({
+                contents:
+                  "export default function RichTextInput() { throw new Error('Filtered selection fixtures do not cover the rich-text editor'); }",
+                loader: 'ts',
+              }));
+              pluginBuild.onResolve({ filter: /^@common\/select\/SelectContent$/ }, () => ({
+                path: 'unopened-predefined-selector',
+                namespace: 'selection-content-fixture',
+              }));
+              pluginBuild.onLoad({ filter: /.*/, namespace: 'selection-content-fixture' }, () => ({
+                contents:
+                  "export function SelectContentButton() { throw new Error('Filtered selection fixtures do not cover the predefined picker'); }",
+                loader: 'ts',
+              }));
+              pluginBuild.onResolve({ filter: /^@constants\/urls$/ }, (args) =>
+                args.importer.endsWith('/SelectionOperation.tsx')
+                  ? { path: 'unopened-discord-help', namespace: 'selection-url-fixture' }
+                  : undefined
+              );
+              pluginBuild.onLoad({ filter: /.*/, namespace: 'selection-url-fixture' }, () => ({
+                contents: "export const DISCORD_URL = 'https://discord.gg/FxsFZVvedr';",
+                loader: 'ts',
+              }));
+            }
             if (renderSpellDrawer) {
               // Stat-line fixtures do not open the operation editor or its remote lookup controls.
               pluginBuild.onResolve({ filter: /^@drawers\/ShowOperationsButton$/ }, () => ({

@@ -309,6 +309,28 @@ These lists do not introduce casting sources or duplicate spell ownership. Remov
 the grant removes its list memberships as well. Focus and innate grants do not use
 this field.
 
+A filtered spell selection may opt in to `optionsFilters.knownSpellSource`, such
+as `"TECHNOMANCER"`, to offer only normal spells independently known to that
+casting source. Keep `spellData.type` as `"NORMAL"`, match its `castingSource` to
+`knownSpellSource` and omit `spellData.rank`. Each option keeps its known rank and
+uses an exact `spellId:rank` saved identity; ordinary spell selections keep their
+existing numeric identities. Named `spellData.listSources` may add the selected
+spell to a Cache without teaching unrelated catalog spells.
+
+For a pair of different-rank choices, the second selection may provide
+`distinctRankFromSelections: ["<first selection UUID>"]`. The reference must name
+one earlier, unpaired filtered spell selection with the same database source
+under the same current owner. Forward, ambiguous, cross-source and stale-owner
+references offer no choices. An invalid saved first choice excludes no rank;
+invalid saved choices remain stored but grant nothing and produce no notification.
+Database membership is frozen after independent grants settle, before these
+choices run, and is never saved as a new spell database. Missing execution context
+offers no choices. This does not add a daily-preparation or retraining lifecycle.
+
+The operation editor preserves these fields through compatible edits. Explicit
+changes to the selection mode, option type, casting source, spell type or granted
+rank clear the opt-in fields when they no longer apply.
+
 ### `giveSpellSlot`
 
 Add spell slots to a casting source. Each slot is `{ lvl, rank, amt }` where `lvl` is the character level the slot becomes available, `rank` the spell rank it casts, and `amt` the count (or `null` for unlimited / cantrip).
