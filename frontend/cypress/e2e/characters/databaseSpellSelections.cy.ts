@@ -218,6 +218,12 @@ const original = CharacterSchema.parse({
   ],
 });
 
+/** Validate fixture rows without projecting nested JSON that the real character API preserves. */
+function validateFixtureCharacter<T extends Character>(row: T): T {
+  CharacterSchema.parse(row);
+  return row;
+}
+
 type FixtureFailureStage =
   | 'worker-constructor'
   | 'worker-url-inspection'
@@ -843,7 +849,12 @@ describe('Source-owned database spell choices', () => {
         } catch {
           // This is current-interceptor attribution, not proof of the requesting page's ownership.
         }
-        saved = CharacterSchema.parse({ ...saved, ...req.body, updated_at: new Date().toISOString() });
+        const changes = { ...req.body };
+        delete changes.expected_updated_at;
+        saved = validateFixtureCharacter({ ...saved, ...changes, updated_at: new Date().toISOString() });
+        expect(saved, 'the concurrency token is not a stored character field').not.to.have.property(
+          'expected_updated_at'
+        );
         data = [saved];
         // Hold one real response in the first case to prove the mutable stub is not an acknowledgement.
         if (
@@ -1092,6 +1103,36 @@ describe('Source-owned database spell choices', () => {
   };
 
   it('keeps both ranks searchable and switches an unsaved choice while its recalculation is held', () => {
+    const wireRow = {
+      ...original,
+      spells: {
+        ...original.spells!,
+        slots: [
+          { rank: 1, source: caster, spell_id: pulse.id, id: 'synthetic-rendered-slot', fixture_extra: { keep: true } },
+        ],
+        fixture_extra: { nested: ['retained'] },
+      },
+      meta_data: { ...original.meta_data, fixture_extra: { retained: true } },
+    };
+    const validated = validateFixtureCharacter(wireRow);
+    expect(validated, 'validation returns the unprojected wire row').to.equal(wireRow);
+    expect(validated.spells.slots[0], 'derived slot identity survives validation').to.have.property(
+      'id',
+      'synthetic-rendered-slot'
+    );
+    expect(validated.spells.slots[0].fixture_extra, 'unknown nested slot data survives validation').to.deep.equal({
+      keep: true,
+    });
+    expect(validated.spells.fixture_extra, 'unknown nested spell data survives validation').to.deep.equal({
+      nested: ['retained'],
+    });
+    expect(validated.meta_data.fixture_extra, 'unknown nested metadata survives validation').to.deep.equal({
+      retained: true,
+    });
+    expect(
+      CharacterSchema.parse(wireRow).spells!.slots[0],
+      'schema projection would drop the derived slot identity'
+    ).not.to.have.property('id');
     visit();
     waitForAcknowledgedSave();
     cy.window().then((win) => {
@@ -1220,6 +1261,18 @@ describe('Source-owned database spell choices', () => {
           'daily spell prepared through the actual slot picker'
         ).to.equal(true)
       );
+      cy.then(() => {
+        const selected = saved.spells!.slots.find(
+          (slot) => slot.source === caster && slot.rank === 1 && slot.spell_id === pulse.id
+        );
+        expect(selected, 'the actual prepared slot retains its runtime display identity')
+          .to.have.property('id')
+          .that.is.a('string');
+        const projected = CharacterSchema.parse(saved).spells!.slots.find(
+          (slot) => slot.source === caster && slot.rank === 1 && slot.spell_id === pulse.id
+        );
+        expect(projected, 'schema projection would drop the actual prepared slot identity').not.to.have.property('id');
+      });
       closePicker('Manage Spells - Technomancer');
 
       cy.contains('button', /^Rest$/)
