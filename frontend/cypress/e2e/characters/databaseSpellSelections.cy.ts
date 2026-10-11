@@ -265,6 +265,10 @@ function getFixtureFailureMessage(value: unknown): string {
   if (
     typeof message === 'string' &&
     (message === 'Native worker message setter unavailable in fixture' ||
+      message === 'Reload the character to recover its save version' ||
+      message === 'Could not recover character save' ||
+      message === 'Character save returned no saved row' ||
+      message === 'update-character failed for character 991902' ||
       message === 'Maximum call stack size exceeded' ||
       /^[A-Za-z_$][A-Za-z0-9_$]{0,63} is not defined$/.test(message) ||
       /^Cannot read properties of (undefined|null) \(reading '(id|data|status|onmessage|prototype|postMessage|_meta_data|dailyPreparation|name|_select_uuid|set|call)'\)$/.test(
@@ -284,6 +288,8 @@ type DailyOption = {
 type HeldAcknowledgement = { requestId: number; options: DailyOption[]; deliver: () => void };
 type WorkerControl = {
   fixtureFailures: FixtureFailure[];
+  saveFailures: string[];
+  saveCalls: number;
   hold: boolean;
   queued: Array<() => void>;
   holdAcknowledgements: boolean;
@@ -337,6 +343,8 @@ describe('Source-owned database spell choices', () => {
         const NativeWorker = fixtureWindow.Worker;
         const control: WorkerControl = {
           fixtureFailures: [],
+          saveFailures: [],
+          saveCalls: 0,
           hold: false,
           queued: [],
           holdAcknowledgements: false,
@@ -371,6 +379,16 @@ describe('Source-owned database spell choices', () => {
           }
         };
         activeWorkerControl = control;
+        const originalConsoleError = win.console.error;
+        win.console.error = function (...args: unknown[]) {
+          try {
+            if (args[0] === 'Character save failed:' && control.saveFailures.length < 16)
+              control.saveFailures.push(getFixtureFailureMessage(args[1]));
+          } catch {
+            // Temporary observation cannot change application error handling.
+          }
+          originalConsoleError.apply(win.console, args);
+        };
         fixtureWindow.Worker = class extends NativeWorker {
           private fixtureCalculation: boolean;
           private fixtureRequests: Set<number>;
@@ -552,6 +570,7 @@ describe('Source-owned database spell choices', () => {
       else if (endpoint === 'find-character') data = req.body.id !== undefined ? saved : [saved];
       else if (endpoint === 'update-character') {
         expect(req.body.id, 'only the synthetic character may be saved').to.equal(original.id);
+        if (activeWorkerControl) activeWorkerControl.saveCalls++;
         saved = CharacterSchema.parse({ ...saved, ...req.body, updated_at: new Date().toISOString() });
         data = [saved];
       } else if (endpoint === 'find-content-source') data = req.body.id !== undefined ? source : [source];
@@ -607,7 +626,7 @@ describe('Source-owned database spell choices', () => {
             : 'unrecognized-category';
         // [WG-WORKER-DIAGNOSTIC] This request remains forbidden, including when no stage was captured.
         throw new Error(
-          `Unexpected database fixture API: report-client-error (category=${category}; fixtureFailures=${JSON.stringify(
+          `Unexpected database fixture API: report-client-error (category=${category}; saveCalls=${activeWorkerControl?.saveCalls ?? 0}; savedHasVersion=${Boolean(saved.updated_at)}; saveFailures=${JSON.stringify(activeWorkerControl?.saveFailures ?? [])}; fixtureFailures=${JSON.stringify(
             activeWorkerControl?.fixtureFailures ?? []
           )})`
         );
