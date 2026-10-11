@@ -220,7 +220,8 @@ export function getBestArmor(id: StoreID, inv?: Inventory | null) {
   let bestArmor: InventoryItem | null = null;
   for (const invItem of inv.items) {
     if (!isItemFormula(invItem) && invItem.is_equipped && isItemArmor(invItem.item)) {
-      const acValue = getFinalAcValue(id, invItem.item);
+      // Inherited Pet AC does not change which equipped armor supplies existing physical penalties.
+      const acValue = getFinalAcValue(id, invItem.item, { useIntrinsicArmor: true });
       if (acValue > bestAc) {
         bestAc = acValue;
         bestArmor = invItem;

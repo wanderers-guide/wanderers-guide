@@ -115,7 +115,7 @@ test('native inputs pin canonical JSON separately from physical SQL and retain a
   );
   assert.equal(plan.spec_hashes.embedded_literal_sha256, plan.spec_hashes.canonical_compact_json_sha256);
   assert.equal(plan.shared_validator_sha256, '012b3cf842038fed5366ad475de75e72444f743f997cdd1e1c1343bedd67aa95');
-  assert.equal(plan.inputs.length, 9);
+  assert.equal(plan.inputs.length, 11);
   for (const input of plan.inputs) {
     const bytes = await readFile(input.path);
     assert.equal(bytes.length, input.bytes);
@@ -146,4 +146,69 @@ test('CI retains six-spell checks and runs focused general safety sequentially w
   assert.ok(
     frontend.includes('scripts/tech-core-introductory-spells.test.mjs scripts/tech-core-general-spells.test.mjs')
   );
+});
+
+test("additional Incarnate matrix checks both complete catalog states without replacing original coverage", () => {
+  const focused = plans.get("focused").incarnate_compatibility;
+  assert.deepEqual(plans.get("exhaustive").incarnate_compatibility, focused);
+  assert.deepEqual(focused.states, [15, 3]);
+  assert.deepEqual(focused.source_only_successor, {
+    id: 2584,
+    uuid: 3690091311596588,
+    from: 15,
+    to: 3,
+  });
+  assert.equal(
+    focused.guard_only_migration_sha256,
+    "f4c2eeb9a230f14f96bef05f2278bf2bfa8cb3a4856147f1893e3a25481bd2a7",
+  );
+  const names = focused.per_state_controls.map(({ name }) => name);
+  assert.equal(names.length, 40);
+  assert.equal(new Set(names).size, names.length);
+  for (const source of [15, 3]) {
+    assert.ok(names.includes("normalized-name-alias-source-" + source));
+    assert.ok(names.includes("pending-name-source-" + source));
+    for (const route of [
+      "content_source_id",
+      "source_id",
+      "source-content_source_id",
+      "source-source_id",
+      "source-id",
+      "meta_data-content_source_id",
+      "meta_data-source-content_source_id",
+      "meta_data-source-source_id",
+    ])
+      assert.ok(names.includes("pending-name-" + route + "-" + source));
+  }
+  for (const name of [
+    "missing-incarnate",
+    "global-uuid-alias",
+    "pending-incarnate-refid",
+    "pending-incarnate-dataid",
+    "pending-incarnate-uuid",
+    "changed-incarnate-created_at",
+    "unpublished-common-core",
+  ]) {
+    assert.equal(
+      focused.per_state_controls.find((control) => control.name === name)
+        .guardRejects,
+      true,
+    );
+  }
+  assert.equal(
+    focused.per_state_controls.filter(({ accepted }) => accepted).length,
+    3,
+  );
+  for (const name of [
+    "changed-unrelated-reference",
+    "changed-unrelated-source",
+    "changed-general-spell",
+    "changed-bound-link",
+    "pending-general-spell",
+  ]) {
+    assert.deepEqual(
+      focused.per_state_controls.find((control) => control.name === name),
+      { name, accepted: false, guardRejects: false },
+    );
+  }
 });

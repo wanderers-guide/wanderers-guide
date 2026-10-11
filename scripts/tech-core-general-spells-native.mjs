@@ -31,6 +31,8 @@ const inputPaths = [
   'supabase/release/tech-core-introductory-spells.sql',
   'supabase/migrations/20261008190000_tech_core_general_spells.sql',
   'supabase/release/tech-core-general-spells.sql',
+  'supabase/migrations/20261011000100_incarnate_release_compatibility.sql',
+  'supabase/release/tech-core-general-spells-incarnate-compatibility.sql',
 ];
 const inputs = new Map(
   await Promise.all(inputPaths.map(async (path) => [resolve(root, path), await readFile(resolve(root, path), 'utf8')]))
@@ -44,6 +46,8 @@ const migrationPath = resolve(root, inputPaths[7]);
 const releasePath = resolve(root, inputPaths[8]);
 const migration = inputs.get(migrationPath);
 const release = inputs.get(releasePath);
+const compatibilityMigration = inputs.get(resolve(root, inputPaths[9]));
+const compatibilityRelease = inputs.get(resolve(root, inputPaths[10]));
 const delimiter = '$tech_core_general$';
 const splitSpec = (sql) => {
   const parts = sql.split(delimiter);
@@ -476,6 +480,154 @@ for (const [name, status] of [
   );
 }
 
+// The original matrix remains intact. These additional controls execute the complete
+// compatibility SQL against both exact catalog states in the same owned fixture.
+const incarnate = spec.references.find(
+  ({ table, row }) => table === "trait" && row.id === 2584,
+).row;
+assert.equal(incarnate.content_source_id, 15);
+const compatibilityControls = [];
+const addCompatibility = (
+  name,
+  setup,
+  { accepted = false, guardRejects = !accepted } = {},
+) => compatibilityControls.push({ name, setup, accepted, guardRejects });
+addCompatibility("missing-incarnate", controlledDelete("trait", 2584));
+for (const [field, value] of [
+  ["content_source_id", 1],
+  ["name", "Edited Incarnate"],
+  ["description", incarnate.description + " __native_mutation__"],
+  ["uuid", incarnate.uuid + 1],
+  ["created_at", "2024-01-01T00:00:00Z"],
+  ["meta_data", { ...incarnate.meta_data, important: true }],
+]) {
+  const expression =
+    typeof value === "number"
+      ? String(value)
+      : typeof value === "string"
+        ? quote(value)
+        : json(value);
+  addCompatibility(
+    "changed-incarnate-" + field,
+    `update public.trait set "${field}"=${expression} where id=2584;`,
+  );
+}
+const insertTraitAlias = (source, sameUuid) => (ctx) => {
+  const row = {
+    ...incarnate,
+    content_source_id: source,
+    uuid: sameUuid ? incarnate.uuid : incarnate.uuid + 1,
+    name: sameUuid ? "__native_alias__" : "  INCARNATE  ",
+  };
+  return `insert into public.trait(id,created_at,name,description,meta_data,content_source_id,uuid)
+    select ${ctx.traitAliasId},r.created_at,r.name,r.description,r.meta_data,r.content_source_id,r.uuid
+    from jsonb_populate_record(null::public.trait,${json(row)}) r;`;
+};
+addCompatibility("global-uuid-alias", insertTraitAlias(1, true));
+for (const source of [3, 15]) {
+  addCompatibility(
+    "normalized-name-alias-source-" + source,
+    insertTraitAlias(source, false),
+  );
+  addCompatibility(
+    "pending-name-source-" + source,
+    queue(" TRAIT ", 0, { name: "  INCARNATE  " }, source),
+  );
+  for (const path of [
+    ["content_source_id"],
+    ["source_id"],
+    ["source", "content_source_id"],
+    ["source", "source_id"],
+    ["source", "id"],
+    ["meta_data", "content_source_id"],
+    ["meta_data", "source", "content_source_id"],
+    ["meta_data", "source", "source_id"],
+  ]) {
+    const data = { name: "  INCARNATE  " };
+    let node = data;
+    for (const key of path.slice(0, -1)) node = node[key] = {};
+    node[path.at(-1)] = " " + source + " ";
+    addCompatibility(
+      "pending-name-" + path.join("-") + "-" + source,
+      queue("trait", 0, data, 900),
+    );
+  }
+}
+for (const [name, refId, data] of [
+  ["refid", 2584, {}],
+  ["dataid", 0, { id: " 2584 " }],
+  ["uuid", 0, { uuid: " " + incarnate.uuid + " " }],
+])
+  addCompatibility("pending-incarnate-" + name, queue("trait", refId, data));
+addCompatibility(
+  "unpublished-common-core",
+  "update public.content_source set is_published=false where id=3;",
+);
+for (const [name, state] of [
+  ["approved", " APPROVED "],
+  ["rejected", "rejected"],
+])
+  addCompatibility(
+    "closed-incarnate-" + name,
+    queue("trait", 2584, { uuid: incarnate.uuid }, 900, { state }),
+    { accepted: true },
+  );
+addCompatibility(
+  "unrelated-pending-trait",
+  queue("trait", 0, { name: "__unrelated_native__" }, 900),
+  { accepted: true },
+);
+// The guard-only migration has no authority over unrelated spell dependencies.
+// The complete wrapper still must reject them in either Incarnate state.
+addCompatibility(
+  "changed-unrelated-reference",
+  "update public.trait set description=description||' __native_mutation__' where id=4506;",
+  { guardRejects: false },
+);
+addCompatibility(
+  "changed-unrelated-source",
+  "update public.content_source set description=coalesce(description,'')||' __native_mutation__' where id=900;",
+  { guardRejects: false },
+);
+addCompatibility(
+  "changed-general-spell",
+  `update public.spell set description=description||' __native_mutation__' where uuid=${first.uuid};`,
+  { guardRejects: false },
+);
+addCompatibility(
+  "changed-bound-link",
+  (ctx) => {
+    const binding = spec.bindings[0];
+    return `update public.spell set description=replace(description,'(link_spell_${ctx.identities.get(binding.target_uuid)})','(link_spell_1)') where uuid=${binding.owner_uuid};`;
+  },
+  { guardRejects: false },
+);
+addCompatibility(
+  "pending-general-spell",
+  queue("spell", 0, { uuid: first.uuid }),
+  { guardRejects: false },
+);
+assert.equal(
+  new Set(compatibilityControls.map(({ name }) => name)).size,
+  compatibilityControls.length,
+);
+const compatibilityPlan = {
+  states: [15, 3],
+  guard_only_migration_sha256: hash(compatibilityMigration),
+  complete_release_sha256: hash(compatibilityRelease),
+  original_release_sha256: hash(release),
+  source_only_successor: { id: 2584, uuid: incarnate.uuid, from: 15, to: 3 },
+  per_state_controls: compatibilityControls.map(
+    ({ setup, ...control }) => control,
+  ),
+  fixed_success_controls: [
+    "original-and-successor-full-readback",
+    "guard-only-and-replay-no-mutation",
+    "release-read-only",
+    "restored-original-full-fixture",
+  ],
+};
+
 const synthetic = bindingVariant((p) => {
   for (const binding of p.bindings.slice(1)) {
     const row = p.rows.find((candidate) => candidate.uuid === binding.owner_uuid);
@@ -516,7 +668,8 @@ const synthetic = bindingVariant((p) => {
 });
 assert.equal(controls.length, new Set(controls.map((control) => control.phase + ':' + control.name)).size);
 const plan = {
-  schema: 'wg-tech-core-general-native-plan-v1',
+  schema: 'wg-tech-core-general-native-plan-v2',
+  incarnate_compatibility: compatibilityPlan,
   generated_at: new Date().toISOString(),
   matrix,
   native_execution_requested: execute,
@@ -596,10 +749,11 @@ if (!execute) {
     userId: '00000000-0000-4000-8000-000000000001',
     proposalId: 700000001,
     temporaryId: 700000002,
+    traitAliasId: 700000003,
     priorIds: new Map(spec.prior_rows.map((row) => [row.uuid, identities.get(row.uuid)])),
     identities,
   };
-  for (const control of controls) {
+  for (const control of [...controls, ...compatibilityControls]) {
     const sql = typeof control.setup === 'function' ? control.setup(ctx) : control.setup;
     assert.equal(typeof sql, 'string');
     assert.doesNotMatch(sql, /\bNaN\b|\bundefined\b/);
@@ -621,7 +775,8 @@ if (!execute) {
 }
 
 const receipt = {
-  schema: 'wg-tech-core-general-native-receipt-v1',
+  schema: 'wg-tech-core-general-native-receipt-v2',
+  incarnate_compatibility: { ...compatibilityPlan, controls: [], passed: false },
   passed: false,
   matrix,
   plan_sha256: hash(JSON.stringify(plan)),
@@ -736,6 +891,7 @@ try {
     userId,
     proposalId: fixture.reserveProposalId(),
     temporaryId: Number(fixture.query('select max(id)+1000000 from public.spell;')),
+    traitAliasId: Number(fixture.query('select max(id)+1000000 from public.trait;')),
   };
   assert.ok(Number.isSafeInteger(ctx.temporaryId));
   assert.equal(
@@ -874,6 +1030,155 @@ try {
     content_triggers_disabled_by_existing_native_fixture: true,
   });
   for (const control of controls.filter((c) => c.phase === 'after')) await runControl(control, ctx);
+  const compatibilityBaseline = fixture.snapshot();
+  const readIncarnate = () =>
+    fixture.queryJson(
+      "select to_jsonb(t)-'updated_at'-'search_tsv' from public.trait t where id=2584;",
+    );
+  assert.deepEqual(readIncarnate(), incarnate);
+  for (const source of compatibilityPlan.states) {
+    const expectedIncarnate = { ...incarnate, content_source_id: source };
+    if (source !== 15) {
+      await stage(
+        "owned-incarnate-source-only-successor",
+        `update public.trait set content_source_id=${source} where id=2584;`,
+      );
+      const changed = fixture.snapshot();
+      assert.deepEqual(
+        normalized(changed),
+        normalized({
+          ...compatibilityBaseline,
+          tuples: {
+            ...compatibilityBaseline.tuples,
+            "public.trait": changed.tuples["public.trait"],
+          },
+        }),
+      );
+    }
+    assert.deepEqual(readIncarnate(), expectedIncarnate);
+    const stateBefore = fixture.snapshot();
+    assert.equal(
+      (
+        await stage(
+          "incarnate-" + source + "-original-read-only",
+          "BEGIN READ ONLY;\n" + release + "\nROLLBACK;",
+        )
+      ).trim(),
+      "tech-core-general-spells|" + (source === 15 ? "t" : "f"),
+    );
+    assert.equal(
+      (
+        await stage(
+          "incarnate-" + source + "-compatibility-read-only",
+          "BEGIN READ ONLY;\n" + compatibilityRelease + "\nROLLBACK;",
+        )
+      ).trim(),
+      "tech-core-general-spells|t",
+    );
+    await stage(
+      "incarnate-" + source + "-actual-guard-only",
+      compatibilityMigration,
+    );
+    assert.deepEqual(
+      fixture.snapshot(),
+      stateBefore,
+      "Guard-only migration leaves full fixture unchanged",
+    );
+    await stage(
+      "incarnate-" + source + "-actual-guard-only-replay",
+      compatibilityMigration,
+    );
+    assert.deepEqual(
+      fixture.snapshot(),
+      stateBefore,
+      "Guard replay leaves full fixture unchanged",
+    );
+    receipt.incarnate_compatibility.controls.push({
+      name: "exact-state-" + source,
+      passed: true,
+      source_only_row_readback: true,
+      complete_release_passed: true,
+      original_release_passed: source === 15,
+      read_only_and_guard_replay_full_preservation: true,
+      snapshot_sha256: stateBefore.sha256,
+    });
+    for (const control of compatibilityControls) {
+      const name = "incarnate-" + source + "-" + control.name;
+      await stop.checkpoint(name);
+      fixture.assertOwned();
+      const setup =
+        typeof control.setup === "function"
+          ? control.setup(ctx)
+          : control.setup;
+      const before = fixture.snapshot();
+      const result = checked(
+        fixture.sql(
+          "BEGIN;\n" + setup + "\n" + compatibilityRelease + "\nROLLBACK;",
+          true,
+        ),
+        name,
+      );
+      assert.equal(
+        result.stdout.trim(),
+        "tech-core-general-spells|" + (control.accepted ? "t" : "f"),
+        name,
+      );
+      assert.deepEqual(
+        fixture.snapshot(),
+        before,
+        name + ": complete release probe preserved fixture",
+      );
+      let guardExit = null;
+      if (control.guardRejects) {
+        // A failing unchanged transaction never reaches its COMMIT. The session
+        // closes with ON_ERROR_STOP and rolls back the complete injected setup.
+        const guard = checked(
+          fixture.sql(
+            "BEGIN;\n" + setup + "\n" + compatibilityMigration + "\nROLLBACK;",
+            true,
+          ),
+          name + "-guard",
+          3,
+        );
+        assert.match(
+          guard.stderr,
+          /Incarnate source-only compatibility differs/,
+          name,
+        );
+        guardExit = guard.status;
+        assert.deepEqual(
+          fixture.snapshot(),
+          before,
+          name + ": rejected actual migration preserved fixture",
+        );
+      }
+      receipt.incarnate_compatibility.controls.push({
+        name,
+        passed: true,
+        accepted: control.accepted,
+        complete_release_exit: result.status,
+        actual_guard_rejection_exit: guardExit,
+        whole_tuples_sequences_auth_saved_queue_schema_roles_preserved: true,
+        snapshot_sha256: before.sha256,
+      });
+    }
+  }
+  await stage(
+    "owned-incarnate-restore-original-source",
+    "update public.trait set content_source_id=15 where id=2584;",
+  );
+  assert.deepEqual(readIncarnate(), incarnate);
+  assert.deepEqual(
+    fixture.snapshot(),
+    compatibilityBaseline,
+    "Both compatibility states restore the exact original whole fixture",
+  );
+  assert.equal(
+    receipt.incarnate_compatibility.controls.length,
+    2 * (compatibilityControls.length + 1),
+  );
+  receipt.incarnate_compatibility.restored_original_full_fixture = true;
+  receipt.incarnate_compatibility.passed = true;
   for (const [path, captured] of inputs)
     assert.equal(await readFile(path, 'utf8'), captured, 'Captured input bytes unchanged: ' + path);
   receipt.inputs_unchanged = true;

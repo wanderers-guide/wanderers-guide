@@ -30,11 +30,12 @@ export async function captureNativeInputManifest({root}) {
     return text;
   }
   const migrationFiles=(await readdir(root+'/supabase/migrations')).filter(path=>migrationName.test(path)).sort();
-  assert.equal(migrationFiles.length,113,'Complete reviewed chronology is mandatory');
-  assert.equal(migrationFiles.at(-1),'20261010000100_shared_ancestries.sql','Exact reviewed Tech Core chronology successor');
+  assert.equal(migrationFiles.length,114,'Complete reviewed chronology is mandatory');
+  assert.equal(migrationFiles.at(-1),'20261011000100_incarnate_release_compatibility.sql','Exact reviewed Incarnate chronology successor');
   const requirements=JSON.parse(await capture('supabase/release/requirements.json'));
   assert.deepEqual(requirements['20261008105800_treasure_vault_terminal_catalog_compatibility.sql'],{check:'treasure-vault-terminal-catalog-compatibility.sql',order:'before-functions'});
   await capture('supabase/release/shared-ancestries.json');
+  await capture('supabase/release/tech-core-general-spells.sql'); // Retain the exact original predicate after compatibility registration.
   const registeredCiPaths=['.github/workflows/e2e.yml','supabase/release/war-of-immortals-index.sql','supabase/release/war-of-immortals-index-regression.sql'];
   for(const path of registeredCiPaths)await capture(path);
   const bootstrapPaths=['data/schema.sql','data/data.sql','data/auth-trigger.sql','supabase/seed.sql','docker/db-init/zzz-passwords.sh'];

@@ -247,6 +247,18 @@ slots, named languages and senses, defenses, speeds, abilities, and traits.
 Each entry has `index`, `id`, `name`, and `content`. Its `index` points to
 `character.companions.list[index]`, including when two companions share a catalog ID.
 Companions use the character's enabled sources and current calculated owner bindings.
+
+Native Normal and Aquatic Pets use their owner's current Armor Class and saving throw
+modifiers before the owner's circumstance and status bonuses or penalties. The Pet's
+own defense adjustments apply afterward. This is a calculation snapshot, so it does
+not add variables or derived defenses to saved characters or exported JSON. A Pet
+preview without an owner retains its standalone values.
+
+Edited or imported Pet stat blocks retain their explicit defenses, including copies
+that keep a native catalog ID. Inheritance requires the native Pet baseline operations
+and source; a complete absolute AC and saving throw block from the combatant editor
+uses standalone calculation. Ordinary familiars and other companions are unaffected.
+
 The saved character and companion records stay unchanged; import still reads `character`.
 
 ## Operations

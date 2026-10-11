@@ -414,7 +414,7 @@
     "order": "before-functions"
   },
   "20261008190000_tech_core_general_spells.sql": {
-    "check": "tech-core-general-spells.sql",
+    "check": "tech-core-general-spells-incarnate-compatibility.sql",
     "order": "before-functions"
   },
   "20261010000000_shared_ancestry_release_compatibility.sql": {
@@ -423,6 +423,10 @@
   },
   "20261010000100_shared_ancestries.sql": {
     "check": "shared-ancestries.sql",
+    "order": "before-functions"
+  },
+  "20261011000100_incarnate_release_compatibility.sql": {
+    "check": "tech-core-general-spells-incarnate-compatibility.sql",
     "order": "before-functions"
   }
 }
