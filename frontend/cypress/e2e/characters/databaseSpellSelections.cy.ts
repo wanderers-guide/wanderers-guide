@@ -503,7 +503,12 @@ describe('Source-owned database spell choices', () => {
       .filter((_, content) => content.querySelector('.mantine-Modal-title')?.textContent?.trim() === title);
   const closePicker = (title = 'Daily Library') => {
     modalWithTitle(title).should('have.length', 1).find('button.mantine-Modal-close').click();
-    modalWithTitle(title).should('have.length', 0);
+    cy.get('body').should((body) => {
+      const remaining = body
+        .find('.mantine-Modal-content')
+        .filter((_, content) => content.querySelector('.mantine-Modal-title')?.textContent?.trim() === title);
+      expect(remaining, `closed ${title} picker`).to.have.length(0);
+    });
   };
   const dailyIdentity = (character: Character) => {
     const identity = character.operation_data!.selections[`character_${daily}`];
