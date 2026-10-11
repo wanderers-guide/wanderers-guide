@@ -4,7 +4,14 @@ import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
 import { OperationSelectFiltersSpellSchema, OperationSchema } from '../src/schemas/operations.ts';
-import { SpellSchema } from '../src/schemas/content.ts';
+import {
+  AbilityBlockSchema,
+  CharacterSchema,
+  ClassSchema,
+  ContentSourceSchema,
+  SpellSchema,
+  TraitSchema,
+} from '../src/schemas/content.ts';
 
 const ts = createRequire(import.meta.url)('typescript');
 
@@ -101,12 +108,12 @@ function selectors(tree, id) {
   return results;
 }
 
-async function calculate(input, packageOverride = content) {
+async function calculate(input, packageOverride = content, context = 'CHARACTER-SHEET') {
   const saved = structuredClone(input);
   const results = await engine.executeOperations(
     {
       type: 'CHARACTER',
-      data: { character: input, content: packageOverride, context: 'CHARACTER-SHEET' },
+      data: { character: input, content: packageOverride, context },
     },
     { directExecution: true }
   );
@@ -760,23 +767,34 @@ test('the actual builder provides exact spell option identity without changing o
   );
 });
 
-test('the isolated browser fixture uses valid saved data and actual source-owned selection schemas', async () => {
+async function readBrowserFixture() {
   const text = await readFile(
     new URL('../cypress/e2e/characters/databaseSpellSelections.cy.ts', import.meta.url),
     'utf8'
   );
   const prefix = text.slice(0, text.indexOf('type WorkerControl'));
-  const javascript = ts.transpileModule(prefix.replace(/^import .*;\n/gm, ''), {
+  const file = ts.createSourceFile('fixture.ts', prefix, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const declarations = file.statements
+    .filter((statement) => !ts.isImportDeclaration(statement))
+    .map((statement) => statement.getText(file))
+    .join('\n');
+  const javascript = ts.transpileModule(declarations, {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
   }).outputText;
-  const { CharacterSchema, ContentSourceSchema } = await import('../src/schemas/content.ts');
-  const fixture = new Function(
+  return new Function(
+    'AbilityBlockSchema',
     'CharacterSchema',
+    'ClassSchema',
     'ContentSourceSchema',
     'SpellSchema',
+    'TraitSchema',
     'OperationSchema',
-    `${javascript}\nreturn { original, pulse, wave, first, second, predefined, predefinedChoice };`
-  )(CharacterSchema, ContentSourceSchema, SpellSchema, OperationSchema);
+    `${javascript}\nreturn { original, pulse, wave, source, fixtureClass, classTrait, classFeature, first, second, predefined, predefinedChoice };`
+  )(AbilityBlockSchema, CharacterSchema, ClassSchema, ContentSourceSchema, SpellSchema, TraitSchema, OperationSchema);
+}
+
+test('the isolated browser fixture uses valid saved data and actual source-owned selection schemas', async () => {
+  const fixture = await readBrowserFixture();
   assert.equal(fixture.original.spells.list.filter((entry) => entry.spell_id === fixture.pulse.id).length, 2);
   assert.equal(fixture.original.custom_operations[1].data.optionsFilters.distinctRankFromSelections[0], fixture.first);
   assert.equal(fixture.original.operation_data.selections[`character_${fixture.predefined}`], fixture.predefinedChoice);
@@ -786,6 +804,59 @@ test('the isolated browser fixture uses valid saved data and actual source-owned
     [1, 3, 2]
   );
   assert.equal(fixture.original.custom_operations[2].data.optionsPredefined[0].operation.data.rank, 1);
+  assert.deepEqual(fixture.original.details.class, fixture.fixtureClass);
+  assert.equal(fixture.fixtureClass.trait_id, fixture.classTrait.id);
+  assert.deepEqual(fixture.classFeature.traits, [fixture.classTrait.id]);
+  assert.deepEqual(fixture.classFeature.operations, []);
+  assert.equal(fixture.classFeature.level, 1);
+  assert.equal(fixture.classTrait.meta_data.class_trait, true);
+  for (const row of [fixture.fixtureClass, fixture.classTrait, fixture.classFeature])
+    assert.equal(row.content_source_id, fixture.source.id);
+});
+
+test('the browser fixture reaches Initial Stats through a real selected class feature without extra choices', async () => {
+  const fixture = await readBrowserFixture();
+  const fixtureContent = {
+    ...content,
+    abilityBlocks: [fixture.classFeature],
+    classes: [fixture.fixtureClass],
+    traits: [fixture.classTrait],
+    sources: [fixture.source],
+    spells: [fixture.pulse, fixture.wave],
+    defaultSources: { PAGE: [fixture.source.id], INFO: [] },
+  };
+  engine.setFixtures([
+    { table: 'class', row: fixture.fixtureClass },
+    { table: 'trait', row: fixture.classTrait },
+    { table: 'ability_block', row: fixture.classFeature },
+    { table: 'spell', row: fixture.pulse },
+    { table: 'spell', row: fixture.wave },
+    { table: 'content_source', row: fixture.source },
+  ]);
+  try {
+    const missingFeature = await calculate(
+      fixture.original,
+      { ...fixtureContent, abilityBlocks: [] },
+      'CHARACTER-BUILDER'
+    );
+    assert.equal(missingFeature.results.ancestrySectionResults.length, 0);
+    assert.equal(missingFeature.results.classFeatureResults.length, 0);
+    const { results } = await calculate(fixture.original, fixtureContent, 'CHARACTER-BUILDER');
+    assert.equal(results.ancestrySectionResults.length, 0);
+    assert.equal(results.classFeatureResults.length, 1);
+    assert.equal(results.classFeatureResults[0].baseSource.id, fixture.classFeature.id);
+    assert.deepEqual(results.classFeatureResults[0].baseResults, []);
+    assert.equal(results.characterResults.length, 3);
+    assert.deepEqual(
+      selectors(results, fixture.first)[0]
+        .selection.options.filter((option) => option.id === fixture.pulse.id)
+        .map((option) => option.rank)
+        .sort((a, b) => a - b),
+      [1, 3]
+    );
+  } finally {
+    engine.setFixtures(spells.map((row) => ({ table: 'spell', row })));
+  }
 });
 
 test('the actual browser storage guard replies only to the exact public background GET', async () => {

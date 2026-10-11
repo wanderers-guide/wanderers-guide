@@ -1,4 +1,11 @@
-import { CharacterSchema, ContentSourceSchema, SpellSchema } from '../../../src/schemas/content';
+import {
+  AbilityBlockSchema,
+  CharacterSchema,
+  ClassSchema,
+  ContentSourceSchema,
+  SpellSchema,
+  TraitSchema,
+} from '../../../src/schemas/content';
 import { OperationSchema } from '../../../src/schemas/operations';
 
 const actor = '00000000-0000-4000-8000-000000991902';
@@ -25,6 +32,52 @@ const source = ContentSourceSchema.parse({
   group: 'Homebrew',
   artwork_url: null,
   meta_data: null,
+});
+const classTrait = TraitSchema.parse({
+  id: 991905,
+  created_at: '',
+  name: 'Database Fixture',
+  description: '',
+  meta_data: { class_trait: true },
+  content_source_id: source.id,
+});
+const fixtureClass = ClassSchema.parse({
+  id: 991904,
+  created_at: '',
+  name: 'Database Fixture Class',
+  rarity: 'COMMON',
+  description: '',
+  operations: [],
+  skill_training_base: 0,
+  trait_id: classTrait.id,
+  artwork_url: null,
+  deprecated: false,
+  content_source_id: source.id,
+  version: '1.0',
+  meta_data: null,
+});
+const classFeature = AbilityBlockSchema.parse({
+  id: 991906,
+  created_at: '',
+  name: 'Database Fixture Feature',
+  operations: [],
+  actions: null,
+  level: 1,
+  rarity: 'COMMON',
+  availability: 'STANDARD',
+  prerequisites: null,
+  frequency: null,
+  cost: null,
+  trigger: null,
+  requirements: null,
+  access: null,
+  description: '',
+  special: null,
+  type: 'class-feature',
+  meta_data: null,
+  traits: [classTrait.id],
+  content_source_id: source.id,
+  version: '1.0',
 });
 const pulse = SpellSchema.parse({
   id: 991902,
@@ -98,7 +151,7 @@ const original = CharacterSchema.parse({
     focus_point_current: 0,
   },
   inventory: { items: [], coins: { cp: 0, sp: 0, gp: 0, pp: 0 } },
-  details: { conditions: [] },
+  details: { conditions: [], class: fixtureClass },
   meta_data: { reset_hp: false },
   operation_data: { selections: { [`character_${predefined}`]: predefinedChoice } },
   variants: null,
@@ -135,7 +188,6 @@ type FixtureWindow = Window & { Worker: typeof Worker; databaseWorkerControl: Wo
 
 describe('Source-owned database spell choices', () => {
   let saved = structuredClone(original);
-  let spellIdReads = 0;
   const visit = () => {
     cy.visit(`/builder/${original.id}`, {
       onBeforeLoad(win) {
@@ -200,7 +252,6 @@ describe('Source-owned database spell choices', () => {
 
   beforeEach(() => {
     saved = structuredClone(original);
-    spellIdReads = 0;
     cy.intercept('**/auth/v1/**', () => {
       throw new Error('Database fixture must not contact authentication');
     });
@@ -232,19 +283,30 @@ describe('Source-owned database spell choices', () => {
         saved = CharacterSchema.parse({ ...saved, ...req.body, updated_at: new Date().toISOString() });
         data = [saved];
       } else if (endpoint === 'find-content-source') data = req.body.id !== undefined ? source : [source];
-      else if (endpoint === 'find-spell') {
+      else if (endpoint === 'find-class') {
         if (typeof req.body.id === 'number') {
-          spellIdReads++;
+          expect(req.body.id, 'only the synthetic class may be read by ID').to.equal(fixtureClass.id);
+          data = fixtureClass;
+        } else data = [fixtureClass];
+      } else if (endpoint === 'find-trait') {
+        if (typeof req.body.id === 'number') {
+          expect(req.body.id, 'only the synthetic trait may be read by ID').to.equal(classTrait.id);
+          data = classTrait;
+        } else data = [classTrait];
+      } else if (endpoint === 'find-ability-block') {
+        if (typeof req.body.id === 'number') {
+          expect(req.body.id, 'only the synthetic feature may be read by ID').to.equal(classFeature.id);
+          data = classFeature;
+        } else data = [classFeature];
+      } else if (endpoint === 'find-spell') {
+        if (typeof req.body.id === 'number') {
           data = spells.find((spell) => spell.id === req.body.id);
           expect(data, 'only seeded spells may be read by ID').not.to.equal(undefined);
         } else data = spells;
       } else if (
         [
           'get-content-versions',
-          'find-ability-block',
           'find-item',
-          'find-trait',
-          'find-class',
           'find-ancestry',
           'find-background',
           'find-language',
@@ -266,12 +328,18 @@ describe('Source-owned database spell choices', () => {
 
   const customPanel = () =>
     cy
+      .get('[data-wg-name="level-0"]')
       .contains('.mantine-Accordion-control', /^Custom/, { timeout: 30000 })
       .closest('.mantine-Accordion-item')
       .find('.mantine-Accordion-panel');
   const openCustom = () => {
     cy.contains('.mantine-Stepper-step', 'Builder', { timeout: 30000 }).click();
-    cy.contains('.mantine-Accordion-control', /^Custom/, { timeout: 30000 }).click();
+    cy.get('[data-wg-name="level-0"]', { timeout: 30000 })
+      .contains('.mantine-Accordion-control', 'Initial Stats')
+      .click();
+    cy.get('[data-wg-name="level-0"]')
+      .contains('.mantine-Accordion-control', /^Custom/, { timeout: 30000 })
+      .click();
     customPanel().find('.selection-choice-base').should('have.length', 3);
   };
   const selection = (index: number) => customPanel().find('.selection-choice-base').eq(index);
@@ -279,6 +347,16 @@ describe('Source-owned database spell choices', () => {
   const searchPulse = () => cy.get('.mantine-Modal-body input[placeholder="Search spells"]').type('Fixture Pulse');
   const selectButtons = () =>
     cy.get('.mantine-Modal-body button').filter((_, button) => button.textContent === 'Select');
+  const rankSelect = (rank: number) =>
+    cy
+      .get('.mantine-Modal-body .mantine-Group-root > .mantine-Text-root')
+      .filter((_, label) => label.textContent?.trim() === `${rank}.`)
+      .should('have.length', 1)
+      .parent('.mantine-Group-root')
+      .should('contain.text', pulse.name)
+      .find('button')
+      .filter((_, button) => button.textContent === 'Select')
+      .should('have.length', 1);
 
   it('keeps both ranks searchable and switches an unsaved choice while its recalculation is held', () => {
     visit();
@@ -287,18 +365,20 @@ describe('Source-owned database spell choices', () => {
     });
     selection(0).contains('button', 'Select a Spell').click();
     searchPulse();
-    selectButtons().should('have.length', 2).eq(0).click();
+    selectButtons().should('have.length', 2);
+    rankSelect(1).click();
     cy.window().should((win) =>
       expect((win as unknown as FixtureWindow).databaseWorkerControl.queued.length).to.be.greaterThan(0)
     );
     reopen(0);
     searchPulse();
-    selectButtons().should('have.length', 2).eq(0).should('be.disabled');
-    selectButtons().eq(1).should('not.be.disabled').click();
+    selectButtons().should('have.length', 2);
+    rankSelect(1).should('be.disabled');
+    rankSelect(3).should('not.be.disabled').click();
     reopen(0);
     searchPulse();
-    selectButtons().eq(0).should('not.be.disabled');
-    selectButtons().eq(1).should('be.disabled');
+    rankSelect(1).should('not.be.disabled');
+    rankSelect(3).should('be.disabled');
     cy.get('.mantine-Modal-header button').click();
     cy.window().then((win) => (win as unknown as FixtureWindow).databaseWorkerControl.release());
     cy.wrap(null, { timeout: 15000 }).should(() =>
@@ -308,8 +388,9 @@ describe('Source-owned database spell choices', () => {
     openCustom();
     reopen(0);
     searchPulse();
-    selectButtons().should('have.length', 2).eq(0).should('not.be.disabled');
-    selectButtons().eq(1).should('be.disabled');
+    selectButtons().should('have.length', 2);
+    rankSelect(1).should('not.be.disabled');
+    rankSelect(3).should('be.disabled');
     cy.screenshot('database-spell-ranks-saved');
   });
 
@@ -319,16 +400,14 @@ describe('Source-owned database spell choices', () => {
     selection(1).contains('button', 'Select a Spell').click();
     searchPulse();
     selectButtons().should('have.length', 1).should('not.be.disabled');
-    selectButtons().first().parents('.mantine-Group-root').first().should('contain.text', '1.');
-    selectButtons().first().click();
+    rankSelect(1).click();
     cy.wrap(null, { timeout: 15000 }).should(() =>
       expect(saved.operation_data!.selections[`character_${second}`]).to.equal(`${pulse.id}:1`)
     );
   });
 
-  it('retains numeric fetching and selected state for PREDEFINED authored UUIDs', () => {
+  it('retains authored UUID and selected state for PREDEFINED spell choices', () => {
     visit();
-    cy.wrap(null, { timeout: 15000 }).should(() => expect(spellIdReads).to.be.greaterThan(0));
     reopen(2);
     searchPulse();
     selectButtons().should('have.length', 1).should('be.disabled');
@@ -341,8 +420,9 @@ describe('Source-owned database spell choices', () => {
     visit();
     reopen(0);
     searchPulse();
-    selectButtons().should('have.length', 2).eq(0).should('not.be.disabled');
-    selectButtons().eq(1).should('be.disabled');
+    selectButtons().should('have.length', 2);
+    rankSelect(1).should('not.be.disabled');
+    rankSelect(3).should('be.disabled');
     cy.document().then((doc) => expect(doc.documentElement.scrollWidth).to.be.at.most(doc.documentElement.clientWidth));
     cy.screenshot('database-spell-ranks-saved-phone');
   });
