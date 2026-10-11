@@ -340,3 +340,23 @@ other source field must match, and the live feat count must independently be 79.
 This accounts for the published Lesson of Memory addition without rewriting book
 metadata or accepting arbitrary later changes. Preserve full preflight, backup,
 independent readback and the remote release report for the rollout.
+
+
+## Incarnate release compatibility
+
+The Incarnate trait was moved from Secrets of Magic to Common Core after the Tech
+Core general spell import. `20261011000100_incarnate_release_compatibility.sql`
+is a guard-only transaction. It accepts the exact original trait or the exact
+source-only successor; it does not move content or write spell or trait rows.
+
+Both registered requirements use
+`tech-core-general-spells-incarnate-compatibility.sql`. Its two branches retain
+the complete original spell, reference, source and binding checks. All other row
+fields must match, Common Core must be published, and duplicate identities or
+pending submissions for either source remain failures. The original migration
+and release file remain unchanged and captured in the native input manifest.
+
+Native verification exercises both source states, alias and pending-submission
+rejections, complete no-op replay preservation and unrelated dependency failures
+in addition to the original general-spell control matrix. Historical migration
+replays and the full release gate must pass before this compatibility change is merged.
