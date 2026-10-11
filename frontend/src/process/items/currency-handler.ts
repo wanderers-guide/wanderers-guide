@@ -42,7 +42,8 @@ export function purchase(
   return updatedCoins;
 }
 
-export function priceToString(price?: { cp?: number; sp?: number; gp?: number; pp?: number }) {
+/** Format stored denominations, optionally labeling SP as Starfinder credits without converting any amounts. */
+export function priceToString(price?: { cp?: number; sp?: number; gp?: number; pp?: number }, displayCredits = false) {
   if (!price) {
     return '—';
   }
@@ -52,7 +53,7 @@ export function priceToString(price?: { cp?: number; sp?: number; gp?: number; p
     priceString += price.cp.toLocaleString() + ' cp';
   }
   if (price.sp) {
-    priceString += (priceString ? ', ' : '') + price.sp.toLocaleString() + ' sp';
+    priceString += (priceString ? ', ' : '') + price.sp.toLocaleString() + (displayCredits ? ' credits' : ' sp');
   }
   if (price.gp) {
     priceString += (priceString ? ', ' : '') + price.gp.toLocaleString() + ' gp';

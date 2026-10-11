@@ -4,7 +4,8 @@ import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
 import ShowInjectedText from '@drawers/ShowInjectedText';
 import TraitsDisplay from '@common/TraitsDisplay';
-import { priceToString } from '@items/currency-handler';
+import { useItemPrice } from '@items/use-item-price';
+import { playingStarfinder } from '@content/system-handler';
 import {
   FUNDAMENTAL_RUNES,
   compileTraits,
@@ -122,26 +123,20 @@ export function InvItemDrawerContent(props: {
   const [editingItem, setEditingItem] = useState(false);
 
   const character = useAtomValue(characterState);
+  // Companion inventory shares its route-bound owner's currency, not a stale global variable store.
+  const itemPrice = useItemPrice(invItem.item, !!character && playingStarfinder(character));
   const containerItems = (character?.inventory?.items.filter((item) => isItemContainer(item.item)) ?? []).filter(
     (i) => i.id !== invItem.id
   );
 
   let price = null;
-  const _invItemPrice = invItem.item.price
-    ? {
-        cp: Number(invItem.item.price.cp) || undefined,
-        sp: Number(invItem.item.price.sp) || undefined,
-        gp: Number(invItem.item.price.gp) || undefined,
-        pp: Number(invItem.item.price.pp) || undefined,
-      }
-    : undefined;
-  if (_invItemPrice && priceToString(_invItemPrice) !== '—') {
+  if (itemPrice !== '—') {
     price = (
       <>
         <Text key={1} fw={600} c='gray.2' span>
           Price
         </Text>{' '}
-        {priceToString(_invItemPrice)}
+        {itemPrice}
       </>
     );
   }

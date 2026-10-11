@@ -6,7 +6,7 @@ import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById, fetchItemByName } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
-import { priceToString } from '@items/currency-handler';
+import { useItemPrice } from '@items/use-item-price';
 import {
   FUNDAMENTAL_RUNES,
   compileTraits,
@@ -145,6 +145,8 @@ export function ItemDrawerContent(props: {
 
   const item = _item ?? props.data.item;
 
+  const itemPrice = useItemPrice(item);
+
   if (!item) {
     return (
       <DrawerLoadState loading={isFetching} onRetry={refetch} />
@@ -152,21 +154,13 @@ export function ItemDrawerContent(props: {
   }
 
   let price = null;
-  const _itemPrice = item.price
-    ? {
-        cp: Number(item.price.cp) || undefined,
-        sp: Number(item.price.sp) || undefined,
-        gp: Number(item.price.gp) || undefined,
-        pp: Number(item.price.pp) || undefined,
-      }
-    : undefined;
-  if (_itemPrice && priceToString(_itemPrice) !== '—') {
+  if (itemPrice !== '—') {
     price = (
       <>
         <Text key={1} fw={600} c='gray.2' span>
           Price
         </Text>{' '}
-        {priceToString(_itemPrice)}
+        {itemPrice}
       </>
     );
   }

@@ -308,6 +308,17 @@ These bonuses are calculated from the current inventory without rewriting the co
 saved attack. This automation covers fundamental weapon potency and striking runes.
 Property rune compatibility and other equipment benefits still require manual configuration.
 
+## Item prices
+
+Starfinder credits use the existing `price.sp` field. Item drawers and inventory
+label that amount as credits for a `starfinder-core` source or, for owned items,
+the active Starfinder character. Catalog drawers use the item's source rather
+than the character's system. Unknown or still-loading sources retain the default
+coin labels unless the owner supplies Starfinder context.
+
+This changes labels only. Copper, gold, platinum, fractional amounts, purchase
+calculations and saved currency remain unchanged.
+
 ## Linking content from prose
 
 Content references are Markdown links with a drawer target:
