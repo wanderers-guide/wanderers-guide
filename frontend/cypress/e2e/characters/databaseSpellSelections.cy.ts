@@ -496,7 +496,15 @@ describe('Source-owned database spell choices', () => {
     searchSpell(name);
     selectButtons().should('have.length', 1).should('not.be.disabled').click();
   };
-  const closePicker = () => cy.get('.mantine-Modal-header button.mantine-Modal-close').last().click();
+  const modalWithTitle = (title: string) =>
+    cy
+      .get('body')
+      .find('.mantine-Modal-content')
+      .filter((_, content) => content.querySelector('.mantine-Modal-title')?.textContent?.trim() === title);
+  const closePicker = (title = 'Daily Library') => {
+    modalWithTitle(title).should('have.length', 1).find('button.mantine-Modal-close').click();
+    modalWithTitle(title).should('have.length', 0);
+  };
   const dailyIdentity = (character: Character) => {
     const identity = character.operation_data!.selections[`character_${daily}`];
     expect(identity, 'opaque daily identity in actual character data').to.be.a('string').and.not.be.empty;
@@ -543,6 +551,16 @@ describe('Source-owned database spell choices', () => {
         else {
           cy.get('button[aria-label="Tab Options"]').trigger('mouseover');
           cy.contains('[role="menuitem"]', /^Spells$/).click();
+          // React dispatches its mouseleave handler from the native mouseout event.
+          cy.get('button[aria-label="Tab Options"]').trigger('mouseout', {
+            eventConstructor: 'MouseEvent',
+            relatedTarget: null,
+          });
+          cy.get('body').then(($body) => {
+            const menu = $body.find('[role="menu"]');
+            if (menu.length) cy.wrap(menu).trigger('mouseout', { eventConstructor: 'MouseEvent', relatedTarget: null });
+          });
+          cy.get('[role="menu"]').should('not.exist');
         }
       });
     }
@@ -568,11 +586,11 @@ describe('Source-owned database spell choices', () => {
     reopen(0);
     searchSpell(wave.name);
     selectButtons().should('have.length', 1).should('be.disabled');
-    closePicker();
+    closePicker('Select a Spell');
     reopen(2);
     searchPulse();
     selectButtons().should('have.length', 1).should('be.disabled');
-    closePicker();
+    closePicker('Predefined Spell');
   };
 
   const waitForDailySave = (spellId: number) => {
@@ -689,7 +707,7 @@ describe('Source-owned database spell choices', () => {
           'daily spell prepared through the actual slot picker'
         ).to.equal(true)
       );
-      closePicker();
+      closePicker('Manage Spells - Technomancer');
 
       cy.contains('button', /^Rest$/)
         .scrollIntoView()
@@ -707,8 +725,8 @@ describe('Source-owned database spell choices', () => {
         .click();
       searchPulse();
       selectButtons().should('have.length', 0);
-      closePicker();
-      closePicker();
+      closePicker('Select Spell');
+      closePicker('Manage Spells - Technomancer');
 
       visit();
       dailySelect()

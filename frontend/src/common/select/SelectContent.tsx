@@ -119,8 +119,8 @@ function hasRankedSpellOptions(type: SelectContentType, options: Record<string, 
   return (
     type === 'spell' &&
     !!options?.length &&
-    options.every((option) =>
-      option._select_uuid === `${option.id}:${option.rank}` || option._meta_data?.dailyPreparation === true
+    options.every(
+      (option) => option._select_uuid === `${option.id}:${option.rank}` || option._meta_data?.dailyPreparation === true
     )
   );
 }
@@ -145,7 +145,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
 }) {
   const [_drawer, openDrawer] = useAtom(drawerState);
   const [selected, setSelected] = useState<T | undefined>();
-  const pendingSelection = useRef<{ previousId: unknown; nextId: unknown } | null>(null);
+  const pendingSelection = useRef<{ previousId: unknown; nextId: unknown; dailyPreparation: boolean } | null>(null);
   const usesRankedIdentity =
     props.selectedOptionUUID !== undefined || hasRankedSpellOptions(props.type, props.options?.overrideOptions);
   const selectedIdentity = usesRankedIdentity ? props.selectedOptionUUID : props.selectedId;
@@ -155,7 +155,16 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
     (async () => {
       const pending = pendingSelection.current;
       if (pending) {
-        if (selectedIdentity === pending.nextId) {
+        if (
+          pending.dailyPreparation &&
+          !props.options?.overrideOptions?.some(
+            (option) => option._meta_data?.dailyPreparation === true && option._select_uuid === pending.nextId
+          )
+        ) {
+          // Rest can expire an optimistic choice while the parent selection is still unset.
+          pendingSelection.current = null;
+          setSelected(undefined);
+        } else if (selectedIdentity === pending.nextId) {
           pendingSelection.current = null;
         } else if (selectedIdentity === pending.previousId) {
           return;
@@ -215,6 +224,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
         pendingSelection.current = {
           previousId: selectedIdentity,
           nextId: usesRankedIdentity ? option._select_uuid : option.id,
+          dailyPreparation: option._meta_data?.dailyPreparation === true,
         };
         setSelected(option);
         props.onClick(option);
