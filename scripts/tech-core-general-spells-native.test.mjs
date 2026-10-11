@@ -182,7 +182,6 @@ test("additional Incarnate matrix checks both complete catalog states without re
   }
   for (const name of [
     "missing-incarnate",
-    "global-uuid-alias",
     "pending-incarnate-refid",
     "pending-incarnate-dataid",
     "pending-incarnate-uuid",
@@ -195,6 +194,19 @@ test("additional Incarnate matrix checks both complete catalog states without re
       true,
     );
   }
+  assert.deepEqual(
+    focused.per_state_controls.find(({ name }) => name === "global-uuid-alias"),
+    {
+      name: "global-uuid-alias",
+      accepted: false,
+      guardRejects: false,
+      schemaRejection: { sqlstate: "23505", constraint: "trait_uuid_key" },
+    },
+  );
+  assert.equal(
+    focused.per_state_controls.filter(({ schemaRejection }) => schemaRejection).length,
+    1,
+  );
   assert.equal(
     focused.per_state_controls.filter(({ accepted }) => accepted).length,
     3,

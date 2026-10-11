@@ -482,6 +482,7 @@ for (const [name, status] of [
 
 // The original matrix remains intact. These additional controls execute the complete
 // compatibility SQL against both exact catalog states in the same owned fixture.
+// A duplicate UUID is rejected by the unchanged schema before release SQL can run.
 const incarnate = spec.references.find(
   ({ table, row }) => table === "trait" && row.id === 2584,
 ).row;
@@ -490,8 +491,11 @@ const compatibilityControls = [];
 const addCompatibility = (
   name,
   setup,
-  { accepted = false, guardRejects = !accepted } = {},
-) => compatibilityControls.push({ name, setup, accepted, guardRejects });
+  { accepted = false, guardRejects = !accepted, schemaRejection } = {},
+) => compatibilityControls.push({
+  name, setup, accepted, guardRejects,
+  ...(schemaRejection ? { schemaRejection } : {}),
+});
 addCompatibility("missing-incarnate", controlledDelete("trait", 2584));
 for (const [field, value] of [
   ["content_source_id", 1],
@@ -523,7 +527,10 @@ const insertTraitAlias = (source, sameUuid) => (ctx) => {
     select ${ctx.traitAliasId},r.created_at,r.name,r.description,r.meta_data,r.content_source_id,r.uuid
     from jsonb_populate_record(null::public.trait,${json(row)}) r;`;
 };
-addCompatibility("global-uuid-alias", insertTraitAlias(1, true));
+addCompatibility("global-uuid-alias", insertTraitAlias(1, true), {
+  guardRejects: false,
+  schemaRejection: { sqlstate: "23505", constraint: "trait_uuid_key" },
+});
 for (const source of [3, 15]) {
   addCompatibility(
     "normalized-name-alias-source-" + source,
@@ -1111,6 +1118,37 @@ try {
           ? control.setup(ctx)
           : control.setup;
       const before = fixture.snapshot();
+      if (control.schemaRejection) {
+        // Preserve the actual unique constraint. This state is unconstructible,
+        // so certify its schema rejection without claiming release/guard coverage.
+        const rejectedSetup = checked(
+          fixture.sql("BEGIN;\n" + setup + "\nROLLBACK;", true),
+          name + "-schema",
+          3,
+        );
+        assert.match(rejectedSetup.stderr, /23505/, name);
+        assert.ok(
+          rejectedSetup.stderr.includes('unique constraint "' + control.schemaRejection.constraint + '"'),
+          name,
+        );
+        assert.deepEqual(
+          fixture.snapshot(),
+          before,
+          name + ": schema rejection preserved the full fixture",
+        );
+        receipt.incarnate_compatibility.controls.push({
+          name,
+          passed: true,
+          accepted: false,
+          schema_rejection: control.schemaRejection,
+          schema_rejection_exit: rejectedSetup.status,
+          complete_release_executed: false,
+          actual_guard_executed: false,
+          whole_tuples_sequences_auth_saved_queue_schema_roles_preserved: true,
+          snapshot_sha256: before.sha256,
+        });
+        continue;
+      }
       const result = checked(
         fixture.sql(
           "BEGIN;\n" + setup + "\n" + compatibilityRelease + "\nROLLBACK;",
