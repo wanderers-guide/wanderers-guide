@@ -873,6 +873,16 @@ export type Creature = z.infer<typeof CreatureSchema>;
 
 // ─── Hazard ───────────────────────────────────────────────────────────────────
 
+/** Shared source-authored rules for primary and secondary hazard activities. */
+const HazardActivitySchema = z.object({
+  name: z.string(),
+  actions: ActionCostSchema.optional(),
+  traits: z.array(z.string()).optional(),
+  trigger: z.string().optional(),
+  requirements: z.string().optional(),
+  effect: z.string(),
+});
+
 /** A hazard shares creature storage but has its own rules and no living-entity state. */
 export const HazardSchema = z.object({
   id: z.number(),
@@ -897,18 +907,18 @@ export const HazardSchema = z.object({
         ref: z.number().optional(),
         hardness: z.number().optional(),
         hp: z.number().optional(),
+        // Qualifications such as per-cube HP are prose, never an inferred aggregate maximum.
+        hp_note: z.string().optional(),
         bt: z.number().optional(),
         immunities: z.string().optional(),
+        weaknesses: z.string().optional(),
+        resistances: z.string().optional(),
       })
       .optional(),
-    activation: z.object({
-      name: z.string(),
-      actions: ActionCostSchema.optional(),
-      traits: z.array(z.string()).optional(),
-      trigger: z.string(),
-      effect: z.string(),
-    }),
+    passive_abilities: z.array(z.object({ name: z.string(), text: z.string() })).optional(),
+    activation: HazardActivitySchema.extend({ trigger: z.string() }),
     routine: z.object({ actions: z.number().int().nonnegative(), text: z.string() }).optional(),
+    secondary_activities: z.array(HazardActivitySchema).optional(),
     reset: z.string().optional(),
   }),
   content_source_id: z.number(),

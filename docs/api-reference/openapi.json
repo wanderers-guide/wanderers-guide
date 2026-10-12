@@ -640,8 +640,26 @@
                   "ref": { "type": "integer" },
                   "hardness": { "type": "integer" },
                   "hp": { "type": "integer" },
+                  "hp_note": {
+                    "type": "string",
+                    "description": "Source-authored HP qualification, such as HP per 5-foot cube. Prose only; without a separately listed numeric hp, this does not create an aggregate encounter HP counter."
+                  },
                   "bt": { "type": "integer" },
-                  "immunities": { "type": "string" }
+                  "immunities": { "type": "string" },
+                  "weaknesses": { "type": "string" },
+                  "resistances": { "type": "string" }
+                }
+              },
+              "passive_abilities": {
+                "type": "array",
+                "description": "Source-ordered passive rules, manually applied by the GM.",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "text"],
+                  "properties": {
+                    "name": { "type": "string" },
+                    "text": { "type": "string" }
+                  }
                 }
               },
               "activation": {
@@ -652,6 +670,7 @@
                   "actions": { "$ref": "#/components/schemas/ActionCost" },
                   "traits": { "type": "array", "items": { "type": "string" } },
                   "trigger": { "type": "string" },
+                  "requirements": { "type": "string" },
                   "effect": { "type": "string" }
                 }
               },
@@ -661,6 +680,22 @@
                 "properties": {
                   "actions": { "type": "integer" },
                   "text": { "type": "string" }
+                }
+              },
+              "secondary_activities": {
+                "type": "array",
+                "description": "Source-ordered additional activities, manually applied by the GM. A trigger is optional when none is printed.",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "effect"],
+                  "properties": {
+                    "name": { "type": "string" },
+                    "actions": { "$ref": "#/components/schemas/ActionCost" },
+                    "traits": { "type": "array", "items": { "type": "string" } },
+                    "trigger": { "type": "string" },
+                    "requirements": { "type": "string" },
+                    "effect": { "type": "string" }
+                  }
                 }
               },
               "reset": { "type": "string" }

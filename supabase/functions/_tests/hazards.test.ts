@@ -2,6 +2,52 @@ import { assert, assertEquals } from 'https://deno.land/std@0.203.0/assert/mod.t
 import { admin, callFunction, seed, stackUnavailable, testUuid, withContentSource } from './seed.ts';
 
 const skip = stackUnavailable();
+const contentUpdateKey = Deno.env.get('CONTENT_UPDATE_KEY') ?? '';
+
+/** A synthetic manual stat block exercises all optional fields without a scalar HP maximum. */
+function manualDetails() {
+  return {
+    complexity: 'COMPLEX',
+    trait_labels: ['Environmental'],
+    stealth: '+7',
+    description: 'A test colony covers the chamber.',
+    disable: 'Engineering DC 18',
+    defenses: {
+      hp_note: '6 per 5-foot cube',
+      weaknesses: 'fire 5',
+      resistances: 'physical 5',
+    },
+    passive_abilities: [
+      { name: 'Colony', text: 'First passive.' },
+      { name: 'Colony', text: 'Second passive.' },
+    ],
+    activation: {
+      name: 'Awaken',
+      actions: 'REACTION',
+      traits: ['Acid'],
+      trigger: 'A creature enters.',
+      requirements: 'The chamber is open.',
+      effect: 'The colony awakens.',
+    },
+    routine: { actions: 2, text: 'The colony grows and bursts.' },
+    secondary_activities: [
+      {
+        name: 'Pulse',
+        actions: 'ONE-ACTION',
+        traits: ['Acid'],
+        effect: 'First effect.',
+      },
+      {
+        name: 'Pulse',
+        actions: 'FREE-ACTION',
+        trigger: 'A creature moves.',
+        requirements: 'A door is open.',
+        effect: 'Second effect.',
+      },
+    ],
+    reset: 'The colony resets after 1 hour.',
+  };
+}
 
 Deno.test({
   name: 'hazards: creature and hazard API results stay separate',
@@ -81,6 +127,10 @@ Deno.test({
       assertEquals(hazardFind.body?.status, 'success');
       assertEquals(hazardFind.body?.data?.type, 'hazard');
       assertEquals(hazardFind.body?.data?.name, hazardName);
+      for (const field of ['defenses', 'passive_abilities', 'secondary_activities']) {
+        assertEquals(field in hazardFind.body.data.details, false);
+      }
+      assertEquals('requirements' in hazardFind.body.data.details.activation, false);
 
       const creatureFind = await callFunction(
         'find-creature',
@@ -163,6 +213,136 @@ Deno.test({
         .single();
       if (sourceError) throw sourceError;
       assertEquals(source.meta_data?.counts?.creature, 2);
+    });
+  },
+});
+
+Deno.test({
+  name: 'hazards: optional manual rules round-trip through scoped find and advanced search',
+  ignore: skip,
+  async fn() {
+    const { userId, jwt } = await seed();
+    await withContentSource(userId, async (sourceId) => {
+      const details = manualDetails();
+      const { data: hazard, error } = await admin
+        .from('creature')
+        .insert({
+          name: `Manualhazard${crypto.randomUUID()}`,
+          level: 2,
+          rarity: 'COMMON',
+          type: 'hazard',
+          details,
+          content_source_id: sourceId,
+          uuid: testUuid(),
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      assert(hazard);
+      const found = await callFunction(
+        'find-creature',
+        { id: hazard.id, type: 'hazard', content_sources: [sourceId] },
+        { token: jwt }
+      );
+      assertEquals(found.body?.status, 'success');
+      assertEquals(found.body?.data?.details, details);
+      assertEquals('hp' in found.body.data.details.defenses, false);
+      const excluded = await callFunction(
+        'find-creature',
+        { id: hazard.id, type: 'hazard', content_sources: [sourceId + 1] },
+        { token: jwt }
+      );
+      assertEquals(excluded.body?.status, 'success');
+      assertEquals(excluded.body?.data, null);
+      const search = await callFunction(
+        'search-data',
+        { is_advanced: true, type: 'hazard', content_sources: [sourceId] },
+        { token: jwt }
+      );
+      assertEquals(search.body?.status, 'success');
+      const row = search.body?.data?.hazards?.find((entry: { id: number }) => entry.id === hazard.id);
+      assert(row);
+      assertEquals(row.details, details);
+      assertEquals(search.body?.data?.creatures?.length, 0);
+    });
+  },
+});
+
+Deno.test({
+  name: 'hazards: the existing content approval route retains ordered optional rules',
+  ignore: skip || !contentUpdateKey,
+  async fn() {
+    const { userId } = await seed();
+    await withContentSource(userId, async (sourceId) => {
+      const before = manualDetails();
+      const details = structuredClone(before);
+      details.passive_abilities?.reverse();
+      details.secondary_activities?.splice(0, 1);
+      details.activation.requirements = 'The chamber has been opened.';
+      const { data: hazard, error } = await admin
+        .from('creature')
+        .insert({
+          name: `Approvalhazard${crypto.randomUUID()}`,
+          level: 2,
+          rarity: 'COMMON',
+          type: 'hazard',
+          details: before,
+          content_source_id: sourceId,
+          uuid: testUuid(),
+        })
+        .select('id,name,uuid,content_source_id,type')
+        .single();
+      if (error) throw error;
+      assert(hazard);
+      const messageId = `test-hazard-${crypto.randomUUID()}`;
+      const { data: update, error: updateError } = await admin
+        .from('content_update')
+        .insert({
+          user_id: userId,
+          type: 'creature',
+          ref_id: hazard.id,
+          content_source_id: sourceId,
+          action: 'UPDATE',
+          data: { details },
+          discord_msg_id: messageId,
+          upvotes: [],
+          downvotes: [],
+          status: { state: 'PENDING' },
+        })
+        .select('id,data')
+        .single();
+      if (updateError) throw updateError;
+      assert(update);
+      try {
+        assertEquals(update.data, { details });
+        await callFunction(
+          'update-content-update',
+          {
+            discord_msg_id: messageId,
+            discord_user_id: 'test-mod',
+            discord_user_name: 'Test Mod',
+            state: 'APPROVE',
+          },
+          { token: contentUpdateKey }
+        );
+        // Approval is checked by readback because external indexing follows the write.
+        const { data: saved, error: savedError } = await admin
+          .from('creature')
+          .select('id,name,uuid,content_source_id,type,details')
+          .eq('id', hazard.id)
+          .single();
+        if (savedError) throw savedError;
+        assertEquals(saved, { ...hazard, details });
+        const { data: approved, error: approvedError } = await admin
+          .from('content_update')
+          .select('status')
+          .eq('id', update.id)
+          .single();
+        if (approvedError) throw approvedError;
+        assertEquals(approved?.status?.state, 'APPROVED');
+      } finally {
+        await admin.from('content_update').delete().eq('id', update.id);
+      }
     });
   },
 });

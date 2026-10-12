@@ -113,3 +113,19 @@ test('shared resolver still controls living levels but never receives a hazard',
   assert.equal(calls, 1);
   assert.equal(result.xp, 48);
 });
+
+test('manual hazard prose, requirements, and activities do not alter XP or party inference', () => {
+  const original = hazards.find((hazard) => hazard.name === 'Primal Chaos Aura');
+  const extended = structuredClone(original);
+  extended.details.defenses = { hp_note: '6 per 5-foot cube', weaknesses: 'fire 5', resistances: 'physical 5' };
+  extended.details.activation.requirements = 'The chamber is open.';
+  extended.details.passive_abilities = [{ name: 'Colony', text: 'The colony grows.' }];
+  extended.details.secondary_activities = [{ name: 'Burst', actions: 'FREE-ACTION', effect: 'A cube bursts.' }];
+  const allies = [6, 6, 8, 8].map((level) => creature(level, true));
+  for (const settings of [encounter, { meta_data: {} }]) {
+    assert.deepEqual(
+      difficulty([...allies, creature(8), createHazardCombatant(extended, 'extended')], settings),
+      difficulty([...allies, creature(8), createHazardCombatant(original, 'original')], settings)
+    );
+  }
+});

@@ -70,6 +70,15 @@ const hazards = [
   { name: 'Wind Surge', link: 'Air', target: 'Air', creature: 'Agyra' },
 ];
 
+// Reviewed contextual references in these five source rows: ordinary air is not the Air trait.
+const contextualOccurrences: Record<string, { air: number; spirit: number }> = {
+  Boneburst: { air: 0, spirit: 1 },
+  "Lightning's Dance": { air: 0, spirit: 0 },
+  'Primal Chaos Aura': { air: 1, spirit: 0 },
+  'Trump of the Oliphaunt': { air: 0, spirit: 0 },
+  'Wind Surge': { air: 1, spirit: 0 },
+};
+
 /** Retry the same geometry bounds while the drawer's enter transition settles. */
 function assertNoHorizontalOverflow() {
   cy.document().should((doc) => {
@@ -240,8 +249,22 @@ describe('Official hazard drawer', () => {
 
         const prose = JSON.stringify(details);
         for (const reference of referenceNames) {
-          const expectedOccurrences = prose.match(new RegExp(`\\b${reference}\\b`, 'gi'))?.length ?? 0;
-          if (!expectedOccurrences) continue;
+          const contextual = reference === 'air' || reference === 'spirit';
+          const expectedOccurrences = contextual
+            ? contextualOccurrences[name][reference]
+            : (prose.match(new RegExp(`\\b${reference}\\b`, 'gi'))?.length ?? 0);
+          if (!expectedOccurrences && !contextual) continue;
+          if (!expectedOccurrences) {
+            cy.get('.mantine-Drawer-content').should(($content) => {
+              expect(
+                [...$content[0].querySelectorAll('a')].filter(
+                  (element) => element.textContent?.toLowerCase() === reference
+                ),
+                `${name} has no contextual ${reference} references`
+              ).to.have.length(0);
+            });
+            continue;
+          }
           cy.get('.mantine-Drawer-content a', { timeout: 30000 })
             .filter((_, element) => element.textContent?.toLowerCase() === reference, { timeout: 30000 })
             .should('have.length', expectedOccurrences)
