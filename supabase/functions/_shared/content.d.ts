@@ -81,6 +81,8 @@ interface PublicUser {
     tier?: 'ADVOCATE' | 'WANDERER' | 'LEGEND' | 'GAME-MASTER';
     access_token?: string;
     refresh_token?: string;
+    /** OAuth client that issued this pair; unmarked pairs belong to the legacy client. */
+    oauth_client_id?: string;
     game_master?: {
       access_code?: string;
       virtual_tier?: {

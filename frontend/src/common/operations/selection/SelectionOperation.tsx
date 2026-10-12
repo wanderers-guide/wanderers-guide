@@ -439,6 +439,9 @@ function SelectionFilteredSpell(props: {
       },
       traits: traits,
       traditions: traditions,
+      // These authored constraints have no editor controls; retain them when other fields change.
+      rarity: props.filters?.rarity,
+      traditionFromSelection: props.filters?.traditionFromSelection,
       spellData: {
         type: type ?? 'NORMAL',
         castingSource: castingSource,
@@ -734,6 +737,7 @@ function SelectionFilteredAdjValue(props: {
       // No editor UI for these yet — pass stored values through so a resave doesn't wipe them
       rarities: isItemGroup ? props.filters?.rarities : undefined,
       addToFamiliarity: group === 'WEAPON' ? props.filters?.addToFamiliarity : undefined,
+      familiarityCategories: group === 'WEAPON' ? props.filters?.familiarityCategories : undefined,
     });
   }, [group, value, itemTraits, hasAncestryTrait]);
 

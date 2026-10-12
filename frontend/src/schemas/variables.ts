@@ -120,7 +120,17 @@ export type Variable = z.infer<typeof VariableSchema>;
 
 // ─── Variable Store ───────────────────────────────────────────────────────────
 
+/** Fresh owner defense context is runtime-only and cannot be authored by variable operations. */
+export const PetOwnerDefensesSchema = z.object({
+  AC_BONUS: z.number().finite(),
+  SAVE_FORT: z.number().finite(),
+  SAVE_REFLEX: z.number().finite(),
+  SAVE_WILL: z.number().finite(),
+});
+export type PetOwnerDefenses = z.infer<typeof PetOwnerDefensesSchema>;
+
 export const VariableStoreSchema = z.object({
+  petOwnerDefenses: PetOwnerDefensesSchema.optional(),
   variables: z.record(z.string(), VariableSchema),
   bonuses: z.record(
     z.string(),

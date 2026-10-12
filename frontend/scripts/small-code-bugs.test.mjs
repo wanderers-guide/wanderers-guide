@@ -388,6 +388,35 @@ test('inline class DC and feat names display their calculated values', () => {
   assert.equal(engine.compileExpressions('CHARACTER', '{{FEAT_NAMES}}'), '');
 });
 
+test('inline lists accept serialized operation defaults and preserve imported legacy stores', async () => {
+  for (const value of [['BATTLE MEDICINE', 'TOUGHNESS'], '["BATTLE MEDICINE","TOUGHNESS"]']) {
+    engine.resetVariables();
+    await engine.runOperations(
+      'CHARACTER',
+      { path: 'custom', node: undefined },
+      [op('authored-list', 'createValue', { variable: 'AUTHORED_LIST', type: 'list-str', value })],
+      { doOnlyValueCreation: true }
+    );
+    const before = engine.exportVariableStore('CHARACTER');
+    assert.equal(engine.compileExpressions('CHARACTER', '{{AUTHORED_LIST}}'), 'BATTLE MEDICINE, TOUGHNESS');
+    assert.match(engine.renderRichText('Chosen feats: {{AUTHORED_LIST}}'), /Chosen feats: BATTLE MEDICINE, TOUGHNESS/);
+    assert.equal(engine.compileExpressions('CHARACTER', "{{INCLUDES(AUTHORED_LIST, 'Toughness') + 2}}"), '3');
+    assert.deepEqual(engine.exportVariableStore('CHARACTER'), before, 'display must not rewrite authored values');
+  }
+
+  const legacy = engine.exportVariableStore('CHARACTER');
+  legacy.variables.FEAT_NAMES.value = '["BATTLE MEDICINE","TOUGHNESS"]';
+  engine.importVariableStore('CHARACTER', legacy);
+  assert.equal(engine.compileExpressions('CHARACTER', '{{ FEAT_NAMES }}'), 'BATTLE MEDICINE, TOUGHNESS');
+  assert.equal(engine.compileExpressions('CHARACTER', "{{INCLUDES(FEAT_NAMES, 'toughness')}}"), '1');
+  assert.deepEqual(engine.exportVariableStore('CHARACTER'), legacy, 'display must preserve the saved store');
+
+  legacy.variables.FEAT_NAMES.value = '[]';
+  engine.importVariableStore('CHARACTER', legacy);
+  assert.equal(engine.compileExpressions('CHARACTER', '{{FEAT_NAMES}}'), '');
+  assert.equal(engine.compileExpressions('CHARACTER', "{{INCLUDES(FEAT_NAMES, 'Toughness')}}"), '0');
+});
+
 test('explicit companion abilities appear once and separately granted feats remain visible', () => {
   const feats = sweepRows
     .filter((entry) => entry.table === 'ability_block' && entry.row.type === 'feat')

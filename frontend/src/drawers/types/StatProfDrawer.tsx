@@ -140,9 +140,15 @@ export function StatProfDrawerContent(props: { data: { id: StoreID; variableName
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
                     <Text c='gray.0' size='xs'>
-                      You're {proficiencyTypeToLabel(compileProficiencyType(variable.value)).toLowerCase()} in this
-                      proficiency, resulting in a{' '}
-                      {sign(getProficiencyTypeValue(compileProficiencyType(variable.value)))} bonus.
+                      {parts.isInheritedDefense ? (
+                        "Included in the owner's saving throw modifier."
+                      ) : (
+                        <>
+                          You're {proficiencyTypeToLabel(compileProficiencyType(variable.value)).toLowerCase()} in this
+                          proficiency, resulting in a{' '}
+                          {sign(getProficiencyTypeValue(compileProficiencyType(variable.value)))} bonus.
+                        </>
+                      )}
                     </Text>
                   </HoverCard.Dropdown>
                 </HoverCard>
@@ -153,7 +159,9 @@ export function StatProfDrawerContent(props: { data: { id: StoreID; variableName
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
                     <Text c='gray.0' size='xs'>
-                      {profWithoutLevel ? (
+                      {parts.isInheritedDefense ? (
+                        "Included in the owner's saving throw modifier."
+                      ) : profWithoutLevel ? (
                         <>
                           {compileProficiencyType(variable.value) === 'U' ? (
                             <>
@@ -435,7 +443,7 @@ function SkillActionsSection(props: { variableName: string }) {
     ],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { variableName }] = queryKey;
       const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('PAGE'));
       return abilityBlocks.filter((block) => {
