@@ -226,7 +226,7 @@ const boundaries = {
   '@atoms/supabaseAtoms': 'export const sessionState = {};',
   '@auth/user-manager': 'export const getCachedPublicUser = () => null;',
   '@content/content-store':
-    'export const defineDefaultSources = () => {}; export const isContentPackageEmpty = () => false;',
+    'export const defineDefaultSources = () => {}; export const isContentPackageEmpty = () => false; export const fetchContentById = async (type, id) => { throw new Error("Unconfigured content read in save-lifecycle fixture: " + type + ":" + id); };',
   '@content/customization-cache': 'export const saveCustomization = () => {};',
   '@operations/operations.main':
     'export const executeOperations = globalThis.__saveHooks.calculate; export const isOperationCancelled = () => false;',
@@ -243,7 +243,7 @@ const boundaries = {
   '@pages/character_sheet/entity-handler': 'export const confirmHealth = globalThis.__saveHooks.confirmHealth;',
   '@variables/calculated-stats': 'export const saveCalculatedStats = globalThis.__saveHooks.saveCalculatedStats;',
   '@variables/variable-manager':
-    'export const resetVariables = () => {}; export const setVariable = () => {}; export const getVariable = () => undefined; export const getVariables = () => ({}); export const addVariable = () => {};',
+    'export const resetVariables = () => {}; export const setVariable = () => {}; export const getVariable = () => undefined; export const getVariables = () => ({}); export const addVariable = () => {}; export const hasDailySpellPreparation = () => { throw new Error("Daily spell ownership is outside the save-lifecycle fixture"); };',
   './variable-manager':
     'export const getVariable = () => undefined; export const getVariables = () => ({}); export const addVariable = () => {};',
   './variable-helpers':
