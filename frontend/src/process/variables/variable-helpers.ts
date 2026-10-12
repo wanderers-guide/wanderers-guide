@@ -1,4 +1,4 @@
-import { getAcParts } from '@items/armor-handler';
+import { ArmorCalculationOptions, getAcParts } from '@items/armor-handler';
 import { getBestArmor } from '@items/inv-utils';
 import { CastingSource, Item, LivingEntity } from '@schemas/content';
 import {
@@ -15,6 +15,7 @@ import { hasTraitType } from '@utils/traits';
 import { getVariable, getVariableBonuses } from './variable-manager';
 import { compileProficiencyType, compileExpressions, getProficiencyTypeValue } from './variable-utils';
 import { sign } from '@utils/numbers';
+import { getInheritedPetDefense } from './pet-defenses';
 
 export function getFinalProfValue(
   id: StoreID,
@@ -117,6 +118,28 @@ export function getProfValueParts(
 ) {
   const variable = getVariable<VariableProf>(id, variableName);
   if (!variable) return null;
+  const inherited = getInheritedPetDefense(id, variableName);
+  if (inherited !== null) {
+    const modifiers = getCombinedVariableValue(
+      id,
+      [variableName],
+      [{ value: inherited, type: 'untyped', text: '', source: 'Pet' }]
+    );
+    // The owner's complete modifier already includes its proficiency, level and attribute exactly once.
+    return {
+      level: 0,
+      profValue: 0,
+      attributeMod: null,
+      isInheritedDefense: true,
+      hasConditionals: modifiers.conditionals.length > 0,
+      breakdown: {
+        bonuses: modifiers.bmap,
+        bonusValue: modifiers.bonus,
+        baseValue: modifiers.value,
+        conditionals: modifiers.conditionals,
+      },
+    };
+  }
   const breakdown = getVariableBreakdown(id, variableName);
   const hasConditionals = breakdown.conditionals.length > 0;
   const profType = overrideProfType ?? compileProficiencyType(variable.value);
@@ -162,6 +185,7 @@ export function getProfValueParts(
     level,
     profValue,
     attributeMod,
+    isInheritedDefense: false,
     hasConditionals,
     breakdown,
   };
@@ -258,8 +282,9 @@ export function getFinalResolveValue(id: StoreID) {
   return Math.max(keyMod, 0);
 }
 
-export function getFinalAcValue(id: StoreID, item?: Item) {
-  const { profBonus, bonusAc, dexBonus, armorBonus } = getAcParts(id, item);
+/** Display inherited Pet AC by default; equipment ranking can explicitly request the existing intrinsic formula. */
+export function getFinalAcValue(id: StoreID, item?: Item, options?: ArmorCalculationOptions): number {
+  const { profBonus, bonusAc, dexBonus, armorBonus } = getAcParts(id, item, options);
   return 10 + profBonus + bonusAc + dexBonus + armorBonus;
 }
 

@@ -209,7 +209,7 @@ export function handleRest(id: StoreID, entity: LivingEntity, setEntity?: Setter
   if (!newEntity) return;
 
   if (
-    hasDailySpellPreparation(id, entity.id, entity.operation_data?.daily_preparation) ||
+    (entity.id !== undefined && hasDailySpellPreparation(id, entity.id, entity.operation_data?.daily_preparation)) ||
     hasSavedDailySpellPreparation(id, entity)
   ) {
     newEntity.operation_data = { ...newEntity.operation_data, daily_preparation: crypto.randomUUID() };

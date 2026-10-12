@@ -127,8 +127,18 @@ export const DailySpellPreparationSchema = z.object({
 });
 export type DailySpellPreparation = z.infer<typeof DailySpellPreparationSchema>;
 
+/** Fresh owner defense context is runtime-only and cannot be authored by variable operations. */
+export const PetOwnerDefensesSchema = z.object({
+  AC_BONUS: z.number().finite(),
+  SAVE_FORT: z.number().finite(),
+  SAVE_REFLEX: z.number().finite(),
+  SAVE_WILL: z.number().finite(),
+});
+export type PetOwnerDefenses = z.infer<typeof PetOwnerDefensesSchema>;
+
 export const VariableStoreSchema = z.object({
   dailySpellPreparation: DailySpellPreparationSchema.optional(),
+  petOwnerDefenses: PetOwnerDefensesSchema.optional(),
   variables: z.record(z.string(), VariableSchema),
   bonuses: z.record(
     z.string(),

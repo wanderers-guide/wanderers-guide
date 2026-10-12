@@ -633,6 +633,13 @@ test('daily runtime ownership survives the validated export/import boundary with
   assert.equal(Object.hasOwn(engine.exportVariableStore('CHARACTER'), 'dailySpellPreparation'), false);
 });
 
+test('a transient entity without an ID cannot inherit daily runtime ownership from another entity', async () => {
+  await calculate(character([selector()]));
+  const transient = character();
+  delete transient.id;
+  assert.deepEqual(rest(transient).operation_data, transient.operation_data);
+});
+
 test('initial daily choices expire after removing the feature, resting and regranting it', async () => {
   const input = character([selector()]);
   input.operation_data.selections[`character_${dailyId}`] = findSelection(

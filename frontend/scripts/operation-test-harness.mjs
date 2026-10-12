@@ -169,9 +169,17 @@ export async function createOperationEngine({
   inspectInitialStats = false,
   resolveArchetypeFixtures = false,
   exportJson = false,
+  importJson = false,
+  workerEntry = false,
 } = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'wg-operation-tests-'));
   try {
+    if (workerEntry) {
+      await writeFile(
+        join(directory, 'worker-port.mjs'),
+        'export const workerPort = { postMessage() { throw new Error("Unconfigured test worker port"); } };'
+      );
+    }
     const result = await build({
       absWorkingDir: frontend,
       stdin: {
@@ -322,6 +330,7 @@ export async function createOperationEngine({
           export { getSpellStats, getItemCastingSource, getSpellheartStats, resolveSpellheartCasting } from '@spells/spell-handler';
           export * from '@spells/innate-spells';
           export { SpellheartCastingSchema, ItemSchema, InventoryItemSchema } from '@schemas/content';
+          export { VariableStoreSchema } from '@schemas/variables';
           export { changeEntityConditions, confirmHealth, handleRest } from '@pages/character_sheet/entity-handler';
           export { findDefaultPresets } from '@common/dice/dice-utils';
           export { getWeaponStats } from '@items/weapon-handler';
@@ -342,6 +351,8 @@ export async function createOperationEngine({
           export { setFixtures, defineDefaultSources } from '@content/content-store';
           export { getOperationErrorNotifications, clearOperationErrorNotifications } from '@utils/notifications';
           ${exportJson ? "export { default as jsonV4, getJsonV4Content } from '@export/json/json-v4'; export { getJsonDownload, clearJsonDownload } from '@export/export-to-json';" : ''}
+          ${importJson ? "export { default as importJsonV4 } from '@import/json/import-from-json'; export { getJsonImportRequests, clearJsonImportRequests } from '@requests/request-manager';" : ''}
+          ${workerEntry ? "import '@operations/operations.worker';" : ''}
         `,
         resolveDir: frontend,
         loader: 'ts',
@@ -354,7 +365,8 @@ export async function createOperationEngine({
       ...(renderCastSpellDrawer || renderSpellDrawer || renderSelectionEditor
         ? { loader: { '.css': 'empty', '.module.css': 'empty' } }
         : {}),
-      ...(renderRichText ||
+      ...(workerEntry ||
+      renderRichText ||
       renderPerceptionDrawer ||
       renderCastSpellDrawer ||
       renderSpellDrawer ||
@@ -362,7 +374,17 @@ export async function createOperationEngine({
       renderSelectionEditor
         ? {
             banner: {
-              js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+              js: [
+                ...(workerEntry ? ["import { workerPort as self } from './worker-port.mjs';"] : []),
+                ...(renderRichText ||
+                renderPerceptionDrawer ||
+                renderCastSpellDrawer ||
+                renderSpellDrawer ||
+                renderBindingEditor ||
+                renderSelectionEditor
+                  ? ["import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);"]
+                  : []),
+              ].join('\n'),
             },
           }
         : {}),
@@ -408,6 +430,25 @@ export async function createOperationEngine({
               );
               pluginBuild.onLoad({ filter: /.*/, namespace: 'selection-url-fixture' }, () => ({
                 contents: "export const DISCORD_URL = 'https://discord.gg/FxsFZVvedr';",
+                loader: 'ts',
+              }));
+            }
+            if (importJson) {
+              // Record only the importer's external API boundary. Unexpected calls
+              // fail closed; no production request, authentication or credential runs.
+              pluginBuild.onResolve({ filter: /^@requests\/request-manager$/ }, () => ({
+                path: 'json-import-request',
+                namespace: 'json-import-request',
+              }));
+              pluginBuild.onLoad({ filter: /.*/, namespace: 'json-import-request' }, () => ({
+                contents: `let requests = [];
+                  export async function makeRequest(type, character) {
+                    if (type !== 'create-character') throw new Error('Unexpected JSON import request: ' + type);
+                    requests.push({ type, character: structuredClone(character) });
+                    return { ...character, id: -990899 };
+                  }
+                  export function getJsonImportRequests() { return structuredClone(requests); }
+                  export function clearJsonImportRequests() { requests = []; }`,
                 loader: 'ts',
               }));
             }
@@ -495,7 +536,14 @@ export async function createOperationEngine({
     const bundlePath = join(directory, 'engine.mjs');
     await writeFile(bundlePath, result.outputFiles[0].text);
     const engine = await import(pathToFileURL(bundlePath).href);
-    return { ...engine, cleanup: () => rm(directory, { recursive: true, force: true }) };
+    const port = workerEntry
+      ? (await import(pathToFileURL(join(directory, 'worker-port.mjs')).href)).workerPort
+      : undefined;
+    return {
+      ...engine,
+      ...(port ? { workerPort: port } : {}),
+      cleanup: () => rm(directory, { recursive: true, force: true }),
+    };
   } catch (error) {
     await rm(directory, { recursive: true, force: true });
     throw error;
