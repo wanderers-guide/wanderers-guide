@@ -190,8 +190,12 @@ a late read cannot publish rows after fresh downloads start. A recent snapshot g
 separate 750-millisecond source-version check. Confirmed changes reject the snapshot;
 a slow or unavailable check uses the account-scoped snapshot for this visit. A late
 verdict never replaces content during calculations. Unverified snapshots keep their
-original timestamp when persisted, preserving the 24-hour age limit. If browser storage
-itself remains stalled, fresh content still loads but persistence waits for that storage
+original timestamp when persisted, preserving the 24-hour age limit. A late confirmed
+source change retires only the still-stale persisted content snapshot for the next reload
+and prevents the current visit from saving its stale content again. A newer snapshot
+from another tab, other accounts, and character drafts are preserved. The current
+calculation keeps its original complete content; it is not refreshed mid-calculation.
+If browser storage itself remains stalled, fresh content still loads but persistence waits for that storage
 operation to finish. Catalog artwork loads only when displayed.
 
 Calculation workers reuse the package posted for their current job. Catalog selections

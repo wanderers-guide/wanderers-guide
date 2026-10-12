@@ -28,6 +28,10 @@ test('content packages and cache respect failures, sources, actors and generatio
     delete: async (key) => {
       state.records.delete(key);
     },
+    deleteIf: async (key, matches) => {
+      const value = state.records.get(key);
+      if (value !== undefined && matches(value)) state.records.delete(key);
+    },
     request: async () => [],
     session: async () => ({ data: { session: { user: { id: state.actor } } } }),
   });
@@ -36,7 +40,7 @@ test('content packages and cache respect failures, sources, actors and generatio
     'supabase-client': `export const supabase = {auth:{getSession:()=>globalThis.__contentCacheTest.session()}};`,
     '@requests/request-manager': `export const makeRequest = async (...args) => { globalThis.__contentCacheTest.requests.push(args); return globalThis.__contentCacheTest.request(...args); };`,
     '@utils/images': `export const preloadImage = async () => {};`,
-    'content-cache-db': `export const idbGet = key => globalThis.__contentCacheTest.read(key); export const idbSet = (key,value) => globalThis.__contentCacheTest.write(key,value); export const idbDelete = key => globalThis.__contentCacheTest.delete(key);`,
+    'content-cache-db': `export const idbGet = key => globalThis.__contentCacheTest.read(key); export const idbSet = (key,value) => globalThis.__contentCacheTest.write(key,value); export const idbDelete = key => globalThis.__contentCacheTest.delete(key); export const idbDeleteIf = (key,matches) => globalThis.__contentCacheTest.deleteIf(key,matches);`,
   };
   let store;
   try {
@@ -385,6 +389,295 @@ test('content packages and cache respect failures, sources, actors and generatio
       contentStore: new Map(),
     });
 
+    await t.test('a late confirmed source change retires the snapshot before the next reload', async (t) => {
+      const checking = deferred(),
+        started = deferred(),
+        nextChecking = deferred();
+      const snapshot = cachedSnapshot();
+      const fresh = {
+        ...row,
+        description: 'Published *corrected* description with [another reference](link_trait_1).',
+      };
+      const key = `content-store:${state.actor}`;
+      const draftKey = `character-draft:${state.actor}:fixture`;
+      const draft = { unsaved: 'Retain this input', character: { id: 1 } };
+      state.records.set(key, structuredClone(snapshot));
+      state.records.set(draftKey, structuredClone(draft));
+      state.read = async (recordKey) => state.records.get(recordKey);
+      state.request = async (type, body) => {
+        if (type === 'get-content-versions') {
+          started.resolve();
+          return checking.promise;
+        }
+        return [{ ...fresh, id: body.id }];
+      };
+      t.mock.timers.enable({ apis: ['setTimeout'] });
+      store.resetContentStore(false);
+      const pending = store.fetchContent('language', query);
+      try {
+        await started.promise;
+        await new Promise((resolve) => setImmediate(resolve));
+        t.mock.timers.tick(750);
+        const currentVisit = await pending;
+        assert.deepEqual(currentVisit, [row], 'the bounded offline fallback keeps the current visit usable');
+
+        checking.resolve([{ id: 81000, updated_at: 'new-source-token' }]);
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.deepEqual(currentVisit, [row], 'retirement never mutates content already used by a calculation');
+        assert.equal(state.records.has(key), false, 'only the positively stale content snapshot is retired');
+        await store.fetchContent('language', { ...query, id: 81002 });
+        t.mock.timers.tick(10000);
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.equal(state.records.has(key), false, 'the retired live generation cannot persist stale rows again');
+
+        state.request = async (type, body) =>
+          type === 'get-content-versions' ? nextChecking.promise : [{ ...fresh, id: body.id }];
+        store.resetContentStore(false);
+        const reloaded = store.fetchContent('language', query);
+        await new Promise((resolve) => setImmediate(resolve));
+        t.mock.timers.tick(750);
+        const reloadedRows = await reloaded;
+        assert.equal(reloadedRows[0]?.id, fresh.id);
+        assert.equal(
+          reloadedRows[0]?.description,
+          fresh.description,
+          'reload cannot reuse a positively proven stale description'
+        );
+        assert.deepEqual(state.records.get(draftKey), draft, 'content retirement must preserve character drafts');
+      } finally {
+        checking.resolve(null);
+        nextChecking.resolve(null);
+        await pending;
+        t.mock.timers.reset();
+        state.read = async (recordKey) => state.records.get(recordKey);
+        store.resetContentStore(false, true);
+      }
+    });
+
+    for (const boundary of ['generation', 'account']) {
+      await t.test(`a late stale verdict cannot retire a newer ${boundary} snapshot`, async (t) => {
+        const checking = deferred(),
+          started = deferred();
+        const snapshot = cachedSnapshot();
+        const originalActor = state.actor;
+        const originalKey = `content-store:${originalActor}`;
+        const fresh = { ...row, description: 'Fresh replacement content' };
+        state.records.set(originalKey, structuredClone(snapshot));
+        state.read = async (key) => state.records.get(key);
+        state.request = async (type) => {
+          if (type === 'get-content-versions') {
+            started.resolve();
+            return checking.promise;
+          }
+          return [];
+        };
+        t.mock.timers.enable({ apis: ['setTimeout'] });
+        store.resetContentStore(false);
+        const pending = store.fetchContent('language', query);
+        try {
+          await started.promise;
+          await new Promise((resolve) => setImmediate(resolve));
+          t.mock.timers.tick(750);
+          assert.deepEqual(await pending, [row]);
+          if (boundary === 'account') {
+            state.actor = `${originalActor}-next`;
+            store.setContentCacheActor(state.actor);
+          } else {
+            store.resetContentStore(false);
+          }
+          const replacement = cachedSnapshot();
+          replacement.idStore.get('content-source').get(81000).updated_at = 'new-source-token';
+          replacement.idStore.get('language').set(row.id, fresh);
+          const replacementKey = `content-store:${state.actor}`;
+          state.records.set(replacementKey, structuredClone(replacement));
+          state.request = async (type) =>
+            type === 'get-content-versions' ? [{ id: 81000, updated_at: 'new-source-token' }] : [fresh];
+          assert.equal((await store.fetchContent('language', query))[0].description, fresh.description);
+          checking.resolve([{ id: 81000, updated_at: 'new-source-token' }]);
+          await new Promise((resolve) => setImmediate(resolve));
+          assert.deepEqual(state.records.get(replacementKey), replacement, 'obsolete work cannot delete fresh storage');
+          assert.equal((await store.fetchContent('language', query))[0].description, fresh.description);
+          if (boundary === 'account') {
+            assert.deepEqual(
+              state.records.get(originalKey),
+              snapshot,
+              'the old account is not touched after switching'
+            );
+          }
+        } finally {
+          checking.resolve(null);
+          await pending;
+          t.mock.timers.reset();
+          state.actor = originalActor;
+          store.setContentCacheActor(originalActor);
+          store.resetContentStore(false, true);
+        }
+      });
+    }
+
+    await t.test('a late stale verdict preserves a fresh snapshot written by another tab', async (t) => {
+      const checking = deferred(),
+        started = deferred();
+      const snapshot = cachedSnapshot();
+      const key = `content-store:${state.actor}`;
+      const replacement = cachedSnapshot();
+      replacement.idStore.get('content-source').get(81000).updated_at = 'new-source-token';
+      replacement.idStore.get('language').set(row.id, { ...row, description: 'Other tab fresh description' });
+      state.records.set(key, structuredClone(snapshot));
+      state.request = async (type, body) => {
+        if (type === 'get-content-versions') {
+          started.resolve();
+          return checking.promise;
+        }
+        return [{ ...row, id: body.id }];
+      };
+      t.mock.timers.enable({ apis: ['setTimeout'] });
+      store.resetContentStore(false);
+      const pending = store.fetchContent('language', query);
+      try {
+        await started.promise;
+        await new Promise((resolve) => setImmediate(resolve));
+        t.mock.timers.tick(750);
+        const currentVisit = await pending;
+        state.records.set(key, structuredClone(replacement));
+        checking.resolve([{ id: 81000, updated_at: 'new-source-token' }]);
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.deepEqual(state.records.get(key), replacement, 'conditional retirement refuses the newer token');
+        assert.deepEqual(currentVisit, [row], 'the current calculation input is not replaced');
+        await store.fetchContent('language', { ...query, id: 81002 });
+        t.mock.timers.tick(10000);
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.deepEqual(state.records.get(key), replacement, "old live maps cannot overwrite another tab's refresh");
+      } finally {
+        checking.resolve(null);
+        await pending;
+        t.mock.timers.reset();
+        store.resetContentStore(false, true);
+      }
+    });
+
+    await t.test('retirement follows an already started stale write and prevents resurrection', async (t) => {
+      const checking = deferred(),
+        checkingStarted = deferred(),
+        writing = deferred(),
+        writingStarted = deferred();
+      const snapshot = cachedSnapshot();
+      const key = `content-store:${state.actor}`;
+      const normalWrite = state.write;
+      state.records.set(key, structuredClone(snapshot));
+      state.request = async (type, body) => {
+        if (type === 'get-content-versions') {
+          checkingStarted.resolve();
+          return checking.promise;
+        }
+        return [{ ...row, id: body.id }];
+      };
+      state.write = async (recordKey, value) => {
+        writingStarted.resolve();
+        await writing.promise;
+        state.records.set(recordKey, structuredClone(value));
+      };
+      t.mock.timers.enable({ apis: ['setTimeout'] });
+      store.resetContentStore(false);
+      const pending = store.fetchContent('language', query);
+      try {
+        await checkingStarted.promise;
+        await new Promise((resolve) => setImmediate(resolve));
+        t.mock.timers.tick(750);
+        const currentVisit = await pending;
+        await store.fetchContent('language', { ...query, id: 81002 });
+        t.mock.timers.tick(10000);
+        await writingStarted.promise;
+        checking.resolve([{ id: 81000, updated_at: 'new-source-token' }]);
+        await new Promise((resolve) => setImmediate(resolve));
+        writing.resolve();
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.equal(state.records.has(key), false, 'retirement runs after the in-flight stale write');
+        assert.deepEqual(currentVisit, [row]);
+        await store.fetchContent('language', { ...query, id: 81003 });
+        t.mock.timers.tick(10000);
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.equal(state.records.has(key), false, 'further lookups cannot resurrect the stale snapshot');
+      } finally {
+        checking.resolve(null);
+        writing.resolve();
+        await pending;
+        t.mock.timers.reset();
+        state.write = normalWrite;
+        store.resetContentStore(false, true);
+      }
+    });
+
+    await t.test('a reset during conditional retirement preserves the replacement snapshot', async (t) => {
+      const checking = deferred(),
+        checkingStarted = deferred(),
+        deleting = deferred(),
+        deletingStarted = deferred();
+      const key = `content-store:${state.actor}`;
+      const snapshot = cachedSnapshot();
+      const replacement = cachedSnapshot();
+      replacement.idStore.get('content-source').get(81000).updated_at = 'new-source-token';
+      replacement.idStore.get('language').set(row.id, { ...row, description: 'New generation replacement' });
+      const normalDeleteIf = state.deleteIf;
+      state.records.set(key, structuredClone(snapshot));
+      state.deleteIf = async (recordKey, matches) => {
+        deletingStarted.resolve();
+        await deleting.promise;
+        const value = state.records.get(recordKey);
+        if (value !== undefined && matches(value)) state.records.delete(recordKey);
+      };
+      state.request = async (type) => {
+        if (type === 'get-content-versions') {
+          checkingStarted.resolve();
+          return checking.promise;
+        }
+        return [];
+      };
+      t.mock.timers.enable({ apis: ['setTimeout'] });
+      store.resetContentStore(false);
+      const pending = store.fetchContent('language', query);
+      try {
+        await checkingStarted.promise;
+        await new Promise((resolve) => setImmediate(resolve));
+        t.mock.timers.tick(750);
+        assert.deepEqual(await pending, [row]);
+        checking.resolve([{ id: 81000, updated_at: 'new-source-token' }]);
+        await deletingStarted.promise;
+        store.resetContentStore(false);
+        state.records.set(key, structuredClone(replacement));
+        state.request = async (type) =>
+          type === 'get-content-versions' ? [{ id: 81000, updated_at: 'new-source-token' }] : [];
+        deleting.resolve();
+        const reloaded = await store.fetchContent('language', query);
+        assert.equal(reloaded[0]?.description, 'New generation replacement');
+        assert.deepEqual(state.records.get(key), replacement, 'the predicate rechecks generation after its await');
+      } finally {
+        checking.resolve(null);
+        deleting.resolve();
+        await pending;
+        t.mock.timers.reset();
+        state.deleteIf = normalDeleteIf;
+        store.resetContentStore(false, true);
+      }
+    });
+
+    await t.test('an unavailable freshness endpoint retains the bounded offline snapshot', async () => {
+      const snapshot = cachedSnapshot();
+      const key = `content-store:${state.actor}`;
+      state.records.set(key, structuredClone(snapshot));
+      state.request = async (type) => {
+        assert.equal(type, 'get-content-versions', 'an unavailable probe must not force catalog downloads');
+        return null;
+      };
+      store.resetContentStore(false);
+      try {
+        assert.deepEqual(await store.fetchContent('language', query), [row]);
+        assert.deepEqual(state.records.get(key), snapshot, 'unavailable is not a positive stale verdict');
+      } finally {
+        store.resetContentStore(false, true);
+      }
+    });
+
     await t.test('a slow version check uses the recent snapshot without extending its age', async (t) => {
       const checking = deferred();
       const snapshot = cachedSnapshot(Date.now() - 20 * 60 * 60 * 1000);
@@ -399,7 +692,7 @@ test('content packages and cache respect failures, sources, actors and generatio
           ['get-content-versions'],
           'slow freshness must not trigger a replacement download'
         );
-        checking.resolve([{ id: 81000, updated_at: 'new-source-token' }]);
+        checking.resolve([{ id: 81000, updated_at: 'old-source-token' }]);
         await new Promise((resolve) => setImmediate(resolve));
         assert.deepEqual(
           await store.fetchContent('language', query),
@@ -487,5 +780,105 @@ test('content packages and cache respect failures, sources, actors and generatio
     store?.resetContentStore(true, true);
     await rm(directory, { recursive: true, force: true });
     delete globalThis.__contentCacheTest;
+  }
+});
+
+/** Check the real IndexedDB helper's transaction boundary without a browser or user storage. */
+test('conditional cache deletion checks and removes within one readwrite transaction', async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), 'wg-content-cache-db-'));
+  const originalIndexedDb = Object.getOwnPropertyDescriptor(globalThis, 'indexedDB');
+  const records = new Map();
+  const transactions = [];
+  const key = 'content-store:fixture';
+  const draftKey = 'character-draft:fixture';
+  const draft = { input: 'Preserve this unrelated value' };
+  let beforeRead = () => {};
+  const db = {
+    transaction(storeName, mode) {
+      const observations = { storeName, mode, reads: [], deletes: [] };
+      transactions.push(observations);
+      const tx = {
+        objectStore(name) {
+          assert.equal(name, storeName);
+          return {
+            get(recordKey) {
+              observations.reads.push(recordKey);
+              const request = {};
+              queueMicrotask(() => {
+                beforeRead();
+                request.result = records.get(recordKey);
+                request.onsuccess?.();
+                queueMicrotask(() => tx.oncomplete?.());
+              });
+              return request;
+            },
+            delete(recordKey) {
+              observations.deletes.push(recordKey);
+              records.delete(recordKey);
+            },
+          };
+        },
+      };
+      return tx;
+    },
+  };
+  Object.defineProperty(globalThis, 'indexedDB', {
+    configurable: true,
+    value: {
+      open() {
+        const request = {};
+        queueMicrotask(() => {
+          request.result = db;
+          request.onsuccess?.();
+        });
+        return request;
+      },
+    },
+  });
+  try {
+    const result = await build({
+      entryPoints: [join(frontend, 'src/process/content/content-cache-db.ts')],
+      bundle: true,
+      write: false,
+      platform: 'node',
+      format: 'esm',
+    });
+    const modulePath = join(directory, 'cache-db.mjs');
+    await writeFile(modulePath, result.outputFiles[0].text);
+    const cacheDb = await import(pathToFileURL(modulePath).href);
+    records.set(draftKey, structuredClone(draft));
+
+    await t.test('matching snapshots are checked and removed by the same transaction', async () => {
+      records.set(key, { token: 'old' });
+      await cacheDb.idbDeleteIf(key, (value) => value.token === 'old');
+      assert.equal(records.has(key), false);
+      assert.deepEqual(transactions.at(-1), { storeName: 'kv', mode: 'readwrite', reads: [key], deletes: [key] });
+      assert.deepEqual(records.get(draftKey), draft);
+    });
+
+    await t.test('a replacement installed before the transaction reads is never deleted', async () => {
+      const replacement = { token: 'new', data: 'Fresh content' };
+      records.set(key, { token: 'old' });
+      beforeRead = () => records.set(key, replacement);
+      try {
+        await cacheDb.idbDeleteIf(key, (value) => value.token === 'old');
+        assert.deepEqual(records.get(key), replacement);
+        assert.deepEqual(transactions.at(-1), { storeName: 'kv', mode: 'readwrite', reads: [key], deletes: [] });
+        assert.deepEqual(records.get(draftKey), draft);
+      } finally {
+        beforeRead = () => {};
+      }
+    });
+
+    await t.test('an absent snapshot does not invoke the predicate or delete another key', async () => {
+      records.delete(key);
+      await cacheDb.idbDeleteIf(key, () => assert.fail('No snapshot exists to compare'));
+      assert.deepEqual(transactions.at(-1), { storeName: 'kv', mode: 'readwrite', reads: [key], deletes: [] });
+      assert.deepEqual(records.get(draftKey), draft);
+    });
+  } finally {
+    if (originalIndexedDb) Object.defineProperty(globalThis, 'indexedDB', originalIndexedDb);
+    else delete globalThis.indexedDB;
+    await rm(directory, { recursive: true, force: true });
   }
 });
