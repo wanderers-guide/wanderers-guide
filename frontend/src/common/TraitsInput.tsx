@@ -4,7 +4,7 @@ import { TagsInput, TagsInputProps } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Trait } from '@schemas/content';
 import { isTruthy } from '@utils/type-fixing';
-import { isNumber } from 'lodash-es';
+import { isNumber, uniqBy } from 'lodash-es';
 import { useMemo } from 'react';
 
 interface TraitsInputProps extends TagsInputProps {
@@ -45,9 +45,8 @@ export default function TraitsInput(props: TraitsInputProps) {
   });
 
   const { options, byLabel, byId, byName, labelById } = useMemo(() => {
-    const traits = (data?.traits ?? [])
-      .filter(isTruthy)
-      .sort((a, b) => a.name.localeCompare(b.name))
+    const traits = uniqBy((data?.traits ?? []).filter(isTruthy), (trait) => trait.id)
+      .sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id)
       .filter((trait) => isTraitVisible('CHARACTER', trait));
 
     const sourceNames = new Map((data?.sources ?? []).map((source) => [source.id, source.name]));
@@ -68,14 +67,25 @@ export default function TraitsInput(props: TraitsInputProps) {
     const byName = new Map<string, Trait[]>();
     const labelById = new Map<number, string>();
 
-    for (const trait of traits) {
-      const key = trait.name.toLowerCase();
+    const labelCount = new Map<string, number>();
+    const labeledTraits = traits.map((trait) => {
       // Only qualify the ambiguous ones, so every trait with a unique name keeps its plain name
       // and nothing changes for the vast majority of content.
       const label =
-        (nameCount.get(key) ?? 0) > 1
+        (nameCount.get(trait.name.toLowerCase()) ?? 0) > 1
           ? `${trait.name} (${sourceNames.get(trait.content_source_id) ?? `#${trait.id}`})`
           : trait.name;
+      labelCount.set(label, (labelCount.get(label) ?? 0) + 1);
+      return { trait, label };
+    });
+
+    for (const { trait, label: baseLabel } of labeledTraits) {
+      const key = trait.name.toLowerCase();
+      // Source names are not unique. Keep both trait IDs selectable instead of giving
+      // Mantine duplicate values, which throws while any item editor is opening.
+      let label = (labelCount.get(baseLabel) ?? 0) > 1 ? `${baseLabel} (#${trait.id})` : baseLabel;
+      // A literal trait name can also equal a generated label; never overwrite its mapping.
+      while (byLabel.has(label)) label += ` (#${trait.id})`;
 
       options.push(label);
       byLabel.set(label, trait);

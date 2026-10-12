@@ -12,6 +12,7 @@ import {
   ProficiencyType,
   ProficiencyValue,
   ExtendedProficiencyType,
+  PetOwnerDefenses,
 } from '@schemas/variables';
 import {
   isAttributeValue,
@@ -31,6 +32,7 @@ import {
   compileExpressions,
   compileProficiencyType,
   getProficiencyTypeValue,
+  parseListStr,
   isProficiencyTypeGreaterOrEqual,
   nextProficiencyType,
 } from './variable-utils';
@@ -619,8 +621,7 @@ function baselineListContributions(store: VariableStore): Map<string, OwnedListC
 }
 
 function listContributionValues(value: unknown): string[] {
-  if (!isListStr(value)) return [];
-  return typeof value === 'string' ? JSON.parse(value) : value;
+  return parseListStr(value) ?? [];
 }
 
 /** A defensive execution-only view; saved stores contain no provenance. */
@@ -942,6 +943,30 @@ export function resetVariables(id?: StoreID) {
  */
 export function importVariableStore(id: StoreID, store: VariableStore) {
   variableMap.set(id, cloneDeep(store));
+}
+
+/** Read runtime owner context separately from authored variables; callers receive an isolated copy. */
+export function getPetOwnerDefenses(id: StoreID): PetOwnerDefenses | undefined {
+  return cloneDeep(getVariableStore(id).petOwnerDefenses);
+}
+
+/** Publish a complete derived context after grants finish, without changing authored variables or live journals. */
+export function setPetOwnerDefenses(id: StoreID, defenses: PetOwnerDefenses): void {
+  getVariableStore(id).petOwnerDefenses = cloneDeep(defenses);
+}
+
+/**
+ * Read a temporary cloned calculation view synchronously, without replacing the live execution's identity.
+ * The reader must not await or run operations. Restoring the exact object also preserves its effect/spell journals.
+ */
+export function readVariableStoreView<T>(id: StoreID, view: VariableStore, read: () => T): T {
+  const original = getVariableStore(id);
+  variableMap.set(id, cloneDeep(view));
+  try {
+    return read();
+  } finally {
+    variableMap.set(id, original);
+  }
 }
 
 /**

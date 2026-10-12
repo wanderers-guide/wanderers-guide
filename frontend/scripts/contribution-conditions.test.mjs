@@ -802,7 +802,9 @@ test('public direct calculation protocol validates the result and rejects invali
   );
   assert.deepEqual(engine.exportVariableStore('CHARACTER'), before);
   assert.deepEqual(engine.getOperationErrorNotifications(), []);
-  assert.deepEqual(Object.keys(before).sort(), ['bonuses', 'history', 'variables']);
+  assert.deepEqual(Object.keys(before).sort(), ['bonuses', 'history', 'petOwnerDefenses', 'variables']);
+  assert.deepEqual(Object.keys(before.petOwnerDefenses).sort(), ['AC_BONUS', 'SAVE_FORT', 'SAVE_REFLEX', 'SAVE_WILL']);
+  assert.ok(Object.values(before.petOwnerDefenses).every(Number.isFinite));
 });
 
 function publicExecution(rows, operations = [heritageGrant, winterGrant]) {
