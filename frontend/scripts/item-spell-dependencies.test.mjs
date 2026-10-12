@@ -196,10 +196,16 @@ const variableStatement = (source, name) => {
 const wandSource = await extractSource('src/pages/character_sheet/panels/spells_list/WandSpellsList.tsx');
 const panelSource = await extractSource('src/pages/character_sheet/panels/SpellsPanel.tsx');
 const handlerSource = await extractSource('src/process/items/inv-handlers.tsx');
+const chargeUpdate = evaluateSource(
+  handlerSource,
+  variableStatement(handlerSource, 'updateItemCharges'),
+  {},
+  'updateItemCharges'
+);
 const chargeHandler = evaluateSource(
   handlerSource,
   variableStatement(handlerSource, 'handleUpdateItemCharges'),
-  {},
+  { updateItemCharges: chargeUpdate },
   'handleUpdateItemCharges'
 );
 const wandEffect = wandSource.nodes.filter(

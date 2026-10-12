@@ -11,13 +11,18 @@ on:
         description: Run the exhaustive content failure matrix instead of representative release hazards
         type: boolean
         default: false
+      private-content:
+        description: Test a sealed unpublished content batch on an isolated runner
+        type: boolean
+        default: false
 
 concurrency:
-  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  group: e2e-${{ github.workflow }}-${{ github.ref }}${{ inputs.private-content && '-private-content' || '' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   e2e:
+    if: ${{ !inputs.private-content }}
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
@@ -29,7 +34,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -124,7 +129,7 @@ jobs:
           }
           verify_registered
           for pass in 1 2; do
-            for migration in supabase/migrations/20260927*.sql supabase/migrations/20260928*.sql supabase/migrations/20260929*.sql supabase/migrations/20260930*.sql supabase/migrations/20261001*.sql supabase/migrations/20261002*.sql supabase/migrations/20261011000100_incarnate_release_compatibility.sql; do
+            for migration in supabase/migrations/20260927*.sql supabase/migrations/20260928*.sql supabase/migrations/20260929*.sql supabase/migrations/20260930*.sql supabase/migrations/20261001*.sql supabase/migrations/20261002*.sql supabase/migrations/20261011000000_restore_heal_companion.sql supabase/migrations/20261011000100_incarnate_release_compatibility.sql; do
               docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"
             done
             verify_registered
@@ -198,12 +203,20 @@ jobs:
         with:
           working-directory: ./frontend
           install: false
+          # Only the two mounted-Rest fixture cases use source-module access.
+          # All other browser cases retain the compiled Docker app as their base URL.
+          start: npm run dev -- --host 127.0.0.1 --port 5174 --strictPort
+          wait-on: "http://localhost:5174"
           command: npm run cy:run -- --browser chrome
         env:
           CYPRESS_BASE_URL: http://localhost:3000
           CYPRESS_TEST_EMAIL: test@wanderersguide.app
           CYPRESS_TEST_PASSWORD: test1234
           CYPRESS_functions_url: http://localhost:8000/functions/v1
+          CYPRESS_module_preview_url: http://localhost:5174
+          VITE_SUPABASE_URL: http://localhost:8000
+          VITE_SUPABASE_KEY: public-fixture
+          VITE_ENV: production
 
       - name: Upload Cypress screenshots
         if: failure()
@@ -242,6 +255,7 @@ jobs:
         run: docker compose down -v
 
   content-native:
+    if: ${{ !inputs.private-content }}
     runs-on: ubuntu-latest
     # Routine releases use representative failures with complete preservation.
     # The exhaustive matrix is available through an explicit manual run.
@@ -255,7 +269,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install content schema test dependencies
         working-directory: ./frontend
@@ -291,6 +305,7 @@ jobs:
           if-no-files-found: warn
 
   tech-core-content:
+    if: ${{ !inputs.private-content }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -299,7 +314,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Pull pinned native fixture images
         run: |
@@ -327,3 +342,69 @@ jobs:
           name: tech-core-general-spells-native-${{ github.sha }}
           path: ${{ runner.temp }}/tech-core-general-spells/receipt.json
           if-no-files-found: warn
+
+  private-content:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.private-content }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install content test dependencies
+        working-directory: ./frontend
+        run: npm ci --legacy-peer-deps --no-audit --no-fund
+      - name: Pull pinned native fixture images
+        run: |
+          docker pull supabase/postgres:15.6.1.146
+          docker pull supabase/gotrue:v2.158.1
+      - name: Test unpublished content
+        run: node scripts/private-content-runner.mjs
+        env:
+          WG_PRIVATE_CONTENT_KEY: ${{ secrets.WG_PRIVATE_CONTENT_KEY }}
+          WG_PRIVATE_CONTENT_SHA256: ${{ secrets.WG_PRIVATE_CONTENT_SHA256 }}
+          WG_PRIVATE_CONTENT_00: ${{ secrets.WG_PRIVATE_CONTENT_00 }}
+          WG_PRIVATE_CONTENT_01: ${{ secrets.WG_PRIVATE_CONTENT_01 }}
+          WG_PRIVATE_CONTENT_02: ${{ secrets.WG_PRIVATE_CONTENT_02 }}
+          WG_PRIVATE_CONTENT_03: ${{ secrets.WG_PRIVATE_CONTENT_03 }}
+          WG_PRIVATE_CONTENT_04: ${{ secrets.WG_PRIVATE_CONTENT_04 }}
+          WG_PRIVATE_CONTENT_05: ${{ secrets.WG_PRIVATE_CONTENT_05 }}
+          WG_PRIVATE_CONTENT_06: ${{ secrets.WG_PRIVATE_CONTENT_06 }}
+          WG_PRIVATE_CONTENT_07: ${{ secrets.WG_PRIVATE_CONTENT_07 }}
+          WG_PRIVATE_CONTENT_08: ${{ secrets.WG_PRIVATE_CONTENT_08 }}
+          WG_PRIVATE_CONTENT_09: ${{ secrets.WG_PRIVATE_CONTENT_09 }}
+          WG_PRIVATE_CONTENT_10: ${{ secrets.WG_PRIVATE_CONTENT_10 }}
+          WG_PRIVATE_CONTENT_11: ${{ secrets.WG_PRIVATE_CONTENT_11 }}
+          WG_PRIVATE_CONTENT_12: ${{ secrets.WG_PRIVATE_CONTENT_12 }}
+          WG_PRIVATE_CONTENT_13: ${{ secrets.WG_PRIVATE_CONTENT_13 }}
+          WG_PRIVATE_CONTENT_14: ${{ secrets.WG_PRIVATE_CONTENT_14 }}
+          WG_PRIVATE_CONTENT_15: ${{ secrets.WG_PRIVATE_CONTENT_15 }}
+          WG_PRIVATE_CONTENT_16: ${{ secrets.WG_PRIVATE_CONTENT_16 }}
+          WG_PRIVATE_CONTENT_17: ${{ secrets.WG_PRIVATE_CONTENT_17 }}
+          WG_PRIVATE_CONTENT_18: ${{ secrets.WG_PRIVATE_CONTENT_18 }}
+          WG_PRIVATE_CONTENT_19: ${{ secrets.WG_PRIVATE_CONTENT_19 }}
+          WG_PRIVATE_CONTENT_20: ${{ secrets.WG_PRIVATE_CONTENT_20 }}
+          WG_PRIVATE_CONTENT_21: ${{ secrets.WG_PRIVATE_CONTENT_21 }}
+          WG_PRIVATE_CONTENT_22: ${{ secrets.WG_PRIVATE_CONTENT_22 }}
+          WG_PRIVATE_CONTENT_23: ${{ secrets.WG_PRIVATE_CONTENT_23 }}
+          WG_PRIVATE_CONTENT_24: ${{ secrets.WG_PRIVATE_CONTENT_24 }}
+          WG_PRIVATE_CONTENT_25: ${{ secrets.WG_PRIVATE_CONTENT_25 }}
+          WG_PRIVATE_CONTENT_26: ${{ secrets.WG_PRIVATE_CONTENT_26 }}
+          WG_PRIVATE_CONTENT_27: ${{ secrets.WG_PRIVATE_CONTENT_27 }}
+          WG_PRIVATE_CONTENT_28: ${{ secrets.WG_PRIVATE_CONTENT_28 }}
+          WG_PRIVATE_CONTENT_29: ${{ secrets.WG_PRIVATE_CONTENT_29 }}
+          WG_PRIVATE_CONTENT_30: ${{ secrets.WG_PRIVATE_CONTENT_30 }}
+          WG_PRIVATE_CONTENT_31: ${{ secrets.WG_PRIVATE_CONTENT_31 }}
+      - name: Archive encrypted content test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: private-content-${{ github.sha }}
+          path: ${{ runner.temp }}/wg-private-content-evidence/evidence.enc
+          if-no-files-found: warn
+          retention-days: 1

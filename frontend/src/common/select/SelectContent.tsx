@@ -116,11 +116,22 @@ import {
 /** Picker-only kinds can share a content table without sharing its living-entity schema. */
 export type SelectContentType = ContentType | 'hazard';
 
+function hasRankedSpellOptions(type: SelectContentType, options: Record<string, any>[] | undefined): boolean {
+  return (
+    type === 'spell' &&
+    !!options?.length &&
+    options.every(
+      (option) => option._select_uuid === `${option.id}:${option.rank}` || option._meta_data?.dailyPreparation === true
+    )
+  );
+}
+
 export function SelectContentButton<T extends Record<string, any> = Record<string, any>>(props: {
   type: ContentType;
   onClick: (option: T) => void;
   onClear?: () => void;
   selectedId?: number;
+  selectedOptionUUID?: string;
   options?: {
     overrideOptions?: T[];
     overrideLabel?: string;
@@ -135,16 +146,28 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
 }) {
   const [_drawer, openDrawer] = useAtom(drawerState);
   const [selected, setSelected] = useState<T | undefined>();
-  const pendingSelection = useRef<{ previousId: unknown; nextId: unknown } | null>(null);
+  const pendingSelection = useRef<{ previousId: unknown; nextId: unknown; dailyPreparation: boolean } | null>(null);
+  const usesRankedIdentity =
+    props.selectedOptionUUID !== undefined || hasRankedSpellOptions(props.type, props.options?.overrideOptions);
+  const selectedIdentity = usesRankedIdentity ? props.selectedOptionUUID : props.selectedId;
 
   // Keep an optimistic choice until its parent accepts it or sends a different value.
   useEffect(() => {
     (async () => {
       const pending = pendingSelection.current;
       if (pending) {
-        if (props.selectedId === pending.nextId) {
+        if (
+          pending.dailyPreparation &&
+          !props.options?.overrideOptions?.some(
+            (option) => option._meta_data?.dailyPreparation === true && option._select_uuid === pending.nextId
+          )
+        ) {
+          // Rest can expire an optimistic choice while the parent selection is still unset.
           pendingSelection.current = null;
-        } else if (props.selectedId === pending.previousId) {
+          setSelected(undefined);
+        } else if (selectedIdentity === pending.nextId) {
+          pendingSelection.current = null;
+        } else if (selectedIdentity === pending.previousId) {
           return;
         } else {
           pendingSelection.current = null;
@@ -152,16 +175,16 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
       }
 
       // If they're the same, no need to do anything
-      if (props.selectedId === selected?.id) {
+      if (selectedIdentity === (usesRankedIdentity ? selected?._select_uuid : selected?.id)) {
         return;
       }
 
-      if (!props.selectedId) {
+      if (!selectedIdentity) {
         setSelected(undefined);
         return;
       }
 
-      if (isNumber(props.selectedId)) {
+      if (!usesRankedIdentity && isNumber(props.selectedId)) {
         const content = await fetchContentById<T>(props.type, props.selectedId);
         if (content) {
           setSelected(content);
@@ -172,7 +195,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
       if (props.options?.overrideOptions) {
         const option = props.options.overrideOptions.find(
           // @ts-ignore
-          (option) => option.id === props.selectedId
+          (option) => (usesRankedIdentity ? option._select_uuid : option.id) === selectedIdentity
         );
         if (option) {
           setSelected(option);
@@ -180,7 +203,16 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
         }
       }
     })();
-  }, [selected?.id, props.selectedId, props.type, props.options?.overrideOptions]);
+  }, [
+    selected?.id,
+    selected?._select_uuid,
+    props.selectedId,
+    props.selectedOptionUUID,
+    selectedIdentity,
+    usesRankedIdentity,
+    props.type,
+    props.options?.overrideOptions,
+  ]);
 
   const typeName = toLabel(props.options?.abilityBlockType || props.type);
 
@@ -190,7 +222,11 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
     selectContent<T>(
       props.type,
       (option) => {
-        pendingSelection.current = { previousId: props.selectedId, nextId: option.id };
+        pendingSelection.current = {
+          previousId: selectedIdentity,
+          nextId: usesRankedIdentity ? option._select_uuid : option.id,
+          dailyPreparation: option._meta_data?.dailyPreparation === true,
+        };
         setSelected(option);
         props.onClick(option);
       },
@@ -201,6 +237,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
         skillAdjustment: props.options?.skillAdjustment,
         // @ts-ignore
         selectedId: selected?.id,
+        ...(usesRankedIdentity ? { selectedOptionUUID: selected?._select_uuid } : {}),
         // @ts-ignore
         filterFn: props.options?.filterFn,
         showButton: props.options?.showButton,
@@ -278,7 +315,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
               size='compact-sm'
               radius='xl'
               onClick={() => {
-                pendingSelection.current = { previousId: props.selectedId, nextId: undefined };
+                pendingSelection.current = { previousId: selectedIdentity, nextId: undefined, dailyPreparation: false };
                 setSelected(undefined);
                 props.onClear?.();
               }}
@@ -305,6 +342,7 @@ export function selectContent<T = Record<string, any>>(
     abilityBlockType?: AbilityBlockType;
     skillAdjustment?: ExtendedProficiencyType;
     selectedId?: number;
+    selectedOptionUUID?: string;
     filterFn?: (option: Record<string, any>) => boolean;
     advancedPresetFilters?: Partial<FiltersParams>;
     showButton?: boolean;
@@ -340,6 +378,7 @@ export default function SelectContentModal({
     abilityBlockType?: AbilityBlockType;
     skillAdjustment?: ExtendedProficiencyType;
     selectedId?: number;
+    selectedOptionUUID?: string;
     filterFn?: (option: Record<string, any>) => boolean;
     advancedPresetFilters?: Partial<FiltersParams>;
     showButton?: boolean;
@@ -754,6 +793,7 @@ export default function SelectContentModal({
                 skillAdjustment={innerProps.options?.skillAdjustment}
                 selectedId={innerProps.options?.selectedId}
                 overrideOptions={innerProps.options?.overrideOptions}
+                selectedOptionUUID={innerProps.options?.selectedOptionUUID}
                 searchQuery={searchQueryDebounced}
                 onClick={
                   innerProps.onClick
@@ -785,6 +825,7 @@ function SelectionOptions(props: {
   sourceId?: number | 'all';
   onClick?: (option: Record<string, any>) => void;
   selectedId?: number;
+  selectedOptionUUID?: string;
   overrideOptions?: Record<string, any>[];
   filterFn?: (option: Record<string, any>) => boolean;
   advancedPresetFilters?: Partial<FiltersParams>;
@@ -857,11 +898,12 @@ function SelectionOptions(props: {
   // query empty when content arrives, and an accumulating index retains removed choices.
   const filteredOptions = useMemo(() => {
     if (!props.searchQuery) return [...options];
-    const search = new JsSearch.Search('id');
+    const rankedSpellOptions = props.overrideOptions !== undefined && hasRankedSpellOptions(props.type, options);
+    const search = new JsSearch.Search(rankedSpellOptions ? '_select_uuid' : 'id');
     search.addIndex('name');
     search.addDocuments(options);
     return search.search(props.searchQuery) as Record<string, any>[];
-  }, [options, props.searchQuery]);
+  }, [options, props.searchQuery, props.type, props.overrideOptions]);
 
   // Pre-compute the prereq-met rank per option once (rather than re-running
   // `meetsPrerequisites` on every comparator call). Lower rank = better fit:
@@ -918,6 +960,7 @@ function SelectionOptions(props: {
       isLoading={!props.overrideOptions && !data && (isFetching || isError)}
       onClick={props.onClick}
       selectedId={props.selectedId}
+      selectedOptionUUID={props.selectedOptionUUID}
       showButton={props.showButton}
       includeOptions={props.includeOptions}
       creaturePreviewZIndex={props.creaturePreviewZIndex}
@@ -933,6 +976,7 @@ export function SelectionOptionsInner(props: {
   isLoading: boolean;
   onClick?: (option: Record<string, any>) => void;
   selectedId?: number;
+  selectedOptionUUID?: string;
   includeOptions?: boolean;
   showButton?: boolean;
   creaturePreviewZIndex?: number;
@@ -983,6 +1027,7 @@ export function SelectionOptionsInner(props: {
             abilityBlockType={props.abilityBlockType}
             onClick={props.onClick ? props.onClick : () => {}}
             selectedId={props.selectedId}
+            selectedOptionUUID={props.selectedOptionUUID}
             showButton={props.showButton}
             includeOptions={props.includeOptions}
             creaturePreviewZIndex={props.creaturePreviewZIndex}
@@ -1013,6 +1058,7 @@ function SelectionOptionsRoot(props: {
   abilityBlockType?: AbilityBlockType;
   onClick: (option: Record<string, any>) => void;
   selectedId?: number;
+  selectedOptionUUID?: string;
   includeOptions?: boolean;
   showButton?: boolean;
   creaturePreviewZIndex?: number;
@@ -1264,7 +1310,11 @@ function SelectionOptionsRoot(props: {
             key={'spell-' + index}
             spell={spell as Spell}
             onClick={props.onClick}
-            selected={props.selectedId === spell.id}
+            selected={
+              props.selectedOptionUUID === undefined
+                ? props.selectedId === spell.id
+                : props.selectedOptionUUID === spell._select_uuid
+            }
             showButton={props.showButton}
             includeOptions={props.includeOptions}
             onDelete={props.onDelete}

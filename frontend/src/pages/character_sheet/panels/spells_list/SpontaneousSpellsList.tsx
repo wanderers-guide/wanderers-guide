@@ -1,5 +1,6 @@
 import BlurButton from '@common/BlurButton';
 import { collectEntitySpellcasting } from '@content/collect-content';
+import { retainRestrictedPreparations } from '@spells/spell-slot-rules';
 import { Accordion, Badge, Box, Divider, Group, Paper, Stack, Text } from '@mantine/core';
 import { getSpellStats } from '@spells/spell-handler';
 import {
@@ -208,7 +209,11 @@ export default function SpontaneousSpellsList(props: {
                                 let count = 0;
                                 const slots = collectEntitySpellcasting(props.id, c).slots;
                                 for (const slot of slots) {
-                                  if (slot.rank === parseInt(rank) && slot.source === props.source?.name) {
+                                  if (
+                                    slot.rank === parseInt(rank) &&
+                                    slot.source === props.source?.name &&
+                                    slot.spell_list_source === undefined
+                                  ) {
                                     slot.exhausted = count < v;
                                     count++;
                                   }
@@ -223,7 +228,7 @@ export default function SpontaneousSpellsList(props: {
                                       focus_point_current: 0,
                                       innate_casts: [],
                                     }),
-                                    slots: slots,
+                                    slots: retainRestrictedPreparations(slots, c.spells?.slots ?? []),
                                   },
                                 };
                               });

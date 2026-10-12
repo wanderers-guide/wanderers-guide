@@ -9,6 +9,8 @@ export interface SelectionTreeNode {
 export interface SelectionTrack {
   path: string;
   node: SelectionTreeNode | undefined;
+  /** Stable owner for daily identities, independent of saved choice values and legacy paths. */
+  choiceOwner?: string;
 }
 
 /** Resolve an explicitly authored sibling only within this selection's current owner path. */

@@ -78,6 +78,8 @@ export type OperationSelectOptionType = z.infer<typeof OperationSelectOptionType
 export const SpellMetadataSchema = z.object({
   type: z.enum(['NORMAL', 'FOCUS', 'INNATE']),
   castingSource: z.string().optional(),
+  // Additional named lists retain the grant's normal casting source and ownership.
+  listSources: z.array(z.string().min(1)).optional(),
   rank: z.number().nullable().optional(),
   tradition: z.enum(['ARCANE', 'OCCULT', 'PRIMAL', 'DIVINE']).optional(),
   casts: z.number().nullable().optional(),
@@ -87,6 +89,13 @@ export type SpellMetadata = z.infer<typeof SpellMetadataSchema>;
 
 export const GiveSpellDataSchema = SpellMetadataSchema.extend({ spellId: z.number() });
 export type GiveSpellData = z.infer<typeof GiveSpellDataSchema>;
+
+/** Calculated grants may carry an expiration marker; authored giveSpell data never does. */
+export const ComputedSpellDataSchema = GiveSpellDataSchema.extend({
+  // Execution-only marker for an opt-in daily selection, never a database entry.
+  preparation: z.union([z.literal('initial'), z.string().uuid()]).optional(),
+});
+export type ComputedSpellData = z.infer<typeof ComputedSpellDataSchema>;
 
 // ─── Condition Check ──────────────────────────────────────────────────────────
 
@@ -241,6 +250,8 @@ export const OperationGiveSpellSlotSchema = z.object({
   type: z.literal('giveSpellSlot'),
   data: z.object({
     castingSource: z.string(),
+    // Opt-in preparation restriction; absence retains ordinary spell-slot behavior.
+    spellListSource: z.string().min(1).optional(),
     slots: z.array(z.object({ lvl: z.number(), rank: z.number(), amt: z.number().nullable() })),
   }),
 });
@@ -317,23 +328,72 @@ export const OperationSelectFiltersAbilityBlockSchema = z.object({
 });
 export type OperationSelectFiltersAbilityBlock = z.infer<typeof OperationSelectFiltersAbilityBlockSchema>;
 
-export const OperationSelectFiltersSpellSchema = z.object({
-  id: z.string(),
-  type: z.literal('SPELL'),
-  level: z.object({ min: z.number().nullable().optional(), max: z.number().nullable().optional() }),
-  // Trait IDs, or legacy trait names — matches the ability-block filter above.
-  traits: z.array(z.union([z.string(), z.number()])).optional(),
-  traditions: z.array(z.string()).optional(),
-  rarity: RaritySchema.optional(),
-  // Resolve the selected ability block's casting-source tradition before its conditional grants run.
-  traditionFromSelection: z
-    .object({
-      key: z.string(),
-      castingSource: z.string(),
-    })
-    .optional(),
-  spellData: SpellMetadataSchema.optional(),
-});
+export const OperationSelectFiltersSpellSchema = z
+  .object({
+    id: z.string(),
+    type: z.literal('SPELL'),
+    level: z.object({ min: z.number().nullable().optional(), max: z.number().nullable().optional() }),
+    // Trait IDs, or legacy trait names — matches the ability-block filter above.
+    traits: z.array(z.union([z.string(), z.number()])).optional(),
+    traditions: z.array(z.string()).optional(),
+    rarity: RaritySchema.optional(),
+    // Resolve the selected ability block's casting-source tradition before its conditional grants run.
+    traditionFromSelection: z
+      .object({
+        key: z.string(),
+        castingSource: z.string(),
+      })
+      .optional(),
+    spellData: SpellMetadataSchema.optional(),
+    // Opt-in database choices use this casting source's independently known spells.
+    knownSpellSource: z.string().min(1).optional(),
+    // Opt-in choices expire when this entity next rests, not when it recalculates.
+    dailyPreparation: z.literal(true).optional(),
+    // A paired choice may exclude the rank of one earlier selector under the same owner.
+    distinctRankFromSelections: z.array(z.string().uuid()).min(1).max(1).optional(),
+  })
+  .superRefine((filters, context) => {
+    if (filters.distinctRankFromSelections && filters.knownSpellSource === undefined) {
+      context.addIssue({
+        code: 'custom',
+        path: ['distinctRankFromSelections'],
+        message: 'A rank pair requires a spell database source.',
+      });
+    }
+    if (filters.dailyPreparation) {
+      const rank = filters.level.min;
+      if (
+        filters.knownSpellSource === undefined ||
+        filters.distinctRankFromSelections !== undefined ||
+        rank === undefined ||
+        rank === null ||
+        !Number.isInteger(rank) ||
+        rank < 1 ||
+        rank > 10 ||
+        filters.level.max !== rank ||
+        !filters.spellData?.listSources?.length ||
+        filters.spellData.listSources.some((source) => source.length === 0)
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['dailyPreparation'],
+          message: 'Daily choices require one rank from 1 to 10, a database source and a named spell list.',
+        });
+      }
+    }
+    if (
+      filters.knownSpellSource !== undefined &&
+      (filters.spellData?.type !== 'NORMAL' ||
+        filters.spellData.castingSource !== filters.knownSpellSource ||
+        filters.spellData.rank !== undefined)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['spellData'],
+        message: 'Database choices retain their source and selected known rank.',
+      });
+    }
+  });
 export type OperationSelectFiltersSpell = z.infer<typeof OperationSelectFiltersSpellSchema>;
 
 export const OperationSelectFiltersLanguageSchema = z.object({

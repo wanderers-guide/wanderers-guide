@@ -9,11 +9,12 @@ import {
   getFinalStaminaValue,
   isStaminaVariant,
 } from '@variables/variable-helpers';
-import { getVariable } from '@variables/variable-manager';
+import { getVariable, hasDailySpellPreparation } from '@variables/variable-manager';
 import { cloneDeep } from 'lodash-es';
 import { evaluate } from 'mathjs';
 import { SetterOrUpdater } from '@utils/type-fixing';
 import { getEntityLevel } from '@utils/entity-utils';
+import { hasSavedDailySpellPreparation } from '@operations/database-spell-context';
 
 /** Apply a user HP edit; normalization only clamps/initializes and never creates combat events. */
 export function confirmHealth<T extends LivingEntity>(
@@ -206,6 +207,13 @@ export function confirmExperience(exp: string, entity: LivingEntity, setEntity?:
 export function handleRest(id: StoreID, entity: LivingEntity, setEntity?: SetterOrUpdater<LivingEntity | null>) {
   const newEntity = cloneDeep(entity);
   if (!newEntity) return;
+
+  if (
+    (entity.id !== undefined && hasDailySpellPreparation(id, entity.id, entity.operation_data?.daily_preparation)) ||
+    hasSavedDailySpellPreparation(id, entity)
+  ) {
+    newEntity.operation_data = { ...newEntity.operation_data, daily_preparation: crypto.randomUUID() };
+  }
 
   // Regen Health
   const conMod = getVariable<VariableAttr>(id, 'ATTRIBUTE_CON')?.value.value ?? 0;

@@ -19,7 +19,8 @@ import { useEffect, useState } from 'react';
 import BlurButton from '@common/BlurButton';
 import { openContextModal } from '@mantine/modals';
 import { collectEntitySpellcasting } from '@content/collect-content';
-import { handleUpdateItemCharges } from '@items/inv-handlers';
+import { handleUpdateItemCharges, updateItemCharges } from '@items/inv-handlers';
+import { getSpellSlotGroupKey, retainRestrictedPreparations } from '@spells/spell-slot-rules';
 import { StoreID } from '@schemas/variables';
 import { cloneDeep, groupBy } from 'lodash-es';
 import ImprintButton from '@common/ImprintButton';
@@ -118,10 +119,23 @@ export default function StaffSpellsList(props: {
                         allSpells: props.allSpells,
                         source: castingSource?.name,
                         onSelect: (slot: SpellSlotRecord) => {
-                          // Expend the selected slot
+                          // Restricted slots can only prepare spells from their named list.
+                          if (slot.spell_list_source !== undefined) return;
                           props.setEntity((c) => {
                             if (!c) return c;
                             const slots = collectEntitySpellcasting(props.id, c).slots;
+                            const currentSlot = slots.find((entry) => entry.id === slot.id);
+                            const currentStaff = c.inventory?.items.find((item) => item.id === props.staff.id);
+                            if (
+                              !currentSlot ||
+                              currentSlot.spell_list_source !== undefined ||
+                              currentSlot.exhausted === true ||
+                              getSpellSlotGroupKey(currentSlot) !== getSpellSlotGroupKey(slot) ||
+                              !currentStaff ||
+                              (currentStaff.item.meta_data?.charges?.max ?? 0) >
+                                slots.reduce((highest, entry) => Math.max(highest, entry.rank), 0)
+                            )
+                              return c;
 
                             let newSlots = cloneDeep(slots ?? []);
                             newSlots = newSlots.map((s) => {
@@ -135,27 +149,23 @@ export default function StaffSpellsList(props: {
                               }
                             });
 
-                            return {
-                              ...c,
-                              spells: {
-                                ...(c.spells ?? {
-                                  slots: [],
-                                  list: [],
-                                  focus_point_current: 0,
-                                  innate_casts: [],
-                                }),
-                                slots: newSlots,
+                            return updateItemCharges(
+                              {
+                                ...c,
+                                spells: {
+                                  ...(c.spells ?? {
+                                    slots: [],
+                                    list: [],
+                                    focus_point_current: 0,
+                                    innate_casts: [],
+                                  }),
+                                  slots: retainRestrictedPreparations(newSlots, c.spells?.slots ?? []),
+                                },
                               },
-                            };
+                              currentStaff,
+                              { max: (currentStaff.item.meta_data?.charges?.max ?? 0) + currentSlot.rank }
+                            );
                           });
-
-                          // Update the staff charges, delay it prevent race condition with slot expending
-                          // TODO: Just combine into one update call
-                          setTimeout(() => {
-                            handleUpdateItemCharges(props.setEntity, props.staff, {
-                              max: props.staff.item.meta_data!.charges!.max! + slot.rank,
-                            });
-                          }, 250);
                         },
                       },
                     });
@@ -286,44 +296,69 @@ export default function StaffSpellsList(props: {
                                           if (option === 'NORMAL') {
                                             castWithCharges();
                                           } else if (option === 'SLOT-CONSUME') {
-                                            // Consume 1 charge
-                                            handleUpdateItemCharges(props.setEntity, props.staff, {
-                                              current: Math.min(currentCharges + 1, maxCharges),
-                                            });
-                                            // Consume slot
+                                            // Spend an unrestricted slot and its staff charge together.
                                             props.setEntity((c) => {
                                               if (!c) return c;
+                                              const currentSlots = collectEntitySpellcasting(props.id, c).slots;
+                                              const available = currentSlots.find(
+                                                (slot) =>
+                                                  slot.source === castingSource?.name &&
+                                                  slot.rank === slotRank &&
+                                                  slot.spell_list_source === undefined &&
+                                                  slot.exhausted !== true
+                                              );
+                                              const currentStaff = c.inventory?.items.find(
+                                                (item) => item.id === props.staff.id
+                                              );
+                                              if (
+                                                !available ||
+                                                !currentStaff ||
+                                                (currentStaff.item.meta_data?.charges?.current ?? 0) >=
+                                                  (currentStaff.item.meta_data?.charges?.max ?? 0)
+                                              )
+                                                return c;
                                               let added = false;
-                                              const newUpdatedSlots = collectEntitySpellcasting(props.id, c).slots.map(
-                                                (slot) => {
-                                                  if (
-                                                    !added &&
-                                                    slot.source === castingSource?.name &&
-                                                    slot.rank === slotRank &&
-                                                    slot.exhausted !== true
-                                                  ) {
-                                                    added = true;
-                                                    return {
-                                                      ...slot,
-                                                      exhausted: true,
-                                                    };
-                                                  }
-                                                  return slot;
+                                              const newUpdatedSlots = currentSlots.map((slot) => {
+                                                if (
+                                                  !added &&
+                                                  slot.source === castingSource?.name &&
+                                                  slot.rank === slotRank &&
+                                                  slot.spell_list_source === undefined &&
+                                                  slot.exhausted !== true
+                                                ) {
+                                                  added = true;
+                                                  return {
+                                                    ...slot,
+                                                    exhausted: true,
+                                                  };
+                                                }
+                                                return slot;
+                                              });
+
+                                              return updateItemCharges(
+                                                {
+                                                  ...c,
+                                                  spells: {
+                                                    ...(c.spells ?? {
+                                                      slots: [],
+                                                      list: [],
+                                                      focus_point_current: 0,
+                                                      innate_casts: [],
+                                                    }),
+                                                    slots: retainRestrictedPreparations(
+                                                      newUpdatedSlots,
+                                                      c.spells?.slots ?? []
+                                                    ),
+                                                  },
+                                                },
+                                                currentStaff,
+                                                {
+                                                  current: Math.min(
+                                                    (currentStaff.item.meta_data?.charges?.current ?? 0) + 1,
+                                                    currentStaff.item.meta_data?.charges?.max ?? 0
+                                                  ),
                                                 }
                                               );
-
-                                              return {
-                                                ...c,
-                                                spells: {
-                                                  ...(c.spells ?? {
-                                                    slots: [],
-                                                    list: [],
-                                                    focus_point_current: 0,
-                                                    innate_casts: [],
-                                                  }),
-                                                  slots: newUpdatedSlots,
-                                                },
-                                              };
                                             });
                                           }
                                         },

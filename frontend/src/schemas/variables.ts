@@ -120,6 +120,13 @@ export type Variable = z.infer<typeof VariableSchema>;
 
 // ─── Variable Store ───────────────────────────────────────────────────────────
 
+/** Execution-only daily ownership survives worker snapshots, not character saves. */
+export const DailySpellPreparationSchema = z.object({
+  entityId: z.number().int(),
+  preparation: z.union([z.literal('initial'), z.string().uuid()]),
+});
+export type DailySpellPreparation = z.infer<typeof DailySpellPreparationSchema>;
+
 /** Fresh owner defense context is runtime-only and cannot be authored by variable operations. */
 export const PetOwnerDefensesSchema = z.object({
   AC_BONUS: z.number().finite(),
@@ -130,6 +137,7 @@ export const PetOwnerDefensesSchema = z.object({
 export type PetOwnerDefenses = z.infer<typeof PetOwnerDefensesSchema>;
 
 export const VariableStoreSchema = z.object({
+  dailySpellPreparation: DailySpellPreparationSchema.optional(),
   petOwnerDefenses: PetOwnerDefensesSchema.optional(),
   variables: z.record(z.string(), VariableSchema),
   bonuses: z.record(

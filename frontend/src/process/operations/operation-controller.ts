@@ -21,10 +21,12 @@ import {
   resolveDeferredOperations,
   resolveQualifiedOperations,
   resolveFinalSkillSelections,
+  resolveDatabaseSpellSelections,
   reconcileQualifiedResults,
   runOperations,
   withContentGrant,
 } from './operation-runner';
+import { bindSpellDatabase, clearSpellDatabase } from './database-spell-context';
 import {
   addVariable,
   addVariableBonus,
@@ -146,7 +148,7 @@ async function _executeOps(
     if (primarySource === 'ancestry') clearConflictingBoostSelections(operations, selectionNode);
     let results = await runOperations(
       varId,
-      { path: `${primarySource}_${selectionNode?.value}`, node: selectionNode },
+      { path: `${primarySource}_${selectionNode?.value}`, node: selectionNode, choiceOwner: primarySource },
       operations,
       { ...cloneDeep(options), sourceLevel },
       sourceLabel
@@ -192,6 +194,7 @@ export async function _executeCharacterOperations(data: {
     try {
       return await executeCharacterOperations(data);
     } finally {
+      clearSpellDatabase('CHARACTER');
       finishVariableEffects('CHARACTER');
       clearDeferredOperations();
     }
@@ -205,6 +208,12 @@ async function executeCharacterOperations(
   const { character, content, context } = data;
 
   resetVariables('CHARACTER');
+  bindSpellDatabase(
+    'CHARACTER',
+    character.spells?.list ?? [],
+    character.operation_data?.daily_preparation,
+    character.id
+  );
   clearDeferredOperations();
   defineSelectionTree(character);
   defineDefaultSources('INFO', content.defaultSources.INFO);
@@ -1121,6 +1130,7 @@ async function executeCharacterOperations(
   const errors = await resolveDeferredOperations();
   errors.push(...(await resolveQualifiedOperations()));
   await resolveFinalSkillSelections();
+  await resolveDatabaseSpellSelections();
   reconcileQualifiedResults({ results, conditionalResults });
 
   // Set calculated stats
@@ -1184,6 +1194,7 @@ export async function _executeCreatureOperations(data: {
     try {
       return await executeCreatureOperations(data);
     } finally {
+      clearSpellDatabase(data.id);
       finishVariableEffects(data.id);
       clearDeferredOperations();
     }
@@ -1197,6 +1208,7 @@ async function executeCreatureOperations(
   const { id, creature, content } = data;
 
   resetVariables(id);
+  bindSpellDatabase(id, creature.spells?.list ?? [], creature.operation_data?.daily_preparation, creature.id);
   clearDeferredOperations();
   defineSelectionTree(creature);
   defineDefaultSources('INFO', content.defaultSources.INFO);
@@ -1327,6 +1339,7 @@ async function executeCreatureOperations(
   const errors = await resolveDeferredOperations();
   errors.push(...(await resolveQualifiedOperations()));
   await resolveFinalSkillSelections();
+  await resolveDatabaseSpellSelections();
   reconcileQualifiedResults({ results, conditionalResults });
 
   // Set calculated stats

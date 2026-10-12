@@ -29,6 +29,7 @@ import {
   OperationSelectFiltersAdjValue,
   OperationSelectFiltersLanguage,
   OperationSelectFiltersSpell,
+  OperationSelectFiltersSpellSchema,
   OperationSelectFiltersTrait,
   OperationSelectOption,
   OperationSelectOptionAbilityBlock,
@@ -71,6 +72,16 @@ import { throwError } from '@utils/error-handling';
 import { GenericData } from '@schemas/index';
 import { getRootSelection, SelectionTreeNode } from './selection-tree';
 import { applyCustomSelectionRules } from './custom-selection-rules';
+import {
+  getDatabaseSpells,
+  getDailyPreparation,
+  getDailySpellChoiceId,
+  getDailySpellRank,
+} from './database-spell-context';
+import { isCantrip, isNormalSpell } from '@spells/spell-utils';
+
+/** A rank pair is resolved only against current siblings beneath this exact saved owner. */
+export type SpellSelectionOwner = { node: SelectionTreeNode | undefined; operations: Operation[]; path?: string };
 
 export function createDefaultOperation<T = Operation>(type: OperationType): T {
   if (type === 'giveAbilityBlock') {
@@ -371,12 +382,13 @@ export function sortObjectByName(a: ObjectWithUUID, b: ObjectWithUUID) {
 export async function determineFilteredSelectionList(
   id: StoreID,
   operationUUID: string,
-  filters: OperationSelectFilters
+  filters: OperationSelectFilters,
+  owner?: SpellSelectionOwner
 ): Promise<ObjectWithUUID[]> {
   if (filters.type === 'ABILITY_BLOCK') {
     return await getAbilityBlockList(id, operationUUID, filters);
   } else if (filters.type === 'SPELL') {
-    return await getSpellList(operationUUID, filters);
+    return await getSpellList(id, operationUUID, filters, owner);
   } else if (filters.type === 'LANGUAGE') {
     return await getLanguageList(id, operationUUID, filters);
   } else if (filters.type === 'TRAIT') {
@@ -545,20 +557,59 @@ async function getTraditionFromSelection(key: string, castingSource: string): Pr
   return traditions.size === 1 ? [...traditions][0] : null;
 }
 
-async function getSpellList(operationUUID: string, filters: OperationSelectFiltersSpell) {
+async function getSpellList(
+  id: StoreID,
+  operationUUID: string,
+  filters: OperationSelectFiltersSpell,
+  owner?: SpellSelectionOwner
+) {
+  if (
+    (filters.knownSpellSource !== undefined ||
+      filters.distinctRankFromSelections !== undefined ||
+      filters.dailyPreparation !== undefined) &&
+    !OperationSelectFiltersSpellSchema.safeParse(filters).success
+  )
+    return [];
   let spells = await fetchContentAll<Spell>('spell', getDefaultSources('PAGE'));
 
-  spells = spells.filter((spell) => isSpellVisible('CHARACTER', spell));
+  spells = spells.filter((spell) => isSpellVisible(filters.knownSpellSource === undefined ? 'CHARACTER' : id, spell));
+
+  if (filters.knownSpellSource !== undefined) {
+    spells = getDatabaseSpells(id, filters.knownSpellSource, spells).filter(isNormalSpell);
+  }
+
+  if (filters.dailyPreparation) {
+    spells = spells.filter((spell) => getDailySpellRank(id, filters.knownSpellSource!, spell) !== undefined);
+  }
+  const selectionRank = (spell: Spell): number => {
+    if (!filters.dailyPreparation) return spell.rank;
+    if (
+      isCantrip(spell) &&
+      owner?.path !== undefined &&
+      owner.node?.children[operationUUID]?.value ===
+        getDailySpellChoiceId(
+          id,
+          filters.knownSpellSource!,
+          `${owner.path}/${operationUUID}`,
+          spell,
+          filters.level.min!
+        )
+    ) {
+      // Automatic heightening does not expire this owner's current-day cantrip choice.
+      return filters.level.min!;
+    }
+    return getDailySpellRank(id, filters.knownSpellSource!, spell)!;
+  };
 
   if (filters.rarity !== undefined) {
     spells = spells.filter((spell) => spell.rarity === filters.rarity);
   }
 
   if (filters.level.min !== undefined) {
-    spells = spells.filter((spell) => spell.rank >= filters.level.min!);
+    spells = spells.filter((spell) => selectionRank(spell) >= filters.level.min!);
   }
   if (filters.level.max !== undefined) {
-    spells = spells.filter((spell) => spell.rank <= filters.level.max!);
+    spells = spells.filter((spell) => selectionRank(spell) <= filters.level.max!);
   }
   if (filters.traits !== undefined) {
     const tDatas = await Promise.all(
@@ -601,13 +652,59 @@ async function getSpellList(operationUUID: string, filters: OperationSelectFilte
     spells = spells.filter((spell) => spell.traditions.some((entry) => entry.toUpperCase() === tradition));
   }
 
-  return spells.map((spell) => {
+  if (filters.distinctRankFromSelections !== undefined) {
+    const siblingId: string | undefined = filters.distinctRankFromSelections[0];
+    const siblings: OperationSelect[] = (owner?.operations ?? []).filter(
+      (operation): operation is OperationSelect => operation.type === 'select' && operation.id === siblingId
+    );
+    const earlier: OperationSelect | undefined = siblings[0];
+    const siblingFilter = earlier?.data.optionsFilters;
+    // Unsupported, forward, repeated or cross-source references never broaden a database choice.
+    if (
+      !owner ||
+      siblings.length !== 1 ||
+      !earlier ||
+      !siblingFilter ||
+      siblingFilter.type !== 'SPELL' ||
+      earlier.data.optionType !== 'SPELL' ||
+      earlier.data.modeType !== 'FILTERED' ||
+      siblingFilter.knownSpellSource !== filters.knownSpellSource ||
+      siblingFilter.distinctRankFromSelections !== undefined ||
+      filters.knownSpellSource === undefined ||
+      filters.distinctRankFromSelections.length !== 1 ||
+      owner.operations.indexOf(earlier) >= owner.operations.findIndex((operation) => operation.id === operationUUID)
+    ) {
+      return [];
+    }
+    const siblingOptions = await getSpellList(id, earlier.id, siblingFilter, owner);
+    const selected = siblingOptions.find((option) => option._select_uuid === owner.node?.children[earlier.id]?.value);
+    if (selected) spells = spells.filter((spell) => spell.rank !== selected.rank);
+  }
+
+  return spells.flatMap((spell) => {
+    const preparation = getDailyPreparation(id);
+    const identity = filters.dailyPreparation
+      ? owner?.path === undefined
+        ? undefined
+        : getDailySpellChoiceId(
+            id,
+            filters.knownSpellSource!,
+            `${owner.path}/${operationUUID}`,
+            spell,
+            filters.level.min!
+          )
+      : filters.knownSpellSource === undefined
+        ? `${spell.id}`
+        : `${spell.id}:${spell.rank}`;
+    if (identity === undefined) return [];
     return {
       ...spell,
-      _select_uuid: `${spell.id}`,
+      _select_uuid: identity,
       _content_type: 'spell' as ContentType,
       _meta_data: {
         ...filters.spellData,
+        ...(filters.knownSpellSource === undefined ? {} : { rank: spell.rank }),
+        ...(filters.dailyPreparation ? { dailyPreparation: true, preparation } : {}),
       },
     };
   });

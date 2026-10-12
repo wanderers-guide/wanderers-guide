@@ -366,6 +366,7 @@ interface LivingEntity {
   operation_data?: {
     selections?: Record<string, string>; // background_<selector op UUID>.. -> <select option op UUID>
     notes?: Record<string, string>; // TODO <op UUID> -> string
+    daily_preparation?: string;
   };
   meta_data?: {
     given_item_ids?: number[];

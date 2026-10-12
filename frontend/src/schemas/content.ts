@@ -131,6 +131,8 @@ export const SpellSlotSchema = z.object({
   rank: z.number(),
   source: z.string(),
   spell_id: z.number().optional(),
+  // Separate restricted preparations from ordinary slots with the same source/rank.
+  spell_list_source: z.string().min(1).optional(),
   exhausted: z.boolean().optional(),
   color: z.string().optional(),
 });
@@ -893,6 +895,7 @@ export const LivingEntitySchema = z.object({
     .object({
       selections: z.record(z.string(), z.string()).optional(),
       notes: z.record(z.string(), z.string()).optional(),
+      daily_preparation: z.string().uuid().optional(),
     })
     .nullable(),
   meta_data: LivingEntityMetaDataSchema.passthrough().nullable(),

@@ -6,8 +6,8 @@ import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById, fetchItemByName } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
-import { priceToString } from '@items/currency-handler';
-import { getArmorGradeView, getEffectiveItemPrice } from '@items/armor-grade-view';
+import { getArmorGradeView } from '@items/armor-grade-view';
+import { useItemPrice } from '@items/use-item-price';
 import {
   FUNDAMENTAL_RUNES,
   compileTraits,
@@ -154,27 +154,20 @@ export function ItemDrawerContent(props: {
 
   const item = _item ?? props.data.item;
 
+  const itemPrice = useItemPrice(item);
+
   if (!item) {
     return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
   }
 
   let price = null;
-  const effectivePrice = getEffectiveItemPrice(item);
-  const _itemPrice = effectivePrice
-    ? {
-        cp: Number(effectivePrice.cp) || undefined,
-        sp: Number(effectivePrice.sp) || undefined,
-        gp: Number(effectivePrice.gp) || undefined,
-        pp: Number(effectivePrice.pp) || undefined,
-      }
-    : undefined;
-  if (_itemPrice && priceToString(_itemPrice) !== '—') {
+  if (itemPrice !== '—') {
     price = (
       <>
         <Text key={1} fw={600} c='gray.2' span>
           Price
         </Text>{' '}
-        {priceToString(_itemPrice)}
+        {itemPrice}
       </>
     );
   }

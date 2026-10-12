@@ -1,0 +1,120 @@
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import test from 'node:test';
+import { assertNativeSqlResult, executeNativeSqlProcess, prepare } from './release-recovery-native.mjs';
+
+const repository = process.env.WG_NATIVE_TEST_REPOSITORY ?? path.resolve(new URL('..', import.meta.url).pathname);
+const prepared = prepare(repository);
+
+test('a numeric transport failure cannot masquerade as an expected SQL rejection', () => {
+  const result = { exit_code: 255, killed: true, signal: 'SIGTERM', process_error_code: null, stdout: 'partial output', stderr: 'ERROR: pending curator dependency' };
+  assert.throws(() => assertNativeSqlResult(result, 'pending curator dependency'), /process|psql/);
+});
+
+test('only a completed psql script rejection with the expected diagnostic is accepted', () => {
+  const complete = { killed: false, signal: null, process_error_code: null, stdout: '', stderr: 'ERROR: pending curator dependency' };
+  assert.doesNotThrow(() => assertNativeSqlResult({ ...complete, exit_code: 3 }, 'pending curator dependency'));
+  assert.doesNotThrow(() => assertNativeSqlResult({ ...complete, exit_code: 0, stderr: '' }));
+  for (const exit_code of [0, 1, 2, 143, 255, null]) assert.throws(() => assertNativeSqlResult({ ...complete, exit_code }, 'pending curator dependency'), /psql/);
+  assert.throws(() => assertNativeSqlResult({ ...complete, exit_code: 3, stderr: 'ERROR: unrelated failure' }, 'pending curator dependency'), /expected diagnostic/);
+  assert.throws(() => assertNativeSqlResult({ ...complete, exit_code: 3 }), /psql/);
+});
+
+test('a killed, signalled or incomplete process never passes even with the expected exit and text', () => {
+  const complete = { exit_code: 3, killed: false, signal: null, process_error_code: null, stdout: '', stderr: 'ERROR: pending curator dependency' };
+  for (const change of [{ killed: true }, { signal: 'SIGTERM' }, { signal: 'SIGKILL' }, { process_error_code: 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER' }, { killed: undefined }, { signal: undefined }, { process_error_code: undefined }]) {
+    assert.throws(() => assertNativeSqlResult({ ...complete, ...change }, 'pending curator dependency'), /process/);
+    assert.throws(() => assertNativeSqlResult({ ...complete, ...change, exit_code: 0 }), /process/);
+  }
+});
+
+test('the external command boundary retains termination flags and partial diagnostics before validation', async () => {
+  const errors = [null, { code: 3, killed: false, signal: null }, { code: 255, killed: true, signal: 'SIGTERM' }, { code: 143, killed: true, signal: 'SIGTERM' }, { code: 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER', killed: true, signal: 'SIGTERM' }, { code: 'ENOENT' }];
+  for (const error of errors) {
+    const result = await executeNativeSqlProcess('isolated-fixture', 'synthetic SQL', (_file, _args, _options, callback) => ({ stdin: { end() { callback(error, 'partial stdout', 'ERROR: pending curator dependency'); } } }));
+    assert.equal(result.stdout, 'partial stdout'); assert.equal(result.stderr, 'ERROR: pending curator dependency');
+    if (!error) { assert.equal(result.exit_code, 0); assertNativeSqlResult(result); }
+    else if (error.code === 3) { assert.equal(result.exit_code, 3); assertNativeSqlResult(result, 'pending curator dependency'); }
+    else {
+      assert.equal(result.killed, error.killed === true); assert.equal(result.signal, error.signal ?? null);
+      assert.equal(result.exit_code, typeof error.code === 'number' ? error.code : null);
+      assert.equal(result.process_error_code, typeof error.code === 'string' ? error.code : null);
+      assert.throws(() => assertNativeSqlResult(result, 'pending curator dependency'), /process/);
+    }
+  }
+});
+
+test('the inert CLI can prepare all 360 cases without executing a server', () => {
+  const output = execFileSync(process.execPath, [new URL('./release-recovery-native.mjs', import.meta.url).pathname, '--repository', repository, '--plan'], { encoding: 'utf8', timeout: 5000 });
+  const plan = JSON.parse(output); assert.equal(plan.mode, 'inert-plan'); assert.equal(plan.cases, 360);
+});
+
+test('candidate SQL bytes and the immutable original query are exactly pinned', () => {
+  assert.equal(prepared.pins.length, 9);
+  assert.equal(prepared.pins.find((pin) => pin.relative.endsWith('incarnate-compatibility.sql')).sha256, '6f1e5f5d111bfc02c2dfe5058b62fb28d92197c733c179d687947a53447b7b6e');
+  assert.equal(prepared.pins.find((pin) => pin.relative === 'supabase/release/tech-core-general-spells.sql').sha256, '97c50a7cf4a529219ff96d86c755dc24c7aa9b287b15db8107bce3e681f3102e');
+});
+
+test('native fixture uses all fourteen real tables, identities, PKs and real cache migrations', () => {
+  assert.equal([...prepared.setup.matchAll(/CREATE TABLE public\./g)].length, 14);
+  assert.equal([...prepared.setup.matchAll(/ADD GENERATED BY DEFAULT AS IDENTITY/g)].length, 14);
+  assert.equal([...prepared.setup.matchAll(/PRIMARY KEY \(id\)/g)].length, 14);
+  assert(prepared.setup.includes(prepared.files['supabase/migrations/20260718000000_content_updated_at.sql']));
+  assert(prepared.setup.includes(prepared.files['supabase/migrations/20260729000000_noop_guard_generated_columns.sql']));
+  assert(prepared.setup.includes('content_update_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)'));
+});
+
+test('standalone transaction wrappers are retained for direct positive tests', () => {
+  for (const [whole, capsule] of [[prepared.recoveryWhole, prepared.recovery], [prepared.compatibilityWhole, prepared.compatibilityMigration]]) {
+    assert.equal(whole.replace(/^begin;\n/m, '').replace(/commit;\n?$/, ''), capsule);
+    assert(!/^begin;$/m.test(capsule)); assert(!/^commit;$/m.test(capsule));
+  }
+});
+
+test('the complete reference/source/spell/binding matrix is present without duplicate case names', () => {
+  assert.equal(new Set(prepared.cases.map((item) => item.name)).size, prepared.cases.length);
+  for (const [prefix, count] of [['incarnate-reject-dependency-', 92], ['incarnate-reject-source-', 7], ['incarnate-reject-missing-spell-', 82], ['incarnate-reject-content-drift-spell-', 82], ['incarnate-reject-bound-link-', 8]]) assert.equal(prepared.cases.filter((item) => item.name.startsWith(prefix)).length, count);
+  for (const name of ['incarnate-original-complete-wrapper', 'incarnate-source-only-successor-complete-wrapper']) assert.equal(prepared.cases.find((item) => item.name === name).expected, true);
+});
+
+test('recovery covers exact native identity, cache failure, late real-insert rollback and eight nested source forms', () => {
+  assert.equal(prepared.heal.row.id, 22108); assert.equal(prepared.heal.row.uuid, 7476666523704164); assert.equal(prepared.heal.row.meta_data.deprecated, true);
+  assert.equal(prepared.cases.filter((item) => item.name.startsWith('heal-nested-name-source-')).length, 8);
+  assert.equal(prepared.cases.filter((item) => item.name.startsWith('heal-dependency-pending-')).length, 16);
+  assert(prepared.cases.some((item) => item.name === 'heal-disabled-parent-trigger-with-current-token'));
+  assert(prepared.cases.some((item) => item.name === 'heal-late-real-insert-cache-rollback' && item.mutation.includes('FROM public.ability_block WHERE id=22108') && item.mutation.includes('updated_at=transaction_timestamp()')));
+  assert(prepared.cases.some((item) => item.name === 'heal-post-trigger-persisted-corruption'));
+});
+
+test('original-state duplicate aliases in either accepted source remain negative cases', () => {
+  for (const source of [3, 15]) {
+    const item = prepared.cases.find(({ name }) => name === 'incarnate-reject-original-duplicate-name-source' + source);
+    assert.equal(item.expected, false); assert.equal(item.check, 'wrapper');
+    assert.match(item.mutation, /^INSERT INTO public\."trait"/);
+    assert(!item.mutation.includes('UPDATE public.trait'), 'The exact original source15 row must remain unchanged');
+    const row = JSON.parse(item.mutation.split('$fixture_json$')[1]);
+    assert.equal(row.id, 999902); assert.equal(row.uuid, 8000000000999902);
+    assert.equal(row.name, '\tIncarnate\n'); assert.equal(row.content_source_id, source);
+  }
+  assert.equal(prepared.cases.find(({ name }) => name === 'incarnate-reject-successor-duplicate-name').expected, false);
+});
+
+test('explicit synthetic IDs never allocate sequences or substitute a shortened wrapper', () => {
+  assert.equal(Object.keys(prepared.identity).length, 82);
+  assert(prepared.seed.includes('800000')); assert(!/\b(?:nextval|setval)\s*\(/i.test(prepared.seed));
+  assert.equal(Buffer.byteLength(prepared.wrapper), 449678);
+  assert.equal(createHash('sha256').update(prepared.wrapper).digest('hex'), '6f1e5f5d111bfc02c2dfe5058b62fb28d92197c733c179d687947a53447b7b6e');
+});
+
+test('owned-container control is exact-ID only with uncertain-start name recovery and strict resources', () => {
+  const source = fs.readFileSync(new URL('./release-recovery-native.mjs', import.meta.url), 'utf8');
+  assert(source.includes("assert.equal(owned.image, IMAGE)")); assert(source.includes("assert.equal(owned.name, '/' + name)"));
+  assert(source.includes('const recovered = await ownership(name); id = recovered.id;'));
+  assert(source.includes("await docker(['rm', '-f', id], 10000)"));
+  assert(source.includes("'--network', 'none', '--memory', '256m', '--cpus', '0.5'"));
+  assert(!source.includes("docker(['stop'")); assert(!source.includes("docker(['pause'")); assert(!source.includes("docker(['restart'"));
+  assert.equal(path.resolve(repository), prepared.repository);
+});
