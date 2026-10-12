@@ -87,7 +87,11 @@ export function StatAcDrawerContent(props: { data: { id: StoreID; inventory?: In
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
                     <Text c='gray.0' size='xs'>
-                      Your proficiency bonus from wearing {armorName}.
+                      {parts.isInheritedDefense ? (
+                        "Included in the owner's Armor Class."
+                      ) : (
+                        <>Your proficiency bonus from wearing {armorName}.</>
+                      )}
                     </Text>
                   </HoverCard.Dropdown>
                 </HoverCard>
@@ -100,8 +104,14 @@ export function StatAcDrawerContent(props: { data: { id: StoreID; inventory?: In
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
                     <Text c='gray.0' size='xs'>
-                      Your Armor Class is associated with the Dexterity attribute, so you add your Dexterity modifier
-                      (with a maximum benefit determined by the armor's Dex Cap).
+                      {parts.isInheritedDefense ? (
+                        "Included in the owner's Armor Class."
+                      ) : (
+                        <>
+                          Your Armor Class is associated with the Dexterity attribute, so you add your Dexterity
+                          modifier (with a maximum benefit determined by the armor's Dex Cap).
+                        </>
+                      )}
                     </Text>
                   </HoverCard.Dropdown>
                 </HoverCard>
@@ -114,7 +124,9 @@ export function StatAcDrawerContent(props: { data: { id: StoreID; inventory?: In
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
                     <Text c='gray.0' size='xs'>
-                      The item bonus provided by the armor you're wearing.
+                      {parts.isInheritedDefense
+                        ? "Included in the owner's Armor Class."
+                        : "The item bonus provided by the armor you're wearing."}
                     </Text>
                   </HoverCard.Dropdown>
                 </HoverCard>

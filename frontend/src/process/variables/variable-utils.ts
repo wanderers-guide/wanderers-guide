@@ -252,15 +252,20 @@ export function isProficiencyType(value?: any): value is ProficiencyType {
 export function isExtendedProficiencyType(value?: string): value is ExtendedProficiencyType {
   return ['U', 'T', 'E', 'M', 'L', '1', '-1'].includes(value ?? '');
 }
-export function isListStr(value?: any): value is string[] {
+/** Read either accepted list format without rewriting the authored or saved value. */
+export function parseListStr(value: unknown): string[] | undefined {
   if (isString(value)) {
     try {
       value = JSON.parse(value);
-    } catch (e) {
-      value = null;
+    } catch {
+      return undefined;
     }
   }
-  return Array.isArray(value) && value.every((v) => isString(v));
+  return Array.isArray(value) && value.every((entry) => isString(entry)) ? value : undefined;
+}
+
+export function isListStr(value?: any): value is string[] {
+  return parseListStr(value) !== undefined;
 }
 
 export function isVariableNum(value: Variable | any): value is VariableNum {
@@ -302,7 +307,7 @@ export function compileExpressions(id: StoreID, text?: string, round = false) {
     const directVariable = getVariables(id)[compiledExpression.trim().toUpperCase()];
     if (directVariable && isVariableListStr(directVariable)) {
       // A standalone list reference displays its entries; arithmetic still uses INCLUDES.
-      text = text.replace(expression, () => directVariable.value.join(', '));
+      text = text.replace(expression, () => (parseListStr(directVariable.value) ?? []).join(', '));
       continue;
     }
     // Resolve list-membership checks to 1/0 first: INCLUDES(LIST_VARIABLE, 'value').
@@ -313,7 +318,7 @@ export function compileExpressions(id: StoreID, text?: string, round = false) {
       (_match, variableName, single, double) => {
         const needle = (single ?? double ?? '').trim().toUpperCase();
         const listVar = getVariables(id)[variableName.toUpperCase()];
-        const list = listVar && isVariableListStr(listVar) ? listVar.value : [];
+        const list = listVar && isVariableListStr(listVar) ? (parseListStr(listVar.value) ?? []) : [];
         return list.some((entry) => entry.trim().toUpperCase() === needle) ? '1' : '0';
       }
     );

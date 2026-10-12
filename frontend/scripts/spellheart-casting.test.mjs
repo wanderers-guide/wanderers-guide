@@ -133,6 +133,25 @@ test('malformed source attributes and unsupported traditions never invent an own
   assert.deepEqual(totals(resolve()), { attack: [9, 4, -1], dc: 19 });
 });
 
+test('Spellheart cantrips use the actual attribute of innate grants and preserve legacy Charisma defaults', () => {
+  for (const [attribute, intelligence, charisma, expected] of [
+    ['ATTRIBUTE_INT', 4, 0, { attack: [11, 6, 1], dc: 21 }],
+    ['ATTRIBUTE_INT', 0, 6, { attack: [9, 4, -1], dc: 19 }],
+    [undefined, 6, 4, { attack: [11, 6, 1], dc: 21 }],
+  ]) {
+    reset({ innate: [{ tradition: 'PRIMAL', attribute }], intelligence, charisma });
+    const before = engine.exportVariableStore('CHARACTER');
+    const owner = structuredClone(entity);
+    assert.deepEqual(totals(resolve(printed, cantrip, owner)), expected);
+    assert.deepEqual(engine.exportVariableStore('CHARACTER'), before);
+    assert.deepEqual(owner, entity);
+    assert.deepEqual(totals(resolve(printed, { ...cantrip, traits: [], rank: 3 })), {
+      attack: [9, 4, -1],
+      dc: 19,
+    });
+  }
+});
+
 test('partial or absent metadata never infers the missing stat, and invalid metadata preserves the compatible existing calculation', () => {
   reset({ sources: [source('ATTRIBUTE_INT')] });
   const old = engine.getSpellStats('CHARACTER', cantrip, 'NONE', 'ATTRIBUTE_CHA');

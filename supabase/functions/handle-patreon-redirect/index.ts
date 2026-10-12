@@ -1,23 +1,38 @@
 // @ts-ignore
 import { serve } from 'std/server';
-import { connect, createServiceClient, getPublicUser } from '../_shared/helpers.ts';
+import { z } from 'https://esm.sh/zod@3.24.2';
+import { connect, createServiceClient, getPublicUser, logEvent } from '../_shared/helpers.ts';
 import { handlePatreonRedirect } from '../_shared/patreon.ts';
+import { PatreonApiError } from '../_shared/patreon-api.ts';
+
+const input = z.object({
+  code: z.string().trim().min(1).max(2048),
+  redirectOrigin: z
+    .string()
+    .url()
+    .refine((value) => {
+      const url = new URL(value);
+      return (
+        url.origin === value &&
+        (url.protocol === 'https:' || (url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname)))
+      );
+    }),
+});
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body, token) => {
-    let { code, redirectOrigin } = body as {
-      code: string;
-      redirectOrigin: string;
-    };
+    const user = await getPublicUser(client, token, { rejectAnonymous: true });
 
-    const user = await getPublicUser(client, token);
-
-    if (!user) {
+    if (!user || user.deactivated) {
       return {
         status: 'error',
         message: 'User not found',
       };
     }
+
+    const parsed = input.safeParse(body);
+    if (!parsed.success) return { status: 'fail', data: { message: 'Invalid Patreon callback.' } };
+    const { code, redirectOrigin } = parsed.data;
 
     try {
       // The Patreon flow reads and writes patreon token data, including cross-user GM
@@ -31,14 +46,19 @@ serve(async (req: Request) => {
         code,
         `${redirectOrigin}/auth/patreon/redirect`
       );
+      if (!result) throw new Error('Patreon account write failed');
       return {
         status: 'success',
-        data: result ? 'Patreon connected' : 'Failed to connect',
+        data: 'Patreon connected',
       };
-    } catch (e) {
+    } catch (error) {
+      logEvent('error', 'handle-patreon-redirect', 'patreon_link_failed', {
+        stage: error instanceof PatreonApiError ? error.stage : 'persistence',
+        status: error instanceof PatreonApiError ? error.status : undefined,
+      });
       return {
         status: 'error',
-        message: `Error: ${JSON.stringify(e)}`,
+        message: 'Patreon connection could not be completed.',
       };
     }
   });

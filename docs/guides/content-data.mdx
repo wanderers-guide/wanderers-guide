@@ -266,6 +266,18 @@ slots, named languages and senses, defenses, speeds, abilities, and traits.
 Each entry has `index`, `id`, `name`, and `content`. Its `index` points to
 `character.companions.list[index]`, including when two companions share a catalog ID.
 Companions use the character's enabled sources and current calculated owner bindings.
+
+Native Normal and Aquatic Pets use their owner's current Armor Class and saving throw
+modifiers before the owner's circumstance and status bonuses or penalties. The Pet's
+own defense adjustments apply afterward. This is a calculation snapshot, so it does
+not add variables or derived defenses to saved characters or exported JSON. A Pet
+preview without an owner retains its standalone values.
+
+Edited or imported Pet stat blocks retain their explicit defenses, including copies
+that keep a native catalog ID. Inheritance requires the native Pet baseline operations
+and source; a complete absolute AC and saving throw block from the combatant editor
+uses standalone calculation. Ordinary familiars and other companions are unaffected.
+
 The saved character and companion records stay unchanged; import still reads `character`.
 
 ## Operations
@@ -289,6 +301,14 @@ Binding to the character's `FEAT_NAMES` lets companion conditionals inspect thos
 Known spells use the saved ranks for their own casting source. A spell learned from
 two sources appears once per rank in each source; distinct heightened versions remain
 available within that source.
+
+Operation expressions accept list variables as arrays or older serialized JSON arrays,
+without rewriting the saved value. Editing other spell selection fields retains authored
+rarity and tradition bindings. Weapon selection edits retain familiarity categories;
+switching to another selection group clears weapon-only familiarity fields.
+
+Spellheart cantrip calculations use the casting attribute of each innate grant, including
+Charisma for older grants that do not specify an attribute.
 
 The `operations` column on each content row is what makes WG content actually _do_ something to a character. See **[Operations](/guides/operations)** for the full catalog of types and their JSON shapes.
 
@@ -314,6 +334,10 @@ weapon’s inventory-entry ID. Divesting or deleting that entry clears the selec
 These bonuses are calculated from the current inventory without rewriting the companion’s
 saved attack. This automation covers fundamental weapon potency and striking runes.
 Property rune compatibility and other equipment benefits still require manual configuration.
+
+Older property rune entries containing only a name remain readable alongside newer rune
+wrappers. They display their saved name without a guessed catalog link. Rune and upgrade
+descriptions sort a display copy, preserving the saved order and embedded snapshots.
 
 ## Linking content from prose
 

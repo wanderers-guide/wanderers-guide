@@ -333,7 +333,7 @@ export function createNativeSourceCorrectionControls({ inputs, fixture, receipt,
     record(name, { actual_exit_status: actual.status, sqlstate: 'P0001', setup_type_proved: true });
   }
   async function beforeUpgrade() {
-    const sourceBody = inputs.helper.body.replace(catalogCompatibilityCtes(catalogPatches), '').replace(catalogCompatibilityProjection(), sourceCorrectionProjection());
+    const sourceBody = (inputs.helper.legacyBody ?? inputs.helper.body).replace(catalogCompatibilityCtes(catalogPatches), '').replace(catalogCompatibilityProjection(), sourceCorrectionProjection());
     assert.equal(sha(sourceBody), SOURCE_CORRECTION_TERMINAL_BODY_SHA256);
     const previousBody = sourceBody.replace(sourceCorrectionCtes(patches), '').replace(sourceCorrectionProjection(), rowExpression);
     assert.equal(sha(previousBody), PREVIOUS_TERMINAL_BODY_SHA256);
@@ -350,7 +350,7 @@ export function createNativeSourceCorrectionControls({ inputs, fixture, receipt,
 
   async function beforeCatalogUpgrade() {
     assert.deepEqual(catalogPatches.map(patch => patch.id), CATALOG_COMPATIBILITY_IDS);
-    const sourceBody = inputs.helper.body.replace(catalogCompatibilityCtes(catalogPatches), '').replace(catalogCompatibilityProjection(), sourceCorrectionProjection());
+    const sourceBody = (inputs.helper.legacyBody ?? inputs.helper.body).replace(catalogCompatibilityCtes(catalogPatches), '').replace(catalogCompatibilityProjection(), sourceCorrectionProjection());
     assert.equal(sha(sourceBody), SOURCE_CORRECTION_TERMINAL_BODY_SHA256);
     const originalBody = sourceBody.replace(sourceCorrectionCtes(patches), '').replace(sourceCorrectionProjection(), rowExpression);
     assert.equal(sha(originalBody), PREVIOUS_TERMINAL_BODY_SHA256);
