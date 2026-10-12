@@ -153,6 +153,7 @@ describe('Content update review', () => {
     cy.intercept('POST', '**/functions/v1/*', (req) => {
       const endpoint = new URL(req.url).pathname.split('/').pop()!;
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      if (endpoint === 'report-client-error') throw new Error(`Unexpected review client failure: ${body.code}`);
       let data: unknown;
       if (endpoint === 'get-user') data = { ...profile, display_name: 'Review Fixture' };
       else if (endpoint === 'get-public-user') data = profile;

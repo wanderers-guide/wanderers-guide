@@ -102,6 +102,7 @@ describe('Official hazard drawer', () => {
     cy.intercept('POST', '**/functions/v1/*', (req) => {
       const endpoint = new URL(req.url).pathname.split('/').pop()!;
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      if (endpoint === 'report-client-error') throw new Error(`Unexpected hazard client failure: ${body.code}`);
       if (endpoint === 'get-content-versions') {
         req.reply({ body: { status: 'success', data: [] } });
         return;

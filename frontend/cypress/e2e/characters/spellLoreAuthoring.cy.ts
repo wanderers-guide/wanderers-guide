@@ -162,6 +162,10 @@ describe('Spell attribute and granted Lore authoring', () => {
     });
     cy.intercept('POST', '**/functions/v1/*', (req) => {
       const endpoint = new URL(req.url).pathname.split('/').pop()!;
+      if (endpoint === 'report-client-error') {
+        const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        throw new Error(`Unexpected authoring client failure: ${body.code}`);
+      }
       let data: unknown = [];
       if (endpoint === 'get-user') data = profile;
       else if (endpoint === 'find-character') data = typeof req.body.id === 'number' ? saved : [saved];
