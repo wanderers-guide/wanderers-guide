@@ -82,11 +82,13 @@ export function getArmorGradeView(item: Item): ArmorGradeView {
   };
 }
 
+/** Derive a valid final armor grade's price; legacy or invalid metadata keeps the printed price. */
 export function getEffectiveItemPrice(item: Item): Item['price'] {
   const view = getArmorGradeView(item);
   return view.kind === 'final' ? view.price : item.price;
 }
 
+/** Derive a valid final armor grade's level; legacy or invalid metadata keeps the printed level. */
 export function getEffectiveItemLevel(item: Item): number {
   const view = getArmorGradeView(item);
   return view.kind === 'final' ? view.level : item.level;
