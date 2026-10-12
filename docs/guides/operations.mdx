@@ -332,6 +332,10 @@ Add an item to the character’s starting inventory.
 
 Add a trait to the character itself. Rare; used when an ancestry or archetype literally makes you have a trait (e.g. _humanoid_).
 Successful grants also add the trait's canonical name to the `TRAIT_NAMES` list variable for conditionals.
+Ordinary traits such as Tech, Holy, and Unholy can be granted explicitly without changing
+their catalog classification. They appear in the actor's trait display and exports, but
+do not become ancestry, class, or archetype feat origins. A trait on an item, spell, or
+feat is not automatically a trait of its owner.
 
 ```jsonc
 { "id": "...", "type": "giveTrait", "data": { "traitId": 1542 } }
