@@ -273,6 +273,64 @@
                 "type": "string",
                 "description": "Display-only inventory name when the stat block differs from the embedded attack name."
               },
+              "starfinder": {
+                "type": "object",
+                "description": "Optional equipment metadata. Final armor opts in with paired base_grade and base_upgrade_slots; printed stats and price remain the starting printing. Selected grade derives improvements without rewriting saved items. Built-in upgrades are fixed and do not consume available slots.",
+                "dependentRequired": {
+                  "base_grade": ["base_upgrade_slots"],
+                  "base_upgrade_slots": ["base_grade"],
+                  "built_in_upgrades": ["base_grade", "base_upgrade_slots"]
+                },
+                "properties": {
+                  "grade": {
+                    "type": ["string", "null"],
+                    "enum": [
+                      "COMMERCIAL",
+                      "TACTICAL",
+                      "ADVANCED",
+                      "SUPERIOR",
+                      "ELITE",
+                      "ULTIMATE",
+                      "PARAGON",
+                      null
+                    ]
+                  },
+                  "base_grade": {
+                    "type": "string",
+                    "enum": [
+                      "COMMERCIAL",
+                      "TACTICAL",
+                      "ADVANCED",
+                      "SUPERIOR",
+                      "ELITE",
+                      "ULTIMATE",
+                      "PARAGON"
+                    ]
+                  },
+                  "base_upgrade_slots": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "capacity": {
+                    "type": "string"
+                  },
+                  "usage": {
+                    "type": ["number", "null"]
+                  },
+                  "slots": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ItemUpgradeReference"
+                    }
+                  },
+                  "built_in_upgrades": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ItemUpgradeReference"
+                    }
+                  }
+                }
+              },
               "spellheart_casting": {
                 "type": "object",
                 "description": "Optional explicit printed spellheart casting values. Missing fields are unknown and are never inferred. Cantrips may use a higher corresponding character value; other spellheart spells use the printed value.",
@@ -288,6 +346,26 @@
           "operations": { "type": "array", "items": { "$ref": "#/components/schemas/Operation" } },
           "content_source_id": { "type": "integer" },
           "version": { "type": "string" }
+        }
+      },
+      "ItemUpgradeReference": {
+        "type": "object",
+        "required": [
+          "name",
+          "id"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "upgrade": {
+            "$ref": "#/components/schemas/Item",
+            "description": "Optional exact configured snapshot. Its ID must match the reference."
+          }
         }
       },
       "AbilityBlock": {

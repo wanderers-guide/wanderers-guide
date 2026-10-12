@@ -10,6 +10,7 @@ import { getContentFast } from '@content/content-store';
 import { isPlayingStarfinder } from '@content/system-handler';
 import classes from '@css/FaqSimple.module.css';
 import { priceToString } from '@items/currency-handler';
+import { getEffectiveItemPrice } from '@items/armor-grade-view';
 import {
   getBulkLimit,
   getFlatInvItems,
@@ -614,6 +615,7 @@ function InvItemOption(props: {
 }) {
   const theme = useMantineTheme();
 
+  const effectivePrice = getEffectiveItemPrice(props.invItem.item);
   const weaponStats = isItemWeapon(props.invItem.item) ? getWeaponStats(props.id, props.invItem.item) : null;
   const sharesEidolonRunes = canInvestEidolonWeapon(props.id, props.invItem.item);
   const isSharedWeapon = props.entity?.inventory?.eidolon_weapon_id === props.invItem.id;
@@ -704,12 +706,12 @@ function InvItemOption(props: {
                   {' '}
                   <Text ta='left' fz='xs'>
                     {priceToString(
-                      props.invItem.item.price
+                      effectivePrice
                         ? {
-                            cp: Number(props.invItem.item.price.cp) || undefined,
-                            sp: Number(props.invItem.item.price.sp) || undefined,
-                            gp: Number(props.invItem.item.price.gp) || undefined,
-                            pp: Number(props.invItem.item.price.pp) || undefined,
+                            cp: Number(effectivePrice.cp) || undefined,
+                            sp: Number(effectivePrice.sp) || undefined,
+                            gp: Number(effectivePrice.gp) || undefined,
+                            pp: Number(effectivePrice.pp) || undefined,
                           }
                         : undefined
                     )}

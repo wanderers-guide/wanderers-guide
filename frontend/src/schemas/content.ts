@@ -177,6 +177,17 @@ export type SpellheartCasting = z.infer<typeof SpellheartCastingSchema>;
 
 // ─── Item (self-referential) ──────────────────────────────────────────────────
 
+export const ArmorGradeSchema = z.enum([
+  'COMMERCIAL',
+  'TACTICAL',
+  'ADVANCED',
+  'SUPERIOR',
+  'ELITE',
+  'ULTIMATE',
+  'PARAGON',
+]);
+export type ArmorGrade = z.infer<typeof ArmorGradeSchema>;
+
 export interface Item {
   id: number;
   created_at: string;
@@ -232,7 +243,10 @@ export interface Item {
       capacity?: string;
       usage?: number | null;
       grade?: 'COMMERCIAL' | 'TACTICAL' | 'ADVANCED' | 'SUPERIOR' | 'ELITE' | 'ULTIMATE' | 'PARAGON' | null;
+      base_grade?: ArmorGrade;
+      base_upgrade_slots?: number;
       slots?: { name: string; id: number; upgrade?: Item }[];
+      built_in_upgrades?: { name: string; id: number; upgrade?: Item }[];
     };
     foundry?: {
       rules?: Record<string, any> | any[];
@@ -257,142 +271,202 @@ export interface Item {
 }
 
 export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
-  z.object({
-    id: z.number(),
-    created_at: z.string(),
-    updated_at: z.string().optional(),
-    name: z.string(),
-    price: z
-      .object({
-        cp: z.union([z.number(), z.string()]).optional(),
-        sp: z.union([z.number(), z.string()]).optional(),
-        gp: z.union([z.number(), z.string()]).optional(),
-        pp: z.union([z.number(), z.string()]).optional(),
-      })
-      .nullable(),
-    bulk: z.string().nullable(),
-    level: z.number(),
-    rarity: RaritySchema,
-    availability: AvailabilitySchema.nullable().optional(),
-    traits: z.array(z.number()).nullable(),
-    description: z.string(),
-    group: ItemGroupSchema,
-    hands: z.string().nullable(),
-    size: SizeSchema,
-    craft_requirements: z.string().nullable(),
-    usage: z.string().nullable(),
-    meta_data: z
-      .object({
-        deprecated: z.boolean().optional(),
-        image_url: z.string().optional(),
-        base_item: z.string().nullable().optional(),
-        base_item_content: z.lazy(() => ItemSchema).optional(),
-        category: ItemMetaCategorySchema.optional().or(z.literal('')),
-        group: ItemMetaGroupSchema.optional().or(z.literal('')),
-        damage: z
-          .object({
-            damageType: z.string().optional(),
-            dice: z.union([z.number(), z.string()]).optional(),
-            die: z.string().nullable().optional(),
-            extra: z.string().optional(),
-          })
-          .nullable()
-          .optional(),
-        attack_bonus: z.number().nullable().optional(),
-        spellheart_casting: SpellheartCastingSchema.optional(),
-        ac_bonus: z.number().optional(),
-        check_penalty: z.union([z.number(), z.string()]).optional(),
-        speed_penalty: z.union([z.number(), z.string()]).optional(),
-        dex_cap: z.number().optional(),
-        strength: z.number().nullable().optional(),
-        bulk: z.object({
-          capacity: z.union([z.number(), z.string()]).optional(),
-          held_or_stowed: z.union([z.number(), z.string()]).optional(),
-          ignored: z.union([z.number(), z.string()]).optional(),
-        }),
-        charges: z
-          .object({
-            current: z.number().nullable().optional(),
-            max: z.number().nullable().optional(),
-          })
-          .optional(),
-        container_default_items: z
-          .array(z.object({ id: z.number(), name: z.string(), quantity: z.number() }))
-          .optional(),
-        hardness: z.union([z.number(), z.string()]).optional(),
-        hp: z.union([z.number(), z.string()]).optional(),
-        hp_max: z.union([z.number(), z.string()]).optional(),
-        broken_threshold: z.union([z.number(), z.string()]).optional(),
-        is_shoddy: z.boolean().optional(),
-        unselectable: z.boolean().optional(),
-        quantity: z.number().optional(),
-        material: z
-          .object({ grade: z.string().nullable().optional(), type: z.string().nullable().optional() })
-          .optional(),
-        range: z.union([z.number(), z.string()]).nullable().optional(),
-        reload: z.string().nullable().optional(),
-        runes: z
-          .object({
-            striking: z.number().optional(),
-            resilient: z.number().optional(),
-            potency: z.number().optional(),
-            property: z
-              .array(
-                z.object({
-                  name: z.string(),
-                  id: z.number(),
-                  rune: z.lazy(() => ItemSchema).optional(),
-                })
-              )
-              .optional(),
-          })
-          .optional(),
-        starfinder: z
-          .object({
-            capacity: z.string().optional(),
-            usage: z.number().nullable().optional(),
-            grade: z
-              .enum(['COMMERCIAL', 'TACTICAL', 'ADVANCED', 'SUPERIOR', 'ELITE', 'ULTIMATE', 'PARAGON'])
-              .optional()
-              .nullable(),
-            slots: z
-              .array(
-                z.object({
-                  name: z.string(),
-                  id: z.number(),
-                  upgrade: z.lazy(() => ItemSchema).optional(),
-                })
-              )
-              .optional(),
-          })
-          .optional(),
-        foundry: z
-          .object({
-            rules: z.union([z.record(z.string(), z.any()), z.array(z.any())]).optional(),
-            tags: z.record(z.string(), z.any()).optional(),
-            bonus: z.number().nullable().optional(),
-            bonus_damage: z.number().nullable().optional(),
-            container_id: z.string().nullable().optional(),
-            splash_damage: z.number().nullable().optional(),
-            stack_group: z.string().optional(),
-            items: z.array(z.record(z.string(), z.any())).optional(),
-          })
-          .optional(),
-        cleaning: z
-          .object({
-            updatedAt: z.string(),
-          })
-          .optional(),
-        display_traits: z.array(z.string()).optional(),
-        inventory_label: z.string().optional(),
-        source: ContentSourceCiteSchema.optional(),
-      })
-      .passthrough()
-      .nullable(),
-    operations: z.array(OperationSchema).nullable(),
-    content_source_id: z.number(),
-    version: z.string(),
-  })
+  z
+    .object({
+      id: z.number(),
+      created_at: z.string(),
+      updated_at: z.string().optional(),
+      name: z.string(),
+      price: z
+        .object({
+          cp: z.union([z.number(), z.string()]).optional(),
+          sp: z.union([z.number(), z.string()]).optional(),
+          gp: z.union([z.number(), z.string()]).optional(),
+          pp: z.union([z.number(), z.string()]).optional(),
+        })
+        .nullable(),
+      bulk: z.string().nullable(),
+      level: z.number(),
+      rarity: RaritySchema,
+      availability: AvailabilitySchema.nullable().optional(),
+      traits: z.array(z.number()).nullable(),
+      description: z.string(),
+      group: ItemGroupSchema,
+      hands: z.string().nullable(),
+      size: SizeSchema,
+      craft_requirements: z.string().nullable(),
+      usage: z.string().nullable(),
+      meta_data: z
+        .object({
+          deprecated: z.boolean().optional(),
+          image_url: z.string().optional(),
+          base_item: z.string().nullable().optional(),
+          base_item_content: z.lazy(() => ItemSchema).optional(),
+          category: ItemMetaCategorySchema.optional().or(z.literal('')),
+          group: ItemMetaGroupSchema.optional().or(z.literal('')),
+          damage: z
+            .object({
+              damageType: z.string().optional(),
+              dice: z.union([z.number(), z.string()]).optional(),
+              die: z.string().nullable().optional(),
+              extra: z.string().optional(),
+            })
+            .nullable()
+            .optional(),
+          attack_bonus: z.number().nullable().optional(),
+          spellheart_casting: SpellheartCastingSchema.optional(),
+          ac_bonus: z.number().optional(),
+          check_penalty: z.union([z.number(), z.string()]).optional(),
+          speed_penalty: z.union([z.number(), z.string()]).optional(),
+          dex_cap: z.number().optional(),
+          strength: z.number().nullable().optional(),
+          bulk: z.object({
+            capacity: z.union([z.number(), z.string()]).optional(),
+            held_or_stowed: z.union([z.number(), z.string()]).optional(),
+            ignored: z.union([z.number(), z.string()]).optional(),
+          }),
+          charges: z
+            .object({
+              current: z.number().nullable().optional(),
+              max: z.number().nullable().optional(),
+            })
+            .optional(),
+          container_default_items: z
+            .array(z.object({ id: z.number(), name: z.string(), quantity: z.number() }))
+            .optional(),
+          hardness: z.union([z.number(), z.string()]).optional(),
+          hp: z.union([z.number(), z.string()]).optional(),
+          hp_max: z.union([z.number(), z.string()]).optional(),
+          broken_threshold: z.union([z.number(), z.string()]).optional(),
+          is_shoddy: z.boolean().optional(),
+          unselectable: z.boolean().optional(),
+          quantity: z.number().optional(),
+          material: z
+            .object({ grade: z.string().nullable().optional(), type: z.string().nullable().optional() })
+            .optional(),
+          range: z.union([z.number(), z.string()]).nullable().optional(),
+          reload: z.string().nullable().optional(),
+          runes: z
+            .object({
+              striking: z.number().optional(),
+              resilient: z.number().optional(),
+              potency: z.number().optional(),
+              property: z
+                .array(
+                  z.object({
+                    name: z.string(),
+                    id: z.number(),
+                    rune: z.lazy(() => ItemSchema).optional(),
+                  })
+                )
+                .optional(),
+            })
+            .optional(),
+          starfinder: z
+            .object({
+              capacity: z.string().optional(),
+              usage: z.number().nullable().optional(),
+              grade: z
+                .enum(['COMMERCIAL', 'TACTICAL', 'ADVANCED', 'SUPERIOR', 'ELITE', 'ULTIMATE', 'PARAGON'])
+                .optional()
+                .nullable(),
+              base_grade: ArmorGradeSchema.optional(),
+              base_upgrade_slots: z.number().int().nonnegative().optional(),
+              slots: z
+                .array(
+                  z.object({
+                    name: z.string(),
+                    id: z.number(),
+                    upgrade: z.lazy(() => ItemSchema).optional(),
+                  })
+                )
+                .optional(),
+              built_in_upgrades: z
+                .array(
+                  z.object({
+                    name: z.string(),
+                    id: z.number().int().positive(),
+                    upgrade: z.lazy(() => ItemSchema).optional(),
+                  })
+                )
+                .optional(),
+            })
+            .superRefine((value, context) => {
+              if ((value.base_grade === undefined) !== (value.base_upgrade_slots === undefined)) {
+                context.addIssue({
+                  code: 'custom',
+                  message: 'Starting grade and upgrade capacity must be supplied together.',
+                });
+              }
+              if (
+                value.base_grade &&
+                value.grade &&
+                ArmorGradeSchema.options.indexOf(value.grade) < ArmorGradeSchema.options.indexOf(value.base_grade)
+              ) {
+                context.addIssue({
+                  code: 'custom',
+                  path: ['grade'],
+                  message: 'Grade cannot be below the starting grade.',
+                });
+              }
+              if (value.built_in_upgrades && value.base_grade === undefined) {
+                context.addIssue({
+                  code: 'custom',
+                  path: ['built_in_upgrades'],
+                  message: 'Built-in upgrades require a starting grade.',
+                });
+              }
+            })
+            .optional(),
+          foundry: z
+            .object({
+              rules: z.union([z.record(z.string(), z.any()), z.array(z.any())]).optional(),
+              tags: z.record(z.string(), z.any()).optional(),
+              bonus: z.number().nullable().optional(),
+              bonus_damage: z.number().nullable().optional(),
+              container_id: z.string().nullable().optional(),
+              splash_damage: z.number().nullable().optional(),
+              stack_group: z.string().optional(),
+              items: z.array(z.record(z.string(), z.any())).optional(),
+            })
+            .optional(),
+          cleaning: z
+            .object({
+              updatedAt: z.string(),
+            })
+            .optional(),
+          display_traits: z.array(z.string()).optional(),
+          inventory_label: z.string().optional(),
+          source: ContentSourceCiteSchema.optional(),
+        })
+        .passthrough()
+        .nullable(),
+      operations: z.array(OperationSchema).nullable(),
+      content_source_id: z.number(),
+      version: z.string(),
+    })
+    .superRefine((item, context) => {
+      const metadata = item.meta_data?.starfinder;
+      if (
+        metadata?.base_grade !== undefined &&
+        (item.group !== 'ARMOR' || item.meta_data?.dex_cap === undefined || item.meta_data.ac_bonus === undefined)
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['meta_data', 'starfinder'],
+          message: 'Starting armor grade requires an armor stat block.',
+        });
+      }
+      for (const [index, slot] of (metadata?.built_in_upgrades ?? []).entries()) {
+        if (slot.upgrade && slot.upgrade.id !== slot.id) {
+          context.addIssue({
+            code: 'custom',
+            path: ['meta_data', 'starfinder', 'built_in_upgrades', index],
+            message: 'Embedded upgrade identity must match its reference.',
+          });
+        }
+      }
+    })
 );
 
 // ─── Inventory (self-referential) ─────────────────────────────────────────────

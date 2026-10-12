@@ -30,11 +30,27 @@ import { drawerState } from '@atoms/navAtoms';
 import { IconCirclePlus, IconX } from '@tabler/icons-react';
 import { selectContent } from '@common/select/SelectContent';
 import { convertToGp } from '@items/currency-handler';
+import { getEffectiveItemPrice } from '@items/armor-grade-view';
 import { selectCondition } from '@pages/character_sheet/sections/ConditionSection';
 import { modals } from '@mantine/modals';
 import { isItemVisible } from '@content/content-hidden';
 import { getGpGained } from '@utils/money';
 import { cloneDeep, truncate } from 'lodash-es';
+
+/** Formats the current item-grade price while leaving journal item snapshots unchanged. */
+function getItemPriceInGp(item: Item): number {
+  const price = getEffectiveItemPrice(item);
+  return convertToGp(
+    price
+      ? {
+          cp: Number(price.cp) || undefined,
+          sp: Number(price.sp) || undefined,
+          gp: Number(price.gp) || undefined,
+          pp: Number(price.pp) || undefined,
+        }
+      : undefined
+  );
+}
 
 export function CreateSocietyAdventureEntryModal(props: {
   opened: boolean;
@@ -177,7 +193,7 @@ export function CreateSocietyAdventureEntryModal(props: {
                             });
                           }}
                         >
-                          {convertToGp(item.price ? { cp: Number(item.price.cp) || undefined, sp: Number(item.price.sp) || undefined, gp: Number(item.price.gp) || undefined, pp: Number(item.price.pp) || undefined } : undefined)} gp, {item.name}
+                          {getItemPriceInGp(item)} gp, {item.name}
                         </Badge>
                       ))}
                   </Group>
@@ -202,7 +218,7 @@ export function CreateSocietyAdventureEntryModal(props: {
                           form.setFieldValue('items_sold', sold);
                           form.setFieldValue(
                             'items_total_sell',
-                            sold.reduce((acc, i) => acc + convertToGp(i.price ? { cp: Number(i.price.cp) || undefined, sp: Number(i.price.sp) || undefined, gp: Number(i.price.gp) || undefined, pp: Number(i.price.pp) || undefined } : undefined), 0)
+                            sold.reduce((acc, i) => acc + getItemPriceInGp(i), 0)
                           );
                           refreshSellTotal();
                         },
@@ -248,7 +264,7 @@ export function CreateSocietyAdventureEntryModal(props: {
                                 form.setFieldValue('items_sold', sold);
                                 form.setFieldValue(
                                   'items_total_sell',
-                                  sold.reduce((acc, i) => acc + convertToGp(i.price ? { cp: Number(i.price.cp) || undefined, sp: Number(i.price.sp) || undefined, gp: Number(i.price.gp) || undefined, pp: Number(i.price.pp) || undefined } : undefined), 0)
+                                  sold.reduce((acc, i) => acc + getItemPriceInGp(i), 0)
                                 );
                                 refreshSellTotal();
                               }}
@@ -257,7 +273,7 @@ export function CreateSocietyAdventureEntryModal(props: {
                             </ActionIcon>
                           }
                         >
-                          {truncate(`${convertToGp(item.price ? { cp: Number(item.price.cp) || undefined, sp: Number(item.price.sp) || undefined, gp: Number(item.price.gp) || undefined, pp: Number(item.price.pp) || undefined } : undefined)} gp, ${item.name}`, { length: 22 })}
+                          {truncate(`${getItemPriceInGp(item)} gp, ${item.name}`, { length: 22 })}
                         </Badge>
                       ))}
                     </Group>
@@ -285,7 +301,7 @@ export function CreateSocietyAdventureEntryModal(props: {
                           form.setFieldValue('items_bought', buy);
                           form.setFieldValue(
                             'items_total_buy',
-                            buy.reduce((acc, i) => acc + convertToGp(i.price ? { cp: Number(i.price.cp) || undefined, sp: Number(i.price.sp) || undefined, gp: Number(i.price.gp) || undefined, pp: Number(i.price.pp) || undefined } : undefined), 0)
+                            buy.reduce((acc, i) => acc + getItemPriceInGp(i), 0)
                           );
                           refreshBuyTotal();
                         },
@@ -331,7 +347,7 @@ export function CreateSocietyAdventureEntryModal(props: {
                                 form.setFieldValue('items_bought', buy);
                                 form.setFieldValue(
                                   'items_total_buy',
-                                  buy.reduce((acc, i) => acc + convertToGp(i.price ? { cp: Number(i.price.cp) || undefined, sp: Number(i.price.sp) || undefined, gp: Number(i.price.gp) || undefined, pp: Number(i.price.pp) || undefined } : undefined), 0)
+                                  buy.reduce((acc, i) => acc + getItemPriceInGp(i), 0)
                                 );
                                 refreshBuyTotal();
                               }}
@@ -340,7 +356,7 @@ export function CreateSocietyAdventureEntryModal(props: {
                             </ActionIcon>
                           }
                         >
-                          {truncate(`${convertToGp(item.price ? { cp: Number(item.price.cp) || undefined, sp: Number(item.price.sp) || undefined, gp: Number(item.price.gp) || undefined, pp: Number(item.price.pp) || undefined } : undefined)} gp, ${item.name}`, { length: 22 })}
+                          {truncate(`${getItemPriceInGp(item)} gp, ${item.name}`, { length: 22 })}
                         </Badge>
                       ))}
                     </Group>

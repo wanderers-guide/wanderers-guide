@@ -13,7 +13,8 @@ import {
 } from '@content/content-store';
 import { fetchHazards } from '@content/hazards';
 import { isActionCost } from '@content/content-utils';
-import { isItemArchaic } from '@items/inv-utils';
+import { compileTraits, isItemArchaic } from '@items/inv-utils';
+import { getArmorGradeView, getEffectiveItemLevel } from '@items/armor-grade-view';
 import {
   ActionIcon,
   Avatar,
@@ -880,13 +881,15 @@ function SelectionOptions(props: {
 
   // Sort by level/rank, then prereqs-met (when enabled for feats), then name
   filteredOptions.sort((a, b) => {
-    if (a.level !== undefined && b.level !== undefined) {
-      if (a.level !== b.level) {
+    const aLevel = props.type === 'item' ? getEffectiveItemLevel(a as Item) : a.level;
+    const bLevel = props.type === 'item' ? getEffectiveItemLevel(b as Item) : b.level;
+    if (aLevel !== undefined && bLevel !== undefined) {
+      if (aLevel !== bLevel) {
         // Sort greatest first if it's overrideOptions
         if (props.overrideOptions) {
-          return b.level - a.level;
+          return bLevel - aLevel;
         } else {
-          return a.level - b.level;
+          return aLevel - bLevel;
         }
       }
     } else if (a.rank !== undefined && b.rank !== undefined) {
@@ -2799,6 +2802,8 @@ export function ItemSelectionOption(props: {
   // Hide deprecated options
   if (props.item.meta_data?.deprecated && !props.selected) return null;
 
+  const armorGradeView = getArmorGradeView(props.item);
+
   return (
     <BaseSelectionOption
       leftSection={
@@ -2812,7 +2817,7 @@ export function ItemSelectionOption(props: {
         <TraitsDisplay
           justify='flex-end'
           size='xs'
-          traitIds={props.item.traits ?? []}
+          traitIds={armorGradeView.kind === 'final' ? compileTraits(props.item) : (props.item.traits ?? [])}
           rarity={props.item.rarity}
           availability={props.item.availability ?? undefined}
           pfSize={props.item.size}
@@ -2835,7 +2840,7 @@ export function ItemSelectionOption(props: {
               })
           : () => {}
       }
-      level={props.item.level}
+      level={getEffectiveItemLevel(props.item)}
       buttonOverride={
         props.includeAdd ? (
           <Box

@@ -9,6 +9,7 @@ import {
 } from '@variables/variable-helpers';
 import { getVariable, getVariableBonuses } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
+import { getArmorGradeBonusKey, getArmorGradeView } from './armor-grade-view';
 import { getInheritedPetDefense } from '@variables/pet-defenses';
 
 /** Armor selection keeps its intrinsic ranking even when displayed Pet AC inherits an owner baseline. */
@@ -47,10 +48,18 @@ function getProfTotal(id: StoreID, item?: Item) {
 function getAcModifiers(id: StoreID, item?: Item, options?: ArmorCalculationOptions) {
   const inherited = options?.useIntrinsicArmor ? null : getInheritedPetDefense(id, 'AC_BONUS');
   const proficiency = inherited === null ? getProfTotal(id, item) : { total: 0, variables: [] };
-  const bonuses: ModifierBonus[] = getVariableBonuses(id, 'AC_BONUS');
+  const activeBonuses = getVariableBonuses(id, 'AC_BONUS');
+  const bonuses: ModifierBonus[] = activeBonuses.filter((bonus) => bonus.armor_grade_key === undefined);
   // An inherited owner AC replaces the Pet's own armor and proficiency, not its direct AC modifiers.
   if (inherited !== null) bonuses.push({ value: inherited - 10, type: 'untyped', text: '', source: 'Pet' });
   let armorItemBonus = inherited === null ? (item?.meta_data?.ac_bonus ?? 0) : 0;
+  if (item && inherited === null) {
+    const view = getArmorGradeView(item);
+    const key = getArmorGradeBonusKey(item);
+    if (view.kind === 'final' && activeBonuses.some((bonus) => bonus.armor_grade_key === key)) {
+      armorItemBonus = view.acBonus;
+    }
+  }
   const potency = inherited === null ? Math.min(item?.meta_data?.runes?.potency ?? 0, 4) : 0;
   // Equipment operations grant invested armor runes under the item's source name. Only combine an
   // active grant, so merely owning an uninvested rune does not activate its magic here.
