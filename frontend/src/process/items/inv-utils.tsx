@@ -221,7 +221,8 @@ export function getBestArmor(id: StoreID, inv?: Inventory | null) {
   let bestArmor: InventoryItem | null = null;
   for (const invItem of inv.items) {
     if (!isItemFormula(invItem) && invItem.is_equipped && isItemArmor(invItem.item)) {
-      const acValue = getFinalAcValue(id, invItem.item);
+      // Inherited Pet AC does not change which equipped armor supplies existing physical penalties.
+      const acValue = getFinalAcValue(id, invItem.item, { useIntrinsicArmor: true });
       if (acValue > bestAc) {
         bestAc = acValue;
         bestArmor = invItem;
@@ -255,7 +256,8 @@ export function getBestShield(id: StoreID, inv?: Inventory) {
   return bestShield;
 }
 
-export function getItemOperations(item: Item, content: ContentPackage, ancestors = new Set<number>()) {
+/** Compile item effects while retaining saved rune snapshots and guarding recursive attachments. */
+export function getItemOperations(item: Item, content: ContentPackage, ancestors = new Set<number>()): Operation[] {
   if (ancestors.has(item.id)) return [];
   const nextAncestors = new Set(ancestors).add(item.id);
   const armorGrade = getArmorGradeView(item);
@@ -322,7 +324,10 @@ export function getItemOperations(item: Item, content: ContentPackage, ancestors
 
     if (item.meta_data?.runes?.property) {
       for (const property of item.meta_data.runes.property) {
-        const propertyRune = content.items.find((i) => i.id === property.id);
+        // The editor saves the rune itself, even when its source is outside the character's catalog.
+        const propertyRune =
+          content.items.find((i) => i.id === property.id) ??
+          (property.rune?.id === property.id && property.rune?.group === 'RUNE' ? property.rune : undefined);
         if (propertyRune) {
           baseOps.push(...getItemOperations(propertyRune, content, nextAncestors));
         }

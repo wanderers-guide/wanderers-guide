@@ -70,6 +70,7 @@ import { defineDefaultSources, importFromContentPackage } from '@content/content
 import { setEidolonRunesInStore } from '@items/eidolon-runes';
 import { getArmorGradeBonusKey, getArmorGradeView } from '@items/armor-grade-view';
 import { getExecutableModes, resolveActiveModeKeys } from '@common/modes/mode-rules';
+import { copyPetOwnerDefenses, publishPetOwnerDefenses } from '@variables/pet-defenses';
 
 let executionQueue: Promise<void> = Promise.resolve();
 
@@ -1124,6 +1125,7 @@ async function executeCharacterOperations(
 
   // Set calculated stats
   setEidolonRunesInStore(character);
+  if (errors.length === 0) publishPetOwnerDefenses(character);
   setCalculatedStatsInStore('CHARACTER', character);
 
   const mergedResults = mergeOperationResults(results, conditionalResults) as typeof results;
@@ -1328,6 +1330,7 @@ async function executeCreatureOperations(
   reconcileQualifiedResults({ results, conditionalResults });
 
   // Set calculated stats
+  if (errors.length === 0) copyPetOwnerDefenses(id, creature);
   setCalculatedStatsInStore(id, creature);
 
   const mergedResults = mergeOperationResults(results, conditionalResults) as typeof results;

@@ -2,7 +2,7 @@ import { ActionSymbol } from '@common/Actions';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { fetchHazardById, getHazardQueryKey } from '@content/hazards';
-import { linkHazardReferences, preloadHazardReferences } from '@content/hazard-links';
+import { remarkHazardReferences, preloadHazardReferences } from '@content/hazard-links';
 import DrawerLoadState from '@drawers/DrawerLoadState';
 import { Badge, Box, Divider, Group, Stack, Text, Title } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
@@ -57,7 +57,8 @@ export function HazardDrawerContent(props: { data: HazardDrawerData }) {
 
   if (!hazard) return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
 
-  const linkText = referencesReady ? linkHazardReferences : (text: string) => text;
+  // Only enrich parsed prose after the official reference preload; authored Markdown stays intact.
+  const remarkPlugins = referencesReady ? [remarkHazardReferences] : [];
   const { details } = hazard;
   const defenses = details.defenses;
   const defenseLines = defenses
@@ -79,7 +80,7 @@ export function HazardDrawerContent(props: { data: HazardDrawerData }) {
         ]
           .filter(Boolean)
           .join('; '),
-        defenses.immunities ? `**Immunities** ${linkText(defenses.immunities)}` : '',
+        defenses.immunities ? `**Immunities** ${defenses.immunities}` : '',
       ].filter(Boolean)
     : [];
 
@@ -102,20 +103,28 @@ export function HazardDrawerContent(props: { data: HazardDrawerData }) {
           <Text fw={600} span>
             Stealth
           </Text>{' '}
-          <RichText span>{linkText(details.stealth)}</RichText>
+          <RichText span remarkPlugins={remarkPlugins}>
+            {details.stealth}
+          </RichText>
         </Text>
-        <RichText ta='justify'>{linkText(details.description)}</RichText>
+        <RichText ta='justify' remarkPlugins={remarkPlugins}>
+          {details.description}
+        </RichText>
         <Text ta='justify'>
           <Text fw={600} span>
             Disable
           </Text>{' '}
-          <RichText span>{linkText(details.disable)}</RichText>
+          <RichText span remarkPlugins={remarkPlugins}>
+            {details.disable}
+          </RichText>
         </Text>
 
         {defenseLines.length > 0 && (
           <>
             <Divider />
-            <RichText ta='justify'>{defenseLines.join('\n\n')}</RichText>
+            <RichText ta='justify' remarkPlugins={remarkPlugins}>
+              {defenseLines.join('\n\n')}
+            </RichText>
           </>
         )}
 
@@ -124,8 +133,8 @@ export function HazardDrawerContent(props: { data: HazardDrawerData }) {
           <Text fw={600}>{details.activation.name}</Text>
           {details.activation.actions && <ActionSymbol cost={details.activation.actions} size='1.5rem' />}
           {details.activation.traits?.length ? (
-            <RichText c='dimmed' span>
-              ({details.activation.traits.map(linkText).join(', ')})
+            <RichText c='dimmed' span remarkPlugins={remarkPlugins}>
+              ({details.activation.traits.join(', ')})
             </RichText>
           ) : null}
         </Group>
@@ -133,11 +142,15 @@ export function HazardDrawerContent(props: { data: HazardDrawerData }) {
           <Text fw={600} span>
             Trigger
           </Text>{' '}
-          <RichText span>{linkText(details.activation.trigger)}</RichText>
+          <RichText span remarkPlugins={remarkPlugins}>
+            {details.activation.trigger}
+          </RichText>
         </Text>
         <Box>
           <Text fw={600}>Effect</Text>
-          <RichText ta='justify'>{linkText(details.activation.effect)}</RichText>
+          <RichText ta='justify' remarkPlugins={remarkPlugins}>
+            {details.activation.effect}
+          </RichText>
         </Box>
 
         {details.routine && (
@@ -145,7 +158,9 @@ export function HazardDrawerContent(props: { data: HazardDrawerData }) {
             <Text fw={600}>
               Routine ({details.routine.actions} {details.routine.actions === 1 ? 'action' : 'actions'})
             </Text>
-            <RichText ta='justify'>{linkText(details.routine.text)}</RichText>
+            <RichText ta='justify' remarkPlugins={remarkPlugins}>
+              {details.routine.text}
+            </RichText>
           </Box>
         )}
         {details.reset && (
@@ -153,7 +168,9 @@ export function HazardDrawerContent(props: { data: HazardDrawerData }) {
             <Text fw={600} span>
               Reset
             </Text>{' '}
-            <RichText span>{linkText(details.reset)}</RichText>
+            <RichText span remarkPlugins={remarkPlugins}>
+              {details.reset}
+            </RichText>
           </Text>
         )}
       </Stack>

@@ -376,7 +376,9 @@ test('completed controllers release provenance and exports never transfer it bet
   engine.removeVariableEffects('CHARACTER', 'ability-block:1');
   assert.equal(value('MAX_HEALTH_BONUS'), 5);
   const snapshot = engine.exportVariableStore('CHARACTER');
-  assert.deepEqual(Object.keys(snapshot).sort(), ['bonuses', 'history', 'variables']);
+  assert.deepEqual(Object.keys(snapshot).sort(), ['bonuses', 'history', 'petOwnerDefenses', 'variables']);
+  assert.deepEqual(Object.keys(snapshot.petOwnerDefenses).sort(), ['AC_BONUS', 'SAVE_FORT', 'SAVE_REFLEX', 'SAVE_WILL']);
+  assert.ok(Object.values(snapshot.petOwnerDefenses).every(Number.isFinite));
   assert.doesNotThrow(() => structuredClone(snapshot));
   engine.importVariableStore('COMPANION', snapshot);
   engine.removeVariableEffects('COMPANION', 'ability-block:1');

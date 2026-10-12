@@ -13,6 +13,7 @@ import { toLabel } from '@utils/strings';
 import { getCombinedVariableValue, getModifierParts, getProfValueParts } from '@variables/variable-helpers';
 import { getVariable } from '@variables/variable-manager';
 import { isCantrip } from './spell-utils';
+import { getInnateSpellAttribute } from './innate-spells';
 
 export function getSpellStats(id: StoreID, spell: Spell | null, tradition: string, attribute: string) {
   return {
@@ -142,10 +143,15 @@ export function getSpellheartStats(
 
   const ownCasting = collectEntitySpellcasting(id, entity);
   const sources = [...ownCasting.sources];
-  // Innate grants use Charisma in the existing innate-spell path, even without a named casting source.
+  // Innate grants retain their authored attribute, with Charisma for older grants that omit it.
   for (const innate of ownCasting.innate) {
     if (!Number.isSafeInteger(innate.spell_id) || innate.spell_id <= 0) continue;
-    sources.push({ name: 'INNATE', type: '-', tradition: innate.tradition, attribute: 'ATTRIBUTE_CHA' });
+    sources.push({
+      name: 'INNATE',
+      type: '-',
+      tradition: innate.tradition,
+      attribute: getInnateSpellAttribute(innate),
+    });
   }
   for (const candidate of sources) {
     const source = CastingSourceSchema.safeParse(candidate);

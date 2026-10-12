@@ -46,6 +46,9 @@ import {
   IconCode,
   IconShield,
   IconTrash,
+  IconCheck,
+  IconRefresh,
+  IconExternalLink,
 } from '@tabler/icons-react';
 import { Campaign, Character, PublicUser } from '@schemas/content';
 import { useState } from 'react';
@@ -63,7 +66,7 @@ import { resetContentStore, fetchContentSources } from '@content/content-store';
 import { supabase } from '../main';
 import { showNotification } from '@mantine/notifications';
 import { DisplayIcon } from '@common/IconDisplay';
-import { PATREON_AUTH_URL } from '@constants/urls';
+import { PATREON_AUTH_URL, PATREON_URL } from '@constants/urls';
 import { resolveThemeColor } from '@utils/theme-color';
 
 export function Component() {
@@ -231,7 +234,8 @@ function ProfileSection() {
   // Determine patron tier
   // A saved Patreon identity remains connected even when it has no paid WG tier.
   const isPatreonConnected = Boolean(user.patreon?.patreon_user_id || user.patreon?.tier);
-  let patronTier = toLabel(user.patreon?.tier) || 'Non-Patron';
+  const patreonConnectionStatus = isPatreonConnected ? 'Connected' : 'Not connected';
+  let patronTier = user.patreon?.tier === 'GAME-MASTER' ? 'Game Master' : toLabel(user.patreon?.tier) || 'Non-Patron';
   let patronColor: MantineColor = 'gray';
   if (patronTier === 'Non-Patron') patronColor = 'gray';
   if (patronTier === 'Advocate') patronColor = 'teal';
@@ -244,7 +248,7 @@ function ProfileSection() {
     user.patreon?.game_master?.virtual_tier?.game_master_user_id
   ) {
     patronTier = 'Wanderer (Virtual)';
-    patronColor = 'blue.3';
+    patronColor = 'blue';
   }
 
   const { mutate: mutateUser } = useMutation({
@@ -490,94 +494,8 @@ function ProfileSection() {
 
           <Divider />
 
-          {/* Patreon */}
-          <Box pt='sm'>
-            <Button
-              size='sm'
-              variant={isPatreonConnected ? 'outline' : 'gradient'}
-              leftSection={<IconBrandPatreon size={18} />}
-              fullWidth
-              component='a'
-              href={PATREON_AUTH_URL}
-            >
-              {isPatreonConnected ? 'Patreon Connected' : 'Connect to Patreon'}
-            </Button>
-          </Box>
-
-          {/* GM section */}
-          {user.patreon?.tier === 'GAME-MASTER' && (
-            <Box pt='md'>
-              <Text ta='center' fw={500} mb='xs'>
-                <Text fs='italic' pr={8} span>
-                  Users in your Group
-                </Text>
-                <Text fz='sm' span>
-                  ({benefitingUsers?.length ?? '...'} / 99)
-                </Text>
-              </Text>
-              <Paper style={{ backgroundColor: 'transparent' }} withBorder>
-                <ScrollArea.Autosize mah={200} py={5}>
-                  {benefitingUsers?.map((benefitingUser, index) => (
-                    <Group key={index} wrap='nowrap' justify='space-between' px={20}>
-                      <Text fz='sm' fw={500}>
-                        {benefitingUser.display_name}
-                      </Text>
-                      <CloseButton
-                        onClick={() => {
-                          modals.openConfirmModal({
-                            id: 'remove-benefiting-user',
-                            title: <Title order={4}>Remove User</Title>,
-                            children: (
-                              <Text size='sm'>
-                                Are you sure you want to remove this user from benefiting from your tier? They will lose
-                                their virtual Wanderer tier.
-                              </Text>
-                            ),
-                            labels: { confirm: 'Remove', cancel: 'Cancel' },
-                            onCancel: () => {},
-                            onConfirm: async () => {
-                              await removeFromGroup(benefitingUser.user_id);
-                            },
-                          });
-                        }}
-                      />
-                    </Group>
-                  ))}
-                  {benefitingUsers?.length === 0 && (
-                    <Text ta='center' fz='sm' c='dimmed' py='xs'>
-                      No one yet, share your link!
-                    </Text>
-                  )}
-                  {(benefitingUsers === undefined || benefitingUsers === null) && (
-                    <Center py='xs'>
-                      <Loader size='sm' type='dots' />
-                    </Center>
-                  )}
-                </ScrollArea.Autosize>
-              </Paper>
-              <Paper style={{ backgroundColor: 'transparent' }} withBorder mt={10} p='md'>
-                <Group wrap='nowrap' justify='space-between' mb={6}>
-                  <Text fz='sm'>Send them this link:</Text>
-                  <Group wrap='nowrap' gap='xs'>
-                    <CopyButton value={gmShareURL}>
-                      {({ copied, copy }) => (
-                        <Button color={copied ? 'teal' : 'blue'} size='compact-xs' onClick={copy}>
-                          {copied ? 'Copied' : 'Copy'}
-                        </Button>
-                      )}
-                    </CopyButton>
-                    <Button color='teal' size='compact-xs' onClick={regenerateCode}>
-                      Regenerate
-                    </Button>
-                  </Group>
-                </Group>
-                <Anchor fz='xs' fs='italic' style={{ wordBreak: 'break-all', overflowWrap: 'break-word' }}>
-                  {gmShareURL}
-                </Anchor>
-              </Paper>
-            </Box>
-          )}
           <Accordion
+            mt='md'
             defaultValue=''
             variant='contained'
             styles={{
@@ -590,6 +508,151 @@ function ProfileSection() {
               panel: { backgroundColor: 'var(--mantine-color-default-hover)' },
             }}
           >
+            {/* Connection status expands settings; only the explicit action starts OAuth. */}
+            <Accordion.Item value='patreon' data-testid='patreon-settings'>
+              <Accordion.Control
+                icon={<IconBrandPatreon size='0.9rem' />}
+                aria-label={`Patreon, ${patreonConnectionStatus}`}
+              >
+                <Group component='span' justify='space-between' gap='xs'>
+                  <Text span>Patreon</Text>
+                  <Badge
+                    size='sm'
+                    variant='light'
+                    color={isPatreonConnected ? 'guide' : 'gray'}
+                    leftSection={isPatreonConnected ? <IconCheck size='0.75rem' aria-hidden /> : undefined}
+                    styles={{ root: { textTransform: 'initial' } }}
+                  >
+                    {patreonConnectionStatus}
+                  </Badge>
+                </Group>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap='md'>
+                  <Group justify='space-between' gap='xs'>
+                    <Text size='xs' c='dimmed'>
+                      Membership
+                    </Text>
+                    <Text size='sm' c='dimmed'>
+                      {patronTier}
+                    </Text>
+                  </Group>
+                  <Group gap='sm'>
+                    {isPatreonConnected ? (
+                      <>
+                        <Button
+                          component='a'
+                          href={PATREON_URL}
+                          target='_blank'
+                          rel='noreferrer'
+                          variant='light'
+                          size='xs'
+                          rightSection={<IconExternalLink size='0.9rem' aria-hidden />}
+                        >
+                          View Patreon
+                        </Button>
+                        <Button
+                          component='a'
+                          href={PATREON_AUTH_URL}
+                          variant='subtle'
+                          color='gray'
+                          size='xs'
+                          leftSection={<IconRefresh size='0.9rem' aria-hidden />}
+                        >
+                          Reconnect
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        component='a'
+                        href={PATREON_AUTH_URL}
+                        variant='light'
+                        size='sm'
+                        leftSection={<IconBrandPatreon size='0.9rem' aria-hidden />}
+                      >
+                        Connect to Patreon
+                      </Button>
+                    )}
+                  </Group>
+                  {/* GM section */}
+                  {user.patreon?.tier === 'GAME-MASTER' && (
+                    <Box>
+                      <Text ta='center' fw={500} mb='xs'>
+                        <Text fs='italic' pr={8} span>
+                          Users in your Group
+                        </Text>
+                        <Text fz='sm' span>
+                          ({benefitingUsers?.length ?? '...'} / 99)
+                        </Text>
+                      </Text>
+                      <Paper style={{ backgroundColor: 'transparent' }} withBorder>
+                        <ScrollArea.Autosize mah={200} py={5}>
+                          {benefitingUsers?.map((benefitingUser, index) => (
+                            <Group key={index} wrap='nowrap' justify='space-between' px={20}>
+                              <Text fz='sm' fw={500} style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+                                {benefitingUser.display_name}
+                              </Text>
+                              <CloseButton
+                                aria-label={`Remove ${benefitingUser.display_name} from group`}
+                                style={{ flexShrink: 0 }}
+                                onClick={() => {
+                                  modals.openConfirmModal({
+                                    id: 'remove-benefiting-user',
+                                    title: <Title order={4}>Remove User</Title>,
+                                    children: (
+                                      <Text size='sm'>
+                                        Are you sure you want to remove this user from benefiting from your tier? They
+                                        will lose their virtual Wanderer tier.
+                                      </Text>
+                                    ),
+                                    labels: { confirm: 'Remove', cancel: 'Cancel' },
+                                    onCancel: () => {},
+                                    onConfirm: async () => {
+                                      await removeFromGroup(benefitingUser.user_id);
+                                    },
+                                  });
+                                }}
+                              />
+                            </Group>
+                          ))}
+                          {benefitingUsers?.length === 0 && (
+                            <Text ta='center' fz='sm' c='dimmed' py='xs'>
+                              No one yet, share your link!
+                            </Text>
+                          )}
+                          {(benefitingUsers === undefined || benefitingUsers === null) && (
+                            <Center py='xs'>
+                              <Loader size='sm' type='dots' />
+                            </Center>
+                          )}
+                        </ScrollArea.Autosize>
+                      </Paper>
+                      <Paper style={{ backgroundColor: 'transparent' }} withBorder mt={10} p='md'>
+                        <Group justify='space-between' gap='xs' mb='xs'>
+                          <Text fz='sm'>Send them this link:</Text>
+                          <Group wrap='nowrap' gap='xs'>
+                            <CopyButton value={gmShareURL}>
+                              {({ copied, copy }) => (
+                                <Button color={copied ? 'teal' : 'blue'} size='compact-xs' onClick={copy}>
+                                  {copied ? 'Copied' : 'Copy'}
+                                </Button>
+                              )}
+                            </CopyButton>
+                            <Button color='teal' size='compact-xs' onClick={regenerateCode}>
+                              Regenerate
+                            </Button>
+                          </Group>
+                        </Group>
+                        <Anchor fz='xs' fs='italic' style={{ wordBreak: 'break-all', overflowWrap: 'break-word' }}>
+                          {gmShareURL}
+                        </Anchor>
+                      </Paper>
+                    </Box>
+                  )}
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+
             {/* Appearance */}
             <Accordion.Item value='appearance'>
               <Accordion.Control icon={<IconPalette size='0.9rem' />}>Appearance</Accordion.Control>
