@@ -1,4 +1,5 @@
 import { AbilityBlockSchema, CharacterSchema, ContentSourceSchema, SpellSchema } from '../../../src/schemas/content';
+import { describeClientFailure } from '../../support/client-failure';
 
 const actor = '00000000-0000-4000-8000-000000000181';
 const profile = { id: 990181, user_id: actor, display_name: 'Authoring Fixture', is_admin: false, is_mod: false };
@@ -164,7 +165,7 @@ describe('Spell attribute and granted Lore authoring', () => {
       const endpoint = new URL(req.url).pathname.split('/').pop()!;
       if (endpoint === 'report-client-error') {
         const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-        throw new Error(`Unexpected authoring client failure: ${body.code}`);
+        throw new Error(`Unexpected authoring client failure: ${describeClientFailure(body)}`);
       }
       let data: unknown = [];
       if (endpoint === 'get-user') data = profile;

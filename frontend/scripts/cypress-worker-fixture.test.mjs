@@ -1,6 +1,23 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { isOperationsWorkerURL } from '../cypress/support/operations-worker-fixture.ts';
+import { describeClientFailure } from '../cypress/support/client-failure.ts';
+
+test('strict browser fixtures describe only known diagnostic categories', () => {
+  for (const code of [
+    'content_load_failed',
+    'calculation_failed',
+    'save_failed',
+    'auth_failed',
+    'update_failed',
+    'chunk_failed',
+    'unhandled_error',
+    'unhandled_rejection',
+  ])
+    assert.equal(describeClientFailure({ code, token: 'private-session', rawError: 'private-error' }), code);
+  for (const body of [null, [], 'private-session', { code: 'private-error' }, { code: 123 }, {}])
+    assert.equal(describeClientFailure(body), 'unknown');
+});
 
 const origin = 'http://localhost:3000';
 for (const path of [
