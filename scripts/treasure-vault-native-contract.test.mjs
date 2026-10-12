@@ -102,7 +102,7 @@ test('strict checked-in Treasure Vault loader identities',async(t)=>{
   const load=map=>loader.loadTreasureVaultDefaultNativeInputs({root,readText:read(map)});
   await t.test('actual-checked-in-default-layout',{timeout:60000},async()=>{
     captured=await captureNativeInputManifest({root});
-    assert.equal(captured.migrations.length,114);
+    assert.equal(captured.migrations.length,115);
     baseline=await loader.loadTreasureVaultDefaultNativeInputs({root,readText:captured.readCurrentText});
     assert.equal(baseline.input_provenance.mode,'checked-in-default');
     assert.deepEqual(baseline.input_provenance.external_private_input_files,[]);
@@ -429,7 +429,7 @@ test('native diagnostic receipts: a rejected log write is handled during a real 
         HostConfig:{...nativeDatabaseResourceLimits(),NetworkMode:'none',PortBindings:{}},Mounts:[],State:{Running:true,OOMKilled:false,ExitCode:0}}]));
     }
     if(args[0]==='logs')return result('');
-    if(args[0]==='rm'){assert.deepEqual(args,['rm','-f','-v',name]);removed=true;return result('');}
+    if(args[0]==='rm'){assert.deepEqual(args,['rm','-f','-v',id]);removed=true;return result('');}
     if(args[0]==='ps')return result(removed?'':name+'\n');
     if(args[0]==='volume')return result('');
     assert.fail('Unmodeled transport, SQL or service action');

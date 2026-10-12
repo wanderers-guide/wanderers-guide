@@ -206,6 +206,19 @@ These bundle the actual operation engine and drawer components against explicit 
 selected rules content comes from the checked-in sanitized data dump. They need no running
 database or authentication account.
 
+Run restricted spell-list, preparation and save/restoration regressions with
+`npm --prefix frontend run test:spell-slots`. These use the public character controller
+and the actual preparation callbacks with explicit local content fixtures. They
+require no database or account, and retain ordinary prepared, spontaneous, focus
+and innate spell behavior checks.
+
+Run source-owned spell database and paired-rank selection regressions with
+`npm --prefix frontend run test:spell-database`. They use the actual character and
+creature controllers, public schemas, filtered editor rendering and saved choice
+callbacks with credential-free local fixtures. The shared picker regressions in
+`test:infra` also verify ranked search identities and optimistic selection state.
+These tests do not import book content or establish production release readiness.
+
 Historical content-repair tests explicitly use the reviewed pre-repair Git snapshot
 through `readHistoricalContentRows`; ordinary `readContentRows` calls still read the
 current checked-in catalog. The shared historical reader verifies the pinned commit,
@@ -428,6 +441,16 @@ ES module loading for the test process. This lets Cypress 13 load the existing
 configuration with its TypeScript loader on Node 20. CI uses
 the same `cy:run` entry point; application and API runtime options are unchanged.
 
+`characters/databaseSpellSelections.cy.ts` keeps six cases on the compiled app,
+including Daily Library selection, reload, preparation and visible Rest. Its two
+mounted-Rest cases use source-module access to the same app's existing Jotai store.
+CI starts a separate Vite preview on port 5174 and sets
+`CYPRESS_module_preview_url=http://localhost:5174` for those two cases only.
+For a local Vite-only run, omit that override and use the normal development
+base URL. Both runtimes retain the same synthetic character and deny-by-default
+network guards. The worker fixture recognizes development and hashed production
+worker URLs; its regression checks run in `test:infra`.
+
 To scope to a single spec:
 
 ```bash
@@ -534,6 +557,37 @@ function/schema manifest. The production content snapshot refreshes weekly or by
 manual dispatch, independently of code pushes. See [Release and recovery](/releases)
 for the read-only production gate, including `release:verify:functions` before
 schema changes, migration baseline and rollout order.
+
+### Unpublished content on a clean runner
+
+The E2E workflow's optional `private-content` manual input runs only an isolated
+content batch. Ordinary pull-request, release and exhaustive runs retain their
+existing checks. This job uses a clean hosted checkout and disposable PostgreSQL
+and Auth fixtures, with no production connection or deployment step.
+
+Unpublished drafts and audit captures stay out of Git. A sealed encrypted packet
+is supplied through temporary `WG_PRIVATE_CONTENT_*` Actions secrets, pinned to
+the exact checkout commit. The runner verifies each private file before execution.
+Logs and readbacks are archived only as authenticated encrypted evidence with
+one-day retention. Keep the evidence key in ignored local storage, verify the
+decrypted receipt, and remove the temporary secrets after the run.
+
+Fixture cleanup reads logs and removes containers by the verified immutable
+container ID. A same-name replacement is left untouched and fails the final
+census, rather than being removed as part of cleanup.
+
+The recovery contracts in `npm run test:release` pin Heal Companion's original
+native identity and both full Incarnate release predicates. Run the saved feat's
+schema, grants and server-rendered drawer checks without a database:
+
+```bash
+cd frontend
+node --max-old-space-size=512 --import=tsx --test --test-concurrency=1 scripts/heal-companion-recovery.test.mjs
+```
+
+These also run in `test:rules`. They do not prove native SQL mutation, rollback,
+cache triggers, browser interactions or production readiness; the isolated native
+database matrix and full release gate are separate requirements.
 
 Run `npm run test:content:contracts` for the checked-in migration input, historical
 guard and safety-runner regressions. These use local files and bounded models,
@@ -681,6 +735,6 @@ receipt verifier, including the positive and negative actual feat-count witnesse
 primary runs the actual move after completing the historical digest and alternate
 allocation comparisons; the alternate runs it at its registered late chronology
 position before all registered release checks and historical replays. Both retain
-the original historical row hashes. The complete chronology now has 113 migrations
-and 106 registered requirements with 69 distinct queries, producing 386 registered
+the original historical row hashes. The complete chronology now has 115 migrations
+and 108 registered requirements with 70 distinct queries, producing 393 registered
 replay statements. No historical SQL body or negative coverage is removed.

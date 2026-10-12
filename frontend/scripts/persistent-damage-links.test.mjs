@@ -1,6 +1,11 @@
 /** Exercise the real RichText renderer when damage traits and conditions share a phrase. */
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { remarkConditionLinks } from '../src/common/rich-text-conditions.ts';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
 
 let engine;
@@ -23,6 +28,120 @@ function anchors(html) {
 function render(text, blacklist = []) {
   return engine.renderRichText(text, blacklist).replace(/<style\b[^>]*>[\s\S]*?<\/style>/g, '');
 }
+
+/** Observe actual parsed link destinations before RichText turns them into drawer callbacks. */
+function parsedLinks(text, conditions = ['concealed', 'invisible', 'observed']) {
+  const links = [];
+  const label = (node) => (node.type === 'text' ? node.value : (node.children ?? []).map(label).join(''));
+  const captureLinks = () => (tree) => {
+    const visit = (node) => {
+      if (node.type === 'link') links.push({ label: label(node), url: node.url });
+      for (const child of node.children ?? []) visit(child);
+    };
+    visit(tree);
+  };
+  renderToStaticMarkup(
+    React.createElement(Markdown, {
+      children: text,
+      remarkPlugins: [remarkGfm, [remarkConditionLinks, { conditions, persistentDamage: true }], captureLinks],
+    })
+  );
+  return links;
+}
+
+test('printed concealment references preserve their words and open canonical Concealed help', () => {
+  const text = 'Concealment persists; concealment and concealed.';
+  const html = render(text);
+  assert.equal(html.replace(/<[^>]+>/g, ''), text);
+  assert.deepEqual(anchors(html), ['Concealment', 'concealment', 'concealed']);
+  assert.deepEqual(parsedLinks(text), [
+    { label: 'Concealment', url: 'link_condition_concealed' },
+    { label: 'concealment', url: 'link_condition_concealed' },
+    { label: 'concealed', url: 'link_condition_concealed' },
+  ]);
+  assert.equal(engine.getConditionByName('concealed').name, 'Concealed');
+});
+
+test('concealment links retain emphasis, headings, table cells and every occurrence', () => {
+  const text = '# Concealment\n\n**concealment** and *concealment*.\n\n| State |\n| --- |\n| concealment |';
+  const html = render(text);
+  assert.deepEqual(anchors(html), ['Concealment', 'concealment', 'concealment', 'concealment']);
+  assert.deepEqual(parsedLinks(text), [
+    { label: 'Concealment', url: 'link_condition_concealed' },
+    { label: 'concealment', url: 'link_condition_concealed' },
+    { label: 'concealment', url: 'link_condition_concealed' },
+    { label: 'concealment', url: 'link_condition_concealed' },
+  ]);
+  assert.match(html, /<strong><a\b[^>]*>concealment<\/a><\/strong>/);
+  assert.match(html, /<em><a\b[^>]*>concealment<\/a><\/em>/);
+});
+
+test('concealment cannot bypass the canonical condition blacklist or unavailable condition list', () => {
+  assert.deepEqual(anchors(render('Concealment concealment concealed observed', ['concealed'])), ['observed']);
+  assert.deepEqual(parsedLinks('Concealment concealment concealed observed', ['observed']), [
+    { label: 'observed', url: 'link_condition_observed' },
+  ]);
+});
+
+test('concealment preserves authored condition, external and trait links and literal code', () => {
+  const text =
+    '[concealment](link_condition_concealed) [concealment](https://example.com/rules) ' +
+    '[concealment](link_trait_1542) `concealment`';
+  assert.deepEqual(parsedLinks(text), [
+    { label: 'concealment', url: 'link_condition_concealed' },
+    { label: 'concealment', url: 'https://example.com/rules' },
+    { label: 'concealment', url: 'link_trait_1542' },
+  ]);
+  const html = render(text);
+  assert.deepEqual(anchors(html), ['concealment', 'concealment', 'concealment']);
+  assert.match(html, /href="https:\/\/example.com\/rules"/);
+  assert.match(html, />concealment<\/code>/);
+  assert.doesNotMatch(html, /<a\b[^>]*>(?:(?!<\/a>)[\s\S])*<a\b/);
+  const fenced = '```text\nconcealment concealed\n```';
+  assert.deepEqual(parsedLinks(fenced), []);
+  assert.deepEqual(anchors(render(fenced)), []);
+});
+
+test('concealment aliases keep whole-word boundaries without broadening canonical case matching', () => {
+  const text = 'unconcealment concealments preconcealment concealmentproof Concealed Invisible';
+  assert.deepEqual(parsedLinks(text), []);
+  assert.deepEqual(anchors(render(text)), []);
+  assert.equal(render(text).replace(/<[^>]+>/g, ''), text);
+});
+
+test('concealment aliases keep whole-word boundaries across Markdown emphasis', () => {
+  const cases = [
+    { text: 'pre*concealment*', visible: 'preconcealment', links: [] },
+    { text: '*concealment*proof', visible: 'concealmentproof', links: [] },
+    { text: 'concealment**proof**', visible: 'concealmentproof', links: [] },
+    {
+      text: '*concealment*.',
+      visible: 'concealment.',
+      links: [{ label: 'concealment', url: 'link_condition_concealed' }],
+    },
+  ];
+  const rendered = cases.map((fixture) => ({
+    ...fixture,
+    html: render(fixture.text),
+    parsed: parsedLinks(fixture.text),
+  }));
+  for (const fixture of rendered) {
+    assert.equal(fixture.html.replace(/<[^>]+>/g, ''), fixture.visible, fixture.text);
+    assert.deepEqual(
+      anchors(fixture.html),
+      fixture.links.map((link) => link.label),
+      fixture.text
+    );
+    assert.deepEqual(fixture.parsed, fixture.links, fixture.text);
+  }
+});
+
+test('concealment help does not add or rename a mechanical condition', () => {
+  assert.equal(engine.getConditionByName('Concealment'), undefined);
+  assert.equal(engine.getConditionByName('Concealed').name, 'Concealed');
+  assert.equal(engine.getConditionByName('Observed').name, 'Observed');
+  assert.equal(engine.getConditionByName('Invisible').name, 'Invisible');
+});
 
 test('linked damage traits retain their own link alongside persistent-damage help', () => {
   const html = render(`1d6 persistent ${fire} damage.`);
@@ -134,4 +253,100 @@ test('result-tier containers do not nest paragraph elements or lose emphasized t
   assert.deepEqual(anchors(html), ['persistent', 'fire', 'damage']);
   assert.match(html, /<em><a\b/);
   assert.doesNotMatch(html, /<p\b[^>]*>(?:(?!<\/p>)[\s\S])*<p\b/);
+});
+
+/** Recreate the global catalog or a character's game flags without a browser. */
+function setGameContext(context) {
+  engine.resetVariables('CHARACTER');
+  if (context !== 'GLOBAL') {
+    engine.setVariable('CHARACTER', 'PATHFINDER', context === 'PATHFINDER');
+    engine.setVariable('CHARACTER', 'STARFINDER', context === 'STARFINDER');
+  }
+}
+
+test('global and Pathfinder prose link Glitching without broadening Suppressed detection', () => {
+  for (const context of ['GLOBAL', 'PATHFINDER', 'STARFINDER']) {
+    setGameContext(context);
+    assert.deepEqual(
+      anchors(render('glitching 1; glitching 2; suppressed; stunned 1.')),
+      context === 'STARFINDER'
+        ? ['glitching', 'glitching', 'suppressed', 'stunned']
+        : ['glitching', 'glitching', 'stunned'],
+      context
+    );
+    assert.equal(engine.getConditionByName('glitching').name, 'Glitching');
+  }
+});
+
+test('character condition choices retain their current game filter and cloned rows', () => {
+  let commonNames;
+  for (const context of ['GLOBAL', 'PATHFINDER', 'STARFINDER']) {
+    setGameContext(context);
+    const choices = engine.getAllConditions();
+    const names = choices.map((condition) => condition.name);
+    assert.equal(names.includes('Glitching'), context === 'STARFINDER', context);
+    assert.equal(names.includes('Suppressed'), context === 'STARFINDER', context);
+    const shared = names.filter((name) => !['Glitching', 'Suppressed'].includes(name));
+    if (commonNames) assert.deepEqual(shared, commonNames, context);
+    else commonNames = shared;
+    choices[0].name = 'mutated test copy';
+    assert.notEqual(engine.getAllConditions()[0].name, 'mutated test copy');
+  }
+});
+
+test('fresh reference names add canonical Glitching once to the existing game-filtered names', () => {
+  for (const context of ['GLOBAL', 'PATHFINDER', 'STARFINDER']) {
+    setGameContext(context);
+    const expected = engine.getAllConditions().map((condition) => condition.name);
+    const glitching = engine.getConditionByName('glitching').name;
+    if (!expected.includes(glitching)) expected.push(glitching);
+    assert.deepEqual(engine.getConditionReferenceNames(), expected, context);
+    assert.equal(engine.getConditionReferenceNames().filter((name) => name === glitching).length, 1);
+    const changed = engine.getConditionReferenceNames();
+    changed[0] = 'mutated reference copy';
+    assert.deepEqual(engine.getConditionReferenceNames(), expected);
+    assert.equal(engine.getConditionByName('glitching').name, 'Glitching');
+  }
+});
+
+test('Glitching prose still respects blacklists, authored links and literal code', () => {
+  setGameContext('GLOBAL');
+  const text =
+    '[glitching](link_condition_glitching); [glitching](https://example.test); `glitching`; **glitching** 2; suppressed.';
+  const html = render(text);
+  assert.deepEqual(anchors(html), ['glitching', 'glitching', 'glitching']);
+  assert.match(html, />glitching<\/code>/);
+  assert.match(html, /<strong><a\b/);
+  assert.match(html, /href="https:\/\/example.test"/);
+  assert.doesNotMatch(html, /\[glitching|link_condition_|<a\b[^>]*>(?:(?!<\/a>)[\s\S])*<a\b/);
+  assert.deepEqual(anchors(render(text, ['glitching', 'suppressed'])), ['glitching', 'glitching']);
+  assert.deepEqual(anchors(render('```text\nglitching; suppressed\n```')), []);
+  // This fix changes reference availability, not the established case matcher.
+  for (const context of ['GLOBAL', 'STARFINDER']) {
+    setGameContext(context);
+    assert.deepEqual(anchors(render('Glitching. Suppressed.')), []);
+  }
+});
+
+test('actual Pathfinder aeon-stone and rune suppression prose stays plain outside Starfinder', async () => {
+  const rows = await readContentRows([
+    { table: 'item', id: 17927 },
+    { table: 'ability_block', id: 26596 },
+  ]);
+  assert.equal(rows.length, 2);
+  assert.equal(rows.find(({ table }) => table === 'item').row.name, 'Aeon Stone (Amber Sphere)');
+  assert.equal(rows.find(({ table }) => table === 'ability_block').row.name, 'Weapon-Rune Shifter');
+  for (const context of ['GLOBAL', 'PATHFINDER', 'STARFINDER']) {
+    setGameContext(context);
+    for (const { row } of rows) {
+      const occurrences = [...row.description.matchAll(/\bsuppressed\b/g)].length;
+      assert.ok(occurrences > 0, row.name);
+      assert.equal(
+        anchors(render(row.description)).filter((label) => label === 'suppressed').length,
+        context === 'STARFINDER' ? occurrences : 0,
+        `${context}: ${row.name}`
+      );
+    }
+    assert.deepEqual(anchors(render('[suppressed](link_condition_suppressed)')), ['suppressed']);
+  }
 });

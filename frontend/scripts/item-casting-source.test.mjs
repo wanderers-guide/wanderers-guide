@@ -118,6 +118,9 @@ async function itemOffering(spell, entity, kind, options = {}) {
     getItemCastingSource: engine.getItemCastingSource,
     isItemBroken: engine.isItemBroken,
     handleUpdateItemCharges: engine.handleUpdateItemCharges,
+    updateItemCharges: engine.updateItemCharges,
+    getSpellSlotGroupKey: engine.getSpellSlotGroupKey,
+    retainRestrictedPreparations: engine.retainRestrictedPreparations,
     collectEntitySpellcasting: engine.collectEntitySpellcasting,
     castingSource,
     castingType,
@@ -512,7 +515,7 @@ for (const selected of [false, true]) {
     expected.spells.slots = collected.slots.map((slot) =>
       slot.source === weakName ? { ...slot, exhausted: true } : slot
     );
-    assert.equal(writes, 2);
+    assert.equal(writes, 1, 'staff charge and slot expenditure are atomic');
     assert.deepEqual(state, expected);
     assert.deepEqual(entity, before);
   });
@@ -608,7 +611,7 @@ test('spontaneous staff choices retain rank-charge and one-charge-plus-slot conv
     const expected = structuredClone(before);
     expected.inventory.items[0].item.meta_data.charges.current = option === 'NORMAL' ? 3 : 1;
     if (option === 'SLOT-CONSUME') expected.spells.slots = [{ ...collected.slots[0], exhausted: true }];
-    assert.equal(writes, option === 'NORMAL' ? 1 : 2);
+    assert.equal(writes, 1, 'both staff choices use one atomic entity update');
     assert.deepEqual(state, expected);
     assert.deepEqual(entity, before);
   }
@@ -659,7 +662,7 @@ test('the actual staff mount effect retains its existing greatest-slot charge in
   }
 });
 
-test('the actual prepared-staff extra-charge choice preserves slot use and delayed charge write', async () => {
+test('the actual prepared-staff extra-charge choice preserves slot use and atomically writes charges', async () => {
   const entity = caster({
     attributes: { INT: 4, WIS: 1 },
     sources: [
@@ -703,10 +706,13 @@ test('the actual prepared-staff extra-charge choice preserves slot use and delay
     cloneDeep,
     collectEntitySpellcasting: engine.collectEntitySpellcasting,
     handleUpdateItemCharges: engine.handleUpdateItemCharges,
+    updateItemCharges: engine.updateItemCharges,
+    getSpellSlotGroupKey: engine.getSpellSlotGroupKey,
+    retainRestrictedPreparations: engine.retainRestrictedPreparations,
     openContextModal: (request) => {
       modal = request;
     },
-    // Time is the boundary: inspect the exact delayed callback before advancing it.
+    // No delayed write may grant charges after its selected slot has disappeared.
     setTimeout: (callback, delay) => {
       scheduled.push({ callback, delay });
     },
@@ -716,16 +722,11 @@ test('the actual prepared-staff extra-charge choice preserves slot use and delay
   assert.equal(writes, 0);
   modal.innerProps.onSelect(collected.slots[1]);
   assert.equal(writes, 1);
-  assert.deepEqual(
-    scheduled.map(({ delay }) => delay),
-    [250]
-  );
+  assert.deepEqual(scheduled, []);
   const slotExpected = structuredClone(before);
   slotExpected.spells.slots = [collected.slots[0], { ...collected.slots[1], exhausted: true }];
-  assert.deepEqual(state, slotExpected);
-  scheduled[0].callback();
   slotExpected.inventory.items[0].item.meta_data.charges.max = 6;
-  assert.equal(writes, 2);
+  assert.equal(writes, 1);
   assert.deepEqual(state, slotExpected);
   assert.deepEqual(entity, before);
 });

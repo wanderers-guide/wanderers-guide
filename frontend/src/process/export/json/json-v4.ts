@@ -28,7 +28,7 @@ import {
   getSpeedValue,
 } from '@variables/variable-helpers';
 import {
-  getAllAncestryTraitVariables,
+  getAllActorTraitVariables,
   getAllAttributeVariables,
   getAllSpeedVariables,
   getVariable,
@@ -120,7 +120,7 @@ export async function getJsonV4Content(entity: LivingEntity, inputStoreID?: Stor
     filterBasicClassFeatures: true,
   });
 
-  const characterTraits = getAllAncestryTraitVariables(STORE_ID)
+  const characterTraits = getAllActorTraitVariables(STORE_ID)
     .map((v) => {
       const trait = content.traits.find((trait) => trait.id === v.value);
       return trait;

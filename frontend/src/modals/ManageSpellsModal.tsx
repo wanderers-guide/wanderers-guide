@@ -21,9 +21,10 @@ import {
   useMantineColorScheme,
 } from '@mantine/core';
 import { isCantrip, isNormalSpell, isRitual } from '@spells/spell-utils';
+import { getSpellSlotGroupKey, isSpellInSlotList, retainRestrictedPreparations } from '@spells/spell-slot-rules';
 import { IconPlus, IconSearch } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { LivingEntity, Spell, SpellSlot, SpellSlotRecord } from '@schemas/content';
+import { LivingEntity, Spell, SpellListEntry, SpellSlot, SpellSlotRecord } from '@schemas/content';
 import { StoreID } from '@schemas/variables';
 import { rankNumber } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
@@ -183,6 +184,7 @@ export default function ManageSpellsModal(props: {
                 setEntity={props.setEntity}
                 filter={props.filter}
                 slots={slots}
+                spellList={charData?.list ?? []}
                 spells={spells ?? []}
                 source={props.source}
               />
@@ -197,6 +199,7 @@ export default function ManageSpellsModal(props: {
               setEntity={props.setEntity}
               filter={props.filter}
               slots={slots}
+              spellList={charData?.list ?? []}
               source={props.source}
             />
           </>
@@ -212,6 +215,7 @@ const SlotsSection = (props: {
   setEntity: SetterOrUpdater<LivingEntity | null>;
   //
   slots: Record<string, SpellSlotRecord[]>;
+  spellList: SpellListEntry[];
   spells?: Spell[];
   source: string;
   filter?: {
@@ -255,7 +259,18 @@ const SlotsSection = (props: {
                       onClick={(spell) => {
                         props.setEntity((c) => {
                           if (!c) return c;
-                          let slots = collectEntitySpellcasting(props.id, c).slots;
+                          const currentSpellcasting = collectEntitySpellcasting(props.id, c);
+                          let slots = currentSpellcasting.slots;
+                          const currentSlot = slots.find((candidate: SpellSlotRecord) => candidate.id === slot.id);
+                          // A selector opened before retraining must use current list membership.
+                          if (
+                            (slot.spell_list_source !== undefined || currentSlot?.spell_list_source !== undefined) &&
+                            (!currentSlot ||
+                              getSpellSlotGroupKey(currentSlot) !== getSpellSlotGroupKey(slot) ||
+                              !isSpellInSlotList(currentSlot, spell.id, currentSpellcasting.list))
+                          ) {
+                            return c;
+                          }
                           slots = slots.map((s) => {
                             if (s.id === slot.id) {
                               return {
@@ -276,7 +291,7 @@ const SlotsSection = (props: {
                                 focus_point_current: 0,
                                 innate_casts: [],
                               }),
-                              slots: slots,
+                              slots: retainRestrictedPreparations(slots, c.spells?.slots ?? [], [slot.id]),
                             },
                           };
                         });
@@ -286,6 +301,14 @@ const SlotsSection = (props: {
                         props.setEntity((c) => {
                           if (!c) return c;
                           let slots = collectEntitySpellcasting(props.id, c).slots;
+                          const currentSlot = slots.find((candidate: SpellSlotRecord) => candidate.id === slot.id);
+                          // Clearing a stale restricted selector cannot clear an ordinary slot in its place.
+                          if (
+                            (slot.spell_list_source !== undefined || currentSlot?.spell_list_source !== undefined) &&
+                            (!currentSlot || getSpellSlotGroupKey(currentSlot) !== getSpellSlotGroupKey(slot))
+                          ) {
+                            return c;
+                          }
                           slots = slots.map((s) => {
                             if (s.id === slot.id) {
                               return {
@@ -306,7 +329,7 @@ const SlotsSection = (props: {
                                 focus_point_current: 0,
                                 innate_casts: [],
                               }),
-                              slots: slots,
+                              slots: retainRestrictedPreparations(slots, c.spells?.slots ?? [], [slot.id]),
                             },
                           };
                         });
@@ -317,6 +340,7 @@ const SlotsSection = (props: {
                         showButton: true,
                         overrideOptions: props.spells,
                         filterFn: (spell: Spell) => {
+                          if (!isSpellInSlotList(slot, spell.id, props.spellList)) return false;
                           // const foundSpell =
                           //   props.spells !== undefined
                           //     ? props.spells.find((s) => s.id === spell.id)

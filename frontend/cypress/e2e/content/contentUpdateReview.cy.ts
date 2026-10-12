@@ -1,4 +1,5 @@
 import { ContentUpdate } from '../../../src/schemas/content';
+import { describeClientFailure } from '../../support/client-failure';
 
 const actor = '00000000-0000-4000-8000-000000000069';
 const source = {
@@ -153,6 +154,8 @@ describe('Content update review', () => {
     cy.intercept('POST', '**/functions/v1/*', (req) => {
       const endpoint = new URL(req.url).pathname.split('/').pop()!;
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      if (endpoint === 'report-client-error')
+        throw new Error(`Unexpected review client failure: ${describeClientFailure(body)}`);
       let data: unknown;
       if (endpoint === 'get-user') data = { ...profile, display_name: 'Review Fixture' };
       else if (endpoint === 'get-public-user') data = profile;

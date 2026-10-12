@@ -18,6 +18,7 @@ import {
 } from '@mantine/core';
 import ManageSpellsModal from '@modals/ManageSpellsModal';
 import { getKnownSpellsByRank, isCantrip } from '@spells/spell-utils';
+import { retainRestrictedPreparations } from '@spells/spell-slot-rules';
 import { getInnateSpellKey } from '@spells/innate-spells';
 import {
   filterSpellCatalog,
@@ -578,7 +579,7 @@ function SpellList(props: {
               focus_point_current: 0,
               innate_casts: [],
             }),
-            slots: newSlots,
+            slots: retainRestrictedPreparations(newSlots, c.spells?.slots ?? []),
           },
         };
       });
@@ -589,7 +590,13 @@ function SpellList(props: {
         if (!c) return c;
         let added = false;
         const newUpdatedSlots = collectEntitySpellcasting(props.id, c).slots.map((slot) => {
-          if (!added && slot.rank === spell.rank && slot.source === props.source!.name && !slot.exhausted === cast) {
+          if (
+            !added &&
+            slot.rank === spell.rank &&
+            slot.source === props.source!.name &&
+            slot.spell_list_source === undefined &&
+            !slot.exhausted === cast
+          ) {
             added = true;
             return {
               ...slot,
@@ -608,7 +615,7 @@ function SpellList(props: {
               focus_point_current: 0,
               innate_casts: [],
             }),
-            slots: newUpdatedSlots,
+            slots: retainRestrictedPreparations(newUpdatedSlots, c.spells?.slots ?? []),
           },
         };
       });
@@ -674,21 +681,23 @@ function SpellList(props: {
   const slots = useMemo(() => {
     if (!props.extra?.slots || props.extra.slots.length === 0) return null;
 
-    const mappedSlots = props.extra.slots.map((slot) => {
-      let spell = props.allSpells.find((spell) => spell.id === slot.spell_id);
-      if (spell) {
-        spell = {
-          ...spell,
-          rank: slot.rank,
+    const mappedSlots = props.extra.slots
+      .filter((slot) => props.type !== 'SPONTANEOUS' || slot.spell_list_source === undefined)
+      .map((slot) => {
+        let spell = props.allSpells.find((spell) => spell.id === slot.spell_id);
+        if (spell) {
+          spell = {
+            ...spell,
+            rank: slot.rank,
+          };
+        }
+        return {
+          ...slot,
+          spell: spell,
         };
-      }
-      return {
-        ...slot,
-        spell: spell,
-      };
-    });
+      });
     return groupBy(mappedSlots, 'rank');
-  }, [props.extra?.slots, props.allSpells]);
+  }, [props.extra?.slots, props.allSpells, props.type]);
 
   const innateSpells = useMemo(() => {
     const filteredSpells = props.extra?.innates

@@ -302,9 +302,70 @@ and independently granted casting proficiency remain. Names stay synchronized wi
 including when two different spell records share a name. Spell-slot pools belong to their
 casting source and are not removed with an individual spell.
 
+A `NORMAL` grant may also provide `listSources: ["CACHE"]`. The spell remains in its
+normal casting source's list and is added to each named list at the granted rank.
+Filtered and predefined spell selections retain the same optional memberships.
+These lists do not introduce casting sources or duplicate spell ownership. Removing
+the grant removes its list memberships as well. Focus and innate grants do not use
+this field.
+
+A filtered spell selection may opt in to `optionsFilters.knownSpellSource`, such
+as `"TECHNOMANCER"`, to offer only normal spells independently known to that
+casting source. Keep `spellData.type` as `"NORMAL"`, match its `castingSource` to
+`knownSpellSource` and omit `spellData.rank`. Each option keeps its known rank and
+uses an exact `spellId:rank` saved identity; ordinary spell selections keep their
+existing numeric identities. Named `spellData.listSources` may add the selected
+spell to a Cache without teaching unrelated catalog spells.
+
+For a pair of different-rank choices, the second selection may provide
+`distinctRankFromSelections: ["<first selection UUID>"]`. The reference must name
+one earlier, unpaired filtered spell selection with the same database source
+under the same current owner. Forward, ambiguous, cross-source and stale-owner
+references offer no choices. An invalid saved first choice excludes no rank;
+invalid saved choices remain stored but grant nothing and produce no notification.
+Database membership is frozen after independent grants settle, before these
+choices run, and is never saved as a new spell database. Missing execution context
+offers no choices. Unmarked choices do not expire on Rest or retraining.
+
+`dailyPreparation: true` opts a database selection into daily expiration. Its saved
+identity includes the entity's `operation_data.daily_preparation` generation,
+actual entity ID, caster, stable selection owner, spell ID, known rank and fixed
+selector rank. Rest advances that generation only for a current daily selector or
+an existing daily preparation. Unselected and empty daily choices still opt in.
+A prior entity-owned daily choice expires even if its feature was removed before
+Rest, so regranting it cannot revive an expired addition. Ordinary entities gain
+no daily metadata. Recalculation, reload and ordinary
+saves do not. A choice from an older preparation, including
+a late picker callback, grants nothing. The saved database, ordinary selections,
+base Cache grants and Expanded Cache selections remain unchanged. Restricted
+preparations of expired members remain saved but are not castable unless another
+current grant still supplies that membership. Clearing or canceling a picker does
+not begin a new preparation.
+
+Daily filters must specify one fixed integer rank from 1 to 10 (`level.min` equals
+`level.max`), a `knownSpellSource`, normal `spellData` with the same casting source,
+and a nonempty named `listSources`. They cannot use a paired-rank exclusion.
+New choices use ranks the entity can currently cast from that source; another
+caster's slots or nonnumeric slot amounts cannot authorize them. Unavailable
+daily choices do not render empty future-rank pickers. A cantrip's storage rank
+remains zero, but its actual heightened rank (half the entity's level, rounded up)
+determines which daily
+rank choice offers it. This implements the feat's unrestricted wording as one
+choice per actual rank, not an additional rank-zero choice. It does not allow a
+cantrip to be prepared in a non-cantrip restricted slot.
+A selected current-day cantrip stays with its original selection owner if leveling
+changes its automatic rank. It still requires independent database membership
+and an available cantrip slot from that caster, and expires on the next Rest.
+Changing its selector's fixed rank invalidates the previous choice.
+
+The operation editor preserves these fields through compatible edits. Explicit
+changes to the selection mode, option type, casting source, spell type or granted
+rank clear the opt-in fields when they no longer apply. Daily selections use the
+existing picker and Rest action, without a separate preparation dialog or toast.
+
 ### `giveSpellSlot`
 
-Add spell slots to a casting source. Each slot is `{ lvl, rank, amt }` where `lvl` is the character level the slot becomes available, `rank` the spell rank it casts, and `amt` the count (or `null` for unlimited / cantrip).
+Add spell slots to a casting source. Each slot is `{ lvl, rank, amt }` where `lvl` is the character level the slot becomes available, `rank` the spell rank it casts, and `amt` the count. Use rank zero for cantrip preparations. A nullable amount is accepted for compatibility but does not create concrete slots; it does not mean unlimited slots.
 
 ```jsonc
 {
@@ -320,6 +381,22 @@ Add spell slots to a casting source. Each slot is `{ lvl, rank, amt }` where `lv
 }
 ```
 
+An optional `data.spellListSource` on `giveSpellSlot` restricts its slots to a named
+list, such as `"CACHE"`. Preparation accepts only members of that exact list at the
+slot's rank or lower. A missing or empty list offers no spells. The usual cantrip,
+focus-spell and rank rules still apply. Omit this field for ordinary slots.
+
+Saved restricted slots retain `spell_list_source` alongside their source and rank.
+This prevents an ordinary preparation from moving into a restricted slot, or the
+reverse, when grants are added or removed. If a spell ceases to be a list member,
+the calculated slot is empty without changing the saved input. Unrelated ordinary
+slot edits, casts and staff expenditure retain the held restricted preparation,
+even when its slot grant is absent. Explicit preparation or clearing replaces only
+the edited restricted slot. Slots within a matching pool restore by their ordinal.
+Rest resets
+exhaustion without changing the restriction or preparation.
+Restricted slots cannot be expended to charge or cast from a staff.
+
 ### `giveItem`
 
 Add an item to the character’s starting inventory.
@@ -332,6 +409,10 @@ Add an item to the character’s starting inventory.
 
 Add a trait to the character itself. Rare; used when an ancestry or archetype literally makes you have a trait (e.g. _humanoid_).
 Successful grants also add the trait's canonical name to the `TRAIT_NAMES` list variable for conditionals.
+Ordinary traits such as Tech, Holy, and Unholy can be granted explicitly without changing
+their catalog classification. They appear in the actor's trait display and exports, but
+do not become ancestry, class, or archetype feat origins. A trait on an item, spell, or
+feat is not automatically a trait of its owner.
 
 ```jsonc
 { "id": "...", "type": "giveTrait", "data": { "traitId": 1542 } }

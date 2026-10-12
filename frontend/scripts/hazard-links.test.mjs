@@ -174,7 +174,7 @@ test('capitalized actions and energy traits link every occurrence, while unknown
   state.available.set('trait:electricity', 22);
   state.available.set('trait:air', 23);
   const text =
-    'Two Strikes, then one Strike. Fly, and later Flies. Electricity, electricity, air, air. ' +
+    'Two Strikes, then one Strike. Fly, and later Flies. Electricity, electricity, air effect, air trait. ' +
     'Kaiju Environmental Complex clumsy 2 stunned 1.';
   await preloadHazardReferences({
     details: {
@@ -204,6 +204,51 @@ test('unavailable references remain readable prose', async () => {
   assert.equal(warm.html, cold.html);
   assert.deepEqual(links(warm.tree), []);
 });
+
+const additionalProseFields = [
+  ['HP note', (details, text) => (details.defenses = { hp_note: text })],
+  ['weaknesses', (details, text) => (details.defenses = { weaknesses: text })],
+  ['resistances', (details, text) => (details.defenses = { resistances: text })],
+  ['primary requirements', (details, text) => (details.activation.requirements = text)],
+  ['passive ability', (details, text) => (details.passive_abilities = [{ name: 'Passive', text }])],
+  [
+    'secondary traits',
+    (details, text) => (details.secondary_activities = [{ name: 'Secondary', traits: [text], effect: '' }]),
+  ],
+  [
+    'secondary trigger',
+    (details, text) => (details.secondary_activities = [{ name: 'Secondary', trigger: text, effect: '' }]),
+  ],
+  [
+    'secondary requirements',
+    (details, text) => (details.secondary_activities = [{ name: 'Secondary', requirements: text, effect: '' }]),
+  ],
+  ['secondary effect', (details, text) => (details.secondary_activities = [{ name: 'Secondary', effect: text }])],
+];
+
+for (const [field, setField] of additionalProseFields) {
+  test(`hazard preload resolves references found only in ${field}`, async () => {
+    globalThis.hazardLinkTest.available.set('trait:fire', 1542);
+    const text = '[fire](link_trait_1542), then fire and fire; `fire`; frightened 1.';
+    const details = { stealth: '', description: '', disable: '', activation: { name: '', trigger: '', effect: '' } };
+    setField(details, text);
+    const before = structuredClone(details);
+
+    await preloadHazardReferences({ details });
+
+    assert.deepEqual(globalThis.hazardLinkTest.calls, [
+      { type: 'trait', name: 'fire', sources: 'ALL-OFFICIAL-PUBLIC' },
+    ]);
+    assert.deepEqual(details, before, 'Preloading never edits a stat-block field');
+    const { tree, html } = render(text);
+    assert.equal(links(tree).filter(({ url }) => url === 'link_trait_1542').length, 3);
+    assert.match(html, /<code\b[^>]*>fire<\/code>/);
+    assert.match(html, /frightened/);
+    const first = structuredClone(tree);
+    remarkHazardReferences()(tree);
+    assert.deepEqual(tree, first);
+  });
+}
 
 test('spirit damage links every occurrence without linking physical damage', async () => {
   globalThis.hazardLinkTest.available.set('trait:spirit', 1556);
@@ -362,3 +407,142 @@ test('ordinary RichText keeps cached energy prose plain while preserving authore
   assert.match(html, /slashing damage/);
   assert.doesNotMatch(html, /\[|\]|<a\b[^>]*>(?:(?!<\/a>)[\s\S])*<a\b/);
 });
+
+const ambiguousReferenceCases = [
+  ['ordinary environmental Air', 'scorching hot air; Air rapidly escapes; rise into the air; tingle in the air.', []],
+  ['narrative Spirit actors', 'overpower the spirit; The spirit takes control; spirit crew’s annihilation.', []],
+  ['capitalization is not a trait context', 'Air rapidly escapes. Spirit Invasion.', []],
+  [
+    'trait and effect phrases',
+    'air effect; Air effects; air trait; spirit effect; Spirit effects; spirit trait.',
+    ['air', 'Air', 'air', 'spirit', 'Spirit', 'spirit'],
+  ],
+  [
+    'repeated Spirit damage',
+    'spirit damage, Spirit damage, and persistent spirit damage.',
+    ['spirit', 'Spirit', 'spirit'],
+  ],
+  [
+    'plain trait lists',
+    '(Air); (air, magical); (occult, spirit); (spirit, air, spirit).',
+    ['Air', 'air', 'spirit', 'spirit', 'air', 'spirit'],
+  ],
+  [
+    'formatted list and qualifier nodes',
+    '(**air**, *magical*); **spirit** damage; spirit **damage**; **Air** trait; ~~spirit~~ effect.',
+    ['air', 'spirit', 'spirit', 'Air', 'spirit'],
+  ],
+  [
+    'mixed authored trait list slots',
+    '(air, [magical](link_trait_1504)); ([occult](link_trait_1514), spirit); (air, [anything](link_trait_1504), spirit).',
+    ['air', 'spirit', 'air', 'spirit'],
+  ],
+  [
+    'trait-slot labels are never read',
+    '([spirit damage](link_trait_1504), air); spirit [damage](link_trait_1504).',
+    ['air'],
+  ],
+  [
+    'ordinary parenthetical prose',
+    '(the spirit); (hot air escapes); (hot air, magical); (Spirit Invasion, occult).',
+    [],
+  ],
+  [
+    'external and code nodes are not trait slots',
+    '(air, [help](https://example.test)); (`occult`, spirit); (air, ![magical](image.png)).',
+    [],
+  ],
+  [
+    'reference links are not trait slots',
+    '(air, [magical][ref]); ([occult][ref], spirit).\n\n[ref]: link_trait_1504',
+    [],
+  ],
+  [
+    'opaque nodes break qualifiers',
+    'spirit `damage`; air [trait](https://example.test); spirit ![damage](image.png); spirit [damage][ref].\n\n[ref]: link_trait_1504',
+    [],
+  ],
+  [
+    'exact elemental result survives earlier spell splits',
+    'Strike, then 1 air (gust of wind); again air (*gust of wind*).',
+    ['air', 'air'],
+  ],
+  ['authored spell label stays opaque', 'air ([gust of wind](link_spell_4650)).', []],
+  [
+    'formatted defense labels',
+    '**Immunities** spirit, air; **Resistances** spirit 5, fire 10; **Weaknesses** spirit 7.',
+    ['spirit', 'air', 'spirit', 'spirit'],
+  ],
+  [
+    'governing defense phrases',
+    'immune to spirit effects; immunity to spirit; resistant to spirit; resistance to spirit damage; weakness to Spirit.',
+    ['spirit', 'spirit', 'spirit', 'spirit', 'Spirit'],
+  ],
+  ['numeric Spirit defense entries', 'spirit 5, fire 10, Spirit 7', ['spirit', 'Spirit']],
+  [
+    'numeric defense second entry',
+    '**Resistances** fire 10, spirit 5; **Immunities** fire, spirit.',
+    ['spirit', 'spirit'],
+  ],
+  [
+    'remote numbers and defense clauses do not leak',
+    'DC 26 to feel air; a spirit 5 feet away; **Immunities** fire. The spirit controls the air.',
+    [],
+  ],
+  [
+    'GFM list and table explicit prose',
+    '- spirit damage and spirit damage\n- air effect\n\n| Kind | Result |\n| --- | --- |\n| spirit | spirit damage |\n| air | air trait |',
+    ['spirit', 'spirit', 'air', 'spirit', 'air'],
+  ],
+  [
+    'curated and repeated plain references coexist',
+    '[spirit](link_trait_1556) takes control; spirit damage and spirit damage; the spirit controls. [air](link_trait_1524), hot air and air effect.',
+    ['spirit', 'spirit', 'spirit', 'air', 'air'],
+  ],
+];
+
+for (const [name, text, expected] of ambiguousReferenceCases) {
+  test(`ambiguous hazard references: ${name}`, () => {
+    for (const [key, id] of [
+      ['trait:air', 1524],
+      ['trait:spirit', 1556],
+      ['trait:fire', 1542],
+      ['spell:gust of wind', 4650],
+      ['action:Strike', 19856],
+    ]) {
+      globalThis.hazardLinkTest.ids.set(key, id);
+    }
+    const before = render(text, { ready: false });
+    const { tree } = render(text);
+    const selected = links(tree).filter(({ url }) => url === 'link_trait_1524' || url === 'link_trait_1556');
+    assert.deepEqual(
+      selected.map(({ label }) => label),
+      expected
+    );
+    const first = structuredClone(tree);
+    remarkHazardReferences()(tree);
+    assert.deepEqual(tree, first, 'The context-aware transform is idempotent');
+    // All authored nodes, including opaque labels, keep their original shape and identity.
+    const authored = [];
+    const visit = (node) => {
+      if (
+        node.type === 'link' ||
+        node.type === 'linkReference' ||
+        node.type === 'inlineCode' ||
+        node.type === 'image' ||
+        node.type === 'imageReference'
+      )
+        authored.push(node);
+      else if ('children' in node) node.children.forEach(visit);
+    };
+    visit(before.tree);
+    remarkHazardReferences()(before.tree);
+    const afterNodes = [];
+    const collect = (node) => {
+      afterNodes.push(node);
+      if ('children' in node) node.children.forEach(collect);
+    };
+    collect(before.tree);
+    assert.ok(authored.every((node) => afterNodes.includes(node)));
+  });
+}

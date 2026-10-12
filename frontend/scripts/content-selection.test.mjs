@@ -91,9 +91,12 @@ const special = {
   getContentFast: '() => []',
   fetchContent: 'async (...args) => { globalThis.__selectionFetch = args; return []; }',
   fetchContentAll: 'async (...args) => { globalThis.__selectionFetchAll = args; return []; }',
+  fetchContentById:
+    'async (...args) => { globalThis.__selectionFetchById = args; return globalThis.__selectionFetchedRow; }',
   fetchHazards: 'async (...args) => { globalThis.__selectionHazards = args; return []; }',
   fetchContentSources: 'async () => []',
   filterByTraitType: '() => []',
+  compileTraits: 'item => globalThis.__selectionCompileTraits(item)',
   hashData: 'value => JSON.stringify(value)',
   toLabel: 'value => String(value)',
   labelToVariable: 'value => globalThis.__selectionLabels(value)',
@@ -138,7 +141,7 @@ const output = join(directory, 'selection.mjs');
 await build({
   absWorkingDir: root,
   stdin: {
-    contents: `export {SelectContentButton, selectContent, SelectionOptions, HazardSelectionOption, FeatSelectionOption} from './src/common/select/SelectContent'; export {default as ManageSpellsModal} from './src/modals/ManageSpellsModal'; export {default as AddItemsModal} from './src/modals/AddItemsModal'; export {AdvancedSearchModal} from './src/modals/AdvancedSearchModal'; export {default as SpellsPanel} from './src/pages/character_sheet/panels/SpellsPanel';`,
+    contents: `export {SelectContentButton, selectContent, SelectionOptions, SelectionOptionsRoot, HazardSelectionOption, FeatSelectionOption, ItemSelectionOption} from './src/common/select/SelectContent'; export {default as ManageSpellsModal} from './src/modals/ManageSpellsModal'; export {default as AddItemsModal} from './src/modals/AddItemsModal'; export {AdvancedSearchModal} from './src/modals/AdvancedSearchModal'; export {default as SpellsPanel} from './src/pages/character_sheet/panels/SpellsPanel';`,
     resolveDir: root,
   },
   bundle: true,
@@ -151,6 +154,8 @@ await build({
       name: 'selection-render-boundaries',
       setup(b) {
         b.onResolve({ filter: /.*/ }, (args) => {
+          if (args.path === '@items/armor-grade-view')
+            return { path: join(root, 'src/process/items/armor-grade-view.ts') };
           if (
             args.path === 'react' ||
             args.path === 'react/jsx-runtime' ||
@@ -160,7 +165,7 @@ await build({
             return { path: args.path, namespace: 'boundary' };
         });
         b.onLoad({ filter: /SelectContent\.tsx$/ }, async (args) => ({
-          contents: `${await readFile(args.path, 'utf8')}\nexport {SelectionOptions};`,
+          contents: `${await readFile(args.path, 'utf8')}\nexport {SelectionOptions, SelectionOptionsRoot};`,
           loader: 'tsx',
         }));
         b.onLoad({ filter: /.*/, namespace: 'boundary' }, (args) => {
@@ -189,8 +194,10 @@ const {
   SelectContentButton,
   selectContent,
   SelectionOptions,
+  SelectionOptionsRoot,
   HazardSelectionOption,
   FeatSelectionOption,
+  ItemSelectionOption,
   ManageSpellsModal,
   AddItemsModal,
   AdvancedSearchModal,
@@ -199,6 +206,70 @@ const {
 const charm = { id: 1, name: 'Charm', rank: 1 };
 const command = { id: 2, name: 'Command', rank: 1 };
 const picker = { type: 'spell', searchQuery: 'Charm', limitSelectedOptions: false };
+
+const finalArmor = {
+  id: 990761,
+  name: 'Synthetic selected-grade armor',
+  group: 'ARMOR',
+  level: 9,
+  price: { sp: 6500 },
+  traits: [991001],
+  rarity: 'COMMON',
+  size: 'MEDIUM',
+  meta_data: { ac_bonus: 4, dex_cap: 2, starfinder: { base_grade: 'ADVANCED', base_upgrade_slots: 0, grade: 'ELITE' } },
+};
+
+test('item selection sorts by effective grade level without changing raw item or non-item ordering', () => {
+  const host = new RenderHost();
+  const legacy = { id: 990762, name: 'Synthetic legacy item', level: 10 };
+  host.data = [finalArmor, legacy];
+  const original = structuredClone(host.data);
+  const props = { type: 'item', searchQuery: '', limitSelectedOptions: false };
+  assert.deepEqual(
+    host.render(SelectionOptions, props).props.options.map((item) => item.id),
+    [legacy.id, finalArmor.id]
+  );
+  assert.deepEqual(
+    host.render(SelectionOptions, { ...props, overrideOptions: host.data }).props.options.map((item) => item.id),
+    [finalArmor.id, legacy.id]
+  );
+  assert.deepEqual(
+    host.render(SelectionOptions, { ...props, type: 'creature' }).props.options.map((item) => item.id),
+    [finalArmor.id, legacy.id]
+  );
+  assert.deepEqual(host.data, original);
+});
+
+test('item selection displays the effective level and actual selected resilience without rewriting the printing', async (t) => {
+  const engine = await createOperationEngine();
+  t.after(() => engine.cleanup());
+  const previousCompile = globalThis.__selectionCompileTraits;
+  globalThis.__selectionCompileTraits = engine.compileTraits;
+  t.after(() => {
+    globalThis.__selectionCompileTraits = previousCompile;
+  });
+  engine.setFixtures(
+    [1, 2].map((tier) => ({
+      table: 'trait',
+      row: {
+        id: 991000 + tier,
+        name: `Resilient +${tier}`,
+        content_source_id: 579,
+      },
+    }))
+  );
+  const host = new RenderHost();
+  const original = structuredClone(finalArmor);
+  const tree = host.render(ItemSelectionOption, { item: finalArmor });
+  assert.equal(tree.props.level, 14);
+  assert.deepEqual(tree.props.rightSection.props.traitIds, [991002]);
+  const legacy = { ...finalArmor, level: 9, meta_data: {} };
+  const legacyTree = host.render(ItemSelectionOption, { item: legacy });
+  assert.equal(legacyTree.props.level, 9);
+  assert.deepEqual(legacyTree.props.rightSection.props.traitIds, [991001]);
+  assert.deepEqual(finalArmor, original);
+});
+
 test('deprecated legacy feats stay visible for saved selections and disappear from new choices', () => {
   const host = new RenderHost();
   const feat = { id: 22108, name: 'Heal Companion', type: 'feat', meta_data: { deprecated: true } };
@@ -222,6 +293,143 @@ test('search never offers an option removed by the current filter or override li
     []
   );
   assert.deepEqual(host.render(SelectionOptions, { ...picker, overrideOptions: [command] }).props.options, []);
+});
+
+test('ranked spell overrides retain both identities during actual picker search and selected-state rendering', () => {
+  const ranked = [1, 3].map((rank) => ({
+    ...charm,
+    rank,
+    _content_type: 'spell',
+    _select_uuid: `${charm.id}:${rank}`,
+  }));
+  const host = new RenderHost();
+  const props = {
+    ...picker,
+    overrideOptions: ranked,
+    selectedId: charm.id,
+    selectedOptionUUID: ranked[0]._select_uuid,
+  };
+  const filtered = host.render(SelectionOptions, props);
+  assert.deepEqual(filtered.props.options.map((option) => option._select_uuid).sort(), ['1:1', '1:3']);
+  assert.equal(filtered.props.selectedOptionUUID, '1:1');
+  const rows = host.render(SelectionOptionsRoot, { ...filtered.props, onClick() {} }).props.children;
+  assert.deepEqual(rows.map((row) => [row.props.spell._select_uuid, row.props.selected]).sort(), [
+    ['1:1', true],
+    ['1:3', false],
+  ]);
+  const changed = host.render(SelectionOptionsRoot, { ...filtered.props, selectedOptionUUID: '1:3', onClick() {} })
+    .props.children;
+  assert.deepEqual(changed.map((row) => [row.props.spell._select_uuid, row.props.selected]).sort(), [
+    ['1:1', false],
+    ['1:3', true],
+  ]);
+  assert.deepEqual(
+    host
+      .render(SelectionOptions, { ...props, overrideOptions: ranked.slice(1) })
+      .props.options.map((option) => option._select_uuid),
+    ['1:3']
+  );
+  const ordinary = host.render(SelectionOptionsRoot, {
+    type: 'spell',
+    options: [charm, command],
+    selectedId: charm.id,
+    onClick() {},
+  }).props.children;
+  assert.deepEqual(
+    ordinary.map((row) => row.props.selected),
+    [true, false]
+  );
+});
+
+test('changing a saved ranked choice preserves exact optimistic identity until the parent acknowledges it', () => {
+  const ranked = [1, 3].map((rank) => ({
+    ...charm,
+    rank,
+    _content_type: 'spell',
+    _select_uuid: `${charm.id}:${rank}`,
+  }));
+  const host = new RenderHost();
+  let saved;
+  const props = {
+    type: 'spell',
+    selectedId: charm.id,
+    selectedOptionUUID: '1:1',
+    options: { overrideOptions: ranked },
+    onClick: (option) => {
+      saved = option._select_uuid;
+    },
+  };
+  host.render(SelectContentButton, props);
+  let tree = host.render(SelectContentButton, props);
+  selectionButtons(tree)[1].props.onClick();
+  assert.equal(globalThis.__selectionModal.innerProps.options.selectedOptionUUID, '1:1');
+  globalThis.__selectionModal.innerProps.onClick(ranked[1]);
+  assert.equal(saved, '1:3');
+  tree = host.render(SelectContentButton, props);
+  selectionButtons(tree)[1].props.onClick();
+  assert.equal(globalThis.__selectionModal.innerProps.options.selectedOptionUUID, '1:3');
+  host.render(SelectContentButton, { ...props, selectedOptionUUID: '1:3' });
+  tree = host.render(SelectContentButton, { ...props, selectedOptionUUID: '1:1' });
+  tree = host.render(SelectContentButton, { ...props, selectedOptionUUID: '1:1' });
+  selectionButtons(tree)[1].props.onClick();
+  assert.equal(globalThis.__selectionModal.innerProps.options.selectedOptionUUID, '1:1');
+});
+
+test('an unsaved ranked choice keeps its exact identity when reopened before parent acknowledgement', () => {
+  const ranked = [1, 3].map((rank) => ({ ...charm, rank, _select_uuid: `${charm.id}:${rank}` }));
+  const host = new RenderHost();
+  const choices = [];
+  const props = {
+    type: 'spell',
+    options: { overrideOptions: ranked },
+    onClick: (option) => choices.push(option._select_uuid),
+  };
+  let tree = host.render(SelectContentButton, props);
+  selectionButtons(tree)[0].props.onClick();
+  globalThis.__selectionModal.innerProps.onClick(ranked[0]);
+  tree = host.render(SelectContentButton, props);
+  selectionButtons(tree)[1].props.onClick();
+  assert.equal(globalThis.__selectionModal.innerProps.options.selectedOptionUUID, '1:1');
+  const rows = new RenderHost().render(SelectionOptionsRoot, {
+    type: 'spell',
+    options: ranked,
+    ...globalThis.__selectionModal.innerProps.options,
+    onClick() {},
+  }).props.children;
+  assert.deepEqual(
+    rows.map((row) => row.props.selected),
+    [true, false]
+  );
+  globalThis.__selectionModal.innerProps.onClick(ranked[1]);
+  tree = host.render(SelectContentButton, props);
+  selectionButtons(tree)[1].props.onClick();
+  assert.equal(globalThis.__selectionModal.innerProps.options.selectedOptionUUID, '1:3');
+  assert.deepEqual(choices, ['1:1', '1:3']);
+  tree = host.render(SelectContentButton, { ...props, selectedId: 1, selectedOptionUUID: '1:3' });
+  selectionButtons(tree)[1].props.onClick();
+  assert.equal(globalThis.__selectionModal.innerProps.options.selectedOptionUUID, '1:3');
+});
+
+test('PREDEFINED spell UUID overrides retain numeric fetching and optimistic picker behavior', async () => {
+  const authored = { ...charm, _select_uuid: '6082549e-6035-451d-a2dd-f90766e54d55' };
+  const next = { ...command, _select_uuid: '5a22ab22-74b9-4658-b194-558c386668d4' };
+  const host = new RenderHost();
+  const props = { type: 'spell', selectedId: charm.id, options: { overrideOptions: [authored, next] }, onClick() {} };
+  globalThis.__selectionFetchedRow = charm;
+  globalThis.__selectionFetchById = undefined;
+  host.render(SelectContentButton, props);
+  await Promise.resolve();
+  let tree = host.render(SelectContentButton, props);
+  assert.deepEqual(globalThis.__selectionFetchById, ['spell', charm.id]);
+  selectionButtons(tree)[1].props.onClick();
+  assert.equal(globalThis.__selectionModal.innerProps.options.selectedId, charm.id);
+  assert.equal(globalThis.__selectionModal.innerProps.options.selectedOptionUUID, undefined);
+  globalThis.__selectionModal.innerProps.onClick(next);
+  tree = host.render(SelectContentButton, props);
+  selectionButtons(tree)[1].props.onClick();
+  assert.equal(globalThis.__selectionModal.innerProps.options.selectedId, command.id);
+  assert.equal(globalThis.__selectionModal.innerProps.options.selectedOptionUUID, undefined);
+  delete globalThis.__selectionFetchedRow;
 });
 
 test('hazard selections use their source-scoped reader without entering the creature cache', async () => {
@@ -323,6 +531,14 @@ test('the shared picker preserves hazard modal options and selection callbacks',
   assert.equal(selected, hazard);
 });
 
+function selectionButtons(node) {
+  if (!node || typeof node !== 'object') return [];
+  return [
+    node.type === 'Button' ? node : [],
+    ...[node.props?.children].flat(Infinity).flatMap(selectionButtons),
+  ].flat();
+}
+
 test('an optimistic selection does not roll back while its parent value is stale', () => {
   const host = new RenderHost();
   const first = { id: 'first', name: 'First option' };
@@ -333,10 +549,7 @@ test('an optimistic selection does not roll back while its parent value is stale
     options: { overrideOptions: [first, second] },
     onClick: () => {},
   };
-  const buttons = (node) => {
-    if (!node || typeof node !== 'object') return [];
-    return [node.type === 'Button' ? node : [], ...[node.props?.children].flat(Infinity).flatMap(buttons)].flat();
-  };
+  const buttons = selectionButtons;
 
   host.render(SelectContentButton, props);
   let tree = host.render(SelectContentButton, props);

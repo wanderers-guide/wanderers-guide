@@ -35,11 +35,51 @@ function cleanupLogModel({database=true,raw,write=()=>{},redact=value=>String(va
       if(typeof raw==='function')return raw(args);
       return raw??{status:0,signal:null,error:null,stdout:'2026-10-05T00:00:00Z owned log\n',stderr:''};
     }
-    if(args[0]==='rm'){assert.deepEqual(args,['rm','-f','-v',name]);return {status:0,signal:null,error:null,stdout:'',stderr:''};}
+    if(args[0]==='rm'){assert.deepEqual(args,['rm','-f','-v',id]);return {status:0,signal:null,error:null,stdout:'',stderr:''};}
     assert.deepEqual(args,['ps','-a','--format','{{.Names}}']);return {status:0,signal:null,error:null,stdout:'unrelated-container\n',stderr:''};
   };
   return {row,name,id,receipt,records,events,errors,removedVolumes,run:()=>disposeNativeOwnedContainer({name,row,database,docker,log:async record=>{await write(record);records.push(record);},redact,receipt,removedVolumes,errors})};
 }
+
+for(const database of [true,false])test(`pure ${database?'PostgreSQL':'Auth'} cleanup does not remove a same-name replacement after the log await`,async()=>{
+  const name='owned-race-'+(database?'db':'auth'),id='a'.repeat(64),replacementId='b'.repeat(64),imageId='sha256:'+'c'.repeat(64),owner='owned-race-model';
+  const row={Id:id,Name:'/'+name,Image:imageId,Config:{Labels:{'wg.native.owner':owner}},State:{Running:true,OOMKilled:false},
+    Mounts:[{Type:'volume',Name:'owned-race-volume'}],HostConfig:nativeDatabaseResourceLimits()};
+  assertNativeContainerIdentity({row,name,id,owner,imageId});
+  const original={id,name,volumes:['owned-race-volume']},replacement={id:replacementId,name,volumes:['unrelated-replacement-volume']};
+  const containers=new Map([[id,original]]),events=[],errors=[],removedVolumes=new Set();
+  const receipt={owned_database_resources:{last_observed:nativeDatabaseResourceLimits(),final_verified:false}};
+  const result=stdout=>({status:0,signal:null,error:null,stdout,stderr:''});
+  const docker=(args,input,allowFailure)=>{
+    events.push([...args]);assert.equal(input,undefined);
+    if(args[0]==='logs'){
+      assert.equal(allowFailure,true);
+      const target=containers.get(args.at(-1))??[...containers.values()].find(container=>container.name===args.at(-1));
+      assert.equal(target,original,'Logs must be read from the inspected original container');
+      return result('owned race log\n');
+    }
+    if(args[0]==='rm'){
+      const target=containers.get(args.at(-1))??[...containers.values()].find(container=>container.name===args.at(-1));
+      assert(target,'The model exposes the actual target of name or ID removal');
+      containers.delete(target.id);return result('');
+    }
+    assert.deepEqual(args,['ps','-a','--format','{{.Names}}']);
+    return result([...containers.values()].map(container=>container.name).join('\n')+'\n');
+  };
+  const log=async()=>{
+    await Promise.resolve();
+    original.name=name+'-renamed';containers.set(replacementId,replacement);
+  };
+  await assert.rejects(disposeNativeOwnedContainer({name,row,database,docker,log,redact:String,receipt,removedVolumes,errors}),
+    {name:'AssertionError',message:/Successful container census proves target absent/});
+  assert.equal(containers.has(id),false,'Only the captured original ID is removed after the await');
+  assert.equal(containers.get(replacementId),replacement,'The unrelated same-name replacement remains untouched');
+  assert.deepEqual(replacement,{id:replacementId,name,volumes:['unrelated-replacement-volume']});
+  assert.deepEqual(events[0],database?['logs','--timestamps','--tail','1000',id]:['logs','--tail','80',id]);
+  assert.deepEqual(events.slice(-2),[['rm','-f','-v',id],['ps','-a','--format','{{.Names}}']]);
+  assert.deepEqual([...removedVolumes],['owned-race-volume']);assert.deepEqual(errors,[]);
+  assert.equal(receipt.cleaned_only_owned_containers_and_volumes,undefined,'A remaining replacement name cannot certify cleanup');
+});
 
 test('pure owned state receipts redact diagnostic strings without changing source state or status metadata',async()=>{
   const secret='fake-owned-state-credential';
@@ -58,7 +98,7 @@ test('pure owned state receipts redact diagnostic strings without changing sourc
     assert.deepEqual({ExitCode:recorded.state.ExitCode,OOMKilled:recorded.state.OOMKilled,Running:recorded.state.Running,Pid:recorded.state.Pid,healthExitCode:recorded.state.Health.Log[0].ExitCode},
       {ExitCode:137,OOMKilled:true,Running:false,Pid:0,healthExitCode:1});
     assert.equal(model.receipt.failure,failure);assert.equal(model.errors.length,0);
-    assert.deepEqual(model.events.slice(-2),[['rm','-f','-v',model.name],['ps','-a','--format','{{.Names}}']]);
+    assert.deepEqual(model.events.slice(-2),[['rm','-f','-v',model.id],['ps','-a','--format','{{.Names}}']]);
     assert.deepEqual([...model.removedVolumes],['owned-anonymous-volume']);
   }
 });
@@ -75,7 +115,7 @@ test('pure owned diagnostic receipts omit arbitrary error names even if the secr
       message:redactorFails?'Owned diagnostic failed; its message could not be safely redacted':'detail [owned-fixture-secret]',
     }]);
     assert.equal(JSON.stringify(model.receipt).includes(secret),false);
-    assert.deepEqual(model.events.slice(-2),[['rm','-f','-v',model.name],['ps','-a','--format','{{.Names}}']]);
+    assert.deepEqual(model.events.slice(-2),[['rm','-f','-v',model.id],['ps','-a','--format','{{.Names}}']]);
     assert.equal(error.name,'name '+secret);assert.equal(error.message,'detail '+secret);
   }
 });
@@ -101,7 +141,7 @@ test('pure owned log failures stay failures while exact retained disposal and ce
     assert.equal(model.errors.length,1,'Bad diagnostic transport is retained as a cleanup failure');
     assert.equal(model.receipt.owned_container_diagnostic_errors.length,1);
     assert.equal(model.receipt.owned_container_diagnostic_errors[0].kind,'logs');
-    assert.deepEqual(model.events.slice(-2),[['rm','-f','-v',model.name],['ps','-a','--format','{{.Names}}']]);
+    assert.deepEqual(model.events.slice(-2),[['rm','-f','-v',model.id],['ps','-a','--format','{{.Names}}']]);
     assert.deepEqual([...model.removedVolumes],['owned-anonymous-volume']);
     assert.deepEqual(model.receipt.failure,{phase:'preserved-primary',message:'Original failure'});
     assert.equal(model.receipt.cleaned_only_owned_containers_and_volumes,undefined,'A diagnostic error cannot claim cleanup certification');
@@ -115,7 +155,7 @@ test('pure owned log failures stay failures while exact retained disposal and ce
   ]){
     const model=cleanupLogModel(options);await model.run();
     assert.equal(model.errors.length,1);assert.equal(model.receipt.owned_container_diagnostic_errors.length,1);
-    assert.deepEqual(model.events.slice(-2),[['rm','-f','-v',model.name],['ps','-a','--format','{{.Names}}']]);
+    assert.deepEqual(model.events.slice(-2),[['rm','-f','-v',model.id],['ps','-a','--format','{{.Names}}']]);
     assert.deepEqual(model.receipt.failure,{phase:'preserved-primary',message:'Original failure'});
   }
 });
@@ -135,7 +175,7 @@ test('pure owned PostgreSQL logs redact each bounded line while Auth keeps its e
   const authCalls=[],authRedact=value=>{authCalls.push(value);return String(value).replaceAll(secret,'[owned-fixture-secret]').split('\n').map(line=>line.slice(0,1000)).join('\n').slice(-12000);};
   const auth=cleanupLogModel({database:false,redact:authRedact,raw:args=>({status:0,signal:null,error:null,stdout:authLines.slice(-Number(args[args.indexOf('--tail')+1])).join('\n')+'\n',stderr:''})});
   await auth.run();
-  assert.deepEqual(auth.events[0],['logs','--tail','80',auth.name]);
+  assert.deepEqual(auth.events[0],['logs','--tail','80',auth.id]);
   assert.deepEqual(authCalls,[authLines.slice(-80).join('\n')+'\n'],'Auth retains the existing whole-output redactor call');
   assert.equal(auth.records[0].text.length,12000);assert.equal(auth.records[0].text.includes(secret),false);
   assert.equal(auth.records[0].scope,'Existing Auth last80 records and whole-output redaction bound.');

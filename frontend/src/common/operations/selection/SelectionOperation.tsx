@@ -118,6 +118,12 @@ export function SelectionOperation(props: {
     ) {
       delete next.selectionAliases;
     }
+    if ((next.modeType !== 'FILTERED' || next.optionType !== 'SPELL') && next.optionsFilters?.type === 'SPELL') {
+      next.optionsFilters = { ...next.optionsFilters };
+      delete next.optionsFilters.knownSpellSource;
+      delete next.optionsFilters.distinctRankFromSelections;
+      delete next.optionsFilters.dailyPreparation;
+    }
     props.onChange(next);
   };
 
@@ -430,6 +436,11 @@ function SelectionFilteredSpell(props: {
   const [attribute, setAttribute] = useState(props.filters?.spellData?.attribute);
 
   useDidUpdate(() => {
+    const keepsDatabase =
+      props.filters?.knownSpellSource !== undefined &&
+      (type ?? 'NORMAL') === 'NORMAL' &&
+      castingSource === props.filters.knownSpellSource &&
+      rank === undefined;
     props.onChange({
       id: props.filters?.id ?? crypto.randomUUID(),
       type: 'SPELL',
@@ -439,12 +450,22 @@ function SelectionFilteredSpell(props: {
       },
       traits: traits,
       traditions: traditions,
+      ...(!keepsDatabase ? {} : { knownSpellSource: props.filters?.knownSpellSource }),
+      ...(!keepsDatabase || props.filters?.dailyPreparation === undefined
+        ? {}
+        : { dailyPreparation: props.filters.dailyPreparation }),
+      ...(!keepsDatabase || props.filters?.distinctRankFromSelections === undefined
+        ? {}
+        : { distinctRankFromSelections: props.filters.distinctRankFromSelections }),
       // These authored constraints have no editor controls; retain them when other fields change.
       rarity: props.filters?.rarity,
       traditionFromSelection: props.filters?.traditionFromSelection,
       spellData: {
         type: type ?? 'NORMAL',
         castingSource: castingSource,
+        ...(props.filters?.spellData?.listSources === undefined
+          ? {}
+          : { listSources: props.filters.spellData.listSources }),
         rank: rank,
         tradition: tradition,
         casts: casts,

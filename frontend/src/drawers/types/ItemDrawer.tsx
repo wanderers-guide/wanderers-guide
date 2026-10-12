@@ -6,7 +6,8 @@ import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById, fetchItemByName } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
-import { priceToString } from '@items/currency-handler';
+import { getArmorGradeView } from '@items/armor-grade-view';
+import { useItemPrice } from '@items/use-item-price';
 import {
   FUNDAMENTAL_RUNES,
   compileTraits,
@@ -72,11 +73,15 @@ import { titleCase } from 'title-case';
 export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
 
-  const { data: _item, isFetching, refetch } = useQuery({
+  const {
+    data: _item,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-item-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       const item = await fetchContentById<Item>('item', id);
 
@@ -119,11 +124,15 @@ export function ItemDrawerContent(props: {
   const [_drawer, openDrawer] = useAtom(drawerState);
   const theme = useMantineTheme();
 
-  const { data: _item, isFetching, refetch } = useQuery({
+  const {
+    data: _item,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-item-with-base-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       const item = await fetchContentById<Item>('item', id);
 
@@ -145,28 +154,20 @@ export function ItemDrawerContent(props: {
 
   const item = _item ?? props.data.item;
 
+  const itemPrice = useItemPrice(item);
+
   if (!item) {
-    return (
-      <DrawerLoadState loading={isFetching} onRetry={refetch} />
-    );
+    return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
   }
 
   let price = null;
-  const _itemPrice = item.price
-    ? {
-        cp: Number(item.price.cp) || undefined,
-        sp: Number(item.price.sp) || undefined,
-        gp: Number(item.price.gp) || undefined,
-        pp: Number(item.price.pp) || undefined,
-      }
-    : undefined;
-  if (_itemPrice && priceToString(_itemPrice) !== '—') {
+  if (itemPrice !== '—') {
     price = (
       <>
         <Text key={1} fw={600} c='gray.2' span>
           Price
         </Text>{' '}
-        {priceToString(_itemPrice)}
+        {itemPrice}
       </>
     );
   }
@@ -257,7 +258,7 @@ export function ItemDrawerContent(props: {
           </Accordion>
         )}
 
-        {isItemWithUpgrades(item) && (
+        {(isItemWithUpgrades(item) || (item.meta_data?.starfinder?.built_in_upgrades?.length ?? 0) > 0) && (
           <Accordion variant='separated' my={5}>
             <Accordion.Item value='upgrades'>
               <Accordion.Control icon={getIconMap('1.0rem', theme.colors.gray[6])['UPGRADE']}>
@@ -296,7 +297,8 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
     enabled: !!materialType,
   });
 
-  const ac = props.item.meta_data?.ac_bonus;
+  const armorGradeView = getArmorGradeView(props.item);
+  const ac = armorGradeView.kind === 'final' ? armorGradeView.acBonus : props.item.meta_data?.ac_bonus;
   let dexCap = props.item.meta_data?.dex_cap;
   let strength = props.item.meta_data?.strength;
   if (!dexCap && dexCap !== 0) {
@@ -571,7 +573,7 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
   }
 
   let upgradeSection = null;
-  if (isItemWithGradeImprovement(props.item)) {
+  if (armorGradeView.kind === 'final' || isItemWithGradeImprovement(props.item)) {
     upgradeSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
         <Group gap={10}>
@@ -580,9 +582,22 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
               Grade
             </Text>{' '}
             <Text c='gray.2' span>
-              {toLabel(props.item.meta_data?.starfinder?.grade)}
+              {toLabel(
+                armorGradeView.kind === 'final' ? armorGradeView.grade : props.item.meta_data?.starfinder?.grade
+              )}
             </Text>
           </Group>
+
+          {armorGradeView.kind === 'final' && (
+            <Group gap={5}>
+              <Text fw={600} c='gray.2' span>
+                Upgrade Slots
+              </Text>
+              <Text c='gray.2' span>
+                {armorGradeView.upgradeSlots}
+              </Text>
+            </Group>
+          )}
 
           {isItemWithUpgrades(props.item) && (
             <>

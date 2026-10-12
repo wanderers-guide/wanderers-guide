@@ -170,7 +170,17 @@ interface Item {
   size: Size;
   craft_requirements?: string;
   usage?: string;
-  meta_data?: Record<string, any>; // TODO
+  meta_data?: Record<string, any> & {
+    starfinder?: {
+      grade?: 'COMMERCIAL' | 'TACTICAL' | 'ADVANCED' | 'SUPERIOR' | 'ELITE' | 'ULTIMATE' | 'PARAGON' | null;
+      base_grade?: 'COMMERCIAL' | 'TACTICAL' | 'ADVANCED' | 'SUPERIOR' | 'ELITE' | 'ULTIMATE' | 'PARAGON';
+      base_upgrade_slots?: number;
+      slots?: { name: string; id: number; upgrade?: Item }[];
+      built_in_upgrades?: { name: string; id: number; upgrade?: Item }[];
+      capacity?: string;
+      usage?: number | null;
+    };
+  };
   operations?: Operation[];
   content_source_id: number;
   version: string;
@@ -356,6 +366,7 @@ interface LivingEntity {
   operation_data?: {
     selections?: Record<string, string>; // background_<selector op UUID>.. -> <select option op UUID>
     notes?: Record<string, string>; // TODO <op UUID> -> string
+    daily_preparation?: string;
   };
   meta_data?: {
     given_item_ids?: number[];
@@ -391,6 +402,16 @@ interface Creature extends LivingEntity {
   version: string;
 }
 
+/** Source-authored hazard activity rules, without automatic combat state or effects. */
+interface HazardActivity {
+  name: string;
+  actions?: ActionCost;
+  traits?: string[];
+  trigger?: string;
+  requirements?: string;
+  effect: string;
+}
+
 /** A read-only hazard stat block stored in the creature catalog table. */
 interface Hazard {
   id: number;
@@ -413,17 +434,17 @@ interface Hazard {
       ref?: number;
       hardness?: number;
       hp?: number;
+      /** Displayed HP qualification; does not define an aggregate HP counter. */
+      hp_note?: string;
       bt?: number;
       immunities?: string;
+      weaknesses?: string;
+      resistances?: string;
     };
-    activation: {
-      name: string;
-      actions?: ActionCost;
-      traits?: string[];
-      trigger: string;
-      effect: string;
-    };
+    passive_abilities?: { name: string; text: string }[];
+    activation: HazardActivity & { trigger: string };
     routine?: { actions: number; text: string };
+    secondary_activities?: HazardActivity[];
     reset?: string;
   };
   meta_data?: {

@@ -3,13 +3,14 @@ import GoldCoin from '@assets/images/currency/gold.png';
 import PlatinumCoin from '@assets/images/currency/platinum.png';
 import SilverCoin from '@assets/images/currency/silver.png';
 import { drawerState } from '@atoms/navAtoms';
+import { characterState } from '@atoms/characterAtoms';
 import { EllipsisText } from '@common/EllipsisText';
 import { ItemIcon } from '@common/ItemIcon';
 import { isItemVisible } from '@content/content-hidden';
 import { getContentFast } from '@content/content-store';
-import { isPlayingStarfinder } from '@content/system-handler';
+import { isPlayingStarfinder, playingStarfinder } from '@content/system-handler';
 import classes from '@css/FaqSimple.module.css';
-import { priceToString } from '@items/currency-handler';
+import { useItemPrice } from '@items/use-item-price';
 import {
   getBulkLimit,
   getFlatInvItems,
@@ -60,7 +61,7 @@ import { isPhoneSized } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';
 import { cloneDeep, truncate } from 'lodash-es';
 import { useState } from 'react';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { SetterOrUpdater } from '@utils/type-fixing';
 import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 import ImprintButton from '@common/ImprintButton';
@@ -79,6 +80,7 @@ export default function InventoryPanel(props: {
   const isPhone = isPhoneSized(props.panelWidth);
   const [searchQuery, setSearchQuery] = useState('');
   const [_drawer, openDrawer] = useAtom(drawerState);
+  const character = useAtomValue(characterState);
 
   const [creatingCustomItem, setCreatingCustomItem] = useState(false);
   const [inventoryAnnouncement, setInventoryAnnouncement] = useState('');
@@ -147,6 +149,7 @@ export default function InventoryPanel(props: {
     <InvItemOption
       id={props.id}
       entity={props.entity}
+      ownerUsesCredits={!!character && playingStarfinder(character)}
       isPhone={isPhone}
       invItem={invItem}
       hideSections={containerHeader}
@@ -604,6 +607,7 @@ function InvItemOption(props: {
   invItem: InventoryItem;
   id: StoreID;
   entity: LivingEntity | null;
+  ownerUsesCredits: boolean;
   onEquip?: (invItem: InventoryItem) => void;
   onInvest?: (invItem: InventoryItem) => void;
   onShareRunes?: (invItem: InventoryItem) => void;
@@ -613,6 +617,8 @@ function InvItemOption(props: {
   isPhone?: boolean;
 }) {
   const theme = useMantineTheme();
+
+  const itemPrice = useItemPrice(props.invItem.item, props.ownerUsesCredits);
 
   const weaponStats = isItemWeapon(props.invItem.item) ? getWeaponStats(props.id, props.invItem.item) : null;
   const sharesEidolonRunes = canInvestEidolonWeapon(props.id, props.invItem.item);
@@ -703,16 +709,7 @@ function InvItemOption(props: {
                 <>
                   {' '}
                   <Text ta='left' fz='xs'>
-                    {priceToString(
-                      props.invItem.item.price
-                        ? {
-                            cp: Number(props.invItem.item.price.cp) || undefined,
-                            sp: Number(props.invItem.item.price.sp) || undefined,
-                            gp: Number(props.invItem.item.price.gp) || undefined,
-                            pp: Number(props.invItem.item.price.pp) || undefined,
-                          }
-                        : undefined
-                    )}
+                    {itemPrice}
                   </Text>
                 </>
               )}

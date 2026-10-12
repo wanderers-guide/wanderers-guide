@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Checkbox,
+  Divider,
   Group,
   Modal,
   NumberInput,
@@ -13,15 +14,19 @@ import {
   Stack,
   Tabs,
   TagsInput,
+  Text,
   TextInput,
   Textarea,
   Title,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { randomId } from '@mantine/hooks';
 import { ActionCostSchema, Hazard, RaritySchema } from '@schemas/content';
 import { toLabel } from '@utils/strings';
-import { cloneDeep } from 'lodash-es';
-import { useState } from 'react';
+import { cloneDeep, unset } from 'lodash-es';
+import { useState, type ChangeEvent, type ReactNode } from 'react';
+
+type HazardListField = 'passive_abilities' | 'secondary_activities';
 
 /** Edit a catalog hazard for moderator review without touching encounter snapshots. */
 export function EditHazardModal(props: {
@@ -34,7 +39,99 @@ export function EditHazardModal(props: {
   const [traitValues, setTraitValues] = useState<(string | number)[]>(props.hazard.details.trait_ids ?? []);
   const hasInvalidTraits = traitValues.some((value) => typeof value !== 'number');
   const form = useForm<Hazard>({ initialValues: cloneDeep(props.hazard) });
+  // Stable row identity belongs only to the editor, never to the submitted source entries.
+  const [listKeys, setListKeys] = useState<Record<HazardListField, string[]>>(() => ({
+    passive_abilities: (props.hazard.details.passive_abilities ?? []).map((): string => randomId()),
+    secondary_activities: (props.hazard.details.secondary_activities ?? []).map((): string => randomId()),
+  }));
   const zIndex = props.zIndex ?? 1000;
+
+  /** Remove a cleared optional property rather than adding empty defaults to the draft. */
+  const clearOptionalField = (path: string): void => {
+    form.setValues((current: Partial<Hazard>): Partial<Hazard> => {
+      const next = cloneDeep(current);
+      unset(next, path);
+      return next;
+    });
+    form.clearFieldError(path);
+  };
+
+  /** Keep optional text controlled without changing absent values until the user edits them. */
+  const optionalTextProps = (path: string, value: string | undefined): ReturnType<typeof form.getInputProps> => ({
+    ...form.getInputProps(path),
+    value: value ?? '',
+    onChange: (event: ChangeEvent<HTMLTextAreaElement>): void => {
+      const text = event.currentTarget.value;
+      if (text === '') clearOptionalField(path);
+      else form.getInputProps(path).onChange(text);
+    },
+  });
+
+  /** Explicit additions create only the source fields required by the chosen entry kind. */
+  const addEntry = (field: HazardListField): void => {
+    const path = `details.${field}`;
+    const entry = field === 'passive_abilities' ? { name: '', text: '' } : { name: '', effect: '' };
+    if (form.getValues().details[field] === undefined) form.setFieldValue(path, [entry]);
+    else form.insertListItem(path, entry);
+    setListKeys(
+      (current): Record<HazardListField, string[]> => ({
+        ...current,
+        [field]: [...current[field], randomId()],
+      })
+    );
+  };
+
+  /** Delete by index so duplicate source names are independent; the final removal restores absence. */
+  const removeEntry = (field: HazardListField, index: number): void => {
+    const path = `details.${field}`;
+    const length = form.getValues().details[field]?.length ?? 0;
+    form.removeListItem(path, index);
+    if (length === 1) clearOptionalField(path);
+    setListKeys(
+      (current): Record<HazardListField, string[]> => ({
+        ...current,
+        [field]: current[field].filter((_, position: number): boolean => position !== index),
+      })
+    );
+  };
+
+  /** Move form values and local keys together, without persisting editor-only identifiers. */
+  const moveEntry = (field: HazardListField, from: number, to: number): void => {
+    form.reorderListItem(`details.${field}`, { from, to });
+    setListKeys((current): Record<HazardListField, string[]> => {
+      const keys = [...current[field]];
+      const [key] = keys.splice(from, 1);
+      keys.splice(to, 0, key);
+      return { ...current, [field]: keys };
+    });
+  };
+
+  /** Keep concise ordered-list controls consistent for both source-only entry arrays. */
+  const entryControls = (field: HazardListField, index: number): ReactNode => (
+    <Group gap='xs' justify='flex-end' wrap='wrap'>
+      <Button
+        type='button'
+        size='xs'
+        variant='subtle'
+        disabled={index === 0}
+        onClick={() => moveEntry(field, index, index - 1)}
+      >
+        Up
+      </Button>
+      <Button
+        type='button'
+        size='xs'
+        variant='subtle'
+        disabled={index === (form.values.details[field]?.length ?? 0) - 1}
+        onClick={() => moveEntry(field, index, index + 1)}
+      >
+        Down
+      </Button>
+      <Button type='button' size='xs' variant='subtle' onClick={() => removeEntry(field, index)}>
+        Remove
+      </Button>
+    </Group>
+  );
 
   const submit = (values: Hazard) => {
     if (hasInvalidTraits) return;
@@ -114,6 +211,30 @@ export function EditHazardModal(props: {
                 <Textarea label='Stealth' autosize minRows={2} {...form.getInputProps('details.stealth')} />
                 <Textarea label='Description' autosize minRows={3} {...form.getInputProps('details.description')} />
                 <Textarea label='Disable' autosize minRows={3} {...form.getInputProps('details.disable')} />
+                <Divider />
+                <Group justify='space-between' wrap='wrap'>
+                  <Text fw={600}>Passive abilities</Text>
+                  <Button type='button' size='xs' variant='light' onClick={() => addEntry('passive_abilities')}>
+                    Add
+                  </Button>
+                </Group>
+                {form.values.details.passive_abilities?.map((ability, index) => (
+                  <Stack key={listKeys.passive_abilities[index]} gap='xs'>
+                    <TextInput
+                      label='Name'
+                      required
+                      {...form.getInputProps(`details.passive_abilities.${index}.name`)}
+                    />
+                    <Textarea
+                      label='Text'
+                      required
+                      autosize
+                      minRows={3}
+                      {...form.getInputProps(`details.passive_abilities.${index}.text`)}
+                    />
+                    {entryControls('passive_abilities', index)}
+                  </Stack>
+                ))}
               </Stack>
             </Tabs.Panel>
             <Tabs.Panel value='defenses' pt='md'>
@@ -147,10 +268,28 @@ export function EditHazardModal(props: {
                       ))}
                     </SimpleGrid>
                     <Textarea
+                      label='HP note'
+                      autosize
+                      minRows={2}
+                      {...optionalTextProps('details.defenses.hp_note', form.values.details.defenses.hp_note)}
+                    />
+                    <Textarea
                       label='Immunities'
                       autosize
                       minRows={2}
                       {...form.getInputProps('details.defenses.immunities')}
+                    />
+                    <Textarea
+                      label='Weaknesses'
+                      autosize
+                      minRows={2}
+                      {...optionalTextProps('details.defenses.weaknesses', form.values.details.defenses.weaknesses)}
+                    />
+                    <Textarea
+                      label='Resistances'
+                      autosize
+                      minRows={2}
+                      {...optionalTextProps('details.defenses.resistances', form.values.details.defenses.resistances)}
                     />
                   </>
                 )}
@@ -175,6 +314,12 @@ export function EditHazardModal(props: {
                   {...form.getInputProps('details.activation.traits')}
                 />
                 <Textarea label='Trigger' autosize minRows={2} {...form.getInputProps('details.activation.trigger')} />
+                <Textarea
+                  label='Requirements'
+                  autosize
+                  minRows={2}
+                  {...optionalTextProps('details.activation.requirements', form.values.details.activation.requirements)}
+                />
                 <Textarea label='Effect' autosize minRows={3} {...form.getInputProps('details.activation.effect')} />
                 <Checkbox
                   label='Routine'
@@ -199,6 +344,72 @@ export function EditHazardModal(props: {
                     <Textarea label='Routine' autosize minRows={3} {...form.getInputProps('details.routine.text')} />
                   </>
                 )}
+                <Divider />
+                <Group justify='space-between' wrap='wrap'>
+                  <Text fw={600}>Secondary activities</Text>
+                  <Button type='button' size='xs' variant='light' onClick={() => addEntry('secondary_activities')}>
+                    Add
+                  </Button>
+                </Group>
+                {form.values.details.secondary_activities?.map((activity, index) => (
+                  <Stack key={listKeys.secondary_activities[index]} gap='xs'>
+                    <TextInput
+                      label='Name'
+                      required
+                      {...form.getInputProps(`details.secondary_activities.${index}.name`)}
+                    />
+                    <Select
+                      label='Actions'
+                      data={ActionCostSchema.unwrap().options.map((value) => ({
+                        value,
+                        label: toLabel(value.toLowerCase().replaceAll('-', ' ')),
+                      }))}
+                      clearable
+                      comboboxProps={{ zIndex: zIndex + 1 }}
+                      {...form.getInputProps(`details.secondary_activities.${index}.actions`)}
+                      value={activity.actions ?? null}
+                      onChange={(value) =>
+                        value === null
+                          ? clearOptionalField(`details.secondary_activities.${index}.actions`)
+                          : form.getInputProps(`details.secondary_activities.${index}.actions`).onChange(value)
+                      }
+                    />
+                    <TagsInput
+                      label='Traits'
+                      comboboxProps={{ zIndex: zIndex + 1 }}
+                      {...form.getInputProps(`details.secondary_activities.${index}.traits`)}
+                      value={activity.traits ?? []}
+                      onChange={(values) =>
+                        values.length === 0
+                          ? clearOptionalField(`details.secondary_activities.${index}.traits`)
+                          : form.getInputProps(`details.secondary_activities.${index}.traits`).onChange(values)
+                      }
+                    />
+                    <Textarea
+                      label='Trigger'
+                      autosize
+                      minRows={2}
+                      {...optionalTextProps(`details.secondary_activities.${index}.trigger`, activity.trigger)}
+                    />
+                    <Textarea
+                      label='Requirements'
+                      autosize
+                      minRows={2}
+                      {...optionalTextProps(
+                        `details.secondary_activities.${index}.requirements`,
+                        activity.requirements
+                      )}
+                    />
+                    <Textarea
+                      label='Effect'
+                      required
+                      autosize
+                      minRows={3}
+                      {...form.getInputProps(`details.secondary_activities.${index}.effect`)}
+                    />
+                    {entryControls('secondary_activities', index)}
+                  </Stack>
+                ))}
                 <Textarea label='Reset' autosize minRows={2} {...form.getInputProps('details.reset')} />
               </Stack>
             </Tabs.Panel>
