@@ -429,7 +429,7 @@ test('native diagnostic receipts: a rejected log write is handled during a real 
         HostConfig:{...nativeDatabaseResourceLimits(),NetworkMode:'none',PortBindings:{}},Mounts:[],State:{Running:true,OOMKilled:false,ExitCode:0}}]));
     }
     if(args[0]==='logs')return result('');
-    if(args[0]==='rm'){assert.deepEqual(args,['rm','-f','-v',name]);removed=true;return result('');}
+    if(args[0]==='rm'){assert.deepEqual(args,['rm','-f','-v',id]);removed=true;return result('');}
     if(args[0]==='ps')return result(removed?'':name+'\n');
     if(args[0]==='volume')return result('');
     assert.fail('Unmodeled transport, SQL or service action');

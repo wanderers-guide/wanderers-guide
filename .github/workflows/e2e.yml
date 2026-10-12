@@ -11,13 +11,18 @@ on:
         description: Run the exhaustive content failure matrix instead of representative release hazards
         type: boolean
         default: false
+      private-content:
+        description: Test a sealed unpublished content batch on an isolated runner
+        type: boolean
+        default: false
 
 concurrency:
-  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  group: e2e-${{ github.workflow }}-${{ github.ref }}${{ inputs.private-content && '-private-content' || '' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   e2e:
+    if: ${{ !inputs.private-content }}
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
@@ -250,6 +255,7 @@ jobs:
         run: docker compose down -v
 
   content-native:
+    if: ${{ !inputs.private-content }}
     runs-on: ubuntu-latest
     # Routine releases use representative failures with complete preservation.
     # The exhaustive matrix is available through an explicit manual run.
@@ -299,6 +305,7 @@ jobs:
           if-no-files-found: warn
 
   tech-core-content:
+    if: ${{ !inputs.private-content }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -335,3 +342,69 @@ jobs:
           name: tech-core-general-spells-native-${{ github.sha }}
           path: ${{ runner.temp }}/tech-core-general-spells/receipt.json
           if-no-files-found: warn
+
+  private-content:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.private-content }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install content test dependencies
+        working-directory: ./frontend
+        run: npm ci --legacy-peer-deps --no-audit --no-fund
+      - name: Pull pinned native fixture images
+        run: |
+          docker pull supabase/postgres:15.6.1.146
+          docker pull supabase/gotrue:v2.158.1
+      - name: Test unpublished content
+        run: node scripts/private-content-runner.mjs
+        env:
+          WG_PRIVATE_CONTENT_KEY: ${{ secrets.WG_PRIVATE_CONTENT_KEY }}
+          WG_PRIVATE_CONTENT_SHA256: ${{ secrets.WG_PRIVATE_CONTENT_SHA256 }}
+          WG_PRIVATE_CONTENT_00: ${{ secrets.WG_PRIVATE_CONTENT_00 }}
+          WG_PRIVATE_CONTENT_01: ${{ secrets.WG_PRIVATE_CONTENT_01 }}
+          WG_PRIVATE_CONTENT_02: ${{ secrets.WG_PRIVATE_CONTENT_02 }}
+          WG_PRIVATE_CONTENT_03: ${{ secrets.WG_PRIVATE_CONTENT_03 }}
+          WG_PRIVATE_CONTENT_04: ${{ secrets.WG_PRIVATE_CONTENT_04 }}
+          WG_PRIVATE_CONTENT_05: ${{ secrets.WG_PRIVATE_CONTENT_05 }}
+          WG_PRIVATE_CONTENT_06: ${{ secrets.WG_PRIVATE_CONTENT_06 }}
+          WG_PRIVATE_CONTENT_07: ${{ secrets.WG_PRIVATE_CONTENT_07 }}
+          WG_PRIVATE_CONTENT_08: ${{ secrets.WG_PRIVATE_CONTENT_08 }}
+          WG_PRIVATE_CONTENT_09: ${{ secrets.WG_PRIVATE_CONTENT_09 }}
+          WG_PRIVATE_CONTENT_10: ${{ secrets.WG_PRIVATE_CONTENT_10 }}
+          WG_PRIVATE_CONTENT_11: ${{ secrets.WG_PRIVATE_CONTENT_11 }}
+          WG_PRIVATE_CONTENT_12: ${{ secrets.WG_PRIVATE_CONTENT_12 }}
+          WG_PRIVATE_CONTENT_13: ${{ secrets.WG_PRIVATE_CONTENT_13 }}
+          WG_PRIVATE_CONTENT_14: ${{ secrets.WG_PRIVATE_CONTENT_14 }}
+          WG_PRIVATE_CONTENT_15: ${{ secrets.WG_PRIVATE_CONTENT_15 }}
+          WG_PRIVATE_CONTENT_16: ${{ secrets.WG_PRIVATE_CONTENT_16 }}
+          WG_PRIVATE_CONTENT_17: ${{ secrets.WG_PRIVATE_CONTENT_17 }}
+          WG_PRIVATE_CONTENT_18: ${{ secrets.WG_PRIVATE_CONTENT_18 }}
+          WG_PRIVATE_CONTENT_19: ${{ secrets.WG_PRIVATE_CONTENT_19 }}
+          WG_PRIVATE_CONTENT_20: ${{ secrets.WG_PRIVATE_CONTENT_20 }}
+          WG_PRIVATE_CONTENT_21: ${{ secrets.WG_PRIVATE_CONTENT_21 }}
+          WG_PRIVATE_CONTENT_22: ${{ secrets.WG_PRIVATE_CONTENT_22 }}
+          WG_PRIVATE_CONTENT_23: ${{ secrets.WG_PRIVATE_CONTENT_23 }}
+          WG_PRIVATE_CONTENT_24: ${{ secrets.WG_PRIVATE_CONTENT_24 }}
+          WG_PRIVATE_CONTENT_25: ${{ secrets.WG_PRIVATE_CONTENT_25 }}
+          WG_PRIVATE_CONTENT_26: ${{ secrets.WG_PRIVATE_CONTENT_26 }}
+          WG_PRIVATE_CONTENT_27: ${{ secrets.WG_PRIVATE_CONTENT_27 }}
+          WG_PRIVATE_CONTENT_28: ${{ secrets.WG_PRIVATE_CONTENT_28 }}
+          WG_PRIVATE_CONTENT_29: ${{ secrets.WG_PRIVATE_CONTENT_29 }}
+          WG_PRIVATE_CONTENT_30: ${{ secrets.WG_PRIVATE_CONTENT_30 }}
+          WG_PRIVATE_CONTENT_31: ${{ secrets.WG_PRIVATE_CONTENT_31 }}
+      - name: Archive encrypted content test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: private-content-${{ github.sha }}
+          path: ${{ runner.temp }}/wg-private-content-evidence/evidence.enc
+          if-no-files-found: warn
+          retention-days: 1

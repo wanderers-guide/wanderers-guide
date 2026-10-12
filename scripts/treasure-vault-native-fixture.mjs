@@ -92,11 +92,12 @@ export function assertNativeCleanupCensus({ownedContainerNames,removedVolumes,cu
 
 /** Dispose only a container whose immutable identity the fixture already verified. */
 export async function disposeNativeOwnedContainer({name,row,database,docker,log,redact,receipt,removedVolumes,errors}) {
+  const id=row.Id;assert.match(id,/^[a-f0-9]{64}$/);
   let volumes=[];
   function diagnosticFailure(kind,error) {
     const {name:nameOfError,message}=nativeDiagnostic(error,{redact,summary:'Owned diagnostic failed; its message could not be safely redacted'});
     errors.push(message);
-    (receipt.owned_container_diagnostic_errors??=[]).push({name,container_id:row.Id,kind,name_of_error:nameOfError,message});
+    (receipt.owned_container_diagnostic_errors??=[]).push({name,container_id:id,kind,name_of_error:nameOfError,message});
   }
   try {
     volumes=row.Mounts.filter(mount=>mount.Type==='volume').map(mount=>mount.Name);
@@ -109,19 +110,19 @@ export async function disposeNativeOwnedContainer({name,row,database,docker,log,
     }
   } catch(error) {diagnosticFailure('metadata',error);}
   try {
-    const args=database?['logs','--timestamps','--tail','1000',row.Id]:['logs','--tail','80',name];
+    const args=database?['logs','--timestamps','--tail','1000',id]:['logs','--tail','80',id];
     const logs=docker(args,undefined,true,false);
     assert.equal(logs.error==null,true,'Owned log capture transport must succeed');
     assert.equal(logs.signal,null,'Owned log capture cannot qualify after a signal');
     assert.equal(logs.status,0,'Owned log capture must exit successfully');
     assert.equal(typeof logs.stdout,'string');assert.equal(typeof logs.stderr,'string');
     const text=database?(logs.stdout+logs.stderr).split('\n').map(line=>redact(line).slice(0,1000)).join('\n'):redact(logs.stdout+logs.stderr);
-    await log({kind:'owned-container-final-logs',name,container_id:row.Id,text,status:logs.status,signal:logs.signal,no_transport_error:true,
+    await log({kind:'owned-container-final-logs',name,container_id:id,text,status:logs.status,signal:logs.signal,no_transport_error:true,
       scope:database?'Actual last1000 timestamped Docker log records; existing secret redactor applied separately per line with a1000-character line bound; not a full archive or proof of earlier causes.':'Existing Auth last80 records and whole-output redaction bound.'});
   } catch(error) {diagnosticFailure('logs',error);}
   // Diagnostic failure is still a failed run, never authority to abandon the
   // existing exact-owned disposal and successful absence-census obligations.
-  docker(['rm','-f','-v',name]);
+  docker(['rm','-f','-v',id]);
   for(const volume of volumes)removedVolumes.add(volume);
   assert.equal(readNativeDockerCensus(docker(['ps','-a','--format','{{.Names}}'])).includes(name),false,'Successful container census proves target absent');
 }
