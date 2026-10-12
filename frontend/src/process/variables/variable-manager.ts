@@ -12,6 +12,8 @@ import {
   ProficiencyType,
   ProficiencyValue,
   ExtendedProficiencyType,
+  DailySpellPreparation,
+  DailySpellPreparationSchema,
 } from '@schemas/variables';
 import {
   isAttributeValue,
@@ -412,6 +414,18 @@ function getVariableStore(id: StoreID) {
     });
   }
   return variableMap.get(id)!;
+}
+
+/** Mark only a resolved daily selector in this execution's existing store. */
+export function registerDailySpellPreparation(id: StoreID, context: DailySpellPreparation): void {
+  const parsed = DailySpellPreparationSchema.safeParse(context);
+  if (parsed.success) getVariableStore(id).dailySpellPreparation = parsed.data;
+}
+
+/** A stale store for another entity or preparation cannot opt Rest into daily expiration. */
+export function hasDailySpellPreparation(id: StoreID, entityId: number, preparation?: string): boolean {
+  const context = getVariableStore(id).dailySpellPreparation;
+  return context?.entityId === entityId && context.preparation === (preparation ?? 'initial');
 }
 
 /** Add a bonus with replayable ownership while retaining the existing stacking and display history. */

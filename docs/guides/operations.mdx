@@ -330,7 +330,11 @@ offers no choices. Unmarked choices do not expire on Rest or retraining.
 `dailyPreparation: true` opts a database selection into daily expiration. Its saved
 identity includes the entity's `operation_data.daily_preparation` generation,
 actual entity ID, caster, stable selection owner, spell ID, known rank and fixed
-selector rank. Rest advances that generation; recalculation, reload and ordinary
+selector rank. Rest advances that generation only for a current daily selector or
+an existing daily preparation. Unselected and empty daily choices still opt in.
+A prior entity-owned daily choice expires even if its feature was removed before
+Rest, so regranting it cannot revive an expired addition. Ordinary entities gain
+no daily metadata. Recalculation, reload and ordinary
 saves do not. A choice from an older preparation, including
 a late picker callback, grants nothing. The saved database, ordinary selections,
 base Cache grants and Expanded Cache selections remain unchanged. Restricted

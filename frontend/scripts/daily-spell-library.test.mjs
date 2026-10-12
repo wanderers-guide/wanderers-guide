@@ -3,6 +3,7 @@ import { after, before, test } from 'node:test';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
 import { OperationSelectFiltersSpellSchema, OperationSchema } from '../src/schemas/operations.ts';
 import { AbilityBlockSchema } from '../src/schemas/content.ts';
+import { VariableStoreSchema } from '../src/schemas/variables.ts';
 import { spellLibraryDraft } from './fixtures/tech-core-spell-library.mjs';
 
 const source = 'TECHNOMANCER';
@@ -85,6 +86,18 @@ async function calculate(input) {
   assert.deepEqual(input, before);
   assert.deepEqual(engine.getOperationErrorNotifications(), []);
   return { results, casting: engine.collectEntitySpellcasting('CHARACTER', input) };
+}
+
+/** Exercise the existing Rest mutation without rewriting the caller's saved entity. */
+function rest(input, id = 'CHARACTER') {
+  const before = structuredClone(input);
+  let rested;
+  engine.handleRest(id, input, (next) => {
+    rested = next;
+  });
+  assert.deepEqual(input, before);
+  assert.ok(rested);
+  return rested;
 }
 
 before(async () => {
@@ -524,5 +537,197 @@ test('expiration retains independently granted base Cache membership for the sam
       casting.list.filter((entry) => entry.source === cache),
       [{ spell_id: spells[0].id, rank: 1, source: cache }]
     );
+  }
+});
+
+test('ordinary Rest preserves absent and unrelated operation metadata without adding a daily field', async () => {
+  for (const operationData of [undefined, { selections: {} }, { selections: { ordinary: 'saved-choice' } }]) {
+    const input = character();
+    input.operation_data = operationData;
+    input.spells.slots = [{ source, rank: 1, spell_list_source: cache, exhausted: true }];
+    await calculate(input);
+    assert.equal(Object.hasOwn(engine.exportVariableStore('CHARACTER'), 'dailySpellPreparation'), false);
+    const rested = rest(input);
+    assert.deepEqual(rested.operation_data, operationData);
+    assert.equal(rested.spells.slots[0].exhausted, false);
+    assert.deepEqual(rested.spells.list, input.spells.list);
+  }
+});
+
+test('an unselected active daily selector opts Rest in without granting a spell', async () => {
+  const input = character([selector()]);
+  const current = await calculate(input);
+  const oldChoice = findSelection(current.results).selection.options[0]._select_uuid;
+  assert.deepEqual(engine.exportVariableStore('CHARACTER').dailySpellPreparation, {
+    entityId: input.id,
+    preparation: 'initial',
+  });
+  assert.equal(current.casting.list.filter((entry) => entry.source === cache).length, 0);
+  const rested = rest(input);
+  assert.match(rested.operation_data.daily_preparation, /^[0-9a-f-]{36}$/);
+  rested.operation_data.selections[`character_${dailyId}`] = oldChoice;
+  const nextDay = await calculate(rested);
+  assert.equal(nextDay.casting.list.filter((entry) => entry.source === cache).length, 0);
+  assert.notEqual(findSelection(nextDay.results).selection.options[0]._select_uuid, oldChoice);
+});
+
+test('an empty daily database still expires a late initial choice before spells become available again', async () => {
+  const input = character([selector()]);
+  const oldChoice = findSelection((await calculate(input)).results).selection.options[0]._select_uuid;
+  const empty = structuredClone(input);
+  empty.spells.list = [];
+  const current = await calculate(empty);
+  assert.equal(findSelection(current.results), undefined);
+  assert.equal(engine.exportVariableStore('CHARACTER').dailySpellPreparation.entityId, empty.id);
+  const rested = rest(empty);
+  rested.spells.list = structuredClone(input.spells.list);
+  rested.operation_data.selections[`character_${dailyId}`] = oldChoice;
+  assert.equal((await calculate(rested)).casting.list.filter((entry) => entry.source === cache).length, 0);
+});
+
+test('inactive, malformed and foreign-source daily selectors cannot opt ordinary Rest in', async () => {
+  const inactive = character([
+    {
+      id: 'df447cdd-8cde-4627-ad71-b3b224377cf8',
+      type: 'conditional',
+      data: {
+        conditions: [
+          { id: 'a12dd612-15fc-49f9-aa66-88e0a41091e3', name: 'LEVEL', operator: 'GREATER_THAN', value: '20' },
+        ],
+        trueOperations: [selector()],
+        falseOperations: [],
+      },
+    },
+  ]);
+  const wrongSource = character([selector()]);
+  wrongSource.custom_operations[0].data.value = 'OTHER:::PREPARED-LIST:::ARCANE:::ATTRIBUTE_INT';
+  const malformed = [
+    { level: { min: 0, max: 0 } },
+    { level: { min: 1, max: 2 } },
+    { knownSpellSource: undefined },
+    { spellData: { type: 'FOCUS', castingSource: source, listSources: [cache] } },
+    { spellData: { type: 'NORMAL', castingSource: source, listSources: [''] } },
+    { dailyPreparation: false },
+  ].map((changes) => {
+    const operation = selector();
+    Object.assign(operation.data.optionsFilters, changes);
+    return character([operation]);
+  });
+  for (const input of [inactive, wrongSource, ...malformed]) {
+    await calculate(input);
+    assert.equal(Object.hasOwn(engine.exportVariableStore('CHARACTER'), 'dailySpellPreparation'), false);
+    assert.deepEqual(rest(input).operation_data, input.operation_data);
+  }
+});
+
+test('daily runtime ownership survives the validated export/import boundary without opting another entity in', async () => {
+  const input = character([selector()]);
+  await calculate(input);
+  const snapshot = VariableStoreSchema.parse(JSON.parse(JSON.stringify(engine.exportVariableStore('CHARACTER'))));
+  engine.resetVariables('CHARACTER');
+  engine.importVariableStore('CHARACTER', snapshot);
+  const other = { ...structuredClone(input), id: input.id + 1 };
+  assert.deepEqual(rest(other).operation_data, other.operation_data);
+  assert.ok(rest(input).operation_data.daily_preparation);
+  await calculate(character());
+  assert.equal(Object.hasOwn(engine.exportVariableStore('CHARACTER'), 'dailySpellPreparation'), false);
+});
+
+test('initial daily choices expire after removing the feature, resting and regranting it', async () => {
+  const input = character([selector()]);
+  input.operation_data.selections[`character_${dailyId}`] = findSelection(
+    (await calculate(input)).results
+  ).selection.options[0]._select_uuid;
+  const choice = input.operation_data.selections[`character_${dailyId}`];
+  const removed = character();
+  removed.operation_data = structuredClone(input.operation_data);
+  await calculate(removed);
+  assert.equal(Object.hasOwn(engine.exportVariableStore('CHARACTER'), 'dailySpellPreparation'), false);
+  const regranted = structuredClone(removed);
+  regranted.custom_operations.push(selector());
+  assert.equal((await calculate(regranted)).casting.list.filter((entry) => entry.source === cache).length, 1);
+  await calculate(removed);
+  const rested = rest(removed);
+  assert.equal(rested.operation_data.selections[`character_${dailyId}`], choice);
+  rested.custom_operations.push(selector());
+  assert.equal((await calculate(rested)).casting.list.filter((entry) => entry.source === cache).length, 0);
+});
+
+test('an established preparation expires across a removed feature even after clearing its saved choice', async () => {
+  const input = character([selector()]);
+  await calculate(input);
+  const prepared = rest(input);
+  const current = await calculate(prepared);
+  prepared.operation_data.selections[`character_${dailyId}`] = findSelection(
+    current.results
+  ).selection.options[0]._select_uuid;
+  const choice = prepared.operation_data.selections[`character_${dailyId}`];
+  const removed = structuredClone(prepared);
+  removed.custom_operations = removed.custom_operations.filter((operation) => operation.id !== dailyId);
+  removed.operation_data.selections = {};
+  await calculate(removed);
+  const rested = rest(removed);
+  assert.notEqual(rested.operation_data.daily_preparation, prepared.operation_data.daily_preparation);
+  rested.custom_operations.push(selector());
+  rested.operation_data.selections[`character_${dailyId}`] = choice;
+  assert.equal((await calculate(rested)).casting.list.filter((entry) => entry.source === cache).length, 0);
+});
+
+test('malformed, foreign-entity, foreign-store and foreign-preparation saved text cannot opt ordinary Rest in', async () => {
+  const input = character([selector()]);
+  const valid = JSON.parse(findSelection((await calculate(input)).results).selection.options[0]._select_uuid);
+  const variants = [
+    'DAILY',
+    JSON.stringify(['DAILY']),
+    JSON.stringify([...valid, 'extra']),
+    JSON.stringify(valid.map((value, index) => (index === 3 ? input.id + 1 : value))),
+    JSON.stringify(valid.map((value, index) => (index === 2 ? 'OTHER-STORE' : value))),
+    JSON.stringify(valid.map((value, index) => (index === 1 ? crypto.randomUUID() : value))),
+    JSON.stringify(valid.map((value, index) => (index === 4 ? '' : value))),
+    JSON.stringify(valid.map((value, index) => (index === 7 ? -1 : value))),
+    JSON.stringify(valid.map((value, index) => (index === 8 ? 0 : value))),
+  ];
+  for (const saved of variants) {
+    const ordinary = character();
+    ordinary.operation_data.selections = { obsolete: saved };
+    await calculate(ordinary);
+    assert.deepEqual(rest(ordinary).operation_data, ordinary.operation_data);
+  }
+});
+
+test('failed and superseded direct calculations cannot publish daily ownership into an ordinary store', async () => {
+  const ordinary = character();
+  await calculate(ordinary);
+  const committed = engine.exportVariableStore('CHARACTER');
+  const cyclicId = 9919591;
+  const cyclic = AbilityBlockSchema.parse({
+    ...spellLibraryDraft,
+    id: cyclicId,
+    created_at: '',
+    operations: [{ id: 'bad-cycle', type: 'giveAbilityBlock', data: { type: 'feat', abilityBlockId: cyclicId } }],
+  });
+  engine.setFixtures([
+    ...spells.map((row) => ({ table: 'spell', row })),
+    cantripRow,
+    { table: 'ability_block', row: cyclic },
+  ]);
+  try {
+    const broken = character([
+      { id: 'bad-grant', type: 'giveAbilityBlock', data: { type: 'feat', abilityBlockId: cyclicId } },
+      selector(),
+    ]);
+    await assert.rejects(calculate(broken), /Cyclic content grant/);
+    assert.deepEqual(engine.exportVariableStore('CHARACTER'), committed);
+    const abandoned = engine.executeOperations(
+      { type: 'CHARACTER', data: { character: character([selector()]), content, context: 'CHARACTER-SHEET' } },
+      { directExecution: true }
+    );
+    const rejected = assert.rejects(abandoned, { name: 'AbortError' });
+    const latest = calculate(ordinary);
+    await Promise.all([rejected, latest]);
+    assert.equal(Object.hasOwn(engine.exportVariableStore('CHARACTER'), 'dailySpellPreparation'), false);
+    assert.deepEqual(rest(ordinary).operation_data, ordinary.operation_data);
+  } finally {
+    engine.setFixtures([...spells.map((row) => ({ table: 'spell', row })), cantripRow]);
   }
 });

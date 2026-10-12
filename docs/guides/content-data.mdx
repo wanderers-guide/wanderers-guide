@@ -283,7 +283,10 @@ saved spell ID and known rank remain distinct in search and selection. An option
 to require a different rank. Stale choices are preserved without granting their
 spell or list membership. Ordinary spell pickers remain unchanged. Optional
 `dailyPreparation: true` choices expire on the entity's next Rest, using the saved
-`operation_data.daily_preparation` generation. Current-day choices survive reload
+`operation_data.daily_preparation` generation. Ordinary entities gain no daily
+metadata on Rest. Active daily selectors opt in even without a selected spell;
+an established daily preparation or an entity-owned prior choice still expires
+when its feature is removed before Rest. Current-day choices survive reload
 and ordinary saves. Old choices stay stored without granting membership; base
 Cache and Expanded Cache memberships do not expire. See the Operations guide for
 the authoring constraints.

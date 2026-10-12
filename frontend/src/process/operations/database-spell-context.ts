@@ -1,6 +1,12 @@
-import { SpellListEntrySchema, type Spell, type SpellListEntry } from '@schemas/content';
+import { SpellListEntrySchema, type LivingEntity, type Spell, type SpellListEntry } from '@schemas/content';
 import { GiveSpellDataSchema, type GiveSpellData } from '@schemas/operations';
-import type { StoreID, VariableListStr, VariableNum } from '@schemas/variables';
+import {
+  DailySpellPreparationSchema,
+  type DailySpellPreparation,
+  type StoreID,
+  type VariableListStr,
+  type VariableNum,
+} from '@schemas/variables';
 import { collectNormalSpellList } from '@spells/spell-list-rules';
 import { getKnownSpellsByRank, isCantrip } from '@spells/spell-utils';
 import { getVariable, getVariables } from '@variables/variable-manager';
@@ -14,6 +20,49 @@ type DatabaseContext = {
   entityId?: number;
 };
 const databases = new WeakMap<ReturnType<typeof getVariables>, DatabaseContext>();
+
+/** Saved identities are read only to expire past choices, never to authorize a grant. */
+const savedDailyChoiceSchema = z.tuple([
+  z.literal('DAILY'),
+  DailySpellPreparationSchema.shape.preparation,
+  z.string().min(1),
+  z.number().int(),
+  z.string().min(1),
+  z.string().min(1),
+  z.number().int().positive(),
+  z.number().int().min(0).max(10),
+  z.number().int().min(1).max(10),
+]);
+
+/** Read the actual entity binding, including when its active daily selector has no choices. */
+export function getDailySpellPreparationContext(id: StoreID): DailySpellPreparation | undefined {
+  const context = databases.get(getVariables(id));
+  return DailySpellPreparationSchema.safeParse({
+    entityId: context?.entityId,
+    preparation: context?.dailyPreparation,
+  }).data;
+}
+
+/** Keep prior daily choices expired across removing the feature, resting and regranting it. */
+export function hasSavedDailySpellPreparation(id: StoreID, entity: LivingEntity): boolean {
+  const preparation = entity.operation_data?.daily_preparation;
+  if (z.string().uuid().safeParse(preparation).success) return true;
+  for (const saved of Object.values(entity.operation_data?.selections ?? {})) {
+    try {
+      const parsed = savedDailyChoiceSchema.safeParse(JSON.parse(saved));
+      if (
+        parsed.success &&
+        parsed.data[1] === (preparation ?? 'initial') &&
+        parsed.data[2] === id &&
+        parsed.data[3] === entity.id
+      )
+        return true;
+    } catch {
+      // Unrelated or malformed selections never opt ordinary Rest into this lifecycle.
+    }
+  }
+  return false;
+}
 
 /** Bind saved database entries to this execution's variable store, never to a global character. */
 export function bindSpellDatabase(

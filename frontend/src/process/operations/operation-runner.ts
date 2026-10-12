@@ -29,6 +29,7 @@ import {
   OperationRemoveSpell,
   OperationResult,
   OperationSelect,
+  OperationSelectFiltersSpellSchema,
   OperationSendNotification,
   OperationSetValue,
 } from '@schemas/operations';
@@ -40,6 +41,7 @@ import {
   getLevelCappedProficiencyType,
   getVariable,
   getVariables,
+  registerDailySpellPreparation,
   getListContributions,
   exportVariableStore,
   setVariable,
@@ -70,7 +72,7 @@ import {
   extendOperations,
   SpellSelectionOwner,
 } from './operation-utils';
-import { snapshotSpellDatabase } from './database-spell-context';
+import { getDailySpellPreparationContext, snapshotSpellDatabase } from './database-spell-context';
 import { SelectionTrack, resolveSelectionNode } from './selection-tree';
 import { isEqual } from 'lodash-es';
 import {
@@ -437,6 +439,23 @@ async function runSelect(
       operation.data.optionType,
       operation.data.optionsPredefined
     );
+  }
+
+  // An active daily owner must expire on Rest even before selecting a spell or filling its database.
+  if (
+    finalizingDatabaseSelections &&
+    operation.data.modeType === 'FILTERED' &&
+    operation.data.optionType === 'SPELL' &&
+    databaseFilter?.type === 'SPELL' &&
+    databaseFilter.dailyPreparation === true &&
+    OperationSelectFiltersSpellSchema.safeParse(databaseFilter).success &&
+    owner?.path !== undefined &&
+    (getVariable<VariableListStr>(varId, 'CASTING_SOURCES')?.value ?? []).some(
+      (source) => source.split(':::')[0] === databaseFilter.knownSpellSource
+    )
+  ) {
+    const context = getDailySpellPreparationContext(varId);
+    if (context) registerDailySpellPreparation(varId, context);
   }
 
   // Future daily ranks have no actionable choice. Other empty selectors keep their existing UI.

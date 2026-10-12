@@ -120,7 +120,15 @@ export type Variable = z.infer<typeof VariableSchema>;
 
 // ─── Variable Store ───────────────────────────────────────────────────────────
 
+/** Execution-only daily ownership survives worker snapshots, not character saves. */
+export const DailySpellPreparationSchema = z.object({
+  entityId: z.number().int(),
+  preparation: z.union([z.literal('initial'), z.string().uuid()]),
+});
+export type DailySpellPreparation = z.infer<typeof DailySpellPreparationSchema>;
+
 export const VariableStoreSchema = z.object({
+  dailySpellPreparation: DailySpellPreparationSchema.optional(),
   variables: z.record(z.string(), VariableSchema),
   bonuses: z.record(
     z.string(),
