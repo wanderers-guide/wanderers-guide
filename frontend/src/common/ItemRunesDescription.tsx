@@ -63,15 +63,11 @@ export function ItemRunesDescription({ item }: { item: Item }) {
 
   const fundamentalRunes = data || [];
 
-  // For old broken item runes, we just return null to not show anything in order to avoid the page from breaking.
-  if (
-    item.meta_data?.runes?.property &&
-    item.meta_data.runes.property.length > 0 &&
-    item.meta_data.runes.property.every((s) => typeof s === 'string')
-  ) {
-    return null;
-  }
-  const propertyRunes = (item.meta_data?.runes?.property || []).sort((a, b) => a.name.localeCompare(b.name));
+  // Legacy names and newer wrappers can coexist. Sort a display copy without rewriting either format.
+  const runeName = (rune: string | { name: string }) => (typeof rune === 'string' ? rune : rune.name);
+  const propertyRunes = [...(item.meta_data?.runes?.property || [])].sort((a, b) =>
+    runeName(a).localeCompare(runeName(b))
+  );
 
   return (
     <>
@@ -84,27 +80,29 @@ export function ItemRunesDescription({ item }: { item: Item }) {
               <Group align='start' justify='space-between' pb={2}>
                 <Box>
                   <Text fw={600} c='gray.2' span>
-                    {rune.name}
+                    {runeName(rune)}
                   </Text>
                 </Box>
-                <Button
-                  variant='light'
-                  size='compact-xs'
-                  radius='xl'
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    openDrawer({
-                      type: 'item',
-                      data: { id: rune.id, item: rune.rune },
-                      extra: { addToHistory: true },
-                    });
-                  }}
-                >
-                  View Item
-                </Button>
+                {typeof rune !== 'string' && (
+                  <Button
+                    variant='light'
+                    size='compact-xs'
+                    radius='xl'
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      openDrawer({
+                        type: 'item',
+                        data: { id: rune.id, item: rune.rune },
+                        extra: { addToHistory: true },
+                      });
+                    }}
+                  >
+                    View Item
+                  </Button>
+                )}
               </Group>
-              <RichText>{rune.rune?.description}</RichText>
+              {typeof rune !== 'string' && <RichText>{rune.rune?.description}</RichText>}
             </Box>
           ))}
         </Box>
@@ -159,6 +157,7 @@ export function ItemUpgradesDescription(props: { item: Item; builtInOnly?: boole
     return <></>;
   }
 
+  // Sort the display copy without changing saved upgrade order or snapshots.
   slots.sort((a, b) => a.name.localeCompare(b.name));
   const renderReferences = (references: { name: string; id: number; upgrade?: Item }[], fixed = false) =>
     references.map((slot, index) => (

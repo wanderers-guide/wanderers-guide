@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { PREVIOUS_TERMINAL_BODY_SHA256, SOURCE_CORRECTION_TERMINAL_BODY_SHA256, SOURCE_CORRECTION_UPGRADE_PATH, SOURCE_CORRECTION_PATH, sourceCorrectionRows, terminalSourceCorrectionUpgrade, wrapDisplaySourceCorrections, CATALOG_COMPATIBILITY_TERMINAL_BODY_SHA256, CATALOG_COMPATIBILITY_UPGRADE_PATH, catalogCompatibilityRows, terminalCatalogCompatibilityInstaller, terminalCatalogCompatibilityUpgrade, wrapSourceCorrectionUpgrade } from './treasure-vault-native-source-corrections.mjs';
+import { SHARED_TERMINAL_SHA256, SHARED_PREDECESSOR_SHA256, SHARED_UPGRADE_PATH, SHARED_MOVE_PATH, sharedSpecFromBody, originalSharedAncestryBody, sharedAncestryUpgrade, wrapSharedUpgrade, sharedAncestryMigration, sharedAncestryRelease } from './treasure-vault-native-shared-ancestries.mjs';
 
 const sha = (value) => createHash('sha256').update(value).digest('hex');
 const validHash = (value) => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
@@ -33,7 +34,7 @@ export const TERMINAL_HELPER = Object.freeze({
   signature: 'public.treasure_vault_terminal_status_v1()',
 });
 export const APPROVED_SHARED_CHECK = Object.freeze({
-  body_sha256: CATALOG_COMPATIBILITY_TERMINAL_BODY_SHA256,
+  body_sha256: SHARED_TERMINAL_SHA256,
   proof_sha256: '39c123a1676c1bb3c6492e4d55b9cd59941b182ab73b574c835b727f1d30a504',
   manifest_sha256: 'dfeec0ae6e8d18e443237f7e9bfbc6571ba8ca8c61521562a0620179b84f64c3',
 });
@@ -154,6 +155,7 @@ export function extractReviewedTerminalHelper({ migrationSql, releaseSql }) {
   assert.ok(body.startsWith(`\nwith global_terminal_settings as materialized(select $global_dual$${proofText}$global_dual$::jsonb as spec),\n`));
   assert.ok(body.endsWith('\nselect phase.recognized,guard.passed from global_terminal_phase phase cross join global_terminal_guard guard;\n'));
   const state = terminalFunctionState(bodySha256);
+  const sharedSpec = sharedSpecFromBody(body), legacyBody = originalSharedAncestryBody(body, sharedSpec);
   const expectedDefinition = `create function ${TERMINAL_HELPER.signature}
 returns table(recognized boolean,passed boolean)
 language sql stable security invoker parallel unsafe cost 100 rows 1
@@ -161,14 +163,14 @@ set search_path = ''
 as $$${body}$$;`;
   assert.ok(definition === expectedDefinition, 'Exact qualified STABLE INVOKER helper signature');
   const expectedMigration = terminalCatalogCompatibilityInstaller({ definition: expectedDefinition, state,
-    previousState: terminalFunctionState(PREVIOUS_TERMINAL_BODY_SHA256), sourceState: terminalFunctionState(SOURCE_CORRECTION_TERMINAL_BODY_SHA256), signature: TERMINAL_HELPER.signature });
+    previousState: `(${terminalFunctionState(PREVIOUS_TERMINAL_BODY_SHA256)}) or (${terminalFunctionState(SHARED_PREDECESSOR_SHA256)})`, sourceState: terminalFunctionState(SOURCE_CORRECTION_TERMINAL_BODY_SHA256), signature: TERMINAL_HELPER.signature });
   assert.ok(migrationSql === expectedMigration, 'No installer body, grant or readback mutation');
   assert.equal(releaseSql, `-- Only inspect definition and grants; this check does not alter or cache content.
 select 'treasure-vault-terminal-status' as id,coalesce((${state}),false) as passed;
 `, 'Exact SELECT-only helper metadata release');
   assert.equal((migrationSql.match(/\bas\s+\$\$/gi) ?? []).length, 1);
   return { path: TERMINAL_HELPER.migration, release: TERMINAL_HELPER.release, signature: TERMINAL_HELPER.signature,
-    sql: migrationSql, releaseSql, check: releaseSql.trim().replace(/;$/, ''), definition, body, bodySha256,
+    sql: migrationSql, releaseSql, check: releaseSql.trim().replace(/;$/, ''), definition, body, bodySha256, sharedSpec, legacyBody,
     proof, proofText, proofSha256: sha(proofText), state, migrationSha256: sha(migrationSql), releaseSha256: sha(releaseSql) };
 }
 
@@ -399,10 +401,12 @@ export function loadTreasureVaultDefaultNativeInputs({ root, readText = path => 
       ['migrations', SOURCE_CORRECTION_UPGRADE_PATH], ['release', 'treasure-vault-terminal-source-corrections.sql'],
       ['migrations', SOURCE_CORRECTION_PATH], ['release', 'treasure-vault-source-corrections.sql'],
       ['migrations', CATALOG_COMPATIBILITY_UPGRADE_PATH], ['release', 'treasure-vault-terminal-catalog-compatibility.sql'],
+      ['release','shared-ancestries.json'], ['migrations',SHARED_UPGRADE_PATH], ['migrations',SHARED_MOVE_PATH], ['release','shared-ancestry-release-compatibility.sql'], ['release','shared-ancestries.sql'],
     ];
     const snapshots = await Promise.all(filenames.map(([directory, filename]) => read(directory, filename)));
-    const [completionSql, completionReleaseSql, displaySql, displayReleaseSql, helperSql, helperReleaseSql, requirementsText, sourceUpgradeSql, sourceUpgradeReleaseSql, sourceRepairSql, sourceRepairReleaseSql, catalogUpgradeSql, catalogUpgradeReleaseSql] = snapshots;
+    const [completionSql, completionReleaseSql, displaySql, displayReleaseSql, helperSql, helperReleaseSql, requirementsText, sourceUpgradeSql, sourceUpgradeReleaseSql, sourceRepairSql, sourceRepairReleaseSql, catalogUpgradeSql, catalogUpgradeReleaseSql, sharedSpecText, sharedUpgradeSql, sharedMoveSql, sharedHelperReleaseSql, sharedMoveReleaseSql] = snapshots;
     const helper = extractReviewedTerminalHelper({ migrationSql: helperSql, releaseSql: helperReleaseSql });
+    assert.deepEqual(JSON.parse(sharedSpecText),helper.sharedSpec);
     const proof = helper.proof;
     assert.deepEqual(proof.candidates, APPROVED_CANDIDATES);
     assertHistoryManifest(proof.historical_files);
@@ -489,20 +493,34 @@ export function loadTreasureVaultDefaultNativeInputs({ root, readText = path => 
     const originalSourceUpgrade = terminalSourceCorrectionUpgrade({ state: sourceState, previousState: terminalFunctionState(PREVIOUS_TERMINAL_BODY_SHA256), patches, signature: helper.signature });
     const originalSourceRelease = `-- Only inspect the exact source-corrected helper definition and unchanged grants.\nselect 'treasure-vault-terminal-source-corrections' as id,coalesce((${sourceState}),false) as passed;\n`;
     const sourceUpgradeWrapper = wrapSourceCorrectionUpgrade({ originalSql: originalSourceUpgrade, originalReleaseSql: originalSourceRelease, state: helper.state });
-    assert.equal(sourceUpgradeSql, sourceUpgradeWrapper.migration);
+    const sharedUpgrade = sharedAncestryUpgrade({ spec: helper.sharedSpec, previousState: terminalFunctionState(SHARED_PREDECESSOR_SHA256), state: helper.state, signature: helper.signature });
+    const legacySourceWrapper = wrapSourceCorrectionUpgrade({ originalSql: originalSourceUpgrade, originalReleaseSql: originalSourceRelease, state: terminalFunctionState(SHARED_PREDECESSOR_SHA256) });
+    const legacyCatalogUpgrade = terminalCatalogCompatibilityUpgrade({ state: terminalFunctionState(SHARED_PREDECESSOR_SHA256), previousState: terminalFunctionState(PREVIOUS_TERMINAL_BODY_SHA256), sourceState, sourcePatches: patches, patches: catalogCompatibilityRows(display.spec), signature: helper.signature });
+    assert.equal(sourceUpgradeSql, wrapSharedUpgrade(legacySourceWrapper.migration, legacyCatalogUpgrade + sharedUpgrade, helper.state));
     assert.equal(sourceUpgradeReleaseSql, sourceUpgradeWrapper.release);
     assert.deepEqual(requirements[SOURCE_CORRECTION_UPGRADE_PATH], { check: 'treasure-vault-terminal-source-corrections.sql', order: 'before-functions' });
     assert.deepEqual(requirements[SOURCE_CORRECTION_PATH], { check: 'treasure-vault-source-corrections.sql', order: 'before-functions' });
     const sourceCorrections = { path: SOURCE_CORRECTION_PATH, sql: sourceRepairSql, releaseSql: sourceRepairReleaseSql, spec: sourceRepairSpec, patches,
       upgrade: { path: SOURCE_CORRECTION_UPGRADE_PATH, sql: sourceUpgradeSql, releaseSql: sourceUpgradeReleaseSql } };
+    assert.equal(sharedUpgradeSql,sharedUpgrade);
+    assert.deepEqual(requirements[SHARED_UPGRADE_PATH], { check: 'shared-ancestry-release-compatibility.sql', order: 'before-functions' });
+    assert.deepEqual(requirements[SHARED_MOVE_PATH], { check: 'shared-ancestries.sql', order: 'before-functions' });
+    assert.equal(sharedMoveSql,sharedAncestryMigration({spec:helper.sharedSpec,state:helper.state,signature:helper.signature}));
+    assert.equal(sharedMoveReleaseSql,sharedAncestryRelease({spec:helper.sharedSpec,state:helper.state,signature:helper.signature}));
+    assert.equal(sharedHelperReleaseSql,`-- Exact shared helper body, metadata and grants.\nselect 'shared-ancestry-release-compatibility' as id,coalesce((${helper.state}),false) as passed;\n`);
+    for (const p of helper.sharedSpec.rows) {
+      const historic = display.spec.catalog.find(x=>x.table===p.table&&x.id===p.before.id);
+      if (p.table==='ancestry'&&p.before.id===7) assert.equal(historic,undefined);
+      else assert.deepEqual(p.before,historic.after,'Every historical owner is derived from exact101');
+    }
     const catalogPatches = catalogCompatibilityRows(display.spec);
-    assert.equal(catalogUpgradeSql, terminalCatalogCompatibilityUpgrade({ state: helper.state, previousState: terminalFunctionState(PREVIOUS_TERMINAL_BODY_SHA256), sourceState, sourcePatches: patches, patches: catalogPatches, signature: helper.signature }));
+    assert.equal(catalogUpgradeSql, wrapSharedUpgrade(legacyCatalogUpgrade, sharedUpgrade, helper.state));
     assert.equal(catalogUpgradeReleaseSql, `-- Only inspect the exact catalog-compatible helper definition and unchanged grants.\nselect 'treasure-vault-terminal-catalog-compatibility' as id,coalesce((${helper.state}),false) as passed;\n`);
     assert.deepEqual(requirements[CATALOG_COMPATIBILITY_UPGRADE_PATH], { check: 'treasure-vault-terminal-catalog-compatibility.sql', order: 'before-functions' });
     const catalogCompatibility = { path: CATALOG_COMPATIBILITY_UPGRADE_PATH, sql: catalogUpgradeSql, releaseSql: catalogUpgradeReleaseSql, patches: catalogPatches };
     const contract = reconstructDualNativeContract(completion.spec, display.spec, proof);
     return {
-      completion, display, helper, contract, sourceCorrections, catalogCompatibility, verifyHistoricalFiles, verifyFreshNativeLedger, originalHistorical,
+      completion, display, helper, contract, sourceCorrections, catalogCompatibility, sharedAncestries: { upgradePath: SHARED_UPGRADE_PATH, path: SHARED_MOVE_PATH, spec: helper.sharedSpec, upgrade: sharedUpgrade, sql: sharedAncestryMigration({spec:helper.sharedSpec,state:helper.state,signature:helper.signature}), releaseSql: sharedAncestryRelease({spec:helper.sharedSpec,state:helper.state,signature:helper.signature}) }, verifyHistoricalFiles, verifyFreshNativeLedger, originalHistorical,
       completionWrapper: { path: COMPLETION_PATH, release: COMPLETION_RELEASE, sql: completionSql, releaseSql: completionReleaseSql, ...completionWrapper },
       actualWrapperMetadata: wrapperMetadata, embeddedProof: proof,
       input_provenance: {

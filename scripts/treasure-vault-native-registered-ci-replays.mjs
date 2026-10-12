@@ -6,9 +6,10 @@ const sha=text=>createHash('sha256').update(text).digest('hex');
 const migrationName=/^[0-9]{14}_[a-z0-9_]+\.sql$/;
 const releaseName=/^[a-z0-9-]+\.sql$/;
 const replayPrefixes=['20260927','20260928','20260929','20260930','20261001','20261002'];
+const compatibilityReplay='20261011000100_incarnate_release_compatibility.sql';
 const indexPaths=['supabase/release/war-of-immortals-index.sql','supabase/release/war-of-immortals-index-regression.sql'];
 const workflowPath='.github/workflows/e2e.yml';
-export const APPROVED_REGISTERED_CI_REPLAY_STEP_SHA256="4ee2f17d57faca47d71f16879ccc02fcc4fbb6ee89e6ca07c48f22bb5eb366d0";
+export const APPROVED_REGISTERED_CI_REPLAY_STEP_SHA256="83e38362282d57610a10acdcd5de2a1a51987d776d1a0ba701f3233705a3bc00";
 
 
 /** Pin the exact reviewed shell step, not a reconstructed or normalized workflow. */
@@ -30,7 +31,7 @@ export function assertRegisteredCiWorkflowRecipe(workflow) {
   assert.equal([...step.matchAll(/^          verify_registered$/gm)].length,1);
   assert.equal([...step.matchAll(/^            verify_registered$/gm)].length,1);
   const replayBlock='          for pass in 1 2; do\n'+
-    '            for migration in '+replayPrefixes.map(prefix=>'supabase/migrations/'+prefix+'*.sql').join(' ')+'; do\n'+
+    '            for migration in '+replayPrefixes.map(prefix=>'supabase/migrations/'+prefix+'*.sql').join(' ')+' supabase/migrations/'+compatibilityReplay+'; do\n'+
     '              docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"\n'+
     '            done\n            verify_registered\n          done\n';
   assert.ok(step.includes(replayBlock),'Exact two date-glob passes and verification order');
@@ -86,12 +87,13 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
   const workflow=assertRegisteredCiWorkflowRecipe(read(workflowPath));
   const requirements=JSON.parse(read('supabase/release/requirements.json'));
   const chronology=inputManifest.migrations;
-  assert.equal(chronology.length,111);
-  assert.equal(chronology.at(-1).path,'20261008190000_tech_core_general_spells.sql');
-  assert.equal(Object.keys(requirements).length,104,'Exact reviewed registered requirement inventory');
+  assert.equal(chronology.length,114);
+  assert.equal(chronology.at(-1).path,compatibilityReplay);
+  assert.equal(Object.keys(requirements).length,107,'Exact reviewed registered requirement inventory');
   assert.deepEqual(requirements['20261008160000_tech_core_introductory_spells.sql'],{check:'tech-core-introductory-spells.sql',order:'before-functions'});
-  assert.deepEqual(requirements['20261008190000_tech_core_general_spells.sql'],{check:'tech-core-general-spells.sql',order:'before-functions'});
+  assert.deepEqual(requirements['20261008190000_tech_core_general_spells.sql'],{check:'tech-core-general-spells-incarnate-compatibility.sql',order:'before-functions'});
   assert.deepEqual(requirements['20261008105800_treasure_vault_terminal_catalog_compatibility.sql'],{check:'treasure-vault-terminal-catalog-compatibility.sql',order:'before-functions'});
+  assert.deepEqual(requirements[compatibilityReplay],{check:'tech-core-general-spells-incarnate-compatibility.sql',order:'before-functions'});
   const names=chronology.map(row=>row.path);
   assert.deepEqual([...names].sort(),names);assert.equal(new Set(names).size,names.length);
   for(const name of names)assert.match(name,migrationName);
@@ -100,19 +102,19 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
     assert.ok(requirement&&typeof requirement==='object');assert.match(requirement.check,releaseName);
   }
   const checkNames=[...new Set(Object.values(requirements).map(row=>row.check))].sort();
-  assert.equal(checkNames.length,67,'Exact reviewed distinct registered check inventory');
+  assert.equal(checkNames.length,69,'Exact reviewed distinct registered check inventory');
   const checks=checkNames.map(name=>({path:'supabase/release/'+name,sql:read('supabase/release/'+name)}));
-  const replays=chronology.filter(row=>replayPrefixes.some(prefix=>row.path.startsWith(prefix))).map(row=>{
+  const replays=chronology.filter(row=>replayPrefixes.some(prefix=>row.path.startsWith(prefix))||row.path===compatibilityReplay).map(row=>{
     const sql=read('supabase/migrations/'+row.path);assert.equal(sha(sql),row.sha256);
     assert.equal(sql,row.sql);return{path:row.path,sql,sha256:row.sha256};
   });
-  assert.equal(replays.length,89);assert.deepEqual(replays.map(row=>row.path),replays.map(row=>row.path).sort());
+  assert.equal(replays.length,90);assert.deepEqual(replays.map(row=>row.path),replays.map(row=>row.path).sort());
   // In these disjoint date groups, lexical date-prefix expansion and a single
   // sorted chronology have the same order as the proposed Bash glob loop.
-  const globOrder=replayPrefixes.flatMap(prefix=>replays.filter(row=>row.path.startsWith(prefix)).map(row=>row.path));
+  const globOrder=[...replayPrefixes.flatMap(prefix=>replays.filter(row=>row.path.startsWith(prefix)).map(row=>row.path)),compatibilityReplay];
   assert.deepEqual(globOrder,replays.map(row=>row.path));
   const indexSql=indexPaths.map(read).join('');
-  const plan={schema:'wg-tv-native-registered-ci-replays-v3',workflow,registered_requirements:Object.keys(requirements).length,
+  const plan={schema:'wg-tv-native-registered-ci-replays-v4',workflow,registered_requirements:Object.keys(requirements).length,
     checks:checks.map(({path,sql})=>({path,sha256:sha(sql)})),replays:replays.map(({path,sha256})=>({path,sha256})),
     passes:2,registered_verification_rounds:3,
     index_footer:{paths:indexPaths,read_only:false,temporary_session_schema:true,mutations_rolled_back:true},

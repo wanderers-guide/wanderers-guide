@@ -10,6 +10,10 @@ import {
 import { getVariable, getVariableBonuses } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
 import { getArmorGradeBonusKey, getArmorGradeView } from './armor-grade-view';
+import { getInheritedPetDefense } from '@variables/pet-defenses';
+
+/** Armor selection keeps its intrinsic ranking even when displayed Pet AC inherits an owner baseline. */
+export type ArmorCalculationOptions = { useIntrinsicArmor?: boolean };
 
 function getProfTotal(id: StoreID, item?: Item) {
   const category = item?.meta_data?.category ?? 'light';
@@ -41,19 +45,22 @@ function getProfTotal(id: StoreID, item?: Item) {
 }
 
 /** Armor potency increases the armor's item bonus before it competes with other item bonuses. */
-function getAcModifiers(id: StoreID, item?: Item) {
-  const proficiency = getProfTotal(id, item);
+function getAcModifiers(id: StoreID, item?: Item, options?: ArmorCalculationOptions) {
+  const inherited = options?.useIntrinsicArmor ? null : getInheritedPetDefense(id, 'AC_BONUS');
+  const proficiency = inherited === null ? getProfTotal(id, item) : { total: 0, variables: [] };
   const activeBonuses = getVariableBonuses(id, 'AC_BONUS');
   const bonuses: ModifierBonus[] = activeBonuses.filter((bonus) => bonus.armor_grade_key === undefined);
-  let armorItemBonus = item?.meta_data?.ac_bonus ?? 0;
-  if (item) {
+  // An inherited owner AC replaces the Pet's own armor and proficiency, not its direct AC modifiers.
+  if (inherited !== null) bonuses.push({ value: inherited - 10, type: 'untyped', text: '', source: 'Pet' });
+  let armorItemBonus = inherited === null ? (item?.meta_data?.ac_bonus ?? 0) : 0;
+  if (item && inherited === null) {
     const view = getArmorGradeView(item);
     const key = getArmorGradeBonusKey(item);
     if (view.kind === 'final' && activeBonuses.some((bonus) => bonus.armor_grade_key === key)) {
       armorItemBonus = view.acBonus;
     }
   }
-  const potency = Math.min(item?.meta_data?.runes?.potency ?? 0, 4);
+  const potency = inherited === null ? Math.min(item?.meta_data?.runes?.potency ?? 0, 4) : 0;
   // Equipment operations grant invested armor runes under the item's source name. Only combine an
   // active grant, so merely owning an uninvested rune does not activate its magic here.
   const potencyIndex =
@@ -101,11 +108,14 @@ export function getArmorStrengthModifier(id: StoreID): number {
     : strength;
 }
 
-export function getAcParts(id: StoreID, item?: Item) {
-  const modifiers = getAcModifiers(id, item);
-  let dexBonus = getFinalVariableValue(id, 'ATTRIBUTE_DEX').total;
+/** Calculate displayed AC parts, or the unchanged intrinsic armor parts when ranking equipment. */
+export function getAcParts(id: StoreID, item?: Item, options?: ArmorCalculationOptions) {
+  const modifiers = getAcModifiers(id, item, options);
+  const inherited = options?.useIntrinsicArmor ? null : getInheritedPetDefense(id, 'AC_BONUS');
+  const isInheritedDefense = inherited !== null;
+  let dexBonus = inherited === null ? getFinalVariableValue(id, 'ATTRIBUTE_DEX').total : 0;
   if (!item) {
-    return { ...modifiers, dexBonus, checkPenalty: 0, speedPenalty: 0 };
+    return { ...modifiers, dexBonus, checkPenalty: 0, speedPenalty: 0, isInheritedDefense };
   }
 
   const dexCap = item.meta_data?.dex_cap ?? 0;
@@ -117,7 +127,7 @@ export function getAcParts(id: StoreID, item?: Item) {
     checkPenalty = 0;
     speedPenalty = Math.min(0, speedPenalty + 5);
   }
-  dexBonus = Math.min(dexBonus, dexCap);
+  if (inherited === null) dexBonus = Math.min(dexBonus, dexCap);
 
-  return { ...modifiers, dexBonus, checkPenalty, speedPenalty };
+  return { ...modifiers, dexBonus, checkPenalty, speedPenalty, isInheritedDefense };
 }

@@ -1196,6 +1196,7 @@ export const PublicUserSchema = z.object({
       tier: z.enum(['ADVOCATE', 'WANDERER', 'LEGEND', 'GAME-MASTER']).optional(),
       access_token: z.string().optional(),
       refresh_token: z.string().optional(),
+      oauth_client_id: z.string().optional(),
       game_master: z
         .object({
           access_code: z.string().optional(),

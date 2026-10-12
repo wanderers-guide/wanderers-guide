@@ -1,0 +1,968 @@
+{
+  "rows": [
+    {
+      "table": "ancestry",
+      "before": {
+        "id": 3,
+        "name": "Elf",
+        "uuid": "6069556547543259",
+        "rarity": "COMMON",
+        "version": "1.0",
+        "trait_id": 1348,
+        "meta_data": {
+          "source": {
+            "url": "https://2e.aonprd.com/Ancestries.aspx?ID=60",
+            "book": "Player Core",
+            "page": "46"
+          }
+        },
+        "created_at": "2023-12-02T22:15:58.556798+00:00",
+        "deprecated": null,
+        "operations": [
+          {
+            "id": "2ab7d55b-60a2-4051-9307-e4c73a6d6596",
+            "data": {
+              "value": 6,
+              "variable": "MAX_HEALTH_ANCESTRY"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "09cbf36d-44d6-436d-9456-5499516314aa",
+            "data": {
+              "value": "medium",
+              "variable": "SIZE"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "72506287-ce22-4033-866d-ab849ac4ec9e",
+            "data": {
+              "value": 30,
+              "variable": "SPEED"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "ca332abb-d0ae-43d6-915b-bb85688cf91e",
+            "data": {
+              "value": {
+                "value": -1
+              },
+              "variable": "ATTRIBUTE_CON"
+            },
+            "type": "adjValue"
+          },
+          {
+            "id": "2406087d-787e-4a0d-9807-e167794d3471",
+            "data": {
+              "languageId": 81
+            },
+            "type": "giveLanguage"
+          },
+          {
+            "id": "d6dea13c-9849-4988-910b-786afad7f468",
+            "data": {
+              "languageId": 84
+            },
+            "type": "giveLanguage"
+          },
+          {
+            "id": "e423312d-baab-4e75-91ec-11599102f395",
+            "data": {
+              "value": "[\n  \"Draconic\",\n  \"Empyrean\",\n  \"Fey\",\n  \"Gnomish\",\n  \"Goblin\",\n  \"Kholo\",\n  \"Orcish\"\n]",
+              "variable": "CORE_LANGUAGES"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "013967a1-ba53-4692-a13a-ceae609481af",
+            "data": {
+              "type": "sense",
+              "abilityBlockId": 19330
+            },
+            "type": "giveAbilityBlock"
+          },
+          {
+            "id": "6849b687-67e5-4e8c-a232-7726c61a63f8",
+            "data": {
+              "value": {
+                "value": 1
+              },
+              "variable": "ATTRIBUTE_DEX"
+            },
+            "type": "adjValue"
+          },
+          {
+            "id": "6e1941cd-a202-4d1c-a117-e3fc8ac9c1e3",
+            "data": {
+              "value": {
+                "value": 1
+              },
+              "variable": "ATTRIBUTE_INT"
+            },
+            "type": "adjValue"
+          },
+          {
+            "id": "eabb4cd7-5aad-4f7c-a712-95d5e272bcf3",
+            "data": {
+              "title": "Select an Attribute",
+              "modeType": "FILTERED",
+              "optionType": "ADJ_VALUE",
+              "optionsFilters": {
+                "id": "8c1e7659-5029-4d00-8d77-f10f50b4688d",
+                "type": "ADJ_VALUE",
+                "group": "ATTRIBUTE",
+                "value": {
+                  "value": 1
+                }
+              },
+              "optionsPredefined": []
+            },
+            "type": "select"
+          },
+          {
+            "id": "13e39aad-cd73-4b63-ae9b-2f8e5b0c12e3",
+            "data": {
+              "traitId": 2399
+            },
+            "type": "giveTrait"
+          }
+        ],
+        "artwork_url": "https://images.demiplane.com/elements/pathfinder-2e/ancestries/ancestry-elf-rm-detail.png?format=webp&quality=90&width=1920",
+        "description": "> _Elves are a tall, long-lived people with a strong tradition of art and magic._\n\nAs an ancient people, elves have seen great change and have the perspective that can come only from watching the arc of history. After leaving Golarion in ancient times, they returned to a changed land, and they still struggle to reclaim their ancestral homes. Elves value kindness, intellect, and beauty, with many elves striving to improve their manners, appearance, and culture. Their studies delve into a level of detail that most shorter-lived peoples find excessive or inefficient. Elves are often rather private people, steeped in the secrets of their groves and kinship groups. They're slow to build friendships outside their kinsfolk, as elves who spend their lives among shorter-lived peoples often become morose after watching generations of companions age and die. These elves are known as Forlorn among their fellow elves.\n\nIf you want a character who is [magical](link_trait_1504), mystical, and mysterious, you should play an elf.",
+        "content_source_id": 1
+      },
+      "uuid": "1585905187237552"
+    },
+    {
+      "table": "ancestry",
+      "before": {
+        "id": 4,
+        "name": "Dwarf",
+        "uuid": "518845481186385",
+        "rarity": "COMMON",
+        "version": "1.0",
+        "trait_id": 1467,
+        "meta_data": {
+          "source": {
+            "url": "https://2e.aonprd.com/Ancestries.aspx?ID=59",
+            "book": "Player Core",
+            "page": "42"
+          }
+        },
+        "created_at": "2023-12-14T04:35:20.980759+00:00",
+        "deprecated": null,
+        "operations": [
+          {
+            "id": "2ab7d55b-60a2-4051-9307-e4c73a6d6596",
+            "data": {
+              "value": 10,
+              "variable": "MAX_HEALTH_ANCESTRY"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "09cbf36d-44d6-436d-9456-5499516314aa",
+            "data": {
+              "value": "medium",
+              "variable": "SIZE"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "72506287-ce22-4033-866d-ab849ac4ec9e",
+            "data": {
+              "value": 20,
+              "variable": "SPEED"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "ca332abb-d0ae-43d6-915b-bb85688cf91e",
+            "data": {
+              "value": {
+                "value": -1
+              },
+              "variable": "ATTRIBUTE_CHA"
+            },
+            "type": "adjValue"
+          },
+          {
+            "id": "2406087d-787e-4a0d-9807-e167794d3471",
+            "data": {
+              "languageId": 81
+            },
+            "type": "giveLanguage"
+          },
+          {
+            "id": "d6dea13c-9849-4988-910b-786afad7f468",
+            "data": {
+              "languageId": 83
+            },
+            "type": "giveLanguage"
+          },
+          {
+            "id": "e423312d-baab-4e75-91ec-11599102f395",
+            "data": {
+              "value": "[\n  \"Gnomish\",\n  \"Goblin\",\n  \"Jotun\",\n  \"Orcish\",\n  \"Petran\",\n  \"Sakvroth\"\n]",
+              "variable": "CORE_LANGUAGES"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "013967a1-ba53-4692-a13a-ceae609481af",
+            "data": {
+              "type": "sense",
+              "abilityBlockId": 20769
+            },
+            "type": "giveAbilityBlock"
+          },
+          {
+            "id": "6849b687-67e5-4e8c-a232-7726c61a63f8",
+            "data": {
+              "value": {
+                "value": 1
+              },
+              "variable": "ATTRIBUTE_CON"
+            },
+            "type": "adjValue"
+          },
+          {
+            "id": "6e1941cd-a202-4d1c-a117-e3fc8ac9c1e3",
+            "data": {
+              "value": {
+                "value": 1
+              },
+              "variable": "ATTRIBUTE_WIS"
+            },
+            "type": "adjValue"
+          },
+          {
+            "id": "eabb4cd7-5aad-4f7c-a712-95d5e272bcf3",
+            "data": {
+              "title": "Select an Attribute",
+              "modeType": "FILTERED",
+              "optionType": "ADJ_VALUE",
+              "optionsFilters": {
+                "id": "8c1e7659-5029-4d00-8d77-f10f50b4688d",
+                "type": "ADJ_VALUE",
+                "group": "ATTRIBUTE",
+                "value": {
+                  "value": 1
+                }
+              },
+              "optionsPredefined": []
+            },
+            "type": "select"
+          },
+          {
+            "id": "802db98f-dfe6-4dac-b370-650edb781046",
+            "data": {
+              "type": "physical-feature",
+              "abilityBlockId": 20771
+            },
+            "type": "giveAbilityBlock"
+          },
+          {
+            "id": "1cfee0a2-58bd-41d0-9b56-6b1ec041198a",
+            "data": {
+              "traitId": 2399
+            },
+            "type": "giveTrait"
+          }
+        ],
+        "artwork_url": "https://images.demiplane.com/elements/pathfinder-2e/ancestries/ancestry-dwarf-rm-detail.png?format=webp&quality=90&width=1920",
+        "description": "> _Dwarves are a short, stocky people who are often stubborn, fierce, and devoted._\n\nDwarves have a well-earned reputation as a stoic and stern people, but they also have an unbridled zeal and deeply value artisanship. To a stranger, they can seem untrusting and clannish, but to their friends and family, they are warm and caring. While trust from a dwarf is hard-won, once gained it is as strong as iron.\n\nIf you want to play a character who is as hard as nails, a stubborn and unrelenting adventurer, with a mix of rugged toughness and deep wisdom, you should play a dwarf.",
+        "content_source_id": 1
+      },
+      "uuid": "8318269341451140"
+    },
+    {
+      "table": "ancestry",
+      "before": {
+        "id": 5,
+        "name": "Gnome",
+        "uuid": "2257579532369643",
+        "rarity": "COMMON",
+        "version": "1.0",
+        "trait_id": 1452,
+        "meta_data": {
+          "source": {
+            "url": "https://2e.aonprd.com/Ancestries.aspx?ID=61",
+            "book": "Player Core",
+            "page": "50"
+          }
+        },
+        "created_at": "2023-12-14T04:38:09.147639+00:00",
+        "deprecated": null,
+        "operations": [
+          {
+            "id": "2ab7d55b-60a2-4051-9307-e4c73a6d6596",
+            "data": {
+              "value": 8,
+              "variable": "MAX_HEALTH_ANCESTRY"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "09cbf36d-44d6-436d-9456-5499516314aa",
+            "data": {
+              "value": "small",
+              "variable": "SIZE"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "72506287-ce22-4033-866d-ab849ac4ec9e",
+            "data": {
+              "value": 25,
+              "variable": "SPEED"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "ca332abb-d0ae-43d6-915b-bb85688cf91e",
+            "data": {
+              "value": {
+                "value": -1
+              },
+              "variable": "ATTRIBUTE_STR"
+            },
+            "type": "adjValue"
+          },
+          {
+            "id": "2406087d-787e-4a0d-9807-e167794d3471",
+            "data": {
+              "languageId": 81
+            },
+            "type": "giveLanguage"
+          },
+          {
+            "id": "d6dea13c-9849-4988-910b-786afad7f468",
+            "data": {
+              "languageId": 90
+            },
+            "type": "giveLanguage"
+          },
+          {
+            "id": "e423312d-baab-4e75-91ec-11599102f395",
+            "data": {
+              "value": "[\n  \"Dwarven\",\n  \"Draconic\",\n  \"Elven\",\n  \"Goblin\",\n  \"Jotun\",\n  \"Orcish\"\n]",
+              "variable": "CORE_LANGUAGES"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "013967a1-ba53-4692-a13a-ceae609481af",
+            "data": {
+              "type": "sense",
+              "abilityBlockId": 19330
+            },
+            "type": "giveAbilityBlock"
+          },
+          {
+            "id": "6849b687-67e5-4e8c-a232-7726c61a63f8",
+            "data": {
+              "value": {
+                "value": 1
+              },
+              "variable": "ATTRIBUTE_CON"
+            },
+            "type": "adjValue"
+          },
+          {
+            "id": "6e1941cd-a202-4d1c-a117-e3fc8ac9c1e3",
+            "data": {
+              "value": {
+                "value": 1
+              },
+              "variable": "ATTRIBUTE_CHA"
+            },
+            "type": "adjValue"
+          },
+          {
+            "id": "eabb4cd7-5aad-4f7c-a712-95d5e272bcf3",
+            "data": {
+              "title": "Select an Attribute",
+              "modeType": "FILTERED",
+              "optionType": "ADJ_VALUE",
+              "optionsFilters": {
+                "id": "8c1e7659-5029-4d00-8d77-f10f50b4688d",
+                "type": "ADJ_VALUE",
+                "group": "ATTRIBUTE",
+                "value": {
+                  "value": 1
+                }
+              },
+              "optionsPredefined": []
+            },
+            "type": "select"
+          },
+          {
+            "id": "cdd84645-ffd4-455b-86ff-a8402b15f8c6",
+            "data": {
+              "languageId": 85
+            },
+            "type": "giveLanguage"
+          },
+          {
+            "id": "74a80d85-13d4-4895-a027-699bef17fc6b",
+            "data": {
+              "traitId": 2399
+            },
+            "type": "giveTrait"
+          }
+        ],
+        "artwork_url": "https://images.demiplane.com/elements/pathfinder-2e/ancestries/ancestry-gnome-rm-detail.png?format=webp&quality=90&width=1920",
+        "description": "> _Gnomes are short and hardy folk, with an unquenchable curiosity and eccentric habits._\n\nLong ago, early gnome ancestors emigrated from the First World, realm of the [fey](link_trait_2021). While it's unclear why the first gnomes wandered to Golarion, this lineage manifests in modern gnomes as bizarre reasoning, eccentricity, obsessive tendencies, and what some see as naivete.\n\nAlways hungry for new experiences, gnomes constantly wander both mentally and physically, attempting to stave off a terrible ailment that threatens all of their people. This affliction, known as the Bleaching, strikes gnomes who fail to dream, innovate, and take in new experiences. The Bleaching slowly drains the color\u2014 literally\u2014from gnomes, and it plunges those affected into states of deep depression that eventually claim their lives. Very few gnomes survive this scourge, becoming deeply morose and wise survivors known as bleachlings.\n\nIf you want a character with boundless enthusiasm and an alien, fey outlook on morality and life, you should play a gnome.",
+        "content_source_id": 1
+      },
+      "uuid": "6314421069635444"
+    },
+    {
+      "table": "ancestry",
+      "before": {
+        "id": 6,
+        "name": "Goblin",
+        "uuid": "5310427347615682",
+        "rarity": "COMMON",
+        "version": "1.0",
+        "trait_id": 1468,
+        "meta_data": {
+          "source": {
+            "url": "https://2e.aonprd.com/Ancestries.aspx?ID=62",
+            "book": "Player Core",
+            "page": "54"
+          }
+        },
+        "created_at": "2023-12-14T04:41:20.25442+00:00",
+        "deprecated": null,
+        "operations": [
+          {
+            "id": "2ab7d55b-60a2-4051-9307-e4c73a6d6596",
+            "data": {
+              "value": 6,
+              "variable": "MAX_HEALTH_ANCESTRY"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "09cbf36d-44d6-436d-9456-5499516314aa",
+            "data": {
+              "value": "small",
+              "variable": "SIZE"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "72506287-ce22-4033-866d-ab849ac4ec9e",
+            "data": {
+              "value": 25,
+              "variable": "SPEED"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "ca332abb-d0ae-43d6-915b-bb85688cf91e",
+            "data": {
+              "value": {
+                "value": -1
+              },
+              "variable": "ATTRIBUTE_WIS"
+            },
+            "type": "adjValue"
+          },
+          {
+            "id": "2406087d-787e-4a0d-9807-e167794d3471",
+            "data": {
+              "languageId": 81
+            },
+            "type": "giveLanguage"
+          },
+          {
+            "id": "d6dea13c-9849-4988-910b-786afad7f468",
+            "data": {
+              "languageId": 86
+            },
+            "type": "giveLanguage"
+          },
+          {
+            "id": "e423312d-baab-4e75-91ec-11599102f395",
+            "data": {
+              "value": "[\n  \"Dwarven\",\n  \"Draconic\",\n  \"Gnomish\",\n  \"Halfling\",\n  \"Orcish\",\n  \"Kholo\"\n]",
+              "variable": "CORE_LANGUAGES"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "013967a1-ba53-4692-a13a-ceae609481af",
+            "data": {
+              "type": "sense",
+              "abilityBlockId": 20769
+            },
+            "type": "giveAbilityBlock"
+          },
+          {
+            "id": "6849b687-67e5-4e8c-a232-7726c61a63f8",
+            "data": {
+              "value": {
+                "value": 1
+              },
+              "variable": "ATTRIBUTE_DEX"
+            },
+            "type": "adjValue"
+          },
+          {
+            "id": "6e1941cd-a202-4d1c-a117-e3fc8ac9c1e3",
+            "data": {
+              "value": {
+                "value": 1
+              },
+              "variable": "ATTRIBUTE_CHA"
+            },
+            "type": "adjValue"
+          },
+          {
+            "id": "eabb4cd7-5aad-4f7c-a712-95d5e272bcf3",
+            "data": {
+              "title": "Select an Attribute",
+              "modeType": "FILTERED",
+              "optionType": "ADJ_VALUE",
+              "optionsFilters": {
+                "id": "8c1e7659-5029-4d00-8d77-f10f50b4688d",
+                "type": "ADJ_VALUE",
+                "group": "ATTRIBUTE",
+                "value": {
+                  "value": 1
+                }
+              },
+              "optionsPredefined": []
+            },
+            "type": "select"
+          },
+          {
+            "id": "b2c01cdb-3d57-4309-98a1-1837b9ef3771",
+            "data": {
+              "traitId": 2399
+            },
+            "type": "giveTrait"
+          }
+        ],
+        "artwork_url": "https://images.demiplane.com/elements/pathfinder-2e/ancestries/ancestry-goblin-rm-detail.png?format=webp&quality=90&width=1920",
+        "description": "> _Goblins are a short, scrappy, energetic people who have spent millennia maligned and feared._\n\nThe convoluted histories other people cling to don't interest goblins. These small folk live in the moment, and they prefer tall tales over factual records. Goblin virtues are about being present, creative, and honest. They strive to lead fulfilled lives, rather than worrying about how their journeys will end. To tell stories, not nitpick the facts. To be small, but dream big. Many goblins enjoy simpler delights like songs, fire, and eating, and hate reading, dogs, and horses. Other goblins might have more complex pursuits, though, such as tinkering with scraps or concocting snacks and explosives from most anything.\n\nIf you want a character who is eccentric, enthusiastic, and fun-loving, you should play a goblin.",
+        "content_source_id": 1
+      },
+      "uuid": "1570287111767689"
+    },
+    {
+      "table": "ancestry",
+      "before": {
+        "id": 7,
+        "name": "Halfling",
+        "uuid": "8172245851438367",
+        "rarity": "COMMON",
+        "version": "1.0",
+        "trait_id": 1474,
+        "meta_data": {
+          "source": {
+            "url": "https://2e.aonprd.com/Ancestries.aspx?ID=63",
+            "book": "Player Core",
+            "page": "58"
+          }
+        },
+        "created_at": "2023-12-14T04:41:36.86084+00:00",
+        "deprecated": null,
+        "operations": [
+          {
+            "id": "2ab7d55b-60a2-4051-9307-e4c73a6d6596",
+            "data": {
+              "value": 6,
+              "variable": "MAX_HEALTH_ANCESTRY"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "09cbf36d-44d6-436d-9456-5499516314aa",
+            "data": {
+              "value": "small",
+              "variable": "SIZE"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "72506287-ce22-4033-866d-ab849ac4ec9e",
+            "data": {
+              "value": 25,
+              "variable": "SPEED"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "ca332abb-d0ae-43d6-915b-bb85688cf91e",
+            "data": {
+              "value": {
+                "value": -1
+              },
+              "variable": "ATTRIBUTE_STR"
+            },
+            "type": "adjValue"
+          },
+          {
+            "id": "2406087d-787e-4a0d-9807-e167794d3471",
+            "data": {
+              "languageId": 81
+            },
+            "type": "giveLanguage"
+          },
+          {
+            "id": "d6dea13c-9849-4988-910b-786afad7f468",
+            "data": {
+              "languageId": 87
+            },
+            "type": "giveLanguage"
+          },
+          {
+            "id": "e423312d-baab-4e75-91ec-11599102f395",
+            "data": {
+              "value": "[\n  \"Dwarven\",\n  \"Elven\",\n  \"Gnomish\",\n  \"Goblin\"\n]",
+              "variable": "CORE_LANGUAGES"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "013967a1-ba53-4692-a13a-ceae609481af",
+            "data": {
+              "type": "sense",
+              "abilityBlockId": 21333
+            },
+            "type": "giveAbilityBlock"
+          },
+          {
+            "id": "6849b687-67e5-4e8c-a232-7726c61a63f8",
+            "data": {
+              "value": {
+                "value": 1
+              },
+              "variable": "ATTRIBUTE_DEX"
+            },
+            "type": "adjValue"
+          },
+          {
+            "id": "6e1941cd-a202-4d1c-a117-e3fc8ac9c1e3",
+            "data": {
+              "value": {
+                "value": 1
+              },
+              "variable": "ATTRIBUTE_WIS"
+            },
+            "type": "adjValue"
+          },
+          {
+            "id": "eabb4cd7-5aad-4f7c-a712-95d5e272bcf3",
+            "data": {
+              "title": "Select an Attribute",
+              "modeType": "FILTERED",
+              "optionType": "ADJ_VALUE",
+              "optionsFilters": {
+                "id": "8c1e7659-5029-4d00-8d77-f10f50b4688d",
+                "type": "ADJ_VALUE",
+                "group": "ATTRIBUTE",
+                "value": {
+                  "value": 1
+                }
+              },
+              "optionsPredefined": []
+            },
+            "type": "select"
+          },
+          {
+            "id": "ef38d67c-fdb2-4bf6-aa2d-3e90502764f2",
+            "data": {
+              "traitId": 2399
+            },
+            "type": "giveTrait"
+          }
+        ],
+        "artwork_url": "https://images.demiplane.com/elements/pathfinder-2e/ancestries/ancestry-halfling-rm-detail.png?format=webp&quality=90&width=1920",
+        "description": "> _Halflings are a short, resilient people who exhibit remarkable curiosity and humor._\n\nClaiming no place as their own, halflings control few settlements larger than villages. Instead, they frequently live among [humans](link_trait_1436) within larger cities, carving out small communities alongside taller folk. Optimistic, cheerful, and driven by powerful wanderlust, halflings make up for their short stature with an abundance of bravado. At once excitable and easygoing, halflings are the best kind of opportunists, and their passions favor joy over violence. While their curiosity sometimes drives them toward adventure, halflings also carry strong ties to house and home.\n\nIf you want to play a character who must contend with these opposing drives toward adventure and comfort, you should play a halfling.",
+        "content_source_id": 1
+      },
+      "uuid": "6593423923373880"
+    },
+    {
+      "table": "ancestry",
+      "before": {
+        "id": 10,
+        "name": "Orc",
+        "uuid": "2005895293702434",
+        "rarity": "COMMON",
+        "version": "1.0",
+        "trait_id": 1461,
+        "meta_data": {
+          "source": {
+            "url": "https://2e.aonprd.com/Ancestries.aspx?ID=66",
+            "book": "Player Core",
+            "page": "70"
+          }
+        },
+        "created_at": "2023-12-14T04:42:25.284011+00:00",
+        "deprecated": null,
+        "operations": [
+          {
+            "id": "2ab7d55b-60a2-4051-9307-e4c73a6d6596",
+            "data": {
+              "value": 10,
+              "variable": "MAX_HEALTH_ANCESTRY"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "09cbf36d-44d6-436d-9456-5499516314aa",
+            "data": {
+              "value": "medium",
+              "variable": "SIZE"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "72506287-ce22-4033-866d-ab849ac4ec9e",
+            "data": {
+              "value": 25,
+              "variable": "SPEED"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "2406087d-787e-4a0d-9807-e167794d3471",
+            "data": {
+              "languageId": 81
+            },
+            "type": "giveLanguage"
+          },
+          {
+            "id": "d6dea13c-9849-4988-910b-786afad7f468",
+            "data": {
+              "languageId": 89
+            },
+            "type": "giveLanguage"
+          },
+          {
+            "id": "e423312d-baab-4e75-91ec-11599102f395",
+            "data": {
+              "value": "[\n  \"Goblin\",\n  \"Jotun\",\n  \"Petran\",\n  \"Sakvroth\"\n]",
+              "variable": "CORE_LANGUAGES"
+            },
+            "type": "setValue"
+          },
+          {
+            "id": "013967a1-ba53-4692-a13a-ceae609481af",
+            "data": {
+              "type": "sense",
+              "abilityBlockId": 20769
+            },
+            "type": "giveAbilityBlock"
+          },
+          {
+            "id": "eabb4cd7-5aad-4f7c-a712-95d5e272bcf3",
+            "data": {
+              "title": "Select an Attribute",
+              "modeType": "FILTERED",
+              "optionType": "ADJ_VALUE",
+              "optionsFilters": {
+                "id": "8c1e7659-5029-4d00-8d77-f10f50b4688d",
+                "type": "ADJ_VALUE",
+                "group": "ATTRIBUTE",
+                "value": {
+                  "value": 1
+                }
+              },
+              "optionsPredefined": []
+            },
+            "type": "select"
+          },
+          {
+            "id": "d3f89920-a79a-4f46-b32a-0c88b543ccec",
+            "data": {
+              "traitId": 2399
+            },
+            "type": "giveTrait"
+          },
+          {
+            "id": "da9c1890-53ff-4033-8396-da52153bd63c",
+            "data": {
+              "title": "Select an Attribute",
+              "modeType": "FILTERED",
+              "optionType": "ADJ_VALUE",
+              "optionsFilters": {
+                "id": "51fb1543-8428-4ad5-bc53-40b5b2225a48",
+                "type": "ADJ_VALUE",
+                "group": "ATTRIBUTE",
+                "value": {
+                  "value": 1
+                }
+              },
+              "optionsPredefined": []
+            },
+            "type": "select"
+          }
+        ],
+        "artwork_url": "https://images.demiplane.com/elements/pathfinder-2e/ancestries/ancestry-orc-rm-detail.png?format=webp&quality=90&width=1920",
+        "description": "> _Orcs are proud, strong people with hardened physiques who value physical might and glory in combat._\n\nOrcs are forged in the fires of violence and conflict, often from the moment they are born. As they live lives that are frequently cut brutally short, orcs revel in testing their strength against worthy foes, often by challenging a higher-ranking member of their community for dominance. Orcs often struggle to gain acceptance among other communities, who frequently see them as brutes. Those who earn the loyalty of an orc friend, however, soon learn that an orc's fidelity and honesty are unparalleled. Orc culture teaches that they are shaped by the challenges they survive, and the most worthy survive the most hardships. Orcs who attain both a long life and great triumphs command immense respect.\n\nIf you want a character who is hardy, fearsome, and excels at feats of physical prowess, you should play an orc.",
+        "content_source_id": 1
+      },
+      "uuid": "2671137626513187"
+    },
+    {
+      "table": "trait",
+      "before": {
+        "id": 1348,
+        "name": "Elf",
+        "uuid": "4613985024096727",
+        "meta_data": {
+          "source": {
+            "url": "https://2e.aonprd.com/Traits.aspx?ID=588",
+            "book": "Player Core",
+            "page": "455"
+          },
+          "ancestry_trait": true
+        },
+        "created_at": "2023-12-02T22:15:57.649606+00:00",
+        "description": "This indicates content from the elf ancestry.",
+        "content_source_id": 1
+      },
+      "uuid": "1557556599974358"
+    },
+    {
+      "table": "trait",
+      "before": {
+        "id": 1452,
+        "name": "Gnome",
+        "uuid": "2346835815415210",
+        "meta_data": {
+          "source": {
+            "url": "https://2e.aonprd.com/Traits.aspx?ID=617",
+            "book": "Player Core",
+            "page": "456"
+          },
+          "ancestry_trait": true
+        },
+        "created_at": "2023-12-14T04:38:08.549176+00:00",
+        "description": "This indicates content from the gnome ancestry.",
+        "content_source_id": 1
+      },
+      "uuid": "277006262697261"
+    },
+    {
+      "table": "trait",
+      "before": {
+        "id": 1461,
+        "name": "Orc",
+        "uuid": "5446207040485289",
+        "meta_data": {
+          "source": {
+            "url": "https://2e.aonprd.com/Traits.aspx?ID=666",
+            "book": "Player Core",
+            "page": "459"
+          },
+          "ancestry_trait": true
+        },
+        "created_at": "2023-12-14T04:42:24.824788+00:00",
+        "description": "This indicates content from the orc ancestry.",
+        "content_source_id": 1
+      },
+      "uuid": "491210871733117"
+    },
+    {
+      "table": "trait",
+      "before": {
+        "id": 1467,
+        "name": "Dwarf",
+        "uuid": "7327654871424708",
+        "meta_data": {
+          "source": {
+            "url": "https://2e.aonprd.com/Traits.aspx?ID=584",
+            "book": "Player Core",
+            "page": "455"
+          },
+          "ancestry_trait": true
+        },
+        "created_at": "2023-12-14T04:35:20.548618+00:00",
+        "description": "This indicates content from the dwarf ancestry.",
+        "content_source_id": 1
+      },
+      "uuid": "7840415119350289"
+    },
+    {
+      "table": "trait",
+      "before": {
+        "id": 1468,
+        "name": "Goblin",
+        "uuid": "8937305273372612",
+        "meta_data": {
+          "source": {
+            "url": "https://2e.aonprd.com/Traits.aspx?ID=618",
+            "book": "Player Core",
+            "page": "456"
+          },
+          "ancestry_trait": true
+        },
+        "created_at": "2023-12-14T04:41:19.653122+00:00",
+        "description": "This indicates content from the goblin ancestry.",
+        "content_source_id": 1
+      },
+      "uuid": "3244209636824582"
+    },
+    {
+      "table": "trait",
+      "before": {
+        "id": 1474,
+        "name": "Halfling",
+        "uuid": "1814241673844771",
+        "meta_data": {
+          "source": {
+            "url": "https://2e.aonprd.com/Traits.aspx?ID=621",
+            "book": "Player Core",
+            "page": "457"
+          },
+          "ancestry_trait": true
+        },
+        "created_at": "2023-12-14T04:41:36.398774+00:00",
+        "description": "This indicates content from the halfling ancestry.",
+        "content_source_id": 1
+      },
+      "uuid": "4590047798938818"
+    }
+  ],
+  "rival_academies": {
+    "id": 493,
+    "url": "https://paizo.com/products/btq05yck",
+    "keys": null,
+    "name": "Rival Academies",
+    "group": "lost-omens",
+    "user_id": null,
+    "meta_data": {
+      "counts": {
+        "feat": 78,
+        "spell": 43,
+        "creature": 1,
+        "class_archetype": 2
+      }
+    },
+    "created_at": "2025-02-25T23:49:27.247566+00:00",
+    "deprecated": null,
+    "foundry_id": null,
+    "operations": [],
+    "artwork_url": "",
+    "description": "The finest mages, scientists, and academics of the Age of Lost Omens are gathering!  \nJourney to a fortress-city in demon-ravaged Sarkoris to learn the ancient magical secrets of the Magaambya's wizards, Lepidstadt's bleeding-edge theories on reanimating flesh with electricity, the extraplanar fey philosophies of the Cobyslarni, and the lore of more than a dozen other academies! With so many prominent scholars in one place, rivalries are sure to abound\u2014whether in the classroom, on the sports fields, or during field trips to dangerous lands.  \nThis 128-page book gives GMs and players a vibrant roster of luminaries, students, athletes, and wizards to build their very own magical academies. Whether players build bonds with classmates or clash with rivals, they'll gain diverse options like advanced spymaster gear, dazzling new martial arts techniques, or new wizard spells and schools, including the remastered Runelord!  \nWritten by: Sharang Biswas, Jeremy Blum, Carlos Cisco, Aoife Ester, Laura Lynn Horst, Andrew Mullen, Kendra Leigh Speedling, Stephanie Lundeen, Mahpiya, Collette Quach, Mikhail Rekun, Erin Roberts, Navaar Seik-Jackson, Shahreena Shahrani, Gina Susanna, Tan Shao Han, Esther Wallace, and Landon Winkler.",
+    "require_key": false,
+    "contact_info": null,
+    "is_published": true,
+    "required_content_sources": [
+      1,
+      256,
+      13,
+      842
+    ]
+  }
+}

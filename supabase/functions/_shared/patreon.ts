@@ -1,11 +1,8 @@
-import * as patreon from 'patreon';
-import type { PublicUser } from './content';
+import { exchangePatreonCode, fetchPatreonIdentity, PatreonApiError, refreshPatreonToken } from './patreon-api.ts';
+import type { PublicUser } from './content.d.ts';
 import _ from 'lodash';
-import { fetchData, updateData } from './helpers.ts';
+import { fetchData, logEvent, updateData } from './helpers.ts';
 import { SupabaseClient, createClient } from '@supabase/supabase-js';
-
-const patreonAPI = patreon.patreon;
-const patreonOAuth = patreon.oauth;
 
 const GM_GROUP_SIZE_CAP = 99;
 
@@ -21,16 +18,13 @@ async function checkAccessLevel(client: SupabaseClient<any, 'public', any>, user
 			const gmUser = gmUsers[0];
 
 			if (gmUser.user_id === user.user_id) {
-				// If someone is their own GM, corrupted, clear their data
-				await removePatreonData(client, user, true);
+				// A self-referencing group cannot grant access.
 				return false;
 			}
 
 			// Confirm the GM has updated access
 			const access = await hasPatreonAccess(gmUser, accessLevel);
-			if (!access) {
-				removePatreonData(client, user, true);
-			}
+			// A failed provider check must not erase a player's group or own paid link.
 			return access;
 		}
 	}
@@ -46,37 +40,17 @@ async function checkAccessLevel(client: SupabaseClient<any, 'public', any>, user
 	return false;
 }
 
-async function removePatreonData(client: SupabaseClient<any, 'public', any>, user: PublicUser, removeVirtualTier = false) {
-	user = _.cloneDeep(user);
-	user.patreon = {
-		...user.patreon,
-		patreon_user_id: undefined,
-		patreon_name: undefined,
-		patreon_email: undefined,
-		tier: undefined,
-		access_token: undefined,
-		refresh_token: undefined,
-		game_master: removeVirtualTier ? undefined : user.patreon?.game_master,
-	};
-	const { status } = await updateData(client, 'public_user', user.id, {
-		patreon: user.patreon,
-	});
-	return {
-		status,
-		user,
-	};
-}
-
 async function addPatreonData(
 	client: SupabaseClient<any, 'public', any>,
 	user: PublicUser,
 	data: {
 		patreon_user_id: string;
-		patreon_name: string;
-		patreon_email: string;
+		patreon_name?: string;
+		patreon_email?: string;
 		tier?: 'ADVOCATE' | 'WANDERER' | 'LEGEND' | 'GAME-MASTER';
 		access_token: string;
-		refresh_token: string;
+		refresh_token?: string;
+		oauth_client_id?: string;
 	},
 ) {
 	user = _.cloneDeep(user);
@@ -88,48 +62,57 @@ async function addPatreonData(
 		tier: data.tier,
 		access_token: data.access_token,
 		refresh_token: data.refresh_token,
+		oauth_client_id: data.oauth_client_id,
 	};
-	const { status } = await updateData(client, 'public_user', user.id, {
+	// Create a new GM's code atomically with their membership; preserve existing groups.
+	if (data.tier === 'GAME-MASTER' && !user.patreon.game_master?.access_code) {
+		user.patreon.game_master = { ...user.patreon.game_master, access_code: crypto.randomUUID().replaceAll('-', '') };
+	}
+	const { status, data: rows } = await updateData(client, 'public_user', user.id, {
 		patreon: user.patreon,
-	});
+	}, true);
 	return {
-		status,
+		status: status === 'SUCCESS' && rows?.some((row: { id: number }) => row.id === user.id) ? 'SUCCESS' : 'ERROR_UNKNOWN',
 		user,
 	};
 }
 
+/** Verify v2 entitlements without erasing linked data during provider failures. */
 export async function hasPatreonAccess(user: PublicUser, accessLevel: 0 | 1 | 2 | 3 | 4): Promise<boolean> {
-	// Use unrestricted client access because we're only updating Patreon data under strict conditions
-	const client = createClient(
-		// @ts-ignore
-		Deno.env.get('SUPABASE_URL') ?? '',
-		// @ts-ignore
-		Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-	);
-
+	if (accessLevel === 0) return true;
+	const client = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
 	user = _.cloneDeep(user);
-	if (user.patreon?.access_token) {
-		const apiClient = patreonAPI(user.patreon?.access_token);
+	const stored = user.patreon;
+	if (!stored?.access_token) {
+		user.patreon = { ...stored, tier: undefined };
+		return await checkAccessLevel(client, user, accessLevel);
+	}
+	try {
+		let identity;
 		try {
-			await apiClient('/current_user');
-			// console.log('Patreon - Valid Access Token - OK');
+			identity = await fetchPatreonIdentity(stored.access_token);
 		} catch (error) {
-			if (user.patreon?.refresh_token) {
-				// console.log('Patreon - Invalid Access Token - ISSUE - Attempting to Refresh');
-
-				const result = await attemptAccessTokenRefresh(client, user, user.patreon.refresh_token);
-				user = result.user;
-			} else {
-				// console.log('Patreon - Invalid Access Token - ISSUE - No RefreshToken, Ending');
-				const result = await removePatreonData(client, user);
-				user = result.user;
-			}
+			if (!(error instanceof PatreonApiError) || error.status !== 401 || !stored.refresh_token) throw error;
+			const tokens = await refreshPatreonToken(stored.refresh_token, stored.oauth_client_id ?? '');
+			user.patreon = { ...stored, ...tokens };
+			// Rotated refresh tokens must be saved before another provider request.
+			const { status, data: rows } = await updateData(client, 'public_user', user.id, { patreon: user.patreon }, true);
+			if (status !== 'SUCCESS' || !rows?.some((row: { id: number }) => row.id === user.id)) return false;
+			identity = await fetchPatreonIdentity(tokens.access_token);
+		}
+		if (identity.tier !== user.patreon?.tier) {
+			const result = await addPatreonData(client, user, { ...user.patreon, ...identity, access_token: user.patreon?.access_token ?? '' });
+			if (result.status !== 'SUCCESS') return false;
+			user = result.user;
 		}
 		return await checkAccessLevel(client, user, accessLevel);
-	} else {
-		// Update user to not have a tier
-		const result = await removePatreonData(client, user);
-		return await checkAccessLevel(client, result.user, accessLevel);
+	} catch (error) {
+		// Fail closed for this paid operation while retaining data for reconnection.
+		logEvent('warn', 'patreon', 'patreon_check_failed', {
+			stage: error instanceof PatreonApiError ? error.stage : 'persistence',
+			status: error instanceof PatreonApiError ? error.status : undefined,
+		});
+		return false;
 	}
 }
 
@@ -273,125 +256,10 @@ export async function regenerateGameMasterAccessCode(client: SupabaseClient<any,
 	};
 }
 
-export async function handlePatreonRedirect(client: SupabaseClient<any, 'public', any>, user: PublicUser, code: string, redirectURL: string) {
-	// Setup client
-	const patreonOAuthClient = patreonOAuth(
-		// @ts-ignore
-		Deno.env.get('PATREON_CLIENT_ID') ?? '',
-		// @ts-ignore
-		Deno.env.get('PATREON_CLIENT_SECRET') ?? '',
-	);
-
-	// Get data store
-	const tokenResult = await patreonOAuthClient.getTokens(code, redirectURL);
-	const apiClient = patreonAPI(tokenResult.access_token);
-
-	// Get campaign data
-	// const campaignID = '4805226';
-	// const campaignResult = await apiClient(`/campaigns/${campaignID}/pledges`);
-	// console.log(campaignResult, campaignResult.rawJson);
-
-	const result = await apiClient('/current_user');
-	const store = result.store;
-
-	// Get user data
-	const userData = store.findAll('user').map((user: any) => user.serialize());
-
-	const uData = findPatronData(userData);
-	if (uData === null) {
-		console.error('Failed to find user data!');
-		console.error(userData);
-		return false;
-	}
-
-	// Get pledge data
-	const patreonUserID = uData.id;
-	const patreonName = uData.attributes.full_name;
-	const patreonEmail = uData.attributes.email;
-
-	// Pledge Data //
-	const pledgeData = store.findAll('pledge').map((pledge: any) => pledge.serialize());
-	//console.log(pledgeData[0].data.relationships.reward);
-
-	const tier = findPatronTier(pledgeData);
-	await addPatreonData(client, user, {
-		patreon_user_id: patreonUserID,
-		patreon_name: patreonName,
-		patreon_email: patreonEmail,
-		tier: tier,
-		access_token: tokenResult.access_token,
-		refresh_token: tokenResult.refresh_token,
-	});
-
-	if (tier === 'GAME-MASTER') {
-		await regenerateGameMasterAccessCode(client, user);
-	}
-
-	return true;
-}
-
-function findPatronData(userData: any) {
-	const myUserID = '32932027';
-
-	for (let uData of userData) {
-		if (uData.data.type === 'user' && uData.data.id !== myUserID) {
-			return uData.data;
-		}
-	}
-	return null;
-}
-
-function findPatronTier(pledgeData: any): 'ADVOCATE' | 'WANDERER' | 'LEGEND' | 'GAME-MASTER' | undefined {
-	const supporterTierID = '5612688';
-	const memberTierID = '5628112';
-	const legendTierID = '6299276';
-	const gmTierID = '22622808';
-
-	for (let pData of pledgeData) {
-		if (pData.data.type === 'pledge' && pData.data.relationships !== null && pData.data.relationships.reward !== null) {
-			if (pData.data.relationships.reward.data.id === supporterTierID) {
-				return 'ADVOCATE';
-			} else if (pData.data.relationships.reward.data.id === memberTierID) {
-				return 'WANDERER';
-			} else if (pData.data.relationships.reward.data.id === legendTierID) {
-				return 'LEGEND';
-			} else if (pData.data.relationships.reward.data.id === gmTierID) {
-				return 'GAME-MASTER';
-			}
-		}
-	}
-	return undefined;
-}
-
-// Patreon Refresh Token //
-async function attemptAccessTokenRefresh(client: SupabaseClient<any, 'public', any>, user: PublicUser, refreshToken: string) {
-	// Setup client
-	const patreonOAuthClient = patreonOAuth(
-		// @ts-ignore
-		Deno.env.get('PATREON_CLIENT_ID') ?? '',
-		// @ts-ignore
-		Deno.env.get('PATREON_CLIENT_SECRET') ?? '',
-	);
-
-	try {
-		const tokenResult = await patreonOAuthClient.refreshToken(refreshToken);
-
-		// console.log('Patreon - Invalid Access Token - ISSUE - Refreshed Token');
-		user = _.cloneDeep(user);
-		user.patreon = {
-			...user.patreon,
-			access_token: tokenResult.access_token,
-			refresh_token: tokenResult.refresh_token,
-		};
-		const { status } = await updateData(client, 'public_user', user.id, {
-			patreon: user.patreon,
-		});
-		return {
-			status,
-			user,
-		};
-	} catch (e) {
-		// console.log('Patreon - Invalid Access Token - ISSUE - Failed to Refresh, Ending');
-		return await removePatreonData(client, user);
-	}
+/** Persist the authorized v2 identity only after all provider responses validate. */
+export async function handlePatreonRedirect(client: SupabaseClient<any, 'public', any>, user: PublicUser, code: string, redirectURL: string): Promise<boolean> {
+	const tokens = await exchangePatreonCode(code, redirectURL);
+	const identity = await fetchPatreonIdentity(tokens.access_token);
+	const result = await addPatreonData(client, user, { ...identity, ...tokens });
+	return result.status === 'SUCCESS';
 }
