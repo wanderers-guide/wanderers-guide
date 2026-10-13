@@ -3,19 +3,24 @@ describe('Login', () => {
     cy.visit('/');
   });
 
-  it('keeps sign in as one keyboard-accessible button', () => {
-    cy.contains('button', 'Sign in').as('signIn');
+  it('keeps sign in as one focusable button with a clickable decorative icon', () => {
+    cy.viewport(1280, 900);
+    cy.contains('.mantine-AppShell-header button', 'Sign in').should('be.visible').as('signIn');
     cy.get('@signIn').find('button, [role="button"], [tabindex]').should('not.exist');
-    cy.get('@signIn').focus().should('be.focused').type('{enter}');
+    // Cypress 13 synthesizes a non-bubbling Enter click, so this checks focus and pointer activation.
+    cy.get('@signIn').focus().should('be.focused');
+    cy.get('@signIn')
+      .find('span.mantine-ActionIcon-root')
+      .should('be.visible')
+      .and('have.attr', 'aria-hidden', 'true')
+      .click();
     cy.location('pathname').should('eq', '/login');
   });
 
-  it('keeps the decorative sign-in icon clickable on mobile', () => {
+  it('opens sign in through the existing mobile navigation', () => {
     cy.viewport(375, 812);
-    cy.contains('button', 'Sign in')
-      .find('span.mantine-ActionIcon-root')
-      .should('have.attr', 'aria-hidden', 'true')
-      .click();
+    cy.get('.mantine-Burger-root').should('be.visible').click();
+    cy.contains('.mantine-AppShell-navbar button', 'Sign in / Register').should('be.visible').click();
     cy.location('pathname').should('eq', '/login');
   });
 

@@ -66,9 +66,8 @@ describe('Legacy property rune descriptions', () => {
           .click();
         cy.get('@drawer').contains('Frost').scrollIntoView().should('be.visible');
         cy.get('@drawer').contains('Shock').scrollIntoView().should('be.visible');
-        cy.get('@drawer').find('.mantine-ScrollArea-viewport').scrollTo('bottom');
-        cy.get('@drawer').contains('Fundamental Runes').should('be.visible');
-        cy.get('@drawer').contains('Weapon Potency (+1)').should('be.visible');
+        cy.get('@drawer').contains('Fundamental Runes').scrollIntoView().should('be.visible');
+        cy.get('@drawer').contains('Weapon Potency (+1)').scrollIntoView().should('be.visible');
         cy.get('@drawer').find('button').filter(':contains("View Item")').should('have.length', buttons);
         cy.document().should((document) =>
           expect(document.documentElement.scrollWidth).to.be.at.most(document.documentElement.clientWidth)
