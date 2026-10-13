@@ -141,8 +141,8 @@ export function assertRequiredNativeEvidence(receipt) {
   assert.equal(ci.registered_requirements,108);assert.equal(ci.checks.length,70);assert.equal(ci.replays.length,91);
   assert.equal(ci.passes,2);assert.equal(ci.registered_verification_rounds,3);assert.equal(ci.expected_native_statements,393);
   assert.equal(ci.stages.length,393);assert.equal(new Set(ci.stages.map(row=>row.label)).size,393);
-  assert.equal(ci.checks.filter(row=>row.path==='supabase/release/tech-core-introductory-spells.sql').length,1);
-  assert.equal(ci.checks.filter(row=>row.path==='supabase/release/tech-core-general-spells-incarnate-compatibility.sql').length,1);
+  assert.equal(ci.checks.filter(row=>row.path==='supabase/release/tech-core-introductory-spells-citation-compatibility.sql').length,1);
+  assert.equal(ci.checks.filter(row=>row.path==='supabase/release/tech-core-general-spells-citation-compatibility.sql').length,1);
   assert.equal(ci.checks.filter(row=>row.path==='supabase/release/treasure-vault-terminal-catalog-compatibility.sql').length,1);
   assert.equal(ci.workflow.path,'.github/workflows/e2e.yml');assert.equal(ci.workflow.exact_bytes,true);
   const workflow=receipt.input_manifest.entries.find(row=>row.path===ci.workflow.path);

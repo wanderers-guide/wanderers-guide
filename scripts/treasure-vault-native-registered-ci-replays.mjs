@@ -91,11 +91,11 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
   assert.equal(chronology.length,115);
   assert.equal(chronology.at(-1).path,'20261011000100_incarnate_release_compatibility.sql');
   assert.equal(Object.keys(requirements).length,108,'Exact reviewed registered requirement inventory');
-  assert.deepEqual(requirements['20261008160000_tech_core_introductory_spells.sql'],{check:'tech-core-introductory-spells.sql',order:'before-functions'});
-  assert.deepEqual(requirements['20261008190000_tech_core_general_spells.sql'],{check:'tech-core-general-spells-incarnate-compatibility.sql',order:'before-functions'});
+  assert.deepEqual(requirements['20261008160000_tech_core_introductory_spells.sql'],{check:'tech-core-introductory-spells-citation-compatibility.sql',order:'before-functions'});
+  assert.deepEqual(requirements['20261008190000_tech_core_general_spells.sql'],{check:'tech-core-general-spells-citation-compatibility.sql',order:'before-functions'});
   assert.deepEqual(requirements[recoveryReplayPaths[0]],{check:'heal-companion-recovery.sql',order:'before-functions'});
   assert.deepEqual(requirements['20261008105800_treasure_vault_terminal_catalog_compatibility.sql'],{check:'treasure-vault-terminal-catalog-compatibility.sql',order:'before-functions'});
-  assert.deepEqual(requirements[compatibilityReplay],{check:'tech-core-general-spells-incarnate-compatibility.sql',order:'before-functions'});
+  assert.deepEqual(requirements[compatibilityReplay],{check:'tech-core-general-spells-citation-compatibility.sql',order:'before-functions'});
   const names=chronology.map(row=>row.path);
   assert.deepEqual([...names].sort(),names);assert.equal(new Set(names).size,names.length);
   for(const name of names)assert.match(name,migrationName);

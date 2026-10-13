@@ -168,6 +168,28 @@ including when the complete original predicate passes without the successor guar
 Other source moves, partial states, duplicate identities and unrelated edits fail.
 The historical migrations and original release queries remain unchanged.
 
+The Tech Core citation checks additionally accept one complete, paired successor:
+Junk (`5225`) cites its Tech Core trait page and Station (`5236`) cites its own
+trait page. Every other field in both records remains exact. The original
+introductory state still permits Station to be absent; the cited state requires
+both complete records. Mixed old and cited records, unrelated metadata changes,
+identity aliases and pending curator edits fail. Both original Incarnate source
+choices retain the complete spell, dependency, source and binding predicates.
+The historical query files remain explicit native-fixture inputs; the three
+requirement registrations use the additive citation checks without changing the
+registered migration inventory.
+
+The focused construction and native-plan contracts run with:
+
+```bash
+node --test scripts/tech-core-citation-compatibility.test.mjs scripts/tech-core-citation-compatibility-native.test.mjs
+```
+
+Construction checks do not execute SQL. The hosted-only native entry requires an
+owner-verified, isolated fixture and executes the focused 200-case matrix. Its
+receipt names the exact executed controls; the larger prepared matrix is not
+implicitly covered. Neither result is a whole-book audit or a production check.
+
 Before applying recovery, require isolated native PostgreSQL apply, idempotence,
 rollback, sequence, cache and negative-case tests against the reviewed SQL hashes.
 `npm run test:release` includes the inert native-fixture preparation contracts.

@@ -91,8 +91,10 @@ test('Construction only: actual workflow/footer bytes and every registered repla
   assert.ok(plan.workflow.exact_bytes);assert.deepEqual(plan.index_footer.paths,footerPaths);assert.equal(plan.index_footer.read_only,false);
   assert.ok(plan.checks.some(row=>row.path==='supabase/release/weapon-stat-fields.sql'));
   assert.equal(plan.checks.filter(row=>row.path==='supabase/release/content-selection-rules.sql').length,1);
-  assert.equal(plan.checks.filter(row=>row.path==='supabase/release/tech-core-introductory-spells.sql').length,1);
-  assert.equal(plan.checks.filter(row=>row.path==='supabase/release/tech-core-general-spells-incarnate-compatibility.sql').length,1);
+  assert.equal(plan.checks.filter(row=>row.path==='supabase/release/tech-core-introductory-spells-citation-compatibility.sql').length,1);
+  assert.equal(plan.checks.filter(row=>row.path==='supabase/release/tech-core-general-spells-citation-compatibility.sql').length,1);
+  for(const path of ['supabase/release/tech-core-introductory-spells.sql','supabase/release/tech-core-general-spells.sql','supabase/release/tech-core-general-spells-incarnate-compatibility.sql'])
+    assert.equal(captured.manifest.entries.filter(row=>row.path===path).length,1,'Historical full query remains an explicit input');
   assert.equal(plan.checks.filter(row=>row.path==='supabase/release/treasure-vault-terminal-catalog-compatibility.sql').length,1);
   assert.equal(plan.replays.some(row=>row.path==='20261008160000_tech_core_introductory_spells.sql'),false,'New Tech Core migration does not expand the reviewed replay date groups');
   assert.equal(plan.replays.some(row=>row.path==='20261008190000_tech_core_general_spells.sql'),false,'The second Tech Core batch preserves all89 reviewed replay members');
@@ -119,7 +121,7 @@ test('Construction only: changed CI commands/layout and missing/drifted captured
     assert.throws(()=>assertRegisteredCiWorkflowRecipe(changed));
     assert.throws(()=>createNativeRegisteredCiReplayControls({...constructorContext,inputManifest:withText(workflowPath,changed)}));
   }
-  for(const path of [workflowPath,...footerPaths,'supabase/release/tech-core-introductory-spells.sql','supabase/release/tech-core-general-spells-incarnate-compatibility.sql','supabase/release/treasure-vault-terminal-catalog-compatibility.sql'])assert.throws(()=>createNativeRegisteredCiReplayControls({...constructorContext,inputManifest:{...captured,
+  for(const path of [workflowPath,...footerPaths,'supabase/release/tech-core-introductory-spells-citation-compatibility.sql','supabase/release/tech-core-general-spells-citation-compatibility.sql','supabase/release/treasure-vault-terminal-catalog-compatibility.sql'])assert.throws(()=>createNativeRegisteredCiReplayControls({...constructorContext,inputManifest:{...captured,
     manifest:{...captured.manifest,entries:captured.manifest.entries.filter(row=>row.path!==path)}}}),/must be captured/);
   assert.throws(()=>createNativeRegisteredCiReplayControls({...constructorContext,inputManifest:withText(footerPaths[0],captured.readRelative(footerPaths[0])+'\n',{recomputeHash:false})}));
   const requirementsPath='supabase/release/requirements.json';
@@ -183,7 +185,7 @@ test('Receipt models require fresh completed393-stage evidence and all nine nati
     row=>{row.alternate_fixture.stages[0].status=3;},row=>{row.alternate_fixture.stages[0].signal='SIGTERM';},row=>{row.alternate_fixture.stages[0].passed=false;},
     row=>{row.alternate_fixture.registered_ci_replays.stages[0].full_state_preserved=false;},row=>{row.alternate_fixture.registered_ci_replays.workflow.recipe_step_sha256='f'.repeat(64);},
     row=>{row.alternate_fixture.registered_ci_replays.workflow.sha256='f'.repeat(64);},row=>{row.alternate_fixture.registered_ci_replays.stages[0].ids=[''];},
-    row=>{row.alternate_fixture.registered_ci_replays.checks.find(check=>check.path==='supabase/release/tech-core-introductory-spells.sql').path='supabase/release/unreviewed.sql';},
+    row=>{row.alternate_fixture.registered_ci_replays.checks.find(check=>check.path==='supabase/release/tech-core-introductory-spells-citation-compatibility.sql').path='supabase/release/unreviewed.sql';},
     row=>{row.registered_ci_replays={passed:true};},row=>{row.alternate_fixture.cleaned_only_owned_containers_and_volumes=false;},
     row=>{row.fresh_native_ledger_verified.catalog=2348;},row=>{row.native_writer_controls.pop();},row=>{row.shared_helper_pending_alias_verified.both_terminals_complete=false;},
     row=>{delete row.shared_ancestries;},row=>{row.shared_ancestries.controls.pop();},row=>{row.shared_ancestries.controls[0].actual_exit_status=0;},row=>{row.shared_ancestries.controls[0].full_state_preserved=false;},row=>{row.shared_ancestries.migration_sha256='f'.repeat(64);},row=>{row.stages.find(stage=>stage.name==='shared-ancestries-exact-replay').sql_sha256='f'.repeat(64);},

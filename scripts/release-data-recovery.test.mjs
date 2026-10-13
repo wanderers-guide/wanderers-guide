@@ -84,7 +84,7 @@ test('normal release wiring preserves legacy requirements and uses the complete 
   const requirements = JSON.parse(await read('supabase/release/requirements.json'));
   assert.equal(requirements['20261001000000_repair_heal_companion.sql'].check, 'heal-companion.sql');
   assert.equal(requirements['20261011000000_restore_heal_companion.sql'].check, 'heal-companion-recovery.sql');
-  const check = 'tech-core-general-spells-incarnate-compatibility.sql';
+  const check = 'tech-core-general-spells-citation-compatibility.sql';
   assert.equal(requirements['20261008190000_tech_core_general_spells.sql'].check, check);
   assert.equal(requirements['20261011000100_incarnate_release_compatibility.sql'].check, check);
   for (const name of [
@@ -118,6 +118,9 @@ test('bounded construction model retains all original replay groups and adds exa
     '.github/workflows/e2e.yml',
     'supabase/release/war-of-immortals-index.sql',
     'supabase/release/war-of-immortals-index-regression.sql',
+    'supabase/release/tech-core-introductory-spells.sql',
+    'supabase/release/tech-core-general-spells.sql',
+    'supabase/release/tech-core-general-spells-incarnate-compatibility.sql',
     ...new Set(Object.values(requirements).map(({ check }) => 'supabase/release/' + check)),
   ])
     await capture(path);
@@ -175,7 +178,7 @@ test('bounded construction model retains all original replay groups and adds exa
   for (const path of [
     'supabase/release/heal-companion.sql',
     'supabase/release/heal-companion-recovery.sql',
-    'supabase/release/tech-core-general-spells-incarnate-compatibility.sql',
+    'supabase/release/tech-core-general-spells-citation-compatibility.sql',
   ])
     assert.equal(plan.checks.filter((check) => check.path === path).length, 1);
   for (const path of ['supabase/release/heal-companion.sql', 'supabase/release/heal-companion-recovery.sql']) {
