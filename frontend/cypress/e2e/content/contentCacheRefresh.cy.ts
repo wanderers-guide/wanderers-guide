@@ -33,9 +33,10 @@ describe('Published content cache refresh', () => {
           };
         })
     );
-  const waitForCache = (present: boolean, remaining = 40): Cypress.Chainable<unknown> =>
-    readCache(cacheKey).then(({ snapshot }) => {
-      if (Boolean(snapshot?.idStore?.get('ability-block')?.has(19873)) === present) return;
+  const waitForCache = (present: boolean, remaining = 40): Cypress.Chainable<{ snapshot: any }> =>
+    readCache(cacheKey).then<{ snapshot: any }>(({ snapshot }) => {
+      if (Boolean(snapshot?.idStore?.get('ability-block')?.has(19873)) === present)
+        return cy.wrap({ snapshot }, { log: false });
       expect(remaining, `content snapshot ${present ? 'persisted' : 'retired'}`).to.be.greaterThan(0);
       return cy.wait(250, { log: false }).then(() => waitForCache(present, remaining - 1));
     });
