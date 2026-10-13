@@ -12,7 +12,7 @@ import { useQuery } from '@tanstack/react-query';
 import DrawerLoadState from '@drawers/DrawerLoadState';
 import { AbilityBlock } from '@schemas/content';
 import { meetsPrerequisites } from '@variables/prereq-detection';
-import { ReactNode } from 'react';
+import { Fragment, ReactNode } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
 import { DisplayOperationSelectionOptions } from './ActionDrawer';
 import ShowInjectedText from '@drawers/ShowInjectedText';
@@ -116,10 +116,10 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
   if (prereqMet && prereqMet.meetMap.size > 0) {
     for (const [prereq, met] of prereqMet.meetMap.entries()) {
       if (!met) {
-        prereqUI.push(<>{prereq}</>);
+        prereqUI.push(prereq);
       } else if (met === 'FULLY') {
         prereqUI.push(
-          <>
+          <Fragment key={prereq}>
             <Text
               style={{
                 textDecoration: 'underline',
@@ -129,11 +129,11 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
             >
               {prereq}
             </Text>
-          </>
+          </Fragment>
         );
       } else if (met === 'PARTIALLY') {
         prereqUI.push(
-          <>
+          <Fragment key={prereq}>
             <Text
               style={{
                 textDecoration: 'underline',
@@ -143,11 +143,11 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
             >
               {prereq}
             </Text>
-          </>
+          </Fragment>
         );
       } else if (met === 'NOT') {
         prereqUI.push(
-          <>
+          <Fragment key={prereq}>
             <Text
               style={{
                 textDecoration: 'underline',
@@ -157,11 +157,11 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
             >
               {prereq}
             </Text>
-          </>
+          </Fragment>
         );
       } else if (met === 'UNKNOWN') {
         prereqUI.push(
-          <>
+          <Fragment key={prereq}>
             <Text
               style={{
                 textDecoration: 'underline',
@@ -171,12 +171,12 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
             >
               {prereq}
             </Text>
-          </>
+          </Fragment>
         );
       }
     }
   } else {
-    prereqUI.push(...(feat.prerequisites ?? []).map((prereq) => <>{prereq}</>));
+    prereqUI.push(...(feat.prerequisites ?? []));
   }
 
   const hasTopSection =
