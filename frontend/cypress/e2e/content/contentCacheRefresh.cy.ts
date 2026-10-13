@@ -17,24 +17,24 @@ describe('Published content cache refresh', () => {
   const unrelatedKey = 'unrelated-content-cache-fixture';
   const oldToken = '2026-10-12T12:00:00Z';
   const newToken = '2026-10-12T13:00:00Z';
-  const readCache = (key: string): Cypress.Chainable<any> =>
+  const readCache = (key: string): Cypress.Chainable<{ snapshot: any }> =>
     cy.window().then(
       (win) =>
-        new Cypress.Promise((resolve, reject) => {
+        new Cypress.Promise<{ snapshot: any }>((resolve, reject) => {
           const open = win.indexedDB.open('wg-content-cache', 1);
           open.onerror = () => reject(open.error);
           open.onsuccess = () => {
             const db = open.result;
             const tx = db.transaction('kv', 'readonly');
             const read = tx.objectStore('kv').get(key);
-            read.onsuccess = () => resolve(read.result);
+            read.onsuccess = () => resolve({ snapshot: read.result });
             read.onerror = () => reject(read.error);
             tx.oncomplete = () => db.close();
           };
         })
     );
   const waitForCache = (present: boolean, remaining = 40): Cypress.Chainable<unknown> =>
-    readCache(cacheKey).then((snapshot) => {
+    readCache(cacheKey).then(({ snapshot }) => {
       if (Boolean(snapshot?.idStore?.get('ability-block')?.has(19873)) === present) return;
       expect(remaining, `content snapshot ${present ? 'persisted' : 'retired'}`).to.be.greaterThan(0);
       return cy.wait(250, { log: false }).then(() => waitForCache(present, remaining - 1));
@@ -117,9 +117,9 @@ describe('Published content cache refresh', () => {
       );
       cy.wait('@lateFreshness', { responseTimeout: 30000 });
       waitForCache(false);
-      readCache(cacheKey).should('eq', undefined);
+      readCache(cacheKey).should('deep.equal', { snapshot: undefined });
       cy.contains('.mantine-Drawer-content', 'Cached description before publication.').should('exist');
-      readCache(unrelatedKey).should('deep.equal', { input: 'Retain unrelated storage' });
+      readCache(unrelatedKey).should('deep.equal', { snapshot: { input: 'Retain unrelated storage' } });
       cy.reload();
       cy.contains('.mantine-Drawer-content', 'Published', { timeout: 30000 }).should('exist');
       cy.contains('.mantine-Drawer-content', 'corrected description')
@@ -127,7 +127,7 @@ describe('Published content cache refresh', () => {
         .should('have.text', 'corrected description');
       cy.contains('.mantine-Drawer-content', 'Cached description before publication.').should('not.exist');
       cy.then(() => expect(freshReads, 'reload fetched the published row').to.be.greaterThan(0));
-      readCache(unrelatedKey).should('deep.equal', { input: 'Retain unrelated storage' });
+      readCache(unrelatedKey).should('deep.equal', { snapshot: { input: 'Retain unrelated storage' } });
       cy.document().should((document) =>
         expect(document.documentElement.scrollWidth).to.be.at.most(document.documentElement.clientWidth)
       );
