@@ -49,8 +49,28 @@ const norm = (value) =>
   String(value ?? "")
     .trim()
     .toLowerCase();
-const trimSQL = (value) =>
-  `pg_catalog.regexp_replace(coalesce(${value},''),'^[[:space:]]+|[[:space:]]+$','','g')`;
+// Match JavaScript trim exactly, including Unicode blanks, without locale-dependent SQL classes.
+export const NORMALIZATION_WHITESPACE = [
+  9,
+  10,
+  11,
+  12,
+  13,
+  32,
+  160,
+  5760,
+  ...Array.from({ length: 11 }, (_, index) => 8192 + index),
+  8232,
+  8233,
+  8239,
+  8287,
+  12288,
+  65279,
+];
+const sqlWhitespace = NORMALIZATION_WHITESPACE.map(
+  (value) => "\\" + value.toString(16).padStart(4, "0"),
+).join("");
+const trimSQL = (value) => `btrim(coalesce(${value},''),U&'${sqlWhitespace}')`;
 const normalizedSQL = (value) => `lower(${trimSQL(value)})`;
 const sources = (data) => [
   data?.content_source_id,

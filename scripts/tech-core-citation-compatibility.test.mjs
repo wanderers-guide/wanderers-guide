@@ -11,6 +11,7 @@ import {
   ORIGINALS,
   sha256,
   QUERY_FILES,
+  NORMALIZATION_WHITESPACE,
 } from "./tech-core-citation-compatibility.mjs";
 
 const directory = path.dirname(new URL(import.meta.url).pathname);
@@ -174,6 +175,48 @@ test("only three registered check paths change, retaining all108 requirements an
 });
 
 test("normalized identity, source/name and citation aliases reject in either citation state", () => {
+  assert.equal(new Set(NORMALIZATION_WHITESPACE).size, 25);
+  for (const code of NORMALIZATION_WHITESPACE) {
+    const blank = String.fromCodePoint(code);
+    assert.equal(blank.trim(), "");
+    for (const pair of plan.pairs) {
+      assert(
+        citationAliasMatch(
+          {
+            ...pair.before,
+            id: 999900,
+            uuid: 8000000000999900,
+            name: blank + pair.before.name + blank,
+          },
+          pair,
+        ),
+      );
+      assert(
+        pendingCitationMatch(
+          {
+            type: blank + "trait" + blank,
+            content_source_id: 579,
+            status: { state: blank + "PENDING" + blank },
+            data: {
+              name: blank + pair.before.name + blank,
+              source_id: blank + "900" + blank,
+            },
+          },
+          pair,
+        ),
+      );
+      assert(
+        !pendingCitationMatch(
+          {
+            type: "trait",
+            status: { state: blank + "APPROVED" + blank },
+            data: { ref_id: pair.before.id },
+          },
+          pair,
+        ),
+      );
+    }
+  }
   for (const pair of plan.pairs)
     for (const base of [pair.before, pair.after]) {
       assert.equal(citationAliasMatch(base, pair), false);

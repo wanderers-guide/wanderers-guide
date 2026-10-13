@@ -12,6 +12,51 @@ const repository =
   process.env.WG_CITATION_REPOSITORY ?? path.resolve(directory, "..");
 const prepared = await prepareNative(repository, undefined);
 
+test("owned fixture includes every exact introductory dependency without replacing general references", () => {
+  assert.deepEqual(
+    prepared.introductoryOnly
+      .map(({ table, row }) => table + ":" + row.id)
+      .sort(),
+    [
+      "ability_block:19632",
+      "ability_block:19722",
+      "ability_block:27519",
+      "ability_block:46744",
+      "trait:1508",
+      "trait:1582",
+    ].sort(),
+  );
+  assert(prepared.seed.startsWith(prepared.base.seed + "\n"));
+  assert.equal(prepared.base.general.references.length, 92);
+  const union = new Map(
+    prepared.base.general.references.map(({ table, row }) => [
+      table + ":" + row.id,
+      row,
+    ]),
+  );
+  for (const { table, row } of prepared.introductoryOnly) {
+    assert(!union.has(table + ":" + row.id));
+    union.set(table + ":" + row.id, row);
+    assert(
+      prepared.seed.includes(
+        JSON.stringify(
+          Object.fromEntries(
+            Object.entries(row).filter(([key]) => key !== "search_tsv"),
+          ),
+        ),
+      ),
+    );
+  }
+  const intro = JSON.parse(
+    prepared.candidate.files[
+      "supabase/release/tech-core-introductory-spells.sql"
+    ].split("$tech_core_spells$")[1],
+  );
+  assert.equal(union.size, 98);
+  for (const { table, row } of intro.references)
+    assert.deepEqual(union.get(table + ":" + row.id), row);
+});
+
 /** Lexical quote witness only, deliberately not a PostgreSQL syntax or behavior substitute. */
 function sqlTokens(sql) {
   const tokens = [];
@@ -59,9 +104,9 @@ function sqlTokens(sql) {
   return tokens;
 }
 
-test("focused actual-native recipe has200 controls, all16/92 dependency negatives and retained original controls", () => {
-  assert.equal(prepared.focused.length, 200);
-  assert.equal(prepared.cases.length, 692);
+test("focused actual-native recipe has205 controls, all16/92 dependency negatives and retained original controls", () => {
+  assert.equal(prepared.focused.length, 205);
+  assert.equal(prepared.cases.length, 697);
   assert.equal(
     prepared.focused.filter((control) =>
       control.name.startsWith("intro-dependency-"),
@@ -81,7 +126,7 @@ test("focused actual-native recipe has200 controls, all16/92 dependency negative
   );
   assert.equal(
     new Set(prepared.focused.map((control) => control.name)).size,
-    200,
+    205,
   );
   assert.equal(
     prepared.focused.filter((control) =>
@@ -122,6 +167,26 @@ test("focused actual-native recipe has200 controls, all16/92 dependency negative
       (control) =>
         control.name === "accepted-original-intro-only-without-Station",
     ).expected,
+  );
+  for (const label of ["NBSP", "BOM"])
+    assert.equal(
+      prepared.focused.find(
+        (control) => control.name === "successor-Unicode-pending-" + label,
+      ).expected,
+      false,
+    );
+  for (const status of ["APPROVED", "REJECTED"])
+    assert.equal(
+      prepared.focused.find(
+        (control) => control.name === "successor-Unicode-closed-" + status,
+      ).expected,
+      true,
+    );
+  assert.equal(
+    prepared.focused.find(
+      (control) => control.name === "successor-Unicode-alias-name",
+    ).expected,
+    false,
   );
 });
 

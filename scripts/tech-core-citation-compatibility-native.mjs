@@ -128,6 +128,34 @@ export async function prepareNative(repository, proposalPath) {
       "$tech_core_spells$",
     )[1],
   );
+  // The general fixture does not contain six dependencies unique to the first batch.
+  // Preserve both original full-row inventories, rather than treating missing rows as a query failure.
+  const referenceInventory = new Map(
+    base.general.references.map(({ table, row }) => [
+      table + ":" + row.id,
+      row,
+    ]),
+  );
+  const introductoryOnly = [];
+  for (const { table, row } of introSpec.references) {
+    const key = table + ":" + row.id;
+    const existing = referenceInventory.get(key);
+    if (existing)
+      assert.deepEqual(
+        existing,
+        row,
+        "Historical reference disagreement: " + key,
+      );
+    else {
+      referenceInventory.set(key, row);
+      introductoryOnly.push({ table, row });
+    }
+  }
+  assert.equal(introductoryOnly.length, 6);
+  const seed =
+    base.seed +
+    "\n" +
+    introductoryOnly.map(({ table, row }) => insert(table, row)).join("\n");
   for (const dependency of introSpec.references)
     add(
       "intro-dependency-" + dependency.table + dependency.row.id,
@@ -362,6 +390,52 @@ export async function prepareNative(repository, proposalPath) {
       }),
     false,
   );
+  const junk = candidate.pairs.find((pair) => pair.before.id === 5225);
+  for (const [label, blank] of [
+    ["NBSP", "\u00a0"],
+    ["BOM", "\ufeff"],
+  ])
+    add(
+      "successor-Unicode-pending-" + label,
+      "general",
+      cite +
+        "\n" +
+        queue(
+          {
+            name: blank + junk.before.name.toUpperCase() + blank,
+            source_id: blank + "900" + blank,
+          },
+          { content_source_id: 579, type: blank + "TRAIT" + blank },
+        ),
+      false,
+    );
+  for (const status of ["APPROVED", "REJECTED"])
+    add(
+      "successor-Unicode-closed-" + status,
+      "general",
+      cite +
+        "\n" +
+        queue(
+          { ref_id: 5225 },
+          {
+            status: { state: "\u00a0" + status + "\ufeff" },
+          },
+        ),
+      true,
+    );
+  add(
+    "successor-Unicode-alias-name",
+    "general",
+    cite +
+      "\n" +
+      insert("trait", {
+        ...junk.before,
+        id: 999902,
+        uuid: 8000000000999902,
+        name: "\u00a0JUNK\ufeff",
+      }),
+    false,
+  );
   // The real UNIQUE constraint rejects these inserts before a SELECT can run.
   // Keep the controls, but never misreport this as an evaluated release predicate.
   for (const control of cases)
@@ -448,6 +522,9 @@ export async function prepareNative(repository, proposalPath) {
       cases.some((control) => control.name === name),
       "Unknown focused recipe " + name,
     );
+  for (const control of cases)
+    if (control.name.startsWith("successor-Unicode-"))
+      focusedNames.add(control.name);
   const focused = cases.filter((control) => focusedNames.has(control.name));
   assert(focused.length >= 150 && focused.length <= 210);
   return {
@@ -455,7 +532,8 @@ export async function prepareNative(repository, proposalPath) {
     base,
     cases,
     focused,
-    seed: base.seed,
+    seed,
+    introductoryOnly,
     queries: {
       intro: candidate.intro.query,
       general: candidate.general.query,
