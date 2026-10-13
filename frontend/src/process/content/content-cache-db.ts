@@ -81,3 +81,24 @@ export async function idbDelete(key: string): Promise<void> {
     }
   });
 }
+
+/** Delete only a matching snapshot, checking and deleting in the same transaction. */
+export async function idbDeleteIf<T>(key: string, matches: (value: T) => boolean): Promise<void> {
+  const db = await openDb();
+  if (!db) return;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.get(key);
+      req.onsuccess = () => {
+        if (req.result !== undefined && matches(req.result as T)) store.delete(key);
+      };
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+      tx.onabort = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+}

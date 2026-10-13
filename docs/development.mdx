@@ -315,6 +315,10 @@ or filtered choices disappear from search results without another keystroke.
 Timing failures belong in the correctness suite when they can change results. Cache
 tests hold IndexedDB reads, writes and deletion independently: fresh downloads must
 continue, and a late cache cannot resurrect content a completed download says is absent.
+Delayed source-version checks also prove that a confirmed stale snapshot is retired for
+the next reload without changing the current calculation or character drafts. Conditional
+retirement checks and deletes in one IndexedDB transaction, preserves fresh replacements
+from other tabs, and refuses obsolete account or cache-generation verdicts.
 Worker tests include the production four-worker pool, queued companions, rapid owner
 changes, reversed completions and a worker failure. These are deterministic integration
 tests with controlled I/O boundaries; Cypress adds the actual browser, worker and API.
