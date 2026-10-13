@@ -321,7 +321,7 @@ test('all current complete dependencies and source headers remain exact, includi
     await readFile(new URL('../../supabase/release/requirements.json', import.meta.url), 'utf8')
   );
   assert.deepEqual(requirements[migrationPath], {
-    check: 'tech-core-general-spells-incarnate-compatibility.sql',
+    check: 'tech-core-general-spells-citation-compatibility.sql',
     order: 'before-functions',
   });
   const [before, , after] = migration.split('$tech_core_general$');

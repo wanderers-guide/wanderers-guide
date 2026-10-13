@@ -37,6 +37,8 @@ export async function captureNativeInputManifest({root}) {
   assert.deepEqual(requirements['20261008105800_treasure_vault_terminal_catalog_compatibility.sql'],{check:'treasure-vault-terminal-catalog-compatibility.sql',order:'before-functions'});
   await capture('supabase/release/shared-ancestries.json');
   await capture('supabase/release/tech-core-general-spells.sql'); // Retain the exact original predicate after compatibility registration.
+  await capture('supabase/release/tech-core-introductory-spells.sql');
+  await capture('supabase/release/tech-core-general-spells-incarnate-compatibility.sql');
   const registeredCiPaths=['.github/workflows/e2e.yml','supabase/release/war-of-immortals-index.sql','supabase/release/war-of-immortals-index-regression.sql'];
   for(const path of registeredCiPaths)await capture(path);
   const bootstrapPaths=['data/schema.sql','data/data.sql','data/auth-trigger.sql','supabase/seed.sql','docker/db-init/zzz-passwords.sh'];

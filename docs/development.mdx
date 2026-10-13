@@ -274,6 +274,14 @@ CI runs the focused native batch sequentially after the six-spell native suite.
 Neither local test plan nor native success establishes a complete book audit or
 production import; ordinary content-trigger and browser checks remain separate.
 
+The additive Tech Core Junk and Station citation-check contracts are included in
+`npm run test:release`. Run their focused construction tests with
+`node --test scripts/tech-core-citation-compatibility.test.mjs scripts/tech-core-citation-compatibility-native.test.mjs`.
+These preserve the complete historical queries and prepare the hosted native
+matrix without starting Docker. See [Release and recovery](/releases) for the
+exact paired citation states and the distinction between construction and SQL
+execution evidence.
+
 The broad PF2e matrix is part of `test:rules`: **1,211 comparisons across 469 engine
 calculations**, grouped into 49 named scenarios and a coverage guard. It loads four
 official sources from the checked-in dump, uses fixed content identities, and freezes

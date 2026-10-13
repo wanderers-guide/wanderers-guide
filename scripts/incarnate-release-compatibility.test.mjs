@@ -86,7 +86,7 @@ test("normal release wiring preserves legacy requirements and uses the complete 
   const requirements = JSON.parse(
     await read("supabase/release/requirements.json"),
   );
-  const check = "tech-core-general-spells-incarnate-compatibility.sql";
+  const check = "tech-core-general-spells-citation-compatibility.sql";
   assert.equal(
     requirements["20261008190000_tech_core_general_spells.sql"].check,
     check,
