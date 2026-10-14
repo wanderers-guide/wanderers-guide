@@ -291,7 +291,7 @@
               },
               "starfinder": {
                 "type": "object",
-                "description": "Optional equipment metadata. Final armor opts in with paired base_grade and base_upgrade_slots; printed stats and price remain the starting printing. Selected grade derives improvements without rewriting saved items. Built-in upgrades are fixed and do not consume available slots.",
+                "description": "Optional equipment metadata. Final armor and pregraded weapons opt in with paired base_grade and base_upgrade_slots; printed stats and price remain the starting printing. Selected grade derives only improvements above that baseline without rewriting saved items. Weapon Tracking follows the selected grade. Built-in upgrades are armor-only, fixed, and do not consume available slots.",
                 "dependentRequired": {
                   "base_grade": ["base_upgrade_slots"],
                   "base_upgrade_slots": ["base_grade"],

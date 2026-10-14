@@ -266,6 +266,31 @@ test('catalog prices follow their printing even while a Starfinder character is 
   );
 });
 
+test('all price consumers use only improvements above a weapon printing and preserve saved prices', () => {
+  for (const [grade, expected] of [
+    ['SUPERIOR', '15,002'],
+    ['ELITE', '25,002'],
+    ['PARAGON', '405,002'],
+  ]) {
+    for (const kind of ['catalog', 'owned', 'inventory']) {
+      const html = render(kind, {
+        sourceId: 900,
+        price: { sp: 15002 },
+        itemOverrides: {
+          group: 'WEAPON',
+          level: 10,
+          meta_data: {
+            damage: { dice: 2, die: 'd4', damageType: 'slashing' },
+            starfinder: { base_grade: 'SUPERIOR', base_upgrade_slots: 1, grade },
+          },
+        },
+        assertQueryEnabled: true,
+      });
+      assert.ok(html.includes(`${expected} credits`), `${kind}: ${grade}`);
+    }
+  }
+});
+
 test('all price consumers compose final armor grades with credits and preserve ordinary Pathfinder gold', () => {
   const gradedArmor = {
     group: 'ARMOR',
