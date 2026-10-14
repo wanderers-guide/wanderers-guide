@@ -6,6 +6,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createOwnedNativeFixture } from './treasure-vault-native-fixture.mjs';
 import { createNativeStopController, finalizeNativeStopReceipt } from './treasure-vault-native-stop.mjs';
+import { TECH_CORE_CONTENT_FIXTURE, readTechCoreContentDump } from './historical-content-fixture.mjs';
 
 const option = (name, fallback) =>
   process.argv.find((arg) => arg.startsWith('--' + name + '='))?.slice(name.length + 3) ?? fallback;
@@ -37,6 +38,7 @@ const inputPaths = [
 const inputs = new Map(
   await Promise.all(inputPaths.map(async (path) => [resolve(root, path), await readFile(resolve(root, path), 'utf8')]))
 );
+const historicalDump = await readTechCoreContentDump({ repositoryRoot: root });
 const introPath = resolve(root, inputPaths[5]);
 const introReleasePath = resolve(root, inputPaths[6]);
 const introMigration = inputs.get(introPath);
@@ -714,6 +716,7 @@ const plan = {
       'Negative missing-row cases briefly use SET LOCAL session_replication_role inside rollback-only owned transactions; normal mode is restored before the unchanged migration executes. This setup is not migration SQL.',
   },
   inputs: [...inputs].map(([path, text]) => ({ path, sha256: hash(text), bytes: Buffer.byteLength(text) })),
+  historical_git_inputs: [TECH_CORE_CONTENT_FIXTURE],
   controls: controls.map(({ name, phase, pattern, variant, setup, ...rest }) => ({
     name,
     phase,
@@ -792,6 +795,7 @@ const receipt = {
   access_review: plan.access_review,
   controls: [],
   inputs: plan.inputs,
+  historical_git_inputs: plan.historical_git_inputs,
 };
 const stop = createNativeStopController({ receipt });
 const fixture = createOwnedNativeFixture({
@@ -803,6 +807,8 @@ const fixture = createOwnedNativeFixture({
     assert.equal(typeof captured, 'string');
     return captured;
   },
+  contentDump: historicalDump,
+  contentDumpProvenance: TECH_CORE_CONTENT_FIXTURE,
   log: async (value) => {
     if (value.kind === 'owned-container-final-logs') (receipt.owned_container_final_logs ??= []).push(value);
     process.stdout.write(JSON.stringify(value) + '\n');

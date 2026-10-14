@@ -8,7 +8,7 @@ import { promisify } from 'node:util';
 import { deflateSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { HISTORICAL_CONTENT_FIXTURE, readHistoricalContentDump } from './historical-content-fixture.mjs';
+import { HISTORICAL_CONTENT_FIXTURE, TECH_CORE_CONTENT_FIXTURE, readHistoricalContentDump, readTechCoreContentDump } from './historical-content-fixture.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -35,9 +35,22 @@ test('a checkout without the pinned Git object fails instead of using current or
   try {
     await git('git', ['init', '--quiet', temporaryRoot]);
     await assert.rejects(readHistoricalContentDump({ repositoryRoot: temporaryRoot }), /historical content fixture/i);
+    await assert.rejects(readTechCoreContentDump({ repositoryRoot: temporaryRoot }), /historical content fixture/i);
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });
   }
+});
+
+test('Tech Core has its own verified pre-import catalog and never changes the Treasure Vault or current inputs', async () => {
+  const currentBefore = sha256(await readFile(join(root, 'data/data.sql')));
+  const text = await readTechCoreContentDump({ repositoryRoot: root });
+  assert.equal(Buffer.byteLength(text), 55105207);
+  assert.equal(sha256(text), '1681b2c6888ebf8f5f406af3f8fa259ba5078fde37cd56df85fb06ccedce2757');
+  assert.equal(TECH_CORE_CONTENT_FIXTURE.commit, '756a80011e1d0e3ac9db0e14a304d8cf0f1479a5');
+  assert.equal(Object.isFrozen(TECH_CORE_CONTENT_FIXTURE), true);
+  assert.notEqual(TECH_CORE_CONTENT_FIXTURE.blob, HISTORICAL_CONTENT_FIXTURE.blob);
+  assert.equal(sha256(await readHistoricalContentDump({ repositoryRoot: root })), HISTORICAL_CONTENT_FIXTURE.sha256);
+  assert.equal(sha256(await readFile(join(root, 'data/data.sql'))), currentBefore);
 });
 
 /** A separate Git object namespace can shadow objects without changing this checkout. */
@@ -71,5 +84,16 @@ test('a same-length corrupted Git blob cannot masquerade as the reviewed histori
     await mkdir(objectDirectory);
     await writeFile(join(objectDirectory, HISTORICAL_CONTENT_FIXTURE.blob.slice(2)), deflateSync(Buffer.concat([Buffer.from('blob ' + bytes.length + '\0'), bytes])));
     await assert.rejects(readHistoricalContentDump({ repositoryRoot: temporaryRoot }), /historical content fixture/i);
+  });
+});
+
+test('Tech Core rejects same-length Git corruption through the shared verified reader', async () => {
+  await withHistoricalObjects(async temporaryRoot => {
+    const bytes = Buffer.from(await readTechCoreContentDump({ repositoryRoot: root }));
+    bytes[0] = bytes[0] === 45 ? 46 : 45;
+    const objectDirectory = join(temporaryRoot, '.git/objects', TECH_CORE_CONTENT_FIXTURE.blob.slice(0, 2));
+    await mkdir(objectDirectory);
+    await writeFile(join(objectDirectory, TECH_CORE_CONTENT_FIXTURE.blob.slice(2)), deflateSync(Buffer.concat([Buffer.from('blob ' + bytes.length + '\0'), bytes])));
+    await assert.rejects(readTechCoreContentDump({ repositoryRoot: temporaryRoot }), /historical content fixture/i);
   });
 });

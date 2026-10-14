@@ -116,6 +116,7 @@ test('native inputs pin canonical JSON separately from physical SQL and retain a
   assert.equal(plan.spec_hashes.embedded_literal_sha256, plan.spec_hashes.canonical_compact_json_sha256);
   assert.equal(plan.shared_validator_sha256, '012b3cf842038fed5366ad475de75e72444f743f997cdd1e1c1343bedd67aa95');
   assert.equal(plan.inputs.length, 11);
+  assert.deepEqual(plan.historical_git_inputs.map(({commit,sha256}) => [commit,sha256]), [['756a80011e1d0e3ac9db0e14a304d8cf0f1479a5','1681b2c6888ebf8f5f406af3f8fa259ba5078fde37cd56df85fb06ccedce2757']]);
   for (const input of plan.inputs) {
     const bytes = await readFile(input.path);
     assert.equal(bytes.length, input.bytes);

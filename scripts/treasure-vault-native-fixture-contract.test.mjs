@@ -8,7 +8,7 @@ import {assertNativeRestoration,createNativePhaseRunner} from './treasure-vault-
 import {metadataAuthorityInspectionSql,assertMetadataAuthorityResult,assertMetadataRejectionSetup} from './treasure-vault-native-metadata.mjs';
 import {nativeStrictReleaseEdges} from './treasure-vault-native-negatives.mjs';
 import {disposeNativeOwnedContainer} from './treasure-vault-native-fixture.mjs';
-import {HISTORICAL_CONTENT_FIXTURE} from './historical-content-fixture.mjs';
+import {HISTORICAL_CONTENT_FIXTURE,TECH_CORE_CONTENT_FIXTURE} from './historical-content-fixture.mjs';
 
 test('historical native bootstrap rejects undeclared, partial or mutated fixture inputs before Docker startup',()=>{
   const construct=options=>createOwnedNativeFixture({root:'/unused-model-root',receipt:{},log:()=>assert.fail('No constructor commands'),
@@ -18,6 +18,8 @@ test('historical native bootstrap rejects undeclared, partial or mutated fixture
     {contentDumpProvenance:HISTORICAL_CONTENT_FIXTURE},
     {contentDump:'partial historical content',contentDumpProvenance:HISTORICAL_CONTENT_FIXTURE},
     {contentDump:'partial historical content',contentDumpProvenance:{...HISTORICAL_CONTENT_FIXTURE,commit:'0'.repeat(40)}},
+    {contentDump:'partial historical content',contentDumpProvenance:TECH_CORE_CONTENT_FIXTURE},
+    {contentDump:'partial historical content',contentDumpProvenance:{...TECH_CORE_CONTENT_FIXTURE,sha256:'0'.repeat(64)}},
   ])assert.throws(()=>construct(options),{name:'AssertionError'});
 });
 

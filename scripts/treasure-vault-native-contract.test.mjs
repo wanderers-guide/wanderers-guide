@@ -17,7 +17,7 @@ import {main as nativeMain,executeNativeBase} from './treasure-vault-native-safe
 import {nativeDiagnostic,createNativeReceiptLogger} from './treasure-vault-native-diagnostics.mjs';
 import {createAuthenticAlternateFixtureDriver} from './treasure-vault-native-alternate-fixture.mjs';
 import {nativeDatabaseResourceLimits} from './treasure-vault-native-fixture.mjs';
-import {HISTORICAL_CONTENT_FIXTURE,readHistoricalContentDump} from './historical-content-fixture.mjs';
+import {HISTORICAL_CONTENT_FIXTURE,TECH_CORE_CONTENT_FIXTURE,readHistoricalContentDump} from './historical-content-fixture.mjs';
 import './treasure-vault-native-fixture-contract.test.mjs';
 
 const sha=value=>createHash('sha256').update(value).digest('hex');
@@ -28,7 +28,7 @@ let diagnosticHistoricalDump;
 async function diagnosticHistoricalInput(verify) {
   diagnosticHistoricalDump??=readHistoricalContentDump({repositoryRoot:root});
   const dump=await diagnosticHistoricalDump;
-  return {manifest:{historical_git_inputs:[HISTORICAL_CONTENT_FIXTURE]},verify,readRelative:()=>'',readHistoricalBootstrap:()=>dump};
+  return {manifest:{historical_git_inputs:[HISTORICAL_CONTENT_FIXTURE,TECH_CORE_CONTENT_FIXTURE]},verify,readRelative:()=>'',readHistoricalBootstrap:()=>dump};
 }
 
 /** In-memory mutants originate only from actual checked-in inputs, never candidates or old receipts. */

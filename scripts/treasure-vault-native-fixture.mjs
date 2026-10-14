@@ -8,7 +8,7 @@ import {createOwnedUnixEngineWorker} from './treasure-vault-native-engine.mjs';
 import {nativeDatabaseResourceLimits,assertNativeDatabaseResourceLimits} from './treasure-vault-native-resources.mjs';
 export {nativeDatabaseResourceLimits,assertNativeDatabaseResourceLimits} from './treasure-vault-native-resources.mjs';
 import {nativeDiagnostic} from './treasure-vault-native-diagnostics.mjs';
-import {HISTORICAL_CONTENT_FIXTURE} from './historical-content-fixture.mjs';
+import {HISTORICAL_CONTENT_FIXTURE,TECH_CORE_CONTENT_FIXTURE} from './historical-content-fixture.mjs';
 
 const sha = value => createHash('sha256').update(value).digest('hex');
 const q = value => "'" + String(value).replaceAll("'", "''") + "'";
@@ -232,9 +232,11 @@ export function createOwnedNativeFixture({ root, receipt, log, bootstrapRead,con
   if(contentDump===undefined)assert.equal(contentDumpProvenance,undefined,'Current catalog bootstrap cannot claim historical provenance');
   else {
     assert.equal(typeof contentDump,'string','Historical bootstrap is explicit UTF8 content');
-    assert.deepEqual(contentDumpProvenance,HISTORICAL_CONTENT_FIXTURE,'Only the exact reviewed historical Git input may override the current catalog');
-    assert.equal(Buffer.byteLength(contentDump),HISTORICAL_CONTENT_FIXTURE.bytes,'Historical bootstrap exact byte length');
-    assert.equal(sha(contentDump),HISTORICAL_CONTENT_FIXTURE.sha256,'Historical bootstrap exact SHA256');
+    const expected=[HISTORICAL_CONTENT_FIXTURE,TECH_CORE_CONTENT_FIXTURE].find(fixture=>fixture.commit===contentDumpProvenance?.commit);
+    assert.ok(expected,'Only an explicitly reviewed historical Git input may override the current catalog');
+    assert.deepEqual(contentDumpProvenance,expected,'Historical provenance must match the complete reviewed descriptor');
+    assert.equal(Buffer.byteLength(contentDump),expected.bytes,'Historical bootstrap exact byte length');
+    assert.equal(sha(contentDump),expected.sha256,'Historical bootstrap exact SHA256');
   }
   const owner = randomUUID(), db = 'wg-tv-native-db-' + owner, auth = 'wg-tv-native-auth-' + owner;
   const password = randomBytes(24).toString('hex'), jwt = randomBytes(32).toString('hex');

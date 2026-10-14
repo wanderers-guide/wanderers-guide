@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {HISTORICAL_CONTENT_FIXTURE} from './historical-content-fixture.mjs';
+import {HISTORICAL_CONTENT_FIXTURE,TECH_CORE_CONTENT_FIXTURE} from './historical-content-fixture.mjs';
 
 const sha=text=>createHash('sha256').update(text).digest('hex');
 const migrationName=/^[0-9]{14}_[a-z0-9_]+\.sql$/;
@@ -73,7 +73,7 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
   assert.equal(typeof stage,'function');assert.equal(typeof checkpoint,'function');
   const manifest=inputManifest.manifest;
   assert.equal(manifest.schema,'wg-tv-native-checked-in-input-manifest-v2');
-  assert.deepEqual(manifest.historical_git_inputs,[HISTORICAL_CONTENT_FIXTURE]);
+  assert.deepEqual(manifest.historical_git_inputs,[HISTORICAL_CONTENT_FIXTURE,TECH_CORE_CONTENT_FIXTURE]);
   assert.equal(manifest.current_catalog_path,'data/data.sql');
   assert.equal(manifest.historical_bootstrap_mode,'pinned-git-predecessor');
   assert.equal(manifest.external_private_inputs.length,0);

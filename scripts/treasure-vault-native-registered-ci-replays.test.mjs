@@ -8,7 +8,7 @@ import {assertRegisteredCiRows,assertRegisteredCiWorkflowRecipe,createNativeRegi
 import {assertRequiredNativeEvidence,parseNativeOptions,REQUIRED_NATIVE_OBLIGATIONS} from './treasure-vault-native-safety.mjs';
 import {SOURCE_CORRECTION_CONTROL_NAMES,SOURCE_CORRECTION_REJECTION_CONTROL_NAMES} from './treasure-vault-native-source-corrections.mjs';
 import {SHARED_NATIVE_CONTROLS,SHARED_MOVE_PATH,sharedAncestryRows} from './treasure-vault-native-shared-ancestries.mjs';
-import {HISTORICAL_CONTENT_FIXTURE} from './historical-content-fixture.mjs';
+import {HISTORICAL_CONTENT_FIXTURE,TECH_CORE_CONTENT_FIXTURE} from './historical-content-fixture.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const sha=text=>createHash('sha256').update(text).digest('hex');
@@ -19,7 +19,7 @@ const forbidden=()=>{throw new Error('Constructor model cannot execute SQL, Dock
 const constructorContext={inputManifest:captured,fixture:{assertOwned:forbidden,snapshot:forbidden},stage:forbidden,receipt:{},checkpoint:forbidden};
 
 test('Historical bootstrap is a declared Git input distinct from current checked-in catalog bytes',()=>{
-  assert.deepEqual(captured.manifest.historical_git_inputs,[HISTORICAL_CONTENT_FIXTURE]);
+  assert.deepEqual(captured.manifest.historical_git_inputs,[HISTORICAL_CONTENT_FIXTURE,TECH_CORE_CONTENT_FIXTURE]);
   const historical=captured.readHistoricalBootstrap();
   const current=captured.readRelative('data/data.sql');
   assert.equal(Buffer.byteLength(historical),54853752);
@@ -62,7 +62,7 @@ function otherFamilyModel({proof,calls}) {
     actual_signal:null,no_transport_error:true,actual_exit_status:0,sql_kind:index===1?'privilege':'release',setup_login:index<2?'supabase_admin':'postgres',execution_role:index===1?'supabase_read_only_user':'postgres'}));
   const bootstrap={content_input:{kind:'pinned-git-predecessor',...HISTORICAL_CONTENT_FIXTURE},dump_sha256:HISTORICAL_CONTENT_FIXTURE.sha256};
   const station=captured.manifest.chronology.some(row=>row.path==='20261008190000_tech_core_general_spells.sql');
-  const prerequisite={passed:true,mode:'absent',keys:['content_source:900','trait:5225',...(station?['trait:5236']:[])],station_included:station,sql_sha256:'a'.repeat(64),explicit_ids:true,sequence_reset:false,trigger_suppression:false,absent_source_timestamp_restored:true,full_preexisting_tuple_and_sequence_guard:true,source:captured.manifest.entries.find(row=>row.path==='data/data.sql'),controls:[{name:'injected-late-rollback',passed:true,sql_sha256:'b'.repeat(64),actual_exit_status:3,actual_signal:null,sqlstate:'P0001',no_transport_error:true,full_state_preserved:true},{name:'exact-replay',passed:true,sql_sha256:'a'.repeat(64),actual_exit_status:0,actual_signal:null,no_transport_error:true,full_state_preserved:true}]};
+  const prerequisite={passed:true,mode:'absent',keys:['content_source:900','trait:5225',...(station?['trait:5236']:[])],station_included:station,sql_sha256:'a'.repeat(64),explicit_ids:true,sequence_reset:false,trigger_suppression:false,absent_source_timestamp_restored:true,full_preexisting_tuple_and_sequence_guard:true,source:{kind:'pinned-git-predecessor',...TECH_CORE_CONTENT_FIXTURE},controls:[{name:'injected-late-rollback',passed:true,sql_sha256:'b'.repeat(64),actual_exit_status:3,actual_signal:null,sqlstate:'P0001',no_transport_error:true,full_state_preserved:true},{name:'exact-replay',passed:true,sql_sha256:'a'.repeat(64),actual_exit_status:0,actual_signal:null,no_transport_error:true,full_state_preserved:true}]};
   const prerequisiteStage={name:'late-tech-core-prerequisites',sql_sha256:prerequisite.sql_sha256,status:0,signal:null,passed:true};
   const sharedSql=sha(captured.readRelative('supabase/migrations/'+SHARED_MOVE_PATH));
   const shared={passed:true,native_executed:true,original_ledger_preserved:true,owner_ids:sharedAncestryRows(JSON.parse(captured.readRelative('supabase/release/shared-ancestries.json'))).map(p=>[p.table,p.id]),migration_sha256:sharedSql,release_sql_sha256:sha(captured.readRelative('supabase/release/shared-ancestries.sql')),controls:SHARED_NATIVE_CONTROLS.map(name=>{const positive=['rival-count-with-real-feat','full-successor-preservation-and-replay'].includes(name);return{name,passed:true,full_state_preserved:true,no_transport_error:true,actual_signal:null,actual_exit_status:positive?0:3,...(positive?{}:{sqlstate:'P0001'})}})};

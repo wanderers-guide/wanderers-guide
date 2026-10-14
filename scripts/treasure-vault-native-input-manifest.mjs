@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFile,lstat,readdir} from 'node:fs/promises';
 import {resolve,relative} from 'node:path';
-import {HISTORICAL_CONTENT_FIXTURE,readHistoricalContentDump} from './historical-content-fixture.mjs';
+import {HISTORICAL_CONTENT_FIXTURE,TECH_CORE_CONTENT_FIXTURE,readHistoricalContentDump,readTechCoreContentDump} from './historical-content-fixture.mjs';
 
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const migrationName=/^[0-9]{14}_[a-z0-9_]+\.sql$/;
@@ -44,7 +44,8 @@ export async function captureNativeInputManifest({root}) {
   const bootstrapPaths=['data/schema.sql','data/data.sql','data/auth-trigger.sql','supabase/seed.sql','docker/db-init/zzz-passwords.sh'];
   for(const path of bootstrapPaths)await capture(path);
   const historicalDump=await readHistoricalContentDump({repositoryRoot:root});
-  const historicalGitInputs=[HISTORICAL_CONTENT_FIXTURE];
+  const techCoreDump=await readTechCoreContentDump({repositoryRoot:root});
+  const historicalGitInputs=[HISTORICAL_CONTENT_FIXTURE,TECH_CORE_CONTENT_FIXTURE];
   const migrations=[];
   for(const path of migrationFiles) {
     const sql=await capture('supabase/migrations/'+path);
@@ -96,6 +97,6 @@ export async function captureNativeInputManifest({root}) {
     assert.equal(current,expected,key+': actual fresh read must equal captured input bytes');
     return current;
   }
-  return {manifest,migrations,readText,readCurrentText,readHistoricalBootstrap:()=>historicalDump,
+  return {manifest,migrations,readText,readCurrentText,readHistoricalBootstrap:()=>historicalDump,readTechCoreBootstrap:()=>techCoreDump,
     readRelative:path=>{assert.ok(contents.has(path));return contents.get(path);},verify};
 }

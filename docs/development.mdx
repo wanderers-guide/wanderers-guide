@@ -228,6 +228,13 @@ the pinned commit declared in `scripts/historical-content-fixture.mjs`, as CI do
 Missing or changed historical inputs fail the test. Current catalog behavior and
 historical migration coverage are separate requirements.
 
+Tech Core import tests use a second pinned predecessor, declared in the same
+historical reader: commit `756a80011e1d0e3ac9db0e14a304d8cf0f1479a5`. Fetch it
+alongside the Treasure Vault predecessor before running the native contracts.
+Both snapshots verify commit, blob, byte length and SHA-256. The Treasure Vault
+bootstrap is unchanged; only its late Tech Core prerequisites use the newer
+pre-import snapshot. The current catalog remains a separately captured input.
+
 Run `node --import=tsx --test scripts/list-id-conditionals.test.mjs` from `frontend`
 for numeric content-ID membership, unchanged name and mode comparisons, and conditional
 focus grants through character reload, branch replacement, and removal.
@@ -260,7 +267,7 @@ separately exercises content triggers; this native fixture disables those trigge
 Tech Core's next 76 general spells have a separate finite schema, helper, rendered-field,
 and ten-occurrence indexing regression suite:
 `node --import=tsx --test scripts/tech-core-general-spells.test.mjs` from `frontend`.
-The native safety runner uses the current catalog and applies the six introductory
+The native safety runner uses the pinned Tech Core predecessor and applies the six introductory
 spells as prerequisites. To construct its plan without starting containers, run
 `node scripts/tech-core-general-spells-native.mjs --output=/absolute/private/evidence-directory`.
 Add `--execute-owned-native` for its focused isolated PostgreSQL checks; only the
@@ -613,6 +620,15 @@ starts before the repairs so insertion, allocation, rollback, and own-stage chec
 remain exercised. The ordinary E2E job instead starts from the current dump, installs
 the actual content triggers, and runs the complete chronology and registered replays.
 Both modes must pass.
+
+When seeding the current Docker catalog, the two original Tech Core spell imports
+first run their complete registered citation-compatibility checks in a read-only
+transaction. An exact successful result preserves the already imported batch.
+A false result still runs the unchanged original migration, which either imports
+an absent batch or rejects incompatible content. SQL errors, empty output, extra
+rows and unexpected check IDs stop bootstrap. Other migrations execute normally.
+Run `node --test scripts/content-bootstrap.test.mjs` for the shell boundary checks;
+these do not start Docker and do not replace the native PostgreSQL checks.
 
 The historical native fixture adds
 only the exact captured Tech Core source and Junk trait immediately before the
