@@ -27,6 +27,11 @@ const batches = [
     "tech-core-general-spells-citation-compatibility.sql",
     "tech-core-general-spells",
   ],
+  [
+    "20261011000100_incarnate_release_compatibility.sql",
+    "tech-core-general-spells-citation-compatibility.sql",
+    "tech-core-general-spells",
+  ],
 ];
 
 /** Exercise the actual bootstrap shell script with a logging Docker boundary, never a database. */
@@ -124,7 +129,7 @@ test("current compatible Tech Core batches are verified read-only instead of rep
   const checks = calls.filter(({ sql }) =>
     sql.includes("tc_citation_choices as materialized"),
   );
-  assert.equal(checks.length, 2);
+  assert.equal(checks.length, 3);
   for (const [index, { args, sql }] of checks.entries()) {
     assert.ok(args.includes("-q") && args.includes("-At"));
     const completeQuery = await readFile(
@@ -162,14 +167,15 @@ test("a false compatibility result cannot bypass a failure in the original migra
 test("an absent batch uses the unchanged original migration and must then pass the complete compatibility check", async () => {
   const { code, calls, originals } = await bootstrap("absent");
   assert.equal(code, 0);
-  for (const original of originals)
+  for (const original of originals.slice(0, 2))
     assert.equal(calls.filter(({ sql }) => sql === original).length, 1);
   assert.equal(
     calls.filter(({ sql }) =>
       sql.includes("tc_citation_choices as materialized"),
     ).length,
-    4,
+    5,
   );
+  assert.equal(calls.some(({sql}) => sql === originals[2]), false, 'The obsolete guard is replaced only by its complete registered successor check');
 });
 
 for (const mode of ["f", "after-error", "after-malformed"]) {

@@ -116,7 +116,7 @@ for migration in "$SCRIPT_DIR"/../supabase/migrations/*.sql; do
     20261008160000_tech_core_introductory_spells.sql)
       check_file='tech-core-introductory-spells-citation-compatibility.sql'
       check_id='tech-core-introductory-spells' ;;
-    20261008190000_tech_core_general_spells.sql)
+    20261008190000_tech_core_general_spells.sql|20261011000100_incarnate_release_compatibility.sql)
       check_file='tech-core-general-spells-citation-compatibility.sql'
       check_id='tech-core-general-spells' ;;
   esac

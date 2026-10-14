@@ -278,6 +278,9 @@ import, runtime binding, complete readback, rollback and no-op replay checks.
 it is not the CI default. Both modes retain exact source and reference guards,
 including Tech Core's null source dependency and Tech's current creature-trait flag.
 CI runs the focused native batch sequentially after the six-spell native suite.
+Both modes also run 20 rollback-only compatibility cases for Tech Core's empty
+dependency array. They retain both exact Incarnate and paired citation states,
+and reject nonempty dependencies, changed headers or content, and pending edits.
 Neither local test plan nor native success establishes a complete book audit or
 production import; ordinary content-trigger and browser checks remain separate.
 
@@ -627,7 +630,10 @@ transaction. An exact successful result preserves the already imported batch.
 A false result still runs the unchanged original migration, which either imports
 an absent batch or rejects incompatible content. Its complete registered check
 must then pass before setup continues. SQL errors, empty output, extra
-rows and unexpected check IDs stop bootstrap. Other migrations execute normally.
+rows and unexpected check IDs stop bootstrap. The later Incarnate guard and its
+two CI replay passes use the same complete registered read-only successor check.
+Other migrations execute normally. Only Tech Core's `NULL` and empty-array
+dependency representations are equivalent; nonempty dependencies still fail.
 Run `node --test scripts/content-bootstrap.test.mjs` for the shell boundary checks;
 these do not start Docker and do not replace the native PostgreSQL checks.
 

@@ -50,7 +50,7 @@ function executionModel({badResultAt=null,badStdoutAt=null,mutateSnapshotAt=null
     if(calls.length===failStageAt)throw new Error('Model native transport failure');
     calls.push({name,sql,status:0,signal:null,passed:true,sql_sha256:sha(sql)});
     if(calls.length===badStdoutAt?.at)return badStdoutAt.stdout;
-    return calls.length===badResultAt?'check|f':sql.startsWith('BEGIN READ ONLY;')||name.endsWith('war-index-regression-footer')?'check|t':'';
+    return calls.length===badResultAt?'check|f':name.endsWith('20261011000100_incarnate_release_compatibility.sql')?'tech-core-general-spells|t':sql.startsWith('BEGIN READ ONLY;')||name.endsWith('war-index-regression-footer')?'check|t':'';
   };
   const family=createNativeRegisteredCiReplayControls({inputManifest,fixture,stage,receipt});
   return{family,receipt,calls};
@@ -152,9 +152,10 @@ test('Orchestration model sends exact393 statements in CI order; footer uses dir
   assert.equal(proof.passed,true);assert.equal(model.calls.length,393);
   const expected=[];
   const verify=round=>{for(const check of model.family.plan.checks)expected.push({name:'registered-ci:verify-'+round+':'+check.path,sql:'BEGIN READ ONLY;\n'+captured.readRelative(check.path)+'\nROLLBACK;\n'});};
-  verify(0);for(const pass of [1,2]){for(const replay of model.family.plan.replays)expected.push({name:'registered-ci:pass-'+pass+':'+replay.path,sql:captured.readRelative('supabase/migrations/'+replay.path)});verify(pass);}
+  verify(0);for(const pass of [1,2]){for(const replay of model.family.plan.replays)expected.push({name:'registered-ci:pass-'+pass+':'+replay.path,sql:replay.path==='20261011000100_incarnate_release_compatibility.sql'?'BEGIN READ ONLY;\n'+captured.readRelative('supabase/release/tech-core-general-spells-citation-compatibility.sql')+'\nROLLBACK;\n':captured.readRelative('supabase/migrations/'+replay.path)});verify(pass);}
   expected.push({name:'registered-ci:war-index-regression-footer',sql:footerPaths.map(path=>captured.readRelative(path)).join('')});
   assert.deepEqual(model.calls.map(({name,sql})=>({name,sql})),expected);
+  assert.equal(proof.stages.filter(row=>row.compatibility_check&&row.read_only&&row.ids.join()==='tech-core-general-spells').length,2);
   assert.equal(proof.stages.at(-1).read_only,false);assert.equal(proof.stages.at(-1).schema_temp_scope,true);
   assert.equal(proof.stages.at(-1).mutations_rolled_back,true);
   await assert.rejects(()=>model.family.run(),/execute once/);
@@ -186,6 +187,9 @@ test('Receipt models require fresh completed393-stage evidence and all nine nati
     row=>{row.alternate_fixture.registered_ci_replays.stages[0].full_state_preserved=false;},row=>{row.alternate_fixture.registered_ci_replays.workflow.recipe_step_sha256='f'.repeat(64);},
     row=>{row.alternate_fixture.registered_ci_replays.workflow.sha256='f'.repeat(64);},row=>{row.alternate_fixture.registered_ci_replays.stages[0].ids=[''];},
     row=>{row.alternate_fixture.registered_ci_replays.checks.find(check=>check.path==='supabase/release/tech-core-introductory-spells-citation-compatibility.sql').path='supabase/release/unreviewed.sql';},
+    row=>{delete row.alternate_fixture.registered_ci_replays.stages.find(stage=>stage.compatibility_check).compatibility_check;},
+    row=>{row.alternate_fixture.registered_ci_replays.stages.find(stage=>stage.compatibility_check).read_only=false;},
+    row=>{row.alternate_fixture.registered_ci_replays.stages.find(stage=>stage.compatibility_check).ids=['unexpected'];},
     row=>{row.registered_ci_replays={passed:true};},row=>{row.alternate_fixture.cleaned_only_owned_containers_and_volumes=false;},
     row=>{row.fresh_native_ledger_verified.catalog=2348;},row=>{row.native_writer_controls.pop();},row=>{row.shared_helper_pending_alias_verified.both_terminals_complete=false;},
     row=>{delete row.shared_ancestries;},row=>{row.shared_ancestries.controls.pop();},row=>{row.shared_ancestries.controls[0].actual_exit_status=0;},row=>{row.shared_ancestries.controls[0].full_state_preserved=false;},row=>{row.shared_ancestries.migration_sha256='f'.repeat(64);},row=>{row.stages.find(stage=>stage.name==='shared-ancestries-exact-replay').sql_sha256='f'.repeat(64);},

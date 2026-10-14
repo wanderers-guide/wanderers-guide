@@ -73,7 +73,9 @@ The two Tech Core spell imports first verify already imported batches with their
 complete registered read-only compatibility checks. Exact success preserves the
 current batch; otherwise the original migration and its complete post-import
 compatibility check must both succeed. Invalid or
-failed check output stops setup. No check is bypassed for an unexpected catalog.
+failed check output stops setup. The later Incarnate guard uses the same complete
+registered check. Tech Core accepts only `NULL` or an empty dependency array;
+nonempty dependencies and unrelated changes still fail.
 
 If an existing installation reports **User not found** after login, verify that
 `data/auth-trigger.sql` is installed. The trigger creates profiles for new accounts.

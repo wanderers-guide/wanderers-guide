@@ -161,6 +161,9 @@ export function assertRequiredNativeEvidence(receipt) {
   assert.deepEqual(ci.stages.filter(row=>row.kind==='release').map(row=>row.round),[...Array(70).fill(0),...Array(70).fill(1),...Array(70).fill(2)]);
   assert.ok(ci.stages.filter(row=>row.kind==='release').every(row=>row.read_only===true&&row.strict_boolean_checks>0&&Array.isArray(row.ids)&&row.ids.length===row.strict_boolean_checks&&row.ids.every(id=>typeof id==='string'&&id.trim())));
   assert.deepEqual(ci.stages.filter(row=>row.kind==='migration').map(row=>row.pass),[...Array(91).fill(1),...Array(91).fill(2)]);
+  const compatibleGuard=ci.stages.filter(row=>row.path==='20261011000100_incarnate_release_compatibility.sql');
+  assert.equal(compatibleGuard.length,2);
+  for(const row of compatibleGuard){assert.equal(row.compatibility_check,'supabase/release/tech-core-general-spells-citation-compatibility.sql');assert.equal(row.read_only,true);assert.deepEqual(row.ids,['tech-core-general-spells']);assert.equal(row.strict_boolean_checks,1);}
   assert.deepEqual(ci.stages.filter(row=>row.kind==='footer').map(row=>({paths:row.paths,read_only:row.read_only,schema_temp_scope:row.schema_temp_scope,mutations_rolled_back:row.mutations_rolled_back})),
     [{paths:['supabase/release/war-of-immortals-index.sql','supabase/release/war-of-immortals-index-regression.sql'],read_only:false,schema_temp_scope:true,mutations_rolled_back:true}]);
   assert.equal(receipt.registered_ci_replays,undefined,'Generic CI replay runs only once, in the positive-only alternate fixture');

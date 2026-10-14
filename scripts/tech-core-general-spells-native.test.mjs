@@ -115,7 +115,7 @@ test('native inputs pin canonical JSON separately from physical SQL and retain a
   );
   assert.equal(plan.spec_hashes.embedded_literal_sha256, plan.spec_hashes.canonical_compact_json_sha256);
   assert.equal(plan.shared_validator_sha256, '012b3cf842038fed5366ad475de75e72444f743f997cdd1e1c1343bedd67aa95');
-  assert.equal(plan.inputs.length, 11);
+  assert.equal(plan.inputs.length, 13);
   assert.deepEqual(plan.historical_git_inputs.map(({commit,sha256}) => [commit,sha256]), [['756a80011e1d0e3ac9db0e14a304d8cf0f1479a5','1681b2c6888ebf8f5f406af3f8fa259ba5078fde37cd56df85fb06ccedce2757']]);
   for (const input of plan.inputs) {
     const bytes = await readFile(input.path);
@@ -130,6 +130,18 @@ test('native inputs pin canonical JSON separately from physical SQL and retain a
     await readFile(runner, 'utf8'),
     /\/private\/tmp|\/Users\/|PREPARATION-REPORT|general-spells\.spec\.json/
   );
+});
+
+test('both native modes execute all20 empty-source compatibility cases after restoring the full original fixture', async () => {
+  const controls = plans.get('focused').empty_source_compatibility;
+  assert.deepEqual(controls, plans.get('exhaustive').empty_source_compatibility);
+  assert.equal(controls.length, 20);
+  assert.equal(controls.filter(({expected}) => expected).length, 8);
+  assert.equal(controls.filter(({expected}) => !expected).length, 12);
+  const implementation = await readFile(runner, 'utf8');
+  assert.ok(implementation.indexOf('const emptySourceBaseline = fixture.snapshot();') > implementation.indexOf('receipt.incarnate_compatibility.restored_original_full_fixture = true;'));
+  assert.match(implementation, /assert\.deepEqual\(fixture\.snapshot\(\), emptySourceBaseline/);
+  assert.match(implementation, /receipt\.empty_source_compatibility\.controls\.length, 20/);
 });
 
 test('CI retains six-spell checks and runs focused general safety sequentially without broad timeout changes', async () => {

@@ -132,7 +132,13 @@ jobs:
           verify_registered
           for pass in 1 2; do
             for migration in supabase/migrations/20260927*.sql supabase/migrations/20260928*.sql supabase/migrations/20260929*.sql supabase/migrations/20260930*.sql supabase/migrations/20261001*.sql supabase/migrations/20261002*.sql supabase/migrations/20261011000000_restore_heal_companion.sql supabase/migrations/20261011000100_incarnate_release_compatibility.sql; do
-              docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"
+              if [ "${migration##*/}" = '20261011000100_incarnate_release_compatibility.sql' ]; then
+                { printf 'BEGIN READ ONLY;\n'; cat supabase/release/tech-core-general-spells-citation-compatibility.sql; printf '\nROLLBACK;\n'; } \
+                  | docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -qAt -f - \
+                  | awk -F'|' 'NF != 2 || $1 != "tech-core-general-spells" || $2 != "t" { failed = 1 } END { if (NR != 1) failed = 1; exit failed }'
+              else
+                docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"
+              fi
             done
             verify_registered
           done

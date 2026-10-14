@@ -156,6 +156,16 @@ test("all historical query clauses and both exact Incarnate choices are retained
   );
 });
 
+test("only Tech Core's two empty dependency representations are compatible", () => {
+  assert.match(plan.intro.transformed, /coalesce\(cardinality\(s\.required_content_sources\),0\)=0/);
+  assert.equal(plan.general.substitutions.length, 2);
+  for (const entry of plan.general.substitutions) {
+    assert.match(entry.transformed, /\{sources,6,required_content_sources\}/);
+    assert.match(entry.transformed, /required_content_sources='\{\}'::bigint\[\]/);
+    assert.match(entry.transformed, /then '\[\]'::jsonb else 'null'::jsonb end/);
+  }
+});
+
 test("only three registered check paths change, retaining all108 requirements and70 distinct full checks", () => {
   const old = structuredClone(plan.original_requirements);
   assert.equal(Object.keys(plan.requirements).length, 108);
