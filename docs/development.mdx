@@ -625,7 +625,8 @@ When seeding the current Docker catalog, the two original Tech Core spell import
 first run their complete registered citation-compatibility checks in a read-only
 transaction. An exact successful result preserves the already imported batch.
 A false result still runs the unchanged original migration, which either imports
-an absent batch or rejects incompatible content. SQL errors, empty output, extra
+an absent batch or rejects incompatible content. Its complete registered check
+must then pass before setup continues. SQL errors, empty output, extra
 rows and unexpected check IDs stop bootstrap. Other migrations execute normally.
 Run `node --test scripts/content-bootstrap.test.mjs` for the shell boundary checks;
 these do not start Docker and do not replace the native PostgreSQL checks.

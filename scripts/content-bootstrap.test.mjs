@@ -77,11 +77,14 @@ if (process.env.WG_BOOTSTRAP_MODE === 'migration-error' && sql.includes('do $imp
 if (sql.includes('tc_citation_choices as materialized')) {
   const id = sql.includes('six-spell batch') ? 'tech-core-introductory-spells' : 'tech-core-general-spells';
   const mode = process.env.WG_BOOTSTRAP_MODE;
+  const reads = fs.readFileSync(process.env.WG_BOOTSTRAP_CALLS, 'utf8').trim().split('\\n').map(JSON.parse)
+    .filter(entry => entry.sql.includes('tc_citation_choices as materialized') && entry.sql.includes('six-spell batch') === sql.includes('six-spell batch')).length;
+  if (mode === 'after-error' && reads > 1) process.exit(3);
   if (mode === 'error') process.exit(3);
   if (mode === 'empty') process.exit(0);
-  if (mode === 'malformed') process.stdout.write('unexpected|t\\n');
+  if (mode === 'malformed' || (mode === 'after-malformed' && reads > 1)) process.stdout.write('unexpected|t\\n');
   else if (mode === 'multiple') process.stdout.write(id + '|t\\n' + id + '|t\\n');
-  else process.stdout.write(id + '|' + (mode === 'migration-error' ? 'f' : mode) + '\\n');
+  else process.stdout.write(id + '|' + (mode === 'absent' ? (reads === 1 ? 'f' : 't') : ['migration-error','after-error','after-malformed'].includes(mode) ? 'f' : mode) + '\\n');
 }
 `,
       { mode: 0o755 },
@@ -156,8 +159,8 @@ test("a false compatibility result cannot bypass a failure in the original migra
   );
 });
 
-test("an absent or incompatible batch still goes through the complete unchanged original migration", async () => {
-  const { code, calls, originals } = await bootstrap("f");
+test("an absent batch uses the unchanged original migration and must then pass the complete compatibility check", async () => {
+  const { code, calls, originals } = await bootstrap("absent");
   assert.equal(code, 0);
   for (const original of originals)
     assert.equal(calls.filter(({ sql }) => sql === original).length, 1);
@@ -165,9 +168,21 @@ test("an absent or incompatible batch still goes through the complete unchanged 
     calls.filter(({ sql }) =>
       sql.includes("tc_citation_choices as materialized"),
     ).length,
-    2,
+    4,
   );
 });
+
+for (const mode of ["f", "after-error", "after-malformed"]) {
+  test(`the old migration cannot bypass ${mode} post-import compatibility`, async () => {
+    const { code, calls, originals } = await bootstrap(mode);
+    assert.notEqual(code, 0);
+    assert.equal(calls.filter(({ sql }) => sql === originals[0]).length, 1);
+    assert.equal(
+      calls.some(({ sql }) => sql === originals[1]),
+      false,
+    );
+  });
+}
 
 for (const mode of ["error", "empty", "malformed", "multiple"]) {
   test(`bootstrap fails closed on ${mode} compatibility output`, async () => {

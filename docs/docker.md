@@ -71,7 +71,8 @@ registering an account or creating characters.
 
 The two Tech Core spell imports first verify already imported batches with their
 complete registered read-only compatibility checks. Exact success preserves the
-current batch; otherwise the original migration must still succeed. Invalid or
+current batch; otherwise the original migration and its complete post-import
+compatibility check must both succeed. Invalid or
 failed check output stops setup. No check is bypassed for an unexpected catalog.
 
 If an existing installation reports **User not found** after login, verify that

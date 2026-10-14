@@ -25,6 +25,10 @@ run_psql() {
   docker exec -i "$CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1
 }
 
+run_content_check() {
+  { printf 'BEGIN READ ONLY;\n'; cat "$SCRIPT_DIR/../supabase/release/$1"; printf '\nROLLBACK;\n'; } | run_psql_quiet -At
+}
+
 # 1. The dump references a 'github' CI role; create it if missing so GRANT
 #    statements in the dump don't fail.
 echo "==> Ensuring 'github' role exists"
@@ -117,7 +121,7 @@ for migration in "$SCRIPT_DIR"/../supabase/migrations/*.sql; do
       check_id='tech-core-general-spells' ;;
   esac
   if [ -n "$check_file" ]; then
-    check_result=$({ printf 'BEGIN READ ONLY;\n'; cat "$SCRIPT_DIR/../supabase/release/$check_file"; printf '\nROLLBACK;\n'; } | run_psql_quiet -At)
+    check_result=$(run_content_check "$check_file")
     case "$check_result" in
       "$check_id|t") continue ;;
       "$check_id|f") ;; # The unchanged migration handles absent imports or refuses incompatible data.
@@ -125,6 +129,13 @@ for migration in "$SCRIPT_DIR"/../supabase/migrations/*.sql; do
     esac
   fi
   run_psql_quiet < "$migration"
+  if [ -n "$check_file" ]; then
+    check_result=$(run_content_check "$check_file")
+    if [ "$check_result" != "$check_id|t" ]; then
+      echo "Error: Tech Core compatibility check failed after $(basename "$migration")" >&2
+      exit 1
+    fi
+  fi
 done
 
 echo "==> Done. Project schema and content data loaded."
