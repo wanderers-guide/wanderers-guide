@@ -13,7 +13,7 @@ import { createAuthenticDualExporter } from './treasure-vault-native-ledger.mjs'
 import { createNativeStopController, finalizeNativeStopReceipt } from './treasure-vault-native-stop.mjs';
 import { captureNativeInputManifest } from './treasure-vault-native-input-manifest.mjs';
 import { createNativeTechCorePrerequisites, TECH_CORE_PREREQUISITE_BOUNDARY } from './treasure-vault-native-tech-core-prerequisites.mjs';
-import { HISTORICAL_CONTENT_FIXTURE } from './historical-content-fixture.mjs';
+import { HISTORICAL_CONTENT_FIXTURE, TECH_CORE_CONTENT_FIXTURE } from './historical-content-fixture.mjs';
 import { createHistoricalPositiveProjections } from './treasure-vault-native-positive-projections.mjs';
 import { createHistorical023FreshImportCapsule } from './treasure-vault-native-fresh-equipment.mjs';
 import { createSharedHelperPendingAliasControls } from './treasure-vault-native-pending-aliases.mjs';
@@ -54,7 +54,7 @@ function requiredNativeObligations(releaseScope){
 /** Fail closed unless every required fresh native family actually completed. */
 export function assertRequiredNativeEvidence(receipt) {
   assertSharedNativeEvidence(receipt);
-  assert.deepEqual(receipt.input_manifest.historical_git_inputs,[HISTORICAL_CONTENT_FIXTURE]);
+  assert.deepEqual(receipt.input_manifest.historical_git_inputs,[HISTORICAL_CONTENT_FIXTURE,TECH_CORE_CONTENT_FIXTURE]);
   for(const fixtureReceipt of [receipt,receipt.alternate_fixture]) {
     assert.deepEqual(fixtureReceipt?.bootstrap?.content_input,{kind:'pinned-git-predecessor',...HISTORICAL_CONTENT_FIXTURE});
     assert.equal(fixtureReceipt.bootstrap.dump_sha256,HISTORICAL_CONTENT_FIXTURE.sha256);
@@ -68,7 +68,7 @@ export function assertRequiredNativeEvidence(receipt) {
     assert.equal(prerequisite.trigger_suppression,false);
     assert.equal(prerequisite.absent_source_timestamp_restored,prerequisite.mode==='absent');
     assert.equal(prerequisite.full_preexisting_tuple_and_sequence_guard,true);
-    assert.deepEqual(prerequisite.source,receipt.input_manifest.entries.find(row=>row.path==='data/data.sql'));
+    assert.deepEqual(prerequisite.source,{kind:'pinned-git-predecessor',...TECH_CORE_CONTENT_FIXTURE});
     const stages=fixtureReceipt.stages.filter(row=>row.name==='late-tech-core-prerequisites');
     assert.equal(stages.length,1);assert.equal(stages[0].passed,true);
     assert.equal(stages[0].status,0);assert.equal(stages[0].signal,null);
@@ -161,6 +161,9 @@ export function assertRequiredNativeEvidence(receipt) {
   assert.deepEqual(ci.stages.filter(row=>row.kind==='release').map(row=>row.round),[...Array(70).fill(0),...Array(70).fill(1),...Array(70).fill(2)]);
   assert.ok(ci.stages.filter(row=>row.kind==='release').every(row=>row.read_only===true&&row.strict_boolean_checks>0&&Array.isArray(row.ids)&&row.ids.length===row.strict_boolean_checks&&row.ids.every(id=>typeof id==='string'&&id.trim())));
   assert.deepEqual(ci.stages.filter(row=>row.kind==='migration').map(row=>row.pass),[...Array(91).fill(1),...Array(91).fill(2)]);
+  const compatibleGuard=ci.stages.filter(row=>row.path==='20261011000100_incarnate_release_compatibility.sql');
+  assert.equal(compatibleGuard.length,2);
+  for(const row of compatibleGuard){assert.equal(row.compatibility_check,'supabase/release/tech-core-general-spells-citation-compatibility.sql');assert.equal(row.read_only,true);assert.deepEqual(row.ids,['tech-core-general-spells']);assert.equal(row.strict_boolean_checks,1);}
   assert.deepEqual(ci.stages.filter(row=>row.kind==='footer').map(row=>({paths:row.paths,read_only:row.read_only,schema_temp_scope:row.schema_temp_scope,mutations_rolled_back:row.mutations_rolled_back})),
     [{paths:['supabase/release/war-of-immortals-index.sql','supabase/release/war-of-immortals-index-regression.sql'],read_only:false,schema_temp_scope:true,mutations_rolled_back:true}]);
   assert.equal(receipt.registered_ci_replays,undefined,'Generic CI replay runs only once, in the positive-only alternate fixture');
@@ -211,7 +214,7 @@ export async function executeNativeBase({root,inputs,migrations,inputManifest,ou
   assert.equal(typeof output, 'string');
   assert.equal(typeof stop.checkpoint, 'function');
   assert.equal(typeof inputManifest.verify,'function');
-  assert.deepEqual(inputManifest.manifest.historical_git_inputs,[HISTORICAL_CONTENT_FIXTURE]);
+  assert.deepEqual(inputManifest.manifest.historical_git_inputs,[HISTORICAL_CONTENT_FIXTURE,TECH_CORE_CONTENT_FIXTURE]);
   const fixture = createOwnedNativeFixture({root,receipt,log,bootstrapRead:inputManifest.readRelative,
     contentDump:inputManifest.readHistoricalBootstrap(),contentDumpProvenance:HISTORICAL_CONTENT_FIXTURE,throwIfRequested:stop.throwIfRequested});
   let phase = 'fixture-bootstrap';

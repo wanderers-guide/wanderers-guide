@@ -69,6 +69,14 @@ installs the signup trigger, and applies the migrations. Starting Compose alone
 does not install the project tables or content. Initialize a fresh database before
 registering an account or creating characters.
 
+The two Tech Core spell imports first verify already imported batches with their
+complete registered read-only compatibility checks. Exact success preserves the
+current batch; otherwise the original migration and its complete post-import
+compatibility check must both succeed. Invalid or
+failed check output stops setup. The later Incarnate guard uses the same complete
+registered check. Tech Core accepts only `NULL` or an empty dependency array;
+nonempty dependencies and unrelated changes still fail.
+
 If an existing installation reports **User not found** after login, verify that
 `data/auth-trigger.sql` is installed. The trigger creates profiles for new accounts.
 It does not repair accounts registered before the trigger was installed. Back up

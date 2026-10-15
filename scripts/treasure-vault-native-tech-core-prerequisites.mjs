@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { HISTORICAL_CONTENT_FIXTURE } from './historical-content-fixture.mjs';
+import { HISTORICAL_CONTENT_FIXTURE, TECH_CORE_CONTENT_FIXTURE } from './historical-content-fixture.mjs';
 
 export const TECH_CORE_PREREQUISITE_BOUNDARY = '20261008160000_tech_core_introductory_spells.sql';
 const generalPath = 'supabase/migrations/20261008190000_tech_core_general_spells.sql';
@@ -71,8 +71,12 @@ export function createNativeTechCorePrerequisites({ inputManifest }) {
   const manifest = inputManifest.manifest;
   assert.equal(manifest.schema, 'wg-tv-native-checked-in-input-manifest-v2');
   assert.equal(manifest.historical_bootstrap_mode, 'pinned-git-predecessor');
-  assert.deepEqual(manifest.historical_git_inputs, [HISTORICAL_CONTENT_FIXTURE], 'Historical input remains the reviewed immutable predecessor');
+  assert.deepEqual(manifest.historical_git_inputs, [HISTORICAL_CONTENT_FIXTURE, TECH_CORE_CONTENT_FIXTURE], 'Historical inputs remain the reviewed immutable predecessors');
   assert.equal(sha(inputManifest.readHistoricalBootstrap()), manifest.historical_git_inputs[0].sha256, 'Historical bytes stay unchanged');
+  assert.equal(typeof inputManifest.readTechCoreBootstrap, 'function', 'The Tech Core predecessor must be explicitly captured');
+  const predecessor = inputManifest.readTechCoreBootstrap();
+  assert.equal(Buffer.byteLength(predecessor), TECH_CORE_CONTENT_FIXTURE.bytes, 'Tech Core predecessor exact byte count');
+  assert.equal(sha(predecessor), TECH_CORE_CONTENT_FIXTURE.sha256, 'Tech Core predecessor exact hash');
   const captured = new Map(manifest.entries.map((entry) => [entry.path, entry]));
   assert.equal(captured.size, manifest.entries.length, 'No duplicate captured inputs');
   function read(path) {
@@ -82,6 +86,7 @@ export function createNativeTechCorePrerequisites({ inputManifest }) {
     assert.equal(sha(text), record.sha256, 'Captured input hash');
     return text;
   }
+  read('data/data.sql'); // Preserve current-file integrity without using it as a historical import baseline.
   const intro = JSON.parse(read(introPath).split('$tech_core_spells$')[1]);
   assert.equal(intro.references.length, 16); assert.equal(intro.sources.length, 3);
   const includeStation = manifest.chronology.some(({ path }) => path === generalPath.split('/').at(-1));
@@ -98,9 +103,9 @@ export function createNativeTechCorePrerequisites({ inputManifest }) {
     const key = 'content_source:' + row.id;
     expected.set(key, { ...expected.get(key), ...row });
   }
-  const rows = capturedCopyRows(read('data/data.sql'), expected);
+  const rows = capturedCopyRows(predecessor, expected);
   for (const spec of specs) {
-    for (const { table, row } of spec.references) assert.deepEqual(normalized(rows.get(table + ':' + row.id).row), row, 'Full current reference equals reviewed spell manifest');
+    for (const { table, row } of spec.references) assert.deepEqual(normalized(rows.get(table + ':' + row.id).row), row, 'Full historical reference equals reviewed spell manifest');
     for (const source of spec.sources) assert.deepEqual(Object.fromEntries(Object.keys(source).map((key) => [key, rows.get('content_source:' + source.id).row[key]])), source, 'Exact source guard projection');
   }
   const keys = ['content_source:900', 'trait:5225', ...(includeStation ? ['trait:5236'] : [])];
@@ -174,7 +179,7 @@ COMMIT;\n`;
     await inputManifest.verify(); fixture.assertOwned();
     const existing = fixture.queryJson(`select coalesce(jsonb_agg(entry),'[]'::jsonb) from (${existingQuery}) r;`);
     const mode = classifyExisting(existing), before = fixture.snapshot();
-    const proof = receipt.tech_core_prerequisites = { passed: false, mode, keys, station_included: includeStation, sql_sha256: sha(sql), explicit_ids: true, sequence_reset: false, trigger_suppression: false, absent_source_timestamp_restored: mode === 'absent', full_preexisting_tuple_and_sequence_guard: true, source: captured.get('data/data.sql'), controls: [] };
+    const proof = receipt.tech_core_prerequisites = { passed: false, mode, keys, station_included: includeStation, sql_sha256: sha(sql), explicit_ids: true, sequence_reset: false, trigger_suppression: false, absent_source_timestamp_restored: mode === 'absent', full_preexisting_tuple_and_sequence_guard: true, source: {kind:'pinned-git-predecessor',...TECH_CORE_CONTENT_FIXTURE}, controls: [] };
     await checkpoint('Tech Core prerequisite late rollback'); fixture.assertOwned();
     const rejected = fixture.sql(lateSql, true);
     assert.equal(rejected.error == null, true, 'Late rollback has no transport error');

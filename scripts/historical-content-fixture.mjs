@@ -14,6 +14,15 @@ export const HISTORICAL_CONTENT_FIXTURE = Object.freeze({
   sha256: '90f71cdffc3be23d45526b6d29e2fc7cfb3e4fb9f5f717dbeed443a598cc9dbb',
 });
 
+/** Exact catalog before the six introductory and 76 general Tech Core spells were imported. */
+export const TECH_CORE_CONTENT_FIXTURE = Object.freeze({
+  commit: '756a80011e1d0e3ac9db0e14a304d8cf0f1479a5',
+  path: 'data/data.sql',
+  blob: '6dfb3ab197a3d906fd427527feb5a7adac78acd0',
+  bytes: 55105207,
+  sha256: '1681b2c6888ebf8f5f406af3f8fa259ba5078fde37cd56df85fb06ccedce2757',
+});
+
 const execFileAsync = promisify(execFile);
 const defaultRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -21,7 +30,17 @@ const defaultRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
  * Read and verify the pinned Git blob without replacing the working-tree dump.
  * Missing history is an error; CI must fetch the declared commit explicitly.
  */
-export async function readHistoricalContentDump({ repositoryRoot = defaultRoot } = {}) {
+export function readHistoricalContentDump({ repositoryRoot = defaultRoot } = {}) {
+  return readVerifiedContentDump(HISTORICAL_CONTENT_FIXTURE, repositoryRoot);
+}
+
+/** Read the separately pinned Tech Core predecessor, never the mutable current catalog. */
+export function readTechCoreContentDump({ repositoryRoot = defaultRoot } = {}) {
+  return readVerifiedContentDump(TECH_CORE_CONTENT_FIXTURE, repositoryRoot);
+}
+
+/** Share Git identity and byte validation without accepting caller-supplied fixture descriptors. */
+async function readVerifiedContentDump(fixture, repositoryRoot) {
   assert.equal(typeof repositoryRoot, 'string', 'Historical content fixture needs a repository path');
   const root = resolve(repositoryRoot);
   const environment = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_')));
@@ -41,11 +60,11 @@ export async function readHistoricalContentDump({ repositoryRoot = defaultRoot }
       throw new Error('Historical content fixture Git input is unavailable or unreadable. Fetch its pinned commit before running historical tests.', { cause });
     }
   }
-  const binding = await git(['rev-parse', '--verify', HISTORICAL_CONTENT_FIXTURE.commit + ':' + HISTORICAL_CONTENT_FIXTURE.path], 1024);
-  assert.equal(binding.toString('utf8'), HISTORICAL_CONTENT_FIXTURE.blob + '\n', 'Historical content fixture commit/path must resolve to its exact reviewed blob');
-  const bytes = await git(['cat-file', 'blob', HISTORICAL_CONTENT_FIXTURE.blob], HISTORICAL_CONTENT_FIXTURE.bytes + 1024);
-  assert.equal(bytes.length, HISTORICAL_CONTENT_FIXTURE.bytes, 'Historical content fixture exact byte length');
-  assert.equal(createHash('sha256').update(bytes).digest('hex'), HISTORICAL_CONTENT_FIXTURE.sha256, 'Historical content fixture exact SHA-256');
+  const binding = await git(['rev-parse', '--verify', fixture.commit + ':' + fixture.path], 1024);
+  assert.equal(binding.toString('utf8'), fixture.blob + '\n', 'Historical content fixture commit/path must resolve to its exact reviewed blob');
+  const bytes = await git(['cat-file', 'blob', fixture.blob], fixture.bytes + 1024);
+  assert.equal(bytes.length, fixture.bytes, 'Historical content fixture exact byte length');
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), fixture.sha256, 'Historical content fixture exact SHA-256');
   const text = bytes.toString('utf8');
   assert.ok(Buffer.from(text, 'utf8').equals(bytes), 'Historical content fixture must be lossless UTF-8');
   return text;

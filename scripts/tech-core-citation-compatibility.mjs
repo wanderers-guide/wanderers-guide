@@ -210,14 +210,14 @@ release_checks as materialized(
 `;
 }
 
-/** Retain every historical clause; only exact embedded expected reference rows are selected. */
+/** Retain historical checks with exact citation choices and equivalent empty Tech Core dependencies. */
 export function buildQuery(original, pairs, tag, intro) {
   const substitutions = [];
   const pattern = new RegExp(
     "\\$" + tag + "\\$([\\s\\S]*?)\\$" + tag + "\\$::jsonb",
     "g",
   );
-  const transformed = original.replace(pattern, (whole, text) => {
+  let transformed = original.replace(pattern, (whole, text) => {
     const spec = JSON.parse(text);
     assert.equal(spec.references.length, intro ? 16 : 92);
     let expression = whole;
@@ -232,10 +232,23 @@ export function buildQuery(original, pairs, tag, intro) {
       assert.deepEqual(spec.references[index].row, pair.before);
       expression = `jsonb_set(${expression},'{references,${index},row}',(select row from tc_citation_selected where id='${pair.before.id}'),false)`;
     }
+    if (!intro) {
+      assert.equal(spec.sources[6].id, 900);
+      assert.equal(spec.sources[6].required_content_sources, null);
+      // Only an exactly empty array selects the alternate expectation. Nonempty arrays still mismatch null.
+      expression = `jsonb_set(${expression},'{sources,6,required_content_sources}',(select case when s.required_content_sources='{}'::bigint[] then '[]'::jsonb else 'null'::jsonb end from public.content_source s where s.id=900),false)`;
+    }
     substitutions.push({ original: whole, transformed: expression });
     return expression;
   });
   assert.equal(substitutions.length, intro ? 1 : 2);
+  if (intro) {
+    const previous = 's.required_content_sources is null';
+    const replacement = 'coalesce(cardinality(s.required_content_sources),0)=0';
+    assert.equal(transformed.split(previous).length, 2);
+    transformed = transformed.replace(previous, replacement);
+    substitutions.push({original:previous, transformed:replacement});
+  }
   assert(transformed.trimEnd().endsWith(";"));
   const query =
     prefix(pairs, intro) +
@@ -245,7 +258,7 @@ export function buildQuery(original, pairs, tag, intro) {
 select id,passed and ((select original from tc_citation_state) or (select successor from tc_citation_state))
   and not(select present from tc_citation_aliases) and not(select present from tc_citation_pending) as passed from release_checks;
 `;
-  // Verify that removing only the expected-row selections recovers the complete source exactly.
+  // Reversing only the declared compatibility substitutions recovers the complete source exactly.
   let reversed = transformed;
   for (const entry of substitutions)
     reversed = reversed.replace(entry.transformed, () => entry.original);

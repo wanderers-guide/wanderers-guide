@@ -104,9 +104,9 @@ function sqlTokens(sql) {
   return tokens;
 }
 
-test("focused actual-native recipe has205 controls, all16/92 dependency negatives and retained original controls", () => {
-  assert.equal(prepared.focused.length, 205);
-  assert.equal(prepared.cases.length, 697);
+test("focused actual-native recipe has225 controls, all16/92 dependency negatives and retained original controls", () => {
+  assert.equal(prepared.focused.length, 225);
+  assert.equal(prepared.cases.length, 717);
   assert.equal(
     prepared.focused.filter((control) =>
       control.name.startsWith("intro-dependency-"),
@@ -126,7 +126,7 @@ test("focused actual-native recipe has205 controls, all16/92 dependency negative
   );
   assert.equal(
     new Set(prepared.focused.map((control) => control.name)).size,
-    205,
+    225,
   );
   assert.equal(
     prepared.focused.filter((control) =>
@@ -188,6 +188,19 @@ test("focused actual-native recipe has205 controls, all16/92 dependency negative
     ).expected,
     false,
   );
+});
+
+test("empty source dependencies retain both Incarnate and citation states without admitting nonempty or drifted records", () => {
+  const controls = prepared.focused.filter(control => control.name.startsWith('empty-source-'));
+  assert.equal(controls.length, 20);
+  assert.equal(controls.filter(control => control.expected).length, 8);
+  assert.equal(controls.filter(control => !control.expected).length, 12);
+  for (const query of ['intro', 'general']) {
+    for (const source of [15, 3]) for (const citations of ['original', 'successor'])
+      assert.equal(controls.find(control => control.name === `empty-source-accepted-${query}-${citations}-Incarnate${source}`).expected, true);
+    for (const name of ['nonempty', 'null-element', 'header-drift', 'pending-source', 'reference-drift', 'mixed-citations'])
+      assert.equal(controls.find(control => control.name === `empty-source-rejected-${query}-${name}`).expected, false);
+  }
 });
 
 test("each complete candidate is a single read-only query with balanced quoted literals", () => {

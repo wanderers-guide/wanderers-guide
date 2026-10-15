@@ -179,6 +179,12 @@ The historical query files remain explicit native-fixture inputs; the three
 requirement registrations use the additive citation checks without changing the
 registered migration inventory.
 
+For Tech Core's source header, `NULL` and an empty required-source array both mean
+no dependencies. The additive checks accept only these two representations;
+nonempty arrays, including arrays containing `NULL`, remain invalid. All other
+source fields and content guards remain exact. Docker bootstrap and the two CI
+replay passes use this complete successor check instead of the obsolete guard.
+
 The focused construction and native-plan contracts run with:
 
 ```bash
@@ -186,7 +192,7 @@ node --test scripts/tech-core-citation-compatibility.test.mjs scripts/tech-core-
 ```
 
 Construction checks do not execute SQL. The hosted-only native entry requires an
-owner-verified, isolated fixture and executes the focused 205-case matrix. Its
+owner-verified, isolated fixture and executes the focused 225-case matrix. Its
 receipt names the exact executed controls; the larger prepared matrix is not
 implicitly covered. Neither result is a whole-book audit or a production check.
 

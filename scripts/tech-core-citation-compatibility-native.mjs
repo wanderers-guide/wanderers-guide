@@ -82,6 +82,22 @@ export async function prepareNative(repository, proposalPath) {
         true,
       );
     }
+  const emptySource = "UPDATE public.content_source SET required_content_sources='{}'::bigint[] WHERE id=900;\n";
+  for (const source of [15, 3])
+    for (const citations of ["original", "successor"])
+      for (const query of ["intro", "general"])
+        add(`empty-source-accepted-${query}-${citations}-Incarnate${source}`, query,
+          emptySource + (source === 3 ? incarnate3 + "\n" : "") + (citations === "successor" ? cite : ""), true);
+  for (const [name, mutation] of [
+    ["nonempty", "UPDATE public.content_source SET required_content_sources=ARRAY[579]::bigint[] WHERE id=900;"],
+    ["null-element", "UPDATE public.content_source SET required_content_sources=ARRAY[NULL]::bigint[] WHERE id=900;"],
+    ["header-drift", "UPDATE public.content_source SET name='Changed Tech Core' WHERE id=900;"],
+    ["pending-source", queue({}, {type:'content-source', ref_id:900})],
+    ["reference-drift", "UPDATE public.trait SET description=description||' drift' WHERE id=5225;"],
+    ["mixed-citations", citeOne(5225)],
+  ])
+    for (const query of ["intro", "general"])
+      add(`empty-source-rejected-${query}-${name}`, query, emptySource + mutation, false);
   add(
     "accepted-original-intro-only-without-Station",
     "intro",
@@ -450,6 +466,7 @@ export async function prepareNative(repository, proposalPath) {
       .filter(
         (control) =>
           control.name.startsWith("accepted-") ||
+          control.name.startsWith("empty-source-") ||
           control.name.startsWith("rejected-") ||
           control.name.startsWith("historical-") ||
           control.name.startsWith("intro-dependency-") ||
@@ -526,7 +543,7 @@ export async function prepareNative(repository, proposalPath) {
     if (control.name.startsWith("successor-Unicode-"))
       focusedNames.add(control.name);
   const focused = cases.filter((control) => focusedNames.has(control.name));
-  assert(focused.length >= 150 && focused.length <= 210);
+  assert.equal(focused.length, 225);
   return {
     candidate,
     base,
