@@ -121,6 +121,15 @@ in `supabase/release/requirements.json`. If a ledger is introduced in a separate
 reviewed reconciliation, the gate also checks recorded post-baseline versions and
 rejects unknown versions. Absence of a ledger never substitutes for effect checks.
 
+`20261015000000_rust_cloud_release_compatibility.sql` recognizes only the exact
+cleaned Rust Cloud description already present in the catalog. The complete row
+must match, including all rules, identity and source fields. The shared comparison
+then projects it to the historical representation without writing spell data.
+The upgrade requires the exact predecessor body, metadata and permissions, and
+verifies the complete successor. Historical repair bodies and ledgers remain
+unchanged. Native checks cover both descriptions, rejected drift, pending edits,
+upgrade replay, full historical replays and complete rollback preservation.
+
 ### Legacy Heal Companion and Incarnate recovery
 
 `20261011000000_restore_heal_companion.sql` restores only the missing deprecated

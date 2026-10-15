@@ -35,6 +35,15 @@ level, capacity and resilience from the difference between selected and starting
 grades. An absent selected grade uses the starting grade without changing the row.
 Unmarked saved and playtest equipment retains its existing grade behavior.
 
+Pregraded Starfinder weapons use the same paired `base_grade` and
+`base_upgrade_slots` fields. Keep the printed damage dice, level, price, and
+available capacity intact. Only increases above that starting grade add dice,
+price, and capacity; Tracking follows the selected grade. For example, a Superior
+Blast Knife starts at 2d4 and 15002 credits, and its Elite grade is 3d4 and 25002
+credits. The editor cannot select below the starting grade. No starting grade is
+inferred for existing saved weapons, and armor-only `built_in_upgrades` remains
+unavailable to weapons.
+
 Fixed preinstalled upgrades belong in `built_in_upgrades`, using the same
 `name`, `id` and optional embedded `upgrade` fields as ordinary `slots`. Built-ins
 do not consume the printed available capacity and cannot be removed through the

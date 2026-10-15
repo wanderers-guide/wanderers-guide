@@ -25,6 +25,7 @@ import {
   terminalFunctionState,
   TERMINAL_HELPER,
 } from "./treasure-vault-native-inputs.mjs";
+import { originalRustCloudBody, rustCloudRows, rustCloudUpgrade, wrapRustCloudUpgrade } from './treasure-vault-native-rust-cloud.mjs';
 const sha = (x) => createHash("sha256").update(x).digest("hex");
 const read = (x) => readFile(new URL("../" + x, import.meta.url), "utf8");
 const helper = extractReviewedTerminalHelper({
@@ -188,10 +189,11 @@ test("all4096 partial-state combinations reject except the two complete states, 
 });
 
 test("the original whole ledger, source corrections and paired classifications are reversible byte-for-byte", () => {
-  const original = originalSharedAncestryBody(helper.body, spec);
+  const sharedBody = originalRustCloudBody(helper.body);
+  const original = originalSharedAncestryBody(sharedBody, spec);
   assert.equal(sha(original), SHARED_PREDECESSOR_SHA256);
-  assert.equal(upgradeSharedAncestryBody(original, spec), helper.body);
-  assert.equal(sha(helper.body), SHARED_TERMINAL_SHA256);
+  assert.equal(upgradeSharedAncestryBody(original, spec), sharedBody);
+  assert.equal(sha(sharedBody), SHARED_TERMINAL_SHA256);
   assert.equal(
     helper.body.split("$global_dual$")[1],
     original.split("$global_dual$")[1],
@@ -208,14 +210,17 @@ test("the original whole ledger, source corrections and paired classifications a
 });
 
 test("registered SQL is exactly reproducible and rejects pending routes under both identities", async () => {
+  const sharedState = terminalFunctionState(SHARED_TERMINAL_SHA256);
+  const display = JSON.parse((await read('supabase/migrations/20261002101000_treasure_vault_complete_display.sql')).split('$display101$')[1]);
+  const rustUpgrade = rustCloudUpgrade({rows:rustCloudRows(display),previousState:sharedState,state:helper.state,signature:helper.signature});
   assert.equal(
     await read("supabase/migrations/" + SHARED_UPGRADE_PATH),
-    sharedAncestryUpgrade({
+    wrapRustCloudUpgrade(sharedAncestryUpgrade({
       spec,
       previousState: terminalFunctionState(SHARED_PREDECESSOR_SHA256),
-      state: helper.state,
+      state: sharedState,
       signature: helper.signature,
-    }),
+    }), rustUpgrade, helper.state),
   );
   assert.equal(
     await read("supabase/migrations/" + SHARED_MOVE_PATH),

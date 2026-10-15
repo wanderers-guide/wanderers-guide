@@ -9,6 +9,7 @@ import { addVariableBonus, getAllSkillVariables, getAllSpeedVariables, getVariab
 import { cloneDeep, uniq } from 'lodash-es';
 import { getArmorStrengthModifier } from './armor-handler';
 import { getArmorGradeView, getEffectiveItemLevel } from './armor-grade-view';
+import { getWeaponGradeStatistics, getWeaponGradeView } from './weapon-grade-view';
 
 /**
  * Get all items in the inventory, including items in containers, as a single array
@@ -573,6 +574,8 @@ export function isItemFundamentalRune(item: Item) {
  * @returns - Whether the item has improved its grade
  */
 export function isItemWithGradeImprovement(item: Item) {
+  const weapon = getWeaponGradeView(item);
+  if (weapon.kind !== 'legacy') return weapon.kind === 'final';
   const view = getArmorGradeView(item);
   if (view.kind !== 'legacy') return view.kind === 'final';
   return item.meta_data?.starfinder?.grade && item.meta_data.starfinder.grade !== 'COMMERCIAL';
@@ -727,6 +730,7 @@ export function isItemArchaic(item: Item) {
  * @param item
  */
 export function compileTraits(item: Item) {
+  const weaponGrade = getWeaponGradeView(item);
   const view = getArmorGradeView(item);
   const finalResilience =
     view.kind === 'final'
@@ -771,6 +775,13 @@ export function compileTraits(item: Item) {
     }
   }
 
+  if (weaponGrade.kind === 'final') {
+    const trackingIds = (['TRACKING-1', 'TRACKING-2', 'TRACKING-3'] as const).map(getTraitIdByType);
+    for (let index = traits.length - 1; index >= 0; index--) {
+      if (trackingIds.includes(traits[index])) traits.splice(index, 1);
+    }
+    if (weaponGrade.tracking) traits.push(getTraitIdByType(weaponGrade.tracking));
+  }
   return uniq(traits);
 }
 
@@ -907,6 +918,20 @@ export function getGradeImprovements(item: Item) {
     trait_ids: [] as number[],
   };
 
+  const weaponGrade = getWeaponGradeView(item);
+  if (weaponGrade.kind !== 'legacy') {
+    if (weaponGrade.kind === 'final') {
+      improvements.grade = weaponGrade.grade;
+      improvements.level = weaponGrade.level;
+      improvements.upgrade_price = weaponGrade.upgradePrice;
+      improvements.total_price = weaponGrade.priceDelta;
+      improvements.upgrade_slots = weaponGrade.upgradeSlots;
+      improvements.damage_dice = 1 + weaponGrade.damageDelta;
+      if (weaponGrade.tracking) improvements.trait_ids.push(getTraitIdByType(weaponGrade.tracking));
+    }
+    return improvements;
+  }
+
   const armorGrade = getArmorGradeView(item);
   if (armorGrade.kind !== 'legacy') {
     if (armorGrade.kind === 'final') {
@@ -1013,49 +1038,13 @@ export function getGradeImprovements(item: Item) {
       improvements.bt_bonus = 60;
     }
   } else if (isItemWeapon(item)) {
-    if (item.meta_data?.starfinder?.grade === 'TACTICAL') {
-      improvements.level = 2;
-      improvements.upgrade_price = 350;
-      improvements.total_price = 350;
-      improvements.upgrade_slots = 0;
-      improvements.damage_dice = 1;
-      improvements.trait_ids.push(getTraitIdByType('TRACKING-1'));
-    } else if (item.meta_data?.starfinder?.grade === 'ADVANCED') {
-      improvements.level = 4;
-      improvements.upgrade_price = 650;
-      improvements.total_price = 1000;
-      improvements.upgrade_slots = 1;
-      improvements.damage_dice = 2;
-      improvements.trait_ids.push(getTraitIdByType('TRACKING-1'));
-    } else if (item.meta_data?.starfinder?.grade === 'SUPERIOR') {
-      improvements.level = 10;
-      improvements.upgrade_price = 9000;
-      improvements.total_price = 10000;
-      improvements.upgrade_slots = 1;
-      improvements.damage_dice = 2;
-      improvements.trait_ids.push(getTraitIdByType('TRACKING-2'));
-    } else if (item.meta_data?.starfinder?.grade === 'ELITE') {
-      improvements.level = 12;
-      improvements.upgrade_price = 10000;
-      improvements.total_price = 20000;
-      improvements.upgrade_slots = 2;
-      improvements.damage_dice = 3;
-      improvements.trait_ids.push(getTraitIdByType('TRACKING-2'));
-    } else if (item.meta_data?.starfinder?.grade === 'ULTIMATE') {
-      improvements.level = 16;
-      improvements.upgrade_price = 80000;
-      improvements.total_price = 100000;
-      improvements.upgrade_slots = 2;
-      improvements.damage_dice = 3;
-      improvements.trait_ids.push(getTraitIdByType('TRACKING-3'));
-    } else if (item.meta_data?.starfinder?.grade === 'PARAGON') {
-      improvements.level = 19;
-      improvements.upgrade_price = 300000;
-      improvements.total_price = 400000;
-      improvements.upgrade_slots = 3;
-      improvements.damage_dice = 4;
-      improvements.trait_ids.push(getTraitIdByType('TRACKING-3'));
-    }
+    const grade = getWeaponGradeStatistics(item.meta_data?.starfinder?.grade ?? 'COMMERCIAL');
+    improvements.level = grade.level;
+    improvements.upgrade_price = grade.upgradePrice;
+    improvements.total_price = grade.price;
+    improvements.upgrade_slots = grade.slots;
+    improvements.damage_dice = grade.dice;
+    if (grade.tracking) improvements.trait_ids.push(getTraitIdByType(grade.tracking));
   }
 
   return improvements;

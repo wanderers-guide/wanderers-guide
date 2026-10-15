@@ -1,4 +1,5 @@
 import type { ArmorGrade, Item } from '@schemas/content';
+import { getWeaponGradeView } from './weapon-grade-view';
 
 export const ARMOR_GRADES: readonly ArmorGrade[] = [
   'COMMERCIAL',
@@ -38,6 +39,7 @@ export type ArmorGradeView = { kind: 'legacy' | 'invalid' } | FinalArmorGradeVie
 
 /** Read a final printing without changing its printed fields or saved snapshot. */
 export function getArmorGradeView(item: Item): ArmorGradeView {
+  if (item.group === 'WEAPON') return { kind: 'legacy' };
   const metadata = item.meta_data?.starfinder;
   if (metadata?.base_grade === undefined && metadata?.base_upgrade_slots === undefined) {
     return { kind: metadata?.built_in_upgrades === undefined ? 'legacy' : 'invalid' };
@@ -82,14 +84,18 @@ export function getArmorGradeView(item: Item): ArmorGradeView {
   };
 }
 
-/** Derive a valid final armor grade's price; legacy or invalid metadata keeps the printed price. */
+/** Derive a marked armor or weapon's price; unmarked or invalid metadata keeps the printed price. */
 export function getEffectiveItemPrice(item: Item): Item['price'] {
+  const weapon = getWeaponGradeView(item);
+  if (weapon.kind === 'final') return weapon.price;
   const view = getArmorGradeView(item);
   return view.kind === 'final' ? view.price : item.price;
 }
 
-/** Derive a valid final armor grade's level; legacy or invalid metadata keeps the printed level. */
+/** Derive a marked armor or weapon's level; unmarked or invalid metadata keeps the printed level. */
 export function getEffectiveItemLevel(item: Item): number {
+  const weapon = getWeaponGradeView(item);
+  if (weapon.kind === 'final') return weapon.level;
   const view = getArmorGradeView(item);
   return view.kind === 'final' ? view.level : item.level;
 }

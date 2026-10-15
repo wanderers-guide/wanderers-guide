@@ -10,6 +10,7 @@ import { fetchContentById, fetchTraits } from '@content/content-store';
 import { toHTML } from '@content/content-utils';
 import { isItemFundamentalRune } from '@items/inv-utils';
 import { ARMOR_GRADES, getArmorGradeView } from '@items/armor-grade-view';
+import { getWeaponGradeView } from '@items/weapon-grade-view';
 import { ItemUpgradesDescription } from '@common/ItemRunesDescription';
 import {
   Accordion,
@@ -107,7 +108,7 @@ export function CreateItemModal(props: {
 
       const mergeData = merge(cloneDeep(form.values), item);
       const damageData = merge(cloneDeep(form.values.meta_data?.damage), item.meta_data?.damage);
-      // Merge must not carry final-armor metadata from a previously edited item into this row.
+      // Merge must not carry a starting grade from a previously edited item into this row.
       const starfinder = mergeData.meta_data?.starfinder;
       const sourceStarfinder = item.meta_data?.starfinder;
       if (starfinder) {
@@ -313,10 +314,12 @@ export function CreateItemModal(props: {
   };
 
   const armorGradeView = getArmorGradeView({ ...form.values, level: Number(form.values.level) });
+  const weaponGradeView = getWeaponGradeView({ ...form.values, level: Number(form.values.level) });
+  const equipmentGradeView = weaponGradeView.kind === 'legacy' ? armorGradeView : weaponGradeView;
   const gradeOptions = ARMOR_GRADES.map((value) => ({ value, label: toLabel(value) }));
   const availableGrades =
-    armorGradeView.kind === 'final'
-      ? gradeOptions.slice(gradeOptions.findIndex((option) => option.value === armorGradeView.baseGrade))
+    equipmentGradeView.kind === 'final'
+      ? gradeOptions.slice(gradeOptions.findIndex((option) => option.value === equipmentGradeView.baseGrade))
       : gradeOptions;
 
   const onReset = () => {
@@ -844,13 +847,13 @@ export function CreateItemModal(props: {
                           <Stack gap={10}>
                             <Select
                               label='Grade'
-                              clearable={armorGradeView.kind !== 'final'}
-                              allowDeselect={armorGradeView.kind !== 'final'}
+                              clearable={equipmentGradeView.kind !== 'final'}
+                              allowDeselect={equipmentGradeView.kind !== 'final'}
                               data={availableGrades}
                               {...form.getInputProps('meta_data.starfinder.grade')}
                               value={
-                                armorGradeView.kind === 'final'
-                                  ? armorGradeView.grade
+                                equipmentGradeView.kind === 'final'
+                                  ? equipmentGradeView.grade
                                   : form.values.meta_data?.starfinder?.grade
                               }
                             />
@@ -866,9 +869,9 @@ export function CreateItemModal(props: {
                                 // Keep saved excess installations; only reject new over-capacity additions.
                                 const addsUpgrade = references.some((reference) => !upgradeSlots?.includes(reference));
                                 if (
-                                  armorGradeView.kind === 'final' &&
+                                  equipmentGradeView.kind === 'final' &&
                                   addsUpgrade &&
-                                  references.length > armorGradeView.upgradeSlots
+                                  references.length > equipmentGradeView.upgradeSlots
                                 ) {
                                   return;
                                 }

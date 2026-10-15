@@ -288,6 +288,10 @@ export function prepare(repository, proposalPath) {
   const originalRequirements = JSON.parse(
     files["supabase/release/requirements.json"],
   );
+  const rustUpgrade = '20261015000000_rust_cloud_release_compatibility.sql';
+  const rustRequirement = originalRequirements[rustUpgrade];
+  assert.deepEqual(rustRequirement, {check:'treasure-vault-terminal-status.sql',order:'before-functions'});
+  delete originalRequirements[rustUpgrade];
   for (const [migration, original] of Object.entries(originalCheckPaths)) {
     assert(
       [
@@ -304,6 +308,7 @@ export function prepare(repository, proposalPath) {
     ORIGINALS["supabase/release/requirements.json"],
     "Only the three checked registration paths may differ",
   );
+  originalRequirements[rustUpgrade] = rustRequirement;
   let suppliedRows;
   if (proposalPath) {
     const proposalBytes = fs.readFileSync(proposalPath);
@@ -374,7 +379,7 @@ export function prepare(repository, proposalPath) {
     requirements[migration].check = check;
     return { migration, before, after: requirements[migration] };
   });
-  assert.equal(Object.keys(requirements).length, 108);
+  assert.equal(Object.keys(requirements).length, 109);
   assert.equal(
     new Set(Object.values(requirements).map((entry) => entry.check)).size,
     70,
