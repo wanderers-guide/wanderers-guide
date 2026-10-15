@@ -69,7 +69,7 @@ export async function createPf2eMatrix() {
       Object.entries(classIds).map(([name, id]) => [name, fixture('class', id, name, name === 'Monk' ? 256 : 1)])
     );
     const items = Object.fromEntries(Object.entries(itemIds).map(([name, id]) => [name, fixture('item', id, name)]));
-    const dwarf = fixture('ancestry', 4, 'Dwarf');
+    const dwarf = fixture('ancestry', 4, 'Dwarf', 3);
     fixture('ability_block', 20661, 'Unburdened Iron');
     let calculations = 0;
 
