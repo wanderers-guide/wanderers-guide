@@ -5,6 +5,7 @@ interface ActionStructureProps extends TextProps {
   symbol: number;
 }
 
+/** Render the existing action glyph without nesting paragraph elements. */
 function ActionStructure(props: ActionStructureProps) {
   const size = props.size || 25;
 
@@ -14,6 +15,7 @@ function ActionStructure(props: ActionStructureProps) {
     <Text pos='relative' mx={mx}>
       <Text
         {...props}
+        component='span'
         fz={size}
         ff='ActionIcons, sans-serif'
         c={props.c ?? 'gray.5'}

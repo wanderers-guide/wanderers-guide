@@ -4,6 +4,7 @@ import { useFocusWithin, useHover, useOs } from '@mantine/hooks';
 import { spotlight } from '@mantine/spotlight';
 import { IconLogin2, IconSearch, IconUsers } from '@tabler/icons-react';
 
+/** Opens the existing sign-in and registration flow through one shared button. */
 export function LoginButton(props: { onClick: () => void }) {
   const os = useOs();
   const theme = useMantineTheme();
@@ -31,7 +32,7 @@ export function LoginButton(props: { onClick: () => void }) {
           </Text>{' '}
           Register
         </Text>
-        <ActionIcon size='sm' color='gray.4' variant='transparent'>
+        <ActionIcon component='span' aria-hidden size='sm' color='gray.4' variant='transparent'>
           <IconLogin2 size={18} stroke={2} />
         </ActionIcon>
       </Group>

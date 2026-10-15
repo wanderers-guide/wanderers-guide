@@ -1,5 +1,85 @@
 type RuneCatalogFixture = { table: string; row: { id: number; name: string; [key: string]: any } };
 
+type RuneViewportMetrics = {
+  clientHeight: number;
+  scrollHeight: number;
+  scrollTop: number;
+  viewport: DOMRect;
+  target: DOMRect;
+};
+
+/** Scrolls the label's actual drawer viewport, then verifies a freshly queried label. */
+const scrollRuneLabelIntoView = (label: string): void => {
+  cy.get('@drawer')
+    .contains(label)
+    .then(($target) => {
+      const $viewport: JQuery<HTMLElement> = $target.closest('.mantine-ScrollArea-viewport');
+      expect($viewport, `${label} owns one scroll viewport`).to.have.length(1);
+      expect($viewport.closest('.mantine-Drawer-content'), `${label} viewport belongs to the drawer`).to.have.length(1);
+      const viewport: HTMLElement = $viewport[0];
+      const target: HTMLElement = $target[0];
+      /** Captures geometry before and after the single explicit viewport scroll. */
+      const measure = (): RuneViewportMetrics => ({
+        clientHeight: viewport.clientHeight,
+        scrollHeight: viewport.scrollHeight,
+        scrollTop: viewport.scrollTop,
+        viewport: viewport.getBoundingClientRect(),
+        target: target.getBoundingClientRect(),
+      });
+      const before: RuneViewportMetrics = measure();
+      const diagnostic: string = `${label}: ${JSON.stringify(before)}`;
+      Cypress.log({ name: 'rune viewport before', message: diagnostic });
+      for (const value of [
+        before.clientHeight,
+        before.scrollHeight,
+        before.scrollTop,
+        viewport.clientTop,
+        before.viewport.top,
+        before.viewport.width,
+        before.viewport.height,
+        before.target.top,
+        before.target.width,
+        before.target.height,
+      ])
+        expect(Number.isFinite(value), `finite geometry ${diagnostic}`).to.eq(true);
+      expect(before.clientHeight, `positive viewport ${diagnostic}`).to.be.greaterThan(0);
+      expect(before.scrollHeight, `complete scroll geometry ${diagnostic}`).to.be.at.least(before.clientHeight);
+      expect(before.viewport.width, `positive viewport width ${diagnostic}`).to.be.greaterThan(0);
+      expect(before.viewport.height, `positive viewport height ${diagnostic}`).to.be.greaterThan(0);
+      expect(before.target.width, `positive target width ${diagnostic}`).to.be.greaterThan(0);
+      expect(before.target.height, `positive target height ${diagnostic}`).to.be.greaterThan(0);
+      expect(before.target.height, `label fits viewport ${diagnostic}`).to.be.at.most(before.clientHeight);
+      const targetTop: number = before.scrollTop + before.target.top - before.viewport.top - viewport.clientTop;
+      expect(targetTop, `target inside scroll content ${diagnostic}`).to.be.at.least(0);
+      expect(targetTop + before.target.height, `target inside scroll extent ${diagnostic}`).to.be.at.most(
+        before.scrollHeight
+      );
+      const destination: number = Math.max(
+        0,
+        Math.min(
+          targetTop - (before.clientHeight - before.target.height) / 2,
+          before.scrollHeight - before.clientHeight
+        )
+      );
+      return cy
+        .wrap($viewport)
+        .scrollTo(0, destination, { ensureScrollable: false })
+        .then(() => {
+          const after: RuneViewportMetrics = measure();
+          const diagnostic: string = `${label}: ${JSON.stringify(after)}`;
+          Cypress.log({ name: 'rune viewport after', message: diagnostic });
+          expect(after.clientHeight, `positive scrolled viewport ${diagnostic}`).to.be.greaterThan(0);
+          expect(after.target.top, `label below viewport top ${diagnostic}`).to.be.at.least(
+            after.viewport.top + viewport.clientTop
+          );
+          expect(after.target.bottom, `label above viewport bottom ${diagnostic}`).to.be.at.most(
+            after.viewport.top + viewport.clientTop + after.clientHeight
+          );
+        });
+    });
+  cy.get('@drawer').contains(label).should('be.visible');
+};
+
 const runeFixtureScript = `
   import { readContentRows } from "./scripts/operation-test-harness.mjs";
   const rows = await readContentRows([
@@ -64,18 +144,17 @@ describe('Legacy property rune descriptions', () => {
         cy.get('@drawer')
           .contains('button', /^Runes$/)
           .click();
-        cy.get('@drawer').contains('Frost').scrollIntoView().should('be.visible');
-        cy.get('@drawer').contains('Shock').scrollIntoView().should('be.visible');
-        cy.get('@drawer').find('.mantine-ScrollArea-viewport').scrollTo('bottom');
-        cy.get('@drawer').contains('Fundamental Runes').should('be.visible');
-        cy.get('@drawer').contains('Weapon Potency (+1)').should('be.visible');
+        scrollRuneLabelIntoView('Frost');
+        scrollRuneLabelIntoView('Shock');
+        scrollRuneLabelIntoView('Fundamental Runes');
+        scrollRuneLabelIntoView('Weapon Potency (+1)');
         cy.get('@drawer').find('button').filter(':contains("View Item")').should('have.length', buttons);
         cy.document().should((document) =>
           expect(document.documentElement.scrollWidth).to.be.at.most(document.documentElement.clientWidth)
         );
         cy.screenshot(`legacy-runes-${kind}-${width}`);
         if (kind === 'mixed') {
-          cy.get('@drawer').contains('Flaming').scrollIntoView().should('be.visible');
+          scrollRuneLabelIntoView('Flaming');
           cy.get('@drawer').contains('button', 'View Item').first().click();
           cy.contains('.mantine-Drawer-content', 'Flaming', { timeout: 30000 }).should('be.visible');
         }

@@ -69,6 +69,7 @@ import { getIconMap } from '@common/ItemIcon';
 import { DisplayIcon } from '@common/IconDisplay';
 import { labelToVariable } from '@variables/variable-utils';
 import { titleCase } from 'title-case';
+import { Fragment } from 'react';
 
 export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
@@ -175,12 +176,12 @@ export function ItemDrawerContent(props: {
   const UBH = [];
   if (item.usage) {
     UBH.push(
-      <>
-        <Text key={0} fw={600} c='gray.2' span>
+      <Fragment key='usage'>
+        <Text fw={600} c='gray.2' span>
           Usage
         </Text>{' '}
         {item.usage.replace(/-/g, ' ')}
-      </>
+      </Fragment>
     );
   }
   if (
@@ -190,22 +191,22 @@ export function ItemDrawerContent(props: {
     !(isItemMetaAttack(item) && `${item.bulk}`.trim() === '0')
   ) {
     UBH.push(
-      <>
-        <Text key={1} fw={600} c='gray.2' span>
+      <Fragment key='bulk'>
+        <Text fw={600} c='gray.2' span>
           Bulk
         </Text>{' '}
         {labelizeBulk(item.bulk)}
-      </>
+      </Fragment>
     );
   }
   if (item.hands && !item.usage?.trim()) {
     UBH.push(
-      <>
-        <Text key={1} fw={600} c='gray.2' span>
+      <Fragment key='hands'>
+        <Text fw={600} c='gray.2' span>
           Hands
         </Text>{' '}
         {item.hands}
-      </>
+      </Fragment>
     );
   }
 

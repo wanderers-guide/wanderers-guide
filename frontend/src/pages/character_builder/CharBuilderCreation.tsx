@@ -1059,13 +1059,14 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
   );
 }
 
+/** Display an attribute label and its existing formatted value. */
 function AttributeModPart(props: { attribute: string; variableName: string }) {
   return (
     <Box>
       <Text c='gray.0' ta='center' fz={11}>
         {props.attribute}
       </Text>
-      <Text c='gray.0' ta='center'>
+      <Text component='div' c='gray.0' ta='center'>
         {displayAttributeValue('CHARACTER', props.variableName, {
           c: 'gray.0',
           ta: 'center',
