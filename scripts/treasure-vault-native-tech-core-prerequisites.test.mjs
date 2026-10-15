@@ -44,10 +44,13 @@ test('Missing or drifted input hashes, changed full payloads and unreviewed refe
   const dump = inputManifest.readRelative('data/data.sql');
   assert.throws(() => createNativeTechCorePrerequisites({ inputManifest: withText('data/data.sql', dump + '\n', { recomputeHash: false }) }), /byte count|hash/);
   assert.throws(() => createNativeTechCorePrerequisites({ inputManifest: { ...inputManifest, manifest: { ...inputManifest.manifest, entries: inputManifest.manifest.entries.filter(({ path }) => path !== 'data/data.sql') } } }), /Missing captured input/);
+  const predecessor = inputManifest.readTechCoreBootstrap();
   for (const [before, after] of [['Spells with the junk trait use scrap, trash, and other debris', 'Changed junk rule'], ['2026-10-07 21:51:13.845822+00', '2026-10-07 21:51:13.845823+00'], ['"trait":46,"class":2,"feat":5', '"trait":47,"class":2,"feat":5']]) {
-    assert.ok(dump.includes(before));
-    assert.throws(() => createNativeTechCorePrerequisites({ inputManifest: withText('data/data.sql', dump.replace(before, after)) }), /reference|prerequisite bytes/);
+    assert.ok(predecessor.includes(before));
+    assert.throws(() => createNativeTechCorePrerequisites({ inputManifest: {...inputManifest, readTechCoreBootstrap: () => predecessor.replace(before, after)} }), /predecessor exact byte count|predecessor exact hash/);
   }
+  assert.throws(() => createNativeTechCorePrerequisites({ inputManifest: {...inputManifest, readTechCoreBootstrap: () => dump} }), /predecessor exact byte count|predecessor exact hash/);
+  assert.throws(() => createNativeTechCorePrerequisites({ inputManifest: {...inputManifest, readTechCoreBootstrap: undefined} }), /explicitly captured/);
   const path = 'supabase/migrations/20261008160000_tech_core_introductory_spells.sql';
   const source = inputManifest.readRelative(path), parts = source.split('$tech_core_spells$');
   for (const change of [spec => { spec.references[0].row.description += ' changed'; }, spec => { spec.references[0].row.id = 99999999; }, spec => { spec.references.push(spec.references[0]); }]) {

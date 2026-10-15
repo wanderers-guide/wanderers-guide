@@ -8,7 +8,7 @@ import {assertRegisteredCiRows,assertRegisteredCiWorkflowRecipe,createNativeRegi
 import {assertRequiredNativeEvidence,parseNativeOptions,REQUIRED_NATIVE_OBLIGATIONS} from './treasure-vault-native-safety.mjs';
 import {SOURCE_CORRECTION_CONTROL_NAMES,SOURCE_CORRECTION_REJECTION_CONTROL_NAMES} from './treasure-vault-native-source-corrections.mjs';
 import {SHARED_NATIVE_CONTROLS,SHARED_MOVE_PATH,sharedAncestryRows} from './treasure-vault-native-shared-ancestries.mjs';
-import {HISTORICAL_CONTENT_FIXTURE} from './historical-content-fixture.mjs';
+import {HISTORICAL_CONTENT_FIXTURE,TECH_CORE_CONTENT_FIXTURE} from './historical-content-fixture.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const sha=text=>createHash('sha256').update(text).digest('hex');
@@ -19,7 +19,7 @@ const forbidden=()=>{throw new Error('Constructor model cannot execute SQL, Dock
 const constructorContext={inputManifest:captured,fixture:{assertOwned:forbidden,snapshot:forbidden},stage:forbidden,receipt:{},checkpoint:forbidden};
 
 test('Historical bootstrap is a declared Git input distinct from current checked-in catalog bytes',()=>{
-  assert.deepEqual(captured.manifest.historical_git_inputs,[HISTORICAL_CONTENT_FIXTURE]);
+  assert.deepEqual(captured.manifest.historical_git_inputs,[HISTORICAL_CONTENT_FIXTURE,TECH_CORE_CONTENT_FIXTURE]);
   const historical=captured.readHistoricalBootstrap();
   const current=captured.readRelative('data/data.sql');
   assert.equal(Buffer.byteLength(historical),54853752);
@@ -50,7 +50,7 @@ function executionModel({badResultAt=null,badStdoutAt=null,mutateSnapshotAt=null
     if(calls.length===failStageAt)throw new Error('Model native transport failure');
     calls.push({name,sql,status:0,signal:null,passed:true,sql_sha256:sha(sql)});
     if(calls.length===badStdoutAt?.at)return badStdoutAt.stdout;
-    return calls.length===badResultAt?'check|f':sql.startsWith('BEGIN READ ONLY;')||name.endsWith('war-index-regression-footer')?'check|t':'';
+    return calls.length===badResultAt?'check|f':name.endsWith('20261011000100_incarnate_release_compatibility.sql')?'tech-core-general-spells|t':sql.startsWith('BEGIN READ ONLY;')||name.endsWith('war-index-regression-footer')?'check|t':'';
   };
   const family=createNativeRegisteredCiReplayControls({inputManifest,fixture,stage,receipt});
   return{family,receipt,calls};
@@ -62,7 +62,7 @@ function otherFamilyModel({proof,calls}) {
     actual_signal:null,no_transport_error:true,actual_exit_status:0,sql_kind:index===1?'privilege':'release',setup_login:index<2?'supabase_admin':'postgres',execution_role:index===1?'supabase_read_only_user':'postgres'}));
   const bootstrap={content_input:{kind:'pinned-git-predecessor',...HISTORICAL_CONTENT_FIXTURE},dump_sha256:HISTORICAL_CONTENT_FIXTURE.sha256};
   const station=captured.manifest.chronology.some(row=>row.path==='20261008190000_tech_core_general_spells.sql');
-  const prerequisite={passed:true,mode:'absent',keys:['content_source:900','trait:5225',...(station?['trait:5236']:[])],station_included:station,sql_sha256:'a'.repeat(64),explicit_ids:true,sequence_reset:false,trigger_suppression:false,absent_source_timestamp_restored:true,full_preexisting_tuple_and_sequence_guard:true,source:captured.manifest.entries.find(row=>row.path==='data/data.sql'),controls:[{name:'injected-late-rollback',passed:true,sql_sha256:'b'.repeat(64),actual_exit_status:3,actual_signal:null,sqlstate:'P0001',no_transport_error:true,full_state_preserved:true},{name:'exact-replay',passed:true,sql_sha256:'a'.repeat(64),actual_exit_status:0,actual_signal:null,no_transport_error:true,full_state_preserved:true}]};
+  const prerequisite={passed:true,mode:'absent',keys:['content_source:900','trait:5225',...(station?['trait:5236']:[])],station_included:station,sql_sha256:'a'.repeat(64),explicit_ids:true,sequence_reset:false,trigger_suppression:false,absent_source_timestamp_restored:true,full_preexisting_tuple_and_sequence_guard:true,source:{kind:'pinned-git-predecessor',...TECH_CORE_CONTENT_FIXTURE},controls:[{name:'injected-late-rollback',passed:true,sql_sha256:'b'.repeat(64),actual_exit_status:3,actual_signal:null,sqlstate:'P0001',no_transport_error:true,full_state_preserved:true},{name:'exact-replay',passed:true,sql_sha256:'a'.repeat(64),actual_exit_status:0,actual_signal:null,no_transport_error:true,full_state_preserved:true}]};
   const prerequisiteStage={name:'late-tech-core-prerequisites',sql_sha256:prerequisite.sql_sha256,status:0,signal:null,passed:true};
   const sharedSql=sha(captured.readRelative('supabase/migrations/'+SHARED_MOVE_PATH));
   const shared={passed:true,native_executed:true,original_ledger_preserved:true,owner_ids:sharedAncestryRows(JSON.parse(captured.readRelative('supabase/release/shared-ancestries.json'))).map(p=>[p.table,p.id]),migration_sha256:sharedSql,release_sql_sha256:sha(captured.readRelative('supabase/release/shared-ancestries.sql')),controls:SHARED_NATIVE_CONTROLS.map(name=>{const positive=['rival-count-with-real-feat','full-successor-preservation-and-replay'].includes(name);return{name,passed:true,full_state_preserved:true,no_transport_error:true,actual_signal:null,actual_exit_status:positive?0:3,...(positive?{}:{sqlstate:'P0001'})}})};
@@ -152,9 +152,10 @@ test('Orchestration model sends exact393 statements in CI order; footer uses dir
   assert.equal(proof.passed,true);assert.equal(model.calls.length,393);
   const expected=[];
   const verify=round=>{for(const check of model.family.plan.checks)expected.push({name:'registered-ci:verify-'+round+':'+check.path,sql:'BEGIN READ ONLY;\n'+captured.readRelative(check.path)+'\nROLLBACK;\n'});};
-  verify(0);for(const pass of [1,2]){for(const replay of model.family.plan.replays)expected.push({name:'registered-ci:pass-'+pass+':'+replay.path,sql:captured.readRelative('supabase/migrations/'+replay.path)});verify(pass);}
+  verify(0);for(const pass of [1,2]){for(const replay of model.family.plan.replays)expected.push({name:'registered-ci:pass-'+pass+':'+replay.path,sql:replay.path==='20261011000100_incarnate_release_compatibility.sql'?'BEGIN READ ONLY;\n'+captured.readRelative('supabase/release/tech-core-general-spells-citation-compatibility.sql')+'\nROLLBACK;\n':captured.readRelative('supabase/migrations/'+replay.path)});verify(pass);}
   expected.push({name:'registered-ci:war-index-regression-footer',sql:footerPaths.map(path=>captured.readRelative(path)).join('')});
   assert.deepEqual(model.calls.map(({name,sql})=>({name,sql})),expected);
+  assert.equal(proof.stages.filter(row=>row.compatibility_check&&row.read_only&&row.ids.join()==='tech-core-general-spells').length,2);
   assert.equal(proof.stages.at(-1).read_only,false);assert.equal(proof.stages.at(-1).schema_temp_scope,true);
   assert.equal(proof.stages.at(-1).mutations_rolled_back,true);
   await assert.rejects(()=>model.family.run(),/execute once/);
@@ -186,6 +187,9 @@ test('Receipt models require fresh completed393-stage evidence and all nine nati
     row=>{row.alternate_fixture.registered_ci_replays.stages[0].full_state_preserved=false;},row=>{row.alternate_fixture.registered_ci_replays.workflow.recipe_step_sha256='f'.repeat(64);},
     row=>{row.alternate_fixture.registered_ci_replays.workflow.sha256='f'.repeat(64);},row=>{row.alternate_fixture.registered_ci_replays.stages[0].ids=[''];},
     row=>{row.alternate_fixture.registered_ci_replays.checks.find(check=>check.path==='supabase/release/tech-core-introductory-spells-citation-compatibility.sql').path='supabase/release/unreviewed.sql';},
+    row=>{delete row.alternate_fixture.registered_ci_replays.stages.find(stage=>stage.compatibility_check).compatibility_check;},
+    row=>{row.alternate_fixture.registered_ci_replays.stages.find(stage=>stage.compatibility_check).read_only=false;},
+    row=>{row.alternate_fixture.registered_ci_replays.stages.find(stage=>stage.compatibility_check).ids=['unexpected'];},
     row=>{row.registered_ci_replays={passed:true};},row=>{row.alternate_fixture.cleaned_only_owned_containers_and_volumes=false;},
     row=>{row.fresh_native_ledger_verified.catalog=2348;},row=>{row.native_writer_controls.pop();},row=>{row.shared_helper_pending_alias_verified.both_terminals_complete=false;},
     row=>{delete row.shared_ancestries;},row=>{row.shared_ancestries.controls.pop();},row=>{row.shared_ancestries.controls[0].actual_exit_status=0;},row=>{row.shared_ancestries.controls[0].full_state_preserved=false;},row=>{row.shared_ancestries.migration_sha256='f'.repeat(64);},row=>{row.stages.find(stage=>stage.name==='shared-ancestries-exact-replay').sql_sha256='f'.repeat(64);},

@@ -5,6 +5,7 @@ import { after, before, test } from 'node:test';
 import uploadUtils from '../../supabase/functions/_shared/upload-utils.ts';
 import { CONTENT_SCHEMAS } from './content-schemas.ts';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
+import { citationState } from '../../scripts/tech-core-citation-compatibility.mjs';
 
 const migrationPath = '20261008190000_tech_core_general_spells.sql';
 const migration = await readFile(new URL('../../supabase/migrations/' + migrationPath, import.meta.url), 'utf8');
@@ -283,7 +284,7 @@ test('ordinary light, force, body parts, physical damage and auto conditions kee
   assert.equal(spell('Emoji Shield').description.includes('link_condition_'), false);
 });
 
-test('all current complete dependencies and source headers remain exact, including null900 and false4506', async () => {
+test('current dependencies retain exact reviewed successors and only empty Tech Core source dependencies', async () => {
   assert.equal(spec.references.length, 92);
   assert.deepEqual(
     spec.sources.map((row) => row.id),
@@ -307,15 +308,42 @@ test('all current complete dependencies and source headers remain exact, includi
       result.created_at = result.created_at.replace(' ', 'T').replace(/([+-][0-9]{2})$/, '$1:00');
     return result;
   };
+  const compatibility = await readFile(
+    new URL('../../supabase/release/tech-core-general-spells-citation-compatibility.sql', import.meta.url),
+    'utf8'
+  );
+  const pairs = JSON.parse(compatibility.split('$tc_citation_pairs$')[1]);
+  const incarnateAfter = JSON.parse(compatibility.split('$incarnate_after$')[1]);
+  const incarnateBefore = spec.references.find(({ table, row }) => table === 'trait' && row.id === 2584).row;
+  assert.equal(incarnateBefore.content_source_id, 15);
+  assert.deepEqual(incarnateAfter, { ...incarnateBefore, content_source_id: 3 });
+  const citationChoice = citationState(
+    current.filter(({ table }) => table === 'trait').map(({ row }) => normalize(row)),
+    pairs
+  );
+  assert.equal(citationChoice.accepted, true, 'Both whole citation rows must be in the same reviewed state');
   for (const reference of spec.references) {
     const actual = current.find(({ table, row }) => table === reference.table && row.id === reference.row.id)?.row;
     assert.ok(actual);
-    assert.deepEqual(normalize(actual), reference.row);
+    const cited = pairs.find((pair) => reference.table === 'trait' && pair.before.id === reference.row.id);
+    const expected =
+      cited && citationChoice.successor
+        ? cited.after
+        : reference.table === 'trait' && reference.row.id === 2584 && actual.content_source_id === 3
+          ? incarnateAfter
+          : reference.row;
+    assert.deepEqual(normalize(actual), expected);
   }
   for (const source of spec.sources) {
     const actual = current.find(({ table, row }) => table === 'content_source' && row.id === source.id)?.row;
     assert.ok(actual);
-    assert.deepEqual(Object.fromEntries(Object.keys(source).map((key) => [key, actual[key]])), source);
+    const expected =
+      source.id === 900 &&
+      Array.isArray(actual.required_content_sources) &&
+      actual.required_content_sources.length === 0
+        ? { ...source, required_content_sources: [] }
+        : source;
+    assert.deepEqual(Object.fromEntries(Object.keys(source).map((key) => [key, actual[key]])), expected);
   }
   const requirements = JSON.parse(
     await readFile(new URL('../../supabase/release/requirements.json', import.meta.url), 'utf8')

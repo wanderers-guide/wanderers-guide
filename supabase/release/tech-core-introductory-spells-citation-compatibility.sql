@@ -41,7 +41,7 @@ dependencies as materialized(select coalesce(count(*)=16 and bool_and(r.row is n
   from settings cross join lateral jsonb_array_elements(spec->'references') p
   left join reference_rows r on r.table_name=p->>'table' and r.row->>'id'=p#>>'{row,id}'),
 sources as materialized(select coalesce(count(*)=3 and bool_and(s.id is not null and jsonb_build_object('id',s.id,'name',s.name,'user_id',s.user_id,'is_published',s.is_published,'deprecated',s.deprecated)=p),false)
-  and exists(select 1 from public.content_source s where s.id=900 and s.name='Tech Core' and s.url='https://store.paizo.com/starfinder-tech-core/' and s."group"='starfinder-core' and s.required_content_sources is null) as passed
+  and exists(select 1 from public.content_source s where s.id=900 and s.name='Tech Core' and s.url='https://store.paizo.com/starfinder-tech-core/' and s."group"='starfinder-core' and coalesce(cardinality(s.required_content_sources),0)=0) as passed
   from settings cross join lateral jsonb_array_elements(spec->'sources') p left join public.content_source s on s.id=(p->>'id')::bigint),
 pending as materialized(select exists(select 1 from public.content_update u cross join settings where upper(btrim(coalesce(u.status->>'state','PENDING'))) not in('APPROVED','REJECTED') and (
   (u.type='spell' and exists(select 1 from expected e where u.data->>'uuid'=e.row->>'uuid'

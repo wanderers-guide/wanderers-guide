@@ -6,6 +6,8 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createOwnedNativeFixture } from './treasure-vault-native-fixture.mjs';
 import { createNativeStopController, finalizeNativeStopReceipt } from './treasure-vault-native-stop.mjs';
+import { TECH_CORE_CONTENT_FIXTURE, readTechCoreContentDump } from './historical-content-fixture.mjs';
+import { prepareNative as prepareCitationControls } from './tech-core-citation-compatibility-native.mjs';
 
 const option = (name, fallback) =>
   process.argv.find((arg) => arg.startsWith('--' + name + '='))?.slice(name.length + 3) ?? fallback;
@@ -33,10 +35,13 @@ const inputPaths = [
   'supabase/release/tech-core-general-spells.sql',
   'supabase/migrations/20261011000100_incarnate_release_compatibility.sql',
   'supabase/release/tech-core-general-spells-incarnate-compatibility.sql',
+  'supabase/release/tech-core-introductory-spells-citation-compatibility.sql',
+  'supabase/release/tech-core-general-spells-citation-compatibility.sql',
 ];
 const inputs = new Map(
   await Promise.all(inputPaths.map(async (path) => [resolve(root, path), await readFile(resolve(root, path), 'utf8')]))
 );
+const historicalDump = await readTechCoreContentDump({ repositoryRoot: root });
 const introPath = resolve(root, inputPaths[5]);
 const introReleasePath = resolve(root, inputPaths[6]);
 const introMigration = inputs.get(introPath);
@@ -48,6 +53,11 @@ const migration = inputs.get(migrationPath);
 const release = inputs.get(releasePath);
 const compatibilityMigration = inputs.get(resolve(root, inputPaths[9]));
 const compatibilityRelease = inputs.get(resolve(root, inputPaths[10]));
+const citationPlan = await prepareCitationControls(root);
+const emptySourceControls = citationPlan.focused.filter(control => control.name.startsWith('empty-source-'));
+assert.equal(emptySourceControls.length, 20);
+assert.equal(citationPlan.queries.intro, inputs.get(resolve(root, inputPaths[11])));
+assert.equal(citationPlan.queries.general, inputs.get(resolve(root, inputPaths[12])));
 const delimiter = '$tech_core_general$';
 const splitSpec = (sql) => {
   const parts = sql.split(delimiter);
@@ -675,6 +685,7 @@ const synthetic = bindingVariant((p) => {
 });
 assert.equal(controls.length, new Set(controls.map((control) => control.phase + ':' + control.name)).size);
 const plan = {
+  empty_source_compatibility: emptySourceControls.map(({name,query,expected}) => ({name,query,expected})),
   schema: 'wg-tech-core-general-native-plan-v2',
   incarnate_compatibility: compatibilityPlan,
   generated_at: new Date().toISOString(),
@@ -714,6 +725,7 @@ const plan = {
       'Negative missing-row cases briefly use SET LOCAL session_replication_role inside rollback-only owned transactions; normal mode is restored before the unchanged migration executes. This setup is not migration SQL.',
   },
   inputs: [...inputs].map(([path, text]) => ({ path, sha256: hash(text), bytes: Buffer.byteLength(text) })),
+  historical_git_inputs: [TECH_CORE_CONTENT_FIXTURE],
   controls: controls.map(({ name, phase, pattern, variant, setup, ...rest }) => ({
     name,
     phase,
@@ -784,6 +796,7 @@ if (!execute) {
 const receipt = {
   schema: 'wg-tech-core-general-native-receipt-v2',
   incarnate_compatibility: { ...compatibilityPlan, controls: [], passed: false },
+  empty_source_compatibility: {controls:[], passed:false},
   passed: false,
   matrix,
   plan_sha256: hash(JSON.stringify(plan)),
@@ -792,6 +805,7 @@ const receipt = {
   access_review: plan.access_review,
   controls: [],
   inputs: plan.inputs,
+  historical_git_inputs: plan.historical_git_inputs,
 };
 const stop = createNativeStopController({ receipt });
 const fixture = createOwnedNativeFixture({
@@ -803,6 +817,8 @@ const fixture = createOwnedNativeFixture({
     assert.equal(typeof captured, 'string');
     return captured;
   },
+  contentDump: historicalDump,
+  contentDumpProvenance: TECH_CORE_CONTENT_FIXTURE,
   log: async (value) => {
     if (value.kind === 'owned-container-final-logs') (receipt.owned_container_final_logs ??= []).push(value);
     process.stdout.write(JSON.stringify(value) + '\n');
@@ -1217,6 +1233,17 @@ try {
   );
   receipt.incarnate_compatibility.restored_original_full_fixture = true;
   receipt.incarnate_compatibility.passed = true;
+  const emptySourceBaseline = fixture.snapshot();
+  assert.equal(fixture.query('select count(*) from public.content_update where id=999901;'), '0');
+  for (const control of emptySourceControls) {
+    const mutation = control.mutation.replaceAll('"user_id":"00000000-0000-4000-8000-000000000001"', '"user_id":'+JSON.stringify(userId));
+    const result = await stage(control.name, 'BEGIN;\n'+mutation+'\n'+citationPlan.queries[control.query]+'\nROLLBACK;');
+    assert.equal(result.trim(), (control.query==='intro'?'tech-core-introductory-spells':'tech-core-general-spells')+'|'+(control.expected?'t':'f'), control.name);
+    assert.deepEqual(fixture.snapshot(), emptySourceBaseline, control.name+': complete native fixture and sequences preserved');
+    receipt.empty_source_compatibility.controls.push({name:control.name, expected:control.expected, passed:true, complete_snapshot_preserved:true});
+  }
+  assert.equal(receipt.empty_source_compatibility.controls.length, 20);
+  receipt.empty_source_compatibility.passed = true;
   for (const [path, captured] of inputs)
     assert.equal(await readFile(path, 'utf8'), captured, 'Captured input bytes unchanged: ' + path);
   receipt.inputs_unchanged = true;

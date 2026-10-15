@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import { test } from 'node:test';
 import { sha256 } from './release.mjs';
-import { HISTORICAL_CONTENT_FIXTURE } from './historical-content-fixture.mjs';
+import { HISTORICAL_CONTENT_FIXTURE, TECH_CORE_CONTENT_FIXTURE } from './historical-content-fixture.mjs';
 import { createNativeRegisteredCiReplayControls } from './treasure-vault-native-registered-ci-replays.mjs';
 
 const root = new URL('../', import.meta.url);
@@ -144,7 +144,7 @@ test('bounded construction model retains all original replay groups and adds exa
     manifest: {
       schema: 'wg-tv-native-checked-in-input-manifest-v2',
       entries: [...files].map(([path, sql]) => ({ path, bytes: Buffer.byteLength(sql), sha256: sha256(sql) })),
-      historical_git_inputs: [HISTORICAL_CONTENT_FIXTURE],
+      historical_git_inputs: [HISTORICAL_CONTENT_FIXTURE, TECH_CORE_CONTENT_FIXTURE],
       current_catalog_path: 'data/data.sql',
       historical_bootstrap_mode: 'pinned-git-predecessor',
       external_private_inputs: [],

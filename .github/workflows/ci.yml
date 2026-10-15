@@ -23,7 +23,9 @@ jobs:
 
       - name: Fetch pinned historical content fixture
         working-directory: .
-        run: git fetch --no-tags --depth=1 origin b5dd54c018ecd414be4dc5659a7c28e7ad4633b7
+        run: |
+          git fetch --no-tags --depth=1 origin b5dd54c018ecd414be4dc5659a7c28e7ad4633b7
+          git fetch --no-tags --depth=1 origin 756a80011e1d0e3ac9db0e14a304d8cf0f1479a5
 
       - uses: actions/setup-node@v4
         with:

@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createOwnedNativeFixture } from './treasure-vault-native-fixture.mjs';
 import { createNativeStopController, finalizeNativeStopReceipt } from './treasure-vault-native-stop.mjs';
+import { TECH_CORE_CONTENT_FIXTURE, readTechCoreContentDump } from './historical-content-fixture.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const outputArgument = process.argv.find((argument) => argument.startsWith('--output='));
@@ -22,6 +23,7 @@ const paths = [
 const bootstrap = new Map(
   await Promise.all(paths.map(async (path) => [path, await readFile(resolve(root, path), 'utf8')]))
 );
+const historicalDump = await readTechCoreContentDump({ repositoryRoot: root });
 const migrationPath = 'supabase/migrations/20261008160000_tech_core_introductory_spells.sql';
 const releasePath = 'supabase/release/tech-core-introductory-spells.sql';
 const migration = await readFile(resolve(root, migrationPath), 'utf8');
@@ -40,6 +42,7 @@ const receipt = {
     migration: { path: migrationPath, sha256: hash(migration) },
     release: { path: releasePath, sha256: hash(release) },
   },
+  historical_git_inputs: [TECH_CORE_CONTENT_FIXTURE],
 };
 const stop = createNativeStopController({ receipt });
 const log = async (value) => {
@@ -57,6 +60,8 @@ const fixture = createOwnedNativeFixture({
     assert.ok(bootstrap.has(path), 'Only captured bootstrap inputs');
     return bootstrap.get(path);
   },
+  contentDump: historicalDump,
+  contentDumpProvenance: TECH_CORE_CONTENT_FIXTURE,
 });
 const stage = async (name, sql) => {
   await stop.checkpoint(name);
