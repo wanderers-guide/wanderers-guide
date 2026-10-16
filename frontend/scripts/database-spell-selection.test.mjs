@@ -767,11 +767,74 @@ test('the actual builder provides exact spell option identity without changing o
   );
 });
 
+test('compiled and module browser entry points retain all eight original cases without skipped tests', async () => {
+  const text = await readFile(new URL('../cypress/support/database-spell-fixture.ts', import.meta.url), 'utf8');
+  const file = ts.createSourceFile('fixture.ts', text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const declarations = file.statements
+    .filter((statement) => !ts.isImportDeclaration(statement))
+    .map((statement) => statement.getText(file))
+    .join('\n');
+  const javascript = ts.transpileModule(declarations, {
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
+  }).outputText;
+  const cases = {};
+  for (const mode of ['compiled', 'module']) {
+    const registered = [];
+    const exports = {};
+    new Function(
+      'exports',
+      'AbilityBlockSchema',
+      'CharacterSchema',
+      'ClassSchema',
+      'ContentSourceSchema',
+      'SpellSchema',
+      'TraitSchema',
+      'OperationSchema',
+      'describe',
+      'beforeEach',
+      'afterEach',
+      'it',
+      javascript
+    )(
+      exports,
+      AbilityBlockSchema,
+      CharacterSchema,
+      ClassSchema,
+      ContentSourceSchema,
+      SpellSchema,
+      TraitSchema,
+      OperationSchema,
+      (_title, register) => register(),
+      () => {},
+      () => {},
+      (title, callback) => {
+        assert.equal(typeof callback, 'function');
+        registered.push(title);
+      }
+    );
+    exports.registerDatabaseSpellSelectionTests(mode);
+    cases[mode] = registered;
+  }
+  assert.equal(cases.compiled.length, 6);
+  assert.equal(cases.module.length, 2);
+  assert.equal(new Set([...cases.compiled, ...cases.module]).size, 8);
+  assert(cases.compiled.every((title) => !title.includes('expires a mounted')));
+  assert(cases.module.every((title) => title.includes('expires a mounted')));
+  for (const screen of ['desktop', 'phone']) {
+    assert(cases.compiled.some((title) => title.startsWith('persists Daily Library') && title.endsWith(screen)));
+    assert(cases.module.some((title) => title.endsWith(screen)));
+  }
+  for (const [name, mode] of [
+    ['databaseSpellSelections', 'compiled'],
+    ['database-spell-mounted-rest', 'module'],
+  ]) {
+    const entry = await readFile(new URL(`../cypress/e2e/characters/${name}.cy.ts`, import.meta.url), 'utf8');
+    assert(entry.includes(`registerDatabaseSpellSelectionTests('${mode}')`));
+  }
+});
+
 async function readBrowserFixture() {
-  const text = await readFile(
-    new URL('../cypress/e2e/characters/databaseSpellSelections.cy.ts', import.meta.url),
-    'utf8'
-  );
+  const text = await readFile(new URL('../cypress/support/database-spell-fixture.ts', import.meta.url), 'utf8');
   const prefix = text.slice(0, text.indexOf('type WorkerControl'));
   const file = ts.createSourceFile('fixture.ts', prefix, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   const declarations = file.statements
@@ -877,17 +940,8 @@ test('the browser fixture reaches Initial Stats through a real selected class fe
 });
 
 test('the actual browser storage guard replies only to the exact public background GET', async () => {
-  const text = await readFile(
-    new URL('../cypress/e2e/characters/databaseSpellSelections.cy.ts', import.meta.url),
-    'utf8'
-  );
-  const file = ts.createSourceFile(
-    'databaseSpellSelections.cy.ts',
-    text,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.TS
-  );
+  const text = await readFile(new URL('../cypress/support/database-spell-fixture.ts', import.meta.url), 'utf8');
+  const file = ts.createSourceFile('database-spell-fixture.ts', text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   let handler;
   const visit = (node) => {
     if (
