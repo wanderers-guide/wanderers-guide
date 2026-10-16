@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import {
   checkRemote,
   checkRemoteFunctions,
@@ -374,10 +375,7 @@ test('historical migrations run separately while PR safety checks remain require
   assert.match(workflow, /Verify starship catalog classification migration replays safely/);
   assert.match(workflow, /API tests \(Edge Functions\)/);
   assert.match(workflow, /Cypress run/);
-  assert.match(workflow, /rg --files cypress\/e2e -g "\*\.cy\.ts" \| sort/);
-  assert.match(workflow, /for spec in "\$\{specs\[@\]\}"; do/);
-  assert.match(workflow, /--browser chrome --spec "\$spec" --config trashAssetsBeforeRuns=false \|\| failed=1/);
-  assert.match(workflow, /exit "\$failed"/);
+  assert.match(workflow, /^          command: bash scripts\/cypress-isolated\.sh$/m);
   assert.doesNotMatch(workflow, /retries=|continue-on-error:/);
   assert.match(workflow, /^  tech-core-content:/m);
   assert.match(historical, /^on:\n  workflow_dispatch:/m);
@@ -408,6 +406,37 @@ test('historical migrations run separately while PR safety checks remain require
     '.agents/legacy/treasure-vault-native-*.json',
     '.agents/legacy/treasure-vault-native-*.json.log',
   ]);
+});
+
+test('isolated Cypress command runs every spec once and retains any failure', async (t) => {
+  const root = await mkdtemp(path.join(tmpdir(), 'wg-cypress-command-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await mkdir(path.join(root, 'bin'));
+  await mkdir(path.join(root, 'cypress/e2e/nested'), { recursive: true });
+  const calls = path.join(root, 'calls.jsonl');
+  await writeFile(path.join(root, 'bin/npm'), `#!/usr/bin/env node
+const fs = require('node:fs');
+const args = process.argv.slice(2);
+fs.appendFileSync(process.env.WG_SPEC_CALLS, JSON.stringify(args) + '\\n');
+process.exit(process.env.WG_SPEC_FAIL === '1' && args.includes('cypress/e2e/a.cy.ts') ? 1 : 0);
+`, { mode: 0o755 });
+  const command = fileURLToPath(new URL('../frontend/scripts/cypress-isolated.sh', import.meta.url));
+  const run = fail => spawnSync('bash', [command], { cwd: root, encoding: 'utf8', timeout: 10000,
+    env: { ...process.env, PATH: path.join(root, 'bin') + path.delimiter + process.env.PATH,
+      WG_SPEC_CALLS: calls, WG_SPEC_FAIL: fail ? '1' : '0' } });
+  assert.equal(run(false).status, 1, 'An empty spec inventory must fail');
+  const specs = ['a.cy.ts', 'c.cy.js', 'd.cy.jsx', 'nested/b with space.cy.tsx'];
+  for (const spec of [...specs, 'ignored.ts']) await write(root, 'cypress/e2e/' + spec, '');
+  for (const fail of [false, true]) {
+    await writeFile(calls, '');
+    const result = run(fail);
+    assert.equal(result.error, undefined);
+    assert.equal(result.signal, null);
+    assert.equal(result.status, fail ? 1 : 0);
+    const actual = (await readFile(calls, 'utf8')).trim().split('\n').map(JSON.parse);
+    assert.deepEqual(actual, specs.map(spec => ['run', 'cy:run', '--', '--browser', 'chrome', '--spec',
+      'cypress/e2e/' + spec, '--config', 'trashAssetsBeforeRuns=false']));
+  }
 });
 
 

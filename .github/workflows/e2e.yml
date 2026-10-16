@@ -225,14 +225,7 @@ jobs:
           wait-on: "http://localhost:5174"
           # Fresh browsers isolate large download fixtures and mocked sessions between specs.
           # Keep every spec and preserve all failure artifacts; do not retry failures.
-          command: >-
-            bash -c 'mapfile -t specs < <(rg --files cypress/e2e -g "*.cy.ts" | sort);
-            test "${#specs[@]}" -gt 0 || exit 1;
-            failed=0;
-            for spec in "${specs[@]}"; do
-            npm run cy:run -- --browser chrome --spec "$spec" --config trashAssetsBeforeRuns=false || failed=1;
-            done;
-            exit "$failed"'
+          command: bash scripts/cypress-isolated.sh
         env:
           CYPRESS_BASE_URL: http://localhost:3000
           CYPRESS_TEST_EMAIL: test@wanderersguide.app
