@@ -130,6 +130,46 @@ const hazard = (id) => ({
   meta_data: { source: { book: 'War of Immortals', page: '191' } },
 });
 
+const starship = (id) => ({
+  ...hazard(id),
+  type: 'starship',
+  name: 'Test ship',
+  details: { description: 'A ship.', stat_block: '**Speed** 2 zones; **HP** 27; **SP** 10' },
+});
+
+test('starship-only audit scopes the shared table and validates printed rules', async (t) => {
+  const result = await audit(
+    t,
+    (url) => {
+      assert.equal(url.pathname, '/rest/v1/creature');
+      assert.equal(url.searchParams.get('type'), 'eq.starship');
+      if (url.searchParams.get('select') === 'id') return [200, [{ id: 3 }]];
+      return [200, url.searchParams.has('and') ? [] : [starship(3)]];
+    },
+    [],
+    'starship'
+  );
+  assert.equal(result.code, 0, result.logs);
+  assert.equal(result.report.tables[0].scanned, 1);
+});
+
+test('shared creature audit reports malformed ships as starships, not living entities', async (t) => {
+  const invalid = starship(3);
+  delete invalid.details.stat_block;
+  const result = await audit(
+    t,
+    (url) => {
+      if (url.searchParams.get('select') === 'id') return [200, [{ id: 3 }]];
+      return [200, url.searchParams.has('and') ? [] : [creature(1), hazard(2), invalid]];
+    },
+    [],
+    'creature'
+  );
+  assert.equal(result.code, 1, result.logs);
+  assert.equal(result.report.tables[0].scanned, 3);
+  assert(result.report.issues.some((issue) => issue.type === 'starship' && issue.path === 'details.stat_block'));
+});
+
 test('full audit validates creature and hazard rows from their shared table once', async (t) => {
   const result = await audit(
     t,

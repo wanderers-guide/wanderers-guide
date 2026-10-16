@@ -8,6 +8,7 @@ import {
   IconLanguage,
   IconMilitaryRank,
   IconPaw,
+  IconRocket,
   IconTag,
   IconTree,
   IconVocabulary,
@@ -45,9 +46,9 @@ export function toText(html: any) {
   return text.replace(/’/g, "'").trim();
 }
 
-export function convertToContentType(type: ContentType | AbilityBlockType | 'hazard'): ContentType {
+export function convertToContentType(type: ContentType | AbilityBlockType | 'hazard' | 'starship'): ContentType {
   // Hazard corrections use the creature table while retaining their hazard row type.
-  if (type === 'hazard') return 'creature';
+  if (type === 'hazard' || type === 'starship') return 'creature';
   // Handle special cases for DrawerTypes
   // @ts-ignore
   if (type === 'cast-spell' || type === 'add-spell') return 'spell';
@@ -78,7 +79,7 @@ export function isActionCost(value: string | null): value is ActionCost {
   ].includes(value);
 }
 
-export function getIconFromContentType(type: ContentType | 'hazard', size: string) {
+export function getIconFromContentType(type: ContentType | 'hazard' | 'starship', size: string) {
   return {
     trait: <IconTag size={size} />,
     item: <IconBackpack size={size} />,
@@ -87,6 +88,7 @@ export function getIconFromContentType(type: ContentType | 'hazard', size: strin
     'ability-block': <IconCaretLeftRight size={size} />,
     creature: <IconPaw size={size} />,
     hazard: <IconAlertTriangle size={size} />,
+    starship: <IconRocket size={size} />,
     ancestry: <IconTree size={size} />,
     background: <IconWindow size={size} />,
     language: <IconLanguage size={size} />,

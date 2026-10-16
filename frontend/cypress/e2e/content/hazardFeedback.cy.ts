@@ -124,6 +124,26 @@ const extendedHazard = {
   },
 };
 const profile = { id: 910002, user_id: actor, display_name: 'Feedback Fixture', is_admin: false, is_mod: false };
+const starship = {
+  id: 941004,
+  uuid: 8941004,
+  created_at: '2026-10-16T00:00:00Z',
+  type: 'starship',
+  name: 'Feedback Starship',
+  level: 1,
+  rarity: 'COMMON',
+  details: {
+    description: 'A synthetic reference ship, not an actor.',
+    stat_block:
+      '**HP** 27; **SP** 10\n\n**Speed** 2 zones; **Sensor Range** 5 zones\n\n[Feedback Trait](link_trait_941101)',
+    trait_ids: [trait.id],
+    trait_labels: ['Tiny'],
+  },
+  content_source_id: source.id,
+  deprecated: false,
+  version: '1.0',
+  meta_data: { source: { book: source.name, page: '197', url: 'https://example.invalid/starship' } },
+};
 const encounter = {
   id: 943001,
   created_at: '',
@@ -273,7 +293,7 @@ function assertDrawerBounds(width: number) {
 describe('Hazard content feedback', () => {
   let submissions: any[];
   let savedEncounter: typeof encounter;
-  let proposedReview: typeof review;
+  let proposedReview: typeof review | (Omit<typeof review, 'data'> & { data: typeof starship });
 
   beforeEach(() => {
     submissions = [];
@@ -311,7 +331,12 @@ describe('Hazard content feedback', () => {
         if (endpoint === 'find-content-source') rows = [source];
         if (endpoint === 'find-trait') rows = [trait];
         if (endpoint === 'find-creature') {
-          rows = body.type === 'hazard' ? [complexHazard, simpleHazard, extendedHazard] : [];
+          rows =
+            body.type === 'starship'
+              ? [starship]
+              : body.type === 'hazard'
+                ? [complexHazard, simpleHazard, extendedHazard]
+                : [];
         }
         if (body.id !== undefined) {
           const ids = Array.isArray(body.id) ? body.id : [body.id];
@@ -331,6 +356,77 @@ describe('Hazard content feedback', () => {
     ['desktop', 1280, 900],
     ['mobile', 390, 844],
   ] as const) {
+    it(`opens ship rules, source details, history, and a lossless correction editor on ${screen}`, () => {
+      cy.viewport(width, height);
+      cy.visit(`/?open=link_starship_${starship.id}`, { onBeforeLoad: session });
+      cy.contains('.mantine-Drawer-content', starship.name, { timeout: 30000 }).should('be.visible');
+      cy.get('.mantine-Drawer-body')
+        .should('contain.text', 'SP 10')
+        .and('contain.text', '2 zones')
+        .and('contain.text', '5 zones');
+      cy.get('.mantine-Drawer-body input, .mantine-Drawer-body textarea').should('not.exist');
+      cy.contains('.mantine-Drawer-content', /Edit Creature|Stamina|Resolve/).should('not.exist');
+      assertDrawerBounds(width);
+      cy.get('.mantine-Drawer-body a').contains('Feedback Trait').click();
+      cy.contains('.mantine-Drawer-content', trait.description).should('be.visible');
+      cy.get('button[aria-label="Go back to previous drawer"]').click();
+      cy.contains('.mantine-Drawer-content', starship.name).should('be.visible');
+      cy.get('button[aria-label="Help and Feedback"]').click();
+      modal('Content Details').contains('a', 'pg. 197').should('have.attr', 'href', starship.meta_data.source.url);
+      modal('Content Details').contains('button', 'Submit Content Update').click();
+      modal('Edit Starship').should('be.visible');
+      field('Name').should('have.value', starship.name);
+      field('Description').should('have.value', starship.details.description);
+      field('Stat Block').should('have.value', starship.details.stat_block);
+      assertNoOverflow();
+      cy.screenshot(`starship-feedback-${screen}`, { capture: 'viewport' });
+      modal('Edit Starship')
+        .contains('button', /^Cancel$/)
+        .click();
+      cy.then(() => expect(submissions).to.have.length(0));
+    });
+
+    it(`keeps ship correction previews outside creature calculations on ${screen}`, () => {
+      cy.viewport(width, height);
+      proposedReview = {
+        ...review,
+        ref_id: starship.id,
+        data: { ...starship, details: { ...starship.details, description: 'Proposed ship rules.' } },
+      };
+      cy.visit(`/content-update/${review.id}`, { onBeforeLoad: session });
+      cy.contains('button', 'View Original', { timeout: 30000 }).click();
+      cy.contains('.mantine-Drawer-content', starship.details.description).should('be.visible');
+      cy.get('.mantine-Drawer-content').should('contain.text', 'Starship 1');
+      cy.get('button[aria-label="Close drawer"]').click();
+      cy.contains('button', 'View Updated').click();
+      cy.contains('.mantine-Drawer-content', 'Proposed ship rules.').should('be.visible');
+      cy.get('.mantine-Drawer-body input, .mantine-Drawer-body textarea').should('not.exist');
+      cy.get('button[aria-label="Help and Feedback"]').should('not.exist');
+      cy.then(() => expect(submissions).to.have.length(0));
+    });
+
+    it(`submits only the edited ship prose while preserving source and identity on ${screen}`, () => {
+      cy.viewport(width, height);
+      cy.visit(`/?open=link_starship_${starship.id}`, { onBeforeLoad: session });
+      cy.contains('.mantine-Drawer-content', starship.name, { timeout: 30000 }).should('be.visible');
+      cy.get('button[aria-label="Help and Feedback"]').click();
+      modal('Content Details').contains('button', 'Submit Content Update').click();
+      field('Description').clear().type('Corrected synthetic ship description.');
+      modal('Edit Starship')
+        .contains('button', /^Update$/)
+        .click();
+      cy.wait('@submitHazardUpdate').then(({ request }) => {
+        const body = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
+        expect(body.type).to.eq('creature');
+        expect(body.ref_id).to.eq(starship.id);
+        expect(body.content_source_id).to.eq(source.id);
+        expect(body.data).to.deep.eq({
+          ...starship,
+          details: { ...starship.details, description: 'Corrected synthetic ship description.' },
+        });
+      });
+    });
+
     it(`shows hazard information and source provenance without changing the drawer on ${screen}`, () => {
       cy.viewport(width, height);
       cy.visit(`/?open=link_hazard_${complexHazard.id}`, { onBeforeLoad: session });

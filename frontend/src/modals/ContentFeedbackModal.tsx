@@ -1,5 +1,5 @@
 import { Text, Stack, Button, Group, Loader, Avatar, Modal, Title, Box, useMantineTheme, Anchor } from '@mantine/core';
-import { AbilityBlockType, ContentSource, ContentType, HazardSchema, Item } from '@schemas/content';
+import { AbilityBlockType, ContentSource, ContentType, HazardSchema, StarshipSchema, Item } from '@schemas/content';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { IconBook2, IconExternalLink, IconHash } from '@tabler/icons-react';
@@ -36,13 +36,15 @@ import { useAtomValue } from 'jotai';
 import { cleanContent, openCleaningPage } from '@ai/cleaning/cleaning-manager';
 import { fetchHazardById } from '@content/hazards';
 import { EditHazardModal } from './EditHazardModal';
+import { EditStarshipModal } from './EditStarshipModal';
+import { fetchStarshipById } from '@content/starships';
 
 export default function ContentFeedbackModal(props: {
   opened: boolean;
   onCancel: () => void;
   onStartFeedback: () => void;
   onCompleteFeedback: () => void;
-  type: ContentType | AbilityBlockType | 'hazard';
+  type: ContentType | AbilityBlockType | 'hazard' | 'starship';
   data: { id?: number; contentSourceId?: number };
   zIndex?: number;
 }) {
@@ -141,7 +143,7 @@ export default function ContentFeedbackModal(props: {
       >
         <Box style={{ position: 'relative', minHeight: 150 }}>
           <ContentFeedbackSection
-            type={props.type === 'hazard' ? 'hazard' : convertToContentType(props.type)}
+            type={props.type === 'hazard' || props.type === 'starship' ? props.type : convertToContentType(props.type)}
             data={props.data}
             onSubmitUpdate={(id, content) => {
               props.onStartFeedback();
@@ -152,6 +154,17 @@ export default function ContentFeedbackModal(props: {
       </Modal>
       {submitUpdate && (
         <Box>
+          {props.type === 'starship' && (
+            <EditStarshipModal
+              opened
+              starship={StarshipSchema.parse(submitUpdate.content)}
+              zIndex={props.zIndex}
+              onCancel={handleReset}
+              onComplete={async (ship) => {
+                await handleComplete(ship.id, ship.content_source_id, ship);
+              }}
+            />
+          )}
           {props.type === 'hazard' && (
             <EditHazardModal
               opened={true}
@@ -375,7 +388,7 @@ export default function ContentFeedbackModal(props: {
 }
 
 function ContentFeedbackSection(props: {
-  type: ContentType | 'hazard';
+  type: ContentType | 'hazard' | 'starship';
   data: { id?: number; contentSourceId?: number };
   onSubmitUpdate: (id: number, content: any) => void;
 }) {
@@ -388,9 +401,11 @@ function ContentFeedbackSection(props: {
     queryKey: [`find-content-${props.type}-${contentId}`, props.data.contentSourceId],
     queryFn: async () => {
       const content =
-        props.type === 'hazard'
-          ? await fetchHazardById(contentId!, props.data.contentSourceId ? [props.data.contentSourceId] : undefined)
-          : await fetchContentById(props.type, contentId!);
+        props.type === 'starship'
+          ? await fetchStarshipById(contentId!, props.data.contentSourceId)
+          : props.type === 'hazard'
+            ? await fetchHazardById(contentId!, props.data.contentSourceId ? [props.data.contentSourceId] : undefined)
+            : await fetchContentById(props.type, contentId!);
       const source = content
         ? await fetchContentById<ContentSource>('content-source', content.content_source_id ?? contentId)
         : null;

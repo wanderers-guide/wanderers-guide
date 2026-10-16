@@ -6,11 +6,12 @@ import { defineDefaultSources, fetchContent, fetchContentSources } from '@conten
 import { findContentUpdate } from '@content/content-update';
 import { getContentUpdateChangedFields } from '@content/content-update-review';
 import { fetchHazardById } from '@content/hazards';
+import { fetchStarshipById } from '@content/starships';
 import { mapToDrawerData } from '@drawers/drawer-utils';
 import { Center, Group, Title, ActionIcon, Text, Divider, Loader, Box, Stack, Anchor, Badge } from '@mantine/core';
 import { IconArrowBigRightLine, IconThumbUp, IconThumbDown } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Creature, Hazard, HazardSchema } from '@schemas/content';
+import { Creature, Hazard, HazardSchema, StarshipSchema } from '@schemas/content';
 import { setPageTitle } from '@utils/document-change';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
@@ -44,13 +45,20 @@ export function Component() {
         return null;
       }
 
-      const isHazardUpdate = contentUpdate.type === 'creature' && contentUpdate.data?.type === 'hazard';
-      const proposedHazardResult = isHazardUpdate ? HazardSchema.safeParse(contentUpdate.data) : null;
-      const proposedHazard = proposedHazardResult?.success ? proposedHazardResult.data : null;
+      const referenceType: 'starship' | 'hazard' = contentUpdate.data?.type === 'starship' ? 'starship' : 'hazard';
+      const isReferenceUpdate =
+        contentUpdate.type === 'creature' && ['hazard', 'starship'].includes(contentUpdate.data?.type);
+      const proposedReferenceResult = isReferenceUpdate
+        ? (referenceType === 'starship' ? StarshipSchema : HazardSchema).safeParse(contentUpdate.data)
+        : null;
+      const proposedReference = proposedReferenceResult?.success ? proposedReferenceResult.data : null;
       let originalContent: Hazard | Record<string, any> | null = null;
       if (contentUpdate.ref_id) {
-        if (isHazardUpdate) {
-          originalContent = await fetchHazardById(contentUpdate.ref_id, [contentUpdate.content_source_id]);
+        if (isReferenceUpdate) {
+          originalContent =
+            referenceType === 'starship'
+              ? await fetchStarshipById(contentUpdate.ref_id, contentUpdate.content_source_id)
+              : await fetchHazardById(contentUpdate.ref_id, [contentUpdate.content_source_id]);
         } else {
           const originalResults = await fetchContent(contentUpdate.type, {
             id: contentUpdate.ref_id,
@@ -65,8 +73,9 @@ export function Component() {
         user,
         source: sources.find((s) => s.id === contentUpdate.content_source_id)!,
         originalContent,
-        isHazardUpdate,
-        proposedHazard,
+        isReferenceUpdate,
+        proposedReference,
+        referenceType,
       };
     },
     refetchInterval: 1000,
@@ -132,9 +141,11 @@ export function Component() {
                             if (!data.contentUpdate.ref_id) return;
 
                             const type = data.contentUpdate.data?.type ?? data.contentUpdate.type;
-                            if (data.isHazardUpdate) {
+                            if (data.isReferenceUpdate) {
                               openDrawer(
-                                mapToDrawerData('hazard', data.contentUpdate.ref_id, { sourceId: data.source.id })
+                                mapToDrawerData(data.referenceType, data.contentUpdate.ref_id, {
+                                  sourceId: data.source.id,
+                                })
                               );
                             } else if (type === 'creature') {
                               openCreatureDrawer({
@@ -182,12 +193,12 @@ export function Component() {
                         <BlurButton
                           size='compact-md'
                           fw={500}
-                          disabled={data.isHazardUpdate && !data.proposedHazard}
+                          disabled={data.isReferenceUpdate && !data.proposedReference}
                           onClick={() => {
-                            if (data.isHazardUpdate) {
-                              if (!data.proposedHazard) return;
+                            if (data.isReferenceUpdate) {
+                              if (!data.proposedReference) return;
                               openDrawer(
-                                mapToDrawerData('hazard', data.proposedHazard, {
+                                mapToDrawerData(data.referenceType, data.proposedReference, {
                                   noFeedback: true,
                                 })
                               );
@@ -224,12 +235,12 @@ export function Component() {
                         <BlurButton
                           size='compact-md'
                           fw={500}
-                          disabled={data.isHazardUpdate && !data.proposedHazard}
+                          disabled={data.isReferenceUpdate && !data.proposedReference}
                           onClick={() => {
-                            if (data.isHazardUpdate) {
-                              if (!data.proposedHazard) return;
+                            if (data.isReferenceUpdate) {
+                              if (!data.proposedReference) return;
                               openDrawer(
-                                mapToDrawerData('hazard', data.proposedHazard, {
+                                mapToDrawerData(data.referenceType, data.proposedReference, {
                                   noFeedback: true,
                                 })
                               );

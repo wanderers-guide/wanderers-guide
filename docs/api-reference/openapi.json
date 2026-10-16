@@ -708,6 +708,35 @@
           "version": { "type": "string" }
         }
       },
+      "Starship": {
+        "type": "object",
+        "description": "Reference-only ship rules stored in the creature table. Not a living entity or encounter combatant. Zones, Hull Points, and Shield Points retain their printed meaning.",
+        "required": ["id", "uuid", "created_at", "type", "name", "level", "rarity", "details", "content_source_id", "version"],
+        "properties": {
+          "id": { "type": "integer" },
+          "uuid": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "type": { "type": "string", "const": "starship" },
+          "name": { "type": "string", "minLength": 1 },
+          "level": { "type": "integer" },
+          "rarity": { "$ref": "#/components/schemas/Rarity" },
+          "details": {
+            "type": "object",
+            "required": ["description", "stat_block"],
+            "properties": {
+              "description": { "type": "string" },
+              "stat_block": { "type": "string", "minLength": 1 },
+              "trait_ids": { "type": "array", "items": { "type": "integer" } },
+              "trait_labels": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "content_source_id": { "type": "integer" },
+          "deprecated": { "type": ["boolean", "null"] },
+          "version": { "type": "string" },
+          "meta_data": { "type": ["object", "null"], "properties": { "source": { "$ref": "#/components/schemas/ContentSourceCite" } } }
+        }
+      },
       "Hazard": {
         "type": "object",
         "description": "A read-only hazard stat block stored in the creature table. Living-entity fields such as inventory and current HP do not apply.",
@@ -1083,7 +1112,7 @@
       },
       "SearchResults": {
         "type": "object",
-        "required": ["ability_blocks", "ancestries", "archetypes", "backgrounds", "classes", "creatures", "hazards", "items", "languages", "spells", "traits", "versatile_heritages", "class_archetypes"],
+        "required": ["ability_blocks", "ancestries", "archetypes", "backgrounds", "classes", "creatures", "hazards", "starships", "items", "languages", "spells", "traits", "versatile_heritages", "class_archetypes"],
         "properties": {
           "ability_blocks": { "type": "array", "items": { "$ref": "#/components/schemas/AbilityBlock" } },
           "ancestries": { "type": "array", "items": { "$ref": "#/components/schemas/Ancestry" } },
@@ -1117,6 +1146,17 @@
                 "level": { "type": "integer" },
                 "type": { "type": "string", "const": "hazard" },
                 "content_source_id": { "type": "integer" }
+              }
+            }
+          },
+          "starships": {
+            "type": "array",
+            "description": "Simple search returns projected fields; advanced search returns complete ship references.",
+            "items": {
+              "type": "object", "required": ["id", "name", "level", "type", "content_source_id"],
+              "properties": {
+                "id": { "type": "integer" }, "name": { "type": "string" }, "level": { "type": "integer" },
+                "type": { "type": "string", "const": "starship" }, "content_source_id": { "type": "integer" }
               }
             }
           },
@@ -1671,8 +1711,8 @@
     "/find-creature": {
       "post": {
         "tags": ["Content"],
-        "summary": "Find creatures or hazards",
-        "description": "Defaults to creatures. Set `type` to `hazard` to retrieve read-only hazard stat blocks from the same catalog table.",
+        "summary": "Find creatures, hazards, or starship references",
+        "description": "Defaults to creatures. Set `type` to `hazard` or `starship` to retrieve the corresponding reference stat blocks from the same catalog table.",
         "operationId": "findCreature",
         "requestBody": {
           "required": false,
@@ -1683,7 +1723,7 @@
                 "properties": {
                   "id": { "oneOf": [{ "type": "integer" }, { "type": "array", "items": { "type": "integer" } }] },
                   "name": { "type": "string" },
-                  "type": { "type": "string", "enum": ["creature", "hazard"], "default": "creature" },
+                  "type": { "type": "string", "enum": ["creature", "hazard", "starship"], "default": "creature" },
                   "content_sources": { "type": "array", "items": { "type": "integer" } }
                 }
               }
@@ -1708,12 +1748,14 @@
                               "items": {
                                 "oneOf": [
                                   { "$ref": "#/components/schemas/Creature" },
-                                  { "$ref": "#/components/schemas/Hazard" }
+                                  { "$ref": "#/components/schemas/Hazard" },
+                                  { "$ref": "#/components/schemas/Starship" }
                                 ]
                               }
                             },
                             { "$ref": "#/components/schemas/Creature" },
                             { "$ref": "#/components/schemas/Hazard" },
+                            { "$ref": "#/components/schemas/Starship" },
                             { "type": "null" }
                           ]
                         }
@@ -3203,7 +3245,7 @@
       "post": {
         "tags": ["Search"],
         "summary": "Search across all content",
-        "description": "Two modes:\n- **Simple**: set `text` (>= 2 chars). Runs a websearch full-text query against every content table, capped at 20 hits per bucket. Best for spotlight-style search.\n- **Advanced**: set `is_advanced: true` plus a `type` and any of the per-type filters. Returns matching rows in the corresponding bucket only. Use `hazard` for hazard stat blocks. Creature and hazard searches support name, rarity, level, and source filters.\n\nAll responses include all thirteen content buckets, even if empty. Hazards and creatures are separate buckets.",
+        "description": "Two modes:\n- **Simple**: set `text` (>= 2 chars). Runs a websearch full-text query against every content table, capped at 20 hits per bucket. Best for spotlight-style search.\n- **Advanced**: set `is_advanced: true` plus a `type` and any of the per-type filters. Returns matching rows in the corresponding bucket only. Use `hazard` or `starship` for reference stat blocks. Creature, hazard, and starship searches support name, rarity, level, and source filters.\n\nAll responses include all fourteen content buckets, even if empty. Creatures, hazards, and starships are separate buckets.",
         "operationId": "searchData",
         "requestBody": {
           "required": true,
@@ -3214,7 +3256,7 @@
                 "properties": {
                   "text": { "type": "string", "description": "Simple-mode search text." },
                   "is_advanced": { "type": "boolean" },
-                  "type": { "oneOf": [{ "$ref": "#/components/schemas/ContentType" }, { "type": "string", "const": "hazard" }] },
+                  "type": { "oneOf": [{ "$ref": "#/components/schemas/ContentType" }, { "type": "string", "enum": ["hazard", "starship"] }] },
                   "content_sources": { "type": "array", "items": { "type": "integer" } },
                   "name": { "type": "string" },
                   "description": { "type": "string" },

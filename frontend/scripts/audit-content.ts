@@ -2,7 +2,7 @@
 import { closeSync, fchmodSync, mkdirSync, openSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { parseArgs } from 'node:util';
-import { HazardSchema } from '../src/schemas/content';
+import { HazardSchema, StarshipSchema } from '../src/schemas/content';
 import { CONTENT_SCHEMAS } from './content-schemas';
 
 type Row = Record<string, unknown> & { id: number };
@@ -29,11 +29,14 @@ async function main() {
   if (values.help) {
     console.log('audit:content [--source-id 400] [--tables item,spell] [--out report.json]');
     console.log('Requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY. GET requests only.');
-    console.log(`Types: ${Object.keys(CONTENT_SCHEMAS).join(', ')}, hazard`);
+    console.log(`Types: ${Object.keys(CONTENT_SCHEMAS).join(', ')}, hazard, starship`);
     return;
   }
   const types = values.tables?.split(',').map((type) => type.trim()) ?? Object.keys(CONTENT_SCHEMAS);
-  if (!types.length || types.some((type) => type !== 'hazard' && !Object.hasOwn(CONTENT_SCHEMAS, type))) {
+  if (
+    !types.length ||
+    types.some((type) => !['hazard', 'starship'].includes(type) && !Object.hasOwn(CONTENT_SCHEMAS, type))
+  ) {
     throw new Error('Unknown content type. Run with --help to list supported types.');
   }
   const rawSourceId = values['source-id'];
@@ -74,8 +77,9 @@ async function main() {
   /** Keep every invalid field in the report while continuing the scoped scan. */
   function validate(type: string, row: Row, summary: TableReport): void {
     summary.scanned++;
-    const rowType = type === 'creature' && row.type === 'hazard' ? 'hazard' : type;
-    const schema = rowType === 'hazard' ? HazardSchema : CONTENT_SCHEMAS[type];
+    const rowType = type === 'creature' && (row.type === 'hazard' || row.type === 'starship') ? row.type : type;
+    const schema =
+      rowType === 'starship' ? StarshipSchema : rowType === 'hazard' ? HazardSchema : CONTENT_SCHEMAS[type];
     const result = schema.safeParse(row);
     if (result.success) return;
     summary.invalid++;
@@ -93,8 +97,8 @@ async function main() {
       throw new Error(`Content source ${sourceId} was not found.`);
     }
     for (const type of new Set(types)) {
-      const table = type === 'hazard' ? 'creature' : type.replaceAll('-', '_');
-      const typeFilter = type === 'hazard' ? { type: 'eq.hazard' } : {};
+      const table = type === 'hazard' || type === 'starship' ? 'creature' : type.replaceAll('-', '_');
+      const typeFilter = type === 'hazard' || type === 'starship' ? { type: `eq.${type}` } : {};
       const summary: TableReport = { type, scanned: 0, invalid: 0, complete: false };
       report.tables.push(summary);
       if (sourceRows && table === 'content_source') {

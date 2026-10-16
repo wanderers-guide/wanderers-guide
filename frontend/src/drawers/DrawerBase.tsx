@@ -129,8 +129,9 @@ export default function DrawerBase() {
   const swipeHandlers = useSwipeGesture({ onSwipeRight: handleDrawerGoBack });
 
   const opened = !!_drawer;
-  const hazardId = _drawer?.data.hazard?.id ?? _drawer?.data.id;
-  const hazardFeedbackAvailable = _drawer?.type !== 'hazard' || (Number.isInteger(hazardId) && hazardId > 0);
+  const hazardId = _drawer?.data.hazard?.id ?? _drawer?.data.starship?.id ?? _drawer?.data.id;
+  const hazardFeedbackAvailable =
+    !['hazard', 'starship'].includes(_drawer?.type ?? '') || (Number.isInteger(hazardId) && hazardId > 0);
   return (
     <>
       <Drawer
@@ -218,7 +219,7 @@ export default function DrawerBase() {
                 <HoverCard
                   shadow='md'
                   openDelay={500}
-                  zIndex={_drawer.type === 'hazard' ? (_drawer.data.zIndex ?? 1000) + 1 : 1000}
+                  zIndex={['hazard', 'starship'].includes(_drawer.type) ? (_drawer.data.zIndex ?? 1000) + 1 : 1000}
                   withArrow
                   withinPortal
                 >
@@ -231,8 +232,8 @@ export default function DrawerBase() {
                       style={getAnchorStyles({ r: 5, b: 5 })}
                       onClick={() => {
                         const type =
-                          _drawer.type === 'hazard'
-                            ? 'hazard'
+                          _drawer.type === 'hazard' || _drawer.type === 'starship'
+                            ? _drawer.type
                             : isAbilityBlockType(_drawer.type)
                               ? _drawer.type
                               : convertToContentType(_drawer.type as ContentType);
@@ -245,9 +246,10 @@ export default function DrawerBase() {
                         }
 
                         // Encounter snapshots refer back to the catalog, never the instance ID.
-                        if (type === 'hazard') {
-                          data.id = data.hazard?.id ?? data.id;
-                          data.contentSourceId = data.hazard?.content_source_id ?? data.sourceId;
+                        if (type === 'hazard' || type === 'starship') {
+                          data.id = data.hazard?.id ?? data.starship?.id ?? data.id;
+                          data.contentSourceId =
+                            data.hazard?.content_source_id ?? data.starship?.content_source_id ?? data.sourceId;
                           data.zIndex = _drawer.data.zIndex ?? 1000;
                         }
 
@@ -284,7 +286,9 @@ export default function DrawerBase() {
           }}
           type={feedbackData.type}
           data={feedbackData.data}
-          zIndex={feedbackData.type === 'hazard' ? (feedbackData.data.zIndex ?? 1000) + 1 : undefined}
+          zIndex={
+            ['hazard', 'starship'].includes(feedbackData.type) ? (feedbackData.data.zIndex ?? 1000) + 1 : undefined
+          }
         />
       )}
       <DrawerCreatureBase />

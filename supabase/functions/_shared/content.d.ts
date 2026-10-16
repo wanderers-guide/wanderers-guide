@@ -36,9 +36,26 @@ type ContentType =
   | 'background'
   | 'language'
   | 'content-source';
-type CreatureRecordType = 'creature' | 'hazard';
-/** Hazards can be searched without enabling them in content authoring endpoints. */
-type SearchContentType = ContentType | 'hazard';
+type CreatureRecordType = 'creature' | 'hazard' | 'starship';
+/** Reference subtypes can be searched without enabling the ordinary creature editor. */
+type SearchContentType = ContentType | 'hazard' | 'starship';
+
+/** Read-only starship reference stored separately from living-entity mechanics. */
+interface Starship {
+  id: number;
+  uuid: number;
+  created_at: string;
+  updated_at?: string;
+  type: 'starship';
+  name: string;
+  level: number;
+  rarity: Rarity;
+  details: { description: string; stat_block: string; trait_ids?: number[]; trait_labels?: string[] };
+  content_source_id: number;
+  deprecated: boolean | null;
+  version: string;
+  meta_data: { source?: { url?: string; book?: string; page?: string } } | null;
+}
 
 // All requests follow JSend specification (https://github.com/omniti-labs/jsend) //
 export type JSendResponse<T = NonNullable<any>> =

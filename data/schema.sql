@@ -477,7 +477,7 @@ CREATE TABLE public.creature (
     search_tsv tsvector GENERATED ALWAYS AS (setweight(to_tsvector('english'::regconfig, (COALESCE(name, ''::character varying))::text), 'A'::"char")) STORED,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     type text DEFAULT 'creature'::text NOT NULL,
-    CONSTRAINT creature_type_check CHECK ((type = ANY (ARRAY['creature'::text, 'hazard'::text])))
+    CONSTRAINT creature_type_check CHECK ((type = ANY (ARRAY['creature'::text, 'hazard'::text, 'starship'::text])))
 );
 
 

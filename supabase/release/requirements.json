@@ -436,5 +436,9 @@
   "20261015000000_rust_cloud_release_compatibility.sql": {
     "check": "treasure-vault-terminal-status.sql",
     "order": "before-functions"
+  },
+  "20261016000000_starship_reference_catalog.sql": {
+    "check": "starship-reference-catalog.sql",
+    "order": "before-functions"
   }
 }

@@ -132,6 +132,11 @@ jobs:
           verify_registered
           for pass in 1 2; do
             for migration in supabase/migrations/20260927*.sql supabase/migrations/20260928*.sql supabase/migrations/20260929*.sql supabase/migrations/20260930*.sql supabase/migrations/20261001*.sql supabase/migrations/20261002*.sql supabase/migrations/20261011000000_restore_heal_companion.sql supabase/migrations/20261011000100_incarnate_release_compatibility.sql; do
+              # Replay the successor instead of restoring the obsolete two-value check.
+              if [ "${migration##*/}" = '20260928010000_hazard_type.sql' ]; then
+                docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -q -f - < supabase/migrations/20261016000000_starship_reference_catalog.sql
+                continue
+              fi
               if [ "${migration##*/}" = '20261011000100_incarnate_release_compatibility.sql' ]; then
                 { printf 'BEGIN READ ONLY;\n'; cat supabase/release/tech-core-general-spells-citation-compatibility.sql; printf '\nROLLBACK;\n'; } \
                   | docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -qAt -f - \
@@ -148,6 +153,13 @@ jobs:
 
       - name: Database authorization regression tests
         run: npm run test:authorization
+
+      - name: Verify starship catalog classification migration replays safely
+        run: |
+          set -euo pipefail
+          for pass in 1 2; do
+            docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -q -f - < supabase/migrations/20261016000000_starship_reference_catalog.sql
+          done
 
       - name: Install frontend dependencies
         working-directory: ./frontend

@@ -30,8 +30,8 @@ serve(async (req: Request) => {
         .eq('id', id)
         .maybeSingle();
       if (error) throw error;
-      if (existing?.type === 'hazard') {
-        return { status: 'fail', data: { id: 'Hazards are read-only.' } };
+      if (existing?.type === 'hazard' || existing?.type === 'starship') {
+        return { status: 'fail', data: { id: 'This catalog type requires its own content editor.' } };
       }
     }
 

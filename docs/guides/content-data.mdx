@@ -16,7 +16,7 @@ WG content lives in Postgres, with one table per primary content type:
 | `spell`                                                                                 | Spells.                                                                                                                                                                     |
 | `item`                                                                                  | Equipment, weapons, armor, consumables, runes, materials.                                                                                                                   |
 | `ancestry`, `versatile_heritage`, `class`, `class_archetype`, `archetype`, `background` | Character-build options. Each is its own table because the schemas differ.                                                                                                  |
-| `creature`                                                                              | Monsters, NPCs, animal companions, and hazards. The `type` column separates creature rows from hazard rows.                                                                 |
+| `creature`                                                                              | Monsters, NPCs, animal companions, hazards, and starship references. The `type` column separates these catalog records.                                                                 |
 | `language`                                                                              | Languages.                                                                                                                                                                  |
 | `content_source`                                                                        | The “book” a row belongs to. Every content row has a `content_source_id`. Sources are owned (`user_id`) by the user who created them, or `null` for official Paizo sources. |
 | `content_update`                                                                        | A pending edit submitted by the community for moderator review.                                                                                                             |
@@ -169,6 +169,36 @@ defense-list, or supported elemental-result context. Ordinary environmental air
 and narrative spirit actors stay plain, including when their words are capitalized.
 
 Creature rows can carry optional `meta_data.stat_block` annotations for source-specific stat lines, including listed senses and skills, trait labels, conditional defense and HP notes, and innate spell frequencies. `immunities_note` and `resistances_note` display conditional effects in their stat-block lists without treating them as unconditional mechanics. These annotations only affect display. Embedded attack items can use `meta_data.display_traits` for trait text that has no matching trait record and `meta_data.inventory_label` when an inventory label differs from the attack name. The underlying creature operations and abilities still hold the actual mechanics.
+
+### Starship references
+
+Starship stat blocks reuse the creature table with `type='starship'`. They have their
+own validated reader, search bucket, and reference drawer. `details.description`
+holds the introduction and `details.stat_block` holds the complete printed rules.
+Keep speed and sensor ranges in zones, and hull HP and Shield Points as distinct
+printed values. These rows never enter the creature cache, character calculations,
+creature editor, or encounter combatants. This is reference support, not a ship
+builder or automated starship combat.
+
+Ship components reuse items with `group='GENERAL'`, empty operations, and
+`meta_data.starship_reference` set to `frame`, `station`, `weapon`, `upgrade`,
+`bay`, or `drone`. Set `meta_data.unselectable=true` to keep them out of ordinary
+equipment selections. Preserve ship-scale ranges and all printed grade profiles in
+the description; do not populate ordinary weapon or armor fields. Station actions
+may be linked hidden ability blocks, never automatic grants to every character.
+
+Starship links use `buildHrefFromContentData('starship', id)` with a verified
+catalog identity. Do not add ships to the ordinary creature cache just to resolve
+links. Index every eligible occurrence and retain canonical source URL, book, and
+page metadata. The existing Help and Feedback flow supports moderated starship
+text corrections while preserving identity and source ownership.
+
+Starship-trait hazards still use `type='hazard'` and the existing hazard fields.
+A printed Stealth DC is not an initiative modifier. Per-object HP belongs in
+`defenses.hp_note` unless the source also provides a single aggregate maximum.
+Ship-only conditions remain reference text or canonical source links, not normal
+character conditions. Deploy the migration, APIs, and frontend before importing
+starship rows or components that depend on this support.
 
 ### Reviewing content submissions
 

@@ -29,6 +29,7 @@ import { ArchetypeDrawerTitle } from './types/ArchetypeDrawer';
 import { VersatileHeritageDrawerTitle } from './types/VersatileHeritageDrawer';
 import { ClassArchetypeDrawerTitle } from './types/ClassArchetypeDrawer';
 import { HazardDrawerTitle } from './types/HazardDrawer';
+import { StarshipDrawerTitle } from './types/StarshipDrawer';
 import { CreatureDrawerTitle } from './types/CreatureDrawer';
 
 const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
@@ -37,6 +38,7 @@ const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
     <div ref={ref}>
       {_drawer?.type === 'content-source' && <ContentSourceDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'hazard' && <HazardDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'starship' && <StarshipDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'creature' && <CreatureDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'generic' && <GenericDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'condition' && <ConditionDrawerTitle data={_drawer.data} />}

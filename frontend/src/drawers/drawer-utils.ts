@@ -2,7 +2,10 @@ import { DrawerType } from '@schemas/index';
 import { ContentType, AbilityBlockType } from '@schemas/content';
 import { isAbilityBlockType } from '@content/content-utils';
 
-export function convertContentLink(input: { type: ContentType | AbilityBlockType | 'condition' | 'hazard'; id: string }): {
+export function convertContentLink(input: {
+  type: ContentType | AbilityBlockType | 'condition' | 'hazard' | 'starship';
+  id: string;
+}): {
   type: DrawerType;
   data: any;
 } {
@@ -30,13 +33,13 @@ export function getMetadataOpenedDict() {
 }
 
 export function mapToDrawerData(
-  type: ContentType | 'hazard',
+  type: ContentType | 'hazard' | 'starship',
   data: Record<string, any> | number,
   dataInject?: Record<string, any>
 ): { type: DrawerType; data: any } {
   let drawerType: DrawerType = type;
-  if (type === 'creature' && data instanceof Object && data.type === 'hazard') {
-    drawerType = 'hazard';
+  if (type === 'creature' && data instanceof Object && (data.type === 'hazard' || data.type === 'starship')) {
+    drawerType = data.type;
   } else if (data instanceof Object && isAbilityBlockType(data.type)) {
     drawerType = data.type;
   }
@@ -62,6 +65,7 @@ export function mapToDrawerData(
     if (drawerType === 'content-source') key = 'source';
     if (drawerType === 'creature') key = 'creature';
     if (drawerType === 'hazard') key = 'hazard';
+    if (drawerType === 'starship') key = 'starship';
     drawerData = {
       [key]: data,
       ...(dataInject ?? {}),

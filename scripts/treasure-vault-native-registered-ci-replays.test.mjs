@@ -83,10 +83,10 @@ test('Construction only: actual workflow/footer bytes and every registered repla
   assert.equal(captured.manifest.schema,'wg-tv-native-checked-in-input-manifest-v2');
   assert.deepEqual(captured.manifest.registered_ci_paths,[workflowPath,...footerPaths]);
   assert.deepEqual(captured.manifest.external_private_inputs,[]);
-  assert.equal(captured.migrations.length,116);
-  assert.equal(captured.migrations.at(-1).path,'20261015000000_rust_cloud_release_compatibility.sql');
+  assert.equal(captured.migrations.length,117);
+  assert.equal(captured.migrations.at(-1).path,'20261016000000_starship_reference_catalog.sql');
   const {plan}=createNativeRegisteredCiReplayControls(constructorContext);
-  assert.equal(plan.registered_requirements,109);assert.equal(plan.checks.length,70);assert.equal(plan.replays.length,91);assert.equal(plan.expected_native_statements,393);
+  assert.equal(plan.registered_requirements,110);assert.equal(plan.checks.length,71);assert.equal(plan.replays.length,91);assert.equal(plan.expected_native_statements,396);
   assert.equal(plan.passed,false);assert.equal(constructorContext.receipt.registered_ci_replays,undefined);
   assert.equal(plan.workflow.sha256,sha(captured.readRelative(workflowPath)));
   assert.ok(plan.workflow.exact_bytes);assert.deepEqual(plan.index_footer.paths,footerPaths);assert.equal(plan.index_footer.read_only,false);
@@ -148,12 +148,12 @@ test('Reader models require exact nonempty two-column true results, not blank/fa
     'first|NULL\n', 'first|true\n', 'first| t\n', 'first|t \n', 'first|T\n', 'first|t|extra\n', 'BEGIN\nfirst|t\n'])assert.throws(()=>assertRegisteredCiRows(value,'model'));
 });
 
-test('Orchestration model sends exact393 statements in CI order; footer uses direct cat bytes and ordinary session',async()=>{
+test('Orchestration model sends exact396 statements in CI order; footer uses direct cat bytes and ordinary session',async()=>{
   const model=executionModel(),proof=await model.family.run();
-  assert.equal(proof.passed,true);assert.equal(model.calls.length,393);
+  assert.equal(proof.passed,true);assert.equal(model.calls.length,396);
   const expected=[];
   const verify=round=>{for(const check of model.family.plan.checks)expected.push({name:'registered-ci:verify-'+round+':'+check.path,sql:'BEGIN READ ONLY;\n'+captured.readRelative(check.path)+'\nROLLBACK;\n'});};
-  verify(0);for(const pass of [1,2]){for(const replay of model.family.plan.replays)expected.push({name:'registered-ci:pass-'+pass+':'+replay.path,sql:replay.path==='20261011000100_incarnate_release_compatibility.sql'?'BEGIN READ ONLY;\n'+captured.readRelative('supabase/release/tech-core-general-spells-citation-compatibility.sql')+'\nROLLBACK;\n':captured.readRelative('supabase/migrations/'+replay.path)});verify(pass);}
+  verify(0);for(const pass of [1,2]){for(const replay of model.family.plan.replays)expected.push({name:'registered-ci:pass-'+pass+':'+replay.path,sql:replay.path==='20261011000100_incarnate_release_compatibility.sql'?'BEGIN READ ONLY;\n'+captured.readRelative('supabase/release/tech-core-general-spells-citation-compatibility.sql')+'\nROLLBACK;\n':captured.readRelative('supabase/migrations/'+(replay.path==='20260928010000_hazard_type.sql'?'20261016000000_starship_reference_catalog.sql':replay.path))});verify(pass);}
   expected.push({name:'registered-ci:war-index-regression-footer',sql:footerPaths.map(path=>captured.readRelative(path)).join('')});
   assert.deepEqual(model.calls.map(({name,sql})=>({name,sql})),expected);
   assert.equal(proof.stages.filter(row=>row.compatibility_check&&row.read_only&&row.ids.join()==='tech-core-general-spells').length,2);
@@ -172,7 +172,7 @@ test('Orchestration models do not complete on result rejection, transport failur
   ]){const model=executionModel(options);await assert.rejects(()=>model.family.run());assert.equal(model.receipt.registered_ci_replays.passed,false);}
 });
 
-test('Receipt models require fresh completed393-stage evidence and all ten native obligations',async()=>{
+test('Receipt models require fresh completed396-stage evidence and all ten native obligations',async()=>{
   const model=executionModel(),proof=await model.family.run(),baseline=otherFamilyModel({proof,calls:model.calls});
   assert.equal(REQUIRED_NATIVE_OBLIGATIONS.length,10);
   assert.equal(assertRequiredNativeEvidence(baseline).length,10);
@@ -203,7 +203,7 @@ test('Receipt models require fresh completed393-stage evidence and all ten nativ
 test('Integration source model executes recipe once after alternate chronology, never through focused negative selection',()=>{
   const alternate=captured.readRelative('scripts/treasure-vault-native-alternate-fixture.mjs');
   assert.equal(alternate.split('await registeredCi.run();').length,2);
-  const chronologyEnd=alternate.indexOf('assert.equal(chronology.length,116)'),run=alternate.indexOf('await registeredCi.run();'),verify=alternate.indexOf('evidence.final_input_verification=');
+  const chronologyEnd=alternate.indexOf('assert.equal(chronology.length,117)'),run=alternate.indexOf('await registeredCi.run();'),verify=alternate.indexOf('evidence.final_input_verification=');
   assert.ok(chronologyEnd>=0&&run>chronologyEnd&&verify>run);
   assert.doesNotMatch(alternate,/selectedNegativeFiles/);
   assert.ok(alternate.includes("await stop.checkpoint('alternate after '+name);return result.stdout;"),'Exact CI reader receives raw stdout');

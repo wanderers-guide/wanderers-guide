@@ -265,6 +265,7 @@ export interface Item {
     };
     display_traits?: string[];
     inventory_label?: string;
+    starship_reference?: 'frame' | 'station' | 'weapon' | 'upgrade' | 'bay' | 'drone';
     source?: ContentSourceCite;
   } | null;
   operations: Operation[] | null;
@@ -439,6 +440,7 @@ export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
             .optional(),
           display_traits: z.array(z.string()).optional(),
           inventory_label: z.string().optional(),
+          starship_reference: z.enum(['frame', 'station', 'weapon', 'upgrade', 'bay', 'drone']).optional(),
           source: ContentSourceCiteSchema.optional(),
         })
         .passthrough()
@@ -1028,6 +1030,38 @@ export const HazardSearchResultSchema = HazardSchema.pick({
   content_source_id: true,
 });
 export type HazardSearchResult = z.infer<typeof HazardSearchResultSchema>;
+
+/** Source-authored starship reference, deliberately separate from living-entity calculations. */
+export const StarshipSchema = z.object({
+  id: z.number(),
+  uuid: z.number(),
+  created_at: z.string(),
+  updated_at: z.string().optional(),
+  type: z.literal('starship'),
+  name: z.string().trim().min(1),
+  level: z.number().int(),
+  rarity: RaritySchema,
+  details: z.object({
+    description: z.string(),
+    stat_block: z.string().min(1),
+    trait_ids: z.array(z.number()).optional(),
+    trait_labels: z.array(z.string()).optional(),
+  }),
+  content_source_id: z.number(),
+  deprecated: z.boolean().nullable(),
+  version: z.string(),
+  meta_data: CiteOnlyMetaDataSchema,
+});
+export type Starship = z.infer<typeof StarshipSchema>;
+
+/** Global search fetches full ship rules only when the user opens the result. */
+export const StarshipSearchResultSchema = StarshipSchema.pick({
+  id: true,
+  type: true,
+  name: true,
+  level: true,
+  content_source_id: true,
+});
 
 // ─── Character ────────────────────────────────────────────────────────────────
 

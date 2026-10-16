@@ -20,6 +20,7 @@ export const DrawerTypeSchema = z.union([
   z.enum([
     'generic',
     'hazard',
+    'starship',
     'condition',
     'character',
     'manage-coins',

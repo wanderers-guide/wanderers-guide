@@ -32,6 +32,7 @@ import {
   ContentType,
   Creature,
   HazardSearchResultSchema,
+  StarshipSearchResultSchema,
   Item,
 } from '@schemas/content';
 import { DrawerType } from '@schemas/index';
@@ -387,6 +388,8 @@ async function queryResults(
 
     const parsedHazards = HazardSearchResultSchema.array().safeParse(searchData.hazards ?? []);
     if (!parsedHazards.success) console.warn('[SEARCH] Invalid hazard result', parsedHazards.error);
+    const parsedStarships = StarshipSearchResultSchema.array().safeParse(searchData.starships ?? []);
+    if (!parsedStarships.success) console.warn('[SEARCH] Invalid starship result', parsedStarships.error);
 
     // Format results to single array
     const result: Record<string, any>[] = [
@@ -397,6 +400,7 @@ async function queryResults(
       ...searchData.classes.map((a: any) => ({ ...a, _type: 'class' })),
       ...searchData.creatures.map((a: any) => ({ ...a, _type: 'creature' })),
       ...(parsedHazards.success ? parsedHazards.data : []).map((a) => ({ ...a, _type: 'hazard' })),
+      ...(parsedStarships.success ? parsedStarships.data : []).map((a) => ({ ...a, _type: 'starship' })),
       ...searchData.items.map((a: any) => ({ ...a, _type: 'item' })),
       ...searchData.languages.map((a: any) => ({ ...a, _type: 'language' })),
       ...searchData.spells.map((a: any) => ({ ...a, _type: 'spell' })),
@@ -414,7 +418,8 @@ async function queryResults(
 
   // Format results to spotlight actions
   return result.map((data) => {
-    const summary = data._type === 'hazard' ? undefined : data.description;
+    const referenceOnly = data._type === 'hazard' || data._type === 'starship';
+    const summary = referenceOnly ? undefined : data.description;
     let description = `${stripMd(`${summary}`)}`.split('.')[0] + '.';
 
     const abilityBlockType = data._type === 'ability-block' ? (data.type as AbilityBlockType) : null;
@@ -431,7 +436,7 @@ async function queryResults(
     return {
       id: `${data._type}-${data.id}`,
       label: `${data.name}`,
-      description: data._type === 'hazard' ? `Lvl. ${data.level}` : summary ? description : undefined,
+      description: referenceOnly ? `Lvl. ${data.level}` : summary ? description : undefined,
       onClick: () => {
         const type = (abilityBlockType ?? data._type) as DrawerType;
         setQueryParam('open', `link_${type}_${data.id}`);
@@ -449,12 +454,12 @@ async function queryResults(
             data: {
               id: data.id,
               readOnly: true,
-              ...(type === 'hazard' ? { sourceId: data.content_source_id } : {}),
+              ...(type === 'hazard' || type === 'starship' ? { sourceId: data.content_source_id } : {}),
             },
           });
         }
       },
-      leftSection: getIconFromContentType(data._type as ContentType | 'hazard', '1.5rem'),
+      leftSection: getIconFromContentType(data._type as ContentType | 'hazard' | 'starship', '1.5rem'),
       highlightColor: theme.colors[theme.primaryColor][2],
       keywords: ['query', `${data._type}`],
       _type: abilityBlockType ?? companionType ?? itemMetaType ?? data._type,

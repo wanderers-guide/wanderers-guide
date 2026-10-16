@@ -34,6 +34,6 @@ export function convertToHardcodedLink(type: ContentType | AbilityBlockType, tex
   return displayText ?? text;
 }
 
-export function buildHrefFromContentData(type: ContentType | AbilityBlockType, id: string | number) {
+export function buildHrefFromContentData(type: ContentType | AbilityBlockType | 'starship', id: string | number) {
   return `link_${type}_${id}`;
 }

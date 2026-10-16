@@ -10,7 +10,7 @@ const compatibilityReplay='20261011000100_incarnate_release_compatibility.sql';
 const recoveryReplayPaths=['20261011000000_restore_heal_companion.sql',compatibilityReplay];
 const indexPaths=['supabase/release/war-of-immortals-index.sql','supabase/release/war-of-immortals-index-regression.sql'];
 const workflowPath='.github/workflows/e2e.yml';
-export const APPROVED_REGISTERED_CI_REPLAY_STEP_SHA256="04910874f21cb4cecc8f0dac6bc25c8186aeac3f889b54b977dd0f90b3fd86c1";
+export const APPROVED_REGISTERED_CI_REPLAY_STEP_SHA256="c1ac3b8140489bef9b65316d263882dd3a5221a2e3df8f5703cde700221854d5";
 
 
 /** Pin the exact reviewed shell step, not a reconstructed or normalized workflow. */
@@ -33,6 +33,11 @@ export function assertRegisteredCiWorkflowRecipe(workflow) {
   assert.equal([...step.matchAll(/^            verify_registered$/gm)].length,1);
   const replayBlock='          for pass in 1 2; do\n'+
     '            for migration in '+[...replayPrefixes.map(prefix=>'supabase/migrations/'+prefix+'*.sql'),...recoveryReplayPaths.map(name=>'supabase/migrations/'+name)].join(' ')+'; do\n'+
+    '              # Replay the successor instead of restoring the obsolete two-value check.\n'+
+    '              if [ "${migration##*/}" = \'20260928010000_hazard_type.sql\' ]; then\n'+
+    '                docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -q -f - < supabase/migrations/20261016000000_starship_reference_catalog.sql\n'+
+    '                continue\n'+
+    '              fi\n'+
     '              if [ "${migration##*/}" = \'20261011000100_incarnate_release_compatibility.sql\' ]; then\n'+
     "                { printf 'BEGIN READ ONLY;\\n'; cat supabase/release/tech-core-general-spells-citation-compatibility.sql; printf '\\nROLLBACK;\\n'; } \\\n"+
     '                  | docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -qAt -f - \\\n'+
@@ -96,9 +101,9 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
   const workflow=assertRegisteredCiWorkflowRecipe(read(workflowPath));
   const requirements=JSON.parse(read('supabase/release/requirements.json'));
   const chronology=inputManifest.migrations;
-  assert.equal(chronology.length,116);
-  assert.equal(chronology.at(-1).path,'20261015000000_rust_cloud_release_compatibility.sql');
-  assert.equal(Object.keys(requirements).length,109,'Exact reviewed registered requirement inventory');
+  assert.equal(chronology.length,117);
+  assert.equal(chronology.at(-1).path,'20261016000000_starship_reference_catalog.sql');
+  assert.equal(Object.keys(requirements).length,110,'Exact reviewed registered requirement inventory');
   assert.deepEqual(requirements['20261008160000_tech_core_introductory_spells.sql'],{check:'tech-core-introductory-spells-citation-compatibility.sql',order:'before-functions'});
   assert.deepEqual(requirements['20261008190000_tech_core_general_spells.sql'],{check:'tech-core-general-spells-citation-compatibility.sql',order:'before-functions'});
   assert.deepEqual(requirements[recoveryReplayPaths[0]],{check:'heal-companion-recovery.sql',order:'before-functions'});
@@ -112,7 +117,7 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
     assert.ok(requirement&&typeof requirement==='object');assert.match(requirement.check,releaseName);
   }
   const checkNames=[...new Set(Object.values(requirements).map(row=>row.check))].sort();
-  assert.equal(checkNames.length,70,'Exact reviewed distinct registered check inventory');
+  assert.equal(checkNames.length,71,'Exact reviewed distinct registered check inventory');
   const checks=checkNames.map(name=>({path:'supabase/release/'+name,sql:read('supabase/release/'+name)}));
   const replays=chronology.filter(row=>replayPrefixes.some(prefix=>row.path.startsWith(prefix))||recoveryReplayPaths.includes(row.path)).map(row=>{
     const sql=read('supabase/migrations/'+row.path);assert.equal(sha(sql),row.sha256);
@@ -159,7 +164,8 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
     for(const pass of [1,2]) {
       for(const replay of replays){
         const check=replay.path===compatibilityReplay?'supabase/release/tech-core-general-spells-citation-compatibility.sql':null;
-        await execute('pass-'+pass+':'+replay.path,check?'BEGIN READ ONLY;\n'+read(check)+'\nROLLBACK;\n':replay.sql,'migration',{pass,path:replay.path,...(check?{compatibility_check:check}:{})});
+        const successor=replay.path==='20260928010000_hazard_type.sql'?'supabase/migrations/20261016000000_starship_reference_catalog.sql':null;
+        await execute('pass-'+pass+':'+replay.path,check?'BEGIN READ ONLY;\n'+read(check)+'\nROLLBACK;\n':successor?read(successor):replay.sql,'migration',{pass,path:replay.path,...(check?{compatibility_check:check}:{}),...(successor?{successor_migration:successor}:{})});
       }
       await verify(pass);
     }

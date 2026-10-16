@@ -350,6 +350,7 @@ async function handleAdvancedSearch(
     classes?: any[];
     creatures?: any[];
     hazards?: any[];
+    starships?: any[];
     items?: any[];
     languages?: any[];
     spells?: any[];
@@ -369,6 +370,8 @@ async function handleAdvancedSearch(
       results.creatures = await searchCreatures('creature');
     } else if (filters.type === 'hazard') {
       results.hazards = await searchCreatures('hazard');
+    } else if (filters.type === 'starship') {
+      results.starships = await searchCreatures('starship');
     } else if (filters.type === 'ancestry') {
       results.ancestries = await simpleTableSearch('ancestry');
     } else if (filters.type === 'archetype') {
@@ -398,6 +401,7 @@ async function handleAdvancedSearch(
       classes: results.classes ?? [],
       creatures: results.creatures ?? [],
       hazards: results.hazards ?? [],
+      starships: results.starships ?? [],
       items: results.items ?? [],
       languages: results.languages ?? [],
       spells: results.spells ?? [],
@@ -431,6 +435,7 @@ async function handleSimpleSearch(
         classes: [],
         creatures: [],
         hazards: [],
+        starships: [],
         items: [],
         languages: [],
         spells: [],
@@ -506,6 +511,7 @@ async function handleSimpleSearch(
     searchTable('trait', text),
     searchTable('versatile_heritage', text),
     searchTable('class_archetype', text),
+    searchTable('creature', text, 'starship'),
   ]);
 
   return {
@@ -524,6 +530,7 @@ async function handleSimpleSearch(
       traits: results[10],
       versatile_heritages: results[11],
       class_archetypes: results[12],
+      starships: results[13],
     },
   };
 }

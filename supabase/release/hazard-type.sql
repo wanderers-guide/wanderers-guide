@@ -21,5 +21,5 @@ select 'creature-type-check', exists (
 )
 union all
 select 'creature-type-values', not exists (
-  select 1 from public.creature where type not in ('creature', 'hazard')
+  select 1 from public.creature where type not in ('creature', 'hazard', 'starship')
 );

@@ -10,6 +10,7 @@ import { toLabel } from '@utils/strings';
 import { convertToContentType } from '@content/content-utils';
 import { fetchContentById } from '@content/content-store';
 import { fetchHazardById } from '@content/hazards';
+import { fetchStarshipById } from '@content/starships';
 import { buildHrefFromContentData } from '@content/hardcoded-links';
 
 export default function ContentLinkControl() {
@@ -65,9 +66,12 @@ export default function ContentLinkControl() {
       const contentData = getContentDataFromHref(url);
       if (!contentData || contentData.type === 'condition') return;
 
-      const content = contentData.type === 'hazard'
-        ? await fetchHazardById(parseInt(contentData.id))
-        : await fetchContentById(convertToContentType(contentData.type), parseInt(contentData.id));
+      const content =
+        contentData.type === 'starship'
+          ? await fetchStarshipById(parseInt(contentData.id))
+          : contentData.type === 'hazard'
+            ? await fetchHazardById(parseInt(contentData.id))
+            : await fetchContentById(convertToContentType(contentData.type), parseInt(contentData.id));
       if (content) {
         setContent(content);
       }

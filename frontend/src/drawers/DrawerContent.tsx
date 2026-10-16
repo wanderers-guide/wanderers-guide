@@ -32,6 +32,7 @@ import { VersatileHeritageDrawerContent } from './types/VersatileHeritageDrawer'
 import { cloneDeep } from 'lodash-es';
 import { ClassArchetypeDrawerContent } from './types/ClassArchetypeDrawer';
 import { HazardDrawerContent } from './types/HazardDrawer';
+import { StarshipDrawerContent } from './types/StarshipDrawer';
 import { CreatureDrawerContent } from './types/CreatureDrawer';
 
 export default function DrawerContent(props: { onMetadataChange?: (openedDict?: Record<string, string>) => void }) {
@@ -54,6 +55,7 @@ export default function DrawerContent(props: { onMetadataChange?: (openedDict?: 
     <>
       {_drawer?.type === 'content-source' && <ContentSourceDrawerContent data={drawerData} />}
       {_drawer?.type === 'hazard' && <HazardDrawerContent data={drawerData} />}
+      {_drawer?.type === 'starship' && <StarshipDrawerContent data={drawerData} />}
       {_drawer?.type === 'creature' && (
         <CreatureDrawerContent
           key={drawerData.id ?? drawerData.creature?.id}
