@@ -2,7 +2,7 @@
 # Run every spec in a fresh browser; preserve artifacts and aggregate failures without retries.
 set -uo pipefail
 
-specs=$(rg --files cypress/e2e -g '*.cy.{js,jsx,ts,tsx}' | sort) || exit 1
+specs=$(find cypress/e2e -type f \( -name '*.cy.js' -o -name '*.cy.jsx' -o -name '*.cy.ts' -o -name '*.cy.tsx' \) | sort) || exit 1
 test -n "$specs" || exit 1
 
 failed=0

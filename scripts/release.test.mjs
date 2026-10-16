@@ -420,6 +420,7 @@ const args = process.argv.slice(2);
 fs.appendFileSync(process.env.WG_SPEC_CALLS, JSON.stringify(args) + '\\n');
 process.exit(process.env.WG_SPEC_FAIL === '1' && args.includes('cypress/e2e/a.cy.ts') ? 1 : 0);
 `, { mode: 0o755 });
+  await writeFile(path.join(root, 'bin/rg'), '#!/bin/sh\nexit 127\n', { mode: 0o755 });
   const command = fileURLToPath(new URL('../frontend/scripts/cypress-isolated.sh', import.meta.url));
   const run = fail => spawnSync('bash', [command], { cwd: root, encoding: 'utf8', timeout: 10000,
     env: { ...process.env, PATH: path.join(root, 'bin') + path.delimiter + process.env.PATH,
@@ -432,7 +433,7 @@ process.exit(process.env.WG_SPEC_FAIL === '1' && args.includes('cypress/e2e/a.cy
     const result = run(fail);
     assert.equal(result.error, undefined);
     assert.equal(result.signal, null);
-    assert.equal(result.status, fail ? 1 : 0);
+    assert.equal(result.status, fail ? 1 : 0, result.stderr);
     const actual = (await readFile(calls, 'utf8')).trim().split('\n').map(JSON.parse);
     assert.deepEqual(actual, specs.map(spec => ['run', 'cy:run', '--', '--browser', 'chrome', '--spec',
       'cypress/e2e/' + spec, '--config', 'trashAssetsBeforeRuns=false']));
