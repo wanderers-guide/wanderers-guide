@@ -5,6 +5,40 @@ import { dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isOperationsWorkerURL } from '../cypress/support/operations-worker-fixture.ts';
 import { describeClientFailure } from '../cypress/support/client-failure.ts';
+import { clearFixtureIndexedDb } from '../cypress/support/content-cache-isolation.ts';
+
+test('fixture isolation resets only IndexedDB for configured loopback origins', async () => {
+  const calls = [];
+  await clearFixtureIndexedDb('http://localhost:3000/builder/123', 'http://127.0.0.1:5174/', async (request) =>
+    calls.push(request)
+  );
+  assert.deepEqual(calls, [
+    { command: 'Storage.clearDataForOrigin', params: { origin: 'http://localhost:3000', storageTypes: 'indexeddb' } },
+    { command: 'Storage.clearDataForOrigin', params: { origin: 'http://127.0.0.1:5174', storageTypes: 'indexeddb' } },
+  ]);
+});
+
+test('fixture isolation deduplicates the same origin and permits an absent module preview', async () => {
+  const calls = [];
+  await clearFixtureIndexedDb('http://localhost:3000/', 'http://localhost:3000/builder/123', async (request) =>
+    calls.push(request)
+  );
+  assert.equal(calls.length, 1);
+  await clearFixtureIndexedDb('http://[::1]:5173/', undefined, async (request) => calls.push(request));
+  assert.equal(calls.length, 2);
+});
+
+for (const url of [
+  'https://wanderersguide.app',
+  'file:///tmp/fixture.html',
+  'http://name:password@localhost:3000',
+  123,
+])
+  test(`fixture isolation refuses an unowned or invalid origin: ${url}`, async () => {
+    const calls = [];
+    await assert.rejects(clearFixtureIndexedDb('http://localhost:3000', url, async (request) => calls.push(request)));
+    assert.equal(calls.length, 0);
+  });
 
 test('generated browser downloads stay outside the watched app root', () => {
   const frontend = resolve(dirname(fileURLToPath(import.meta.url)), '..');

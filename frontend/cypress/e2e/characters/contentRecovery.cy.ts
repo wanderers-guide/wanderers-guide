@@ -10,9 +10,11 @@ describe('Incomplete content recovery', () => {
     cy.wait('@signIn').then(({ response }) => {
       token = response?.body.access_token;
     });
+    cy.intercept('POST', '**/functions/v1/find-character').as('initialCharacters');
     cy.visit('/characters');
+    cy.wait('@initialCharacters', { timeout: 30000 }).its('response.body.status').should('eq', 'success');
     cy.intercept('POST', '**/functions/v1/create-character').as('create');
-    cy.get('button[aria-label="Create Character"]').click();
+    cy.get('button[aria-label="Create Character"]').should('be.visible').and('not.be.disabled').click();
     cy.wait('@create').then(({ response }) => {
       characterId = response?.body.data.id;
     });
