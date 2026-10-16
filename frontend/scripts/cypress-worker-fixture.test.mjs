@@ -1,7 +1,24 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { dirname, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { isOperationsWorkerURL } from '../cypress/support/operations-worker-fixture.ts';
 import { describeClientFailure } from '../cypress/support/client-failure.ts';
+
+test('generated browser downloads stay outside the watched app root', () => {
+  const frontend = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+  const source = readFileSync(resolve(frontend, 'cypress.config.ts'), 'utf8');
+  const folder = source.match(/^\s*downloadsFolder:\s*'([^']+)'/m)?.[1];
+  assert.equal(folder, '../.agents/legacy/cypress-downloads');
+  assert(relative(frontend, resolve(frontend, folder)).startsWith('../'));
+  for (const name of ['companionJsonExport', 'contentDownloads'])
+    assert(
+      readFileSync(resolve(frontend, `cypress/e2e/characters/${name}.cy.ts`), 'utf8').includes(
+        "Cypress.config('downloadsFolder')"
+      )
+    );
+});
 
 test('strict browser fixtures describe only known diagnostic categories', () => {
   for (const code of [
