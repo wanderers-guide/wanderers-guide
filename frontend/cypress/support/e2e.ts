@@ -29,8 +29,9 @@ const isolateServiceWorker = () =>
 before(isolateServiceWorker);
 beforeEach(isolateServiceWorker);
 
-// Isolate mock catalogs between cases, not between the reloads exercised inside a case.
-beforeEach(() =>
+// Clear the owned browser before suite setup, never underneath an already mounted app.
+// Suites that vary their mock catalog explicitly reset between their own cases.
+before(() =>
   cy.then(() =>
     clearFixtureIndexedDb(Cypress.config('baseUrl'), Cypress.env('module_preview_url'), (request) =>
       Cypress.automation('remote:debugger:protocol', request)

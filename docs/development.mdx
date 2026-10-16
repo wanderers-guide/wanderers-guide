@@ -703,6 +703,9 @@ stack. Pull requests retain the code/contracts, API and authorization tests,
 registered read-only checks and replay smoke, browser tests, and focused Tech Core
 import checks. CI runs every Cypress spec in a fresh browser process, retains
 failure artifacts from all specs, and does not automatically retry failures.
+The support file clears IndexedDB before suite setup. Tests that deliberately
+change their mock catalog reset it explicitly between cases, not beneath an
+app mounted by a suite's setup hook. Reloads inside a case retain their cache.
 A content publication also requires its exact batch's native
 import, rollback, conflict and saved-data preservation tests and the production
 read-only release gate. Local fixture limits remain the same.

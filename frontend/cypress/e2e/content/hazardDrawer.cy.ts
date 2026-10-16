@@ -1,4 +1,5 @@
 import { describeClientFailure } from '../../support/client-failure';
+import { clearFixtureIndexedDb } from '../../support/content-cache-isolation';
 
 type CatalogRow = { id: number; name: string; content_source_id?: number; [key: string]: any };
 type CatalogFixture = { table: string; row: CatalogRow };
@@ -107,6 +108,11 @@ describe('Official hazard drawer', () => {
   });
 
   beforeEach(() => {
+    cy.then(() =>
+      clearFixtureIndexedDb(Cypress.config('baseUrl'), undefined, (request) =>
+        Cypress.automation('remote:debugger:protocol', request)
+      )
+    );
     cy.intercept('**/auth/v1/**', () => {
       throw new Error('Hazard catalog smoke must not authenticate or write user data');
     });

@@ -1,3 +1,5 @@
+import { clearFixtureIndexedDb } from '../../support/content-cache-isolation';
+
 type CacheFixtureRow = { table: string; row: { id: number; name: string; [key: string]: any } };
 
 const fixtureScript = `
@@ -12,6 +14,13 @@ const fixtureScript = `
 `;
 
 describe('Published content cache refresh', () => {
+  beforeEach(() =>
+    cy.then(() =>
+      clearFixtureIndexedDb(Cypress.config('baseUrl'), undefined, (request) =>
+        Cypress.automation('remote:debugger:protocol', request)
+      )
+    )
+  );
   let fixtures: CacheFixtureRow[];
   const cacheKey = 'content-store:anonymous';
   const unrelatedKey = 'unrelated-content-cache-fixture';

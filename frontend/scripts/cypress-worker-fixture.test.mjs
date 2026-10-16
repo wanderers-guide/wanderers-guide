@@ -7,6 +7,16 @@ import { isOperationsWorkerURL } from '../cypress/support/operations-worker-fixt
 import { describeClientFailure } from '../cypress/support/client-failure.ts';
 import { clearFixtureIndexedDb } from '../cypress/support/content-cache-isolation.ts';
 
+test('catalog cleanup precedes suite setup and is explicit for changing catalog fixtures', () => {
+  const support = readFileSync(new URL('../cypress/support/e2e.ts', import.meta.url), 'utf8');
+  assert.match(support, /before\(\(\) =>\s*cy\.then\(\(\) =>\s*clearFixtureIndexedDb/);
+  assert.doesNotMatch(support, /beforeEach\(\(\) =>\s*cy\.then\(\(\) =>\s*clearFixtureIndexedDb/);
+  for (const name of ['contentCacheRefresh', 'contentUpdateReview', 'hazardDrawer']) {
+    const source = readFileSync(new URL(`../cypress/e2e/content/${name}.cy.ts`, import.meta.url), 'utf8');
+    assert.match(source, /beforeEach\(\(\) =>[\s\S]*?clearFixtureIndexedDb/);
+  }
+});
+
 test('fixture isolation resets only IndexedDB for configured loopback origins', async () => {
   const calls = [];
   await clearFixtureIndexedDb('http://localhost:3000/builder/123', 'http://127.0.0.1:5174/', async (request) =>

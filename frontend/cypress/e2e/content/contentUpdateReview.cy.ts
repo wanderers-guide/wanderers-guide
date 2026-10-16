@@ -1,5 +1,6 @@
 import { ContentUpdate } from '../../../src/schemas/content';
 import { describeClientFailure } from '../../support/client-failure';
+import { clearFixtureIndexedDb } from '../../support/content-cache-isolation';
 
 const actor = '00000000-0000-4000-8000-000000000069';
 const source = {
@@ -143,6 +144,11 @@ describe('Content update review', () => {
   let original: Record<string, unknown> | null;
 
   beforeEach(() => {
+    cy.then(() =>
+      clearFixtureIndexedDb(Cypress.config('baseUrl'), undefined, (request) =>
+        Cypress.automation('remote:debugger:protocol', request)
+      )
+    );
     original = structuredClone(ability);
     review = makeReview('ability-block', 'UPDATE', { ...ability, meta_data: { unselectable: true } });
     cy.intercept('**/auth/v1/**', () => {
