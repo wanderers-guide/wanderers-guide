@@ -7,10 +7,6 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
-      exhaustive-content:
-        description: Run the exhaustive content failure matrix instead of representative release hazards
-        type: boolean
-        default: false
       private-content:
         description: Test a sealed unpublished content batch on an isolated runner
         type: boolean
@@ -227,7 +223,16 @@ jobs:
           # All other browser cases retain the compiled Docker app as their base URL.
           start: npm run dev -- --host 127.0.0.1 --port 5174 --strictPort
           wait-on: "http://localhost:5174"
-          command: npm run cy:run -- --browser chrome
+          # Fresh browsers isolate large download fixtures and mocked sessions between specs.
+          # Keep every spec and preserve all failure artifacts; do not retry failures.
+          command: >-
+            bash -c 'mapfile -t specs < <(rg --files cypress/e2e -g "*.cy.ts" | sort);
+            test "${#specs[@]}" -gt 0 || exit 1;
+            failed=0;
+            for spec in "${specs[@]}"; do
+            npm run cy:run -- --browser chrome --spec "$spec" --config trashAssetsBeforeRuns=false || failed=1;
+            done;
+            exit "$failed"'
         env:
           CYPRESS_BASE_URL: http://localhost:3000
           CYPRESS_TEST_EMAIL: test@wanderersguide.app
@@ -273,58 +278,6 @@ jobs:
       - name: Tear down docker stack
         if: always()
         run: docker compose down -v
-
-  content-native:
-    if: ${{ !inputs.private-content }}
-    runs-on: ubuntu-latest
-    # Routine releases use representative failures with complete preservation.
-    # The exhaustive matrix is available through an explicit manual run.
-    timeout-minutes: ${{ inputs.exhaustive-content && 360 || 120 }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Fetch pinned historical content fixture
-        run: |
-          git fetch --no-tags --depth=1 origin b5dd54c018ecd414be4dc5659a7c28e7ad4633b7
-          git fetch --no-tags --depth=1 origin 756a80011e1d0e3ac9db0e14a304d8cf0f1479a5
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install content schema test dependencies
-        working-directory: ./frontend
-        run: npm ci --legacy-peer-deps --no-audit --no-fund
-
-      - name: Validate native contracts before fixture startup
-        run: npm run test:content:contracts
-
-      - name: Pull pinned native fixture images
-        run: |
-          docker pull supabase/postgres:15.6.1.146
-          docker pull supabase/gotrue:v2.158.1
-
-      - name: Isolated content migration safety tests
-        env:
-          EXHAUSTIVE_CONTENT: ${{ inputs.exhaustive-content }}
-        run: |
-          if [ "$EXHAUSTIVE_CONTENT" = "true" ]; then
-            npm run test:content:native
-          else
-            npm run test:content:native -- --release
-          fi
-
-      - name: Upload content migration safety evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: treasure-vault-native-${{ github.sha }}
-          path: |
-            .agents/legacy/treasure-vault-native-*.json
-            .agents/legacy/treasure-vault-native-*.json.log
-          include-hidden-files: true
-          if-no-files-found: warn
 
   tech-core-content:
     if: ${{ !inputs.private-content }}

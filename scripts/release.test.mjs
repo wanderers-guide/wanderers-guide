@@ -365,19 +365,35 @@ test('baseline digest records require an explicit supported algorithm and preser
   }
 });
 
-test('CI retains native migration evidence on failure without archiving unrelated backups', async () => {
+test('historical migrations run separately while PR safety checks remain required', async () => {
   const workflow = await readFile(new URL('../.github/workflows/e2e.yml', import.meta.url), 'utf8');
+  const historical = await readFile(new URL('../.github/workflows/historical-content.yml', import.meta.url), 'utf8');
+  assert.doesNotMatch(workflow, /content-native:|exhaustive-content|npm run test:content:native/);
+  assert.match(workflow, /^  pull_request:\n    branches: \[main\]/m);
+  assert.match(workflow, /npm run test:authorization/);
+  assert.match(workflow, /Verify starship catalog classification migration replays safely/);
+  assert.match(workflow, /API tests \(Edge Functions\)/);
+  assert.match(workflow, /Cypress run/);
+  assert.match(workflow, /rg --files cypress\/e2e -g "\*\.cy\.ts" \| sort/);
+  assert.match(workflow, /for spec in "\$\{specs\[@\]\}"; do/);
+  assert.match(workflow, /--browser chrome --spec "\$spec" --config trashAssetsBeforeRuns=false \|\| failed=1/);
+  assert.match(workflow, /exit "\$failed"/);
+  assert.doesNotMatch(workflow, /retries=|continue-on-error:/);
+  assert.match(workflow, /^  tech-core-content:/m);
+  assert.match(historical, /^on:\n  workflow_dispatch:/m);
+  assert.doesNotMatch(historical, /^  (pull_request|push|schedule):/m);
   // Scope retention to the isolated job, including a final upload step.
-  const nativeJob = workflow.match(/^  content-native:\n((?: {4}[^\n]*\n|\n)*)/m)?.[1];
+  const nativeJob = historical.match(/^  content-native:\n((?: {4}[^\n]*\n|\n)*)/m)?.[1];
   const browserJob = workflow.match(/^  e2e:\n((?: {4}[^\n]*\n|\n)*)/m)?.[1];
   assert.ok(nativeJob && browserJob, 'both independent verification jobs exist');
-  assert.match(nativeJob, /^    timeout-minutes: \$\{\{ inputs\.exhaustive-content && 360 \|\| 120 \}\}$/m);
+  assert.match(nativeJob, /^    timeout-minutes: 360$/m);
   assert.match(browserJob, /^    timeout-minutes: 120$/m);
   assert.doesNotMatch(browserJob, /npm run test:content:native/);
   assert.doesNotMatch(nativeJob, /continue-on-error:|--only-negative|^    needs:/m);
-  assert.match(nativeJob, /if \[ "\$EXHAUSTIVE_CONTENT" = "true" \]; then\s+npm run test:content:native\s+else\s+npm run test:content:native -- --release\s+fi/);
+  assert.match(nativeJob, /^        run: npm run test:content:native$/m);
+  assert.doesNotMatch(nativeJob, /--release/);
   const marker = '      - name: Upload content migration safety evidence\n';
-  assert.equal(workflow.split(marker).length, 2, 'one evidence upload step');
+  assert.equal(historical.split(marker).length, 2, 'one evidence upload step');
   const start = nativeJob.indexOf(marker);
   const nextStep = nativeJob.indexOf('\n      - name:', start + marker.length);
   assert.ok(start > nativeJob.indexOf('      - name: Isolated content migration safety tests\n'));

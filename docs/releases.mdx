@@ -69,6 +69,13 @@ commit before merging, then verify that the live frontend publishes the new
 artifact and passes its smoke checks. A Render dashboard login is not needed to
 trigger that deployment.
 
+Pull requests run code/contracts, API/authorization, browser, migration replay
+smoke and focused import checks. The complete historical migration matrix is an
+independent on-demand **Historical content safety** workflow, not a routine PR
+gate. Its tests and failure evidence are retained. Before publishing new book
+data, also test the exact guarded import batch for rollback, curator conflicts,
+link resolution and saved-data preservation.
+
 Render's exact build command, cache behavior, rollback configuration and automatic
 enforcement of this gate remain infrastructure audit follow-ups. Until automatic
 enforcement is verified, the release operator must require a passing remote report

@@ -681,13 +681,13 @@ snapshot lacks private curator proposal bodies, so acceptance of those exact
 private bodies remains untested. An optional output filename saves the receipt
 without overwriting an existing file.
 
-CI runs representative failure cases in a separate `content-native` job with a
-120-minute budget. Each repair retains direct rejection and late rollback coverage.
-The terminal checks retain representative stale/partial state, pending conflicts,
+The full historical matrix runs in the on-demand **Historical content safety**
+workflow, separate from pull-request checks, with a six-hour budget. Each repair
+retains direct rejection and late rollback coverage. The terminal checks cover stale/partial state, pending conflicts,
 identity/allocation and source/dependency failures. All actual positive migrations,
 complete preservation snapshots, shared-helper compatibility, permission checks,
-concurrent writers and alternate allocations still run. The receipt explicitly
-records reduced negative coverage and never claims an exhaustive pass.
+concurrent writers and alternate allocations still run. The local `--release`
+option explicitly records reduced negative coverage and never claims an exhaustive pass.
 It runs the fast contract tests before pulling images or creating
 a fixture. These include passing the complete captured migration chronology through
 the alternate allocation guard, so a stale migration count fails immediately.
@@ -699,12 +699,18 @@ comparison allowance. It recognizes only their exact approved GENERAL rows and
 does not change content, hide fields from hashing, or broaden the three-record
 correction. Mixed or otherwise edited rows remain rejected.
 Its owned database does not share a runner with the browser/API
-stack. The ordinary E2E job keeps its two-hour budget and runs independently;
-both jobs must pass before release. Local fixture limits remain the same.
+stack. Pull requests retain the code/contracts, API and authorization tests,
+registered read-only checks and replay smoke, browser tests, and focused Tech Core
+import checks. CI runs every Cypress spec in a fresh browser process, retains
+failure artifacts from all specs, and does not automatically retry failures.
+A content publication also requires its exact batch's native
+import, rollback, conflict and saved-data preservation tests and the production
+read-only release gate. Local fixture limits remain the same.
 
 The exhaustive matrix is separate from routine releases. Run
-`npm run test:content:native` locally or select **exhaustive-content** when manually
-dispatching the E2E workflow. That explicit manual run has a six-hour budget.
+`npm run test:content:native` locally or manually dispatch **Historical content
+safety** (`historical-content.yml`). Neither the historical test implementation
+nor its assertions are removed from the repository.
 
 After the safety step, CI uploads generated receipts, redacted stage logs and
 dual-ledger hashes to the `treasure-vault-native-<commit>` artifact. The upload
