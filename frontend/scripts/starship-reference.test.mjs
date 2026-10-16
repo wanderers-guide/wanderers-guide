@@ -12,7 +12,7 @@ const temporary = await mkdtemp(join(tmpdir(), 'wg-starship-reference-'));
 after(() => rm(temporary, { recursive: true, force: true }));
 await build({
   stdin: {
-    contents: `export * from './src/process/content/starships';export * from './src/process/content/starship-content-update';export {StarshipSchema,CreatureSchema,CombatantSchema} from './src/schemas/content';`,
+    contents: `export * from './src/process/content/starships';export * from './src/process/content/starship-content-update';export {StarshipSchema,CreatureSchema,CombatantSchema} from './src/schemas/content';export {buildHrefFromContentData} from './src/process/content/hardcoded-links';`,
     resolveDir: frontend,
   },
   outfile: join(temporary, 'reference.mjs'),
@@ -24,15 +24,18 @@ await build({
     {
       name: 'catalog-boundary',
       setup(builder) {
-        builder.onResolve({ filter: /^(\.\/content-store|@requests\/request-manager)$/ }, ({ path }) => ({
-          path,
-          namespace: 'boundary',
-        }));
+        builder.onResolve(
+          { filter: /^(\.\/content-store|@content\/content-store|@requests\/request-manager)$/ },
+          ({ path }) => ({
+            path,
+            namespace: 'boundary',
+          })
+        );
         builder.onLoad({ filter: /.*/, namespace: 'boundary' }, ({ path }) => ({
           loader: 'js',
           contents:
-            path === './content-store'
-              ? `export const getDefaultSources=scope=>scope;export const getDefaultSourcesKey=scope=>globalThis.shipTest.keys[scope]??scope;export const fetchContentSources=async scope=>Array.isArray(scope)?scope.map(id=>({id})):globalThis.shipTest.sources[scope]??[];`
+            path === './content-store' || path === '@content/content-store'
+              ? `export const getCachedContent=()=>[];export const getDefaultSources=scope=>scope;export const getDefaultSourcesKey=scope=>globalThis.shipTest.keys[scope]??scope;export const fetchContentSources=async scope=>Array.isArray(scope)?scope.map(id=>({id})):globalThis.shipTest.sources[scope]??[];`
               : `export const makeRequest=async(route,body)=>{globalThis.shipTest.requests.push({route,body});return globalThis.shipTest.row;};`,
         }));
       },
@@ -62,6 +65,8 @@ beforeEach(() => {
 });
 
 test('ship source rules round-trip without living state or feet conversion', () => {
+  assert.equal(runtime.buildHrefFromContentData('starship', 71), 'link_starship_71');
+  assert.equal(runtime.buildHrefFromContentData('hazard', 72), 'link_hazard_72');
   assert.deepEqual(runtime.StarshipSchema.parse(ship()), ship());
   assert.equal(runtime.CreatureSchema.safeParse(ship()).success, false);
   assert.equal(
