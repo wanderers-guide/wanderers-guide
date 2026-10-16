@@ -9,6 +9,7 @@ import {
 } from '../../../src/schemas/content';
 import { OperationSchema } from '../../../src/schemas/operations';
 import { isOperationsWorkerURL } from '../../support/operations-worker-fixture';
+import { describeClientFailure } from '../../support/client-failure';
 
 const actor = '00000000-0000-4000-8000-000000991902';
 const first = '6082549e-6035-451d-a2dd-f90766e54d55';
@@ -444,6 +445,10 @@ describe('Source-owned database spell choices', () => {
     cy.intercept('**/functions/v1/*', (req) => {
       expect(req.method, 'fixture API method').to.equal('POST');
       const endpoint = new URL(req.url).pathname.split('/').pop()!;
+      if (endpoint === 'report-client-error') {
+        const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        throw new Error(`Unexpected database fixture client failure: ${describeClientFailure(body)}`);
+      }
       let data: unknown;
       if (endpoint === 'get-user') data = profile;
       else if (endpoint === 'find-character') data = req.body.id !== undefined ? saved : [saved];

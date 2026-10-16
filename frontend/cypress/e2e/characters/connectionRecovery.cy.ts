@@ -7,13 +7,16 @@ describe('Interrupted character saves', () => {
   beforeEach(() => {
     characterId = undefined;
     cy.intercept('POST', '**/auth/v1/token*').as('signIn');
+    cy.intercept('POST', '**/functions/v1/find-character').as('initialCharacters');
     cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
     cy.wait('@signIn').then(({ response }) => {
       token = response?.body.access_token;
       actorId = response?.body.user.id;
     });
+    // The header renders before the signed-in list has finished loading.
+    cy.wait('@initialCharacters', { timeout: 30000 }).its('response.body.status').should('eq', 'success');
     cy.intercept('POST', '**/functions/v1/create-character').as('create');
-    cy.get('button[aria-label="Create Character"]').click();
+    cy.get('button[aria-label="Create Character"]').should('be.visible').and('not.be.disabled').click();
     cy.wait('@create').then(({ response }) => {
       characterId = response?.body.data.id;
     });
