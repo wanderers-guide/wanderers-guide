@@ -13,7 +13,11 @@ for (const outcome of ['success', 'null', 'rejection']) {
     const errors = [];
     let calls = 0;
     const handler = new Function(
-      'createCampaign', 'navigate', 'setLoadingCreateCampaign', 'setLoadingCreateZeroCampaign', 'console',
+      'createCampaign',
+      'navigate',
+      'setLoadingCreateCampaign',
+      'setLoadingCreateZeroCampaign',
+      'console',
       `return async () => {${body}};`
     )(
       async () => {
@@ -22,8 +26,12 @@ for (const outcome of ['success', 'null', 'rejection']) {
         return outcome === 'success' ? { id: 42 } : null;
       },
       (route) => routes.push(route),
-      (value) => { loading.header = value; },
-      (value) => { loading.empty = value; },
+      (value) => {
+        loading.header = value;
+      },
+      (value) => {
+        loading.empty = value;
+      },
       { error: (...args) => errors.push(args) }
     );
     await handler();

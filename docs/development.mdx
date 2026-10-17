@@ -8,6 +8,10 @@ For a focused run, use `node --test frontend/scripts/campaign-creation.test.mjs`
 It checks both buttons after successful, empty, and rejected responses, without
 retrying a potentially committed creation.
 
+`test:infra` also covers proficiency-editor type changes and malformed persisted
+content-query results. Invalid content-cache entries are ignored in favor of a
+fresh read; this does not clear character drafts or other local storage.
+
 <Info>
   **Prerequisites**:
   - [Node.js](https://nodejs.org/en/download) version 19 or higher

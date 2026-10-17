@@ -307,6 +307,12 @@ async function hydrateContentCache(generation: number, actorId: string): Promise
       Date.now() - rec.savedAt > CONTENT_CACHE_TTL_MS
     )
       return;
+    // Fetch results are always arrays. Ignore malformed optional cache data before
+    // it can bypass network reads and enter a character's calculation package.
+    if (rec.contentStore instanceof Map && [...rec.contentStore.values()].some((value) => !Array.isArray(value))) {
+      console.warn('[CONTENT-CACHE] Ignoring malformed saved query results');
+      return;
+    }
     // A slow freshness endpoint must not turn a usable local snapshot into a full download.
     // Keep this visit consistent: a late verdict cannot swap content during calculations.
     const verification = verifyPersistedContentVersions(rec);
