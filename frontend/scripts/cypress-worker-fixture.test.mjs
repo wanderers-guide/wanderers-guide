@@ -114,6 +114,7 @@ test('login setup uses one visit and waits for its requested destination', async
     );
     assert.doesNotMatch(setup, /cy\.visit\(/);
     assert(setup.indexOf('cy.intercept(') < setup.indexOf('cy.login('));
+    assert.match(encounter, /const readPlayer = \(\) =>\s*cy\.then\(/);
     const lostAcknowledgement = encounter.slice(
       encounter.indexOf("  it('saves GM Drained"),
       encounter.indexOf("  it('pauses GM Drained")

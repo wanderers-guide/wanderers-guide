@@ -461,6 +461,8 @@ Use the public anonymous key, never the service-role key.
 The encounter synchronization fixture signs in directly to its campaign using the
 existing login redirect. It does not start a second full-page visit immediately
 after login. Other fixtures retain the default character-list destination.
+Its database-read task is queued after preceding browser commands finish,
+including reloads, rather than being invoked while the test queue is built.
 
 The Cypress commands preserve existing `NODE_OPTIONS` and disable synchronous
 ES module loading for the test process. This lets Cypress 13 load the existing

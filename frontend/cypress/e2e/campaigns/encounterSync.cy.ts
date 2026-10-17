@@ -37,7 +37,7 @@ describe('Campaign encounter synchronization', () => {
     if (fixture) cy.task('campaignFixture:cleanup', fixture.key, { log: false });
   });
 
-  const readPlayer = () => cy.task<any>('campaignFixture:read', fixture!.key, { log: false });
+  const readPlayer = () => cy.then(() => cy.task<any>('campaignFixture:read', fixture!.key, { log: false }));
 
   const addDrained = () => {
     cy.get('button[aria-label="Add Condition"]').click();
