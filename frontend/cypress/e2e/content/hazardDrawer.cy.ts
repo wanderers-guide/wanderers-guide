@@ -122,7 +122,10 @@ describe('Official hazard drawer', () => {
       if (endpoint === 'report-client-error')
         throw new Error(`Unexpected hazard client failure: ${describeClientFailure(body)}`);
       if (endpoint === 'get-content-versions') {
-        req.reply({ body: { status: 'success', data: [] } });
+        req.reply({
+          headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
+          body: { status: 'success', data: [] },
+        });
         return;
       }
       const table = endpoint.startsWith('find-') ? endpoint.slice(5).replaceAll('-', '_') : undefined;
@@ -145,6 +148,7 @@ describe('Official hazard drawer', () => {
         }
       }
       req.reply({
+        headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
         body: { status: 'success', data: endpoint === 'find-creature' && typeof body.id === 'number' ? rows[0] : rows },
       });
     });

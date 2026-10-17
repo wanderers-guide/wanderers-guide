@@ -480,7 +480,11 @@ export function registerDatabaseSpellSelectionTests(mode: 'compiled' | 'module')
               releaseHeldRankSaveResponse = () => {
                 releaseHeldRankSaveResponse = null;
                 try {
-                  req.reply({ statusCode: 200, body: { status: 'success', data } });
+                  req.reply({
+                    statusCode: 200,
+                    headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
+                    body: { status: 'success', data },
+                  });
                 } finally {
                   resolve();
                 }
@@ -523,7 +527,11 @@ export function registerDatabaseSpellSelectionTests(mode: 'compiled' | 'module')
         )
           data = [];
         else throw new Error(`Unexpected database fixture API: ${endpoint}`);
-        req.reply({ statusCode: 200, body: { status: 'success', data } });
+        req.reply({
+          statusCode: 200,
+          headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
+          body: { status: 'success', data },
+        });
       });
     });
 
