@@ -18,7 +18,6 @@ describe('Campaign encounter synchronization', () => {
     cy.viewport(1280, 900);
     cy.task<CampaignFixture>('campaignFixture:create', null, { log: false }).then((created) => {
       fixture = created;
-      cy.login(created.gm.email, created.gm.password);
       cy.intercept('POST', '**/functions/v1/find-character', (request) => {
         if (request.body.campaign_id !== created.campaignId) return;
         campaignPolls += 1;
@@ -27,7 +26,8 @@ describe('Campaign encounter synchronization', () => {
           request.reply({ statusCode: 503, body: { status: 'error', message: 'Simulated weak connection' } });
         }
       });
-      cy.visit(`/campaign/${created.campaignId}`);
+      // Use the existing login redirect instead of racing it with a second full-page visit.
+      cy.login(created.gm.email, created.gm.password, `campaign/${created.campaignId}`);
       cy.contains('button[role="tab"]', /^Encounters$/, { timeout: 30000 }).click();
       cy.get('input[placeholder="HP"]', { timeout: 30000 }).should('have.value', '20');
     });

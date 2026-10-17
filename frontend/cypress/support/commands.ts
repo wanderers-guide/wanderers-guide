@@ -23,12 +23,12 @@
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 //
 // -- This is a parent command --
-Cypress.Commands.add('login', (email: string, password: string) => {
-  cy.visit('/login?redirect=characters');
+Cypress.Commands.add('login', (email: string, password: string, redirect = 'characters') => {
+  cy.visit(`/login?redirect=${encodeURIComponent(redirect)}`);
   cy.get('input[name="email"]:visible').type(email);
   cy.get('input[name="password"]:visible').type(password, { log: false });
   cy.contains('button', 'Sign in with Email').click();
-  cy.location('pathname', { timeout: 10000 }).should('eq', '/characters');
+  cy.location('pathname', { timeout: 10000 }).should('eq', `/${redirect}`);
 });
 
 Cypress.Commands.add('buildABC', (ancestry: string, background: string, playerClass: string) => {
@@ -101,15 +101,16 @@ declare global {
     interface Chainable {
       /**
        * Login to Wanderer's Guide
-       * @param email 
-       * @param password 
+       * @param email
+       * @param password
+       * @param redirect App-relative destination after signing in, without a leading slash.
        */
-      login(email: string, password: string): Chainable<Element>;
+      login(email: string, password: string, redirect?: string): Chainable<Element>;
       /**
        * Selects the ancestry, background and class in the character builder
-       * @param ancestry 
-       * @param background 
-       * @param playerClass 
+       * @param ancestry
+       * @param background
+       * @param playerClass
        */
       buildABC(ancestry: string, background: string, playerClass: string): Chainable<Element>;
       selectLanguage(language: string): Chainable<Element>;

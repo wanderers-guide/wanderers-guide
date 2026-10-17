@@ -81,6 +81,47 @@ test('strict browser fixtures describe only known diagnostic categories', () => 
 });
 
 const origin = 'http://localhost:3000';
+test('login setup uses one visit and waits for its requested destination', async () => {
+  const previousCypress = globalThis.Cypress;
+  const previousCy = globalThis.cy;
+  const commands = new Map();
+  const calls = [];
+  globalThis.Cypress = { Commands: { add: (name, command) => commands.set(name, command) } };
+  globalThis.cy = {
+    visit: (url) => calls.push(['visit', url]),
+    get: () => ({ type: () => {} }),
+    contains: () => ({ click: () => {} }),
+    location: (name, options) => ({
+      should: (comparison, value) => calls.push(['location', name, options, comparison, value]),
+    }),
+  };
+  try {
+    await import('../cypress/support/commands.ts');
+    for (const destination of [undefined, 'campaign/123']) {
+      calls.length = 0;
+      commands.get('login')('fixture@example.invalid', 'fixture-password', destination);
+      const path = destination ?? 'characters';
+      assert.deepEqual(calls, [
+        ['visit', `/login?redirect=${encodeURIComponent(path)}`],
+        ['location', 'pathname', { timeout: 10000 }, 'eq', `/${path}`],
+      ]);
+    }
+    const encounter = readFileSync(new URL('../cypress/e2e/campaigns/encounterSync.cy.ts', import.meta.url), 'utf8');
+    const setup = encounter.slice(encounter.indexOf('  beforeEach('), encounter.indexOf('  afterEach('));
+    assert.match(
+      setup,
+      /cy\.login\(created\.gm\.email, created\.gm\.password, `campaign\/\$\{created\.campaignId\}`\)/
+    );
+    assert.doesNotMatch(setup, /cy\.visit\(/);
+    assert(setup.indexOf('cy.intercept(') < setup.indexOf('cy.login('));
+  } finally {
+    if (previousCypress === undefined) delete globalThis.Cypress;
+    else globalThis.Cypress = previousCypress;
+    if (previousCy === undefined) delete globalThis.cy;
+    else globalThis.cy = previousCy;
+  }
+});
+
 for (const path of [
   '/src/process/operations/operations.worker.ts?worker_file&type=module',
   '/assets/operations.worker-Cwhh3n5_.js',
