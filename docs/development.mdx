@@ -3,6 +3,11 @@ title: 'Development'
 description: "Running Wanderer's Guide locally"
 ---
 
+Campaign creation recovery is covered by `npm --prefix frontend run test:infra`.
+For a focused run, use `node --test frontend/scripts/campaign-creation.test.mjs`.
+It checks both buttons after successful, empty, and rejected responses, without
+retrying a potentially committed creation.
+
 <Info>
   **Prerequisites**:
   - [Node.js](https://nodejs.org/en/download) version 19 or higher
