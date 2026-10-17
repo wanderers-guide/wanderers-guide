@@ -88,6 +88,7 @@ export default function useCharacter(
   draftStored: boolean;
   retrySave: () => void;
   loadError: boolean;
+  calculationError: Error | null;
 } {
   const [character, setCharacter] = useAtom(characterState);
   const session = useAtomValue(sessionState);
@@ -308,6 +309,7 @@ export default function useCharacter(
   const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
   const executingOperations = useRef<number | null>(null);
   const [calculationFailed, setCalculationFailed] = useState(false);
+  const [calculationError, setCalculationError] = useState<Error | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [operationAttempt, setOperationAttempt] = useState(0);
   const retriedOperationsHash = useRef<number | null>(null);
@@ -317,6 +319,7 @@ export default function useCharacter(
     // character's or account's results after navigation.
     setOperationResults(undefined);
     setCalculationFailed(false);
+    setCalculationError(null);
     retriedOperationsHash.current = null;
     if (options.type === 'EXECUTE_OPS') resetVariables('CHARACTER');
   }, [characterId, sessionActorId, options.type]);
@@ -400,18 +403,22 @@ export default function useCharacter(
         if (controller.signal.aborted) return;
         handleOperationResults(results, controller.signal);
         setCalculationFailed(false);
+        setCalculationError(null);
         retriedOperationsHash.current = null;
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted || isOperationCancelled(error)) return;
         console.error('Character calculation failed:', error);
         setCalculationFailed(true);
-        options.data.onFinishLoading();
         // A transient worker failure gets one quiet retry. Changed inputs start a
         // fresh calculation; persistent failures never loop or publish partial math.
         if (retriedOperationsHash.current !== debouncedOperationsHash) {
           retriedOperationsHash.current = debouncedOperationsHash;
           retryTimer = setTimeout(() => setOperationAttempt((attempt) => attempt + 1), 2000);
+        } else {
+          // Let the existing route error boundary handle an exhausted initial calculation.
+          setCalculationError(error instanceof Error ? error : new Error('Character calculation failed'));
+          options.data.onFinishLoading();
         }
       })
       .finally(() => {
@@ -933,11 +940,12 @@ export default function useCharacter(
   return {
     character,
     setCharacter,
-    isLoading: !isFinished && !calculationFailed && !loadError,
+    isLoading: !isFinished && !calculationError && !loadError,
     saveState,
     draftStored,
     retrySave: () => retrySaveRef.current(),
     loadError,
+    calculationError,
     results: operationResults ?? null,
   };
 }

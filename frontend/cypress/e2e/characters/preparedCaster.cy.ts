@@ -7,10 +7,13 @@ describe('Character builder', () => {
     cy.wait('@signIn').then(({ response }) => {
       token = response?.body.access_token;
     });
+    cy.intercept('POST', '**/functions/v1/find-character').as('characterList');
     cy.visit('/characters');
+    cy.wait('@characterList', { requestTimeout: 30000, responseTimeout: 30000 });
     cy.intercept('POST', '**/functions/v1/create-character').as('created');
     cy.get('button[aria-label="Create Character"]').click();
-    cy.wait('@created').then(({ response }) => {
+    cy.wait('@created', { requestTimeout: 30000, responseTimeout: 30000 }).then(({ response }) => {
+      expect(response?.body.status).to.eq('success');
       characterId = response?.body.data.id;
     });
     cy.location('pathname', { timeout: 10000 }).should('include', '/builder');
