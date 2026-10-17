@@ -57,7 +57,7 @@ describe('Calculation recovery', () => {
       },
     });
     cy.wrap(null, { timeout: 30000 }).should(() => expect(attempts).to.be.greaterThan(0));
-    cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
+    cy.contains('Hit Points').should('not.be.visible');
     cy.contains("Couldn't calculate this character").should('not.exist');
     cy.contains('button', 'Retry calculation').should('not.exist');
     cy.document().then((doc) => {
@@ -73,6 +73,35 @@ describe('Calculation recovery', () => {
     cy.screenshot('calculation-recovered-mobile');
     cy.viewport(1280, 900);
     cy.screenshot('calculation-recovered-desktop');
+  });
+
+  it('uses the existing error page after both initial calculation attempts fail', () => {
+    let attempts = 0;
+    let saves = 0;
+    cy.on('uncaught:exception', (error) => {
+      if (error.message.includes('Simulated exhausted calculation')) return false;
+    });
+    cy.intercept('POST', '**/functions/v1/update-character', (request) => {
+      saves++;
+      request.continue();
+    });
+    cy.visit(`/sheet/${characterId}`, {
+      onBeforeLoad(win) {
+        win.Worker = new Proxy(win.Worker, {
+          construct() {
+            attempts++;
+            throw new Error('Simulated exhausted calculation');
+          },
+        });
+      },
+    });
+    cy.contains('We just rolled a Nat 1...', { timeout: 30000 }).should('be.visible');
+    cy.contains('Simulated exhausted calculation').should('be.visible');
+    cy.contains('Hit Points').should('not.exist');
+    cy.then(() => {
+      expect(attempts).to.eq(2);
+      expect(saves).to.eq(0);
+    });
   });
 
   it('calculates published dedication checks with the legacy displayed Untrained default', () => {

@@ -185,7 +185,7 @@ function CharacterSheetInner(props: {
 
   // EXECUTE_OPS triggers the character's operation pipeline and calls
   // onFinishLoading when it completes, which dismisses the loading screen.
-  const { character, setCharacter, isLoading, loadError } = useCharacter(props.characterId, {
+  const { character, setCharacter, isLoading, loadError, calculationError, results } = useCharacter(props.characterId, {
     type: 'EXECUTE_OPS',
     data: {
       content: props.content,
@@ -216,6 +216,9 @@ function CharacterSheetInner(props: {
   }, [character, isLoading, props.content]);
 
   if (loadError) return <CharacterLoader />;
+
+  // Without a committed calculation the stat sections would display default zeros.
+  if (calculationError && !results) throw calculationError;
 
   return (
     <Center>

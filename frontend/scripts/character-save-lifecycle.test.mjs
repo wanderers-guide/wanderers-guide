@@ -646,6 +646,7 @@ test('an empty success payload remains a failed save with a retained draft', asy
   await harness.flush();
   assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Retained edit');
   assert.equal(harness.value.saveState, 'failed');
+  assert.equal(harness.value.calculationError, null, 'save failures are not calculation failures');
   harness.unmount();
 });
 
@@ -669,12 +670,46 @@ test('pending and failed calculations retain inputs locally without writing deri
   assert.equal(getBufferedCharacterSave(1, 'owner').draft.requiresCalculation, true);
   assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Edit during calculation');
   assert.equal(harness.requests.filter((value) => value.type === 'update-character').length, 0);
-  assert.equal(harness.value.isLoading, false);
+  assert.equal(harness.value.isLoading, true, 'initial stats stay loading during the quiet retry');
+  assert.equal(harness.value.calculationError, null);
   assert.equal('operationError' in harness.value, false);
   assert.equal('retryOperations' in harness.value, false);
   events.get('focus')();
   await harness.flush();
   assert.equal(harness.notices.length, 0, 'calculation failures stay silent');
+  harness.unmount();
+});
+
+test('only an exhausted calculation exposes an error without publishing default stats or dropping drafts', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let finished = 0;
+  harness.options = {
+    type: 'EXECUTE_OPS',
+    data: { content: {}, context: 'CHARACTER-SHEET', onFinishLoading: () => finished++ },
+  };
+  harness.calculate = async () => {
+    throw new Error('worker crashed');
+  };
+  harness.render();
+  await harness.flush();
+  harness.edit({ name: 'Retained retry input' });
+  await harness.flush();
+  assert.equal(harness.value.calculationError, null);
+  assert.equal(harness.value.isLoading, true);
+  assert.equal(finished, 0);
+  t.mock.timers.tick(2000);
+  await harness.flush();
+  assert.equal(harness.value.calculationError.message, 'worker crashed');
+  assert.equal(finished, 1);
+  assert.equal(harness.value.results, null);
+  assert.equal(harness.requests.filter((value) => value.type === 'update-character').length, 0);
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Retained retry input');
+  harness.calculate = async () => ({ marker: 'recovered' });
+  harness.edit({ level: 2 });
+  await harness.flush();
+  assert.equal(harness.value.calculationError, null);
+  assert.deepEqual(harness.value.results, { marker: 'recovered' });
+  assert.equal(harness.character.name, 'Retained retry input');
   harness.unmount();
 });
 
