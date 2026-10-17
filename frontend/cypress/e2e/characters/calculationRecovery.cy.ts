@@ -95,8 +95,8 @@ describe('Calculation recovery', () => {
         });
       },
     });
-    cy.contains('We just rolled a Nat 1...', { timeout: 30000 }).should('be.visible');
-    cy.contains('Simulated exhausted calculation').should('be.visible');
+    cy.contains('Unable to open this page', { timeout: 30000 }).should('be.visible');
+    cy.contains('Simulated exhausted calculation').should('not.exist');
     cy.contains('Hit Points').should('not.exist');
     cy.then(() => {
       expect(attempts).to.eq(2);
