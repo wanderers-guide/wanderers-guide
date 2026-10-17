@@ -461,6 +461,10 @@ npm --prefix frontend run cy:e2e:open     # interactive Cypress UI
 
 `cy:e2e` bakes in `CYPRESS_BASE_URL=http://localhost:3000` and the default test creds (`test@wanderersguide.app` / `test1234`).
 
+Functional Chromium tests bypass service-worker responses before suite setup and
+each test, so cached HTML cannot bypass Cypress navigation instrumentation.
+Production service-worker behavior is unchanged; `test:infra` covers the app-update lifecycle.
+
 The `content/treasure-vault-references.cy.ts` catalog-only cases require `ANON_KEY`
 in the Cypress process environment, matching the public anonymous JWT used by
 the local frontend. Cypress maps it to `publicAnonKey`; CI already supplies it.
