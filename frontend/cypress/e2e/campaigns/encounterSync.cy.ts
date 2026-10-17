@@ -49,6 +49,9 @@ describe('Campaign encounter synchronization', () => {
 
   it('saves GM Drained and HP together once through a lost acknowledgement, polls, and reopening', () => {
     let writes = 0;
+    cy.intercept('POST', '**/functions/v1/find-character', (request) => {
+      if (request.body.id === fixture!.characterId) request.alias = 'drainedRead';
+    });
     cy.intercept('POST', '**/functions/v1/update-character', (request) => {
       if (request.body.id !== fixture!.characterId) return;
       writes += 1;
@@ -64,6 +67,8 @@ describe('Campaign encounter synchronization', () => {
       });
     });
     addDrained();
+    // The writer reconciles a real server read before submitting the condition change.
+    cy.wait('@drainedRead').its('response.body.status').should('eq', 'success');
     cy.wait('@drainedSave');
     cy.get('input[placeholder="HP"]').should('have.value', '19');
     cy.then(() => {

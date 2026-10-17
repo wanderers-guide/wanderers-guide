@@ -114,6 +114,15 @@ test('login setup uses one visit and waits for its requested destination', async
     );
     assert.doesNotMatch(setup, /cy\.visit\(/);
     assert(setup.indexOf('cy.intercept(') < setup.indexOf('cy.login('));
+    const lostAcknowledgement = encounter.slice(
+      encounter.indexOf("  it('saves GM Drained"),
+      encounter.indexOf("  it('pauses GM Drained")
+    );
+    assert(lostAcknowledgement.includes("request.alias = 'drainedRead'"));
+    assert(
+      lostAcknowledgement.indexOf("cy.wait('@drainedRead')") <
+        lostAcknowledgement.indexOf("cy.wait('@drainedSave')")
+    );
   } finally {
     if (previousCypress === undefined) delete globalThis.Cypress;
     else globalThis.Cypress = previousCypress;
