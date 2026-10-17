@@ -59,11 +59,18 @@ export function Component() {
   const [loadingCreateZeroCampaign, setLoadingCreateZeroCampaign] = useState(false);
 
   const handleCreateCampaign = async () => {
-    const campaign = await createCampaign();
-    if (campaign) {
-      navigate(`/campaign/${campaign.id}`);
+    try {
+      const campaign = await createCampaign();
+      if (campaign) {
+        navigate(`/campaign/${campaign.id}`);
+      }
+    } catch (error) {
+      console.error('Could not create campaign:', error);
+    } finally {
+      // Both entry points must recover without replaying a possibly committed write.
+      setLoadingCreateCampaign(false);
+      setLoadingCreateZeroCampaign(false);
     }
-    setLoadingCreateCampaign(false);
   };
 
   const reachedCampaignLimit = (data?.length ?? 0) >= CAMPAIGN_SLOT_CAP && !hasPatreonAccess(getCachedPublicUser(), 2);

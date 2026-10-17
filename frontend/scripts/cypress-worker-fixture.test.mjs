@@ -2,6 +2,39 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { isOperationsWorkerURL } from '../cypress/support/operations-worker-fixture.ts';
 import { describeClientFailure } from '../cypress/support/client-failure.ts';
+import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
+
+test('functional navigation bypasses an already active worker before suite and test visits', async () => {
+  const hooks = [];
+  const commands = [];
+  const pending = [];
+  const source = readFileSync(new URL('../cypress/support/e2e.ts', import.meta.url), 'utf8').replace(
+    "import './commands'",
+    ''
+  );
+  runInNewContext(source, {
+    before: (hook) => hooks.push(hook),
+    beforeEach: (hook) => hooks.push(hook),
+    Cypress: {
+      isBrowser: () => true,
+      automation: async (type, options) => commands.push({ type, options }),
+    },
+    cy: {
+      intercept: () => {},
+      then: (callback) => pending.push(callback),
+    },
+  });
+  assert.equal(hooks.length, 2);
+  for (const hook of hooks) hook();
+  for (const callback of pending) await callback();
+  assert.equal(commands.length, 2);
+  for (const command of commands) {
+    assert.equal(command.type, 'remote:debugger:protocol');
+    assert.equal(command.options.command, 'Network.setBypassServiceWorker');
+    assert.equal(command.options.params.bypass, true);
+  }
+});
 
 test('strict browser fixtures describe only known diagnostic categories', () => {
   for (const code of [

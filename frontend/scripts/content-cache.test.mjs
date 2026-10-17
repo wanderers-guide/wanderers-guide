@@ -46,7 +46,12 @@ test('content packages and cache respect failures, sources, actors and generatio
   try {
     const result = await build({
       absWorkingDir: frontend,
-      stdin: { contents: "export * from './src/process/content/content-store';", resolveDir: frontend, loader: 'ts' },
+      stdin: {
+        contents:
+          "export * from './src/process/content/content-store'; export {hashData as fixtureHash} from './src/utils/numbers';",
+        resolveDir: frontend,
+        loader: 'ts',
+      },
       tsconfig: join(frontend, 'tsconfig.json'),
       bundle: true,
       write: false,
@@ -166,6 +171,26 @@ test('content packages and cache respect failures, sources, actors and generatio
     for (let i = 0; i < 10; i++) await Promise.resolve();
     assert.deepEqual(store.getCachedContent('language'), [], 'obsolete hydration never repopulates reset cache');
     state.read = async (key) => state.records.get(key);
+
+    await t.test('a malformed persisted query result cannot replace fresh content', async () => {
+      store.resetContentStore(true, true);
+      await new Promise((resolve) => setImmediate(resolve));
+      state.records.set('content-store:C', {
+        version: 4,
+        actorId: 'C',
+        savedAt: Date.now(),
+        idStore: new Map(),
+        contentStore: new Map([[store.fixtureHash({ type: 'language', data: query }), 'broken cached result']]),
+      });
+      state.request = async () => [row];
+      store.resetContentStore(false);
+      const reads = state.requests.length;
+      const result = await store.fetchContent('language', query);
+      assert.equal(result[0].id, row.id);
+      assert.equal(result[0].name, row.name);
+      assert.equal(state.requests.length, reads + 1, 'malformed storage must not bypass the network');
+      store.resetContentStore(true, true);
+    });
 
     state.request = async (type) => (type === 'find-ability-block' ? null : []);
     await assert.rejects(

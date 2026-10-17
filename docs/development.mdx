@@ -3,6 +3,15 @@ title: 'Development'
 description: "Running Wanderer's Guide locally"
 ---
 
+Campaign creation recovery is covered by `npm --prefix frontend run test:infra`.
+For a focused run, use `node --test frontend/scripts/campaign-creation.test.mjs`.
+It checks both buttons after successful, empty, and rejected responses, without
+retrying a potentially committed creation.
+
+`test:infra` also covers proficiency-editor type changes and malformed persisted
+content-query results. Invalid content-cache entries are ignored in favor of a
+fresh read; this does not clear character drafts or other local storage.
+
 <Info>
   **Prerequisites**:
   - [Node.js](https://nodejs.org/en/download) version 19 or higher
@@ -451,6 +460,10 @@ npm --prefix frontend run cy:e2e:open     # interactive Cypress UI
 ```
 
 `cy:e2e` bakes in `CYPRESS_BASE_URL=http://localhost:3000` and the default test creds (`test@wanderersguide.app` / `test1234`).
+
+Functional Chromium tests bypass service-worker responses before suite setup and
+each test, so cached HTML cannot bypass Cypress navigation instrumentation.
+Production service-worker behavior is unchanged; `test:infra` covers the app-update lifecycle.
 
 The `content/treasure-vault-references.cy.ts` catalog-only cases require `ANON_KEY`
 in the Cypress process environment, matching the public anonymous JWT used by
