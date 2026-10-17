@@ -76,6 +76,7 @@ describe('Calculation recovery', () => {
   });
 
   it('uses the existing error page after both initial calculation attempts fail', () => {
+    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
     let attempts = 0;
     let saves = 0;
     cy.on('uncaught:exception', (error) => {
