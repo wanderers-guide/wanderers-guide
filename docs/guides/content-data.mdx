@@ -115,10 +115,11 @@ The remaining editors reload their own contents, and deleting the last page leav
 one blank Notes page. Editing or removing an imported creature ability affects only
 the selected row, even when legacy rows share an ID.
 
-Character calculation failures stay in background diagnostics. The sheet and builder
-remain editable, and retain the last successful calculation during the current session.
-A transient failure gets one automatic retry. Persistent failures wait for changed
-inputs; raw edits remain buffered locally, and incomplete derived stats never save.
+Character calculation failures retain the last successful calculation during the current
+session. A transient failure gets one automatic retry. If both initial attempts fail
+before any calculation succeeds, the sheet uses the existing error page instead of
+showing default zero statistics. Raw edits remain buffered locally, and incomplete
+derived stats never save.
 
 Predefined ability, spell, and language choices in the operation editor have an X
 to remove that choice. Other choices retain their existing IDs and values, including
@@ -178,6 +179,13 @@ and submitted settings. Expand **Full content data** to inspect the complete rea
 records, including operations and metadata omitted from the rules preview. The
 original and updated rules previews remain available alongside these review details.
 Reviewing a request does not edit or approve it; moderation still happens in Discord.
+
+Dedication lookups prefer the archetype from the dedication's own content source,
+then a matching archetype trait. This preserves separate printings when older
+archetypes reference the same dedication. Accounts without subscribed books do not
+issue an empty-ID query, which the API interprets as an unrestricted source lookup.
+Named prerequisite alternatives such as “Guiding Shot or Set-Up Strike” accept either
+owned feature. Exact feature names containing conjunctions are checked first.
 
 ### Loading and saving safely
 

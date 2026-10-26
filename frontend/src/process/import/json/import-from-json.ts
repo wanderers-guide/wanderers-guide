@@ -12,13 +12,12 @@ export default async function importFromJSON(file: File) {
     loading: true,
   });
 
-  const contents = await getFileContents(file);
   let character = null;
   try {
+    const contents = await getFileContents(file);
     const obj = JSON.parse(contents);
     character = await importObject(obj);
     if (character) {
-      hideNotification(`importing-${file.name}`);
       showNotification({
         title: 'Success',
         message: `Imported "${character.name}"`,
@@ -29,7 +28,6 @@ export default async function importFromJSON(file: File) {
       throw new Error();
     }
   } catch (e) {
-    hideNotification(`importing-${file.name}`);
     showNotification({
       title: 'Import failed',
       message: 'Invalid JSON file',
@@ -37,6 +35,8 @@ export default async function importFromJSON(file: File) {
       icon: null,
       autoClose: false,
     });
+  } finally {
+    hideNotification(`importing-${file.name}`);
   }
   return character;
 }
@@ -68,6 +68,8 @@ export async function getFileContents(file: File): Promise<string> {
     reader.onload = function fileReadCompleted() {
       resolve(reader.result as string);
     };
+    reader.onerror = () => reject(new Error('Could not read the selected file.'));
+    reader.onabort = () => reject(new Error('File reading was cancelled.'));
     reader.readAsText(file);
   });
 }

@@ -3,6 +3,12 @@ title: 'Development'
 description: "Running Wanderer's Guide locally"
 ---
 
+The October Discord regressions are covered by
+`frontend/cypress/e2e/characters/discordOct26.cy.ts`. The browser fixture intercepts
+all API calls and verifies HTTP-200 application-error recovery, a twenty-encounter
+navigation list, and long Lore labels on desktop and mobile. It uses synthetic
+characters and checked-in content, without a live account.
+
 Campaign creation recovery is covered by `npm --prefix frontend run test:infra`.
 For a focused run, use `node --test frontend/scripts/campaign-creation.test.mjs`.
 It checks both buttons after successful, empty, and rejected responses, without

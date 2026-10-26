@@ -1007,7 +1007,10 @@ export async function extendOperations(
     return operations ?? [];
   }
 
-  const archetype = await fetchArchetypeByDedicationFeat(obj.id);
+  const archetype = await fetchArchetypeByDedicationFeat(obj.id, {
+    content_source_id: obj.content_source_id,
+    traits: obj.traits,
+  });
   if (!archetype) {
     return operations ?? [];
   }

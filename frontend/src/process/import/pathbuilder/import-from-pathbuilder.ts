@@ -13,43 +13,52 @@ export async function importFromPathbuilder(pathbuilderJsonId: number) {
     loading: true,
   });
 
-  const res = await fetch(`https://pathbuilder2e.com/json.php?id=${pathbuilderJsonId}`);
-  const json = await res.json();
+  try {
+    const res = await fetch(`https://pathbuilder2e.com/json.php?id=${pathbuilderJsonId}`);
+    const json = await res.json();
 
-  if (json?.success) {
-    const ftc = convertPathbuilderToFTC(json.build);
-    console.log('Converted FTC:', ftc);
-    const character = await importFromFTC(ftc);
+    if (json?.success) {
+      const ftc = convertPathbuilderToFTC(json.build);
+      console.log('Converted FTC:', ftc);
+      const character = await importFromFTC(ftc);
 
-    if (character) {
-      hideNotification(`importing-${pathbuilderJsonId}`);
-      showNotification({
-        title: 'Success',
-        message: `Imported "${character.name}"`,
-        icon: null,
-        autoClose: 3000,
-      });
+      if (character) {
+        showNotification({
+          title: 'Success',
+          message: `Imported "${character.name}"`,
+          icon: null,
+          autoClose: 3000,
+        });
+      } else {
+        showNotification({
+          title: 'Import failed',
+          message: 'Error importing from Pathbuilder',
+          color: 'red',
+          icon: null,
+          autoClose: false,
+        });
+      }
+      return character;
     } else {
-      hideNotification(`importing-${pathbuilderJsonId}`);
       showNotification({
         title: 'Import failed',
-        message: 'Error importing from Pathbuilder',
+        message: 'Error from Pathbuilder',
         color: 'red',
         icon: null,
         autoClose: false,
       });
+      return null;
     }
-    return character;
-  } else {
-    hideNotification(`importing-${pathbuilderJsonId}`);
+  } catch (error: unknown) {
+    console.error('Pathbuilder import failed:', error);
     showNotification({
       title: 'Import failed',
-      message: 'Error from Pathbuilder',
+      message: error instanceof Error ? error.message : 'Could not import from Pathbuilder.',
       color: 'red',
-      icon: null,
-      autoClose: false,
     });
     return null;
+  } finally {
+    hideNotification(`importing-${pathbuilderJsonId}`);
   }
 }
 

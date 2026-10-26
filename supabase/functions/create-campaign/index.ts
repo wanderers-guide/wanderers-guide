@@ -31,7 +31,7 @@ serve(async (req: Request) => {
     if (!user) {
       return {
         status: 'error',
-        message: 'User not found',
+        message: 'Sign in again to create a campaign.',
       };
     }
 
@@ -52,7 +52,7 @@ serve(async (req: Request) => {
         if (!access) {
           return {
             status: 'error',
-            message: 'User does not have access',
+            message: 'Additional campaigns require an active Wanderer membership. Check Patreon in Account.',
           };
         }
       }

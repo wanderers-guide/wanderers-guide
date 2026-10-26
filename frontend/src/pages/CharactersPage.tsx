@@ -125,18 +125,27 @@ export function Component() {
   }, []);
 
   const handleCreateCharacter = async () => {
-    const character = await createCharacter();
-    if (character) {
-      // We navigate away immediately, so the list query stays cached. With the
-      // global staleTime (main.tsx), coming back within that window would render
-      // the pre-creation list — the new character invisible for up to a minute
-      // (and the e2e cleanup, which returns here to delete it, never finds it).
-      // Mark the list stale so the next mount refetches.
-      queryClient.invalidateQueries({ queryKey: ['find-character'] });
-      navigate(`/builder/${character.id}`);
+    try {
+      const character = await createCharacter();
+      if (character) {
+        // We navigate away immediately, so the list query stays cached. With the
+        // global staleTime (main.tsx), coming back within that window would render
+        // the pre-creation list — the new character invisible for up to a minute
+        // (and the e2e cleanup, which returns here to delete it, never finds it).
+        // Mark the list stale so the next mount refetches.
+        queryClient.invalidateQueries({ queryKey: ['find-character'] });
+        navigate(`/builder/${character.id}`);
+      }
+    } catch (error: unknown) {
+      showNotification({
+        title: 'Could not create character',
+        message: error instanceof Error ? error.message : 'Please try again.',
+        color: 'red',
+      });
+    } finally {
+      setLoadingCreateCharacter(false);
+      setLoadingCreateZeroCharacter(false);
     }
-    setLoadingCreateCharacter(false);
-    setLoadingCreateZeroCharacter(false);
   };
 
   const reachedCharacterLimit =
@@ -307,26 +316,35 @@ export function Component() {
                       withCloseButton: false,
                       loading: true,
                     });
-                    const character = await importFromFTC({
-                      version: '1.0',
-                      data: {
-                        name: 'RANDOM',
-                        class: 'RANDOM',
-                        background: 'RANDOM',
-                        ancestry: 'RANDOM',
-                        level: Math.floor(Math.random() * 20) + 1,
-                        content_sources: 'ALL',
-                        selections: 'RANDOM',
-                        items: [],
-                        spells: [],
-                        conditions: [],
-                      },
-                    });
-                    hideNotification(`create-random-character`);
-                    if (character) {
-                      navigate(`/sheet/${character.id}`);
+                    try {
+                      const character = await importFromFTC({
+                        version: '1.0',
+                        data: {
+                          name: 'RANDOM',
+                          class: 'RANDOM',
+                          background: 'RANDOM',
+                          ancestry: 'RANDOM',
+                          level: Math.floor(Math.random() * 20) + 1,
+                          content_sources: 'ALL',
+                          selections: 'RANDOM',
+                          items: [],
+                          spells: [],
+                          conditions: [],
+                        },
+                      });
+                      if (character) {
+                        navigate(`/sheet/${character.id}`);
+                      }
+                    } catch (error: unknown) {
+                      showNotification({
+                        title: 'Could not create character',
+                        message: error instanceof Error ? error.message : 'Please try again.',
+                        color: 'red',
+                      });
+                    } finally {
+                      hideNotification('create-random-character');
+                      setLoadingCreateRandomCharacter(false);
                     }
-                    setLoadingCreateRandomCharacter(false);
                   }}
                 >
                   <IconArrowsShuffle size='1.3rem' stroke={2.5} />
@@ -340,9 +358,18 @@ export function Component() {
                 onChange={async (file) => {
                   if (!file) return;
                   setLoadingImportCharacter(true);
-                  const character = await importFromJSON(file);
-                  refetch();
-                  setLoadingImportCharacter(false);
+                  try {
+                    const character = await importFromJSON(file);
+                    refetch();
+                  } catch (error: unknown) {
+                    showNotification({
+                      title: 'Could not import character',
+                      message: error instanceof Error ? error.message : 'Please try again.',
+                      color: 'red',
+                    });
+                  } finally {
+                    setLoadingImportCharacter(false);
+                  }
                 }}
                 accept='application/JSON'
               >
@@ -356,9 +383,18 @@ export function Component() {
                 onChange={async (file) => {
                   if (!file) return;
                   setLoadingImportCharacter(true);
-                  const character = await importFromGUIDECHAR(file);
-                  refetch();
-                  setLoadingImportCharacter(false);
+                  try {
+                    const character = await importFromGUIDECHAR(file);
+                    refetch();
+                  } catch (error: unknown) {
+                    showNotification({
+                      title: 'Could not import character',
+                      message: error instanceof Error ? error.message : 'Please try again.',
+                      color: 'red',
+                    });
+                  } finally {
+                    setLoadingImportCharacter(false);
+                  }
                 }}
                 accept='.guidechar'
               >
@@ -374,9 +410,18 @@ export function Component() {
               onConfirm={async (pathbuilderId) => {
                 setOpenedPathbuilderModal(false);
                 setLoadingImportCharacter(true);
-                const character = await importFromPathbuilder(pathbuilderId);
-                refetch();
-                setLoadingImportCharacter(false);
+                try {
+                  const character = await importFromPathbuilder(pathbuilderId);
+                  refetch();
+                } catch (error: unknown) {
+                  showNotification({
+                    title: 'Could not import character',
+                    message: error instanceof Error ? error.message : 'Please try again.',
+                    color: 'red',
+                  });
+                } finally {
+                  setLoadingImportCharacter(false);
+                }
               }}
               onClose={() => setOpenedPathbuilderModal(false)}
             />
@@ -690,12 +735,17 @@ async function createCharacter() {
   const randomImageUrl = images[Math.floor(Math.random() * images.length)]?.url;
 
   // Create character
-  const result = await makeRequest<Character>('create-character', {
-    meta_data: {
-      reset_hp: true,
+  const result = await makeRequest<Character>(
+    'create-character',
+    {
+      meta_data: {
+        reset_hp: true,
+      },
+      details: { background_image_url: randomImageUrl },
     },
-    details: { background_image_url: randomImageUrl },
-  });
+    true,
+    { throwOnFailure: true }
+  );
   return result;
 }
 
@@ -737,9 +787,16 @@ async function createCharacterCopy(character: Character) {
     roll_history: undefined, // not needed
   };
 
-  const result = await makeRequest<Character>('create-character', copy);
-
-  hideNotification(`copy-character-${character.id}`);
-
-  return result;
+  try {
+    return await makeRequest<Character>('create-character', copy, true, { throwOnFailure: true });
+  } catch (error: unknown) {
+    showNotification({
+      title: 'Could not copy character',
+      message: error instanceof Error ? error.message : 'Please try again.',
+      color: 'red',
+    });
+    return null;
+  } finally {
+    hideNotification(`copy-character-${character.id}`);
+  }
 }
