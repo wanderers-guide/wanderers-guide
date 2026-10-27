@@ -297,6 +297,10 @@ export function prepare(repository, proposalPath) {
   assert.deepEqual(curatorRequirement, {check:'treasure-vault-terminal-status.sql',order:'before-functions'});
   delete originalRequirements[curatorUpgrade];
   const mineUpgrade = '20261026000000_mine_mod_rules.sql';
+  const bookCountUpgrade = '20261027000000_curator_book_count_compatibility.sql';
+  const bookCountRequirement = originalRequirements[bookCountUpgrade];
+  assert.deepEqual(bookCountRequirement, {check:'treasure-vault-terminal-status.sql',order:'before-functions'});
+  delete originalRequirements[bookCountUpgrade];
   const mineRequirement = originalRequirements[mineUpgrade];
   assert.deepEqual(mineRequirement, {check:'mine-mod-rules.sql',order:'before-functions'});
   delete originalRequirements[mineUpgrade];
@@ -319,6 +323,7 @@ export function prepare(repository, proposalPath) {
   originalRequirements[rustUpgrade] = rustRequirement;
   originalRequirements[mineUpgrade] = mineRequirement;
   originalRequirements[curatorUpgrade] = curatorRequirement;
+  originalRequirements[bookCountUpgrade] = bookCountRequirement;
   let suppliedRows;
   if (proposalPath) {
     const proposalBytes = fs.readFileSync(proposalPath);
@@ -389,7 +394,7 @@ export function prepare(repository, proposalPath) {
     requirements[migration].check = check;
     return { migration, before, after: requirements[migration] };
   });
-  assert.equal(Object.keys(requirements).length, 111);
+  assert.equal(Object.keys(requirements).length, 112);
   assert.equal(
     new Set(Object.values(requirements).map((entry) => entry.check)).size,
     71,
