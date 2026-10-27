@@ -7,6 +7,7 @@ import { SHARED_TERMINAL_SHA256, SHARED_PREDECESSOR_SHA256, SHARED_UPGRADE_PATH,
 import { RUST_CLOUD_TERMINAL_SHA256, RUST_CLOUD_UPGRADE_PATH, originalRustCloudBody, rustCloudRows, rustCloudUpgrade, wrapRustCloudUpgrade } from './treasure-vault-native-rust-cloud.mjs';
 
 import { CURATOR_TERMINAL_SHA256, CURATOR_UPGRADE_PATH, originalCuratorBody, curatorUpgrade, wrapCuratorUpgrade } from './treasure-vault-native-curator-successors.mjs';
+import { BOOK_COUNT_UPGRADE_PATH, PREVIOUS_CURATOR_TERMINAL_SHA256 } from './treasure-vault-native-book-count.mjs';
 
 const sha = (value) => createHash('sha256').update(value).digest('hex');
 const validHash = (value) => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
@@ -168,7 +169,7 @@ set search_path = ''
 as $$${body}$$;`;
   assert.ok(definition === expectedDefinition, 'Exact qualified STABLE INVOKER helper signature');
   const expectedMigration = terminalCatalogCompatibilityInstaller({ definition: expectedDefinition, state,
-    previousState: `(${terminalFunctionState(PREVIOUS_TERMINAL_BODY_SHA256)}) or (${terminalFunctionState(SHARED_PREDECESSOR_SHA256)}) or (${terminalFunctionState(SHARED_TERMINAL_SHA256)}) or (${terminalFunctionState(RUST_CLOUD_TERMINAL_SHA256)})`, sourceState: terminalFunctionState(SOURCE_CORRECTION_TERMINAL_BODY_SHA256), signature: TERMINAL_HELPER.signature });
+    previousState: `(${terminalFunctionState(PREVIOUS_TERMINAL_BODY_SHA256)}) or (${terminalFunctionState(SHARED_PREDECESSOR_SHA256)}) or (${terminalFunctionState(SHARED_TERMINAL_SHA256)}) or (${terminalFunctionState(RUST_CLOUD_TERMINAL_SHA256)}) or (${terminalFunctionState(PREVIOUS_CURATOR_TERMINAL_SHA256)})`, sourceState: terminalFunctionState(SOURCE_CORRECTION_TERMINAL_BODY_SHA256), signature: TERMINAL_HELPER.signature });
   assert.ok(migrationSql === expectedMigration, 'No installer body, grant or readback mutation');
   assert.equal(releaseSql, `-- Only inspect definition and grants; this check does not alter or cache content.
 select 'treasure-vault-terminal-status' as id,coalesce((${state}),false) as passed;
@@ -407,10 +408,10 @@ export function loadTreasureVaultDefaultNativeInputs({ root, readText = path => 
       ['migrations', SOURCE_CORRECTION_PATH], ['release', 'treasure-vault-source-corrections.sql'],
       ['migrations', CATALOG_COMPATIBILITY_UPGRADE_PATH], ['release', 'treasure-vault-terminal-catalog-compatibility.sql'],
       ['release','shared-ancestries.json'], ['migrations',SHARED_UPGRADE_PATH], ['migrations',SHARED_MOVE_PATH], ['release','shared-ancestry-release-compatibility.sql'], ['release','shared-ancestries.sql'],
-      ['migrations',RUST_CLOUD_UPGRADE_PATH], ['migrations',CURATOR_UPGRADE_PATH],
+      ['migrations',RUST_CLOUD_UPGRADE_PATH], ['migrations',CURATOR_UPGRADE_PATH], ['migrations',BOOK_COUNT_UPGRADE_PATH],
     ];
     const snapshots = await Promise.all(filenames.map(([directory, filename]) => read(directory, filename)));
-    const [completionSql, completionReleaseSql, displaySql, displayReleaseSql, helperSql, helperReleaseSql, requirementsText, sourceUpgradeSql, sourceUpgradeReleaseSql, sourceRepairSql, sourceRepairReleaseSql, catalogUpgradeSql, catalogUpgradeReleaseSql, sharedSpecText, sharedUpgradeSql, sharedMoveSql, sharedHelperReleaseSql, sharedMoveReleaseSql, rustUpgradeSql, curatorUpgradeSql] = snapshots;
+    const [completionSql, completionReleaseSql, displaySql, displayReleaseSql, helperSql, helperReleaseSql, requirementsText, sourceUpgradeSql, sourceUpgradeReleaseSql, sourceRepairSql, sourceRepairReleaseSql, catalogUpgradeSql, catalogUpgradeReleaseSql, sharedSpecText, sharedUpgradeSql, sharedMoveSql, sharedHelperReleaseSql, sharedMoveReleaseSql, rustUpgradeSql, curatorUpgradeSql, bookCountUpgradeSql] = snapshots;
     const helper = extractReviewedTerminalHelper({ migrationSql: helperSql, releaseSql: helperReleaseSql });
     assert.deepEqual(JSON.parse(sharedSpecText),helper.sharedSpec);
     const proof = helper.proof;
@@ -516,6 +517,8 @@ export function loadTreasureVaultDefaultNativeInputs({ root, readText = path => 
     assert.equal(sharedUpgradeSql,wrapCuratorUpgrade(wrapRustCloudUpgrade(sharedUpgrade,rustUpgrade,rustState),curator,helper.state));
     assert.equal(rustUpgradeSql,wrapCuratorUpgrade(`begin;\n${rustUpgrade}commit;\n`,curator,helper.state));
     assert.equal(curatorUpgradeSql,`begin;\n${curator}commit;\n`);
+    assert.equal(bookCountUpgradeSql,curatorUpgradeSql);
+    assert.deepEqual(requirements[BOOK_COUNT_UPGRADE_PATH], {check:TERMINAL_HELPER.release,order:'before-functions'});
     assert.deepEqual(requirements[CURATOR_UPGRADE_PATH], {check:TERMINAL_HELPER.release,order:'before-functions'});
     assert.deepEqual(requirements[RUST_CLOUD_UPGRADE_PATH], { check: TERMINAL_HELPER.release, order: 'before-functions' });
     assert.deepEqual(requirements[SHARED_UPGRADE_PATH], { check: 'shared-ancestry-release-compatibility.sql', order: 'before-functions' });

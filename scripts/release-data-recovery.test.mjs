@@ -158,9 +158,9 @@ test('bounded construction model retains all original replay groups and adds exa
     receipt: {},
   };
   const { plan } = createNativeRegisteredCiReplayControls(context);
-  assert.equal(migrations.length, 118);
+  assert.equal(migrations.length, 119);
   assert.equal(plan.schema, 'wg-tv-native-registered-ci-replays-v4');
-  assert.equal(plan.registered_requirements, 111);
+  assert.equal(plan.registered_requirements, 112);
   assert.equal(plan.checks.length, 71);
   assert.equal(plan.replays.length, 91);
   assert.equal(plan.expected_native_statements, 396);
