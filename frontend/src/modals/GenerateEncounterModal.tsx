@@ -32,7 +32,6 @@ import { SelectIcon, stringifyIconValue } from '@common/IconDisplay';
 import { IconBulbFilled, IconSparkles } from '@tabler/icons-react';
 import { generateEncounters } from '@ai/open-ai-handler';
 import { showNotification } from '@mantine/notifications';
-import { set } from 'node_modules/cypress/types/lodash';
 import { useAtom, useAtomValue } from 'jotai';
 import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import RichText from '@common/RichText';

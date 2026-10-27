@@ -14,7 +14,6 @@ import {
 import { rankNumber, sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { getTraitIdByType } from '@utils/traits';
-import { Dictionary } from 'node_modules/cypress/types/lodash';
 import { useAtom } from 'jotai';
 import { SetterOrUpdater } from '@utils/type-fixing';
 import { SpellSlotSelect } from '../SpellsPanel';
@@ -55,7 +54,7 @@ export default function FocusSpellsList(props: {
   hasFilters: boolean;
   openManageSpells?: (source: string, type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY') => void;
   castSpell: (cast: boolean, spell: Spell) => void;
-  spells: Dictionary<Spell[]>;
+  spells: Record<string, Spell[]>;
 }) {
   const isPhone = useMediaQuery(phoneQuery());
 

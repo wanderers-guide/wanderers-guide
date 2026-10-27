@@ -15,7 +15,6 @@ import {
 } from '@schemas/content';
 import { rankNumber, sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
-import { Dictionary } from 'node_modules/cypress/types/lodash';
 import { useAtom } from 'jotai';
 import { SetterOrUpdater } from '@utils/type-fixing';
 import { SpellSlotSelect } from '../SpellsPanel';
@@ -62,7 +61,8 @@ export default function SpontaneousSpellsList(props: {
       rank_max?: number;
     }
   ) => void;
-  slots: Dictionary<
+  slots: Record<
+    string,
     {
       spell: Spell | undefined;
       rank: number;
@@ -73,7 +73,7 @@ export default function SpontaneousSpellsList(props: {
     }[]
   > | null;
   castSpell: (cast: boolean, spell: Spell) => void;
-  spells: Dictionary<Spell[]>;
+  spells: Record<string, Spell[]>;
 }) {
   const isPhone = useMediaQuery(phoneQuery());
 
