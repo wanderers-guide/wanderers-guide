@@ -189,6 +189,44 @@ test('content packages and cache respect failures, sources, actors and generatio
       assert.deepEqual(await store.fetchContentAll('ability-block', [81000]), []);
       assert.equal(state.requests.length, 1, 'a successful empty catalog is complete and reusable');
     });
+    await t.test(
+      'every page and the cache key retain captured filters when the caller changes its arrays',
+      { timeout: 10000 },
+      async (child) => {
+        preparePages(child);
+        const rows = abilityRows(1001),
+          held = deferred(),
+          started = deferred();
+        const traits = [471],
+          prerequisites = ['Original requirement'];
+        state.request = async (_type, body) => {
+          assert.deepEqual(body.traits, [471]);
+          assert.deepEqual(body.prerequisites, ['Original requirement']);
+          if (body.after_id === undefined) {
+            started.resolve();
+            return held.promise;
+          }
+          return rows.slice(1000);
+        };
+        const pending = store.fetchContent('ability-block', { content_sources: [81000], traits, prerequisites });
+        await started.promise;
+        traits[0] = 999;
+        prerequisites[0] = 'Changed requirement';
+        held.resolve(rows.slice(0, 1000));
+        assert.equal((await pending).length, 1001);
+        assert.equal(
+          (
+            await store.fetchContent('ability-block', {
+              content_sources: [81000],
+              traits: [471],
+              prerequisites: ['Original requirement'],
+            })
+          ).length,
+          1001
+        );
+        assert.equal(state.requests.length, 2, 'the original filter scope is cached, not the mutated caller state');
+      }
+    );
     await t.test('a failed later page publishes nothing and a retry restarts the complete catalog', async (child) => {
       preparePages(child);
       const rows = abilityRows(1002);

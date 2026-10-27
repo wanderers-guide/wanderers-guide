@@ -597,7 +597,7 @@ export async function fetchContent<T = Record<string, any>>(
 
   // Resolve source scope BEFORE any cache hit, including IDs and names. Capture defaults
   // now so a later view change cannot alter this request's meaning.
-  data = { ...data };
+  data = cloneDeep({ ...data });
   if (type !== 'content-source') {
     const scope: SourceValue | undefined = data.content_sources;
     const info = getDefaultSources('INFO');

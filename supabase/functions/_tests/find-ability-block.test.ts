@@ -4,7 +4,7 @@ import { admin, callFunction, seed, stackUnavailable, testUuid, withContentSourc
 const skip = stackUnavailable();
 
 Deno.test({
-  name: 'find-ability-block: bounded pages preserve filters, ownership and legacy shapes',
+  name: 'find-ability-block: bounded pages preserve filters, access rules and legacy shapes',
   ignore: skip,
   async fn() {
     const { userId, jwt } = await seed();
@@ -72,7 +72,18 @@ Deno.test({
       assertEquals(scalar.body.data.id, ids[0]);
       const anonymous = await callFunction('find-ability-block', { ...scope, page_size: 2 });
       assertEquals(anonymous.body?.status, 'success');
-      assertEquals(anonymous.body.data, [], 'paging cannot reveal an unpublished private source');
+      // Homebrew content is readable by an explicit source ID under the existing
+      // read policy. Unpublished sources must remain absent from the default catalog.
+      assertEquals(
+        anonymous.body.data.map((row: { id: number }) => row.id),
+        ids.slice(0, 2)
+      );
+      const defaultCatalog = await callFunction('find-ability-block', { page_size: 2, after_id: ids[0] });
+      assertEquals(defaultCatalog.body?.status, 'success');
+      assert(
+        defaultCatalog.body.data.every((row: { id: number }) => !ids.includes(row.id)),
+        'the default catalog excludes unpublished homebrew sources'
+      );
     });
   },
 });
