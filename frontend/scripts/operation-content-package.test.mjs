@@ -177,6 +177,43 @@ test('missing required tables fail and the next complete worker job still calcul
   assert.equal(networkCalls, 0);
 });
 
+for (const [field, label] of [
+  ['class', 'class'],
+  ['class_2', 'secondary class'],
+  ['background', 'background'],
+  ['ancestry', 'ancestry'],
+]) {
+  test(`a missing selected ${label} rejects partial math and a complete package recovers`, async () => {
+    const { content, wizard } = await coreWizardFixture();
+    const incomplete = { ...character(), details: { [field]: { id: 987654 } } };
+    await self.onmessage({
+      data: {
+        id: 1,
+        execution: {
+          type: 'CHARACTER',
+          data: { character: incomplete, content: packet(), context: 'CHARACTER-SHEET' },
+        },
+      },
+    });
+    const failed = messages.pop();
+    assert.equal(failed.status, 'error');
+    assert.equal(failed.message, `Calculation is missing the selected ${label} content.`);
+    assert.equal(failed.data, undefined, 'no default or partial store is published');
+    assert.equal(api.getWorkerContentReader(), undefined);
+
+    await self.onmessage({
+      data: {
+        id: 2,
+        execution: { type: 'CHARACTER', data: { character: wizard, content, context: 'CHARACTER-SHEET' } },
+      },
+    });
+    const recovered = messages.pop();
+    assert.equal(recovered.status, 'success', recovered.message);
+    assert.equal(networkCalls, 0);
+    assert.equal(api.getWorkerContentReader(), undefined);
+  });
+}
+
 test('controller failures release the package without keeping a partial worker context', async () => {
   await self.onmessage({
     data: {

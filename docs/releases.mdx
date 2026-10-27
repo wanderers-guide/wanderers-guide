@@ -387,6 +387,9 @@ retaining the local input and its original base. Background reads and ordinary
 edits recheck the competing version, and saving resumes when merging is safe.
 Calculation failures retry quietly without publishing partial math. There is no
 download or discard workflow for save history.
+Calculations also reject a content package that cannot resolve a saved primary or
+secondary class, ancestry, or background. Unselected Builder choices remain valid;
+missing selected content must recover before a new result can be published.
 
 Retained drafts stay on the device under the same character ID. They do not create
 additional server characters. Versioned drafts with a known common ancestor can be
