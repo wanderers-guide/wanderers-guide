@@ -166,13 +166,13 @@ test("only Tech Core's two empty dependency representations are compatible", () 
   }
 });
 
-test("only three registered check paths change, retaining all109 requirements and70 distinct full checks", () => {
+test("only three registered check paths change, retaining all110 requirements and71 distinct full checks", () => {
   const old = structuredClone(plan.original_requirements);
-  assert.equal(Object.keys(plan.requirements).length, 109);
+  assert.equal(Object.keys(plan.requirements).length, 110);
   assert.deepEqual(plan.requirements['20261015000000_rust_cloud_release_compatibility.sql'],{check:'treasure-vault-terminal-status.sql',order:'before-functions'});
   assert.equal(
     new Set(Object.values(plan.requirements).map((entry) => entry.check)).size,
-    70,
+    71,
   );
   for (const change of plan.changes) {
     assert.deepEqual(change.before, old[change.migration]);
