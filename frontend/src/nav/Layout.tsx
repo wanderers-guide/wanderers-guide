@@ -73,6 +73,8 @@ export default function Layout(props: { children: React.ReactNode }) {
   // Scroll to hide header,
   const [pinned, setPinned] = useState(true);
   const SCROLL_PINNED_THRESHOLD = 20;
+  // Route loading states share the exact content inset used by the application shell.
+  const contentTopPadding = `calc(${rem(52)} + var(--mantine-spacing-md))`;
 
   return (
     <AppShell
@@ -520,7 +522,14 @@ export default function Layout(props: { children: React.ReactNode }) {
           }
         }}
       >
-        <AppShell.Main pt={`calc(${rem(52)} + var(--mantine-spacing-md))`}>{props.children}</AppShell.Main>
+        <AppShell.Main
+          pt={contentTopPadding}
+          style={{
+            '--wg-page-content-height': `calc(100dvh - ${contentTopPadding} - var(--app-shell-padding))`,
+          }}
+        >
+          {props.children}
+        </AppShell.Main>
       </ScrollArea>
     </AppShell>
   );

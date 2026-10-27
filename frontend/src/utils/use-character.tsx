@@ -93,6 +93,7 @@ export default function useCharacter(
   const [character, setCharacter] = useAtom(characterState);
   const session = useAtomValue(sessionState);
   const sessionActorId = session?.user.id ?? null;
+  const isSessionPending = session === undefined;
   const [loadedIdentity, setLoadedIdentity] = useState<{ id: number; actor: string | null } | null>(null);
   const hasLoadedCharacter = loadedIdentity?.id === characterId && loadedIdentity.actor === sessionActorId;
   const loadedActorRef = useRef<string | null>(null);
@@ -238,9 +239,11 @@ export default function useCharacter(
       // A failed request is not an authorization decision. Keep the route while retrying quietly.
       const dbCharacter = await makeRequest<Character>('find-character', { id: characterId }, false, {
         throwOnFailure: true,
+        ...(sessionActorId ? { expectedActorId: sessionActorId } : { anonymous: true }),
       });
       if (!active) return;
       if (!dbCharacter) {
+        if (isSessionPending) throw new Error('Waiting for the saved session before loading this character.');
         handleFetchedCharacter(dbCharacter);
         return;
       }
@@ -303,7 +306,7 @@ export default function useCharacter(
       saveScopeRef.current = scope + 1;
       clearSaveRetry();
     };
-  }, [characterId, sessionActorId, loadAttempt, handleFetchedCharacter, pauseConflictingSave]);
+  }, [characterId, sessionActorId, isSessionPending, loadAttempt, handleFetchedCharacter, pauseConflictingSave]);
 
   // Execute operations
   const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
@@ -838,7 +841,7 @@ export default function useCharacter(
         writeRevision: writeRevisionRef.current,
       };
       const remote = await makeRequest<Character>('find-character', { id: characterId }, false, {
-        ...(context.actor ? { expectedActorId: context.actor } : {}),
+        ...(context.actor ? { expectedActorId: context.actor } : { anonymous: true }),
         throwOnFailure: true,
       });
       if (!remote) return { ...context, character: null };

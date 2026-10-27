@@ -24,6 +24,10 @@ globalThis.__recovery = {
     shown++;
   },
   hide: () => {},
+  generation: 0,
+  defaults: [],
+  contentReads: 0,
+  request: async () => ({ content_sources: { enabled: [1] } }),
 };
 const outfile = join(directory, 'recovery.mjs');
 await build({
@@ -59,10 +63,12 @@ await build({
       export const useEffect = globalThis.__recovery.effect;
       export const useRef = globalThis.__recovery.ref, useState = globalThis.__recovery.state;
       export const useQuery = globalThis.__recovery.query;
-      export const defineDefaultSources = (_, sources) => sources;
-      export const fetchContentSources = async () => [];
-      export const fetchContentPackage = async () => ({});
-      export const makeRequest = async () => ({content_sources: {enabled: [1]}});
+      export const captureContentReadScope = actorId => ({actorId, generation: globalThis.__recovery.generation});
+      export const assertContentReadScope = scope => { if(scope.generation !== globalThis.__recovery.generation) throw new Error('Content changed while loading.'); };
+      export const defineDefaultSources = (_, sources) => {globalThis.__recovery.defaults.push(sources); return sources;};
+      export const fetchContentSources = async () => {globalThis.__recovery.contentReads++; return [];};
+      export const fetchContentPackage = async () => {globalThis.__recovery.contentReads++; return {};};
+      export const makeRequest = (...args) => globalThis.__recovery.request(...args);
       export const showNotification = globalThis.__recovery.show, hideNotification = globalThis.__recovery.hide;
       export const Button = 'button', Group = 'group', Text = 'text', Fragment = 'fragment';
       export const jsx = (type, props) => ({type,props}), jsxs = jsx;
@@ -181,6 +187,41 @@ class ContentHost {
     host = undefined;
   }
 }
+
+test('a late anonymous character response cannot change a newer account’s source defaults or start content reads', async () => {
+  globalThis.document = Object.assign(new EventTarget(), { visibilityState: 'visible' });
+  const view = new ContentHost();
+  view.scope.actorId = null;
+  let finish;
+  let capturedOptions;
+  const originalRequest = globalThis.__recovery.request;
+  globalThis.__recovery.defaults.length = 0;
+  globalThis.__recovery.contentReads = 0;
+  globalThis.__recovery.request = (_type, _body, _notify, options) => {
+    capturedOptions = options;
+    return new Promise((resolve) => {
+      finish = resolve;
+    });
+  };
+  try {
+    view.render();
+    const pending = view.options.queryFn();
+    const rejected = assert.rejects(pending, /Content changed/);
+    assert.equal(capturedOptions.anonymous, true);
+    assert.equal(capturedOptions.expectedActorId, undefined);
+    globalThis.__recovery.generation++;
+    view.scope.actorId = 'new-account';
+    view.render();
+    finish({ content_sources: { enabled: [999] } });
+    await rejected;
+    assert.deepEqual(globalThis.__recovery.defaults, []);
+    assert.equal(globalThis.__recovery.contentReads, 0);
+    assert.equal(view.options.queryKey[1].actor, 'new-account');
+  } finally {
+    globalThis.__recovery.request = originalRequest;
+    view.unmount();
+  }
+});
 
 test('a complete library remains visible through failures, but cannot cross character or account scopes', () => {
   globalThis.document = Object.assign(new EventTarget(), { visibilityState: 'visible' });

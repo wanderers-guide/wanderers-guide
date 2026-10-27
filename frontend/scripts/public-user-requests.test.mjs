@@ -65,7 +65,7 @@ await build({
               ? `export const supabase = {
                   auth: { getSession: () => globalThis.__publicUserRequestsTest.session() },
                   functions: { invoke: (...args) => globalThis.__publicUserRequestsTest.invoke(...args) }
-                };`
+                }; export const functions = supabase.functions;`
               : 'export const showNotification = () => {}; export const hideNotification = () => {};',
         }));
       },

@@ -90,7 +90,8 @@ export function Component(props: {}) {
   };
 
   const theme = useMantineTheme();
-  const actorId = useAtomValue(sessionState)?.user.id ?? null;
+  const session = useAtomValue(sessionState);
+  const actorId = session?.user.id ?? null;
   const [doneLoading, setDoneLoading] = useState(false);
   const [sourceRequest, setSourceRequest] = useState<{ id: string; actor: string | null; sources: number[] }>();
   const requestedSources =
@@ -100,6 +101,7 @@ export function Component(props: {}) {
   const content = useCharacterContent({
     characterId: characterId,
     actorId,
+    authPending: session === undefined,
     sources: requestedSources,
     context: 'sheet',
   });
@@ -116,15 +118,7 @@ export function Component(props: {}) {
   }, []);
 
   const loader = (
-    <Box
-      style={{
-        width: '100%',
-        height: '300px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
+    <Center w='100%' mih='var(--wg-page-content-height)'>
       <D20Loader
         size={100}
         color={theme.colors[theme.primaryColor][5]}
@@ -132,7 +126,7 @@ export function Component(props: {}) {
         status='Loading...'
         hasStatusBg
       />
-    </Box>
+    </Center>
   );
 
   if (!content) {

@@ -1,4 +1,10 @@
-import { defineDefaultSources, fetchContentPackage, fetchContentSources } from '@content/content-store';
+import {
+  assertContentReadScope,
+  captureContentReadScope,
+  defineDefaultSources,
+  fetchContentPackage,
+  fetchContentSources,
+} from '@content/content-store';
 import { makeRequest } from '@requests/request-manager';
 import { Character, ContentPackage } from '@schemas/content';
 import { useQuery } from '@tanstack/react-query';
@@ -8,6 +14,7 @@ import { useQuietRetry } from './use-quiet-retry';
 type ContentScope = {
   characterId: string | number;
   actorId: string | null;
+  authPending?: boolean;
   sources?: number[];
   context: 'sheet' | 'builder';
 };
@@ -16,6 +23,7 @@ type ContentScope = {
 export function useCharacterContent({
   characterId,
   actorId,
+  authPending = false,
   sources,
   context,
 }: ContentScope): ContentPackage | undefined {
@@ -24,19 +32,23 @@ export function useCharacterContent({
   const { data, isError, isFetching, refetch } = useQuery({
     queryKey:
       context === 'sheet'
-        ? [`find-content-${characterId}`, { actor: actorId, sources: sources ?? null }]
+        ? [`find-content-${characterId}`, { actor: actorId, authPending, sources: sources ?? null }]
         : [
             `find-content-${characterId}-for-char-builder-creation`,
-            { characterId, actor: actorId, sources: sources ?? null },
+            { characterId, actor: actorId, authPending, sources: sources ?? null },
           ],
     queryFn: async () => {
+      const readScope = captureContentReadScope(actorId);
       const character = await makeRequest<Character>('find-character', { id: characterId }, false, {
         throwOnFailure: true,
-        ...(actorId ? { expectedActorId: actorId } : {}),
+        ...(actorId ? { expectedActorId: actorId } : { anonymous: true }),
       });
+      assertContentReadScope(readScope);
+      // An anonymous miss cannot deny access while the saved account is unresolved.
+      if (!character && authPending) throw new Error('Waiting for the saved session before loading this character.');
       const requested = defineDefaultSources('PAGE', sources ?? character?.content_sources?.enabled ?? []);
-      await fetchContentSources(requested);
-      return fetchContentPackage(requested, { fetchSources: true, fetchCreatures: context === 'sheet' });
+      await fetchContentSources(requested, false, readScope);
+      return fetchContentPackage(requested, { fetchSources: true, fetchCreatures: context === 'sheet', readScope });
     },
     retry: 1,
     retryDelay: 2000,

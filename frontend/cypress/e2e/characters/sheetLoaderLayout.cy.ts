@@ -1,0 +1,58 @@
+/** The public sheet's pending-read state must fill the visible route content area. */
+describe('Public sheet loader layout', () => {
+  let releaseRead: (() => void) | undefined;
+
+  afterEach(() => {
+    releaseRead?.();
+    releaseRead = undefined;
+  });
+
+  for (const [name, width, height] of [
+    ['desktop', 1280, 900],
+    ['phone', 390, 844],
+    ['short phone', 390, 700],
+  ] as const) {
+    it(`centers the complete loading indicator in the available ${name} content area`, () => {
+      const pending = new Promise<void>((resolve) => {
+        releaseRead = resolve;
+      });
+      cy.intercept('POST', '**/functions/v1/find-character', (request) =>
+        pending.then(() => request.reply({ statusCode: 200, body: { status: 'success', data: null } }))
+      );
+      cy.viewport(width, height);
+      cy.visit('/sheet/36514', {
+        onBeforeLoad(win) {
+          win.indexedDB.open = () => {
+            throw new Error('Cold loader layout fixture');
+          };
+        },
+      });
+      cy.contains('Loading...').should('be.visible');
+      cy.contains('Loading...')
+        .parent()
+        .should((indicator) => {
+          const element = indicator[0];
+          const main = element.closest('main');
+          expect(main, 'the route loading indicator is inside the application main region').not.to.eq(null);
+          if (!main) throw new Error('Missing application main region');
+          const win = element.ownerDocument.defaultView;
+          if (!win) throw new Error('Missing loading indicator window');
+          const bounds = element.getBoundingClientRect();
+          const mainBounds = main.getBoundingClientRect();
+          const style = win.getComputedStyle(main);
+          const centerX =
+            (mainBounds.left + parseFloat(style.paddingLeft) + mainBounds.right - parseFloat(style.paddingRight)) / 2;
+          const centerY =
+            (mainBounds.top + parseFloat(style.paddingTop) + height - parseFloat(style.paddingBottom)) / 2;
+          expect(indicator.find('svg'), 'measure the artwork together with its status label').to.have.length(1);
+          expect(bounds.left + bounds.width / 2, 'horizontal center of the route content').to.be.closeTo(centerX, 2);
+          expect(bounds.top + bounds.height / 2, 'vertical center of the visible route content').to.be.closeTo(
+            centerY,
+            2
+          );
+        });
+      cy.document().its('documentElement.scrollWidth').should('be.at.most', width);
+      cy.screenshot(`sheet-loader-centered-${width}x${height}`);
+    });
+  }
+});

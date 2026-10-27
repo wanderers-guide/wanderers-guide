@@ -2,7 +2,8 @@ import { reportClientFailure } from '@utils/client-errors';
 import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError, type Session } from '@supabase/supabase-js';
 import { JSendResponse, RequestType } from '@schemas/requests';
 import { logError, throwError } from '@utils/error-handling';
-import { supabase } from '../supabase-client';
+import { functions, supabase } from '../supabase-client';
+import { readSession, withinSessionBudget, SessionChangedError } from '@auth/session-reader';
 import { RequestRejectedError } from './request-rejection';
 
 const MAX_TRANSIENT_RETRIES = 1;
@@ -56,16 +57,12 @@ export function resetSessionExpired(): void {
   sessionExpired = false;
 }
 
-/** Read authentication without allowing a storage/refresh failure to discard the pending request. */
-async function getSession(): Promise<Session | null> {
-  try {
-    const { data, error } = await supabase.auth.getSession();
-    return error ? null : data.session;
-  } catch (error) {
-    console.error('Could not read the current session:', error);
-    return null;
-  }
-}
+export type RequestOptions = {
+  expectedActorId?: string;
+  anonymous?: boolean;
+  throwOnFailure?: boolean;
+  throwOnRejection?: boolean;
+};
 
 /** Only these responses prove JWT validation failed before the handler could write. */
 function isRejectedJwt(status: number, body: unknown): boolean {
@@ -95,13 +92,13 @@ function isCharacterStatementTimeout(type: RequestType, status: number, body: un
 
 /** Refresh once for concurrent failures, and never replay a request as a different account. */
 async function recoverSession(failedSession: Session | null): Promise<Session | null> {
-  const current = await getSession();
+  const current = await readSession();
   if (!failedSession || !current || current.user.id !== failedSession.user.id) return null;
   if (current.access_token !== failedSession.access_token) return current;
   if (!refreshingSession) {
     refreshingSession = (async () => {
       try {
-        const { data, error } = await supabase.auth.refreshSession();
+        const { data, error } = await withinSessionBudget(supabase.auth.refreshSession());
         return error ? null : data.session;
       } catch (error) {
         console.error('Could not refresh the session:', error);
@@ -112,7 +109,7 @@ async function recoverSession(failedSession: Session | null): Promise<Session | 
     })();
   }
   const refreshed = await refreshingSession;
-  const latest = await getSession();
+  const latest = await readSession();
   return refreshed && latest?.user.id === failedSession.user.id && latest.access_token === refreshed.access_token
     ? refreshed
     : null;
@@ -123,17 +120,30 @@ export async function makeRequest<T = Record<string, any>>(
   type: RequestType,
   body: Record<string, any>,
   notifyFailure = true,
-  options?: { expectedActorId?: string; throwOnFailure?: boolean; throwOnRejection?: boolean }
+  options?: RequestOptions
 ): Promise<T | null> {
   let lastError: any = null;
   let lastErrorBody: unknown = null;
   let transientRetries = 0;
   let retriedAuthentication = false;
-  let requestSession = await getSession();
   const failure = (): null => {
     if (options?.throwOnFailure) throw new Error(`Request failed: ${type}`);
     return null;
   };
+  // Anonymous is an explicit public read, never a fallback for an unavailable session.
+  if (
+    options?.anonymous &&
+    (!RETRYABLE_READS.has(type) || options.expectedActorId || (type === 'find-character' && body.id === undefined))
+  )
+    return failure();
+  let requestSession: Session | null;
+  try {
+    requestSession = options?.anonymous ? null : await readSession();
+  } catch (error) {
+    if (!(error instanceof SessionChangedError))
+      console.error(`Could not establish request identity for ${type}:`, error);
+    return failure();
+  }
   if (options?.expectedActorId && requestSession?.user.id !== options.expectedActorId) {
     console.error(`Request actor mismatch before ${type}: ${requestSession ? 'different account' : 'no session'}`);
     return failure();
@@ -169,16 +179,22 @@ export async function makeRequest<T = Record<string, any>>(
         // Some gateway failures have no JSON body. They are not authentication failures.
       }
       if (isRejectedJwt(error.context.status, lastErrorBody)) {
+        if (options?.anonymous) break;
         if (!retriedAuthentication) {
           retriedAuthentication = true;
-          const recovered = await recoverSession(requestSession);
+          const recovered = await recoverSession(requestSession).catch(() => null);
           if (recovered) {
             requestSession = recovered;
             resetSessionExpired();
             continue;
           }
         }
-        const current = await getSession();
+        let current: Session | null;
+        try {
+          current = await readSession();
+        } catch {
+          break;
+        }
         // A request from a previous account must not change the new account's authentication state.
         if (
           (!current || current.user.id === requestSession?.user.id) &&
@@ -209,7 +225,12 @@ export async function makeRequest<T = Record<string, any>>(
       transientRetries++;
       await sleep(250 + Math.random() * 250);
       // Keep the original identity on retries. An account switch cannot replay its write.
-      const current = await getSession();
+      let current: Session | null;
+      try {
+        current = options?.anonymous ? null : await readSession();
+      } catch {
+        break;
+      }
       if (current?.user.id !== requestSession?.user.id) break;
       requestSession = current;
       continue;
@@ -249,7 +270,7 @@ async function invokeWithTimeout(
       resolve({ data: null, error: new Error('Timeout') });
     }, timeout);
 
-    supabase.functions
+    functions
       .invoke(type, {
         body,
         signal: controller.signal,
