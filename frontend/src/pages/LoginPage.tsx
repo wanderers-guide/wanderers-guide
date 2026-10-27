@@ -18,20 +18,19 @@ import DicordIcon from '../assets/images/discord-icon.png';
 import GitHubIcon from '../assets/images/github-icon.png';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { sessionState } from '@atoms/supabaseAtoms';
-import { useAtom, useAtomValue } from 'jotai';
+import { useAtomValue } from 'jotai';
 import { useEffect, useState } from 'react';
 import { setPageTitle } from '@utils/document-change';
 import { clearUserData } from '@auth/user-manager';
 import { IconMail } from '@tabler/icons-react';
 import { supabase } from '../main';
-import { set } from 'node_modules/cypress/types/lodash';
 
 export function Component() {
   setPageTitle('Login');
 
   const theme = useMantineTheme();
   const navigate = useNavigate();
-  const [session, setSession] = useAtom(sessionState);
+  const session = useAtomValue(sessionState);
 
   const [searchParams] = useSearchParams();
   useEffect(() => {
@@ -156,7 +155,6 @@ export function Component() {
 
               if (data.user) {
                 // Will automatically update and redirect
-                console.log('Sign in data:', data);
                 setEmail('');
                 setPassword('');
               }

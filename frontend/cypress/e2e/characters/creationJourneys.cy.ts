@@ -180,7 +180,7 @@ describe('Character creation journeys', () => {
         .its('response.body.status')
         .should('eq', 'success');
       const openLevel4 = () => {
-        cy.get('[data-wg-name="level-4"]').click();
+        cy.get('[data-wg-name="level-4"]', { timeout: 30000 }).should('be.visible').click();
         cy.get('[data-wg-name="level-4"]').contains('.mantine-Accordion-item', 'Fighter Feat').click();
         cy.get('[data-wg-name="level-4"]').contains('button', 'Select a Feat').click();
         cy.contains('[role="tab"]', 'Archetype Feats').click();

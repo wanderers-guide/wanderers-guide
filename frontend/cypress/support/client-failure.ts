@@ -49,7 +49,7 @@ export function captureClientDiagnostics(win: Cypress.AUTWindow, messages: strin
         typeof input === 'string' || input instanceof URL ? input.toString() : input.url,
         win.location.href
       );
-      if (url.pathname.startsWith('/functions/v1/')) {
+      if (url.pathname.startsWith('/functions/v1/') || url.pathname === '/auth/v1/token') {
         record(`Fetch rejected for ${url.pathname.split('/').pop()}`);
         record(error);
       }

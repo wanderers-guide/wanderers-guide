@@ -348,6 +348,12 @@ CI runs these regression suites before the production build. The content selecto
 already typed search while its catalog is still loading, and verify that removed sources
 or filtered choices disappear from search results without another keystroke.
 
+The Cypress `login` command awaits the actual successful Auth response before checking
+navigation and the authenticated character list. Rejected sign-ins report their HTTP
+status and fixed provider code; diagnostic messages redact credentials and omit payloads.
+Vite ignores generated Cypress downloads, screenshots, and videos so recording test
+artifacts cannot reload the two fixtures that require source-module access.
+
 Timing failures belong in the correctness suite when they can change results. Cache
 tests hold IndexedDB reads, writes and deletion independently: fresh downloads must
 continue, and a late cache cannot resurrect content a completed download says is absent.
