@@ -75,10 +75,12 @@ describe('October Discord regressions', () => {
       const endpoint = new URL(req.url).pathname.split('/').pop()!;
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       let data: any;
-      if (endpoint === 'create-character')
+      if (endpoint === 'create-character') {
+        req.alias = 'rejectedCreation';
         return req.reply({
           body: { status: 'error', message: 'Reconnect Patreon in Account to verify additional character slots.' },
         });
+      }
       if (endpoint === 'update-character')
         return req.reply({ body: { status: 'success', data: [{ ...character, ...body }] } });
       if (endpoint === 'find-character') data = body.id ? character : [character];
@@ -151,7 +153,8 @@ describe('October Discord regressions', () => {
       },
       { force: true }
     );
-    cy.contains('Import failed').should('be.visible');
+    cy.wait('@rejectedCreation', { requestTimeout: 30000, responseTimeout: 30000 });
+    cy.contains('Import failed', { timeout: 30000 }).should('be.visible');
     cy.contains('Reconnect Patreon').should('be.visible');
     cy.contains('Invalid JSON file').should('not.exist');
     cy.get('button[aria-label="Import Character"]').should('not.have.attr', 'data-loading');

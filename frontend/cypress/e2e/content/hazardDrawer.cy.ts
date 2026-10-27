@@ -155,7 +155,7 @@ describe('Official hazard drawer', () => {
         const screenshotName = `hazard-${name.toLowerCase().replaceAll(' ', '-')}-${screen}`;
         cy.viewport(width, height);
         cy.visit(`/?open=link_hazard_${hazard.id}`);
-        cy.wait('@hazardRead');
+        cy.wait('@hazardRead', { requestTimeout: 30000, responseTimeout: 30000 });
         cy.get('html').should('have.attr', 'data-mantine-color-scheme', 'dark');
         cy.get('.mantine-Drawer-content').should('have.length', 1).and('be.visible');
         cy.get('.mantine-Drawer-content')

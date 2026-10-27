@@ -78,7 +78,7 @@ describe('Incomplete content recovery', () => {
       // The scheduled background read recovers without a Retry button or page reload.
       cy.wait('@catalog', { requestTimeout: 45000, responseTimeout: 120000 });
       if (surface === 'sheet') cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
-      else cy.contains('Select Ancestry', { timeout: 30000 }).scrollIntoView().should('be.visible');
+      else cy.contains('button:visible', 'Select Ancestry', { timeout: 30000 }).scrollIntoView().should('be.visible');
       cy.contains("Couldn't load game content").should('not.exist');
       cy.screenshot(`quiet-${surface}-recovered-mobile`);
     });

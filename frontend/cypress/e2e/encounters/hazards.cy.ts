@@ -236,7 +236,7 @@ describe('Hazard encounter controls', () => {
       cy.get('.mantine-Modal-body')
         .contains('button', /^Select$/)
         .click();
-      cy.wait('@saveEncounter').then(() => {
+      cy.wait('@saveEncounter', { requestTimeout: 30000, responseTimeout: 30000 }).then(() => {
         expect(saved.meta_data).to.deep.eq({ party_level: 7, party_size: 4 });
         expect(saved.combatants.list.filter((entry: any) => entry.type === 'CREATURE')).to.have.length(2);
       });

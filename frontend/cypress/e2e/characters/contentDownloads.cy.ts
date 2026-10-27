@@ -119,7 +119,9 @@ describe('Slow content downloads', () => {
     cy.then(() => expect(counts.requests(), 'Home does not download the feat catalog').to.eq(0));
     cy.contains('button', 'Builder').click();
     waitForCatalog();
-    cy.contains('Select Ancestry', { timeout: 30000 }).scrollIntoView().should('be.visible');
+    // Choices mount hidden while the worker finishes. Keep readiness in the
+    // existing retryable query instead of freezing a hidden element by scrolling it.
+    cy.contains('button:visible', 'Select Ancestry', { timeout: 30000 }).scrollIntoView().should('be.visible');
     cy.contains("Couldn't load game content").should('not.exist');
     cy.then(() => expect(counts.requests()).to.eq(1));
     cy.screenshot('slow-builder-loaded');

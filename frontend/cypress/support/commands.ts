@@ -23,12 +23,23 @@
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 //
 // -- This is a parent command --
+let loginSequence: number = 0;
+
 Cypress.Commands.add('login', (email: string, password: string) => {
+  const readyAlias: string = `loginCharactersReady${++loginSequence}`;
+  // The route changes before the authenticated page's reads settle. Await its
+  // initial list so subsequent actions start after the authenticated page is ready.
+  cy.intercept('POST', '**/functions/v1/find-character', (request) => {
+    if (request.body.user_id) request.alias = readyAlias;
+  });
   cy.visit('/login?redirect=characters');
   cy.get('input[name="email"]:visible').type(email);
   cy.get('input[name="password"]:visible').type(password, { log: false });
   cy.contains('button', 'Sign in with Email').click();
   cy.location('pathname', { timeout: 10000 }).should('eq', '/characters');
+  cy.wait(`@${readyAlias}`, { requestTimeout: 30000, responseTimeout: 30000 })
+    .its('response.body.status')
+    .should('eq', 'success');
 });
 
 Cypress.Commands.add('buildABC', (ancestry: string, background: string, playerClass: string) => {
