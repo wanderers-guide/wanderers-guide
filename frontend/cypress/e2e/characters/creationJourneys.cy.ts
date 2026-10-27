@@ -195,6 +195,15 @@ describe('Character creation journeys', () => {
       cy.visit('/builder/' + id);
       cy.get('button[aria-label="Next Page"]', { timeout: 30000 }).click();
       openLevel4();
+      cy.get('.mantine-Modal-close').click();
+      cy.get('.mantine-Modal-content').should('not.exist');
+      cy.viewport(390, 844);
+      cy.contains('.mantine-Stepper-step', 'Home').click();
+      cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('be.visible');
+      cy.get('button[aria-label="Next Page"]').scrollIntoView().should('be.visible');
+      cy.screenshot('builder-next-page-phone');
+      cy.get('button[aria-label="Next Page"]').click();
+      cy.get('[data-wg-name="level-4"]', { timeout: 30000 }).scrollIntoView().should('be.visible');
     });
   });
 });

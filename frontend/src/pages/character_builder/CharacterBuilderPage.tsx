@@ -1,16 +1,6 @@
 import BlurBox from '@common/BlurBox';
 import { glassStyle } from '@utils/colors';
-import {
-  ActionIcon,
-  Box,
-  Center,
-  LoadingOverlay,
-  ScrollArea,
-  Stack,
-  Stepper,
-  Text,
-  rem,
-} from '@mantine/core';
+import { ActionIcon, Box, Center, LoadingOverlay, ScrollArea, Stack, Stepper, Text, rem } from '@mantine/core';
 import { makeRequest } from '@requests/request-manager';
 import { IconArrowLeft, IconArrowRight, IconHammer, IconHome, IconUser } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
@@ -76,33 +66,7 @@ export function Component() {
     <Center>
       <Box maw={800} w='100%' pb='sm'>
         <Stack style={{ position: 'relative' }}>
-          {isCharacterBuilderMobile() ? (
-            <Box
-              style={{
-                position: 'absolute',
-                bottom: -100,
-                paddingBottom: 20,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                visibility: active === 2 ? 'hidden' : 'visible',
-              }}
-            >
-              <ActionIcon
-                variant='filled'
-                color='gray'
-                aria-label='Next Page'
-                radius={60}
-                size={60}
-                style={{
-                  ...glassStyle({ bg: true }),
-                }}
-                onClick={() => handleStepChange(active + 1)}
-                disabled={active === 1 && !isPlayable(character)}
-              >
-                <IconArrowRight size='1.7rem' stroke={2} />
-              </ActionIcon>
-            </Box>
-          ) : (
+          {!isCharacterBuilderMobile() && (
             <>
               <ActionIcon
                 variant='filled'
@@ -213,6 +177,23 @@ export function Component() {
               </Stepper.Completed>
             </Stepper>
           </BlurBox>
+          {isCharacterBuilderMobile() && (
+            // Keep mobile navigation inside the scrollable layout instead of below its clipped boundary.
+            <Center pt='sm' style={{ visibility: active === 2 ? 'hidden' : 'visible' }}>
+              <ActionIcon
+                variant='filled'
+                color='gray'
+                aria-label='Next Page'
+                radius={60}
+                size={60}
+                style={glassStyle({ bg: true })}
+                onClick={() => handleStepChange(active + 1)}
+                disabled={active === 1 && !isPlayable(character)}
+              >
+                <IconArrowRight size='1.7rem' stroke={2} />
+              </ActionIcon>
+            </Center>
+          )}
         </Stack>
       </Box>
     </Center>

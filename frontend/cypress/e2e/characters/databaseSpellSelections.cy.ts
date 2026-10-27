@@ -540,7 +540,7 @@ describe('Source-owned database spell choices', () => {
       .find('.mantine-Accordion-panel');
   const openCustom = () => {
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', original.name);
-    cy.get('button[aria-label="Next Page"]', { timeout: 30000 }).should('be.visible').click();
+    cy.get('button[aria-label="Next Page"]', { timeout: 30000 }).scrollIntoView().should('be.visible').click();
     cy.get('[data-wg-name="level-0"]', { timeout: 30000 })
       .should('be.visible')
       .contains('.mantine-Accordion-control', 'Initial Stats')
