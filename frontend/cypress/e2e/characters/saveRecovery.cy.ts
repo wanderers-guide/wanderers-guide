@@ -1,3 +1,4 @@
+import { captureClientDiagnostics } from '../../support/client-failure';
 /** Verify that an unreplayable draft stays quietly preserved without replacing server data. */
 describe('Buffered character recovery', () => {
   let characterId: number;
@@ -5,6 +6,12 @@ describe('Buffered character recovery', () => {
   let actorId: string;
 
   before(() => {
+    const diagnostics: string[] = [];
+    cy.on('window:before:load', (win) => captureClientDiagnostics(win, diagnostics));
+    cy.on('fail', (error) => {
+      error.message += `\nBrowser diagnostics: ${JSON.stringify(diagnostics)}`;
+      throw error;
+    });
     cy.intercept('POST', '**/auth/v1/token*').as('signIn');
     cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
     cy.wait('@signIn').then(({ response }) => {

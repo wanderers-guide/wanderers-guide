@@ -15,3 +15,29 @@ export function describeClientFailure(body: unknown): string {
   const code = body.code;
   return typeof code === 'string' && FAILURE_CODES.has(code) ? code : 'unknown';
 }
+
+/** Keep bounded, credential-redacted browser messages beside strict fixture failures. */
+export function captureClientDiagnostics(win: Cypress.AUTWindow, messages: string[]): (value: unknown) => void {
+  const record = (value: unknown): void => {
+    let message: string = typeof value === 'string' ? value : typeof value;
+    if (value && typeof value === 'object' && 'message' in value && typeof value.message === 'string') {
+      message = value.message;
+      if ('context' in value && value.context && typeof value.context === 'object' && 'message' in value.context)
+        message += `: ${String(value.context.message)}`;
+    }
+    message = message
+      .replace(/Bearer\s+\S+/gi, 'Bearer <redacted>')
+      .replace(/[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{12,}/g, '<redacted JWT>')
+      .slice(0, 500);
+    if (messages.at(-1) !== message) messages.push(message);
+    if (messages.length > 12) messages.shift();
+  };
+  win.addEventListener('error', (event) => record(event.message));
+  win.addEventListener('unhandledrejection', (event) => record(event.reason));
+  const original = win.console.error;
+  win.console.error = (...values: unknown[]): void => {
+    values.forEach(record);
+    original.apply(win.console, values);
+  };
+  return record;
+}

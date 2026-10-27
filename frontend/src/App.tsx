@@ -105,10 +105,14 @@ export default function App() {
   const [session, setSession] = useAtom(sessionState);
   useEffect(() => {
     resetContentStore();
+    let mounted: boolean = true;
+    let authRevision: number = 0;
 
     supabase.auth
       .getSession()
       .then(({ data: { session } }) => {
+        // A completed sign-in/out is newer than this initial storage snapshot.
+        if (!mounted || authRevision > 0) return;
         setContentCacheActor(session?.user.id ?? null);
         setSession(session);
         // Clear stale account chrome quietly; character drafts remain account-scoped.
@@ -117,6 +121,7 @@ export default function App() {
         }
       })
       .catch(() => {
+        if (!mounted || authRevision > 0) return;
         // A failed initial read may offer sign-in, but must not strand the route.
         setSession((current) => (current === undefined ? null : current));
       });
@@ -124,6 +129,8 @@ export default function App() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted || (event === 'INITIAL_SESSION' && authRevision > 0)) return;
+      authRevision += 1;
       setContentCacheActor(session?.user.id ?? null);
       setSession(session);
       if (session) resetSessionExpired();
@@ -138,7 +145,10 @@ export default function App() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const activeCharacer = useAtomValue(characterState);

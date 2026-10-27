@@ -1,10 +1,25 @@
 export {};
+import { captureClientDiagnostics } from '../../support/client-failure';
 
 /** Real local Auth, character writes and reloads; only the paid AI boundary is stubbed. */
 describe('Character creation journeys', () => {
   let token: string;
   let createdIds: number[];
+  let diagnostics: string[];
   beforeEach(() => {
+    diagnostics = [];
+    cy.on('window:before:load', (win) => {
+      const record = captureClientDiagnostics(win, diagnostics);
+      const observer = new win.MutationObserver(() => {
+        for (const notification of win.document.querySelectorAll('.mantine-Notification-root'))
+          if (notification.textContent?.includes('Could not copy character')) record(notification.textContent);
+      });
+      observer.observe(win.document, { childList: true, subtree: true });
+    });
+    cy.on('fail', (error) => {
+      error.message += `\nBrowser diagnostics: ${JSON.stringify(diagnostics)}`;
+      throw error;
+    });
     createdIds = [];
     cy.intercept('POST', '**/auth/v1/token*').as('signIn');
     cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));

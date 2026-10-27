@@ -9,6 +9,7 @@ import {
 } from '../../../src/schemas/content';
 import { OperationSchema } from '../../../src/schemas/operations';
 import { isOperationsWorkerURL } from '../../support/operations-worker-fixture';
+import { captureClientDiagnostics, describeClientFailure } from '../../support/client-failure';
 
 const actor = '00000000-0000-4000-8000-000000991902';
 const first = '6082549e-6035-451d-a2dd-f90766e54d55';
@@ -276,6 +277,7 @@ function getDailyOptions(value: unknown): DailyOption[] {
 }
 
 describe('Source-owned database spell choices', () => {
+  let diagnostics: string[] = [];
   let saved = structuredClone(original);
   let saveResponses: { received: number; completed: number } = { received: 0, completed: 0 };
   let holdFinalRankSaveResponse = false;
@@ -310,6 +312,7 @@ describe('Source-owned database spell choices', () => {
     });
     cy.visit(`/${page}/${original.id}`, {
       onBeforeLoad(win) {
+        captureClientDiagnostics(win, diagnostics);
         const fixtureWindow = win as unknown as FixtureWindow;
         const NativeWorker = fixtureWindow.Worker;
         const control: WorkerControl = {
@@ -417,6 +420,7 @@ describe('Source-owned database spell choices', () => {
   };
 
   beforeEach(() => {
+    diagnostics = [];
     saved = structuredClone(original);
     saveResponses = { received: 0, completed: 0 };
     holdFinalRankSaveResponse = false;
@@ -513,7 +517,10 @@ describe('Source-owned database spell choices', () => {
         ].includes(endpoint)
       )
         data = [];
-      else throw new Error(`Unexpected database fixture API: ${endpoint}`);
+      else
+        throw new Error(
+          `Unexpected database fixture API: ${endpoint}; code=${describeClientFailure(req.body)}; diagnostics=${JSON.stringify(diagnostics)}`
+        );
       req.reply({ statusCode: 200, body: { status: 'success', data } });
     });
   });
