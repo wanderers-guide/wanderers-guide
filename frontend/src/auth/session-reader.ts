@@ -17,7 +17,7 @@ export class SessionChangedError extends Error {
 /** An Auth event supersedes any older read still waiting on storage or refresh. */
 export function invalidateSessionRead(actorId?: string | null): void {
   sessionRevision += 1;
-  currentActor = actorId;
+  if (actorId !== undefined) currentActor = actorId;
   pendingSession = undefined;
 }
 
@@ -49,7 +49,10 @@ export function readSession(): Promise<Session | null> {
       // INITIAL_SESSION can establish this very read's account before getSession resolves.
       // A different account, sign-out or unscoped reset still cancels the old identity.
       const establishedInitialActor =
-        actorAtStart === undefined && typeof currentActor === 'string' && data.session?.user.id === currentActor;
+        actorAtStart === undefined &&
+        sessionRevision === revision + 1 &&
+        typeof currentActor === 'string' &&
+        data.session?.user.id === currentActor;
       if (revision !== sessionRevision && !establishedInitialActor) throw new SessionChangedError();
       return data.session;
     });

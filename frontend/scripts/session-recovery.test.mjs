@@ -195,13 +195,14 @@ test('unknown private identities fail within a shared budget without clearing dr
 });
 
 test('an initial Auth event can establish the same account before its current read resolves', async () => {
+  const initial = await import(pathToFileURL(join(directory, 'session.mjs')).href + '?uncontested-initial');
   let finish;
   readAuthSession = () =>
     new Promise((resolve) => {
       finish = resolve;
     });
-  const pending = api.makeRequest('find-content-update', { id: 1 }, false, { throwOnFailure: true });
-  api.invalidateSessionRead('owner');
+  const pending = initial.makeRequest('find-content-update', { id: 1 }, false, { throwOnFailure: true });
+  initial.invalidateSessionRead('owner');
   finish({ data: { session: signedIn() }, error: null });
   assert.deepEqual(await pending, [{ id: 1 }]);
   assert.equal(calls.length, 1);
@@ -249,6 +250,44 @@ test('sign-out cancels a pending private request without an anonymous downgrade'
   assert.equal(await pending, null);
   assert.equal(calls.length, 0);
   assert.equal(api.hasSessionExpired(), false);
+});
+
+for (const [name, transitions] of [
+  ['two account events', ['owner', 'other-account']],
+  ['sign-out then sign-in', [null, 'other-account']],
+  ['reset then sign-in', [undefined, 'other-account']],
+])
+  test(`an initially unknown request is cancelled after ${name}`, async () => {
+    const initial = await import(
+      pathToFileURL(join(directory, 'session.mjs')).href + '?cancelled-' + name.replaceAll(' ', '-')
+    );
+    let finish;
+    readAuthSession = () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      });
+    const pending = initial.makeRequest('create-character', { name: 'Uncontested identity required' }, false);
+    for (const actor of transitions) initial.invalidateSessionRead(actor);
+    finish({ data: { session: signedIn('other-token', 'other-account') }, error: null });
+    assert.equal(await pending, null);
+    assert.equal(calls.length, 0);
+    assert.equal(initial.hasSessionExpired(), false);
+  });
+
+test('an unscoped reset preserves the confirmed account for subsequent pending work', async () => {
+  const scoped = await import(pathToFileURL(join(directory, 'session.mjs')).href + '?preserved-known-actor');
+  scoped.invalidateSessionRead('owner');
+  scoped.invalidateSessionRead();
+  let finish;
+  readAuthSession = () =>
+    new Promise((resolve) => {
+      finish = resolve;
+    });
+  const pending = scoped.makeRequest('create-character', { name: 'Owner input' }, false);
+  scoped.invalidateSessionRead('other-account');
+  finish({ data: { session: signedIn('other-token', 'other-account') }, error: null });
+  assert.equal(await pending, null);
+  assert.equal(calls.length, 0);
 });
 
 test('legacy HTTP 400/PGRST301 refreshes and replays exactly once with the fresh token', async () => {
