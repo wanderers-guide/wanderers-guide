@@ -4,7 +4,7 @@
 
 describe('Navigation', () => {
   beforeEach(() => {
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
   });
 
   const visitViaUserMenu = (label: string, expectedPath: string) => {

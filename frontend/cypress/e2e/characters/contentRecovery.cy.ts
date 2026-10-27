@@ -2,7 +2,7 @@ describe('Incomplete content recovery', () => {
   let characterId: number;
   let token: string;
   const login = () =>
-    cy.session('quiet-content-recovery', () => cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD')));
+    cy.session('quiet-content-recovery', () => cy.login());
 
   before(() => {
     cy.intercept('POST', '**/auth/v1/token*').as('signIn');
@@ -32,7 +32,7 @@ describe('Incomplete content recovery', () => {
     if (!characterId || !token) return;
     cy.request({
       method: 'POST',
-      url: `${Cypress.env('functions_url')}/delete-content`,
+      url: `${Cypress.expose('functions_url')}/delete-content`,
       headers: { Authorization: `Bearer ${token}` },
       body: { id: characterId, type: 'character' },
       log: false,

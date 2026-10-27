@@ -7,7 +7,7 @@ describe('Interrupted character saves', () => {
   beforeEach(() => {
     characterId = undefined;
     cy.intercept('POST', '**/auth/v1/token*').as('signIn');
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
     cy.wait('@signIn').then(({ response }) => {
       token = response?.body.access_token;
       actorId = response?.body.user.id;
@@ -27,7 +27,7 @@ describe('Interrupted character saves', () => {
     if (!characterId || !token) return;
     cy.request({
       method: 'POST',
-      url: `${Cypress.env('functions_url')}/delete-content`,
+      url: `${Cypress.expose('functions_url')}/delete-content`,
       headers: { Authorization: `Bearer ${token}` },
       body: { id: characterId, type: 'character' },
       log: false,
@@ -40,7 +40,7 @@ describe('Interrupted character saves', () => {
     cy
       .request({
         method: 'POST',
-        url: `${Cypress.env('functions_url')}/find-character`,
+        url: `${Cypress.expose('functions_url')}/find-character`,
         headers: { Authorization: `Bearer ${token}` },
         body: { id: characterId },
         log: false,
@@ -75,7 +75,7 @@ describe('Interrupted character saves', () => {
     cy.wait('@recoveredSave', { timeout: 15000 }).its('response.body.status').should('eq', 'success');
     cy.request({
       method: 'POST',
-      url: `${Cypress.env('functions_url')}/find-character`,
+      url: `${Cypress.expose('functions_url')}/find-character`,
       headers: { Authorization: `Bearer ${token}` },
       body: { id: characterId },
       log: false,

@@ -1,6 +1,6 @@
 describe('Character list session recovery', () => {
   it('does not present a lost session as an empty account, and retries after recovery', () => {
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
     cy.visit('/account');
     cy.contains('Non-Patron', { timeout: 15000 }).should('be.visible');
     cy.get('header button[aria-haspopup="menu"]').click();

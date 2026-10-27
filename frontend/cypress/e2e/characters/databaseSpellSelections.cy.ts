@@ -392,7 +392,7 @@ describe('Source-owned database spell choices', () => {
             else send();
           }
         };
-        const host = new URL(Cypress.env('functions_url')).hostname.split('.')[0];
+        const host = new URL(Cypress.expose('functions_url')).hostname.split('.')[0];
         const token = `${win.btoa('{}')}.${win.btoa(JSON.stringify({ sub: actor, exp: 4102444800 }))}.fixture`;
         win.localStorage.setItem(
           `sb-${host}-auth-token`,
@@ -911,7 +911,7 @@ describe('Source-owned database spell choices', () => {
     it(
       `expires a mounted optimistic daily choice and ignores its late native acknowledgement on ${viewport}`,
       // Source-module access must use the same app store as the mounted picker.
-      { baseUrl: Cypress.env('module_preview_url') ?? Cypress.config('baseUrl') },
+      { baseUrl: Cypress.expose('module_preview_url') ?? Cypress.config('baseUrl') },
       () => {
         cy.viewport(phone ? 390 : 1280, phone ? 844 : 900);
         fixtureSelections(saved)[`character_${first}`] = `${wave.id}:2`;

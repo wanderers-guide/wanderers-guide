@@ -7,7 +7,7 @@ describe('Condition math and recovery through the real sheet', () => {
     cy
       .request({
         method: 'POST',
-        url: `${Cypress.env('functions_url')}/${endpoint}`,
+        url: `${Cypress.expose('functions_url')}/${endpoint}`,
         headers: { Authorization: `Bearer ${token}` },
         body,
         log: false,
@@ -76,7 +76,7 @@ describe('Condition math and recovery through the real sheet', () => {
     releaseContent = undefined;
     cy.viewport(1280, 900);
     cy.intercept('POST', '**/auth/v1/token*').as('signIn');
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
     cy.wait('@signIn').then(({ response }) => {
       token = response?.body.access_token;
       request('find-class', { id: 26 })

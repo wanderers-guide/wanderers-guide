@@ -22,7 +22,7 @@ describe('Character creation journeys', () => {
     });
     createdIds = [];
     cy.intercept('POST', '**/auth/v1/token*').as('signIn');
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
     cy.wait('@signIn').then(({ response }) => {
       token = response!.body.access_token;
     });
@@ -37,7 +37,7 @@ describe('Character creation journeys', () => {
       for (const id of createdIds)
         cy.request({
           method: 'POST',
-          url: `${Cypress.env('functions_url')}/delete-content`,
+          url: `${Cypress.expose('functions_url')}/delete-content`,
           headers: { Authorization: `Bearer ${token}` },
           body: { id, type: 'character' },
           log: false,
@@ -50,7 +50,7 @@ describe('Character creation journeys', () => {
     cy
       .request({
         method: 'POST',
-        url: `${Cypress.env('functions_url')}/find-character`,
+        url: `${Cypress.expose('functions_url')}/find-character`,
         headers: { Authorization: `Bearer ${token}` },
         body: { id },
         log: false,
@@ -63,7 +63,7 @@ describe('Character creation journeys', () => {
   it('copies an owned character once and retains its persisted build after reload', () => {
     cy.request({
       method: 'POST',
-      url: `${Cypress.env('functions_url')}/create-character`,
+      url: `${Cypress.expose('functions_url')}/create-character`,
       headers: { Authorization: `Bearer ${token}` },
       body: { name: 'October copy fixture', level: 4, hero_points: 2, content_sources: { enabled: [1, 7] } },
       log: false,
@@ -141,7 +141,7 @@ describe('Character creation journeys', () => {
       const id = response!.body.data.id;
       cy.request({
         method: 'POST',
-        url: `${Cypress.env('functions_url')}/update-character`,
+        url: `${Cypress.expose('functions_url')}/update-character`,
         headers: { Authorization: `Bearer ${token}` },
         body: {
           id,

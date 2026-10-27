@@ -20,7 +20,7 @@ fresh read; this does not clear character drafts or other local storage.
 
 <Info>
   **Prerequisites**:
-  - [Node.js](https://nodejs.org/en/download) version 19 or higher
+  - [Node.js](https://nodejs.org/en/download) version 22 or higher
   - [Docker](https://www.docker.com/)
   - [Supabase CLI](https://supabase.com/docs/guides/local-development) for your OS (follow the instructions [here](https://supabase.com/docs/guides/cli/getting-started))
   - [Postgres](https://www.postgresql.org/), need `psql` (the client command line)
@@ -488,10 +488,16 @@ the local frontend. Cypress maps it to `publicAnonKey`; CI already supplies it.
 These cases read public catalog data without creating an account or inventory.
 Use the public anonymous key, never the service-role key.
 
-The Cypress commands preserve existing `NODE_OPTIONS` and disable synchronous
-ES module loading for the test process. This lets Cypress 13 load the existing
-configuration with its TypeScript loader on Node 20. CI uses
-the same `cy:run` entry point; application and API runtime options are unchanged.
+Cypress 16.2 runs the browser suite with Node 22. Chrome uses native network
+interception, so application requests reach the local stack through Chrome's own
+network layer. CI still checks the real sign-in response, persisted writes,
+conflicts, denied requests and visible controls; failed cases are not retried.
+
+Test passwords and the harness anonymous credential use `cy.env()` and stay out
+of command logs. Only the public `functions_url`, `module_preview_url` and
+`patreonCase` options are mapped to `Cypress.expose()` by the Node configuration.
+Existing `CYPRESS_*` environment overrides still work. `cy.login()` reads the
+owned test email/password when explicit fixture credentials are not supplied.
 
 `characters/databaseSpellSelections.cy.ts` keeps six cases on the compiled app,
 including Daily Library selection, reload, preparation and visible Rest. Its two

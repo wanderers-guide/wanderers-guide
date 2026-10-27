@@ -137,3 +137,5 @@ service. Do not reset an existing database to repair a runtime timeout.
   custom CORS, or per-route auth.
 - Image tags are pinned to versions that worked at the time of writing.
   Bump them deliberately.
+
+The frontend Docker build uses Node 22, matching the frontend `.node-version` and Cypress CI runtime. The served application remains static nginx output.

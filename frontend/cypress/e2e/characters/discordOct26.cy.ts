@@ -17,55 +17,47 @@ describe('October Discord regressions', () => {
     meta_data: { party_level: 1, party_size: 4 },
   }));
   before(() => {
-    const script = `
-      import { readContentRows } from './scripts/operation-test-harness.mjs';
-      const tables = ['ability_block','item','class','ancestry','background','spell','trait','language','archetype','versatile_heritage','class_archetype'];
-      const fixtures = await readContentRows([...tables.map(table => ({table,sourceIds:[1]})),{table:'content_source',id:1}]);
-      console.log(JSON.stringify(fixtures));
-    `;
-    cy.exec(`node --input-type=module -e '${script.replaceAll("'", "'\\''")}'`, { log: false, timeout: 60000 }).then(
-      ({ stdout }) => {
-        fixtures = JSON.parse(stdout);
-        character = {
-          id: 36514,
-          created_at: '',
-          updated_at: 'fixture-version',
-          user_id: actor,
-          name: 'Long Lore regression',
-          level: 11,
-          experience: 0,
-          hero_points: 1,
-          hp_current: 1,
-          hp_temp: 0,
-          stamina_current: 0,
-          resolve_current: 0,
-          notes: null,
-          roll_history: null,
-          spells: null,
-          inventory: { items: [], coins: { cp: 0, sp: 0, gp: 0, pp: 0 } },
-          details: { conditions: [] },
-          meta_data: { reset_hp: false },
-          operation_data: { selections: {} },
-          variants: null,
-          content_sources: { enabled: [1] },
-          companions: { list: [] },
-          options: { custom_operations: true },
-          custom_operations: [
-            { id: 'ancestry-hp', type: 'setValue', data: { variable: 'MAX_HEALTH_ANCESTRY', value: 8 } },
-            { id: 'class-hp', type: 'setValue', data: { variable: 'MAX_HEALTH_CLASS_PER_LEVEL', value: 6 } },
-            {
-              id: 'long-lore',
-              type: 'createValue',
-              data: {
-                type: 'prof',
-                variable: 'SKILL_LORE_REBELLION_LORE_AND_STRATEGY_WITH_AN_EXTREMELY_LONG_NAME',
-                value: { value: 'T', attribute: 'ATTRIBUTE_INT' },
-              },
+    cy.task<any>('contentFixture:sources', [1], { log: false, timeout: 60000 }).then((rows) => {
+      fixtures = rows;
+      character = {
+        id: 36514,
+        created_at: '',
+        updated_at: 'fixture-version',
+        user_id: actor,
+        name: 'Long Lore regression',
+        level: 11,
+        experience: 0,
+        hero_points: 1,
+        hp_current: 1,
+        hp_temp: 0,
+        stamina_current: 0,
+        resolve_current: 0,
+        notes: null,
+        roll_history: null,
+        spells: null,
+        inventory: { items: [], coins: { cp: 0, sp: 0, gp: 0, pp: 0 } },
+        details: { conditions: [] },
+        meta_data: { reset_hp: false },
+        operation_data: { selections: {} },
+        variants: null,
+        content_sources: { enabled: [1] },
+        companions: { list: [] },
+        options: { custom_operations: true },
+        custom_operations: [
+          { id: 'ancestry-hp', type: 'setValue', data: { variable: 'MAX_HEALTH_ANCESTRY', value: 8 } },
+          { id: 'class-hp', type: 'setValue', data: { variable: 'MAX_HEALTH_CLASS_PER_LEVEL', value: 6 } },
+          {
+            id: 'long-lore',
+            type: 'createValue',
+            data: {
+              type: 'prof',
+              variable: 'SKILL_LORE_REBELLION_LORE_AND_STRATEGY_WITH_AN_EXTREMELY_LONG_NAME',
+              value: { value: 'T', attribute: 'ATTRIBUTE_INT' },
             },
-          ],
-        };
-      }
-    );
+          },
+        ],
+      };
+    });
   });
   beforeEach(() => {
     cy.intercept('**/auth/v1/**', () => {
@@ -112,7 +104,7 @@ describe('October Discord regressions', () => {
   const visit = (url: string) =>
     cy.visit(url, {
       onBeforeLoad(win) {
-        const host = new URL(Cypress.env('functions_url')).hostname.split('.')[0];
+        const host = new URL(Cypress.expose('functions_url')).hostname.split('.')[0];
         const token = `${win.btoa('{}')}.${win.btoa(JSON.stringify({ sub: actor, exp: 4102444800 }))}.fixture`;
         win.localStorage.setItem(
           `sb-${host}-auth-token`,
@@ -202,16 +194,8 @@ describe('October Discord regressions', () => {
         hp_temp: 0,
         meta_data: { reset_hp: false },
       };
-      const script = `
-        import { readContentRows } from './scripts/operation-test-harness.mjs';
-        import { writeFile } from 'node:fs/promises';
-        const tables = ['ability_block','item','class','ancestry','background','spell','trait','language','archetype','versatile_heritage','class_archetype'];
-        const sources = [...new Set([3,...${JSON.stringify(build.content_sources.enabled)}])];
-        const fixtures = await readContentRows([...tables.map(table => ({table,sourceIds:sources})),...sources.map(id => ({table:'content_source',id}))]);
-        await writeFile('/tmp/wg-oct26-druid-content.json', JSON.stringify(fixtures));
-      `;
-      cy.exec(`node --input-type=module -e '${script.replaceAll("'", "'\\''")}'`, { log: false, timeout: 60000 });
-      cy.readFile('/tmp/wg-oct26-druid-content.json', { log: false, timeout: 60000 }).then((rows) => {
+      const sources = [...new Set<number>([3, ...build.content_sources.enabled])];
+      cy.task<any>('contentFixture:sources', sources, { log: false, timeout: 60000 }).then((rows) => {
         fixtures = rows;
         expect(fixtures.some(({ table, row }) => table === 'ancestry' && row.id === build.details.ancestry.id)).to.eq(
           true,

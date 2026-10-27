@@ -26,7 +26,14 @@ import { captureClientDiagnostics } from './client-failure';
 // -- This is a parent command --
 let loginSequence: number = 0;
 
-Cypress.Commands.add('login', (email: string, password: string) => {
+Cypress.Commands.add('login', (email?: string, password?: string) => {
+  if (email === undefined || password === undefined) {
+    return cy.env(['TEST_EMAIL', 'TEST_PASSWORD']).then(({ TEST_EMAIL, TEST_PASSWORD }) => {
+      if (typeof TEST_EMAIL !== 'string' || typeof TEST_PASSWORD !== 'string')
+        throw new Error('UI sign-in requires the owned test credentials');
+      return cy.login(TEST_EMAIL, TEST_PASSWORD);
+    });
+  }
   const readyAlias: string = `loginCharactersReady${++loginSequence}`;
   const authAlias: string = `${readyAlias}Auth`;
   const diagnostics: string[] = [];
@@ -131,7 +138,7 @@ declare global {
        * @param email 
        * @param password 
        */
-      login(email: string, password: string): Chainable<Element>;
+      login(email?: string, password?: string): Chainable<Element>;
       /**
        * Selects the ancestry, background and class in the character builder
        * @param ancestry 

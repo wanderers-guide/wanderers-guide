@@ -56,7 +56,7 @@ describe('Slow content downloads', () => {
       cy.then(() => {
         cy.request({
           method: 'POST',
-          url: `${Cypress.env('functions_url')}/create-character`,
+          url: `${Cypress.expose('functions_url')}/create-character`,
           headers: { Authorization: `Bearer ${token}` },
           log: false,
           body: {

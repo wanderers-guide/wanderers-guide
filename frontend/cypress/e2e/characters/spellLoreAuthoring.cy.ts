@@ -182,7 +182,7 @@ describe('Spell attribute and granted Lore authoring', () => {
     });
     cy.visit(`/builder/${original.id}`, {
       onBeforeLoad(win) {
-        const host = new URL(Cypress.env('functions_url')).hostname.split('.')[0];
+        const host = new URL(Cypress.expose('functions_url')).hostname.split('.')[0];
         const token = `${win.btoa('{}')}.${win.btoa(JSON.stringify({ sub: actor, exp: 4102444800 }))}.fixture`;
         win.localStorage.setItem(
           `sb-${host}-auth-token`,

@@ -30,7 +30,7 @@ describe('Quiet Patreon account linking', () => {
     { name: 'phone Game Master settings', query: 'code=fixture-code', connected: true, gm: true, width: 390 },
     { name: 'virtual member without a Patreon link', query: '', connected: false, virtual: true, width: 390 },
   ]) {
-    if (Cypress.env('patreonCase') && Cypress.env('patreonCase') !== scenario.name) continue;
+    if (Cypress.expose('patreonCase') && Cypress.expose('patreonCase') !== scenario.name) continue;
     it(`${scenario.name} returns to Account with fresh state and no recovery messages`, () => {
       let linked = false;
       let exchanges = 0;
@@ -100,7 +100,7 @@ describe('Quiet Patreon account linking', () => {
       });
       cy.visit(`/auth/patreon/redirect?${scenario.query}`, {
         onBeforeLoad(win) {
-          const host = new URL(Cypress.env('functions_url')).hostname.split('.')[0];
+          const host = new URL(Cypress.expose('functions_url')).hostname.split('.')[0];
           const token = `${win.btoa('{}')}.${win.btoa(JSON.stringify({ sub: actor, exp: 4102444800 }))}.fixture`;
           win.localStorage.setItem(
             `sb-${host}-auth-token`,
