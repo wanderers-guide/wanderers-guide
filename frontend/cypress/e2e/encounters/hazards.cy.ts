@@ -1,4 +1,4 @@
-export {};
+import { paginateAbilityFixture } from '../../support/content-pagination';
 
 type Row = { id: number; name: string; content_source_id?: number; [key: string]: any };
 type Fixture = { table: string; row: Row };
@@ -78,6 +78,7 @@ describe('Hazard encounter controls', () => {
         if (body.name) rows = rows.filter((row) => row.name.toLowerCase() === body.name.toLowerCase());
         if (Array.isArray(body.content_sources))
           rows = rows.filter((row) => body.content_sources.includes(row.content_source_id));
+        if (table === 'ability_block') rows = paginateAbilityFixture(rows, body);
         data = body.id !== undefined && !Array.isArray(body.id) ? rows[0] : rows;
       } else throw new Error(`Unexpected fixture endpoint ${endpoint}`);
       req.reply({ body: { status: 'success', data } });

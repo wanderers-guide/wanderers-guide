@@ -1,6 +1,6 @@
+import { paginateAbilityFixture } from '../../support/content-pagination';
+
 type RuneCatalogFixture = { table: string; row: { id: number; name: string; [key: string]: any } };
-
-
 
 describe('Legacy property rune descriptions', () => {
   let fixtures: RuneCatalogFixture[];
@@ -30,6 +30,7 @@ describe('Legacy property rune descriptions', () => {
       if (body.name) rows = rows.filter((row) => row.name.toLowerCase() === body.name.toLowerCase());
       if (Array.isArray(body.content_sources))
         rows = rows.filter((row) => body.content_sources.includes(row.content_source_id));
+      if (table === 'ability_block') rows = paginateAbilityFixture(rows, body);
       request.reply({ body: { status: 'success', data: rows } });
     });
   });
