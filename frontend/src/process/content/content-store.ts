@@ -232,7 +232,7 @@ function contentRequestOptions(actorId: string | null): RequestOptions {
 export function setContentCacheActor(userId: string | null): void {
   const actorId = userId ?? 'anonymous';
   if (actorId !== cacheActorId) {
-    invalidateSessionRead();
+    invalidateSessionRead(userId);
     cacheActorId = actorId;
     resetContentStore(false);
   }

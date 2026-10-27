@@ -4,10 +4,20 @@ import { supabase } from '../supabase-client';
 const SESSION_READ_TIMEOUT_MS = 5000;
 let pendingSession: Promise<Session | null> | undefined;
 let sessionRevision = 0;
+let currentActor: string | null | undefined;
+
+/** Account supersession is an expected cancellation, not an authentication outage. */
+export class SessionChangedError extends Error {
+  constructor() {
+    super('Current account changed while reading session.');
+    this.name = 'SessionChangedError';
+  }
+}
 
 /** An Auth event supersedes any older read still waiting on storage or refresh. */
-export function invalidateSessionRead(): void {
+export function invalidateSessionRead(actorId?: string | null): void {
   sessionRevision += 1;
+  currentActor = actorId;
   pendingSession = undefined;
 }
 
@@ -33,9 +43,14 @@ export async function withinSessionBudget<T>(work: Promise<T>): Promise<T> {
 export function readSession(): Promise<Session | null> {
   if (!pendingSession) {
     const revision = sessionRevision;
+    const actorAtStart = currentActor;
     const pending = withinSessionBudget(supabase.auth.getSession()).then(({ data, error }) => {
-      if (revision !== sessionRevision) throw new Error('Current account changed while reading session.');
       if (error) throw error;
+      // INITIAL_SESSION can establish this very read's account before getSession resolves.
+      // A different account, sign-out or unscoped reset still cancels the old identity.
+      const establishedInitialActor =
+        actorAtStart === undefined && typeof currentActor === 'string' && data.session?.user.id === currentActor;
+      if (revision !== sessionRevision && !establishedInitialActor) throw new SessionChangedError();
       return data.session;
     });
     const shared = pending.finally(() => {

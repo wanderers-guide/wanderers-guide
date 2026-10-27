@@ -3,7 +3,7 @@ import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError, type Sess
 import { JSendResponse, RequestType } from '@schemas/requests';
 import { logError, throwError } from '@utils/error-handling';
 import { functions, supabase } from '../supabase-client';
-import { readSession, withinSessionBudget } from '@auth/session-reader';
+import { readSession, withinSessionBudget, SessionChangedError } from '@auth/session-reader';
 import { RequestRejectedError } from './request-rejection';
 
 const MAX_TRANSIENT_RETRIES = 1;
@@ -140,7 +140,8 @@ export async function makeRequest<T = Record<string, any>>(
   try {
     requestSession = options?.anonymous ? null : await readSession();
   } catch (error) {
-    console.error(`Could not establish request identity for ${type}:`, error);
+    if (!(error instanceof SessionChangedError))
+      console.error(`Could not establish request identity for ${type}:`, error);
     return failure();
   }
   if (options?.expectedActorId && requestSession?.user.id !== options.expectedActorId) {

@@ -78,7 +78,7 @@ await build({
     'import.meta.env.PROD': 'false',
   },
   stdin: {
-    contents: `export * from './src/request/request-manager'; export * from './src/request/request-rejection'; export * from './src/utils/character-save-buffer';`,
+    contents: `export * from './src/request/request-manager'; export * from './src/request/request-rejection'; export * from './src/utils/character-save-buffer'; export {invalidateSessionRead} from './src/auth/session-reader';`,
     resolveDir: root,
   },
   outfile: join(directory, 'session.mjs'),
@@ -148,6 +148,7 @@ beforeEach(() => {
     return { data: { session }, error: null };
   };
   api.resetSessionExpired();
+  api.invalidateSessionRead();
   hides = 0;
 });
 
@@ -191,6 +192,63 @@ test('unknown private identities fail within a shared budget without clearing dr
     { id: 1 },
   ]);
   assert.equal(calls[0].headers.Authorization, 'Bearer new-token');
+});
+
+test('an initial Auth event can establish the same account before its current read resolves', async () => {
+  let finish;
+  readAuthSession = () =>
+    new Promise((resolve) => {
+      finish = resolve;
+    });
+  const pending = api.makeRequest('find-content-update', { id: 1 }, false, { throwOnFailure: true });
+  api.invalidateSessionRead('owner');
+  finish({ data: { session: signedIn() }, error: null });
+  assert.deepEqual(await pending, [{ id: 1 }]);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].headers.Authorization, 'Bearer current-token');
+});
+
+test('an older private identity is still cancelled when Auth establishes a different account', async () => {
+  let finish;
+  readAuthSession = () =>
+    new Promise((resolve) => {
+      finish = resolve;
+    });
+  const pending = api.makeRequest('update-character', { id: 1 }, false, { expectedActorId: 'owner' });
+  api.invalidateSessionRead('other-account');
+  finish({ data: { session: signedIn() }, error: null });
+  assert.equal(await pending, null);
+  assert.equal(calls.length, 0);
+  assert.equal(api.hasSessionExpired(), false);
+});
+
+test('a pending request with a known actor cannot change to the new account returned by Auth', async () => {
+  api.invalidateSessionRead('owner');
+  let finish;
+  readAuthSession = () =>
+    new Promise((resolve) => {
+      finish = resolve;
+    });
+  const pending = api.makeRequest('create-character', { name: 'Captured owner input' }, false);
+  api.invalidateSessionRead('other-account');
+  finish({ data: { session: signedIn('other-token', 'other-account') }, error: null });
+  assert.equal(await pending, null);
+  assert.equal(calls.length, 0);
+});
+
+test('sign-out cancels a pending private request without an anonymous downgrade', async () => {
+  api.invalidateSessionRead('owner');
+  let finish;
+  readAuthSession = () =>
+    new Promise((resolve) => {
+      finish = resolve;
+    });
+  const pending = api.makeRequest('create-character', { name: 'Retained input' }, false);
+  api.invalidateSessionRead(null);
+  finish({ data: { session: null }, error: null });
+  assert.equal(await pending, null);
+  assert.equal(calls.length, 0);
+  assert.equal(api.hasSessionExpired(), false);
 });
 
 test('legacy HTTP 400/PGRST301 refreshes and replays exactly once with the fresh token', async () => {
