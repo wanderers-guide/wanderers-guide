@@ -197,7 +197,7 @@ describe('Character creation journeys', () => {
       openLevel4();
       cy.get('.mantine-Modal-close').click();
       cy.get('.mantine-Modal-content').should('not.exist');
-      cy.viewport(390, 844);
+      cy.viewport(390, 700);
       cy.contains('.mantine-Stepper-step', 'Home').click();
       cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('be.visible');
       cy.get('button[aria-label="Next Page"]').scrollIntoView().should('be.visible');
