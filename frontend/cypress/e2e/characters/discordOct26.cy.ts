@@ -110,30 +110,27 @@ describe('October Discord regressions', () => {
     }
     releaseSessionRefresh = undefined;
   });
+  const savedSession = (expiresAt: number) => ({
+    access_token: `${btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))}.${btoa(JSON.stringify({ sub: actor, role: 'authenticated', exp: expiresAt }))}.fixture`,
+    refresh_token: 'fixture',
+    token_type: 'bearer',
+    expires_at: expiresAt,
+    expires_in: 3600,
+    user: {
+      id: actor,
+      aud: 'authenticated',
+      role: 'authenticated',
+      email: 'fixture@example.invalid',
+      app_metadata: {},
+      user_metadata: {},
+      created_at: '',
+    },
+  });
   const visit = (url: string, expiresAt: number = 4102444800) =>
     cy.visit(url, {
       onBeforeLoad(win) {
         const host = new URL(Cypress.expose('functions_url')).hostname.split('.')[0];
-        const token = `${win.btoa('{}')}.${win.btoa(JSON.stringify({ sub: actor, exp: expiresAt }))}.fixture`;
-        win.localStorage.setItem(
-          `sb-${host}-auth-token`,
-          JSON.stringify({
-            access_token: token,
-            refresh_token: 'fixture',
-            token_type: 'bearer',
-            expires_at: expiresAt,
-            expires_in: 3600,
-            user: {
-              id: actor,
-              aud: 'authenticated',
-              role: 'authenticated',
-              email: 'fixture@example.invalid',
-              app_metadata: {},
-              user_metadata: {},
-              created_at: '',
-            },
-          })
-        );
+        win.localStorage.setItem(`sb-${host}-auth-token`, JSON.stringify(savedSession(expiresAt)));
         win.localStorage.removeItem('user-data');
       },
     });
@@ -183,9 +180,69 @@ describe('October Discord regressions', () => {
         expect(privateWrites, 'anonymous recovery cannot save a character').to.eq(0);
         releaseSessionRefresh?.();
       });
+      cy.wait('@stalledSessionRefresh', { responseTimeout: 20000 }).then(() => {
+        releaseSessionRefresh = undefined;
+      });
+      cy.window().should((win) => {
+        const host = new URL(Cypress.expose('functions_url')).hostname.split('.')[0];
+        expect(
+          win.localStorage.getItem(`sb-${host}-auth-token`) === null,
+          'the failed refresh has settled before leaving this fixture'
+        ).to.eq(true);
+      });
       cy.contains('Hit Points', { timeout: 10000 }).should('be.visible');
     }
   );
+  for (const restored of [true, false]) {
+    it(
+      `keeps a private sheet on its route until the pending session ${restored ? 'recovers' : 'confirms sign-out'}`,
+      { defaultCommandTimeout: 20000 },
+      () => {
+        const stalled = new Promise<void>((resolve) => {
+          releaseSessionRefresh = resolve;
+        });
+        cy.intercept('POST', '**/auth/v1/token*', (request) =>
+          stalled.then(() =>
+            request.reply(
+              restored
+                ? {
+                    statusCode: 200,
+                    body: savedSession(Math.floor(Date.now() / 1000) + 3600),
+                  }
+                : {
+                    statusCode: 400,
+                    body: {
+                      code: 'refresh_token_not_found',
+                      error_code: 'refresh_token_not_found',
+                      message: 'Saved session is no longer valid',
+                    },
+                  }
+            )
+          )
+        ).as('stalledSessionRefresh');
+        cy.intercept('POST', '**/functions/v1/find-character', (request) => {
+          const bearer = String(request.headers.authorization).split(' ')[1];
+          const payload = JSON.parse(atob(bearer.split('.')[1].replaceAll('-', '+').replaceAll('_', '/')));
+          if (payload.role === 'anon') request.alias = 'anonymousPrivateSheet';
+          request.reply({ body: { status: 'success', data: payload.role === 'anon' ? null : character } });
+        });
+        visit('/sheet/36514', 1);
+        cy.wait('@anonymousPrivateSheet');
+        // Keep the real SDK refresh pending across a quiet retry and the old unauthorized path.
+        cy.wait(3000);
+        cy.location('pathname').should('eq', '/sheet/36514');
+        cy.contains('Loading...').should('be.visible');
+        cy.then(() => releaseSessionRefresh?.());
+        cy.wait('@stalledSessionRefresh', { responseTimeout: 20000 }).then(() => {
+          releaseSessionRefresh = undefined;
+        });
+        if (restored) {
+          cy.contains('Hit Points', { timeout: 20000 }).should('be.visible');
+          cy.location('pathname').should('eq', '/sheet/36514');
+        } else cy.location('pathname', { timeout: 20000 }).should('eq', '/sheet-unauthorized');
+      }
+    );
+  }
   it('releases creation loading and shows an application error returned with HTTP 200', () => {
     visit('/characters');
     cy.get('button[aria-label="Create Character"]').click();

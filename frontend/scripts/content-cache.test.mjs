@@ -121,6 +121,30 @@ test('content packages and cache respect failures, sources, actors and generatio
         }
       }
     );
+    await t.test(
+      'a same-account token refresh can finish the pending session read without invalidating content',
+      async () => {
+        const originalSession = state.session;
+        const refreshed = deferred();
+        store.setContentCacheActor('A');
+        store.resetContentStore(true, true);
+        const scope = store.captureContentReadScope('A');
+        state.session = () => refreshed.promise;
+        state.requests.length = 0;
+        state.request = async () => [];
+        try {
+          const pending = store.fetchContent('language', { id: 999, content_sources: [1] });
+          store.setContentCacheActor('A');
+          refreshed.resolve({ data: { session: { user: { id: 'A' }, access_token: 'refreshed-A-token' } } });
+          assert.deepEqual(await pending, []);
+          store.assertContentReadScope(scope);
+          assert.equal(state.requests[0][3].expectedActorId, 'A');
+        } finally {
+          state.session = originalSession;
+          store.resetContentStore(true, true);
+        }
+      }
+    );
     await t.test('dedications prefer their own printing when an older archetype shares the feat ID', async () => {
       store.defineDefaultSources('BOTH', [371, 842]);
       const base = {

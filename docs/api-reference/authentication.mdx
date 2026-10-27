@@ -181,7 +181,9 @@ identity through the stateless Supabase Functions transport, without a second Au
 Authenticated requests share concurrent session reads with a five-second deadline.
 A timed-out session read is unknown, so the request fails without sending an anonymous
 write, marking the account expired, clearing its profile, or removing buffered edits.
-Auth events invalidate older pending reads.
+Account changes invalidate older pending reads. A same-account token refresh can
+complete its original read. An anonymous miss while Auth is still initializing is
+not an authorization denial; the page waits for the saved session to settle.
 
 The web app refreshes its session once after a proven JWT rejection (`401` with
 `AUTH_REQUIRED` or an invalid/expired JWT message, including older `400`/`PGRST301`

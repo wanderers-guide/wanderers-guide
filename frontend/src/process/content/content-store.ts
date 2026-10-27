@@ -230,9 +230,9 @@ function contentRequestOptions(actorId: string | null): RequestOptions {
 
 /** Invalidate immediately on Auth events, before any synchronous content consumer runs. */
 export function setContentCacheActor(userId: string | null): void {
-  invalidateSessionRead();
   const actorId = userId ?? 'anonymous';
   if (actorId !== cacheActorId) {
+    invalidateSessionRead();
     cacheActorId = actorId;
     resetContentStore(false);
   }
