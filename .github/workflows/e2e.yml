@@ -207,14 +207,14 @@ jobs:
         run: cd supabase && deno test --no-check --allow-net --allow-env --allow-read functions/_tests/
 
       - name: Cypress run
-        uses: cypress-io/github-action@v6
+        uses: cypress-io/github-action@01e3b659a495b41649cdd0aa82e1d1624e26520b # v7.4.4; Node 24 readiness fix
         with:
           working-directory: ./frontend
           install: false
           # Only the two mounted-Rest fixture cases use source-module access.
           # All other browser cases retain the compiled Docker app as their base URL.
           start: npm run dev -- --host 127.0.0.1 --port 5174 --strictPort
-          wait-on: "http://localhost:5174"
+          wait-on: "http://127.0.0.1:5174"
           command: npm run cy:run -- --browser chrome
         env:
           CYPRESS_BASE_URL: http://localhost:3000
