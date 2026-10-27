@@ -494,6 +494,16 @@ outer compatibility wrapper. Native rollback controls cover both original and
 successor combinations, upgrade/replay, unrelated edits, queue aliases and helper
 drift. Apply only the new dated compatibility migration to production.
 
+`20261027000000_curator_book_count_compatibility.sql` additionally recognizes the
+published Litany Against Wrath and Litany Against Sloth feats in Core Rulebook.
+The book counter may change from 282 to 284 only when the real feat count is 284,
+both complete published rows match, no duplicate identity or unresolved matching
+submission exists, and every other book field is unchanged. A counter edit alone
+fails. The original content, template, source and curator checks remain intact;
+this migration changes only the helper definition. Native rollback controls cover
+the original counter, the complete successor, missing or altered feats, unrelated
+metadata and content drift, rejected helper predecessors, and historical replay.
+
 `20261026000000_mine_mod_rules.sql` repairs eight existing Tech Core records:
 Maneuvering Mines, Healing Mines, Aerial Hologram, Aerobatics Mastery, Expert
 Mechanic, Programmer, Auto Spellshape and Magical Shorthand. It compares complete

@@ -84,10 +84,10 @@ test('Construction only: actual workflow/footer bytes and every registered repla
   assert.equal(captured.manifest.schema,'wg-tv-native-checked-in-input-manifest-v2');
   assert.deepEqual(captured.manifest.registered_ci_paths,[workflowPath,...footerPaths]);
   assert.deepEqual(captured.manifest.external_private_inputs,[]);
-  assert.equal(captured.migrations.length,118);
-  assert.equal(captured.migrations.at(-1).path,'20261026010000_curator_release_compatibility.sql');
+  assert.equal(captured.migrations.length,119);
+  assert.equal(captured.migrations.at(-1).path,'20261027000000_curator_book_count_compatibility.sql');
   const {plan}=createNativeRegisteredCiReplayControls(constructorContext);
-  assert.equal(plan.registered_requirements,111);assert.equal(plan.checks.length,71);assert.equal(plan.replays.length,91);assert.equal(plan.expected_native_statements,396);
+  assert.equal(plan.registered_requirements,112);assert.equal(plan.checks.length,71);assert.equal(plan.replays.length,91);assert.equal(plan.expected_native_statements,396);
   assert.equal(plan.passed,false);assert.equal(constructorContext.receipt.registered_ci_replays,undefined);
   assert.equal(plan.workflow.sha256,sha(captured.readRelative(workflowPath)));
   assert.ok(plan.workflow.exact_bytes);assert.deepEqual(plan.index_footer.paths,footerPaths);assert.equal(plan.index_footer.read_only,false);
@@ -204,7 +204,7 @@ test('Receipt models require fresh completed396-stage evidence and all ten nativ
 test('Integration source model executes recipe once after alternate chronology, never through focused negative selection',()=>{
   const alternate=captured.readRelative('scripts/treasure-vault-native-alternate-fixture.mjs');
   assert.equal(alternate.split('await registeredCi.run();').length,2);
-  const chronologyEnd=alternate.indexOf('assert.equal(chronology.length,118)'),run=alternate.indexOf('await registeredCi.run();'),verify=alternate.indexOf('evidence.final_input_verification=');
+  const chronologyEnd=alternate.indexOf('assert.equal(chronology.length,119)'),run=alternate.indexOf('await registeredCi.run();'),verify=alternate.indexOf('evidence.final_input_verification=');
   assert.ok(chronologyEnd>=0&&run>chronologyEnd&&verify>run);
   assert.doesNotMatch(alternate,/selectedNegativeFiles/);
   assert.ok(alternate.includes("await stop.checkpoint('alternate after '+name);return result.stdout;"),'Exact CI reader receives raw stdout');

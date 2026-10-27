@@ -3,10 +3,11 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { RUST_CLOUD_TERMINAL_SHA256 } from "./treasure-vault-native-rust-cloud.mjs";
+import { bookCountReplacement, originalBookCountBody, upgradeBookCountBody, PREVIOUS_CURATOR_TERMINAL_SHA256, BOOK_COUNT_NATIVE_CONTROLS, runNativeBookCountControls } from './treasure-vault-native-book-count.mjs';
 export const CURATOR_UPGRADE_PATH =
   "20261026010000_curator_release_compatibility.sql";
 export const CURATOR_TERMINAL_SHA256 =
-  "798819e3febae6a944bd3cfdec2ae84d8ff893ee6c7859e7266a5bff3f333444";
+  "a07223d6cd719e484a994ea965405c8f72820d927fb1ea3086b27b6e3981adca";
 export const curatorRows = JSON.parse(
   readFileSync(
     new URL("./treasure-vault-curator-successors.json", import.meta.url),
@@ -50,11 +51,11 @@ export function upgradeCuratorBody(body) {
       result.slice(match.end);
   }
   assert.equal(result.split(ending).length, 2);
-  return result.replace(ending, fencedEnding);
+  return upgradeBookCountBody(result.replace(ending, fencedEnding));
 }
 /** Restore and hash the complete predecessor, retaining all immutable native ledgers. */
 export function originalCuratorBody(body) {
-  let result = body;
+  let result = originalBookCountBody(body);
   assert.equal(result.split(fencedEnding).length, 2);
   result = result.replace(fencedEnding, ending);
   for (const row of [...curatorRows].reverse()) {
@@ -85,6 +86,9 @@ export function curatorUpgrade({ body, previousState, state, signature }) {
     working = working.slice(0, match.start) + after + working.slice(match.end);
   }
   replacements.push([ending, fencedEnding]);
+  working = working.replace(ending, fencedEnding);
+  const bookCount = bookCountReplacement(working);
+  replacements.push(bookCount);
   const replaceSql = replacements
     .map(
       ([before, after], i) =>
@@ -96,7 +100,7 @@ do $curator_upgrade$
 declare body text;
 begin
  if (${state}) is true then return; end if;
- if (${previousState}) is not true then raise exception 'Curator helper predecessor differs'; end if;
+ if (${previousState}) is not true and (${state.replaceAll(CURATOR_TERMINAL_SHA256, PREVIOUS_CURATOR_TERMINAL_SHA256)}) is not true then raise exception 'Curator helper predecessor differs'; end if;
  select prosrc into strict body from pg_catalog.pg_proc where oid=pg_catalog.to_regprocedure('${signature}');
 ${replaceSql}
  if pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(body,'UTF8')),'hex')<>'${CURATOR_TERMINAL_SHA256}' then raise exception 'Curator helper successor differs'; end if;
@@ -278,6 +282,7 @@ export async function runNativeCuratorCompatibility({
       [],
       true,
     );
+  await runNativeBookCountControls({inputs,fixture,capsule,userId});
   receipt.curator_compatibility = {
     passed: true,
     native_executed: true,
@@ -309,6 +314,7 @@ export const CURATOR_NATIVE_CONTROLS = Object.freeze([
   "predecessor-body",
   "predecessor-metadata",
   "predecessor-acl",
+  ...BOOK_COUNT_NATIVE_CONTROLS,
 ]);
 
 /** Missing native curator controls cannot certify a release. */

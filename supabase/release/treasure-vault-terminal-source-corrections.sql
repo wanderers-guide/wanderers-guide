@@ -1,7 +1,7 @@
 -- Preserve the original source helper check and recognize its exact successor.
 select o.id,case when (exists(select 1 from pg_catalog.pg_proc p
   where p.oid=pg_catalog.to_regprocedure('public.treasure_vault_terminal_status_v1()')
-    and pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to((p.prosrc)::text,'UTF8')),'hex')='798819e3febae6a944bd3cfdec2ae84d8ff893ee6c7859e7266a5bff3f333444'
+    and pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to((p.prosrc)::text,'UTF8')),'hex')='a07223d6cd719e484a994ea965405c8f72820d927fb1ea3086b27b6e3981adca'
     and p.prokind='f' and p.prolang=(select l.oid from pg_catalog.pg_language l where l.lanname='sql')
     and p.provolatile='s' and p.prosecdef is false and p.proisstrict is false and p.proleakproof is false
     and p.proparallel='u' and p.procost=100 and p.prorows=1

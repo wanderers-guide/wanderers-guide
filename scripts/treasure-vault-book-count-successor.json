@@ -1,0 +1,132 @@
+{
+  "before": {
+    "id": 11,
+    "url": "https://paizo.com/products/btq01zp3?Pathfinder-Core-Rulebook",
+    "keys": null,
+    "name": "Core Rulebook",
+    "group": "legacy",
+    "user_id": null,
+    "meta_data": {
+      "counts": {
+        "feat": 282
+      }
+    },
+    "created_at": "2024-04-18T07:53:09.197853+00:00",
+    "deprecated": null,
+    "foundry_id": "Pathfinder Core Rulebook",
+    "operations": [],
+    "artwork_url": "",
+    "description": "This comprehensive 640-page guide to the Pathfinder roleplaying game provides everything you need to set out into a world of limitless fantasy adventure! Choose from ancestries like elf, human, and goblin and classes like alchemist, fighter, and sorcerer to create a hero of your own design, destined to become a legend! The new Pathfinder rules are easier to learn and faster to play, and they offer deeper customization than ever before!",
+    "require_key": false,
+    "contact_info": null,
+    "is_published": true,
+    "required_content_sources": []
+  },
+  "after": {
+    "id": 11,
+    "url": "https://paizo.com/products/btq01zp3?Pathfinder-Core-Rulebook",
+    "keys": null,
+    "name": "Core Rulebook",
+    "group": "legacy",
+    "user_id": null,
+    "meta_data": {
+      "counts": {
+        "feat": 284
+      }
+    },
+    "created_at": "2024-04-18T07:53:09.197853+00:00",
+    "deprecated": null,
+    "foundry_id": "Pathfinder Core Rulebook",
+    "operations": [],
+    "artwork_url": "",
+    "description": "This comprehensive 640-page guide to the Pathfinder roleplaying game provides everything you need to set out into a world of limitless fantasy adventure! Choose from ancestries like elf, human, and goblin and classes like alchemist, fighter, and sorcerer to create a hero of your own design, destined to become a legend! The new Pathfinder rules are easier to learn and faster to play, and they offer deeper customization than ever before!",
+    "require_key": false,
+    "contact_info": null,
+    "is_published": true,
+    "required_content_sources": []
+  },
+  "feats": [
+    {
+      "id": 60080,
+      "cost": "",
+      "name": "Litany Against Wrath",
+      "type": "feat",
+      "uuid": "4295515313175440",
+      "level": 6,
+      "access": "",
+      "rarity": "COMMON",
+      "traits": [
+        3628,
+        2535
+      ],
+      "actions": null,
+      "special": "",
+      "trigger": "",
+      "version": null,
+      "frequency": "",
+      "meta_data": {},
+      "created_at": "2026-10-27T14:50:55.755169+00:00",
+      "operations": [
+        {
+          "id": "466f72ad-7904-4d01-b151-d9b829ab136c",
+          "data": {
+            "rank": 3,
+            "type": "FOCUS",
+            "spellId": 5534,
+            "castingSource": "CHAMPION"
+          },
+          "type": "giveSpell"
+        }
+      ],
+      "description": "You excoriate a foe for its wrath against goodly creatures. You can cast the [litany against wrath](link_spell_5534) devotion spell. Increase the number of Focus Points in your focus pool by 1.",
+      "availability": null,
+      "requirements": "",
+      "prerequisites": [
+        "tenets of good",
+        "Devotion Spells"
+      ],
+      "content_source_id": 11
+    },
+    {
+      "id": 60081,
+      "cost": "",
+      "name": "Litany Against Sloth",
+      "type": "feat",
+      "uuid": "2719876236060716",
+      "level": 10,
+      "access": "",
+      "rarity": "COMMON",
+      "traits": [
+        3628,
+        2535
+      ],
+      "actions": null,
+      "special": "",
+      "trigger": "",
+      "version": null,
+      "frequency": "",
+      "meta_data": {},
+      "created_at": "2026-10-27T14:51:09.597601+00:00",
+      "operations": [
+        {
+          "id": "47605fd1-bd4e-4328-b4bf-15ed414a4b48",
+          "data": {
+            "rank": 5,
+            "type": "FOCUS",
+            "spellId": 5535,
+            "castingSource": "CHAMPION"
+          },
+          "type": "giveSpell"
+        }
+      ],
+      "description": "You rail against the sin of sloth, turning a foe\u2019s laziness against it. You can cast the [litany against sloth](link_spell_5535) devotion spell. Increase the number of Focus Points in your focus pool by 1.",
+      "availability": null,
+      "requirements": "",
+      "prerequisites": [
+        "devotion spells",
+        "tenets of good"
+      ],
+      "content_source_id": 11
+    }
+  ]
+}
