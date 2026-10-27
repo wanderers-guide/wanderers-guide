@@ -141,6 +141,22 @@ describe('October Discord regressions', () => {
     cy.contains('Reconnect Patreon').should('be.visible');
     cy.get('button[aria-label="Create Character"]').should('not.have.attr', 'data-loading');
   });
+  it('preserves the actionable server error when importing a valid JSON file', () => {
+    visit('/characters');
+    cy.get('input[type="file"][accept="application/JSON"]').selectFile(
+      {
+        contents: Cypress.Buffer.from(JSON.stringify({ version: 4, character: { name: 'Valid import', level: 1 } })),
+        fileName: 'character.json',
+        mimeType: 'application/json',
+      },
+      { force: true }
+    );
+    cy.contains('Import failed').should('be.visible');
+    cy.contains('Reconnect Patreon').should('be.visible');
+    cy.contains('Invalid JSON file').should('not.exist');
+    cy.get('button[aria-label="Import Character"]').should('not.have.attr', 'data-loading');
+    cy.contains('Please wait...').should('not.exist');
+  });
   it('keeps all twenty encounters reachable in the scrollable navigation', () => {
     cy.viewport(1280, 900);
     visit('/encounters');
@@ -168,6 +184,48 @@ describe('October Discord regressions', () => {
     cy.screenshot('discord-long-lore-desktop');
     cy.viewport(390, 844);
     cy.contains('Hit Points').should('be.visible');
+    cy.document().then((doc) => expect(doc.documentElement.scrollWidth).to.be.at.most(doc.documentElement.clientWidth));
     cy.screenshot('discord-long-lore-mobile');
+  });
+
+  it('recalculates the reported level-11 Druid with cold and warm caches in the real worker', () => {
+    cy.fixture('oct26-druid-build.json').then((build) => {
+      character = {
+        ...build,
+        user_id: actor,
+        name: 'Druid regression',
+        updated_at: 'fixture-version',
+        hp_current: 121,
+        hp_temp: 0,
+        meta_data: { reset_hp: false },
+      };
+      const script = `
+        import { readContentRows } from './scripts/operation-test-harness.mjs';
+        import { writeFile } from 'node:fs/promises';
+        const tables = ['ability_block','item','class','ancestry','background','spell','trait','language','archetype','versatile_heritage','class_archetype'];
+        const fixtures = await readContentRows(tables.map(table => ({table,sourceIds:${JSON.stringify(build.content_sources.enabled)}})));
+        await writeFile('/tmp/wg-oct26-druid-content.json', JSON.stringify(fixtures));
+      `;
+      cy.exec(`node --input-type=module -e '${script.replaceAll("'", "'\\''")}'`, { log: false, timeout: 60000 });
+      cy.readFile('/tmp/wg-oct26-druid-content.json', { log: false, timeout: 60000 }).then((rows) => {
+        fixtures = rows;
+      });
+    });
+    cy.viewport(1366, 768);
+    visit('/sheet/910010');
+    const assertDruid = () => {
+      cy.contains('Hit Points', { timeout: 90000 }).should('be.visible');
+      cy.contains('121').should('exist');
+      cy.contains('+19').should('exist');
+      cy.contains('We just rolled a Nat 1...').should('not.exist');
+    };
+    assertDruid();
+    cy.screenshot('discord-druid-desktop-cold');
+    cy.reload();
+    assertDruid();
+    cy.viewport(390, 844);
+    cy.reload();
+    assertDruid();
+    cy.screenshot('discord-druid-mobile-warm');
   });
 });

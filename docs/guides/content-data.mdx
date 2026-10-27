@@ -334,6 +334,15 @@ Companion `bindValue` operations keep their saved source store and variable visi
 when reopened, including custom destination values created only in the companion.
 Companion conditions can read bindings from the already calculated parent character.
 Binding to the character's `FEAT_NAMES` lets companion conditionals inspect those feats.
+Numeric bindings may add an optional `value.offset` and opt in to
+`value.includeBonuses`, for example a fly Speed equal
+to land Speed plus 10 feet. They retain the highest independently granted base speed.
+
+Expert Mechanic's skill choice uses `optionsFilters.skillRules: 'expert-mechanic'`.
+It reads proficiency before that feat's occurrence, offers Computers or Crafting
+below expert, and otherwise offers only trained skills, including trained Lore.
+Its saved choice remains valid when recalculated and cannot grant expert in an
+untrained alternative skill.
 
 Known spells use the saved ranks for their own casting source. A spell learned from
 two sources appears once per rank in each source; distinct heightened versions remain

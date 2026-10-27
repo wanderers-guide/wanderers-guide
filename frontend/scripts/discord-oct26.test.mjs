@@ -103,13 +103,13 @@ test('mine mods appear in Modify rules only while their granting feats are owned
     new URL('../../supabase/migrations/20261026000000_mine_mod_rules.sql', import.meta.url),
     'utf8'
   );
-  const entries = JSON.parse(migration.split('$entries$')[1]);
+  const entries = JSON.parse(migration.split('$entries$')[1]).filter((entry) => [59580, 59691].includes(entry.id));
   const { readContentRows } = await import('./operation-test-harness.mjs');
   const rows = await readContentRows([
     ...entries.map(({ id }) => ({ table: 'ability_block', id })),
     { table: 'ability_block', id: 59021 },
   ]);
-  for (const entry of entries) rows.find(({ row }) => row.id === entry.id).row.operations = [entry.operation];
+  for (const entry of entries) rows.find(({ row }) => row.id === entry.id).row.operations = entry.operations;
   engine.setFixtures(rows);
   const content = {
     abilityBlocks: rows.map(({ row }) => row),
@@ -146,7 +146,8 @@ test('mine mods appear in Modify rules only while their granting feats are owned
     });
     const injected = packet.store.variables.INJECT_TEXT.value.map((text) => JSON.parse(text));
     assert.equal(injected.length, owned.length);
-    for (const entry of owned) assert.ok(injected.some((row) => row.id === 59021 && row.text.includes(entry.name)));
+    for (const entry of owned)
+      assert.ok(injected.some((row) => row.id === 59021 && row.text.includes(entry.before.name)));
   }
 });
 

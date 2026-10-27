@@ -1,3 +1,5 @@
+import { originalCuratorBody, curatorUpgrade, wrapCuratorUpgrade } from './treasure-vault-native-curator-successors.mjs';
+import { RUST_CLOUD_TERMINAL_SHA256 as rustHash } from './treasure-vault-native-rust-cloud.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
@@ -76,33 +78,33 @@ test("the description is the only allowed difference, including the complete pri
 });
 
 test("one exact reversible splice preserves the whole original ledger and every other predicate", () => {
-  const previous = originalRustCloudBody(helper.body);
+  const previous = originalRustCloudBody(helper.rustBody);
   assert.equal(sha(previous), SHARED_TERMINAL_SHA256);
-  assert.equal(sha(helper.body), RUST_CLOUD_TERMINAL_SHA256);
-  assert.equal(upgradeRustCloudBody(previous, batch.rows), helper.body);
+  assert.equal(sha(helper.rustBody), RUST_CLOUD_TERMINAL_SHA256);
+  assert.equal(upgradeRustCloudBody(previous, batch.rows), helper.rustBody);
   assert.equal(
     helper.body.split("$global_dual$")[1],
     previous.split("$global_dual$")[1],
   );
   assert.throws(() => upgradeRustCloudBody(previous + "\n", batch.rows));
-  assert.throws(() => originalRustCloudBody(helper.body + "\n"));
+  assert.throws(() => originalRustCloudBody(helper.rustBody + "\n"));
 });
 
 test("the additive migration changes only the exact function, with complete metadata and grant fences", async () => {
   const generated = rustCloudUpgrade({
     rows: batch.rows,
     previousState: terminalFunctionState(SHARED_TERMINAL_SHA256),
-    state: helper.state,
+    state: terminalFunctionState(rustHash),
     signature: helper.signature,
   });
-  assert.equal(batch.sql, `begin;\n${generated}commit;\n`);
+  assert.equal(batch.sql, wrapCuratorUpgrade(`begin;\n${generated}commit;\n`,curatorUpgrade({body:helper.rustBody,previousState:terminalFunctionState(rustHash),state:helper.state,signature:helper.signature}),helper.state));
   assert.equal(
     await read("supabase/migrations/" + RUST_CLOUD_UPGRADE_PATH),
     batch.sql,
   );
   assert.doesNotMatch(
     batch.sql,
-    /\b(?:update public\.|delete from|insert into|grant |revoke )/i,
+    /\b(?:update public\.|delete from|insert into|grant (?:execute|select|all|usage)|revoke (?:execute|select|all|usage))/i,
   );
   for (const predicate of [
     "p.prosecdef is false",

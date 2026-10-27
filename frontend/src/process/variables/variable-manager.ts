@@ -928,6 +928,12 @@ function applyAddVariable(
     // New variable
     variable = newVariable(type, name, defaultValue);
     getVariables(id)[variable.name] = variable;
+    if (variable.type === 'prof' && variable.name.startsWith('SKILL_') && context) {
+      // A later Lore creation must not look trained to an earlier skill selector.
+      const initial = cloneDeep(variable.value);
+      variable.value = { ...initial, value: 'U', increases: 0 };
+      applySkillAdjustment(id, variable, compileProficiencyType(initial), initial.attribute, context);
+    }
 
     // Add to history
     //addVariableHistory(variable.name, variable.value, null, source ?? 'Created');

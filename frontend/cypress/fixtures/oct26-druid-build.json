@@ -1,0 +1,416 @@
+{
+  "id": 910010,
+  "level": 11,
+  "details": {
+    "class": {
+      "id": 23
+    },
+    "ancestry": {
+      "id": 3
+    },
+    "background": {
+      "id": 725
+    },
+    "conditions": []
+  },
+  "options": {
+    "auto_detect_prerequisites": true,
+    "is_public": true
+  },
+  "variants": {
+    "free_archetype": true
+  },
+  "content_sources": {
+    "enabled": [
+      7,
+      1,
+      114,
+      185,
+      8,
+      256,
+      15,
+      85,
+      32,
+      34,
+      33,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      52,
+      118,
+      147,
+      152,
+      42,
+      43,
+      45,
+      46,
+      172,
+      44,
+      47,
+      48,
+      49,
+      11,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      146,
+      24,
+      25,
+      26,
+      27,
+      29,
+      28,
+      171,
+      30,
+      31,
+      14,
+      239,
+      240,
+      241,
+      51,
+      12,
+      203,
+      17,
+      13,
+      16,
+      117,
+      186,
+      50,
+      611,
+      499,
+      400,
+      580,
+      402,
+      582,
+      448,
+      581,
+      305,
+      476,
+      420,
+      493,
+      591,
+      318,
+      748,
+      811,
+      730,
+      839,
+      838,
+      842,
+      873,
+      852,
+      853,
+      901,
+      859,
+      867
+    ]
+  },
+  "custom_operations": null,
+  "operation_data": {
+    "selections": {
+      "class_720d2fe6-f042-4353-8313-1293375b1301-0": "SKILL_RELIGION",
+      "class_720d2fe6-f042-4353-8313-1293375b1301-0_SKILL_RELIGION": "SKILL_RELIGION",
+      "class_720d2fe6-f042-4353-8313-1293375b1301-1": "SKILL_MEDICINE",
+      "class_720d2fe6-f042-4353-8313-1293375b1301-1_SKILL_RELIGION": "SKILL_RELIGION",
+      "class_720d2fe6-f042-4353-8313-1293375b1301-2": "SKILL_INTIMIDATION",
+      "class_720d2fe6-f042-4353-8313-1293375b1301-2_SKILL_RELIGION": "SKILL_RELIGION",
+      "class-feature-19285_32f84fc9-8e95-44c0-b096-54c392fccc6a": "ATTRIBUTE_STR",
+      "class-feature-19285_32f84fc9-8e95-44c0-b096-54c392fccc6a_ATTRIBUTE_STR": "ATTRIBUTE_STR",
+      "class-feature-19285_64c7f82c-f4bb-4808-a4f9-67e3a1bfdefb": "ATTRIBUTE_DEX",
+      "class-feature-19285_64c7f82c-f4bb-4808-a4f9-67e3a1bfdefb_ATTRIBUTE_DEX": "ATTRIBUTE_DEX",
+      "class-feature-19285_8182a79d-0287-4417-ad1d-d0b18ace14e7": "ATTRIBUTE_INT",
+      "class_720d2fe6-f042-4353-8313-1293375b1301-3": "SKILL_SURVIVAL",
+      "class_720d2fe6-f042-4353-8313-1293375b1301-3_SKILL_RELIGION": "SKILL_RELIGION",
+      "class-feature-19285_8182a79d-0287-4417-ad1d-d0b18ace14e7_ATTRIBUTE_INT": "ATTRIBUTE_INT",
+      "class-feature-19285_9edb532b-b2df-454e-b870-4773e19abd56": "ATTRIBUTE_CON",
+      "class-feature-19285_9edb532b-b2df-454e-b870-4773e19abd56_ATTRIBUTE_CON": "ATTRIBUTE_CON",
+      "ancestry_eabb4cd7-5aad-4f7c-a712-95d5e272bcf3": "ATTRIBUTE_STR",
+      "ancestry_eabb4cd7-5aad-4f7c-a712-95d5e272bcf3_ATTRIBUTE_STR": "ATTRIBUTE_STR",
+      "ancestry_957ee14b-c6dc-44eb-881b-e99a1b4e5118-0": "90",
+      "ancestry_957ee14b-c6dc-44eb-881b-e99a1b4e5118-0_81": "81",
+      "ancestry_957ee14b-c6dc-44eb-881b-e99a1b4e5118-1": "85",
+      "ancestry_957ee14b-c6dc-44eb-881b-e99a1b4e5118-1_81": "81",
+      "ancestry-section-5742419753466526_3fd6a268-771b-49fc-93ed-9b53695d1a29": "20763",
+      "ancestry-section-5742419753466526_3fd6a268-771b-49fc-93ed-9b53695d1a29_20763": "20763",
+      "ancestry-section-2707339574403411_9f26290c-a2db-4c45-9b34-5053e60c106d-0": "20109",
+      "ancestry-section-2707339574403411_9f26290c-a2db-4c45-9b34-5053e60c106d-0_20109": "20109",
+      "background_3c76bbc6-9cd8-4dbb-a335-453e564921e0": "35bb18eb-dde9-47a4-a1ca-56b72fc14305",
+      "class_720d2fe6-f042-4353-8313-1293375b1301-4": "SKILL_RELIGION",
+      "class_720d2fe6-f042-4353-8313-1293375b1301-4_SKILL_RELIGION": "SKILL_RELIGION",
+      "ancestry_957ee14b-c6dc-44eb-881b-e99a1b4e5118-2": "81",
+      "ancestry_957ee14b-c6dc-44eb-881b-e99a1b4e5118-2_81": "81",
+      "background_3c76bbc6-9cd8-4dbb-a335-453e564921e0_76283aca-e4a8-44e3-8ba7-6afc49de5dd0": "76283aca-e4a8-44e3-8ba7-6afc49de5dd0",
+      "background_d9ba4046-be08-42a1-aae9-1ac7a9f011f0": "ATTRIBUTE_STR",
+      "background_d9ba4046-be08-42a1-aae9-1ac7a9f011f0_ATTRIBUTE_STR": "ATTRIBUTE_STR",
+      "background_fbfa208f-5a42-4955-8798-8556d1540fc0": "SKILL_RELIGION",
+      "background_fbfa208f-5a42-4955-8798-8556d1540fc0_SKILL_RELIGION": "SKILL_RELIGION",
+      "class-feature-21217_f78123ba-0c0a-4a65-8de5-f33d5523257c": "0ddfce1c-23f8-48bb-ab0e-b46f0362f823",
+      "class-feature-21216_d5f9a5fb-f567-4784-b9f2-163106b3c8bf": "68c303f5-2ebc-4781-8a02-7716f9f5def9",
+      "class-feature-21216_1433e9db-be6f-4e22-a66f-360eec72366d": "33029",
+      "class-feature-21219_2029b9c0-56fb-457a-8f95-f3ef4c8aa5a8": "19974",
+      "class-feature-19312_12e1e1c6-efbb-4bfe-8117-5c0fdbc2bdbf": "32726",
+      "class-feature-19379_28017953-a9b0-463c-a188-44430105d177": "SKILL_INTIMIDATION",
+      "class-feature-19307_262b4e1b-9173-49f1-b6ea-c82dd4ee3bdb": "19899",
+      "class-feature-19307_262b4e1b-9173-49f1-b6ea-c82dd4ee3bdb_19899_5c207e00-5763-4489-85d0-326e570af0ed": "26937",
+      "class-feature-19307_262b4e1b-9173-49f1-b6ea-c82dd4ee3bdb_19899_5c207e00-5763-4489-85d0-326e570af0ed_26937_ca61aa4b-71bd-41fb-b218-e9de1bc4c736": "4888",
+      "class-feature-21220_2029b9c0-56fb-457a-8f95-f3ef4c8aa5a8": "22523",
+      "class-feature-19313_12e1e1c6-efbb-4bfe-8117-5c0fdbc2bdbf": "19946",
+      "class-feature-19293_32f84fc9-8e95-44c0-b096-54c392fccc6a": "ATTRIBUTE_CON",
+      "class-feature-19293_64c7f82c-f4bb-4808-a4f9-67e3a1bfdefb": "ATTRIBUTE_WIS",
+      "class-feature-19293_8182a79d-0287-4417-ad1d-d0b18ace14e7": "ATTRIBUTE_STR",
+      "class-feature-19293_9edb532b-b2df-454e-b870-4773e19abd56": "ATTRIBUTE_DEX",
+      "class-feature-19380_28017953-a9b0-463c-a188-44430105d177": "SKILL_MEDICINE",
+      "ancestry-section-491735390724817_9f26290c-a2db-4c45-9b34-5053e60c106d-1": "26666",
+      "class-feature-21221_2029b9c0-56fb-457a-8f95-f3ef4c8aa5a8": "22465",
+      "class-feature-21221_2029b9c0-56fb-457a-8f95-f3ef4c8aa5a8_22465_e680ffec-9c98-4f52-81f3-1dc1f9546ad2": "320b8765-eb67-4f0e-9d52-31535069f6e4",
+      "class-feature-19316_12e1e1c6-efbb-4bfe-8117-5c0fdbc2bdbf": "20695",
+      "class-feature-1110485945182216_9594307d-b111-437f-a55a-de101e8d46b1-2": "a525eb70-e18f-4a95-80d9-29f6aaee0d3e-2",
+      "class-feature-1110485945182216_9594307d-b111-437f-a55a-de101e8d46b1-2_a525eb70-e18f-4a95-80d9-29f6aaee0d3e-2_1c575456-4cb7-44eb-a153-9d6884b272a8-2": "39021",
+      "class-feature-1110485945182216_9594307d-b111-437f-a55a-de101e8d46b1-2_a525eb70-e18f-4a95-80d9-29f6aaee0d3e-2_1c575456-4cb7-44eb-a153-9d6884b272a8-2_39021_6b24969d-ac6d-4502-ad05-8e3c7d2ac915": "38714",
+      "class-feature-1229544020159109_9594307d-b111-437f-a55a-de101e8d46b1-4": "354b57f0-ef29-4f53-819b-f1f211adfc7b-4",
+      "class-feature-1229544020159109_9594307d-b111-437f-a55a-de101e8d46b1-4_354b57f0-ef29-4f53-819b-f1f211adfc7b-4_f8cbab2a-f19f-4209-9207-5eb30b43d4eb-4": "39209",
+      "class-feature-5027598898434207_9594307d-b111-437f-a55a-de101e8d46b1-6": "354b57f0-ef29-4f53-819b-f1f211adfc7b-6",
+      "class-feature-1229544020159109_9594307d-b111-437f-a55a-de101e8d46b1-4_354b57f0-ef29-4f53-819b-f1f211adfc7b-4_f8cbab2a-f19f-4209-9207-5eb30b43d4eb-4_39209_44c6bb68-2d4f-4b8a-8b97-d34935fd7e73": "38749",
+      "class-feature-5027598898434207_9594307d-b111-437f-a55a-de101e8d46b1-6_354b57f0-ef29-4f53-819b-f1f211adfc7b-6_f8cbab2a-f19f-4209-9207-5eb30b43d4eb-6": "39208",
+      "class-feature-19381_28017953-a9b0-463c-a188-44430105d177": "SKILL_MEDICINE",
+      "class-feature-19308_262b4e1b-9173-49f1-b6ea-c82dd4ee3bdb": "30547",
+      "class-feature-21222_2029b9c0-56fb-457a-8f95-f3ef4c8aa5a8": "22521",
+      "class-feature-21222_2029b9c0-56fb-457a-8f95-f3ef4c8aa5a8_39210_3d3b3a73-14f7-4bf0-8be0-f3bfca8e1c37": "38751",
+      "class-feature-7667270260836663_9594307d-b111-437f-a55a-de101e8d46b1-8": "354b57f0-ef29-4f53-819b-f1f211adfc7b-8",
+      "class-feature-7667270260836663_9594307d-b111-437f-a55a-de101e8d46b1-8_354b57f0-ef29-4f53-819b-f1f211adfc7b-8_f8cbab2a-f19f-4209-9207-5eb30b43d4eb-8": "39210",
+      "class-feature-7667270260836663_9594307d-b111-437f-a55a-de101e8d46b1-8_354b57f0-ef29-4f53-819b-f1f211adfc7b-8_f8cbab2a-f19f-4209-9207-5eb30b43d4eb-8_39210_3d3b3a73-14f7-4bf0-8be0-f3bfca8e1c37": "38751",
+      "class-feature-20983_12e1e1c6-efbb-4bfe-8117-5c0fdbc2bdbf": "20676",
+      "class-feature-19382_28017953-a9b0-463c-a188-44430105d177": "SKILL_ATHLETICS",
+      "ancestry-section-4419086668321027_9f26290c-a2db-4c45-9b34-5053e60c106d-2": "20107",
+      "class-feature-19294_32f84fc9-8e95-44c0-b096-54c392fccc6a": "ATTRIBUTE_CON",
+      "class-feature-19294_64c7f82c-f4bb-4808-a4f9-67e3a1bfdefb": "ATTRIBUTE_WIS",
+      "class-feature-19294_8182a79d-0287-4417-ad1d-d0b18ace14e7": "ATTRIBUTE_STR",
+      "class-feature-19294_9edb532b-b2df-454e-b870-4773e19abd56": "ATTRIBUTE_CHA",
+      "class-feature-6166211398375831_9594307d-b111-437f-a55a-de101e8d46b1-10": "354b57f0-ef29-4f53-819b-f1f211adfc7b-10",
+      "class-feature-6166211398375831_9594307d-b111-437f-a55a-de101e8d46b1-10_354b57f0-ef29-4f53-819b-f1f211adfc7b-10_f8cbab2a-f19f-4209-9207-5eb30b43d4eb-10": "39211",
+      "class-feature-21223_2029b9c0-56fb-457a-8f95-f3ef4c8aa5a8": "20453",
+      "class-feature-19322_12e1e1c6-efbb-4bfe-8117-5c0fdbc2bdbf": "20015",
+      "class-feature-19309_262b4e1b-9173-49f1-b6ea-c82dd4ee3bdb": "30905",
+      "class-feature-19383_28017953-a9b0-463c-a188-44430105d177": "SKILL_NATURE"
+    }
+  },
+  "inventory": {
+    "items": [],
+    "coins": {
+      "cp": 0,
+      "sp": 0,
+      "gp": 0,
+      "pp": 0
+    }
+  },
+  "spells": {
+    "slots": [
+      {
+        "id": "CHARACTER-spell-slot-0",
+        "rank": 0,
+        "source": "DRUID",
+        "spell_id": 5012,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-1",
+        "rank": 0,
+        "source": "DRUID",
+        "spell_id": 4649,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-2",
+        "rank": 0,
+        "source": "DRUID",
+        "spell_id": 4720,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-3",
+        "rank": 0,
+        "source": "DRUID",
+        "spell_id": 4562,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-4",
+        "rank": 0,
+        "source": "DRUID",
+        "spell_id": 5089,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-5",
+        "rank": 1,
+        "source": "DRUID",
+        "spell_id": 5879,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-6",
+        "rank": 1,
+        "source": "DRUID",
+        "spell_id": 5879,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-7",
+        "rank": 1,
+        "source": "DRUID",
+        "spell_id": 4423,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-8",
+        "rank": 4,
+        "source": "DRUID",
+        "spell_id": 5025,
+        "exhausted": true
+      },
+      {
+        "id": "CHARACTER-spell-slot-9",
+        "rank": 4,
+        "source": "DRUID",
+        "spell_id": 5025,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-10",
+        "rank": 4,
+        "source": "DRUID",
+        "spell_id": 4623,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-11",
+        "rank": 3,
+        "source": "DRUID",
+        "spell_id": 4623,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-12",
+        "rank": 3,
+        "source": "DRUID",
+        "spell_id": 4658,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-13",
+        "rank": 3,
+        "source": "DRUID",
+        "spell_id": 4623,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-14",
+        "rank": 2,
+        "source": "DRUID",
+        "spell_id": 5000,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-15",
+        "rank": 2,
+        "source": "DRUID",
+        "spell_id": 4828,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-16",
+        "rank": 2,
+        "source": "DRUID",
+        "spell_id": 6347,
+        "exhausted": true
+      },
+      {
+        "id": "CHARACTER-spell-slot-17",
+        "rank": 6,
+        "source": "DRUID",
+        "spell_id": 5024,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-18",
+        "rank": 6,
+        "source": "DRUID",
+        "spell_id": 7888,
+        "exhausted": true
+      },
+      {
+        "id": "CHARACTER-spell-slot-19",
+        "rank": 5,
+        "source": "DRUID",
+        "spell_id": 5031,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-20",
+        "rank": 5,
+        "source": "DRUID",
+        "spell_id": 4681,
+        "exhausted": true
+      },
+      {
+        "id": "CHARACTER-spell-slot-21",
+        "rank": 5,
+        "source": "DRUID",
+        "spell_id": 4594,
+        "exhausted": true
+      },
+      {
+        "id": "CHARACTER-spell-slot-22",
+        "rank": 0,
+        "source": "ANIMIST",
+        "spell_id": 4645,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-23",
+        "rank": 0,
+        "source": "ANIMIST",
+        "spell_id": 4578,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-24",
+        "rank": 1,
+        "source": "ANIMIST",
+        "spell_id": 4409,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-25",
+        "rank": 2,
+        "source": "ANIMIST",
+        "spell_id": 5233,
+        "exhausted": true
+      },
+      {
+        "id": "CHARACTER-spell-slot-26",
+        "rank": 3,
+        "source": "ANIMIST",
+        "spell_id": 4660,
+        "exhausted": false
+      },
+      {
+        "id": "CHARACTER-spell-slot-27",
+        "rank": 1,
+        "source": "ANIMIST",
+        "spell_id": 4782,
+        "exhausted": true
+      }
+    ],
+    "list": [],
+    "focus_point_current": 1,
+    "innate_casts": []
+  },
+  "companions": null
+}

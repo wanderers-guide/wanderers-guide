@@ -1,3 +1,4 @@
+import { runNativeCuratorCompatibility, assertCuratorNativeEvidence } from './treasure-vault-native-curator-successors.mjs';
 import { SHARED_MOVE_PATH, runNativeSharedAncestries, assertSharedNativeEvidence } from './treasure-vault-native-shared-ancestries.mjs';
 import { runNativeRustCloudCompatibility, assertRustCloudNativeEvidence } from './treasure-vault-native-rust-cloud.mjs';
 import assert from 'node:assert/strict';
@@ -140,7 +141,7 @@ export function assertRequiredNativeEvidence(receipt) {
   assert.ok(metadata.filter(row=>!privileged.includes(row)).every(row=>row.setup_login==='postgres'));
   const ci=receipt.alternate_fixture.registered_ci_replays;
   assert.equal(ci?.schema,'wg-tv-native-registered-ci-replays-v4');assert.equal(ci.passed,true);
-  assert.equal(ci.registered_requirements,110);assert.equal(ci.checks.length,71);assert.equal(ci.replays.length,91);
+  assert.equal(ci.registered_requirements,111);assert.equal(ci.checks.length,71);assert.equal(ci.replays.length,91);
   assert.equal(ci.passes,2);assert.equal(ci.registered_verification_rounds,3);assert.equal(ci.expected_native_statements,396);
   assert.equal(ci.stages.length,396);assert.equal(new Set(ci.stages.map(row=>row.label)).size,396);
   assert.equal(ci.checks.filter(row=>row.path==='supabase/release/tech-core-introductory-spells-citation-compatibility.sql').length,1);
@@ -183,13 +184,14 @@ export function assertRequiredNativeEvidence(receipt) {
   }
   for (const name of ['exact-old-helper-upgrade','changed-old-helper-rejection','all-before-to-all-after','pending-curator','late-failure-full-rollback','actual-correction-full-preservation','corrected-historical-replays','corrected-read-only-checks',...Array.from({length:6},(_,index)=>'mixed-successor-'+(index+1)),...[11937,11944,12325].map(id=>'unreviewed-field-'+id)]) assert.ok(source.controls.some(row=>row.name===name), 'Missing native source correction control '+name);
   assertRustCloudNativeEvidence(receipt);
+  assertCuratorNativeEvidence(receipt);
   return requiredNativeObligations(releaseScope).map(row=>({name:row.name,implemented:true,fresh_native_evidence_verified:true}));
 }
 
 /** Pure plan: explicit membership/chronology, never glob-skip unknown or future migrations. */
 export function buildNativeVerificationPlan({inputs,files,selectedNegativeFiles = null,releaseScope=false}) {
   assert.equal(inputs.input_provenance.mode, 'checked-in-default');
-  assert.equal(files.length, 117, 'Exact reviewed complete CI chronology');
+  assert.equal(files.length, 118, 'Exact reviewed complete CI chronology');
   assert.deepEqual([...files].sort(), files);
   assert.equal(new Set(files).size, files.length);
   assert.ok(files.includes('20261001010000_repair_weapon_stat_fields.sql'));
@@ -336,6 +338,7 @@ export async function executeNativeBase({root,inputs,migrations,inputManifest,ou
     await runNativeSharedAncestries({inputs,fixture,receipt,stage,userId,checkpoint:stop.checkpoint});
     assert.equal(receipt.shared_ancestries.passed,true);
     await runNativeRustCloudCompatibility({inputs,fixture,receipt,userId,checkpoint:stop.checkpoint});
+    await runNativeCuratorCompatibility({inputs,fixture,receipt,userId,checkpoint:stop.checkpoint});
     receipt.execution_family_proofs=assertRequiredNativeEvidence(receipt);
     receipt.full_native_execution_complete = selectedNegativeFiles === null && !releaseScope;
     receipt.release_native_execution_complete = releaseScope;
