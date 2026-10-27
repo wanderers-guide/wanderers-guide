@@ -135,6 +135,10 @@ export default function App() {
       setSession(session);
       if (session) resetSessionExpired();
 
+      if (event === 'INITIAL_SESSION' && !session && getCachedPublicUser()) {
+        // Initial absence is not an unexpected expiry, but cached account chrome is stale.
+        clearUserData();
+      }
       if (event === 'SIGNED_OUT') {
         // Unexpected expiry pauses saves quietly. Intentional logout already cleared the user cache.
         const hadUser = !!getCachedPublicUser();

@@ -340,8 +340,11 @@ self-links, repeated assignments, long chains, and companion isolation.
 Run request recovery, buffered character saves, and worker lifecycle regressions with
 `npm --prefix frontend run test:infra`. These exercise the real request manager, save hook,
 and operation lifecycle with controlled authentication, network, storage, and worker
-boundaries. They require no running database or production credentials. CI runs these
-regression suites before the production build. The content selector tests also exercise an
+boundaries. They require no running database or production credentials. The auth tests
+exercise initial session reads, live sign-in/sign-out events, and effect cleanup in
+controlled orders. A late initial snapshot cannot replace a newer account, and an absent
+initial session clears cached account chrome quietly while retaining character drafts.
+CI runs these regression suites before the production build. The content selector tests also exercise an
 already typed search while its catalog is still loading, and verify that removed sources
 or filtered choices disappear from search results without another keystroke.
 

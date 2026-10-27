@@ -170,7 +170,12 @@ describe('Character creation journeys', () => {
       cy.contains('.mantine-Modal-body [role="tabpanel"]:visible', 'Magus Dedication', { timeout: 30000 }).should(
         'be.visible'
       );
-      cy.get('.mantine-Modal-body [role="tabpanel"]:visible').contains('button', 'Select').click();
+      // The unfiltered tab also contains Magus; wait for the debounced result before choosing it.
+      cy.get('.mantine-Modal-body [role="tabpanel"]:visible')
+        .find('button', { timeout: 30000 })
+        .filter((_, button) => button.textContent === 'Select')
+        .should('have.length', 1)
+        .click();
       cy.wait('@savedMagus', { requestTimeout: 30000, responseTimeout: 30000 })
         .its('response.body.status')
         .should('eq', 'success');

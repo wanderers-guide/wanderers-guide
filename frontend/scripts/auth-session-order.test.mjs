@@ -17,6 +17,7 @@ function mount() {
     state,
     actor,
     clears = 0,
+    cached = true,
     expired = 0,
     unsubscribed = false;
   const initial = new Promise((yes, no) => {
@@ -59,9 +60,10 @@ function mount() {
     (value) => {
       state = typeof value === 'function' ? value(state) : value;
     },
-    () => ({ user_id: 'cached-account' }),
+    () => (cached ? { user_id: 'cached-account' } : null),
     () => {
       clears++;
+      cached = false;
     },
     () => {},
     () => {
@@ -129,6 +131,23 @@ test('late INITIAL_SESSION event cannot supersede a later live sign-in', async (
   await h.finish(older);
   assert.equal(h.state, newer);
   assert.equal(h.actor, newer.user.id);
+});
+test('absent INITIAL_SESSION clears cached chrome before the initial read without reporting expiry', async () => {
+  const h = mount();
+  h.emit('INITIAL_SESSION', null);
+  await h.finish(null);
+  assert.equal(h.state, null);
+  assert.equal(h.actor, null);
+  assert.equal(h.clears, 1);
+  assert.equal(h.expired, 0);
+});
+test('absent initial read and later INITIAL_SESSION clear cached chrome only once', async () => {
+  const h = mount();
+  await h.finish(null);
+  h.emit('INITIAL_SESSION', null);
+  assert.equal(h.state, null);
+  assert.equal(h.clears, 1);
+  assert.equal(h.expired, 0);
 });
 test('uncontested initial read still establishes the account and cache actor', async () => {
   const h = mount();

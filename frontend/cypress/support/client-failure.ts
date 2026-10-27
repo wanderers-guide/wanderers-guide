@@ -39,5 +39,22 @@ export function captureClientDiagnostics(win: Cypress.AUTWindow, messages: strin
     values.forEach(record);
     original.apply(win.console, values);
   };
+  const fetch = win.fetch.bind(win);
+  win.fetch = async (...args: Parameters<typeof win.fetch>) => {
+    try {
+      return await fetch(...args);
+    } catch (error) {
+      const input = args[0];
+      const url = new URL(
+        typeof input === 'string' || input instanceof URL ? input.toString() : input.url,
+        win.location.href
+      );
+      if (url.pathname.startsWith('/functions/v1/')) {
+        record(`Fetch rejected for ${url.pathname.split('/').pop()}`);
+        record(error);
+      }
+      throw error;
+    }
+  };
   return record;
 }
