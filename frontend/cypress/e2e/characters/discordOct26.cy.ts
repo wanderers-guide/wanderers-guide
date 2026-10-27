@@ -195,7 +195,7 @@ describe('October Discord regressions', () => {
         user_id: actor,
         name: 'Druid regression',
         updated_at: 'fixture-version',
-        hp_current: 121,
+        hp_current: 116,
         hp_temp: 0,
         meta_data: { reset_hp: false },
       };
@@ -203,19 +203,24 @@ describe('October Discord regressions', () => {
         import { readContentRows } from './scripts/operation-test-harness.mjs';
         import { writeFile } from 'node:fs/promises';
         const tables = ['ability_block','item','class','ancestry','background','spell','trait','language','archetype','versatile_heritage','class_archetype'];
-        const fixtures = await readContentRows(tables.map(table => ({table,sourceIds:${JSON.stringify(build.content_sources.enabled)}})));
+        const sources = [...new Set([3,...${JSON.stringify(build.content_sources.enabled)}])];
+        const fixtures = await readContentRows([...tables.map(table => ({table,sourceIds:sources})),...sources.map(id => ({table:'content_source',id}))]);
         await writeFile('/tmp/wg-oct26-druid-content.json', JSON.stringify(fixtures));
       `;
       cy.exec(`node --input-type=module -e '${script.replaceAll("'", "'\\''")}'`, { log: false, timeout: 60000 });
       cy.readFile('/tmp/wg-oct26-druid-content.json', { log: false, timeout: 60000 }).then((rows) => {
         fixtures = rows;
+        expect(fixtures.some(({ table, row }) => table === 'ancestry' && row.id === build.details.ancestry.id)).to.eq(
+          true,
+          'Common Core ancestry must be present'
+        );
       });
     });
     cy.viewport(1366, 768);
     visit('/sheet/910010');
     const assertDruid = () => {
       cy.contains('Hit Points', { timeout: 90000 }).should('be.visible');
-      cy.contains('121').should('exist');
+      cy.contains('116').should('exist');
       cy.contains('+19').should('exist');
       cy.contains('We just rolled a Nat 1...').should('not.exist');
     };
