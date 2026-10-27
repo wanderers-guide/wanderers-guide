@@ -3,6 +3,12 @@ title: 'Development'
 description: "Running Wanderer's Guide locally"
 ---
 
+The October Discord regressions are covered by
+`frontend/cypress/e2e/characters/discordOct26.cy.ts`. The browser fixture intercepts
+all API calls and verifies HTTP-200 application-error recovery, a twenty-encounter
+navigation list, and long Lore labels on desktop and mobile. It uses synthetic
+characters and checked-in content, without a live account.
+
 Campaign creation recovery is covered by `npm --prefix frontend run test:infra`.
 For a focused run, use `node --test frontend/scripts/campaign-creation.test.mjs`.
 It checks both buttons after successful, empty, and rejected responses, without
@@ -14,7 +20,7 @@ fresh read; this does not clear character drafts or other local storage.
 
 <Info>
   **Prerequisites**:
-  - [Node.js](https://nodejs.org/en/download) version 19 or higher
+  - [Node.js](https://nodejs.org/en/download) version 22 or higher
   - [Docker](https://www.docker.com/)
   - [Supabase CLI](https://supabase.com/docs/guides/local-development) for your OS (follow the instructions [here](https://supabase.com/docs/guides/cli/getting-started))
   - [Postgres](https://www.postgresql.org/), need `psql` (the client command line)
@@ -334,10 +340,21 @@ self-links, repeated assignments, long chains, and companion isolation.
 Run request recovery, buffered character saves, and worker lifecycle regressions with
 `npm --prefix frontend run test:infra`. These exercise the real request manager, save hook,
 and operation lifecycle with controlled authentication, network, storage, and worker
-boundaries. They require no running database or production credentials. CI runs these
-regression suites before the production build. The content selector tests also exercise an
+boundaries. They require no running database or production credentials. The auth tests
+exercise initial session reads, live sign-in/sign-out events, and effect cleanup in
+controlled orders. A late initial snapshot cannot replace a newer account, and an absent
+initial session clears cached account chrome quietly while retaining character drafts.
+CI runs these regression suites before the production build. The content selector tests also exercise an
 already typed search while its catalog is still loading, and verify that removed sources
 or filtered choices disappear from search results without another keystroke.
+
+The Cypress `login` command awaits the actual successful Auth response before checking
+navigation and the authenticated character list. Rejected sign-ins report their HTTP
+status and fixed provider code; diagnostic messages redact credentials and omit payloads.
+Vite ignores generated Cypress downloads, screenshots, and videos so recording test
+artifacts cannot reload the two fixtures that require source-module access.
+The creation journey also verifies that the mobile Builder's Next Page control is
+reachable within the scrolling page and still opens the persisted level-four build.
 
 Timing failures belong in the correctness suite when they can change results. Cache
 tests hold IndexedDB reads, writes and deletion independently: fresh downloads must
@@ -471,10 +488,16 @@ the local frontend. Cypress maps it to `publicAnonKey`; CI already supplies it.
 These cases read public catalog data without creating an account or inventory.
 Use the public anonymous key, never the service-role key.
 
-The Cypress commands preserve existing `NODE_OPTIONS` and disable synchronous
-ES module loading for the test process. This lets Cypress 13 load the existing
-configuration with its TypeScript loader on Node 20. CI uses
-the same `cy:run` entry point; application and API runtime options are unchanged.
+Cypress 16.2 runs the browser suite with Node 22. Chrome uses native network
+interception, so application requests reach the local stack through Chrome's own
+network layer. CI still checks the real sign-in response, persisted writes,
+conflicts, denied requests and visible controls; failed cases are not retried.
+
+Test passwords and the harness anonymous credential use `cy.env()` and stay out
+of command logs. Only the public `functions_url`, `module_preview_url` and
+`patreonCase` options are mapped to `Cypress.expose()` by the Node configuration.
+Existing `CYPRESS_*` environment overrides still work. `cy.login()` reads the
+owned test email/password when explicit fixture credentials are not supplied.
 
 `characters/databaseSpellSelections.cy.ts` keeps six cases on the compiled app,
 including Daily Library selection, reload, preparation and visible Rest. Its two

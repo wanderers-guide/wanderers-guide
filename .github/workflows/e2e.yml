@@ -36,7 +36,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -66,14 +66,19 @@ jobs:
             const sig = crypto.createHmac('sha256', secret).update(`${header}.${payload}`).digest('base64url');
             return `${header}.${payload}.${sig}`;
           };
-          const env = [
-            `JWT_SECRET=${secret}`,
-            `ANON_KEY=${sign('anon')}`,
-            `SERVICE_ROLE_KEY=${sign('service_role')}`,
-            `POSTGRES_PASSWORD=${crypto.randomBytes(16).toString('hex')}`,
+          const generated = {
+            JWT_SECRET: secret,
+            ANON_KEY: sign('anon'),
+            SERVICE_ROLE_KEY: sign('service_role'),
+            POSTGRES_PASSWORD: crypto.randomBytes(16).toString('hex'),
             // Shared secret for the content-updates webhook; minting one lets the
             // update-content-update tests run in CI instead of skipping.
-            `CONTENT_UPDATE_KEY=${crypto.randomBytes(24).toString('hex')}`,
+            CONTENT_UPDATE_KEY: crypto.randomBytes(24).toString('hex'),
+          };
+          // Mask before exporting: later action environment dumps must not reveal these values.
+          for (const value of Object.values(generated)) console.log(`::add-mask::${value}`);
+          const env = [
+            ...Object.entries(generated).map(([name, value]) => `${name}=${value}`),
             `PUBLIC_SUPABASE_URL=http://localhost:8000`,
             `SITE_URL=http://localhost:3000`,
             `VITE_ENV=production`,
@@ -207,14 +212,14 @@ jobs:
         run: cd supabase && deno test --no-check --allow-net --allow-env --allow-read functions/_tests/
 
       - name: Cypress run
-        uses: cypress-io/github-action@v6
+        uses: cypress-io/github-action@01e3b659a495b41649cdd0aa82e1d1624e26520b # v7.4.4; Node 24 readiness fix
         with:
           working-directory: ./frontend
           install: false
           # Only the two mounted-Rest fixture cases use source-module access.
           # All other browser cases retain the compiled Docker app as their base URL.
           start: npm run dev -- --host 127.0.0.1 --port 5174 --strictPort
-          wait-on: "http://localhost:5174"
+          wait-on: "http://127.0.0.1:5174"
           command: npm run cy:run -- --browser chrome
         env:
           CYPRESS_BASE_URL: http://localhost:3000
@@ -279,7 +284,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Install content schema test dependencies
         working-directory: ./frontend
@@ -327,7 +332,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Pull pinned native fixture images
         run: |
@@ -368,7 +373,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
       - name: Install content test dependencies
         working-directory: ./frontend
         run: npm ci --legacy-peer-deps --no-audit --no-fund

@@ -10,7 +10,6 @@ import {
   SpellSectionType,
   SpellSlot,
 } from '@schemas/content';
-import { Dictionary } from 'node_modules/cypress/types/lodash';
 import SpellListEntrySection from './SpellListEntrySection';
 import { StoreID } from '@schemas/variables';
 import { SetterOrUpdater } from '@utils/type-fixing';
@@ -44,7 +43,7 @@ export default function RitualSpellsList(props: {
   hasFilters: boolean;
   openManageSpells?: (source: string, type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY') => void;
   castSpell: (cast: boolean, spell: Spell) => void;
-  spells: Dictionary<Spell[]>;
+  spells: Record<string, Spell[]>;
 }) {
   const { spells, castSpell } = props;
 

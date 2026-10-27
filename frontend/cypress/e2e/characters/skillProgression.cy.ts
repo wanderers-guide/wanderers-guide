@@ -16,12 +16,12 @@ describe('Historical skill progression', () => {
 
   before(() => {
     cy.intercept('POST', '**/auth/v1/token*').as('signIn');
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
     cy.wait('@signIn').then(({ response }) => {
       token = response?.body.access_token;
       cy.request({
         method: 'POST',
-        url: `${Cypress.env('functions_url')}/find-class`,
+        url: `${Cypress.expose('functions_url')}/find-class`,
         headers: { Authorization: `Bearer ${token}` },
         body: { id: 20 },
         log: false,
@@ -30,7 +30,7 @@ describe('Historical skill progression', () => {
         expect(body.data.name).to.eq('Fighter');
         cy.request({
           method: 'POST',
-          url: `${Cypress.env('functions_url')}/create-character`,
+          url: `${Cypress.expose('functions_url')}/create-character`,
           headers: { Authorization: `Bearer ${token}` },
           body: {
             name: 'Historical skill progression',
@@ -53,7 +53,7 @@ describe('Historical skill progression', () => {
     if (!characterId || !token) return;
     cy.request({
       method: 'POST',
-      url: `${Cypress.env('functions_url')}/delete-content`,
+      url: `${Cypress.expose('functions_url')}/delete-content`,
       headers: { Authorization: `Bearer ${token}` },
       body: { id: characterId, type: 'character' },
       log: false,
@@ -112,7 +112,7 @@ describe('Historical skill progression', () => {
 
     cy.request({
       method: 'POST',
-      url: `${Cypress.env('functions_url')}/find-character`,
+      url: `${Cypress.expose('functions_url')}/find-character`,
       headers: { Authorization: `Bearer ${token}` },
       body: { id: characterId },
       log: false,

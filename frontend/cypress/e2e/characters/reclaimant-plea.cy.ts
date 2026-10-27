@@ -6,7 +6,7 @@ describe('Reclaimant Plea', () => {
       .then(() =>
         cy.request({
           method: 'POST',
-          url: `${Cypress.env('functions_url')}/${endpoint}`,
+          url: `${Cypress.expose('functions_url')}/${endpoint}`,
           headers: { Authorization: `Bearer ${token}` },
           body,
           log: false,
@@ -23,7 +23,7 @@ describe('Reclaimant Plea', () => {
 
   it('renders all three saved innate choices at rank 7 and preserves them after reload', () => {
     cy.intercept('POST', '**/auth/v1/token*').as('signIn');
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
     cy.wait('@signIn').then(({ response }) => {
       token = response?.body.access_token;
     });

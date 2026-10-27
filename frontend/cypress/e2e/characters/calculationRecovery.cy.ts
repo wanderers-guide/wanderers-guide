@@ -5,7 +5,7 @@ describe('Calculation recovery', () => {
 
   before(() => {
     cy.intercept('POST', '**/auth/v1/token*').as('signIn');
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
     cy.wait('@signIn').then(({ response }) => {
       token = response?.body.access_token;
     });
@@ -23,7 +23,7 @@ describe('Calculation recovery', () => {
     if (!characterId || !token) return;
     cy.request({
       method: 'POST',
-      url: `${Cypress.env('functions_url')}/delete-content`,
+      url: `${Cypress.expose('functions_url')}/delete-content`,
       headers: { Authorization: `Bearer ${token}` },
       body: { id: characterId, type: 'character' },
       log: false,
@@ -76,7 +76,7 @@ describe('Calculation recovery', () => {
   });
 
   it('uses the existing error page after both initial calculation attempts fail', () => {
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
     let attempts = 0;
     let saves = 0;
     cy.on('uncaught:exception', (error) => {
@@ -106,12 +106,12 @@ describe('Calculation recovery', () => {
   });
 
   it('calculates published dedication checks with the legacy displayed Untrained default', () => {
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
     const request = (endpoint: string, body: Record<string, unknown>) =>
       cy
         .request({
           method: 'POST',
-          url: `${Cypress.env('functions_url')}/${endpoint}`,
+          url: `${Cypress.expose('functions_url')}/${endpoint}`,
           headers: { Authorization: `Bearer ${token}` },
           body,
           log: false,
@@ -166,7 +166,7 @@ describe('Calculation recovery', () => {
   });
 
   it('keeps the builder editable after a persistent worker failure without a retry screen', () => {
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
     let attempts = 0;
     let saves = 0;
     cy.intercept('POST', '**/functions/v1/update-character', (request) => {
@@ -197,12 +197,12 @@ describe('Calculation recovery', () => {
   });
 
   it('persists the displayed Untrained value when opening a legacy condition in the editor', () => {
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
     const api = (endpoint: string, body: Record<string, unknown>) =>
       cy
         .request({
           method: 'POST',
-          url: `${Cypress.env('functions_url')}/${endpoint}`,
+          url: `${Cypress.expose('functions_url')}/${endpoint}`,
           headers: { Authorization: `Bearer ${token}` },
           body,
           log: false,
@@ -246,10 +246,10 @@ describe('Calculation recovery', () => {
     cy.screenshot('conditional-editor-untrained-persisted');
   });
   it('shows the actual False comparison for an existing blank boolean condition', () => {
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
     cy.request({
       method: 'POST',
-      url: `${Cypress.env('functions_url')}/find-character`,
+      url: `${Cypress.expose('functions_url')}/find-character`,
       headers: { Authorization: `Bearer ${token}` },
       body: { id: characterId },
       log: false,
@@ -257,7 +257,7 @@ describe('Calculation recovery', () => {
       expect(body.status).to.eq('success');
       cy.request({
         method: 'POST',
-        url: `${Cypress.env('functions_url')}/update-character`,
+        url: `${Cypress.expose('functions_url')}/update-character`,
         headers: { Authorization: `Bearer ${token}` },
         body: {
           id: characterId,
@@ -321,7 +321,7 @@ describe('Calculation recovery', () => {
     cy.wait('@booleanSave', { timeout: 15000 }).its('response.body.status').should('eq', 'success');
     cy.request({
       method: 'POST',
-      url: `${Cypress.env('functions_url')}/find-character`,
+      url: `${Cypress.expose('functions_url')}/find-character`,
       headers: { Authorization: `Bearer ${token}` },
       body: { id: characterId },
       log: false,

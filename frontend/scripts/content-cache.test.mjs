@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readContentRows } from './operation-test-harness.mjs';
 import { test } from 'node:test';
 import { build } from 'esbuild';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
@@ -77,6 +78,49 @@ test('content packages and cache respect failures, sources, actors and generatio
     });
     await writeFile(join(directory, 'store.mjs'), result.outputFiles[0].text);
     store = await import(pathToFileURL(join(directory, 'store.mjs')).href);
+    await t.test('dedications prefer their own printing when an older archetype shares the feat ID', async () => {
+      store.defineDefaultSources('BOTH', [371, 842]);
+      const base = {
+        created_at: '',
+        name: 'Magus',
+        rarity: 'COMMON',
+        description: '',
+        artwork_url: null,
+        deprecated: null,
+        version: '1.0',
+        dedication_feat_id: 22549,
+        meta_data: null,
+      };
+      state.request = async () => [
+        { ...base, id: 282, content_source_id: 371, trait_id: 3995 },
+        { ...base, id: 307, content_source_id: 842, trait_id: 4260 },
+      ];
+      assert.equal(
+        (await store.fetchArchetypeByDedicationFeat(22549, { content_source_id: 842, traits: [4260] })).id,
+        307
+      );
+      assert.equal(
+        (await store.fetchArchetypeByDedicationFeat(22549, { content_source_id: 371, traits: [3995] })).id,
+        282
+      );
+      store.resetContentStore(true, true);
+    });
+
+    await t.test('an account without subscriptions never issues an unrestricted empty-ID source query', async () => {
+      const [{ row: source }] = await readContentRows([{ table: 'content_source', id: 1 }]);
+      state.request = async (type, body) => {
+        assert.equal(type, 'find-content-source');
+        assert.notDeepEqual(body.id, [], 'empty subscription filters would return every source');
+        return [source];
+      };
+      const available = await store.fetchContentSources('ALL-USER-ACCESSIBLE');
+      assert.deepEqual(
+        available.map((entry) => entry.id),
+        [1]
+      );
+      store.resetContentStore(true, true);
+    });
+
     const row = {
       id: 81001,
       uuid: 81001,

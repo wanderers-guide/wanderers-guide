@@ -387,6 +387,9 @@ retaining the local input and its original base. Background reads and ordinary
 edits recheck the competing version, and saving resumes when merging is safe.
 Calculation failures retry quietly without publishing partial math. There is no
 download or discard workflow for save history.
+Calculations also reject a content package that cannot resolve a saved primary or
+secondary class, ancestry, or background. Unselected Builder choices remain valid;
+missing selected content must recover before a new result can be published.
 
 Retained drafts stay on the device under the same character ID. They do not create
 additional server characters. Versioned drafts with a known common ancestor can be
@@ -476,3 +479,23 @@ Native verification exercises both source states, alias and pending-submission
 rejections, complete no-op replay preservation and unrelated dependency failures
 in addition to the original general-spell control matrix. Historical migration
 replays and the full release gate must pass before this compatibility change is merged.
+
+## October curator compatibility
+
+`20261026010000_curator_release_compatibility.sql` recognizes the exact reviewed
+Scent link correction and Enthrall rules correction while retaining the complete
+original Treasure Vault ledgers. It writes no content. Every other row field,
+reference, source, helper setting and grant remains pinned. Enthrall's successor
+UUID also receives duplicate-identity and pending-submission checks.
+
+The early helper installer includes this same successor for complete historical
+replays. Existing upgrade installers retain their exact previous SQL inside an
+outer compatibility wrapper. Native rollback controls cover both original and
+successor combinations, upgrade/replay, unrelated edits, queue aliases and helper
+drift. Apply only the new dated compatibility migration to production.
+
+`20261026000000_mine_mod_rules.sql` repairs eight existing Tech Core records:
+Maneuvering Mines, Healing Mines, Aerial Hologram, Aerobatics Mastery, Expert
+Mechanic, Programmer, Auto Spellshape and Magical Shorthand. It compares complete
+original rows and refuses pending curator work before adding operations. Verify
+its registered release predicate and source cache timestamp after application.

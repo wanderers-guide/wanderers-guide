@@ -776,9 +776,9 @@ export async function fetchContentSources(sources: SourceValue, bypassWorkerPack
       const user = await getPublicUser(undefined, { throwOnFailure: true, sharedReadScope: generation });
       assertCurrentGeneration(generation);
       // Now fetch all the other sources the user has subscribed to
-      const ur = await fetchSources({
-        id: user?.subscribed_content_sources?.map((s) => s.source_id) ?? [],
-      });
+      const subscriptions = user?.subscribed_content_sources?.map((subscription) => subscription.source_id) ?? [];
+      // An empty ID filter means “all” to the API, not “no subscriptions”.
+      const ur = subscriptions.length > 0 ? await fetchSources({ id: subscriptions }) : [];
 
       results = uniqBy([...pr, ...ur], (source) => source.id);
     } else if (sources === 'ALL-HOMEBREW-ACCESSIBLE') {
@@ -916,11 +916,20 @@ export async function findRequiredContentSources(sourceIds?: number[]) {
   };
 }
 
-export async function fetchArchetypeByDedicationFeat(feat_id: number) {
+/** Resolve a dedication within its own printing before considering cross-book archetypes. */
+export async function fetchArchetypeByDedicationFeat(
+  feat_id: number,
+  feat?: { content_source_id?: number; traits?: number[] | null }
+): Promise<Archetype | null> {
   const archetypes = await fetchContent<Archetype>('archetype', {
     dedication_feat_id: feat_id,
   });
-  return archetypes.length > 0 ? archetypes[0] : null;
+  return (
+    archetypes.find((archetype) => archetype.content_source_id === feat?.content_source_id) ??
+    archetypes.find((archetype) => feat?.traits?.includes(archetype.trait_id)) ??
+    archetypes[0] ??
+    null
+  );
 }
 export async function fetchVersHeritageByHeritage(heritage_id: number) {
   const versatileHeritages = await fetchContent<VersatileHeritage>('versatile-heritage', {

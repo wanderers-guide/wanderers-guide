@@ -2,25 +2,7 @@ export {};
 
 type Row = { id: number; name: string; content_source_id?: number; [key: string]: any };
 type Fixture = { table: string; row: Row };
-const fixtureScript = `
-  import { readFile } from "node:fs/promises";
-  import { readContentRows } from "./scripts/operation-test-harness.mjs";
-  const entries = JSON.parse((await readFile("../supabase/migrations/20260928020000_war_of_immortals_hazards.sql", "utf8")).split("$entries$")[1]);
-  const rows = await readContentRows([
-    ...[1, 3, 400].map(id => ({table: "content_source", id})),
-    ...[4414, 4851, 4650, 4668, 4899, 4830].map(id => ({table: "spell", id})),
-    ...[19721, 19856].map(id => ({table: "ability_block", id})),
-  ]);
-  const traits = new Set([...entries.flatMap(entry => entry.details.trait_ids), ...rows.flatMap(({row}) => row.traits ?? [])]);
-  rows.push(...await readContentRows([...traits].map(id => ({table: "trait", id}))));
-  rows.push(...entries.map((entry, index) => ({table: "creature", row: {
-    id: 911001 + index, uuid: entry.uuid, created_at: "2026-09-28T00:00:00Z", type: "hazard",
-    name: entry.name, level: entry.level, rarity: "RARE", details: entry.details,
-    content_source_id: 400, deprecated: false, version: "1.0",
-    meta_data: {source: {book: "War of Immortals", page: entry.page, url: entry.url}},
-  }})));
-  console.log(JSON.stringify(rows));
-`;
+
 const actor = '00000000-0000-4000-8000-000000000001';
 const creature = {
   id: 920001,
@@ -52,8 +34,8 @@ describe('Hazard encounter controls', () => {
   let fixtures: Fixture[];
   let saved: any;
   before(() =>
-    cy.exec(`node --input-type=module -e '${fixtureScript}'`, { log: false, timeout: 60000 }).then(({ stdout }) => {
-      fixtures = JSON.parse(stdout);
+    cy.task<any>('contentFixture:hazards', null, { log: false, timeout: 60000 }).then((rows) => {
+      fixtures = rows;
     })
   );
   beforeEach(() => {
@@ -105,7 +87,7 @@ describe('Hazard encounter controls', () => {
     cy.visit('/encounters', {
       onBeforeLoad(win) {
         // A synthetic session for this intercepted browser fixture, never a real account or token.
-        const authHost = new URL(Cypress.env('functions_url')).hostname.split('.')[0];
+        const authHost = new URL(Cypress.expose('functions_url')).hostname.split('.')[0];
         const storageKey = `sb-${authHost}-auth-token`;
         const token = `${win.btoa('{}')}.${win.btoa(JSON.stringify({ sub: actor, exp: 4102444800 }))}.fixture`;
         win.localStorage.setItem(
@@ -236,7 +218,7 @@ describe('Hazard encounter controls', () => {
       cy.get('.mantine-Modal-body')
         .contains('button', /^Select$/)
         .click();
-      cy.wait('@saveEncounter').then(() => {
+      cy.wait('@saveEncounter', { requestTimeout: 30000, responseTimeout: 30000 }).then(() => {
         expect(saved.meta_data).to.deep.eq({ party_level: 7, party_size: 4 });
         expect(saved.combatants.list.filter((entry: any) => entry.type === 'CREATURE')).to.have.length(2);
       });

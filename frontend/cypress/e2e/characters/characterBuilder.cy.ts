@@ -4,7 +4,7 @@ describe('Characters', () => {
   beforeEach(() => {
     characterId = undefined;
     cy.intercept('POST', '**/auth/v1/token*').as('signIn');
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
     cy.wait('@signIn').then(({ response }) => {
       token = response?.body.access_token;
     });
@@ -52,7 +52,7 @@ describe('Characters', () => {
       if (!characterId || !token) return;
       cy.request({
         method: 'POST',
-        url: `${Cypress.env('functions_url')}/delete-content`,
+        url: `${Cypress.expose('functions_url')}/delete-content`,
         headers: { Authorization: `Bearer ${token}` },
         body: { id: characterId, type: 'character' },
         log: false,
@@ -65,7 +65,7 @@ describe('Characters', () => {
       cy.visit('/characters');
       cy.request({
         method: 'POST',
-        url: `${Cypress.env('functions_url')}/find-character`,
+        url: `${Cypress.expose('functions_url')}/find-character`,
         headers: { Authorization: `Bearer ${token}` },
         body: { id: characterId },
         log: false,
@@ -74,7 +74,7 @@ describe('Characters', () => {
         .then((character) =>
           cy.request({
             method: 'POST',
-            url: `${Cypress.env('functions_url')}/update-character`,
+            url: `${Cypress.expose('functions_url')}/update-character`,
             headers: { Authorization: `Bearer ${token}` },
             body: {
               id: characterId,
@@ -98,7 +98,7 @@ describe('Characters', () => {
     it('inherits account fields omitted by a character theme and keeps phone inputs readable', () => {
       cy.request({
         method: 'POST',
-        url: `${Cypress.env('functions_url')}/find-character`,
+        url: `${Cypress.expose('functions_url')}/find-character`,
         headers: { Authorization: `Bearer ${token}` },
         body: { id: characterId },
         log: false,
@@ -107,7 +107,7 @@ describe('Characters', () => {
         .then((character) =>
           cy.request({
             method: 'POST',
-            url: `${Cypress.env('functions_url')}/update-character`,
+            url: `${Cypress.expose('functions_url')}/update-character`,
             headers: { Authorization: `Bearer ${token}` },
             log: false,
             body: {

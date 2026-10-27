@@ -9,6 +9,7 @@ import {
 } from '../../../src/schemas/content';
 import { OperationSchema } from '../../../src/schemas/operations';
 import { isOperationsWorkerURL } from '../../support/operations-worker-fixture';
+import { captureClientDiagnostics, describeClientFailure } from '../../support/client-failure';
 
 const actor = '00000000-0000-4000-8000-000000991902';
 const first = '6082549e-6035-451d-a2dd-f90766e54d55';
@@ -276,6 +277,7 @@ function getDailyOptions(value: unknown): DailyOption[] {
 }
 
 describe('Source-owned database spell choices', () => {
+  let diagnostics: string[] = [];
   let saved = structuredClone(original);
   let saveResponses: { received: number; completed: number } = { received: 0, completed: 0 };
   let holdFinalRankSaveResponse = false;
@@ -310,6 +312,7 @@ describe('Source-owned database spell choices', () => {
     });
     cy.visit(`/${page}/${original.id}`, {
       onBeforeLoad(win) {
+        captureClientDiagnostics(win, diagnostics);
         const fixtureWindow = win as unknown as FixtureWindow;
         const NativeWorker = fixtureWindow.Worker;
         const control: WorkerControl = {
@@ -389,7 +392,7 @@ describe('Source-owned database spell choices', () => {
             else send();
           }
         };
-        const host = new URL(Cypress.env('functions_url')).hostname.split('.')[0];
+        const host = new URL(Cypress.expose('functions_url')).hostname.split('.')[0];
         const token = `${win.btoa('{}')}.${win.btoa(JSON.stringify({ sub: actor, exp: 4102444800 }))}.fixture`;
         win.localStorage.setItem(
           `sb-${host}-auth-token`,
@@ -417,6 +420,7 @@ describe('Source-owned database spell choices', () => {
   };
 
   beforeEach(() => {
+    diagnostics = [];
     saved = structuredClone(original);
     saveResponses = { received: 0, completed: 0 };
     holdFinalRankSaveResponse = false;
@@ -513,7 +517,10 @@ describe('Source-owned database spell choices', () => {
         ].includes(endpoint)
       )
         data = [];
-      else throw new Error(`Unexpected database fixture API: ${endpoint}`);
+      else
+        throw new Error(
+          `Unexpected database fixture API: ${endpoint}; code=${describeClientFailure(req.body)}; diagnostics=${JSON.stringify(diagnostics)}`
+        );
       req.reply({ statusCode: 200, body: { status: 'success', data } });
     });
   });
@@ -532,7 +539,8 @@ describe('Source-owned database spell choices', () => {
       .closest('.mantine-Accordion-item')
       .find('.mantine-Accordion-panel');
   const openCustom = () => {
-    cy.contains('.mantine-Stepper-step', 'Builder', { timeout: 30000 }).click();
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', original.name);
+    cy.get('button[aria-label="Next Page"]', { timeout: 30000 }).scrollIntoView().should('be.visible').click();
     cy.get('[data-wg-name="level-0"]', { timeout: 30000 })
       .should('be.visible')
       .contains('.mantine-Accordion-control', 'Initial Stats')
@@ -903,7 +911,7 @@ describe('Source-owned database spell choices', () => {
     it(
       `expires a mounted optimistic daily choice and ignores its late native acknowledgement on ${viewport}`,
       // Source-module access must use the same app store as the mounted picker.
-      { baseUrl: Cypress.env('module_preview_url') ?? Cypress.config('baseUrl') },
+      { baseUrl: Cypress.expose('module_preview_url') ?? Cypress.config('baseUrl') },
       () => {
         cy.viewport(phone ? 390 : 1280, phone ? 844 : 900);
         fixtureSelections(saved)[`character_${first}`] = `${wave.id}:2`;

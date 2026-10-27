@@ -2442,7 +2442,7 @@
       "post": {
         "tags": ["Characters"],
         "summary": "Create or update a character",
-        "description": "Free users are limited to 6 characters. Patreon tier 2+ removes the cap. Pass `id` to update.",
+        "description": "Free users are limited to 6 characters. Patreon tier 2+ removes the cap. Pass `id` to update. Additional character slots require verified Wanderer membership. If access cannot be verified, the existing error response directs the user to check Patreon in Account; no creation is retried automatically.",
         "operationId": "createCharacter",
         "requestBody": {
           "required": true,
@@ -2559,7 +2559,7 @@
       "post": {
         "tags": ["Campaigns"],
         "summary": "Create or update a campaign",
-        "description": "Creating a new campaign requires Patreon tier 1+ (free users cannot create campaigns).",
+        "description": "Free users may create one campaign. Verified Patreon tier 2+ (Wanderer or higher) removes the cap. Additional campaigns require verified Wanderer membership. If access cannot be verified, the existing error response directs the user to check Patreon in Account; no creation is retried automatically.",
         "operationId": "createCampaign",
         "requestBody": {
           "required": true,

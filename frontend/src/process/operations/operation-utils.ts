@@ -56,6 +56,8 @@ import {
   getAllClassTraitVariables,
   getAllSkillVariables,
   getAllWeaponGroupVariables,
+  getSkillEffectContext,
+  getSkillSelectionPreview,
   getVariable,
 } from '@variables/variable-manager';
 import {
@@ -808,6 +810,21 @@ async function getAdjValueList(id: StoreID, operationUUID: string, filters: Oper
 
   if (filters.group === 'SKILL') {
     variables = getAllSkillVariables(id);
+    if (filters.skillRules === 'expert-mechanic') {
+      const context = getSkillEffectContext(id);
+      const rankBefore = (variable: VariableProf) =>
+        (context ? getSkillSelectionPreview(id, variable.name, 'E', context)?.from : undefined) ??
+        compileProficiencyType(variable.value);
+      const preferred = variables.filter(
+        (variable): variable is VariableProf =>
+          variable.type === 'prof' &&
+          ['SKILL_COMPUTERS', 'SKILL_CRAFTING'].includes(variable.name) &&
+          !isProficiencyTypeGreaterOrEqual(rankBefore(variable), 'E')
+      );
+      variables = preferred.length
+        ? preferred
+        : variables.filter((variable) => variable.type === 'prof' && rankBefore(variable) === 'T');
+    }
   }
   if (filters.group === 'ADD-LORE') {
     variables = getAllSkillVariables(id).filter((variable) => variable.name.startsWith('SKILL_LORE_'));
@@ -1007,7 +1024,10 @@ export async function extendOperations(
     return operations ?? [];
   }
 
-  const archetype = await fetchArchetypeByDedicationFeat(obj.id);
+  const archetype = await fetchArchetypeByDedicationFeat(obj.id, {
+    content_source_id: obj.content_source_id,
+    traits: obj.traits,
+  });
   if (!archetype) {
     return operations ?? [];
   }

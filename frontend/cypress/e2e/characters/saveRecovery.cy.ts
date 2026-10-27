@@ -1,3 +1,4 @@
+import { captureClientDiagnostics } from '../../support/client-failure';
 /** Verify that an unreplayable draft stays quietly preserved without replacing server data. */
 describe('Buffered character recovery', () => {
   let characterId: number;
@@ -5,8 +6,14 @@ describe('Buffered character recovery', () => {
   let actorId: string;
 
   before(() => {
+    const diagnostics: string[] = [];
+    cy.on('window:before:load', (win) => captureClientDiagnostics(win, diagnostics));
+    cy.on('fail', (error) => {
+      error.message += `\nBrowser diagnostics: ${JSON.stringify(diagnostics)}`;
+      throw error;
+    });
     cy.intercept('POST', '**/auth/v1/token*').as('signIn');
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
     cy.wait('@signIn').then(({ response }) => {
       token = response?.body.access_token;
       actorId = response?.body.user.id;
@@ -25,7 +32,7 @@ describe('Buffered character recovery', () => {
     if (!characterId || !token) return;
     cy.request({
       method: 'POST',
-      url: `${Cypress.env('functions_url')}/delete-content`,
+      url: `${Cypress.expose('functions_url')}/delete-content`,
       headers: { Authorization: `Bearer ${token}` },
       body: { id: characterId, type: 'character' },
       log: false,
@@ -79,7 +86,7 @@ describe('Buffered character recovery', () => {
     assertQuiet();
     cy.request({
       method: 'POST',
-      url: `${Cypress.env('functions_url')}/find-character`,
+      url: `${Cypress.expose('functions_url')}/find-character`,
       headers: { Authorization: `Bearer ${token}` },
       body: { id: characterId },
       log: false,
@@ -89,7 +96,7 @@ describe('Buffered character recovery', () => {
   });
 
   it('retains conflicting input through reload and automatically saves when the versions become compatible', () => {
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
     cy.visit(`/builder/${characterId}`);
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should('have.value', 'Saved remote name');
     let saves = 0;
@@ -121,7 +128,7 @@ describe('Buffered character recovery', () => {
     cy.wrap(null).should(() => expect(releaseSave).to.be.a('function'));
     cy.request({
       method: 'POST',
-      url: `${Cypress.env('functions_url')}/update-character`,
+      url: `${Cypress.expose('functions_url')}/update-character`,
       headers: { Authorization: `Bearer ${token}` },
       body: { id: characterId, name: 'Changed on another device' },
       log: false,
@@ -157,7 +164,7 @@ describe('Buffered character recovery', () => {
     cy.contains('Changes not saved').should('not.exist');
     cy.request({
       method: 'POST',
-      url: `${Cypress.env('functions_url')}/find-character`,
+      url: `${Cypress.expose('functions_url')}/find-character`,
       headers: { Authorization: `Bearer ${token}` },
       body: { id: characterId },
       log: false,
@@ -170,7 +177,7 @@ describe('Buffered character recovery', () => {
     cy.then(() =>
       cy.request({
         method: 'POST',
-        url: `${Cypress.env('functions_url')}/update-character`,
+        url: `${Cypress.expose('functions_url')}/update-character`,
         headers: { Authorization: `Bearer ${token}` },
         body: { id: characterId, name: originalName },
         log: false,
@@ -194,7 +201,7 @@ describe('Buffered character recovery', () => {
     });
     cy.request({
       method: 'POST',
-      url: `${Cypress.env('functions_url')}/find-character`,
+      url: `${Cypress.expose('functions_url')}/find-character`,
       headers: { Authorization: `Bearer ${token}` },
       body: { id: characterId },
       log: false,

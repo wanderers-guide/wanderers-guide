@@ -74,6 +74,12 @@ const manifestForPlugin: Partial<VitePWAOptions> = {
 // https://vitejs.dev/config/
 export default defineConfig({
   base: './',
+  server: {
+    watch: {
+      // Cypress writes HTML while recording downloads; test artifacts must not reload mounted fixtures.
+      ignored: ['**/cypress/downloads/**', '**/cypress/screenshots/**', '**/cypress/videos/**'],
+    },
+  },
   define: {
     __WG_RELEASE__: JSON.stringify(releaseRevision()),
   },

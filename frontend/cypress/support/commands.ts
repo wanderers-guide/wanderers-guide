@@ -1,4 +1,5 @@
 /// <reference types="cypress" />
+import { captureClientDiagnostics } from './client-failure';
 // ***********************************************
 // This example commands.ts shows you how to
 // create various custom commands and overwrite
@@ -23,12 +24,45 @@
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 //
 // -- This is a parent command --
-Cypress.Commands.add('login', (email: string, password: string) => {
+let loginSequence: number = 0;
+
+Cypress.Commands.add('login', (email?: string, password?: string) => {
+  if (email === undefined || password === undefined) {
+    return cy.env(['TEST_EMAIL', 'TEST_PASSWORD']).then(({ TEST_EMAIL, TEST_PASSWORD }) => {
+      if (typeof TEST_EMAIL !== 'string' || typeof TEST_PASSWORD !== 'string')
+        throw new Error('UI sign-in requires the owned test credentials');
+      return cy.login(TEST_EMAIL, TEST_PASSWORD);
+    });
+  }
+  const readyAlias: string = `loginCharactersReady${++loginSequence}`;
+  const authAlias: string = `${readyAlias}Auth`;
+  const diagnostics: string[] = [];
+  cy.on('window:before:load', (win) => captureClientDiagnostics(win, diagnostics));
+  cy.on('fail', (error) => {
+    error.message += `\nBrowser diagnostics: ${JSON.stringify(diagnostics)}`;
+    throw error;
+  });
+  cy.intercept({ method: 'POST', pathname: '/auth/v1/token', query: { grant_type: 'password' } }).as(authAlias);
+  // The route changes before the authenticated page's reads settle. Await its
+  // initial list so subsequent actions start after the authenticated page is ready.
+  cy.intercept('POST', '**/functions/v1/find-character', (request) => {
+    if (request.body.user_id) request.alias = readyAlias;
+  });
   cy.visit('/login?redirect=characters');
   cy.get('input[name="email"]:visible').type(email);
   cy.get('input[name="password"]:visible').type(password, { log: false });
   cy.contains('button', 'Sign in with Email').click();
+  // Authentication can still be in flight when the route check starts. Require
+  // the real response first; rejected sign-ins must fail with their status/code.
+  cy.wait(`@${authAlias}`, { requestTimeout: 10000, responseTimeout: 30000 }).then(({ response }) => {
+    const code: unknown = response?.body?.error_code ?? response?.body?.code;
+    const category: string = typeof code === 'string' && /^[a-z_]{1,64}$/.test(code) ? code : 'none';
+    expect(response?.statusCode, `UI sign-in HTTP status; code=${category}`).to.eq(200);
+  });
   cy.location('pathname', { timeout: 10000 }).should('eq', '/characters');
+  cy.wait(`@${readyAlias}`, { requestTimeout: 30000, responseTimeout: 30000 })
+    .its('response.body.status')
+    .should('eq', 'success');
 });
 
 Cypress.Commands.add('buildABC', (ancestry: string, background: string, playerClass: string) => {
@@ -104,7 +138,7 @@ declare global {
        * @param email 
        * @param password 
        */
-      login(email: string, password: string): Chainable<Element>;
+      login(email?: string, password?: string): Chainable<Element>;
       /**
        * Selects the ancestry, background and class in the character builder
        * @param ancestry 

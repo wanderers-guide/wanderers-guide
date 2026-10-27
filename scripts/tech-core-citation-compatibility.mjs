@@ -292,6 +292,14 @@ export function prepare(repository, proposalPath) {
   const rustRequirement = originalRequirements[rustUpgrade];
   assert.deepEqual(rustRequirement, {check:'treasure-vault-terminal-status.sql',order:'before-functions'});
   delete originalRequirements[rustUpgrade];
+  const curatorUpgrade = '20261026010000_curator_release_compatibility.sql';
+  const curatorRequirement = originalRequirements[curatorUpgrade];
+  assert.deepEqual(curatorRequirement, {check:'treasure-vault-terminal-status.sql',order:'before-functions'});
+  delete originalRequirements[curatorUpgrade];
+  const mineUpgrade = '20261026000000_mine_mod_rules.sql';
+  const mineRequirement = originalRequirements[mineUpgrade];
+  assert.deepEqual(mineRequirement, {check:'mine-mod-rules.sql',order:'before-functions'});
+  delete originalRequirements[mineUpgrade];
   for (const [migration, original] of Object.entries(originalCheckPaths)) {
     assert(
       [
@@ -309,6 +317,8 @@ export function prepare(repository, proposalPath) {
     "Only the three checked registration paths may differ",
   );
   originalRequirements[rustUpgrade] = rustRequirement;
+  originalRequirements[mineUpgrade] = mineRequirement;
+  originalRequirements[curatorUpgrade] = curatorRequirement;
   let suppliedRows;
   if (proposalPath) {
     const proposalBytes = fs.readFileSync(proposalPath);
@@ -379,10 +389,10 @@ export function prepare(repository, proposalPath) {
     requirements[migration].check = check;
     return { migration, before, after: requirements[migration] };
   });
-  assert.equal(Object.keys(requirements).length, 109);
+  assert.equal(Object.keys(requirements).length, 111);
   assert.equal(
     new Set(Object.values(requirements).map((entry) => entry.check)).size,
-    70,
+    71,
   );
   if (!proposalPath) {
     assert.equal(

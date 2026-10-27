@@ -369,10 +369,15 @@ export async function importFromFTC(d: FTC) {
   }
 
   // Create the character
-  return await makeRequest<Character>('create-character', {
-    ...character,
-    id: undefined, // remove ID so it creates a new character
-  });
+  return await makeRequest<Character>(
+    'create-character',
+    {
+      ...character,
+      id: undefined, // remove ID so it creates a new character
+    },
+    true,
+    { throwOnFailure: true }
+  );
 }
 
 function findMatchingOption(selections: { name: string; level: number }[], options: ObjectWithUUID[], level: number) {

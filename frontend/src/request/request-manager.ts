@@ -134,7 +134,10 @@ export async function makeRequest<T = Record<string, any>>(
     if (options?.throwOnFailure) throw new Error(`Request failed: ${type}`);
     return null;
   };
-  if (options?.expectedActorId && requestSession?.user.id !== options.expectedActorId) return failure();
+  if (options?.expectedActorId && requestSession?.user.id !== options.expectedActorId) {
+    console.error(`Request actor mismatch before ${type}: ${requestSession ? 'different account' : 'no session'}`);
+    return failure();
+  }
 
   while (true) {
     const timeout =

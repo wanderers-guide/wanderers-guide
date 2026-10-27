@@ -18,6 +18,7 @@ for (const outcome of ['success', 'null', 'rejection']) {
       'setLoadingCreateCampaign',
       'setLoadingCreateZeroCampaign',
       'console',
+      'showNotification',
       `return async () => {${body}};`
     )(
       async () => {
@@ -32,7 +33,8 @@ for (const outcome of ['success', 'null', 'rejection']) {
       (value) => {
         loading.empty = value;
       },
-      { error: (...args) => errors.push(args) }
+      { error: (...args) => errors.push(args) },
+      () => {}
     );
     await handler();
     assert.deepEqual(loading, { header: false, empty: false });

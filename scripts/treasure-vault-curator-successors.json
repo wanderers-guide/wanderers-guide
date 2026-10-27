@@ -1,0 +1,240 @@
+[
+  {
+    "table": "ability_block",
+    "id": 40547,
+    "before": {
+      "id": 40547,
+      "cost": "",
+      "name": "Scent",
+      "type": "feat",
+      "uuid": "4731186266480737",
+      "level": 1,
+      "access": "",
+      "rarity": "COMMON",
+      "traits": [
+        4265,
+        3843
+      ],
+      "actions": null,
+      "special": "",
+      "trigger": "",
+      "version": null,
+      "frequency": "",
+      "meta_data": {
+        "source": {
+          "url": "https://2e.aonprd.com/Familiars.aspx?ID=147",
+          "book": "Player Core",
+          "page": "259"
+        }
+      },
+      "created_at": "2025-03-26T15:31:24.185603+00:00",
+      "operations": [
+        {
+          "id": "de5c9529-a9f3-4b8d-aaeb-bb92e9e4e730",
+          "data": {
+            "type": "sense",
+            "abilityBlockId": 20773
+          },
+          "type": "giveAbilityBlock"
+        }
+      ],
+      "description": "Your pet can use scent as an imprecise sense within 30 feet.",
+      "availability": null,
+      "requirements": "",
+      "prerequisites": [],
+      "content_source_id": 1
+    },
+    "after": {
+      "id": 40547,
+      "cost": "",
+      "name": "Scent",
+      "type": "feat",
+      "uuid": "4731186266480737",
+      "level": 1,
+      "access": "",
+      "rarity": "COMMON",
+      "traits": [
+        4265,
+        3843
+      ],
+      "actions": null,
+      "special": "",
+      "trigger": "",
+      "version": null,
+      "frequency": "",
+      "meta_data": {
+        "source": {
+          "url": "https://2e.aonprd.com/Familiars.aspx?ID=147",
+          "book": "Player Core",
+          "page": "259"
+        }
+      },
+      "created_at": "2025-03-26T15:31:24.185603+00:00",
+      "operations": [
+        {
+          "id": "de5c9529-a9f3-4b8d-aaeb-bb92e9e4e730",
+          "data": {
+            "type": "sense",
+            "abilityBlockId": 20773
+          },
+          "type": "giveAbilityBlock"
+        }
+      ],
+      "description": "Your pet can use [scent](link_sense_20773) as an imprecise sense within 30 feet.",
+      "availability": null,
+      "requirements": "",
+      "prerequisites": [],
+      "content_source_id": 1
+    },
+    "diff": {
+      "description": {
+        "before": "Your pet can use scent as an imprecise sense within 30 feet.",
+        "after": "Your pet can use [scent](link_sense_20773) as an imprecise sense within 30 feet."
+      }
+    }
+  },
+  {
+    "table": "spell",
+    "id": 4603,
+    "before": {
+      "id": 4603,
+      "area": null,
+      "cast": "TWO-ACTIONS",
+      "cost": "",
+      "name": "Enthrall",
+      "rank": 3,
+      "uuid": "8430406010494590",
+      "range": "120 feet",
+      "rarity": "COMMON",
+      "traits": [
+        1469,
+        1432,
+        1486,
+        1433
+      ],
+      "defense": null,
+      "targets": "all creatures in range",
+      "trigger": null,
+      "version": "1.0",
+      "duration": "",
+      "meta_data": {
+        "damage": [],
+        "source": {
+          "url": "https://2e.aonprd.com/Spells.aspx?ID=1516",
+          "book": "Player Core",
+          "page": "329"
+        },
+        "foundry": {
+          "rules": [],
+          "is_focus": false
+        }
+      },
+      "created_at": "2024-03-23T20:33:00.120161+00:00",
+      "heightened": {
+        "data": {},
+        "text": []
+      },
+      "traditions": [
+        "arcane",
+        "occult"
+      ],
+      "description": "Your words fascinate your targets. You speak or sing without interruption throughout the casting and duration. Targets who notice your speech or song might give their undivided attention; each target must attempt a Will save. The GM might grant a circumstance bonus (to a maximum of +4) if the target is of an opposing religion, ancestry, or political leaning, or is otherwise unlikely to agree with what you're saying.\n\nEach creature that comes within range has to attempt a save when you [Sustain the spell](link_action_20948). If you're speaking, enthrall gains the [linguistic](link_trait_1458) trait.\n\n**Critical Success** The target is unaffected and notices that you tried to use magic.\n\n**Success** The target needn't pay attention but doesn't notice you tried to use magic (it might notice others are enthralled).\n\n**Failure** The target is fascinated with you. It can attempt another Will save if it witnesses actions or speech with which it disagrees. If it succeeds, it's no longer fascinated and is temporarily immune for 1 hour. If the target is subject to a hostile act, or if another creature succeeds at a Diplomacy or Intimidation check against it, the fascination ends immediately.\n\n**Critical Failure** As failure, but the target can't attempt a save to end the fascination if it disagrees with you.",
+      "availability": null,
+      "requirements": null,
+      "content_source_id": 3
+    },
+    "after": {
+      "id": 4603,
+      "area": null,
+      "cast": "TWO-ACTIONS",
+      "cost": "",
+      "name": "Enthrall",
+      "rank": 3,
+      "uuid": "4738149853371241",
+      "range": "120 feet",
+      "rarity": "COMMON",
+      "traits": [
+        1469,
+        1432,
+        1486,
+        1433
+      ],
+      "defense": "Will",
+      "targets": "all creatures in range",
+      "trigger": null,
+      "version": "1.0",
+      "duration": "sustained",
+      "meta_data": {
+        "focus": false,
+        "damage": [],
+        "source": {
+          "url": "https://2e.aonprd.com/Spells.aspx?ID=1516",
+          "book": "Player Core",
+          "page": "329"
+        },
+        "foundry": {
+          "rules": [],
+          "is_focus": false
+        }
+      },
+      "created_at": "2024-03-23T20:33:00.120161+00:00",
+      "heightened": {
+        "data": {},
+        "text": []
+      },
+      "traditions": [
+        "arcane",
+        "occult"
+      ],
+      "description": "Your words fascinate your targets. You speak or sing without interruption throughout the casting and duration. Targets who notice your speech or song might give their undivided attention; each target must attempt a Will save. The GM might grant a circumstance bonus (to a maximum of +4) if the target is of an opposing religion, ancestry, or political leaning, or is otherwise unlikely to agree with what you're saying.\n\nEach creature that comes within range has to attempt a save when you [Sustain the spell](link_action_20948). If you're speaking, _enthrall_ gains the [linguistic](link_trait_1458) trait.\n\n**Critical Success** The target is unaffected and notices that you tried to use magic.\n\n**Success** The target needn't pay attention but doesn't notice you tried to use magic (it might notice others are enthralled).\n\n**Failure** The target is fascinated with you. It can attempt another Will save if it witnesses actions or speech with which it disagrees. If it succeeds, it's no longer fascinated and is temporarily immune for 1 hour. If the target is subject to a hostile act, or if another creature succeeds at a Diplomacy or Intimidation check against it, the fascination ends immediately.\n\n**Critical Failure** As failure, but the target can't attempt a save to end the fascination if it disagrees with you.",
+      "availability": null,
+      "requirements": null,
+      "content_source_id": 3
+    },
+    "diff": {
+      "description": {
+        "before": "Your words fascinate your targets. You speak or sing without interruption throughout the casting and duration. Targets who notice your speech or song might give their undivided attention; each target must attempt a Will save. The GM might grant a circumstance bonus (to a maximum of +4) if the target is of an opposing religion, ancestry, or political leaning, or is otherwise unlikely to agree with what you're saying.\n\nEach creature that comes within range has to attempt a save when you [Sustain the spell](link_action_20948). If you're speaking, enthrall gains the [linguistic](link_trait_1458) trait.\n\n**Critical Success** The target is unaffected and notices that you tried to use magic.\n\n**Success** The target needn't pay attention but doesn't notice you tried to use magic (it might notice others are enthralled).\n\n**Failure** The target is fascinated with you. It can attempt another Will save if it witnesses actions or speech with which it disagrees. If it succeeds, it's no longer fascinated and is temporarily immune for 1 hour. If the target is subject to a hostile act, or if another creature succeeds at a Diplomacy or Intimidation check against it, the fascination ends immediately.\n\n**Critical Failure** As failure, but the target can't attempt a save to end the fascination if it disagrees with you.",
+        "after": "Your words fascinate your targets. You speak or sing without interruption throughout the casting and duration. Targets who notice your speech or song might give their undivided attention; each target must attempt a Will save. The GM might grant a circumstance bonus (to a maximum of +4) if the target is of an opposing religion, ancestry, or political leaning, or is otherwise unlikely to agree with what you're saying.\n\nEach creature that comes within range has to attempt a save when you [Sustain the spell](link_action_20948). If you're speaking, _enthrall_ gains the [linguistic](link_trait_1458) trait.\n\n**Critical Success** The target is unaffected and notices that you tried to use magic.\n\n**Success** The target needn't pay attention but doesn't notice you tried to use magic (it might notice others are enthralled).\n\n**Failure** The target is fascinated with you. It can attempt another Will save if it witnesses actions or speech with which it disagrees. If it succeeds, it's no longer fascinated and is temporarily immune for 1 hour. If the target is subject to a hostile act, or if another creature succeeds at a Diplomacy or Intimidation check against it, the fascination ends immediately.\n\n**Critical Failure** As failure, but the target can't attempt a save to end the fascination if it disagrees with you."
+      },
+      "defense": {
+        "before": null,
+        "after": "Will"
+      },
+      "uuid": {
+        "before": "8430406010494590",
+        "after": "4738149853371241"
+      },
+      "meta_data": {
+        "before": {
+          "damage": [],
+          "source": {
+            "url": "https://2e.aonprd.com/Spells.aspx?ID=1516",
+            "book": "Player Core",
+            "page": "329"
+          },
+          "foundry": {
+            "rules": [],
+            "is_focus": false
+          }
+        },
+        "after": {
+          "focus": false,
+          "damage": [],
+          "source": {
+            "url": "https://2e.aonprd.com/Spells.aspx?ID=1516",
+            "book": "Player Core",
+            "page": "329"
+          },
+          "foundry": {
+            "rules": [],
+            "is_focus": false
+          }
+        }
+      },
+      "duration": {
+        "before": "",
+        "after": "sustained"
+      }
+    }
+  }
+]

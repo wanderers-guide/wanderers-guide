@@ -13,16 +13,16 @@ export default async function importFromGUIDECHAR(file: File) {
     loading: true,
   });
 
-  const contents = await getFileContents(file);
   let character = null;
+  let fileValidated = false;
   try {
+    const contents = await getFileContents(file);
     const obj = JSON.parse(contents);
     const ftc = convertGUIDECHARToFTC(obj);
-    console.log('Converted FTC:', ftc);
-    const character = await importFromFTC(ftc);
+    fileValidated = true;
+    character = await importFromFTC(ftc);
 
     if (character) {
-      hideNotification(`importing-${file.name}`);
       showNotification({
         title: 'Success',
         message: `Imported "${character.name}"`,
@@ -30,18 +30,18 @@ export default async function importFromGUIDECHAR(file: File) {
         autoClose: 3000,
       });
     } else {
-      throw new Error();
+      throw new Error('The character could not be imported. Please try again.');
     }
   } catch (e) {
-    console.log(e);
-    hideNotification(`importing-${file.name}`);
     showNotification({
       title: 'Import failed',
-      message: 'Invalid GUIDECHAR file',
+      message: fileValidated && e instanceof Error ? e.message : 'Invalid GUIDECHAR file',
       color: 'red',
       icon: null,
       autoClose: false,
     });
+  } finally {
+    hideNotification(`importing-${file.name}`);
   }
   return character;
 }

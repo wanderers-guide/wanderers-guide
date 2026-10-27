@@ -158,35 +158,37 @@ describe('Finite Treasure Vault catalog reference witnesses', { testIsolation: t
   let authorization: string;
 
   /** Use the owned harness's actual public anonymous credential; observe without replacing requests. */
-  beforeEach(() => {
-    const key: unknown = Cypress.env('publicAnonKey');
-    if (typeof key !== 'string' || key.length === 0)
-      throw new Error('The owned harness must provide its actual public anonymous key');
-    const parts: string[] = key.split('.');
-    expect(parts.length, 'actual public JWT component count').to.eq(3);
-    const payload: unknown = JSON.parse(Cypress.Buffer.from(parts[1], 'base64').toString('utf8'));
-    z.object({ role: z.literal('anon') }).parse(payload);
-    authorization = `Bearer ${key}`;
-    const functionsUrl: string = String(Cypress.env('functions_url'));
-    expect(new URL(functionsUrl).pathname).to.eq('/functions/v1');
-    cy.intercept(`${functionsUrl}/**`, (request) => {
-      if (request.method === 'OPTIONS') return request.continue();
-      const endpoint: string = new URL(request.url).pathname.split('/').pop() ?? '';
-      expect(request.method, 'catalog-only API method').to.eq('POST');
-      expect(readEndpoints.has(endpoint), `catalog-only endpoint ${endpoint}`).to.eq(true);
-      const header: unknown = request.headers.authorization;
-      if (typeof header !== 'string' || header !== authorization)
-        throw new Error('An App read did not use the owned public anonymous credential');
-      request.continue();
-    });
-    const origin: string = new URL(functionsUrl).origin;
-    for (const path of ['auth/v1', 'rest/v1']) {
-      cy.intercept(`${origin}/${path}/**`, (request) => {
-        expect(['GET', 'HEAD', 'OPTIONS'].includes(request.method), 'no Auth/catalog/account writes').to.eq(true);
+  beforeEach(() =>
+    cy.env(['publicAnonKey']).then(({ publicAnonKey }) => {
+      const key: unknown = publicAnonKey;
+      if (typeof key !== 'string' || key.length === 0)
+        throw new Error('The owned harness must provide its actual public anonymous key');
+      const parts: string[] = key.split('.');
+      expect(parts.length, 'actual public JWT component count').to.eq(3);
+      const payload: unknown = JSON.parse(Cypress.Buffer.from(parts[1], 'base64').toString('utf8'));
+      z.object({ role: z.literal('anon') }).parse(payload);
+      authorization = `Bearer ${key}`;
+      const functionsUrl: string = String(Cypress.expose('functions_url'));
+      expect(new URL(functionsUrl).pathname).to.eq('/functions/v1');
+      cy.intercept(`${functionsUrl}/**`, (request) => {
+        if (request.method === 'OPTIONS') return request.continue();
+        const endpoint: string = new URL(request.url).pathname.split('/').pop() ?? '';
+        expect(request.method, 'catalog-only API method').to.eq('POST');
+        expect(readEndpoints.has(endpoint), `catalog-only endpoint ${endpoint}`).to.eq(true);
+        const header: unknown = request.headers.authorization;
+        if (typeof header !== 'string' || header !== authorization)
+          throw new Error('An App read did not use the owned public anonymous credential');
         request.continue();
       });
-    }
-  });
+      const origin: string = new URL(functionsUrl).origin;
+      for (const path of ['auth/v1', 'rest/v1']) {
+        cy.intercept(`${origin}/${path}/**`, (request) => {
+          expect(['GET', 'HEAD', 'OPTIONS'].includes(request.method), 'no Auth/catalog/account writes').to.eq(true);
+          request.continue();
+        });
+      }
+    })
+  );
 
   /** Schema-parse real public reads; cy.request does not fake or inject application responses. */
   const readRows = <T>(endpoint: string, body: Record<string, unknown>, schema: z.ZodType<T>): Cypress.Chainable<T[]> =>
@@ -195,7 +197,7 @@ describe('Finite Treasure Vault catalog reference witnesses', { testIsolation: t
         if (!readEndpoints.has(endpoint)) throw new Error('Only the reviewed public read endpoints are permitted');
         return cy.request({
           method: 'POST',
-          url: `${Cypress.env('functions_url')}/${endpoint}`,
+          url: `${Cypress.expose('functions_url')}/${endpoint}`,
           headers: { Authorization: authorization },
           body,
           log: false,

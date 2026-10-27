@@ -388,7 +388,14 @@ export default function EncountersPanel(props: {
     return (
       <Tabs orientation='vertical' value={activeTab} onChange={setActiveTab}>
         <Tabs.List>
-          <ScrollArea h={props.panelHeight - 100} w={210} scrollbars='y'>
+          <ScrollArea
+            h={props.panelHeight - 100}
+            w={210}
+            scrollbars='y'
+            type='auto'
+            offsetScrollbars='y'
+            viewportProps={{ tabIndex: 0, 'aria-label': 'Encounters' }}
+          >
             {encounters.map((encounter, index) => (
               <Tabs.Tab
                 key={index}
