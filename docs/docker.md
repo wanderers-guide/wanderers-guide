@@ -69,6 +69,12 @@ installs the signup trigger, and applies the migrations. Starting Compose alone
 does not install the project tables or content. Initialize a fresh database before
 registering an account or creating characters.
 
+The shared `data/filter-pg-dump.sh` removes the PG17-only zero-valued
+`transaction_timeout` setting and unsupported client guards when restoring into the
+existing PG15 container. The schema restore retains the existing trigger filter;
+registered migrations still install each trigger with its function. Portable exported
+artifacts retain the complete schema and client guards.
+
 The two Tech Core spell imports first verify already imported batches with their
 complete registered read-only compatibility checks. Exact success preserves the
 current batch; otherwise the original migration and its complete post-import

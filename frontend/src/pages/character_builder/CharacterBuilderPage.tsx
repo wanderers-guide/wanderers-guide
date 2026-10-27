@@ -1,19 +1,15 @@
+import { useBuilderCharacter } from '@utils/use-builder-character';
 import BlurBox from '@common/BlurBox';
 import { glassStyle } from '@utils/colors';
 import { ActionIcon, Box, Center, LoadingOverlay, ScrollArea, Stack, Stepper, Text, rem } from '@mantine/core';
-import { makeRequest } from '@requests/request-manager';
 import { IconArrowLeft, IconArrowRight, IconHammer, IconHome, IconUser } from '@tabler/icons-react';
-import { useQuery } from '@tanstack/react-query';
-import { Character } from '@schemas/content';
 import { isPlayable } from '@utils/character';
 import { setPageTitle } from '@utils/document-change';
 import { isCharacterBuilderMobile } from '@utils/screen-sizes';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLoaderData, useNavigate } from 'react-router-dom';
 import CharBuilderCreation from './CharBuilderCreation';
 import CharBuilderHome from './CharBuilderHome';
-import { useAtomValue } from 'jotai';
-import { characterState } from '@atoms/characterAtoms';
 import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
 
@@ -45,22 +41,9 @@ export function Component() {
   const stepIconStyle = { width: rem(18), height: rem(18) };
   const pageHeight = 550;
 
-  const globalCharacter = useAtomValue(characterState);
-  const { data, isLoading } = useQuery({
-    queryKey: [`get-character-init-builder-${characterId}`, { characterId }],
-    queryFn: async () => {
-      return await makeRequest<Character>('find-character', {
-        id: parseInt(characterId),
-      });
-    },
-  });
-  const character = useMemo(() => {
-    if (globalCharacter && globalCharacter.id === parseInt(characterId)) {
-      return globalCharacter;
-    } else {
-      return data ?? null;
-    }
-  }, [data, globalCharacter]);
+  const { controller, content, calculationReady } = useBuilderCharacter(parseInt(characterId), active === 1);
+  const { character, isLoaded } = controller;
+  const isLoading = !isLoaded;
 
   return (
     <Center>
@@ -129,7 +112,7 @@ export function Component() {
               >
                 <Box mih={pageHeight} px='sm'>
                   {active === 0 && character && !isLoading ? (
-                    <CharBuilderHome characterId={character.id} pageHeight={pageHeight} />
+                    <CharBuilderHome characterId={character.id} pageHeight={pageHeight} controller={controller} />
                   ) : (
                     <LoadingOverlay
                       visible={isLoading}
@@ -148,7 +131,13 @@ export function Component() {
               >
                 <Box mih={pageHeight}>
                   {active === 1 && character && !isLoading ? (
-                    <CharBuilderCreation characterId={character.id} pageHeight={pageHeight} />
+                    <CharBuilderCreation
+                      characterId={character.id}
+                      pageHeight={pageHeight}
+                      controller={controller}
+                      content={content}
+                      calculationReady={calculationReady}
+                    />
                   ) : (
                     <LoadingOverlay
                       visible={isLoading}

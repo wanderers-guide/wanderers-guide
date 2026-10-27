@@ -83,6 +83,8 @@ export default function useCharacter(
   setCharacter: SetterOrUpdater<Character | null>;
   //
   isLoading: boolean;
+  isLoaded: boolean;
+  requiresCalculation: boolean;
   results: OperationCharacterResultPackage | null;
   saveState: CharacterSaveState;
   draftStored: boolean;
@@ -402,9 +404,10 @@ export default function useCharacter(
       },
       { signal: controller.signal }
     )
-      .then((results) => {
+      .then(async (results) => {
         if (controller.signal.aborted) return;
-        handleOperationResults(results, controller.signal);
+        await handleOperationResults(results, controller.signal);
+        if (controller.signal.aborted) return;
         setCalculationFailed(false);
         setCalculationError(null);
         retriedOperationsHash.current = null;
@@ -444,7 +447,7 @@ export default function useCharacter(
     contentSourcesMatch,
   ]);
 
-  const handleOperationResults = (results: OperationCharacterResultPackage, signal: AbortSignal) => {
+  const handleOperationResults = async (results: OperationCharacterResultPackage, signal: AbortSignal) => {
     if (options.type !== 'EXECUTE_OPS') return;
     if (!debouncedCharacter) return;
     if (signal.aborted) return;
@@ -507,8 +510,9 @@ export default function useCharacter(
       return normalized;
     });
 
-    // Save calculated stats
-    saveCalculatedStats('CHARACTER', debouncedCharacter, convertToSetEntity(commitCharacter));
+    // Keep persistence blocked until delayed derived stats have joined this state.
+    await saveCalculatedStats('CHARACTER', debouncedCharacter, convertToSetEntity(commitCharacter));
+    if (signal.aborted) return;
 
     setOperationResults(results);
 
@@ -944,6 +948,8 @@ export default function useCharacter(
     character,
     setCharacter,
     isLoading: !isFinished && !calculationError && !loadError,
+    isLoaded: hasLoadedCharacter,
+    requiresCalculation: needsCalculationRef.current,
     saveState,
     draftStored,
     retrySave: () => retrySaveRef.current(),

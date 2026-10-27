@@ -87,10 +87,14 @@ import { ImageOption } from '@schemas/index';
 import { cloneDeep, isEqual, uniq } from 'lodash-es';
 import BlurBox from '@common/BlurBox';
 import { DisplayIcon } from '@common/IconDisplay';
-import useCharacter from '@utils/use-character';
+import type useCharacter from '@utils/use-character';
 import { resolveThemeColor } from '@utils/theme-color';
 
-export default function CharBuilderHome(props: { characterId: number; pageHeight: number }) {
+export default function CharBuilderHome(props: {
+  characterId: number;
+  pageHeight: number;
+  controller: ReturnType<typeof useCharacter>;
+}) {
   const theme = useMantineTheme();
 
   const { ref, height } = useElementSize();
@@ -100,9 +104,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
   const queryClient = useQueryClient();
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const { character, setCharacter, isLoading, loadError } = useCharacter(props.characterId, {
-    type: 'SIMPLE',
-  });
+  const { character, setCharacter, isLoading, loadError } = props.controller;
 
   const [loadingGenerateName, setLoadingGenerateName] = useState(false);
   const [displayNameInput, refreshNameInput] = useRefresh();

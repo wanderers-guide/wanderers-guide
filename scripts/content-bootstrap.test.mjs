@@ -49,6 +49,10 @@ async function bootstrap(mode) {
       join(root, "data/create-db-docker.sh"),
       join(directory, "data/create-db-docker.sh"),
     );
+    await copyFile(
+      join(root, "data/filter-pg-dump.sh"),
+      join(directory, "data/filter-pg-dump.sh"),
+    );
     for (const path of ["schema.sql", "data.sql", "auth-trigger.sql"])
       await writeFile(join(directory, "data", path), "-- model input\n");
     await writeFile(
@@ -175,7 +179,11 @@ test("an absent batch uses the unchanged original migration and must then pass t
     ).length,
     5,
   );
-  assert.equal(calls.some(({sql}) => sql === originals[2]), false, 'The obsolete guard is replaced only by its complete registered successor check');
+  assert.equal(
+    calls.some(({ sql }) => sql === originals[2]),
+    false,
+    "The obsolete guard is replaced only by its complete registered successor check",
+  );
 });
 
 for (const mode of ["f", "after-error", "after-malformed"]) {

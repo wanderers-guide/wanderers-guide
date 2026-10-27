@@ -2,12 +2,17 @@ name: Refresh sanitized content snapshot
 
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Commit the verified sanitized snapshot
+        type: boolean
+        default: false
   schedule:
     # This reads production. Keep it independent of code pushes and migrations;
     # the sanitized snapshot supports local development, not production backups.
     # Tuesday 09:00 UTC avoids the Americas' evening peak. Measure provider I/O
     # during exports before deciding whether a replica is justified.
-    - cron: '0 9 * * 2'
+    - cron: "0 9 * * 2"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -43,24 +48,30 @@ jobs:
           sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
           wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
           sudo apt update
-          sudo apt install postgresql-client-16 locate -y
+          sudo apt install postgresql-client-17 locate -y
+          echo '/usr/lib/postgresql/17/bin' >> "$GITHUB_PATH"
       - name: Dump Database
         working-directory: ./data
         env:
           DB_URI: ${{ secrets.DB_URI }}
-          PGOPTIONS: '-c statement_timeout=60000 -c lock_timeout=5000'
+          PGOPTIONS: "-c statement_timeout=60000 -c lock_timeout=5000"
         run: ./ci-dump.sh "$DB_URI"
       # Creates a local copy of the data to work on
       - name: Restore local database
         working-directory: ./data
-        run: ./create-db.sh ${{ env.LOCAL_DB }}
+        run: ./create-db.sh "$LOCAL_DB" .scratch/schema-pre-data.sql
       - name: Remove user data
         working-directory: ./data
-        run: ./clear-user-data.sh ${{ env.LOCAL_DB }}
+        run: ./clear-user-data.sh "$LOCAL_DB"
       - name: Dump clean data
         working-directory: ./data
-        run: pg_dump --data-only --table="public.*" ${{ env.LOCAL_DB }} > data.sql
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X -q --single-transaction --set=ON_ERROR_STOP=1 --set=VERBOSITY=sqlstate --set=SHOW_CONTEXT=never -d "$LOCAL_DB" -f .scratch/schema-public-constraints.sql
+          pg_dump --data-only --table="public.*" "$LOCAL_DB" | ./filter-pg-dump.sh portable > data.sql
       - name: Commit
+        if: github.event_name == 'schedule' || inputs.publish
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: '[no ci] Update Schema'
+          commit_message: "[no ci] Update Schema"
