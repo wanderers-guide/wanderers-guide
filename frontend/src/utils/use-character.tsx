@@ -471,16 +471,18 @@ export default function useCharacter(
       setVariable('CHARACTER', 'STAMINA_VARIANT', true);
     }
 
-    // Add the extra items to the inventory from variables
-    addExtraItems('CHARACTER', options.data.content.items, debouncedCharacter, convertToSetEntity(commitCharacter));
-
-    // Check bulk limits
-    checkBulkLimit(
-      'CHARACTER',
-      debouncedCharacter,
-      convertToSetEntity(commitCharacter),
-      debouncedCharacter.options?.ignore_bulk_limit !== true
-    );
+    // Grants, removals and encumbrance can change calculation inputs. Keep the
+    // writer blocked until these delayed updates settle or invalidate this run.
+    await Promise.all([
+      addExtraItems('CHARACTER', options.data.content.items, debouncedCharacter, convertToSetEntity(commitCharacter)),
+      checkBulkLimit(
+        'CHARACTER',
+        debouncedCharacter,
+        convertToSetEntity(commitCharacter),
+        debouncedCharacter.options?.ignore_bulk_limit !== true
+      ),
+    ]);
+    if (signal.aborted) return;
 
     // Apply armor/shield penalties
     applyEquipmentPenalties('CHARACTER', debouncedCharacter);

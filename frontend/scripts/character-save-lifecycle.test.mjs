@@ -45,6 +45,7 @@ class HookHost {
     this.contentReads = [];
     this.builderContent = { defaultSources: { PAGE: [3] }, items: [] };
     this.addExtraItems = () => {};
+    this.checkBulkLimit = () => {};
     this.slots = [];
     this.cursor = 0;
     this.effects = [];
@@ -209,6 +210,7 @@ globalThis.__saveHooks = {
     return options.enabled ? harness.builderContent : undefined;
   },
   addExtraItems: (...args) => harness.addExtraItems(...args),
+  checkBulkLimit: (...args) => harness.checkBulkLimit(...args),
   confirmHealth: (...args) => harness.confirmHealth(...args),
   saveCalculatedStats: (...args) => harness.saveCalculatedStats(...args),
   debounce: (value) => harness.debouncedCharacter ?? value,
@@ -265,8 +267,7 @@ const boundaries = {
   './variable-utils': 'export const labelToVariable = value => value;',
   '@utils/objects':
     'export const getDeepDiff = (a,b) => JSON.stringify(a) === JSON.stringify(b) ? {} : { changed: true };',
-  '@items/inv-handlers':
-    'export const addExtraItems = globalThis.__saveHooks.addExtraItems; export const checkBulkLimit = () => {};',
+  '@items/inv-handlers': 'export const {addExtraItems,checkBulkLimit} = globalThis.__saveHooks;',
   '@variables/variable-helpers':
     'export const getFinalHealthValue = () => 10; export const getHealthValueParts = () => ({classHp: 6}); export const getFinalResolveValue = () => 0; export const getFinalStaminaValue = () => 0; export const isStaminaVariant = () => false;',
 };
@@ -2007,5 +2008,110 @@ test('a delayed Builder item grant still recalculates and persists after switchi
   assert.equal(writes.length, before + 1);
   assert.equal(writes.at(-1).body.name, 'Home with granted Fist');
   assert.deepEqual(writes.at(-1).body.inventory.items, [{ id: 'fist' }]);
+  harness.unmount();
+});
+
+for (const phase of ['inventory', 'bulk']) {
+  test(`Builder Home waits for ${phase} completion before the first save and hard reload`, async () => {
+    const calculation = deferred();
+    const completion = deferred();
+    let remote = {
+      ...row(),
+      inventory: { items: phase === 'inventory' ? [{ id: 'retired-grant' }] : [] },
+      meta_data: { given_item_ids: phase === 'inventory' ? [42] : [] },
+      details: { conditions: [] },
+    };
+    harness.builderMode = true;
+    harness.builderActive = true;
+    harness.saveCalculatedStats = actualSaveCalculatedStats;
+    harness.calculate = () => calculation.promise;
+    const finish = (character, update) => {
+      const finished =
+        phase === 'inventory'
+          ? character.inventory.items.length === 0
+          : character.details.conditions.some((condition) => condition.name === 'Encumbered');
+      if (finished) return;
+      return completion.promise.then(() =>
+        update((previous) =>
+          phase === 'inventory'
+            ? { ...previous, inventory: { items: [] }, meta_data: { ...previous.meta_data, given_item_ids: [] } }
+            : { ...previous, details: { ...previous.details, conditions: [{ name: 'Encumbered', value: 1 }] } }
+        )
+      );
+    };
+    if (phase === 'inventory') harness.addExtraItems = (_store, _items, character, update) => finish(character, update);
+    else harness.checkBulkLimit = (_store, character, update) => finish(character, update);
+    const request = async (type, body) => {
+      if (type === 'find-character') return structuredClone(remote);
+      remote = { ...remote, ...body, updated_at: 'version-2' };
+      return [structuredClone(remote)];
+    };
+    harness.request = request;
+    try {
+      harness.render();
+      await harness.flush();
+      harness.builderActive = false;
+      harness.render();
+      harness.edit({ name: 'Home with completed derived state' });
+      await harness.flush();
+      calculation.resolve({ complete: true });
+      await harness.flush();
+      await new Promise((resolve) => setTimeout(resolve, 120));
+      await harness.flush();
+      assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
+      assert.equal(getBufferedCharacterSave(1, 'owner').draft.requiresCalculation, true);
+      completion.resolve();
+      await harness.flush();
+      await new Promise((resolve) => setTimeout(resolve, 120));
+      await harness.flush();
+      const writes = harness.requests.filter(({ type }) => type === 'update-character');
+      assert.equal(writes.length, 1);
+      assert.equal(writes[0].body.name, 'Home with completed derived state');
+      assert.equal(writes[0].body.meta_data.calculated_stats.hp_max, 10);
+      if (phase === 'inventory') {
+        assert.deepEqual(writes[0].body.inventory.items, []);
+        assert.deepEqual(writes[0].body.meta_data.given_item_ids, []);
+      } else assert.equal(writes[0].body.details.conditions[0].name, 'Encumbered');
+      harness.unmount();
+      harness = new HookHost();
+      harness.builderMode = true;
+      harness.request = request;
+      harness.render();
+      await harness.flush();
+      assert.equal(harness.character.name, remote.name);
+      assert.deepEqual(harness.character.inventory, remote.inventory);
+      assert.deepEqual(harness.character.details.conditions, remote.details.conditions);
+      assert.ok(harness.contentReads.every((read) => read.enabled === false));
+    } finally {
+      completion.resolve();
+      harness.unmount();
+    }
+  });
+}
+
+test('an account change while derived inventory waits retires the old completion pipeline', async () => {
+  const calculation = deferred();
+  const inventory = deferred();
+  let statCommits = 0;
+  harness.options = {
+    type: 'EXECUTE_OPS',
+    data: { content: { items: [] }, context: 'CHARACTER-BUILDER', onFinishLoading() {} },
+  };
+  harness.addExtraItems = () => inventory.promise;
+  harness.saveCalculatedStats = () => statCommits++;
+  harness.calculate = () => calculation.promise;
+  harness.render();
+  await harness.flush();
+  calculation.resolve({ complete: true });
+  await harness.flush();
+  assert.equal(statCommits, 0);
+  harness.session = { user: { id: 'other' } };
+  harness.options = { type: 'SIMPLE' };
+  harness.render();
+  await harness.flush();
+  inventory.resolve();
+  await harness.flush();
+  assert.equal(statCommits, 0);
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
   harness.unmount();
 });

@@ -139,7 +139,26 @@ describe('October Discord regressions', () => {
     });
   it('recovers pending Builder math on Home and persists an immediate name edit before reload', () => {
     const writerId = '00000000-0000-4000-8000-000000000099';
-    let server = { ...structuredClone(character), updated_at: '2026-10-27T12:00:00.000Z' };
+    let server: typeof character = { ...structuredClone(character), updated_at: '2026-10-27T12:00:00.000Z' };
+    const retiredItem = fixtures.find(
+      ({ table, row }) =>
+        table === 'item' &&
+        row.id !== 9252 &&
+        !row.operations?.length &&
+        !row.meta_data?.container_default_items?.length
+    )!.row;
+    server.inventory.items = [
+      {
+        id: 'retired-operation-grant',
+        item: structuredClone(retiredItem),
+        is_formula: false,
+        is_equipped: false,
+        is_invested: false,
+        is_implanted: false,
+        container_contents: [],
+      },
+    ];
+    server.meta_data.given_item_ids = [retiredItem.id];
     const base = structuredClone(server);
     let writes = 0;
     let contentStarted = false;
@@ -203,6 +222,8 @@ describe('October Discord regressions', () => {
       expect(request.body.name).to.eq('Home name before calculation');
       expect(request.body.meta_data.calculated_stats.hp_max).to.be.a('number');
       expect(request.body.inventory.items.some((entry: any) => entry.item.id === 9252)).to.eq(true);
+      expect(request.body.inventory.items.some((entry: any) => entry.item.id === retiredItem.id)).to.eq(false);
+      expect(request.body.meta_data.given_item_ids).not.to.include(retiredItem.id);
     });
     cy.reload();
     cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should(

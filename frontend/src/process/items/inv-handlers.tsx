@@ -264,68 +264,63 @@ export const updateItemCharges = (
   };
 };
 
-export function checkBulkLimit(
+/** Resolve after the delayed bulk-derived condition update. */
+export async function checkBulkLimit(
   storeId: StoreID,
   entity: LivingEntity,
   setEntity: SetterOrUpdater<LivingEntity | null>,
   addEncumbered: boolean
-) {
-  setTimeout(() => {
-    if (!entity.inventory) return;
-    if (addEncumbered && Math.floor(getInvBulk(entity.inventory, storeId)) > getBulkLimit(storeId)) {
-      // Add encumbered condition
-      const newConditions = cloneDeep(entity.details?.conditions ?? []);
-      const encumbered = newConditions.find((c) => c.name === 'Encumbered');
-      if (!encumbered) {
-        newConditions.push(getConditionByName('Encumbered', 'Over Bulk Limit')!);
+): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  if (!entity.inventory) return;
+  if (addEncumbered && Math.floor(getInvBulk(entity.inventory, storeId)) > getBulkLimit(storeId)) {
+    // Add encumbered condition
+    const newConditions = cloneDeep(entity.details?.conditions ?? []);
+    const encumbered = newConditions.find((c) => c.name === 'Encumbered');
+    if (!encumbered) {
+      newConditions.push(getConditionByName('Encumbered', 'Over Bulk Limit')!);
 
-        // if (Math.floor(getInvBulk(character.inventory)) > getBulkLimitImmobile(storeId)) {
-        //   const immobilized = newConditions.find((c) => c.name === 'Immobilized');
-        //   if (!immobilized) {
-        //     newConditions.push(getConditionByName('Immobilized', 'Way Over Bulk Limit')!);
-        //   }
-        // }
-
-        setEntity((c) => {
-          if (!c) return c;
-          return {
-            ...c,
-            details: {
-              ...c.details,
-              conditions: newConditions,
-            },
-          };
-        });
-      }
-    } else {
-      // Remove encumbered condition
-      const newConditions = cloneDeep(entity.details?.conditions ?? []);
-      const encumbered = newConditions.find((c) => c.name === 'Encumbered' && c.source === 'Over Bulk Limit');
-      if (encumbered) {
-        newConditions.splice(newConditions.indexOf(encumbered), 1);
-        setEntity((c) => {
-          if (!c) return c;
-          return {
-            ...c,
-            details: {
-              ...c.details,
-              conditions: newConditions,
-            },
-          };
-        });
-      }
+      setEntity((c) => {
+        if (!c) return c;
+        return {
+          ...c,
+          details: {
+            ...c.details,
+            conditions: newConditions,
+          },
+        };
+      });
     }
-  }, 200);
+  } else {
+    // Remove encumbered condition
+    const newConditions = cloneDeep(entity.details?.conditions ?? []);
+    const encumbered = newConditions.find((c) => c.name === 'Encumbered' && c.source === 'Over Bulk Limit');
+    if (encumbered) {
+      newConditions.splice(newConditions.indexOf(encumbered), 1);
+      setEntity((c) => {
+        if (!c) return c;
+        return {
+          ...c,
+          details: {
+            ...c.details,
+            conditions: newConditions,
+          },
+        };
+      });
+    }
+  }
 }
 
-export function addExtraItems(
+/** Resolve only after both grants and removals have reached the entity setter. */
+export async function addExtraItems(
   storeId: StoreID,
   items: Item[],
   entity: LivingEntity,
   setEntity: SetterOrUpdater<LivingEntity | null>
-) {
+): Promise<void> {
   // Add extra items
-  setTimeout(async () => {
+  const additions = (async () => {
+    await new Promise((resolve) => setTimeout(resolve, 100));
     const extraItems: InventoryItem[] = [];
 
     let extraItemIds = getVariable<VariableListStr>(storeId, 'EXTRA_ITEM_IDS')?.value ?? [];
@@ -389,10 +384,11 @@ export function addExtraItems(
         },
       };
     });
-  }, 100);
+  })();
 
   // Remove extra items that are no longer in the list
-  setTimeout(() => {
+  const removals = (async () => {
+    await new Promise((resolve) => setTimeout(resolve, 200));
     if (!entity.inventory) return;
 
     const givenItemIds = entity.meta_data?.given_item_ids ?? [];
@@ -418,5 +414,6 @@ export function addExtraItems(
         },
       };
     });
-  }, 200);
+  })();
+  await Promise.all([additions, removals]);
 }

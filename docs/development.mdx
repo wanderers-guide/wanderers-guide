@@ -359,6 +359,9 @@ lifecycle tests hold calculations and delayed inventory grants across these tran
 then require one versioned save containing both the new name and complete derived data.
 Calculation completion also waits for the real delayed calculated-stat update, so
 the first full save cannot publish inputs before their derived stats are stored.
+It also waits for granted-item additions/removals and bulk-derived conditions.
+Changing those inputs invalidates the calculation before persistence can resume,
+including when Home is reloaded immediately after an old grant is removed.
 
 The Cypress `login` command awaits the actual successful Auth response before checking
 navigation and the authenticated character list. Rejected sign-ins report their HTTP
