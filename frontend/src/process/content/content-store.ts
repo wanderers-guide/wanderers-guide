@@ -676,37 +676,82 @@ export async function fetchContent<T = Record<string, any>>(
       const newData = data;
       let rawResult: T | T[] | null;
       if (type === 'ability-block' && (data.id === undefined || Array.isArray(data.id))) {
-        // A complete catalog can exceed the Edge worker's memory budget. Keep each
-        // response bounded and stage every page before publishing this logical fetch.
+        // Keep every response bounded. Large libraries use three disjoint source
+        // chains so cold loading does not serialize every network roundtrip.
         const pageSize = 1000;
-        const records: T[] = [];
-        let afterId: number | undefined;
-        while (true) {
-          const page = await makeRequest<T[]>(
-            FETCH_REQUEST_MAP[type],
-            { ...newData, page_size: pageSize, after_id: afterId },
-            false,
-            { ...requestOptions, throwOnFailure: true }
-          );
-          assertCurrentGeneration(generation);
-          if (!Array.isArray(page) || page.length > pageSize) {
-            throw new Error('Could not load ability-block content. Retry the request.');
-          }
-          for (const record of page) {
-            if (
-              !record ||
-              typeof record !== 'object' ||
-              !('id' in record) ||
-              typeof record.id !== 'number' ||
-              !Number.isSafeInteger(record.id) ||
-              (afterId !== undefined && record.id <= afterId)
-            ) {
-              throw new Error('Ability-block pagination did not advance. Retry the request.');
+        const sourceIds = newData.content_sources;
+        const splitSources =
+          Array.isArray(sourceIds) &&
+          sourceIds.length > 3 &&
+          Object.keys(newData).every((key) => key === 'content_sources');
+        const sourceGroups = splitSources
+          ? Array.from({ length: 3 }, (_, group) => sourceIds.filter((_, index) => index % 3 === group))
+          : [sourceIds];
+        const recordId = (record: T): number => {
+          if (
+            !record ||
+            typeof record !== 'object' ||
+            !('id' in record) ||
+            typeof record.id !== 'number' ||
+            !Number.isSafeInteger(record.id)
+          )
+            throw new Error('Ability-block pagination did not advance. Retry the request.');
+          return record.id;
+        };
+        let failed = false;
+        let failure: unknown;
+        // Drain outstanding requests before releasing this coalesced fetch, so
+        // a retry cannot overlap unfinished sibling chains and exceed the bound.
+        const groups = await Promise.all(
+          sourceGroups.map(async (contentSources) => {
+            try {
+              const records: T[] = [];
+              let afterId: number | undefined;
+              while (!failed) {
+                const page = await makeRequest<T[]>(
+                  FETCH_REQUEST_MAP[type],
+                  { ...newData, content_sources: contentSources, page_size: pageSize, after_id: afterId },
+                  false,
+                  { ...requestOptions, throwOnFailure: true }
+                );
+                assertCurrentGeneration(generation);
+                if (failed) return [];
+                if (!Array.isArray(page) || page.length > pageSize) {
+                  throw new Error('Could not load ability-block content. Retry the request.');
+                }
+                for (const record of page) {
+                  const id = recordId(record);
+                  if (afterId !== undefined && id <= afterId) {
+                    throw new Error('Ability-block pagination did not advance. Retry the request.');
+                  }
+                  if (
+                    splitSources &&
+                    (!record ||
+                      typeof record !== 'object' ||
+                      !('content_source_id' in record) ||
+                      typeof record.content_source_id !== 'number' ||
+                      !contentSources.includes(record.content_source_id))
+                  )
+                    throw new Error('Ability-block content did not match its requested sources. Retry the request.');
+                  afterId = id;
+                  records.push(record);
+                }
+                if (page.length < pageSize) return records;
+              }
+              return [];
+            } catch (error: unknown) {
+              if (!failed) failure = error;
+              failed = true;
+              return [];
             }
-            afterId = record.id;
-            records.push(record);
+          })
+        );
+        if (failed) throw failure;
+        const records = groups.flat().sort((left, right) => recordId(left) - recordId(right));
+        for (let index = 1; index < records.length; index++) {
+          if (recordId(records[index - 1]) === recordId(records[index])) {
+            throw new Error('Ability-block pagination returned a duplicate identity. Retry the request.');
           }
-          if (page.length < pageSize) break;
         }
         rawResult = records;
       } else {

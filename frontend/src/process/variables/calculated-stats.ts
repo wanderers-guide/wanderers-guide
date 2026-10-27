@@ -13,57 +13,58 @@ import {
 import { labelToVariable } from './variable-utils';
 import { getDeepDiff } from '@utils/objects';
 
-export function saveCalculatedStats(
+export async function saveCalculatedStats(
   id: StoreID,
   entity: LivingEntity,
   setEntity: SetterOrUpdater<LivingEntity | null>
-) {
-  setTimeout(() => {
-    const maxHealth = getFinalHealthValue(id);
-    // Stamina variant pools — both helpers return 0 when the variant isn't enabled.
-    const maxStamina = getFinalStaminaValue(id);
-    const maxResolve = getFinalResolveValue(id);
-    const ac = getFinalAcValue(id, getBestArmor(id, entity.inventory)?.item);
-    const finalProfs: Record<string, { total: number; type: ProficiencyType }> = {};
+): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  const maxHealth = getFinalHealthValue(id);
+  // Stamina variant pools — both helpers return 0 when the variant isn't enabled.
+  const maxStamina = getFinalStaminaValue(id);
+  const maxResolve = getFinalResolveValue(id);
+  const ac = getFinalAcValue(id, getBestArmor(id, entity.inventory)?.item);
+  const finalProfs: Record<string, { total: number; type: ProficiencyType }> = {};
 
-    // Get calculated proficiencies
-    for (const name of Object.keys(getVariables(id))) {
-      const variable = getVariable(id, name);
-      if (variable?.type !== 'prof') continue;
-      if (variable.name.includes('___')) continue;
+  // Get calculated proficiencies
+  for (const name of Object.keys(getVariables(id))) {
+    const variable = getVariable(id, name);
+    if (variable?.type !== 'prof') continue;
+    if (variable.name.includes('___')) continue;
 
-      const value = getFinalProfValue(id, name);
-      const type = variable.value.value;
+    const value = getFinalProfValue(id, name);
+    const type = variable.value.value;
 
-      finalProfs[name] = {
-        total: parseInt(value),
-        type: type,
-      };
-    }
-
-    const calcStats = {
-      hp_max: maxHealth,
-      stamina_max: maxStamina,
-      resolve_max: maxResolve,
-      ac: ac,
-      profs: finalProfs,
+    finalProfs[name] = {
+      total: parseInt(value),
+      type: type,
     };
+  }
 
-    if (Object.keys(getDeepDiff(calcStats, entity.meta_data?.calculated_stats ?? {})).length === 0) return;
+  const calcStats = {
+    hp_max: maxHealth,
+    stamina_max: maxStamina,
+    resolve_max: maxResolve,
+    ac: ac,
+    profs: finalProfs,
+  };
 
-    // Save the calculated stats
-    console.log('Saving calculated stats', calcStats);
-    setEntity((c) => {
-      if (!c) return c;
-      return {
-        ...c,
-        meta_data: {
-          ...c.meta_data,
-          calculated_stats: calcStats,
-        },
-      };
-    });
-  }, 100);
+  if (Object.keys(getDeepDiff(calcStats, entity.meta_data?.calculated_stats ?? {})).length === 0) {
+    return;
+  }
+
+  // Save the calculated stats
+  console.log('Saving calculated stats', calcStats);
+  setEntity((c) => {
+    if (!c) return c;
+    return {
+      ...c,
+      meta_data: {
+        ...c.meta_data,
+        calculated_stats: calcStats,
+      },
+    };
+  });
 }
 
 export function setCalculatedStatsInStore(id: StoreID, entity: LivingEntity) {

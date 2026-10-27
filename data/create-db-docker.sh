@@ -75,11 +75,11 @@ SQL
 #    the function) — which imposes the invariant that any trigger added to prod
 #    must come from a migration, or local/CI databases will silently lack it.
 echo "==> Loading schema.sql"
-sed -e '/^\\restrict /d' -e '/^\\unrestrict /d' -e '/^CREATE TRIGGER /d' "$SCRIPT_DIR/schema.sql" | run_psql_quiet
+"$SCRIPT_DIR/filter-pg-dump.sh" schema < "$SCRIPT_DIR/schema.sql" | run_psql_quiet
 
 # 5. Load data.
 echo "==> Loading data.sql (~45 MB, this may take a minute)"
-sed -e '/^\\restrict /d' -e '/^\\unrestrict /d' "$SCRIPT_DIR/data.sql" | run_psql_quiet
+"$SCRIPT_DIR/filter-pg-dump.sh" data < "$SCRIPT_DIR/data.sql" | run_psql_quiet
 
 # 6. Supabase services connect as anon/authenticated/service_role; they need
 #    USAGE on the schema and CRUD on its objects. RLS policies (defined in

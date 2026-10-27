@@ -240,6 +240,181 @@ test('content packages and cache respect failures, sources, actors and generatio
         assert.equal(state.requests.length, 2, 'the complete logical query is cached');
       }
     );
+    await t.test(
+      'large catalogs use at most three disjoint source chains and publish only the complete sorted result',
+      async (child) => {
+        preparePages(child);
+        const sources = [81000, 81001, 81002, 81003, 81004, 81005];
+        const rows = Array.from({ length: 3600 }, (_, index) => ({
+          ...abilityRows(1, index + 1)[0],
+          content_source_id: sources[index % sources.length],
+        }));
+        const first = deferred(),
+          second = deferred(),
+          firstStarted = deferred(),
+          secondStarted = deferred();
+        let active = 0,
+          maximum = 0,
+          firstCount = 0,
+          secondCount = 0;
+        state.request = async (type, body) => {
+          assert.equal(type, 'find-ability-block');
+          assert.equal(body.page_size, 1000);
+          active++;
+          maximum = Math.max(maximum, active);
+          try {
+            if (body.after_id === undefined) {
+              if (++firstCount === 3) firstStarted.resolve();
+              await first.promise;
+            } else {
+              if (++secondCount === 3) secondStarted.resolve();
+              await second.promise;
+            }
+            return rows
+              .filter(
+                (row) =>
+                  body.content_sources.includes(row.content_source_id) &&
+                  (body.after_id === undefined || row.id > body.after_id)
+              )
+              .slice(0, 1000);
+          } finally {
+            active--;
+          }
+        };
+        const one = store.fetchContentAll('ability-block', sources),
+          two = store.fetchContentAll('ability-block', sources);
+        await firstStarted.promise;
+        assert.equal(state.requests.length, 3, 'concurrent readers share the same bounded source chains');
+        const partitions = state.requests.map(([, body]) => body.content_sources);
+        assert.deepEqual(
+          partitions.flat().sort((a, b) => a - b),
+          sources
+        );
+        assert.equal(new Set(partitions.flat()).size, sources.length, 'a source belongs to exactly one chain');
+        assert.deepEqual(store.getCachedContent('ability-block'), []);
+        first.resolve();
+        await secondStarted.promise;
+        assert.deepEqual(
+          store.getCachedContent('ability-block'),
+          [],
+          'completed first pages are not a published catalog'
+        );
+        second.resolve();
+        for (const actual of await Promise.all([one, two]))
+          assert.deepEqual(
+            actual.map((row) => row.id),
+            rows.map((row) => row.id)
+          );
+        assert.equal(maximum, 3);
+        assert.equal(state.requests.length, 6, 'six requests complete in two controlled network waves');
+        assert.equal(store.getCachedContent('ability-block').length, 3600);
+      }
+    );
+    await t.test(
+      'a failed parallel source chain never publishes a partial library and can retry completely',
+      async (child) => {
+        preparePages(child);
+        const sources = [81000, 81001, 81002, 81003];
+        const rows = Array.from({ length: 1004 }, (_, index) => ({
+          ...abilityRows(1, index + 1)[0],
+          content_source_id: index < 1001 ? 81000 : sources[index - 1000],
+        }));
+        const response = (body) =>
+          rows
+            .filter(
+              (row) =>
+                body.content_sources.includes(row.content_source_id) &&
+                (body.after_id === undefined || row.id > body.after_id)
+            )
+            .slice(0, 1000);
+        state.request = async (_type, body) => (body.after_id !== undefined ? null : response(body));
+        await assert.rejects(store.fetchContentAll('ability-block', sources), /Could not load ability-block/);
+        assert.deepEqual(store.getCachedContent('ability-block'), []);
+        state.request = async (_type, body) => response(body);
+        assert.deepEqual(
+          (await store.fetchContentAll('ability-block', sources)).map((row) => row.id),
+          rows.map((row) => row.id)
+        );
+      }
+    );
+    await t.test('account changes cancel all parallel source chains before any page is stored', async (child) => {
+      preparePages(child);
+      const held = deferred(),
+        started = deferred();
+      let calls = 0;
+      state.request = async (_type, body) => {
+        if (++calls === 3) started.resolve();
+        await held.promise;
+        return [{ ...abilityRows(1, calls)[0], content_source_id: body.content_sources[0] }];
+      };
+      const request = store.fetchContentAll('ability-block', [81000, 81001, 81002, 81003]);
+      const rejected = assert.rejects(request, /Content changed/);
+      await started.promise;
+      store.setContentCacheActor('B');
+      held.resolve();
+      await rejected;
+      assert.deepEqual(store.getCachedContent('ability-block'), []);
+      assert.equal(calls, 3);
+    });
+    await t.test('a source partition rejects rows from outside its requested books', async (child) => {
+      preparePages(child);
+      state.request = async () => [{ ...abilityRows(1)[0], content_source_id: 999999 }];
+      await assert.rejects(
+        store.fetchContentAll('ability-block', [81000, 81001, 81002, 81003]),
+        /did not match its requested sources/
+      );
+      assert.deepEqual(store.getCachedContent('ability-block'), []);
+    });
+    await t.test(
+      'failed chains drain their siblings before a retry can start another three requests',
+      async (child) => {
+        preparePages(child);
+        const sources = [81000, 81001, 81002, 81003],
+          held = deferred(),
+          started = deferred();
+        let active = 0,
+          maximum = 0,
+          calls = 0;
+        state.request = async (_type, body) => {
+          calls++;
+          active++;
+          maximum = Math.max(maximum, active);
+          if (calls === 3) started.resolve();
+          try {
+            if (body.content_sources.includes(81000)) return null;
+            await held.promise;
+            return abilityRows(1000).map((row) => ({ ...row, content_source_id: body.content_sources[0] }));
+          } finally {
+            active--;
+          }
+        };
+        const first = store.fetchContentAll('ability-block', sources),
+          rejectedFirst = assert.rejects(first, /Could not load ability-block/);
+        await started.promise;
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.equal(active, 2, 'two sibling requests remain in flight');
+        const retry = store.fetchContentAll('ability-block', sources),
+          rejectedRetry = assert.rejects(retry, /Could not load ability-block/);
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.equal(calls, 3, 'the failed logical fetch still owns its pending siblings');
+        held.resolve();
+        await Promise.all([rejectedFirst, rejectedRetry]);
+        assert.equal(calls, 3, 'siblings do not start another page after the failure');
+        assert.deepEqual(store.getCachedContent('ability-block'), []);
+        assert.ok(maximum <= 3);
+        state.request = async () => {
+          calls++;
+          active++;
+          maximum = Math.max(maximum, active);
+          await Promise.resolve();
+          active--;
+          return [];
+        };
+        assert.deepEqual(await store.fetchContentAll('ability-block', sources), []);
+        assert.equal(calls, 6);
+        assert.equal(maximum, 3);
+      }
+    );
     await t.test('an exactly full final page requires an empty read and empty catalogs stay valid', async (child) => {
       preparePages(child);
       const rows = abilityRows(1000);

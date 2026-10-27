@@ -339,7 +339,7 @@ export async function createOperationEngine({
           export { preserveItemUpgradeSelections } from '@items/upgrade-selection';
           export { getGradeImprovements, getItemOperations } from '@items/inv-utils';
           export * from '@items/eidolon-runes';
-          export { handleAddItem, handleDeleteItem, handleUpdateItem, handleMoveItem, addExtraItems, handleUpdateItemCharges } from '@items/inv-handlers';
+          export { handleAddItem, handleDeleteItem, handleUpdateItem, handleMoveItem, addExtraItems, checkBulkLimit, handleUpdateItemCharges } from '@items/inv-handlers';
           export { isItemInvestable, isItemBroken, getFlatInvItems, getItemBulk, getInvBulk, getBulkLimit, getBulkLimitImmobile, applyEquipmentPenalties, getBestArmor, getBestShield, getEquippedWeapons, reachedInvestedLimit, reachedImplantLimit, compileTraits } from '@items/inv-utils';
           export { getListStringInputValue } from '@common/operations/variables/operation-value-defaults';
           export { toggleActiveMode, getExecutableModes } from '@common/modes/mode-rules';

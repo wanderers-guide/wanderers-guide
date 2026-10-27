@@ -15,6 +15,7 @@ type ContentScope = {
   characterId: string | number;
   actorId: string | null;
   authPending?: boolean;
+  enabled?: boolean;
   sources?: number[];
   context: 'sheet' | 'builder';
 };
@@ -24,6 +25,7 @@ export function useCharacterContent({
   characterId,
   actorId,
   authPending = false,
+  enabled = true,
   sources,
   context,
 }: ContentScope): ContentPackage | undefined {
@@ -51,10 +53,11 @@ export function useCharacterContent({
       return fetchContentPackage(requested, { fetchSources: true, fetchCreatures: context === 'sheet', readScope });
     },
     retry: 1,
+    enabled,
     retryDelay: 2000,
     refetchOnWindowFocus: false,
   });
-  useQuietRetry(isError && !isFetching, refetch);
+  useQuietRetry(enabled && isError && !isFetching, refetch);
   useEffect(() => {
     if (data) setReady({ identity, content: data });
   }, [data, identity]);

@@ -6,6 +6,7 @@ describe('October Discord regressions', () => {
   let fixtures: { table: string; row: { id: number; [key: string]: any } }[] = [];
   let character: Record<string, any>;
   let releaseSessionRefresh: (() => void) | undefined;
+  let releaseBuilderContent: (() => void) | undefined;
   const encounters = Array.from({ length: 20 }, (_, index) => ({
     id: 910000 + index,
     created_at: '',
@@ -109,6 +110,8 @@ describe('October Discord regressions', () => {
       cy.wait('@stalledSessionRefresh', { responseTimeout: 20000 });
     }
     releaseSessionRefresh = undefined;
+    releaseBuilderContent?.();
+    releaseBuilderContent = undefined;
   });
   const savedSession = (expiresAt: number) => ({
     access_token: `${btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))}.${btoa(JSON.stringify({ sub: actor, role: 'authenticated', exp: expiresAt }))}.fixture`,
@@ -134,6 +137,101 @@ describe('October Discord regressions', () => {
         win.localStorage.removeItem('user-data');
       },
     });
+  it('recovers pending Builder math on Home and persists an immediate name edit before reload', () => {
+    const writerId = '00000000-0000-4000-8000-000000000099';
+    let server: typeof character = { ...structuredClone(character), updated_at: '2026-10-27T12:00:00.000Z' };
+    const retiredItem = fixtures.find(
+      ({ table, row }) =>
+        table === 'item' &&
+        row.id !== 9252 &&
+        !row.operations?.length &&
+        !row.meta_data?.container_default_items?.length
+    )!.row;
+    server.inventory.items = [
+      {
+        id: 'retired-operation-grant',
+        item: structuredClone(retiredItem),
+        is_formula: false,
+        is_equipped: false,
+        is_invested: false,
+        is_implanted: false,
+        container_contents: [],
+      },
+    ];
+    server.meta_data.given_item_ids = [retiredItem.id];
+    const base = structuredClone(server);
+    let writes = 0;
+    let contentStarted = false;
+    const held = new Promise<void>((resolve) => {
+      releaseBuilderContent = resolve;
+    });
+    cy.intercept('POST', '**/functions/v1/find-character', (request) => {
+      const body = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
+      request.reply({ body: { status: 'success', data: body.id ? server : [server] } });
+    });
+    cy.intercept('POST', '**/functions/v1/update-character', (request) => {
+      const body = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
+      expect(body.expected_updated_at).to.eq(server.updated_at);
+      const { expected_updated_at: _version, ...fields } = body;
+      server = { ...server, ...fields, updated_at: new Date(Date.parse(base.updated_at) + ++writes).toISOString() };
+      request.reply({ body: { status: 'success', data: [server] } });
+    }).as('recoveredHomeSave');
+    cy.intercept('POST', '**/functions/v1/find-ability-block', (request) => {
+      contentStarted = true;
+      const body = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
+      const rows = fixtures
+        .filter(({ table, row }) => table === 'ability_block' && body.content_sources.includes(row.content_source_id))
+        .map(({ row }) => row);
+      return held.then(() => request.reply({ body: { status: 'success', data: paginateAbilityFixture(rows, body) } }));
+    });
+    cy.then(() =>
+      Cypress.automation('remote:debugger:protocol', {
+        command: 'Storage.clearDataForOrigin',
+        params: { origin: Cypress.config('baseUrl'), storageTypes: 'all' },
+      })
+    );
+    cy.visit('/builder/36514', {
+      onBeforeLoad(win) {
+        const host = new URL(Cypress.expose('functions_url')).hostname.split('.')[0];
+        win.localStorage.setItem(`sb-${host}-auth-token`, JSON.stringify(savedSession(4102444800)));
+        win.localStorage.setItem(
+          `autosave-character-36514-${actor}:writer:${writerId}`,
+          JSON.stringify({
+            version: 2,
+            actorId: actor,
+            writerId,
+            requiresCalculation: true,
+            base,
+            body: { ...base, name: 'Retained Builder draft', expected_updated_at: base.updated_at },
+          })
+        );
+      },
+    });
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 })
+      .should('have.value', 'Retained Builder draft')
+      .clear()
+      .type('Home name before calculation');
+    cy.wrap(null).should(() => {
+      expect(contentStarted, 'Home resumes the required calculation').to.eq(true);
+      expect(writes, 'unfinished derived values cannot be saved').to.eq(0);
+    });
+    cy.then(() => {
+      releaseBuilderContent?.();
+    });
+    cy.wait('@recoveredHomeSave', { responseTimeout: 60000 }).then(({ request }) => {
+      expect(request.body.name).to.eq('Home name before calculation');
+      expect(request.body.meta_data.calculated_stats.hp_max).to.be.a('number');
+      expect(request.body.inventory.items.some((entry: any) => entry.item.id === 9252)).to.eq(true);
+      expect(request.body.inventory.items.some((entry: any) => entry.item.id === retiredItem.id)).to.eq(false);
+      expect(request.body.meta_data.given_item_ids).not.to.include(retiredItem.id);
+    });
+    cy.reload();
+    cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 }).should(
+      'have.value',
+      'Home name before calculation'
+    );
+    cy.contains('We just rolled a Nat 1...').should('not.exist');
+  });
   it(
     'loads a public sheet while an expired saved session is waiting for refresh',
     { defaultCommandTimeout: 20000 },

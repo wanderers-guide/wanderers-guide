@@ -83,6 +83,8 @@ export default function useCharacter(
   setCharacter: SetterOrUpdater<Character | null>;
   //
   isLoading: boolean;
+  isLoaded: boolean;
+  requiresCalculation: boolean;
   results: OperationCharacterResultPackage | null;
   saveState: CharacterSaveState;
   draftStored: boolean;
@@ -402,9 +404,10 @@ export default function useCharacter(
       },
       { signal: controller.signal }
     )
-      .then((results) => {
+      .then(async (results) => {
         if (controller.signal.aborted) return;
-        handleOperationResults(results, controller.signal);
+        await handleOperationResults(results, controller.signal);
+        if (controller.signal.aborted) return;
         setCalculationFailed(false);
         setCalculationError(null);
         retriedOperationsHash.current = null;
@@ -444,7 +447,7 @@ export default function useCharacter(
     contentSourcesMatch,
   ]);
 
-  const handleOperationResults = (results: OperationCharacterResultPackage, signal: AbortSignal) => {
+  const handleOperationResults = async (results: OperationCharacterResultPackage, signal: AbortSignal) => {
     if (options.type !== 'EXECUTE_OPS') return;
     if (!debouncedCharacter) return;
     if (signal.aborted) return;
@@ -468,16 +471,18 @@ export default function useCharacter(
       setVariable('CHARACTER', 'STAMINA_VARIANT', true);
     }
 
-    // Add the extra items to the inventory from variables
-    addExtraItems('CHARACTER', options.data.content.items, debouncedCharacter, convertToSetEntity(commitCharacter));
-
-    // Check bulk limits
-    checkBulkLimit(
-      'CHARACTER',
-      debouncedCharacter,
-      convertToSetEntity(commitCharacter),
-      debouncedCharacter.options?.ignore_bulk_limit !== true
-    );
+    // Grants, removals and encumbrance can change calculation inputs. Keep the
+    // writer blocked until these delayed updates settle or invalidate this run.
+    await Promise.all([
+      addExtraItems('CHARACTER', options.data.content.items, debouncedCharacter, convertToSetEntity(commitCharacter)),
+      checkBulkLimit(
+        'CHARACTER',
+        debouncedCharacter,
+        convertToSetEntity(commitCharacter),
+        debouncedCharacter.options?.ignore_bulk_limit !== true
+      ),
+    ]);
+    if (signal.aborted) return;
 
     // Apply armor/shield penalties
     applyEquipmentPenalties('CHARACTER', debouncedCharacter);
@@ -507,8 +512,9 @@ export default function useCharacter(
       return normalized;
     });
 
-    // Save calculated stats
-    saveCalculatedStats('CHARACTER', debouncedCharacter, convertToSetEntity(commitCharacter));
+    // Keep persistence blocked until delayed derived stats have joined this state.
+    await saveCalculatedStats('CHARACTER', debouncedCharacter, convertToSetEntity(commitCharacter));
+    if (signal.aborted) return;
 
     setOperationResults(results);
 
@@ -944,6 +950,8 @@ export default function useCharacter(
     character,
     setCharacter,
     isLoading: !isFinished && !calculationError && !loadError,
+    isLoaded: hasLoadedCharacter,
+    requiresCalculation: needsCalculationRef.current,
     saveState,
     draftStored,
     retrySave: () => retrySaveRef.current(),
