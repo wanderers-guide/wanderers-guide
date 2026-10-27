@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { FunctionsClient } from '@supabase/functions-js';
 
 /**
  * The single shared Supabase client for the entire app.
@@ -11,7 +12,10 @@ import { createClient } from '@supabase/supabase-js';
  * inactivity was noticed by one client while the rest of the app kept acting
  * logged in with dead credentials.
  */
-export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_KEY
+export const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_KEY);
+
+/** Stateless transport uses the request's captured JWT without re-entering the Auth lock. */
+export const functions = new FunctionsClient(
+  new URL('functions/v1', `${import.meta.env.VITE_SUPABASE_URL.replace(/\/+$/, '')}/`).href,
+  { headers: { apikey: import.meta.env.VITE_SUPABASE_KEY } }
 );

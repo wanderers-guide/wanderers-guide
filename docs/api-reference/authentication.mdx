@@ -172,6 +172,17 @@ A handful of internal endpoints use a shared service secret instead. Most consum
 
 ## Web app session and save recovery
 
+Public character and content reads capture an anonymous identity while Auth is still
+initializing. They do not wait for a saved session's token refresh. Once Auth establishes
+an account, the page starts a new account-scoped read; obsolete anonymous responses
+cannot change the content cache or its source selection. Every request uses its captured
+identity through the stateless Supabase Functions transport, without a second Auth lookup.
+
+Authenticated requests share concurrent session reads with a five-second deadline.
+A timed-out session read is unknown, so the request fails without sending an anonymous
+write, marking the account expired, clearing its profile, or removing buffered edits.
+Auth events invalidate older pending reads.
+
 The web app refreshes its session once after a proven JWT rejection (`401` with
 `AUTH_REQUIRED` or an invalid/expired JWT message, including older `400`/`PGRST301`
 responses). Concurrent rejected requests share that refresh. A request retries as

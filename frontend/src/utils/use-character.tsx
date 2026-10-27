@@ -238,6 +238,7 @@ export default function useCharacter(
       // A failed request is not an authorization decision. Keep the route while retrying quietly.
       const dbCharacter = await makeRequest<Character>('find-character', { id: characterId }, false, {
         throwOnFailure: true,
+        ...(sessionActorId ? { expectedActorId: sessionActorId } : { anonymous: true }),
       });
       if (!active) return;
       if (!dbCharacter) {
@@ -838,7 +839,7 @@ export default function useCharacter(
         writeRevision: writeRevisionRef.current,
       };
       const remote = await makeRequest<Character>('find-character', { id: characterId }, false, {
-        ...(context.actor ? { expectedActorId: context.actor } : {}),
+        ...(context.actor ? { expectedActorId: context.actor } : { anonymous: true }),
         throwOnFailure: true,
       });
       if (!remote) return { ...context, character: null };

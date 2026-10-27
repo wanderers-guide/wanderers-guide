@@ -43,9 +43,14 @@ let notices;
 let hides;
 let invoke;
 let refresh;
+let sessionReads;
+let readAuthSession;
 const client = {
   auth: {
-    getSession: async () => ({ data: { session }, error: null }),
+    getSession: () => {
+      sessionReads++;
+      return readAuthSession();
+    },
     refreshSession: async () => {
       refreshes++;
       return refresh();
@@ -95,7 +100,7 @@ await build({
           contents: args.path.includes('supabase-js')
             ? 'export const {FunctionsHttpError,FunctionsFetchError,FunctionsRelayError} = globalThis.__sessionTest;'
             : args.path.includes('supabase-client')
-              ? 'export const supabase = globalThis.__sessionTest.client;'
+              ? 'export const supabase = globalThis.__sessionTest.client; export const functions = supabase.functions;'
               : args.path.includes('notifications')
                 ? 'export const {showNotification,hideNotification} = globalThis.__sessionTest;'
                 : 'export const logError = () => {}; export const throwError = () => {};',
@@ -131,6 +136,8 @@ const savedDraft = (actor = 'owner') => api.getBufferedCharacterSave(1, actor);
 beforeEach(() => {
   globalThis.localStorage = new MemoryStorage();
   session = signedIn();
+  sessionReads = 0;
+  readAuthSession = async () => ({ data: { session }, error: null });
   calls = [];
   refreshes = 0;
   notices = 0;
@@ -142,6 +149,48 @@ beforeEach(() => {
   };
   api.resetSessionExpired();
   hides = 0;
+});
+
+test('explicit public reads bypass a stalled Auth read and cannot write or list private characters', async () => {
+  readAuthSession = () => new Promise(() => {});
+  assert.deepEqual(await api.makeRequest('find-character', { id: 1 }, false, { anonymous: true }), [{ id: 1 }]);
+  assert.equal(sessionReads, 0);
+  assert.equal(calls[0].headers.Authorization, 'Bearer anonymous-project-key');
+  for (const [type, body] of [
+    ['update-character', { id: 1 }],
+    ['find-character', {}],
+  ]) {
+    assert.equal(await api.makeRequest(type, body, false, { anonymous: true }), null);
+  }
+  assert.equal(calls.length, 1);
+  assert.equal(api.hasSessionExpired(), false);
+});
+
+test('unknown private identities fail within a shared budget without clearing drafts or marking expiry', async () => {
+  let finish;
+  readAuthSession = () =>
+    new Promise((resolve) => {
+      finish = resolve;
+    });
+  api.bufferCharacterSave(character(), 'owner', 'version-1', { base: character('Saved name') });
+  localStorage.setItem('user-data', '{"id":"owner"}');
+  const results = await Promise.all(
+    Array.from({ length: 12 }, () =>
+      api.makeRequest('update-character', { id: 1 }, false, { expectedActorId: 'owner' })
+    )
+  );
+  assert.ok(results.every((result) => result === null));
+  assert.equal(sessionReads, 1);
+  assert.equal(calls.length, 0);
+  assert.equal(api.hasSessionExpired(), false);
+  assert.equal(savedDraft().draft.body.name, 'Local draft');
+  assert.equal(localStorage.getItem('user-data'), '{"id":"owner"}');
+  readAuthSession = async () => ({ data: { session: signedIn('new-token', 'new-owner') }, error: null });
+  finish({ data: { session: signedIn('old-token') }, error: null });
+  assert.deepEqual(await api.makeRequest('find-character', { id: 1 }, false, { expectedActorId: 'new-owner' }), [
+    { id: 1 },
+  ]);
+  assert.equal(calls[0].headers.Authorization, 'Bearer new-token');
 });
 
 test('legacy HTTP 400/PGRST301 refreshes and replays exactly once with the fresh token', async () => {

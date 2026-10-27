@@ -1,4 +1,10 @@
-import { defineDefaultSources, fetchContentPackage, fetchContentSources } from '@content/content-store';
+import {
+  assertContentReadScope,
+  captureContentReadScope,
+  defineDefaultSources,
+  fetchContentPackage,
+  fetchContentSources,
+} from '@content/content-store';
 import { makeRequest } from '@requests/request-manager';
 import { Character, ContentPackage } from '@schemas/content';
 import { useQuery } from '@tanstack/react-query';
@@ -30,13 +36,15 @@ export function useCharacterContent({
             { characterId, actor: actorId, sources: sources ?? null },
           ],
     queryFn: async () => {
+      const readScope = captureContentReadScope(actorId);
       const character = await makeRequest<Character>('find-character', { id: characterId }, false, {
         throwOnFailure: true,
-        ...(actorId ? { expectedActorId: actorId } : {}),
+        ...(actorId ? { expectedActorId: actorId } : { anonymous: true }),
       });
+      assertContentReadScope(readScope);
       const requested = defineDefaultSources('PAGE', sources ?? character?.content_sources?.enabled ?? []);
-      await fetchContentSources(requested);
-      return fetchContentPackage(requested, { fetchSources: true, fetchCreatures: context === 'sheet' });
+      await fetchContentSources(requested, false, readScope);
+      return fetchContentPackage(requested, { fetchSources: true, fetchCreatures: context === 'sheet', readScope });
     },
     retry: 1,
     retryDelay: 2000,

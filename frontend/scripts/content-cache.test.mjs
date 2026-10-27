@@ -78,6 +78,49 @@ test('content packages and cache respect failures, sources, actors and generatio
     });
     await writeFile(join(directory, 'store.mjs'), result.outputFiles[0].text);
     store = await import(pathToFileURL(join(directory, 'store.mjs')).href);
+    await t.test(
+      'anonymous package reads carry one scope through pagination and optional lookups without Auth',
+      async () => {
+        const originalSession = state.session;
+        store.setContentCacheActor(null);
+        store.resetContentStore(true, true);
+        state.session = () => {
+          throw new Error('Public content must not read Auth');
+        };
+        state.requests.length = 0;
+        state.request = async () => [];
+        try {
+          const scope = store.captureContentReadScope(null);
+          await store.fetchContentPackage([1], { fetchSources: true, fetchCreatures: true, readScope: scope });
+          assert.ok(state.requests.length > 10, 'exercise the full package and optional lookups');
+          for (const [type, , , options] of state.requests) {
+            assert.equal(options.anonymous, true, type);
+            assert.equal(options.expectedActorId, undefined, type);
+          }
+          const language = deferred();
+          const started = deferred();
+          state.request = async () => {
+            started.resolve();
+            return language.promise;
+          };
+          const pending = store.fetchContent('language', { id: 999, content_sources: [1] }, false, false, scope);
+          const rejected = assert.rejects(pending, /Content changed/);
+          await started.promise;
+          store.setContentCacheActor('B');
+          language.resolve([{ id: 999, content_source_id: 1, name: 'Old anonymous data' }]);
+          await rejected;
+          assert.deepEqual(store.getCachedContent('language'), []);
+          assert.throws(() => store.assertContentReadScope(scope), /Content changed/);
+          store.captureContentReadScope('B');
+        } finally {
+          state.session = originalSession;
+          state.actor = 'A';
+          state.request = async () => [];
+          store.setContentCacheActor('A');
+          store.resetContentStore(true, true);
+        }
+      }
+    );
     await t.test('dedications prefer their own printing when an older archetype shares the feat ID', async () => {
       store.defineDefaultSources('BOTH', [371, 842]);
       const base = {
@@ -361,6 +404,7 @@ test('content packages and cache respect failures, sources, actors and generatio
     const oldSession = deferred();
     state.session = () => oldSession.promise;
     const oldLookup = store.fetchContent('language', query);
+    const oldRejected = assert.rejects(oldLookup, /Content changed|Current account changed/);
     state.actor = 'C';
     store.setContentCacheActor('C');
     state.session = async () => ({ data: { session: { user: { id: state.actor } } } });
@@ -368,7 +412,7 @@ test('content packages and cache respect failures, sources, actors and generatio
     await store.fetchContent('language', query);
     const requestsAfterSwitch = state.requests.length;
     oldSession.resolve({ data: { session: { user: { id: 'B' } } } });
-    await oldLookup;
+    await oldRejected;
     await store.fetchContent('language', query);
     assert.equal(state.requests.length, requestsAfterSwitch, 'an old session read cannot restore actor B over actor C');
 
