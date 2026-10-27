@@ -66,14 +66,19 @@ jobs:
             const sig = crypto.createHmac('sha256', secret).update(`${header}.${payload}`).digest('base64url');
             return `${header}.${payload}.${sig}`;
           };
-          const env = [
-            `JWT_SECRET=${secret}`,
-            `ANON_KEY=${sign('anon')}`,
-            `SERVICE_ROLE_KEY=${sign('service_role')}`,
-            `POSTGRES_PASSWORD=${crypto.randomBytes(16).toString('hex')}`,
+          const generated = {
+            JWT_SECRET: secret,
+            ANON_KEY: sign('anon'),
+            SERVICE_ROLE_KEY: sign('service_role'),
+            POSTGRES_PASSWORD: crypto.randomBytes(16).toString('hex'),
             // Shared secret for the content-updates webhook; minting one lets the
             // update-content-update tests run in CI instead of skipping.
-            `CONTENT_UPDATE_KEY=${crypto.randomBytes(24).toString('hex')}`,
+            CONTENT_UPDATE_KEY: crypto.randomBytes(24).toString('hex'),
+          };
+          // Mask before exporting: later action environment dumps must not reveal these values.
+          for (const value of Object.values(generated)) console.log(`::add-mask::${value}`);
+          const env = [
+            ...Object.entries(generated).map(([name, value]) => `${name}=${value}`),
             `PUBLIC_SUPABASE_URL=http://localhost:8000`,
             `SITE_URL=http://localhost:3000`,
             `VITE_ENV=production`,
