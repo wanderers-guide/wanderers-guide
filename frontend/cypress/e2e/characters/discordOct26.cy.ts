@@ -1,9 +1,9 @@
-export {};
+import { paginateAbilityFixture } from '../../support/content-pagination';
 
 /** Intercept every API boundary; these regressions never write to a real account. */
 describe('October Discord regressions', () => {
   const actor = '00000000-0000-4000-8000-000000000001';
-  let fixtures: { table: string; row: Record<string, any> }[] = [];
+  let fixtures: { table: string; row: { id: number; [key: string]: any } }[] = [];
   let character: Record<string, any>;
   const encounters = Array.from({ length: 20 }, (_, index) => ({
     id: 910000 + index,
@@ -96,6 +96,7 @@ describe('October Discord regressions', () => {
         if (Array.isArray(body.content_sources))
           rows = rows.filter((row) => body.content_sources.includes(row.content_source_id));
         if (body.dedication_feat_id) rows = rows.filter((row) => row.dedication_feat_id === body.dedication_feat_id);
+        if (table === 'ability_block') rows = paginateAbilityFixture(rows, body);
         data = body.id !== undefined && !Array.isArray(body.id) ? (rows[0] ?? null) : rows;
       } else throw new Error(`Unexpected API ${endpoint}`);
       req.reply({ body: { status: 'success', data } });

@@ -648,7 +648,8 @@ export async function fetchData<T = Record<string, any>>(
   client: SupabaseClient<any, 'public', any>,
   tableName: TableName,
   filters: SelectFilter[],
-  created?: { from?: string; to?: string }
+  created?: { from?: string; to?: string },
+  page?: { size: number; afterId?: number }
 ) {
   // Check if we're fetching all rows
   const hasNoId = ((fil: SelectFilter[]) => {
@@ -663,8 +664,8 @@ export async function fetchData<T = Record<string, any>>(
   // Postgres guarantees no row order across the separate chunk queries, so a plan flip
   // mid-pagination silently drops or duplicates rows — an HTTP 200 with a partial corpus
   // that clients then persist as complete. Every fetchData table has an `id` bigint PK.
-  const CHUNK_SIZE = 5000;
-  let lastId: number | null = null;
+  const CHUNK_SIZE = page?.size ?? 5000;
+  let lastId: number | null = page?.afterId ?? null;
   let allRows: T[] = [];
   let hasMore = true;
 
@@ -726,6 +727,7 @@ export async function fetchData<T = Record<string, any>>(
     }
     const { data, error } = await query.order('id', { ascending: true }).limit(CHUNK_SIZE);
     if (error) throw error;
+    if (!Array.isArray(data)) throw new Error(`Invalid query result for ${tableName}`);
 
     if (data && data.length > 0) {
       allRows = allRows.concat(data);
@@ -733,7 +735,7 @@ export async function fetchData<T = Record<string, any>>(
     }
 
     // Check if we've fetched all rows
-    hasMore = data.length === CHUNK_SIZE;
+    hasMore = page === undefined && data.length === CHUNK_SIZE;
   }
 
   return allRows;

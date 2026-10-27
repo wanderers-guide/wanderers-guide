@@ -1,9 +1,8 @@
 import { describeClientFailure } from '../../support/client-failure';
+import { paginateAbilityFixture } from '../../support/content-pagination';
 
 type CatalogRow = { id: number; name: string; content_source_id?: number; [key: string]: any };
 type CatalogFixture = { table: string; row: CatalogRow };
-
-
 
 const referenceNames = [
   'gust of wind',
@@ -93,6 +92,7 @@ describe('Official hazard drawer', () => {
       if (Array.isArray(body.content_sources)) {
         rows = rows.filter((row) => body.content_sources.includes(row.content_source_id));
       }
+      if (table === 'ability_block') rows = paginateAbilityFixture(rows, body);
       if (endpoint === 'find-creature') {
         rows = rows.filter((row) => row.type === (body.type ?? 'creature'));
         if (body.type === 'hazard') {

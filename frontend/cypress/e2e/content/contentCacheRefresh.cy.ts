@@ -1,6 +1,6 @@
+import { paginateAbilityFixture } from '../../support/content-pagination';
+
 type CacheFixtureRow = { table: string; row: { id: number; name: string; [key: string]: any } };
-
-
 
 describe('Published content cache refresh', () => {
   let fixtures: CacheFixtureRow[];
@@ -67,6 +67,7 @@ describe('Published content cache refresh', () => {
         if (body.name) rows = rows.filter((row) => row.name.toLowerCase() === body.name.toLowerCase());
         if (Array.isArray(body.content_sources))
           rows = rows.filter((row) => body.content_sources.includes(row.content_source_id));
+        if (table === 'ability_block') rows = paginateAbilityFixture(rows, body);
         for (const row of rows) {
           if (table === 'content_source') row.updated_at = published ? newToken : oldToken;
           if (table === 'ability_block' && published) {
