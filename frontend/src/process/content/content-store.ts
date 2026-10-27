@@ -642,7 +642,44 @@ export async function fetchContent<T = Record<string, any>>(
 
     const fetchPromise = (async () => {
       const newData = data;
-      const rawResult = await makeRequest<T>(FETCH_REQUEST_MAP[type], newData, false, { throwOnFailure: true });
+      let rawResult: T | T[] | null;
+      if (type === 'ability-block' && (data.id === undefined || Array.isArray(data.id))) {
+        // A complete catalog can exceed the Edge worker's memory budget. Keep each
+        // response bounded and stage every page before publishing this logical fetch.
+        const pageSize = 1000;
+        const records: T[] = [];
+        let afterId: number | undefined;
+        while (true) {
+          const page = await makeRequest<T[]>(
+            FETCH_REQUEST_MAP[type],
+            { ...newData, page_size: pageSize, after_id: afterId },
+            false,
+            { throwOnFailure: true }
+          );
+          assertCurrentGeneration(generation);
+          if (!Array.isArray(page) || page.length > pageSize) {
+            throw new Error('Could not load ability-block content. Retry the request.');
+          }
+          for (const record of page) {
+            if (
+              !record ||
+              typeof record !== 'object' ||
+              !('id' in record) ||
+              typeof record.id !== 'number' ||
+              !Number.isSafeInteger(record.id) ||
+              (afterId !== undefined && record.id <= afterId)
+            ) {
+              throw new Error('Ability-block pagination did not advance. Retry the request.');
+            }
+            afterId = record.id;
+            records.push(record);
+          }
+          if (page.length < pageSize) break;
+        }
+        rawResult = records;
+      } else {
+        rawResult = await makeRequest<T>(FETCH_REQUEST_MAP[type], newData, false, { throwOnFailure: true });
+      }
       assertCurrentGeneration(generation);
       if ((rawResult === null || rawResult === undefined) && (data.id === undefined || Array.isArray(data.id))) {
         throw new Error(`Could not load ${type} content. Retry the request.`);

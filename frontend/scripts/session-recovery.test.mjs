@@ -413,6 +413,78 @@ test('ambiguous lost responses retry reads once and never duplicate mutations', 
   assert.equal(calls.length, 2);
 });
 
+test('a worker resource limit retries a catalog read once with the original account', async () => {
+  const body = { id: [42], content_sources: [3] };
+  const records = [{ id: 42, name: 'Recovered feat' }];
+  invoke = async () =>
+    calls.length === 1
+      ? http(546, { code: 'WORKER_RESOURCE_LIMIT', message: 'Worker resources exhausted' })
+      : ok(records);
+  assert.deepEqual(
+    await api.makeRequest('find-ability-block', body, false, { expectedActorId: 'owner', throwOnFailure: true }),
+    records
+  );
+  assert.equal(calls.length, 2);
+  assert.ok(calls.every((call) => call.type === 'find-ability-block' && call.body === body));
+  assert.deepEqual(
+    calls.map((call) => call.headers.Authorization),
+    ['Bearer current-token', 'Bearer current-token']
+  );
+  assert.equal(refreshes, 0);
+  assert.equal(api.hasSessionExpired(), false);
+  assert.equal(notices, 0);
+});
+
+test('persistent worker resource limits stop after one read retry even without a JSON error body', async () => {
+  invoke = async () => ({
+    data: null,
+    error: new FunctionsHttpError(new Response('Resources exhausted', { status: 546 })),
+  });
+  await assert.rejects(
+    api.makeRequest('find-ability-block', { content_sources: [3] }, false, { throwOnFailure: true }),
+    /Request failed: find-ability-block/
+  );
+  assert.equal(calls.length, 2);
+  assert.equal(refreshes, 0);
+  assert.equal(api.hasSessionExpired(), false);
+});
+
+test('a worker resource limit cannot replay a read as a different account', async () => {
+  invoke = async () => {
+    session = signedIn('other-token', 'other');
+    return http(546, { code: 'WORKER_RESOURCE_LIMIT' });
+  };
+  await assert.rejects(
+    api.makeRequest('find-ability-block', { content_sources: [3] }, false, {
+      expectedActorId: 'owner',
+      throwOnFailure: true,
+    }),
+    /Request failed: find-ability-block/
+  );
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].headers.Authorization, 'Bearer current-token');
+  assert.equal(refreshes, 0);
+  assert.equal(api.hasSessionExpired(), false);
+});
+
+test('worker resource limits never automatically repeat mutations or paid work', async () => {
+  for (const type of [
+    'create-character',
+    'create-campaign',
+    'update-character',
+    'create-content-source',
+    'open-ai-request',
+    'vector-db-populate-collection',
+  ]) {
+    calls = [];
+    invoke = async () => http(546, { code: 'WORKER_RESOURCE_LIMIT' });
+    assert.equal(await api.makeRequest(type, { id: 1 }, false), null);
+    assert.equal(calls.length, 1, type);
+  }
+  assert.equal(refreshes, 0);
+  assert.equal(api.hasSessionExpired(), false);
+});
+
 test('a signed-out request is explicitly anonymous even if sign-in races invocation', async () => {
   session = null;
   invoke = async () => {

@@ -1307,9 +1307,11 @@
     },
     "/find-ability-block": {
       "post": {
-        "tags": ["Content"],
+        "tags": [
+          "Content"
+        ],
         "summary": "Find ability blocks (feats, actions, class features, etc.)",
-        "description": "Ability blocks cover feats, actions, physical-features, senses, class-features, heritages, and modes. Filter by `type` to narrow.",
+        "description": "Ability blocks cover feats, actions, physical-features, senses, class-features, heritages, and modes. Filter by `type` to narrow. For large lists, page_size (1–1000) returns one ID-ordered page. Send its last ID as after_id with the same filters until a shorter or empty page arrives. after_id requires page_size. Without pagination, legacy complete-array and scalar-ID responses are unchanged.",
         "operationId": "findAbilityBlock",
         "requestBody": {
           "required": false,
@@ -1318,12 +1320,60 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "id": { "oneOf": [{ "type": "integer" }, { "type": "array", "items": { "type": "integer" } }] },
-                  "type": { "$ref": "#/components/schemas/AbilityBlockType" },
-                  "name": { "type": "string" },
-                  "content_sources": { "type": "array", "items": { "type": "integer" } },
-                  "traits": { "type": "array", "items": { "type": "integer" } },
-                  "prerequisites": { "type": "array", "items": { "type": "string" } }
+                  "id": {
+                    "oneOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "integer"
+                        }
+                      }
+                    ]
+                  },
+                  "type": {
+                    "$ref": "#/components/schemas/AbilityBlockType"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "content_sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "traits": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "prerequisites": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "page_size": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1000,
+                    "description": "Maximum rows in this page; omit for the legacy complete response."
+                  },
+                  "after_id": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991,
+                    "description": "Exclusive ID cursor from the previous page; requires page_size."
+                  }
+                },
+                "dependentRequired": {
+                  "after_id": [
+                    "page_size"
+                  ]
                 }
               }
             }
@@ -1331,21 +1381,42 @@
         },
         "responses": {
           "200": {
-            "description": "JSend success.",
+            "description": "JSend success, or JSend fail for invalid pagination.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": { "type": "string", "enum": ["success"] },
-                    "data": {
-                      "oneOf": [
-                        { "type": "array", "items": { "$ref": "#/components/schemas/AbilityBlock" } },
-                        { "$ref": "#/components/schemas/AbilityBlock" },
-                        { "type": "null" }
-                      ]
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "success"
+                          ]
+                        },
+                        "data": {
+                          "oneOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/AbilityBlock"
+                              }
+                            },
+                            {
+                              "$ref": "#/components/schemas/AbilityBlock"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/JSendFail"
                     }
-                  }
+                  ]
                 }
               }
             }

@@ -121,6 +121,154 @@ test('content packages and cache respect failures, sources, actors and generatio
       store.resetContentStore(true, true);
     });
 
+    const [{ row: abilityTemplate }] = await readContentRows([{ table: 'ability_block', id: 22549 }]);
+    const abilityRows = (count, start = 91000) =>
+      Array.from({ length: count }, (_, i) => ({
+        ...abilityTemplate,
+        id: start + i,
+        uuid: start + i,
+        name: `Paged feat ${start + i}`,
+        content_source_id: 81000,
+      }));
+    const preparePages = (child) => {
+      const reset = () => {
+        state.actor = 'A';
+        store.setContentCacheActor('A');
+        store.resetContentStore(true, true);
+        state.requests = [];
+      };
+      reset();
+      child.after(reset);
+    };
+    await t.test(
+      'paged catalogs coalesce and publish only after every page succeeds',
+      { timeout: 10000 },
+      async (child) => {
+        preparePages(child);
+        const rows = abilityRows(1003),
+          held = deferred(),
+          started = deferred();
+        state.request = async (type, body) => {
+          assert.equal(type, 'find-ability-block');
+          assert.equal(body.page_size, 1000);
+          assert.deepEqual(body.content_sources, [81000]);
+          if (body.after_id === undefined) return rows.slice(0, 1000);
+          assert.equal(body.after_id, rows[999].id);
+          started.resolve();
+          return held.promise;
+        };
+        const first = store.fetchContentAll('ability-block', [81000]);
+        const second = store.fetchContentAll('ability-block', [81000]);
+        await started.promise;
+        assert.deepEqual(store.getCachedContent('ability-block'), [], 'a staged page is not a cached catalog');
+        assert.equal(state.requests.length, 2, 'concurrent readers share one page chain');
+        held.resolve(rows.slice(1000));
+        for (const result of await Promise.all([first, second]))
+          assert.deepEqual(
+            result.map((row) => row.id),
+            rows.map((row) => row.id)
+          );
+        assert.equal(store.getCachedContent('ability-block').length, 1003);
+        await store.fetchContentAll('ability-block', [81000]);
+        assert.equal(state.requests.length, 2, 'the complete logical query is cached');
+      }
+    );
+    await t.test('an exactly full final page requires an empty read and empty catalogs stay valid', async (child) => {
+      preparePages(child);
+      const rows = abilityRows(1000);
+      state.request = async (_type, body) => (body.after_id === undefined ? rows : []);
+      assert.equal((await store.fetchContentAll('ability-block', [81000])).length, 1000);
+      assert.deepEqual(
+        state.requests.map(([, body]) => body.after_id),
+        [undefined, rows.at(-1).id]
+      );
+      store.resetContentStore(true, true);
+      state.requests = [];
+      state.request = async () => [];
+      assert.deepEqual(await store.fetchContentAll('ability-block', [81000]), []);
+      assert.deepEqual(await store.fetchContentAll('ability-block', [81000]), []);
+      assert.equal(state.requests.length, 1, 'a successful empty catalog is complete and reusable');
+    });
+    await t.test('a failed later page publishes nothing and a retry restarts the complete catalog', async (child) => {
+      preparePages(child);
+      const rows = abilityRows(1002);
+      let unavailable = true;
+      state.request = async (_type, body) => {
+        if (body.after_id === undefined) return rows.slice(0, 1000);
+        if (unavailable) throw new Error('Second page unavailable');
+        return rows.slice(1000);
+      };
+      await assert.rejects(store.fetchContentAll('ability-block', [81000]), /Second page unavailable/);
+      assert.deepEqual(store.getCachedContent('ability-block'), []);
+      unavailable = false;
+      assert.equal((await store.fetchContentAll('ability-block', [81000])).length, 1002);
+      assert.deepEqual(
+        state.requests.map(([, body]) => body.after_id),
+        [undefined, rows[999].id, undefined, rows[999].id]
+      );
+    });
+    await t.test('account and source resets discard a catalog between pages', { timeout: 10000 }, async (child) => {
+      preparePages(child);
+      for (const change of ['account', 'source']) {
+        store.resetContentStore(true, true);
+        const rows = abilityRows(1001),
+          held = deferred(),
+          started = deferred();
+        state.request = async (_type, body) => {
+          assert.deepEqual(body.content_sources, [81000]);
+          if (body.after_id === undefined) return rows.slice(0, 1000);
+          started.resolve();
+          return held.promise;
+        };
+        const pending = store.fetchContentAll('ability-block', [81000]);
+        await started.promise;
+        if (change === 'account') {
+          state.actor = 'B';
+          store.setContentCacheActor('B');
+        } else {
+          store.resetContentStore(true, true);
+          store.defineDefaultSources('BOTH', [81009]);
+        }
+        const rejected = assert.rejects(pending, /Content changed while loading/);
+        held.resolve(rows.slice(1000));
+        await rejected;
+        assert.deepEqual(store.getCachedContent('ability-block'), []);
+      }
+    });
+    await t.test('oversized, unordered and non-advancing pages cannot become complete catalogs', async (child) => {
+      preparePages(child);
+      for (const invalid of ['oversized', 'duplicate', 'backward', 'unsafe-id']) {
+        store.resetContentStore(true, true);
+        const rows = abilityRows(1001);
+        state.request = async (_type, body) => {
+          if (invalid === 'oversized') return rows;
+          if (invalid === 'duplicate') return [rows[0], rows[0]];
+          if (invalid === 'unsafe-id') return [{ ...rows[0], id: Number.MAX_SAFE_INTEGER + 1 }];
+          return body.after_id === undefined ? rows.slice(0, 1000) : [rows[999]];
+        };
+        await assert.rejects(
+          store.fetchContentAll('ability-block', [81000]),
+          /Could not load ability-block|pagination did not advance/
+        );
+        assert.deepEqual(store.getCachedContent('ability-block'), [], invalid);
+      }
+    });
+    await t.test('single-record ability lookups retain their existing request and response shape', async (child) => {
+      preparePages(child);
+      const record = abilityRows(1)[0];
+      state.request = async (_type, body) => {
+        assert.equal(body.id, record.id);
+        assert.equal(body.page_size, undefined);
+        assert.equal(body.after_id, undefined);
+        return record;
+      };
+      assert.equal(
+        (await store.fetchContent('ability-block', { id: record.id, content_sources: [81000] }))[0].id,
+        record.id
+      );
+      assert.equal(state.requests.length, 1);
+    });
+
     const row = {
       id: 81001,
       uuid: 81001,

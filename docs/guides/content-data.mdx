@@ -192,6 +192,12 @@ owned feature. Exact feature names containing conjunctions are checked first.
 A content package becomes available only after every requested table and source lookup
 succeeds. A successful empty table is valid; a failed request remains an error. The
 sheet and builder offer Retry and do not calculate or save against a partial package.
+Ability-block catalog reads use sequential pages of at most 1,000 rows to avoid
+assembling a whole multi-book response in one Edge Function worker. The browser
+stages every page before publishing the complete scoped catalog. A failed page,
+invalid cursor, or account/source reset discards that staged result; a later retry
+starts the complete read again. Single-record lookups keep their existing shape.
+
 Browser caches follow the signed-in account and resolved source set, and resets discard
 late requests and hydration from the previous cache generation. Content cache cleanup
 preserves unsynced character drafts.

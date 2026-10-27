@@ -25,7 +25,7 @@ const CONTENT_DOWNLOAD_READS = new Set<RequestType>([
   'find-spell',
 ]);
 // A lost response can follow a committed write. Only explicitly read-only handlers
-// may be retried after an ambiguous network or gateway failure.
+// may be retried after an ambiguous network, gateway or worker resource failure.
 const RETRYABLE_READS = new Set<RequestType>([
   ...CONTENT_DOWNLOAD_READS,
   'gm-users-in-group',
@@ -200,11 +200,11 @@ export async function makeRequest<T = Record<string, any>>(
     }
 
     const isTransientNetwork = error instanceof FunctionsFetchError || error instanceof FunctionsRelayError;
-    const isGatewayError = error instanceof FunctionsHttpError && [502, 503, 504].includes(error.context?.status);
+    const isTransientHttp = error instanceof FunctionsHttpError && [502, 503, 504, 546].includes(error.context?.status);
     if (
       RETRYABLE_READS.has(type) &&
       transientRetries < MAX_TRANSIENT_RETRIES &&
-      (isTransientNetwork || isGatewayError)
+      (isTransientNetwork || isTransientHttp)
     ) {
       transientRetries++;
       await sleep(250 + Math.random() * 250);

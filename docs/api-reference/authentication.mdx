@@ -178,8 +178,9 @@ responses). Concurrent rejected requests share that refresh. A request retries a
 the same account; permission failures do not trigger refresh. Signing in or recovering
 the session clears the persistent session-expired notice.
 
-Ambiguous network and gateway failures retry only explicitly read-only requests, once,
-at the request layer. Other mutations, AI requests and vector population are not
+Ambiguous network, gateway (`502`/`503`/`504`), and worker resource-limit (`546`)
+failures retry only explicitly read-only requests, once, at the request layer.
+Other mutations, AI requests and vector population are not
 repeated automatically. The character editor has a separate guarded recovery flow:
 a failed save retains its submitted snapshot, reads the authoritative character,
 merges pending intent, and writes with the current server version. This handles a
