@@ -27,7 +27,7 @@ const server=createServer(async(req,res)=>{
   if(req.url==='/v1.45/containers/'+db.id+'/json')return response(200,{
     Id:scenario==='wrong-container'?'f'.repeat(64):db.id,Name:'/'+(scenario==='wrong-name'?'replacement':db.name),Image:scenario==='wrong-image'?'sha256:'+'e'.repeat(64):db.imageId,
     Config:{User:scenario.startsWith('empty-user-')?'':'postgres',Labels:{'wg.native.owner':observedScenario==='wrong-owner'?'not-owned':db.owner}},State:{Running:scenario!=='container-stopped'},
-    HostConfig:{Memory:observedScenario==='memory-drift'?2147483648:1073741824,MemorySwap:scenario==='swap-drift'?2147483648:1073741824,NanoCpus:scenario==='cpu-drift'?2000000000:1000000000,NetworkMode:scenario==='wrong-network'?'bridge':'none',PortBindings:scenario==='ports'?{'5432/tcp':[{HostPort:'5432'}]}:{}},
+    HostConfig:{Memory:observedScenario==='memory-drift'?2147483648:1073741824,MemorySwap:scenario==='swap-drift'?2147483648:1073741824,NanoCpus:scenario==='cpu-drift'?1000000000:3000000000,NetworkMode:scenario==='wrong-network'?'bridge':'none',PortBindings:scenario==='ports'?{'5432/tcp':[{HostPort:'5432'}]}:{}},
   });
   if(req.url==='/v1.45/containers/'+db.id+'/exec') {
     if(scenario==='create-timeout')return;
