@@ -426,6 +426,17 @@ test('a GM provider outage cannot erase a player’s own Patreon link or virtual
   assert.equal(player.patreon.access_token, tokens.access_token);
   assert.equal(player.patreon.game_master.virtual_tier.game_master_user_id, 'fixture-gm');
 });
+test('a lapsed GM group cannot revoke a paragon’s or developer’s own access', async () => {
+  for (const flag of ['is_community_paragon', 'is_developer']) {
+    setup();
+    gmProfiles = [{ id: 18, user_id: 'fixture-gm', patreon: { tier: 'GAME-MASTER' } }];
+    const user = { ...original, [flag]: true };
+    assert.equal(await api.hasPatreonAccess(user, 2), true, flag);
+    assert.equal(await api.hasPatreonAccess(user, 3), false, flag);
+    assert.equal(writes.length, 0);
+    assert.equal(requests.length, 0);
+  }
+});
 test('a refused refresh preserves the existing account and never retries a grant', async () => {
   setup(new Response('{}', { status: 401 }), new Response('{"error":"invalid_grant"}', { status: 400 }));
   const user = { ...original, patreon: { ...tokens, tier: 'WANDERER' } };
