@@ -120,12 +120,26 @@ describe('Characters', () => {
         .its('body.status')
         .should('eq', 'success');
       // These preferences exist only in the intercepted profile, without changing the account.
-      cy.intercept('POST', '**/functions/v1/get-user', (request) =>
-        request.continue((response) => {
-          if (response.body.data?.user_id)
-            response.body.data.site_theme = { color: '#a65cce', view_operations: true, zoom: 1 };
-        })
-      );
+      // Read the owned fixture first. A response callback can reject when navigation cancels
+      // an in-flight profile request under Chrome's native network interception.
+      cy.request({
+        method: 'POST',
+        url: `${Cypress.expose('functions_url')}/get-user`,
+        headers: { Authorization: `Bearer ${token}` },
+        body: {},
+        log: false,
+      })
+        .its('body.data')
+        .then((profile) => {
+          expect(profile.user_id).to.be.a('string');
+          cy.intercept('POST', '**/functions/v1/get-user', {
+            statusCode: 200,
+            body: {
+              status: 'success',
+              data: { ...profile, site_theme: { color: '#a65cce', view_operations: true, zoom: 1 } },
+            },
+          });
+        });
       cy.viewport(390, 844);
       cy.visit(`/builder/${characterId}`);
       cy.get('input[placeholder="Unknown Wanderer"]', { timeout: 30000 })
