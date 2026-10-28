@@ -21,10 +21,39 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  e2e:
+  native-scope:
     if: ${{ !inputs.private-content }}
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 3
+    outputs:
+      run_native: ${{ steps.scope.outputs.run_native }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch exact PR endpoints
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git fetch --no-tags --depth=1 origin "$BASE_SHA" "$HEAD_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Determine native input scope
+        id: scope
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CI_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/ci-native-scope.mjs
+
+  e2e-browser:
+    if: ${{ !inputs.private-content }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
 
     steps:
       - uses: actions/checkout@v4
@@ -169,7 +198,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: contribution-authoring-screenshots
+          name: contribution-authoring-screenshots-${{ matrix.shard }}
           path: ${{ runner.temp }}/contribution-authoring
           if-no-files-found: ignore
 
@@ -211,6 +240,10 @@ jobs:
       - name: API tests (Edge Functions)
         run: cd supabase && deno test --no-check --allow-net --allow-env --allow-read functions/_tests/
 
+      - name: Partition all browser specs
+        id: shard
+        run: node scripts/cypress-shard.mjs --index=${{ matrix.shard }} --count=3
+
       - name: Cypress run
         uses: cypress-io/github-action@01e3b659a495b41649cdd0aa82e1d1624e26520b # v7.4.4; Node 24 readiness fix
         with:
@@ -220,7 +253,7 @@ jobs:
           # All other browser cases retain the compiled Docker app as their base URL.
           start: npm run dev -- --host 127.0.0.1 --port 5174 --strictPort
           wait-on: "http://127.0.0.1:5174"
-          command: npm run cy:run -- --browser chrome
+          command: npm run cy:run -- --browser chrome --spec ${{ steps.shard.outputs.spec }}
         env:
           CYPRESS_BASE_URL: http://localhost:3000
           CYPRESS_TEST_EMAIL: test@wanderersguide.app
@@ -235,7 +268,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: cypress-screenshots
+          name: cypress-screenshots-${{ matrix.shard }}
           path: frontend/cypress/screenshots
           if-no-files-found: ignore
 
@@ -243,7 +276,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: cypress-videos
+          name: cypress-videos-${{ matrix.shard }}
           path: frontend/cypress/videos
           if-no-files-found: ignore
 
@@ -259,7 +292,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: compose-logs
+          name: compose-logs-${{ matrix.shard }}
           path: compose-logs.txt
           if-no-files-found: ignore
 
@@ -267,8 +300,21 @@ jobs:
         if: always()
         run: docker compose down -v
 
+  # Keep one stable check name and require every shard to pass.
+  e2e:
+    if: ${{ always() && !inputs.private-content }}
+    needs: e2e-browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Require all browser shards
+        env:
+          RESULT: ${{ needs.e2e-browser.result }}
+        run: test "$RESULT" = success
+
   content-native:
-    if: ${{ !inputs.private-content }}
+    needs: native-scope
+    if: ${{ !cancelled() && !inputs.private-content && (needs.native-scope.result != 'success' || needs.native-scope.outputs.run_native != 'false') }}
     runs-on: ubuntu-latest
     # Routine releases use representative failures with complete preservation.
     # The exhaustive matrix is available through an explicit manual run.
@@ -320,7 +366,8 @@ jobs:
           if-no-files-found: warn
 
   tech-core-content:
-    if: ${{ !inputs.private-content }}
+    needs: native-scope
+    if: ${{ !cancelled() && !inputs.private-content && (needs.native-scope.result != 'success' || needs.native-scope.outputs.run_native != 'false') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -373,7 +420,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
       - name: Install content test dependencies
         working-directory: ./frontend
         run: npm ci --legacy-peer-deps --no-audit --no-fund

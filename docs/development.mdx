@@ -18,6 +18,21 @@ retrying a potentially committed creation.
 content-query results. Invalid content-cache entries are ignored in favor of a
 fresh read; this does not clear character drafts or other local storage.
 
+Frontend-only pull requests run the normal build, rules, API and browser checks
+without repeating the native database migration matrices. `scripts/ci-native-scope.mjs`
+compares the exact PR revisions. Database/content inputs, schemas, dependencies,
+CI configuration and unclassified paths retain native verification. Registering
+a rules test may change only `scripts.test:rules` in `frontend/package.json`.
+Missing comparison evidence also retains native verification. Pushes to `main`
+and manual runs always run the native matrices.
+
+The browser suite runs on three isolated Docker stacks. `scripts/cypress-shard.mjs`
+discovers every spec, then balances them using recorded durations; new specs receive
+a default weight and remain included. Timings affect distribution, never coverage.
+The `e2e` check passes only when all three shards pass. Their screenshots and logs
+use distinct artifact names. Run an individual partition with
+`node scripts/cypress-shard.mjs --index=1 --count=3` from the repository root.
+
 <Info>
   **Prerequisites**: - [Node.js](https://nodejs.org/en/download) version 22 or
   higher - [Docker](https://www.docker.com/) - [Supabase
