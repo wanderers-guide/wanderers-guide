@@ -744,7 +744,10 @@ These fixture checks do not add or change prerequisites in production.
 The native runner requires locally available PostgreSQL 15.6
 and GoTrue images and a local Docker engine. It creates uniquely owned offline containers without
 published ports. Each new test PostgreSQL container is limited to 1 GiB of memory,
-no swap and one CPU, with fresh limit checks recorded in its receipt. These limits
+no swap and three CPUs, with fresh limit checks recorded in its receipt.
+The CPU budget lets PostgreSQL's query leader and two parallel workers run together
+instead of competing within a one-CPU quota. It changes no SQL, preservation
+checks or test selection. These limits
 apply per container, not to the whole machine; existing containers are unchanged.
 An out-of-memory or timeout failure remains a failed test.
 The runner performs a genuine signup and checks the public-user trigger,
@@ -794,8 +797,8 @@ comparison allowance. It recognizes only their exact approved GENERAL rows and
 does not change content, hide fields from hashing, or broaden the three-record
 correction. Mixed or otherwise edited rows remain rejected.
 Its owned database does not share a runner with the browser/API
-stack. The ordinary E2E job keeps its two-hour budget and runs independently;
-both jobs must pass before release. Local fixture limits remain the same.
+stack. The browser suite runs in three independent jobs with 45-minute budgets
+and a strict `e2e` aggregate. Full native checks remain required on `main`.
 
 The exhaustive matrix is separate from routine releases. Run
 `npm run test:content:native` locally or select **exhaustive-content** when manually

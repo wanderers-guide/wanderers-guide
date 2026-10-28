@@ -191,7 +191,7 @@ const contentKeyOrder=['item','class','spell','trait','ancestry','creature','lan
 
 /** Configuration models only; actual limit enforcement and memory use require native execution. */
 test('pure new-database resource policy is fixed per fixture without starting services',()=>{
-  const expected={Memory:1073741824,MemorySwap:1073741824,NanoCpus:1000000000};
+  const expected={Memory:1073741824,MemorySwap:1073741824,NanoCpus:3000000000};
   assert.deepEqual(nativeDatabaseResourceLimits(),expected);
   const changed=nativeDatabaseResourceLimits();changed.Memory=0;assert.deepEqual(nativeDatabaseResourceLimits(),expected);
   const receipts=[{},{}];
@@ -208,12 +208,12 @@ test('pure new-database resource policy is fixed per fixture without starting se
 });
 
 test('pure resource readback rejects missing, changed, unbounded or wrongly typed limits',()=>{
-  const expected={Memory:1073741824,MemorySwap:1073741824,NanoCpus:1000000000};
+  const expected={Memory:1073741824,MemorySwap:1073741824,NanoCpus:3000000000};
   const row={HostConfig:{...expected,NetworkMode:'none',PortBindings:{}}};
   assert.deepEqual(assertNativeDatabaseResourceLimits(row),expected);
   const mutants=[null,{}, {HostConfig:null},{HostConfig:[]},...Object.keys(expected).flatMap(field=>[0,-1,expected[field]*2,expected[field]/2,String(expected[field]),undefined].map(value=>({HostConfig:{...expected,[field]:value}})))];
   for(const mutant of mutants)assert.throws(()=>assertNativeDatabaseResourceLimits(mutant));
-  row.HostConfig.NanoCpus=2000000000;assert.throws(()=>assertNativeDatabaseResourceLimits(row));
+  row.HostConfig.NanoCpus=1000000000;assert.throws(()=>assertNativeDatabaseResourceLimits(row));
 });
 
 test('pure correct limits cannot authenticate a substituted container, image or owner',()=>{
