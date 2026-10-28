@@ -437,6 +437,17 @@ test('a lapsed GM group cannot revoke a paragon’s or developer’s own access'
     assert.equal(requests.length, 0);
   }
 });
+test('a broken Patreon link cannot revoke a paragon’s or developer’s own access', async () => {
+  for (const flag of ['is_community_paragon', 'is_developer']) {
+    setup(new Response('{}', { status: 503 }));
+    const user = { ...original, patreon: { ...tokens, tier: 'WANDERER' }, [flag]: true };
+    assert.equal(await api.hasPatreonAccess(user, 2), true, flag);
+    assert.equal(requests.length, 0);
+    assert.equal(await api.hasPatreonAccess(user, 3), false, flag);
+    assert.equal(requests.length, 1);
+    assert.equal(writes.length, 0);
+  }
+});
 test('a refused refresh preserves the existing account and never retries a grant', async () => {
   setup(new Response('{}', { status: 401 }), new Response('{"error":"invalid_grant"}', { status: 400 }));
   const user = { ...original, patreon: { ...tokens, tier: 'WANDERER' } };
