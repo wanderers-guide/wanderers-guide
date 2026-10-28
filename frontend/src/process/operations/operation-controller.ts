@@ -1502,6 +1502,7 @@ function clearConflictingBoostSelections(operations: Operation[], node?: Selecti
   walk(operations, node);
 }
 
+/** Keep boosts distinct within their owning source, including nested custom ancestry choices. */
 function limitBoostOptions(operations: Operation[], operationResults: OperationResult[]): OperationResult[] {
   operationResults = cloneDeep(operationResults);
   const unselectedOptions: string[] = [];
@@ -1509,6 +1510,14 @@ function limitBoostOptions(operations: Operation[], operationResults: OperationR
   const collect = (results: OperationResult[]): void => {
     for (const result of results) {
       if (!result) continue;
+      const source = result.result?.source;
+      if (result.result && source?._content_type === 'ability-block' && source.type === 'class-feature') {
+        // A granted class feature owns its boost set, just like a top-level class feature.
+        // Eidolon Advancement grants several levels here; custom choices still share their parent's set.
+        const grantedOperations: Operation[] = source.operations ?? [];
+        result.result.results = limitBoostOptions(grantedOperations, result.result.results ?? []);
+        continue;
+      }
       allResults.push(result);
       collect(result.result?.results ?? []);
     }
