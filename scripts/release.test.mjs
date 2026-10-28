@@ -369,12 +369,34 @@ test('CI retains native migration evidence on failure without archiving unrelate
   const workflow = await readFile(new URL('../.github/workflows/e2e.yml', import.meta.url), 'utf8');
   // Scope retention to the isolated job, including a final upload step.
   const nativeJob = workflow.match(/^  content-native:\n((?: {4}[^\n]*\n|\n)*)/m)?.[1];
-  const browserJob = workflow.match(/^  e2e:\n((?: {4}[^\n]*\n|\n)*)/m)?.[1];
+  const browserJob = workflow.match(/^  e2e-browser:\n((?: {4}[^\n]*\n|\n)*)/m)?.[1];
   assert.ok(nativeJob && browserJob, 'both independent verification jobs exist');
   assert.match(nativeJob, /^    timeout-minutes: \$\{\{ inputs\.exhaustive-content && 360 \|\| 120 \}\}$/m);
-  assert.match(browserJob, /^    timeout-minutes: 120$/m);
+  assert.match(browserJob, /^    timeout-minutes: 45$/m);
+  assert.match(browserJob, /fail-fast: false/);
+  assert.match(browserJob, /shard: \[1, 2, 3\]/);
+  assert.match(browserJob, /--spec \$\{\{ steps\.shard\.outputs\.spec \}\}/);
+  for (const name of ['cypress-screenshots', 'cypress-videos', 'compose-logs', 'contribution-authoring-screenshots'])
+    assert.ok(browserJob.includes('name: ' + name + '-${{ matrix.shard }}'));
+  const browserGate = workflow.match(/^  e2e:\n((?: {4}[^\n]*\n|\n)*)/m)?.[1];
+  assert.ok(browserGate);
+  assert.match(browserGate, /^    needs: e2e-browser$/m);
+  assert.match(browserGate, /always\(\)/);
+  assert.match(browserGate, /RESULT: \$\{\{ needs\.e2e-browser\.result \}\}/);
+  assert.ok(browserGate.includes('run: test "$RESULT" = success'));
   assert.doesNotMatch(browserJob, /npm run test:content:native/);
-  assert.doesNotMatch(nativeJob, /continue-on-error:|--only-negative|^    needs:/m);
+  assert.doesNotMatch(nativeJob, /continue-on-error:|--only-negative/m);
+  assert.match(nativeJob, /^    needs: native-scope$/m);
+  assert.match(nativeJob, /!cancelled\(\).*needs\.native-scope\.result != 'success'.*needs\.native-scope\.outputs\.run_native != 'false'/);
+  const scopeJob = workflow.match(/^  native-scope:\n((?: {4}[^\n]*\n|\n)*)/m)?.[1];
+  const techCoreJob = workflow.match(/^  tech-core-content:\n((?: {4}[^\n]*\n|\n)*)/m)?.[1];
+  assert.ok(scopeJob && techCoreJob);
+  assert.match(scopeJob, /run_native: \$\{\{ steps\.scope\.outputs\.run_native \}\}/);
+  assert.match(scopeJob, /run: node scripts\/ci-native-scope\.mjs/);
+  assert.match(scopeJob, /CI_BASE_SHA: \$\{\{ github\.event\.pull_request\.base\.sha \}\}/);
+  assert.match(scopeJob, /CI_HEAD_SHA: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
+  assert.match(techCoreJob, /^    needs: native-scope$/m);
+  assert.match(techCoreJob, /needs\.native-scope\.result != 'success'.*needs\.native-scope\.outputs\.run_native != 'false'/);
   assert.match(nativeJob, /if \[ "\$EXHAUSTIVE_CONTENT" = "true" \]; then\s+npm run test:content:native\s+else\s+npm run test:content:native -- --release\s+fi/);
   const marker = '      - name: Upload content migration safety evidence\n';
   assert.equal(workflow.split(marker).length, 2, 'one evidence upload step');
