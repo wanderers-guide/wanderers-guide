@@ -1,4 +1,5 @@
 import { defineConfig } from 'cypress';
+import { registerStartupRecoveryFixture } from './cypress/support/startup-recovery-fixture';
 import { registerCampaignFixtures } from './cypress/support/campaign-fixture';
 import { registerContentFixtures } from './cypress/support/content-fixture.mjs';
 
@@ -18,6 +19,7 @@ export default defineConfig({
       for (const key of ['functions_url', 'module_preview_url', 'patreonCase']) {
         if (config.env[key] !== undefined) config.expose[key] = config.env[key];
       }
+      registerStartupRecoveryFixture(on);
       registerCampaignFixtures(on, config);
       registerContentFixtures(on);
       return config;

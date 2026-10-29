@@ -21,6 +21,16 @@ import './commands';
 // tests on the network; browser-recovery.test.mjs exercises the actual update lifecycle.
 // https://github.com/cypress-io/cypress/issues/30405
 const isolateServiceWorker = () => {
+  // The recovery regression needs actual worker interception and multiple controlled clients.
+  if (Cypress.spec.name === 'startupRecovery.cy.ts') {
+    cy.then(() =>
+      Cypress.automation('remote:debugger:protocol', {
+        command: 'Network.setBypassServiceWorker',
+        params: { bypass: false },
+      })
+    );
+    return;
+  }
   cy.intercept('GET', '**/sw.js', {
     body: '/* Functional test worker: no cache or fetch interception. */',
     headers: { 'content-type': 'application/javascript', 'cache-control': 'no-store' },
