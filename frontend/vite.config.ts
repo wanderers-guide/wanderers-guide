@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { readFileSync } from 'node:fs';
+import { transformSync } from 'esbuild';
 import { execFileSync } from 'node:child_process';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { VitePWA, VitePWAOptions } from 'vite-plugin-pwa';
@@ -114,6 +116,25 @@ export default defineConfig({
     },
   },
   plugins: [
+    {
+      name: 'inline-startup-recovery',
+      // An inline classic script runs even when the service worker stalls module downloads.
+      transformIndexHtml: {
+        order: 'pre',
+        handler: (html) => {
+          const bootstrap = transformSync(readFileSync(path.resolve(__dirname, 'src/startup-recovery.ts'), 'utf8'), {
+            loader: 'ts',
+            target: 'es2020',
+            minify: true,
+          }).code;
+          // Keep charset first, and run before stylesheets can block classic scripts.
+          return html.replace(
+            /(<meta charset=[^>]*>)/i,
+            (charset) => `${charset}<script data-wg-startup-recovery>${bootstrap}</script>`
+          );
+        },
+      },
+    },
     react(),
     visualizer({
       emitFile: false,
