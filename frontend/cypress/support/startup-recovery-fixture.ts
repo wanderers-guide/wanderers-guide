@@ -52,7 +52,6 @@ export function registerStartupRecoveryFixture(on: Cypress.PluginEvents): void {
             self.addEventListener('install', event => event.waitUntil((async () => {
               const cache = await caches.open('startup-recovery-fixture');
               await cache.add('/stale-shell');
-              await self.skipWaiting();
             })()));
             self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
             self.addEventListener('fetch', event => {

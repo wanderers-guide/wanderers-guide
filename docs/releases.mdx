@@ -375,7 +375,7 @@ recover a blank page when a stale service worker prevents the app bundle from
 starting. After 20 seconds it first confirms that the network serves a valid app
 shell, then unregisters only the app's root service worker and reloads the blank
 client once. It never activates a waiting update or reloads an already started app.
-Other open editors retain their current controller and in-memory input. Login,
+Other open editors keep their current document and in-memory input. Login,
 local drafts, IndexedDB content and offline caches are not cleared. Accepted input
 also disables recovery, and a session-storage guard limits attempts to one per ten
 minutes. Offline and unresponsive recovery operations leave the page intact.

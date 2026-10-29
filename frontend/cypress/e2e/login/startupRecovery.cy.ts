@@ -37,7 +37,7 @@ describe('Stale service worker startup recovery', () => {
     { browser: { family: 'chromium', name: '!electron' } },
     () => {
       let editorWindow: Window;
-      let editorController: ServiceWorker | null;
+      let editorDocument: Document;
       cy.task<string>('startupRecovery:start').then((origin) => {
         cy.visit(`${origin}/editor`);
         cy.get('input').type('An unsaved character note');
@@ -52,7 +52,7 @@ describe('Stale service worker startup recovery', () => {
             );
           }
           editorWindow = win;
-          editorController = win.navigator.serviceWorker.controller;
+          editorDocument = win.document;
         });
         cy.then(() =>
           Cypress.automation('remote:debugger:protocol', {
@@ -64,7 +64,7 @@ describe('Stale service worker startup recovery', () => {
         });
         waitForRecovery();
         cy.then(() => {
-          expect(editorWindow.navigator.serviceWorker.controller).to.eq(editorController);
+          expect(editorWindow.document, 'the unsaved editor was never navigated or reloaded').to.eq(editorDocument);
           expect(editorWindow.localStorage.getItem('fixture-draft')).to.eq('Retained draft');
           expect(editorWindow.localStorage.getItem('fixture-auth')).to.eq('Retained session');
         });
