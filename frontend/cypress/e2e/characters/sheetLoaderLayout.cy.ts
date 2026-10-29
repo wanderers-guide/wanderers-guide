@@ -15,7 +15,7 @@ describe('Public sheet loader layout', () => {
     ['zoomed phone', 390, 844, 0.8],
     ['short phone', 390, 700, 1],
   ] as const) {
-    it(`centers the complete loading indicator in the available ${name} content area`, () => {
+    it(`places the complete loading indicator 60% above the bottom of the ${name} content area`, () => {
       const pending = new Promise<void>((resolve) => {
         releaseRead = resolve;
       });
@@ -50,18 +50,18 @@ describe('Public sheet loader layout', () => {
               mainBounds.right -
               parseFloat(style.paddingRight) * zoom) /
             2;
-          const centerY =
-            (mainBounds.top + parseFloat(style.paddingTop) * zoom + height - parseFloat(style.paddingBottom) * zoom) /
-            2;
+          const contentTop = mainBounds.top + parseFloat(style.paddingTop) * zoom;
+          const contentBottom = height - parseFloat(style.paddingBottom) * zoom;
+          const centerY = contentTop + (contentBottom - contentTop) * 0.4;
           expect(indicator.find('svg'), 'measure the artwork together with its status label').to.have.length(1);
           expect(bounds.left + bounds.width / 2, 'horizontal center of the route content').to.be.closeTo(centerX, 2);
-          expect(bounds.top + bounds.height / 2, 'vertical center of the visible route content').to.be.closeTo(
+          expect(bounds.top + bounds.height / 2, '40% down the visible route content').to.be.closeTo(
             centerY,
             2
           );
         });
       cy.document().its('documentElement.scrollWidth').should('be.at.most', width);
-      cy.screenshot(`sheet-loader-centered-${width}x${height}-zoom-${zoom}`);
+      cy.screenshot(`sheet-loader-raised-${width}x${height}-zoom-${zoom}`);
     });
   }
 });
