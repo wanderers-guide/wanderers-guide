@@ -519,7 +519,8 @@ npm --prefix frontend run cy:e2e:open     # interactive Cypress UI
 Functional Chromium tests bypass service-worker responses before suite setup and
 each test, so cached HTML cannot bypass Cypress navigation instrumentation.
 The `login/startupRecovery.cy.ts` suite explicitly enables real service workers on
-an isolated loopback fixture server. A worker serves an app shell but stalls its
+an isolated loopback fixture server. Run it in Chrome, as CI does: Electron does
+not support creating the independent top-level browser target this test needs. A worker serves an app shell but stalls its
 module download; the suite verifies automatic network recovery in a second browser
 client while another client retains its unsaved input, controller and stored data.
 The fixture is served from memory and is never included in production assets.
