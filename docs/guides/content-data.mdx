@@ -233,7 +233,11 @@ catalog, preserving the endpoint's first-by-ID choice when names occur in more t
 book. This optional metadata starts loading with the PAGE package and gets at most
 750 milliseconds of extra wait after the required tables finish. Failure or a late result
 cannot block an unrelated character or mutate a posted package; an actual missing lookup
-uses the existing scoped request. Spell panels use the same complete page package, so an
+uses the existing scoped request. Repeated calculation passes share successful implicit
+trait lookups within that job, keyed by the resolved source scope and request. Failed
+lookups remain retryable, returned rows are independent copies, and this metadata never
+enters PAGE catalogs or a later job. Trait IDs already present in PAGE remain local.
+Spell panels use the same complete page package, so an
 early render cannot cache an empty catalog while a character is being restored.
 
 The builder waits for the current character's authoritative save context before

@@ -118,15 +118,17 @@ export function Component(props: {}) {
   }, []);
 
   const loader = (
-    <Center w='100%' mih='var(--wg-page-content-height)'>
-      <D20Loader
-        size={100}
-        color={theme.colors[theme.primaryColor][5]}
-        percentage={percentage}
-        status='Loading...'
-        hasStatusBg
-      />
-    </Center>
+    <Box w='100%' mih='var(--wg-page-content-height)' pos='relative' role='status' aria-label='Loading character'>
+      <Box pos='absolute' top='40%' left='50%' style={{ transform: 'translate(-50%, -50%)' }}>
+        <D20Loader
+          size={100}
+          color={theme.colors[theme.primaryColor][5]}
+          percentage={percentage}
+          status='Loading...'
+          hasStatusBg
+        />
+      </Box>
+    </Box>
   );
 
   if (!content) {
