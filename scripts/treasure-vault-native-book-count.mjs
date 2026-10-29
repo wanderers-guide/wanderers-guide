@@ -151,10 +151,12 @@ export function modeCountReplacement(body) {
   assert(end>start);
   return [prefix+body.slice(start,end)+suffix,prefix+modeProjection(body.slice(start,end))+suffix];
 }
+/** Apply the single source projection to the exact reviewed predecessor. */
 export function upgradeModeCountBody(body) {
   const [before,after]=modeCountReplacement(body);
   return body.replace(before,()=>after);
 }
+/** Recover and hash the entire predecessor, rejecting any altered allowance. */
 export function originalModeCountBody(body) {
   const start=body.indexOf(prefix)+prefix.length,end=body.indexOf(suffix,start),expression=body.slice(start,end);
   assert.equal(expression.split(modeMarker).length,2);
