@@ -7,10 +7,13 @@ describe('Public sheet loader layout', () => {
     releaseRead = undefined;
   });
 
-  for (const [name, width, height] of [
-    ['desktop', 1280, 900],
-    ['phone', 390, 844],
-    ['short phone', 390, 700],
+  for (const [name, width, height, zoom] of [
+    ['desktop', 1280, 900, 1],
+    ['zoomed desktop', 1280, 900, 0.8],
+    ['enlarged desktop', 1280, 900, 1.2],
+    ['phone', 390, 844, 1],
+    ['zoomed phone', 390, 844, 0.8],
+    ['short phone', 390, 700, 1],
   ] as const) {
     it(`centers the complete loading indicator in the available ${name} content area`, () => {
       const pending = new Promise<void>((resolve) => {
@@ -22,6 +25,7 @@ describe('Public sheet loader layout', () => {
       cy.viewport(width, height);
       cy.visit('/sheet/36514', {
         onBeforeLoad(win) {
+          win.localStorage.setItem('customization-cache', JSON.stringify({ sheet_theme: { zoom } }));
           win.indexedDB.open = () => {
             throw new Error('Cold loader layout fixture');
           };
@@ -41,9 +45,14 @@ describe('Public sheet loader layout', () => {
           const mainBounds = main.getBoundingClientRect();
           const style = win.getComputedStyle(main);
           const centerX =
-            (mainBounds.left + parseFloat(style.paddingLeft) + mainBounds.right - parseFloat(style.paddingRight)) / 2;
+            (mainBounds.left +
+              parseFloat(style.paddingLeft) * zoom +
+              mainBounds.right -
+              parseFloat(style.paddingRight) * zoom) /
+            2;
           const centerY =
-            (mainBounds.top + parseFloat(style.paddingTop) + height - parseFloat(style.paddingBottom)) / 2;
+            (mainBounds.top + parseFloat(style.paddingTop) * zoom + height - parseFloat(style.paddingBottom) * zoom) /
+            2;
           expect(indicator.find('svg'), 'measure the artwork together with its status label').to.have.length(1);
           expect(bounds.left + bounds.width / 2, 'horizontal center of the route content').to.be.closeTo(centerX, 2);
           expect(bounds.top + bounds.height / 2, 'vertical center of the visible route content').to.be.closeTo(
@@ -52,7 +61,7 @@ describe('Public sheet loader layout', () => {
           );
         });
       cy.document().its('documentElement.scrollWidth').should('be.at.most', width);
-      cy.screenshot(`sheet-loader-centered-${width}x${height}`);
+      cy.screenshot(`sheet-loader-centered-${width}x${height}-zoom-${zoom}`);
     });
   }
 });

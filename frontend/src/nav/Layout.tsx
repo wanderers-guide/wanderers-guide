@@ -11,6 +11,7 @@ import {
   Group,
   Menu,
   ScrollArea,
+  Skeleton,
   Stack,
   Text,
   UnstyledButton,
@@ -138,7 +139,10 @@ export default function Layout(props: { children: React.ReactNode }) {
               <Group>
                 <SearchBar />
 
-                {!session ? (
+                {/* Keep the account slot neutral until Auth confirms the initial session. */}
+                {session === undefined ? (
+                  <Skeleton w={160} h={32} radius='md' aria-label='Loading account' />
+                ) : !session ? (
                   <LoginButton
                     onClick={() => {
                       navigate('/characters');
@@ -463,7 +467,7 @@ export default function Layout(props: { children: React.ReactNode }) {
               Logout
             </UnstyledButton>
           </Stack>
-        ) : (
+        ) : session === null ? (
           <Stack gap={5}>
             <SearchBar />
             <UnstyledButton
@@ -507,11 +511,14 @@ export default function Layout(props: { children: React.ReactNode }) {
               Legacy Site
             </UnstyledButton>
           </Stack>
+        ) : (
+          <Skeleton h={32} radius='md' mx='sm' aria-label='Loading account' />
         )}
       </AppShell.Navbar>
 
+      {/* Convert viewport height to layout units before the ancestor page zoom scales it. */}
       <ScrollArea
-        h={'100dvh'}
+        h='calc(100dvh / var(--wg-page-zoom, 1))'
         type={isMobileTouch ? 'never' : 'auto'}
         scrollbars='y'
         onScrollPositionChange={(pos) => {
@@ -525,7 +532,7 @@ export default function Layout(props: { children: React.ReactNode }) {
         <AppShell.Main
           pt={contentTopPadding}
           style={{
-            '--wg-page-content-height': `calc(100dvh - ${contentTopPadding} - var(--app-shell-padding))`,
+            '--wg-page-content-height': `calc(100dvh / var(--wg-page-zoom, 1) - ${contentTopPadding} - var(--app-shell-padding))`,
           }}
         >
           {props.children}

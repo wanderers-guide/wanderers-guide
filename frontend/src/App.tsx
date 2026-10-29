@@ -398,7 +398,7 @@ export default function App() {
         <Notifications position='top-right' zIndex={9400} containerWidth={350} />
         <AppUpdates />
         <DrawerBase />
-        <Box style={{ zoom: sheetTheme.zoom ?? 1 }}>
+        <Box style={{ zoom: sheetTheme.zoom ?? 1, '--wg-page-zoom': sheetTheme.zoom ?? 1 }}>
           <Layout>
             {/* Outlet is where react-router will render child routes */}
             <Outlet />
