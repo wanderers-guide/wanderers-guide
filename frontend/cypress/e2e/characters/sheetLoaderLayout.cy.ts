@@ -55,10 +55,7 @@ describe('Public sheet loader layout', () => {
           const centerY = contentTop + (contentBottom - contentTop) * 0.4;
           expect(indicator.find('svg'), 'measure the artwork together with its status label').to.have.length(1);
           expect(bounds.left + bounds.width / 2, 'horizontal center of the route content').to.be.closeTo(centerX, 2);
-          expect(bounds.top + bounds.height / 2, '40% down the visible route content').to.be.closeTo(
-            centerY,
-            2
-          );
+          expect(bounds.top + bounds.height / 2, '40% down the visible route content').to.be.closeTo(centerY, 2);
         });
       cy.document().its('documentElement.scrollWidth').should('be.at.most', width);
       cy.screenshot(`sheet-loader-raised-${width}x${height}-zoom-${zoom}`);
