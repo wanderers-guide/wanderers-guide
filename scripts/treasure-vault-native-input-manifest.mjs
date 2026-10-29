@@ -30,9 +30,9 @@ export async function captureNativeInputManifest({root}) {
     return text;
   }
   const migrationFiles=(await readdir(root+'/supabase/migrations')).filter(path=>migrationName.test(path)).sort();
-  assert.equal(migrationFiles.length,119,'Complete reviewed chronology is mandatory');
-  assert.equal(migrationFiles.at(-1),'20261027000000_curator_book_count_compatibility.sql','Exact reviewed release recovery chronology successor');
-  assert.deepEqual(migrationFiles.slice(-7),['20261010000100_shared_ancestries.sql','20261011000000_restore_heal_companion.sql','20261011000100_incarnate_release_compatibility.sql','20261015000000_rust_cloud_release_compatibility.sql','20261026000000_mine_mod_rules.sql','20261026010000_curator_release_compatibility.sql','20261027000000_curator_book_count_compatibility.sql']);
+  assert.equal(migrationFiles.length,120,'Complete reviewed chronology is mandatory');
+  assert.equal(migrationFiles.at(-1),'20261029000000_overflowing_mode_count_compatibility.sql','Exact reviewed release recovery chronology successor');
+  assert.deepEqual(migrationFiles.slice(-8),['20261010000100_shared_ancestries.sql','20261011000000_restore_heal_companion.sql','20261011000100_incarnate_release_compatibility.sql','20261015000000_rust_cloud_release_compatibility.sql','20261026000000_mine_mod_rules.sql','20261026010000_curator_release_compatibility.sql','20261027000000_curator_book_count_compatibility.sql','20261029000000_overflowing_mode_count_compatibility.sql']);
   const requirements=JSON.parse(await capture('supabase/release/requirements.json'));
   assert.deepEqual(requirements['20261008105800_treasure_vault_terminal_catalog_compatibility.sql'],{check:'treasure-vault-terminal-catalog-compatibility.sql',order:'before-functions'});
   await capture('supabase/release/shared-ancestries.json');
@@ -73,6 +73,7 @@ export async function captureNativeInputManifest({root}) {
   await module('scripts/treasure-vault-native-safety.mjs');
   await capture('scripts/treasure-vault-curator-successors.json');
   await capture('scripts/treasure-vault-book-count-successor.json');
+  await capture('scripts/treasure-vault-mode-count-successor.json');
   const entries=[...records.values()].sort((a,b)=>a.path.localeCompare(b.path));
   const manifest={schema:'wg-tv-native-checked-in-input-manifest-v2',entries,historical_git_inputs:historicalGitInputs,
     sha256:sha(JSON.stringify({entries,historical_git_inputs:historicalGitInputs})),chronology:migrations.map(({path,sha256})=>({path,sha256})),

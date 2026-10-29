@@ -1,0 +1,185 @@
+{
+  "before": {
+    "id": 842,
+    "url": "https://store.paizo.com/pathfinder-impossible-magic/",
+    "keys": null,
+    "name": "Impossible Magic",
+    "group": "pathfinder-core",
+    "user_id": null,
+    "meta_data": {
+      "counts": {
+        "feat": 492,
+        "mode": 1,
+        "class": 4,
+        "spell": 331,
+        "trait": 25,
+        "creature": 12,
+        "archetype": 11,
+        "class-feature": 179,
+        "content_update": 183,
+        "heritage": 2,
+        "item": 311,
+        "sense": 1,
+        "action": 1
+      }
+    },
+    "created_at": "2026-06-08T21:54:10.805658+00:00",
+    "deprecated": null,
+    "foundry_id": null,
+    "operations": [],
+    "artwork_url": "",
+    "description": "The perfect spell can solve just about any problem. From simple cantrips to reality-warping magic, this new rulebook contains a plethora of options for any adventurer who wants to delve into the unknown and unlock their true magical potential.\n\nWithin the confines of these pages lies the magnificent spellcraft of four wonderfully magical and unique classes!\n\n*   Strike with both spell and blade with as a magus.\n    \n*   Command an army of the undead as a necromancer.\n    \n*   Scribe unique magic onto enemies and allies alike as a runesmith.\n    \n*   Fight alongside a powerful magical companion as a summoner.\n    \n\nYou\u2019ll also find over 240 spells that can be cast for both mischief and wonder, new impossible spells so impactful that they scar the soul, several fantastical archetypes that will bring a magical twist to any table, new arcane schools derived from the heart of the Impossible Lands themselves, and wondrous magical items that will allow even the most mundane of characters to experience the power of magic.\n\nAll of this is made manifest before you with Impossible Magic!",
+    "require_key": false,
+    "contact_info": null,
+    "is_published": true,
+    "required_content_sources": [
+      1
+    ]
+  },
+  "after": {
+    "id": 842,
+    "url": "https://store.paizo.com/pathfinder-impossible-magic/",
+    "keys": null,
+    "name": "Impossible Magic",
+    "group": "pathfinder-core",
+    "user_id": null,
+    "meta_data": {
+      "counts": {
+        "feat": 492,
+        "item": 311,
+        "mode": 2,
+        "class": 4,
+        "sense": 1,
+        "spell": 331,
+        "trait": 25,
+        "action": 1,
+        "creature": 12,
+        "heritage": 2,
+        "archetype": 11,
+        "class-feature": 179,
+        "content_update": 183
+      }
+    },
+    "created_at": "2026-06-08T21:54:10.805658+00:00",
+    "deprecated": null,
+    "foundry_id": null,
+    "operations": [],
+    "artwork_url": "",
+    "description": "The perfect spell can solve just about any problem. From simple cantrips to reality-warping magic, this new rulebook contains a plethora of options for any adventurer who wants to delve into the unknown and unlock their true magical potential.\n\nWithin the confines of these pages lies the magnificent spellcraft of four wonderfully magical and unique classes!\n\n*   Strike with both spell and blade with as a magus.\n    \n*   Command an army of the undead as a necromancer.\n    \n*   Scribe unique magic onto enemies and allies alike as a runesmith.\n    \n*   Fight alongside a powerful magical companion as a summoner.\n    \n\nYou\u2019ll also find over 240 spells that can be cast for both mischief and wonder, new impossible spells so impactful that they scar the soul, several fantastical archetypes that will bring a magical twist to any table, new arcane schools derived from the heart of the Impossible Lands themselves, and wondrous magical items that will allow even the most mundane of characters to experience the power of magic.\n\nAll of this is made manifest before you with Impossible Magic!",
+    "require_key": false,
+    "contact_info": null,
+    "is_published": true,
+    "required_content_sources": [
+      1
+    ]
+  },
+  "mode": {
+    "id": 60082,
+    "cost": "",
+    "name": "Overflowing",
+    "type": "mode",
+    "uuid": "6065284533186802",
+    "level": 1,
+    "access": "",
+    "rarity": "COMMON",
+    "traits": [],
+    "actions": null,
+    "special": "",
+    "trigger": "",
+    "version": null,
+    "frequency": "",
+    "meta_data": {},
+    "created_at": "2026-10-28T03:23:54.86583+00:00",
+    "operations": [
+      {
+        "id": "842d2def-4d4c-4162-84e2-3103c41a9df8",
+        "data": {
+          "conditions": [
+            {
+              "id": "d66c566f-c1f8-4e93-b3f1-eb0ba627dfcb",
+              "data": {
+                "name": "LEVEL",
+                "type": "num",
+                "value": 3
+              },
+              "name": "LEVEL",
+              "type": "num",
+              "value": "15",
+              "operator": "GREATER_THAN_OR_EQUALS"
+            }
+          ],
+          "trueOperations": [
+            {
+              "id": "060113e4-ea8b-4fd9-9e13-3d8627b57ea7",
+              "data": {
+                "text": "you gain a +2 status bonus to saving throws against effects with the arcane, divine, magical, occult, and primal traits.",
+                "type": "status",
+                "value": "2",
+                "variable": "SAVE_FORT"
+              },
+              "type": "addBonusToValue"
+            },
+            {
+              "id": "20121b32-d294-4204-98f4-b1d6613ba08d",
+              "data": {
+                "text": "you gain a +2 status bonus to saving throws against effects with the arcane, divine, magical, occult, and primal traits.",
+                "type": "status",
+                "value": "2",
+                "variable": "SAVE_REFLEX"
+              },
+              "type": "addBonusToValue"
+            },
+            {
+              "id": "7a3871cd-5e67-460e-a064-312ed5af06ba",
+              "data": {
+                "text": "you gain a +2 status bonus to saving throws against effects with the arcane, divine, magical, occult, and primal traits.",
+                "type": "status",
+                "value": "2",
+                "variable": "SAVE_WILL"
+              },
+              "type": "addBonusToValue"
+            }
+          ],
+          "falseOperations": [
+            {
+              "id": "f3780ada-624b-4cbe-8547-977098b87bb9",
+              "data": {
+                "text": "you gain a +1 status bonus to saving throws against effects with the arcane, divine, magical, occult, and primal traits.",
+                "type": "status",
+                "value": "1",
+                "variable": "SAVE_FORT"
+              },
+              "type": "addBonusToValue"
+            },
+            {
+              "id": "de270925-45ad-4cb4-931a-f6af0b2f8ca4",
+              "data": {
+                "text": "you gain a +1 status bonus to saving throws against effects with the arcane, divine, magical, occult, and primal traits.",
+                "type": "status",
+                "value": "1",
+                "variable": "SAVE_REFLEX"
+              },
+              "type": "addBonusToValue"
+            },
+            {
+              "id": "5656b49d-88c9-4397-9263-160f5dae27fa",
+              "data": {
+                "text": "you gain a +1 status bonus to saving throws against effects with the arcane, divine, magical, occult, and primal traits.",
+                "type": "status",
+                "value": "1",
+                "variable": "SAVE_WILL"
+              },
+              "type": "addBonusToValue"
+            }
+          ]
+        },
+        "type": "conditional"
+      }
+    ],
+    "description": "You remain overflowing for up to 1 minute before the stored magical energy fades. While overflowing, you gain a +1 status bonus to saving throws against effects with the [arcane](link_trait_1459), [divine](link_trait_1475), [magical](link_trait_1504), [occult](link_trait_1514), and [primal](link_trait_1454) traits. This bonus becomes +2 at 15th level.",
+    "availability": null,
+    "requirements": "",
+    "prerequisites": [],
+    "content_source_id": 842
+  }
+}

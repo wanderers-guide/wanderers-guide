@@ -141,7 +141,7 @@ export function assertRequiredNativeEvidence(receipt) {
   assert.ok(metadata.filter(row=>!privileged.includes(row)).every(row=>row.setup_login==='postgres'));
   const ci=receipt.alternate_fixture.registered_ci_replays;
   assert.equal(ci?.schema,'wg-tv-native-registered-ci-replays-v4');assert.equal(ci.passed,true);
-  assert.equal(ci.registered_requirements,112);assert.equal(ci.checks.length,71);assert.equal(ci.replays.length,91);
+  assert.equal(ci.registered_requirements,113);assert.equal(ci.checks.length,71);assert.equal(ci.replays.length,91);
   assert.equal(ci.passes,2);assert.equal(ci.registered_verification_rounds,3);assert.equal(ci.expected_native_statements,396);
   assert.equal(ci.stages.length,396);assert.equal(new Set(ci.stages.map(row=>row.label)).size,396);
   assert.equal(ci.checks.filter(row=>row.path==='supabase/release/tech-core-introductory-spells-citation-compatibility.sql').length,1);
@@ -191,7 +191,7 @@ export function assertRequiredNativeEvidence(receipt) {
 /** Pure plan: explicit membership/chronology, never glob-skip unknown or future migrations. */
 export function buildNativeVerificationPlan({inputs,files,selectedNegativeFiles = null,releaseScope=false}) {
   assert.equal(inputs.input_provenance.mode, 'checked-in-default');
-  assert.equal(files.length, 119, 'Exact reviewed complete CI chronology');
+  assert.equal(files.length, 120, 'Exact reviewed complete CI chronology');
   assert.deepEqual([...files].sort(), files);
   assert.equal(new Set(files).size, files.length);
   assert.ok(files.includes('20261001010000_repair_weapon_stat_fields.sql'));

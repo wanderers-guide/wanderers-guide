@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { RUST_CLOUD_TERMINAL_SHA256 } from "./treasure-vault-native-rust-cloud.mjs";
-import { bookCountReplacement, originalBookCountBody, upgradeBookCountBody, PREVIOUS_CURATOR_TERMINAL_SHA256, BOOK_COUNT_NATIVE_CONTROLS, runNativeBookCountControls } from './treasure-vault-native-book-count.mjs';
+import { bookCountReplacement, originalBookCountBody, upgradeBookCountBody, PREVIOUS_CURATOR_TERMINAL_SHA256, BOOK_COUNT_NATIVE_CONTROLS, runNativeBookCountControls, MODE_COUNT_TERMINAL_SHA256, originalModeCountBody, modeCountUpgrade, wrapModeCountUpgrade, MODE_COUNT_NATIVE_CONTROLS, runNativeModeCountControls } from './treasure-vault-native-book-count.mjs';
 export const CURATOR_UPGRADE_PATH =
   "20261026010000_curator_release_compatibility.sql";
 export const CURATOR_TERMINAL_SHA256 =
@@ -55,7 +55,7 @@ export function upgradeCuratorBody(body) {
 }
 /** Restore and hash the complete predecessor, retaining all immutable native ledgers. */
 export function originalCuratorBody(body) {
-  let result = originalBookCountBody(body);
+  let result = originalBookCountBody(sha(body)===MODE_COUNT_TERMINAL_SHA256?originalModeCountBody(body):body);
   assert.equal(result.split(fencedEnding).length, 2);
   result = result.replace(fencedEnding, ending);
   for (const row of [...curatorRows].reverse()) {
@@ -71,7 +71,7 @@ export function originalCuratorBody(body) {
   return result;
 }
 /** Upgrade only the exact deployed predecessor and verify full metadata after replacement. */
-export function curatorUpgrade({ body, previousState, state, signature }) {
+function originalCuratorUpgrade({ body, previousState, state, signature }) {
   const successor = upgradeCuratorBody(body);
   assert.equal(sha(successor), CURATOR_TERMINAL_SHA256);
   let working = body;
@@ -283,6 +283,7 @@ export async function runNativeCuratorCompatibility({
       true,
     );
   await runNativeBookCountControls({inputs,fixture,capsule,userId});
+  await runNativeModeCountControls({inputs,fixture,capsule,userId});
   receipt.curator_compatibility = {
     passed: true,
     native_executed: true,
@@ -315,6 +316,7 @@ export const CURATOR_NATIVE_CONTROLS = Object.freeze([
   "predecessor-metadata",
   "predecessor-acl",
   ...BOOK_COUNT_NATIVE_CONTROLS,
+  ...MODE_COUNT_NATIVE_CONTROLS,
 ]);
 
 /** Missing native curator controls cannot certify a release. */
@@ -337,4 +339,12 @@ export function assertCuratorNativeEvidence(receipt) {
     assert.match(control.sql_sha256, /^[a-f0-9]{64}$/);
   }
   return true;
+}
+
+/** Compose the unchanged curator installer with the one exact Overflowing successor. */
+export function curatorUpgrade({body,previousState,state,signature}) {
+  const curatorState=state.replaceAll(MODE_COUNT_TERMINAL_SHA256,CURATOR_TERMINAL_SHA256);
+  const original=originalCuratorUpgrade({body,previousState,state:curatorState,signature});
+  const mode=modeCountUpgrade({body:upgradeCuratorBody(body),previousState:curatorState,state,signature});
+  return wrapModeCountUpgrade(original,mode,state);
 }

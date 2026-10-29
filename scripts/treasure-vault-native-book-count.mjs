@@ -106,7 +106,7 @@ export async function runNativeBookCountControls({ inputs, fixture, capsule, use
   const template=inputs.helper.proof.templates.find(row=>row.table==='item');
   assert(template);
   await capsule('book-count-template-drift',clean+`update public.item set name=name||' unreviewed' where uuid=${quote(template.uuid)}::bigint;`+status,[fail]);
-  const original=originalBookCountBody(inputs.helper.body);
+  const original=originalBookCountBody(sha(inputs.helper.body)===MODE_COUNT_TERMINAL_SHA256?originalModeCountBody(inputs.helper.body):inputs.helper.body);
   const predecessor=inputs.helper.definition.replace(inputs.helper.body,()=>original).replace('create function ','create or replace function ');
   await capsule('book-count-deployed-upgrade-replay',predecessor+clean+status+inputs.curatorCompatibility.upgrade+status+inputs.curatorCompatibility.upgrade+status,[fail,pass,pass]);
   for(const [name,mutation] of [
@@ -118,4 +118,128 @@ export async function runNativeBookCountControls({ inputs, fixture, capsule, use
   assert.equal(replays.length,41);
   const replay=replays.map(row=>row.sql.replace(/^begin;\n/,'').replace(/commit;\n$/,'')).join('\n');
   await capsule('book-count-historical-replays',clean+replay+status,[pass]);
+}
+
+/** The approved Overflowing addition changes only Impossible Magic's mode count. */
+export const MODE_COUNT_UPGRADE_PATH = '20261029000000_overflowing_mode_count_compatibility.sql';
+export const PREVIOUS_MODE_TERMINAL_SHA256 = 'a07223d6cd719e484a994ea965405c8f72820d927fb1ea3086b27b6e3981adca';
+export const MODE_COUNT_TERMINAL_SHA256 = '04b8c42f598632cac674719222e79824af9f0057b7473747a5de11ae7d43f58a';
+export const modeCountSpec = JSON.parse(readFileSync(new URL('./treasure-vault-mode-count-successor.json', import.meta.url), 'utf8'));
+assert.equal(modeCountSpec.before.id,842);
+assert.equal(modeCountSpec.before.meta_data.counts.mode,1);
+assert.deepEqual(modeCountSpec.after,{...modeCountSpec.before,meta_data:{...modeCountSpec.before.meta_data,counts:{...modeCountSpec.before.meta_data.counts,mode:2}}});
+assert.deepEqual([modeCountSpec.mode.id,modeCountSpec.mode.type,modeCountSpec.mode.content_source_id],[60082,'mode',842]);
+assert.ok(modeCountSpec.mode.description.length>0);
+const modeMarker=' else /* mode107 predecessor */ (';
+
+/** Accept the complete reviewed mode, real count and identities before projecting one counter. */
+function modeProjection(original) {
+  const mode=literal(modeCountSpec.mode,'mode107_row');
+  return `case when s.id=842 and (to_jsonb(s)-'updated_at')=${literal(modeCountSpec.after,'mode107_source_after')}
+ and (select count(*) from public.ability_block where content_source_id=842 and type='mode')=2
+ and exists(select 1 from public.ability_block a where a.id=60082 and ((to_jsonb(a)-'updated_at'-'search_tsv')||jsonb_build_object('uuid',a.uuid::text))=${mode})
+ and not exists(select 1 from public.ability_block a where a.id<>60082 and (a.uuid::text=${mode}->>'uuid' or(a.content_source_id=842 and lower(btrim(a.name))=lower(btrim(${mode}->>'name')))))
+ and not exists(select 1 from public.content_update u where upper(btrim(coalesce(u.status->>'state','PENDING'))) not in('APPROVED','REJECTED') and u.type in('ability-block','mode') and (u.ref_id=60082 or u.data->>'id'='60082' or u.data->>'uuid'=${mode}->>'uuid' or((u.content_source_id=842 or u.data->>'content_source_id'='842') and lower(btrim(u.data->>'name'))=lower(btrim(${mode}->>'name')))))
+ then ${literal(modeCountSpec.before,'mode107_source_before')}${modeMarker}${original}) end`;
+}
+
+/** Preserve the complete a072 predecessor and replace just its source projection. */
+export function modeCountReplacement(body) {
+  assert.equal(sha(body),PREVIOUS_MODE_TERMINAL_SHA256);
+  assert.equal(body.split(prefix).length,2);
+  const start=body.indexOf(prefix)+prefix.length,end=body.indexOf(suffix,start);
+  assert(end>start);
+  return [prefix+body.slice(start,end)+suffix,prefix+modeProjection(body.slice(start,end))+suffix];
+}
+export function upgradeModeCountBody(body) {
+  const [before,after]=modeCountReplacement(body);
+  return body.replace(before,()=>after);
+}
+export function originalModeCountBody(body) {
+  const start=body.indexOf(prefix)+prefix.length,end=body.indexOf(suffix,start),expression=body.slice(start,end);
+  assert.equal(expression.split(modeMarker).length,2);
+  assert(expression.endsWith(') end'));
+  const original=body.slice(0,start)+expression.slice(expression.indexOf(modeMarker)+modeMarker.length,-5)+body.slice(end);
+  assert.equal(sha(original),PREVIOUS_MODE_TERMINAL_SHA256);
+  assert.equal(upgradeModeCountBody(original),body);
+  return original;
+}
+
+/** Upgrade only the exact installed helper and retain metadata, owner and grants. */
+export function modeCountUpgrade({body,previousState,state,signature}) {
+  const [before,after]=modeCountReplacement(body);
+  assert.equal(sha(upgradeModeCountBody(body)),MODE_COUNT_TERMINAL_SHA256);
+  return `-- Recognize only the complete approved Overflowing mode and its exact source count.
+do $mode107_upgrade$
+declare body text;
+begin
+ if (${state}) is true then return; end if;
+ if (${previousState}) is not true then raise exception 'Overflowing helper predecessor differs'; end if;
+ select prosrc into strict body from pg_catalog.pg_proc where oid=pg_catalog.to_regprocedure('${signature}');
+ body:=replace(body,$mode107_before$${before}$mode107_before$,$mode107_after$${after}$mode107_after$);
+ if pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(body,'UTF8')),'hex')<>'${MODE_COUNT_TERMINAL_SHA256}' then raise exception 'Overflowing helper successor differs'; end if;
+ execute 'create or replace function ${signature} returns table(recognized boolean,passed boolean) language sql stable security invoker parallel unsafe cost 100 rows 1 set search_path = '''' as '||pg_catalog.quote_literal(body)||';';
+ if (${state}) is not true then raise exception 'Overflowing helper readback differs'; end if;
+end $mode107_upgrade$;
+`;
+}
+
+/** Preserve every previous installer byte inside the additional compatibility layer. */
+export function wrapModeCountUpgrade(originalSql,upgrade,state) {
+  if(originalSql.startsWith('begin;\n')){assert(originalSql.endsWith('commit;\n'));return 'begin;\n'+wrapModeCountUpgrade(originalSql.slice(7,-8),upgrade,state)+'commit;\n';}
+  return `-- Preserve the exact previous compatibility installer.
+do $mode107_wrapper$
+begin
+ if (${state}) is true then return; end if;
+ execute $mode107_previous$${originalSql}$mode107_previous$;
+ execute $mode107_next$${upgrade}$mode107_next$;
+end $mode107_wrapper$;
+`;
+}
+
+export const MODE_COUNT_NATIVE_CONTROLS=Object.freeze([
+  'mode-count-original-one','mode-count-counter-without-addition','mode-count-complete-two','mode-count-wrong-real-count',
+  'mode-count-source-drift','mode-count-missing-mode','mode-count-description-drift','mode-count-operation-drift','mode-count-identity-drift',
+  'mode-count-uuid-alias','mode-count-name-alias','mode-count-pending-ref','mode-count-pending-id','mode-count-pending-name','mode-count-pending-uuid',
+  'mode-count-protected-row-drift','mode-count-template-drift','mode-count-deployed-upgrade-replay',
+  'mode-count-predecessor-body','mode-count-predecessor-metadata','mode-count-predecessor-acl','mode-count-historical-replays',
+]);
+
+/** Verify the additional allowance and every rejection in the existing owned rollback fixture. */
+export async function runNativeModeCountControls({inputs,fixture,capsule,userId}) {
+  const pass={recognized:true,passed:true},fail={recognized:true,passed:false};
+  const status=`select row_to_json(s) from ${inputs.helper.signature} s;`;
+  const quote=value=>"'"+String(value).replaceAll("'","''")+"'";
+  const columns=fixture.queryJson("select jsonb_agg(column_name order by ordinal_position) from information_schema.columns where table_schema='public' and table_name='ability_block' and is_generated='NEVER';").map(name=>'"'+name+'"').join(',');
+  const insert=row=>`insert into public.ability_block(${columns}) select ${columns} from jsonb_populate_record(null::public.ability_block,${quote(JSON.stringify(row))}::jsonb||jsonb_build_object('updated_at',now()));`;
+  const source=`update public.content_source set meta_data=${quote(JSON.stringify(modeCountSpec.after.meta_data))}::jsonb where id=842;`;
+  assert.equal(fixture.queryJson("select to_jsonb(count(*)) from public.ability_block where content_source_id=842 and type='mode';"),1);
+  const clean=insert(modeCountSpec.mode)+source;
+  const extra={...modeCountSpec.mode,id:900000051,uuid:'900000000000000051',name:'Owned native mode count witness'};
+  await capsule('mode-count-original-one',status,[pass]);
+  await capsule('mode-count-counter-without-addition',source+status,[fail]);
+  await capsule('mode-count-complete-two',clean+status,[pass]);
+  await capsule('mode-count-wrong-real-count',clean+insert(extra)+status,[fail]);
+  await capsule('mode-count-source-drift',clean+"update public.content_source set name=name||' unreviewed' where id=842;"+status,[fail]);
+  await capsule('mode-count-missing-mode',clean+"delete from public.ability_block where id=60082;"+insert(extra)+status,[fail]);
+  await capsule('mode-count-description-drift',clean+"update public.ability_block set description='' where id=60082;"+status,[fail]);
+  await capsule('mode-count-operation-drift',clean+"update public.ability_block set operations='{}'::json[] where id=60082;"+status,[fail]);
+  await capsule('mode-count-identity-drift',clean+"update public.ability_block set uuid=900000000000000052 where id=60082;"+status,[fail]);
+  await capsule('mode-count-uuid-alias',clean+insert({...extra,type:'feat',uuid:modeCountSpec.mode.uuid})+status,[fail]);
+  await capsule('mode-count-name-alias',clean+insert({...extra,type:'feat',name:modeCountSpec.mode.name})+status,[fail]);
+  for(const [name,data,ref] of [['ref',{},60082],['id',{id:60082},null],['name',{name:modeCountSpec.mode.name},null],['uuid',{uuid:modeCountSpec.mode.uuid},null]]) {
+    const pending=`insert into public.content_update(id,type,ref_id,content_source_id,action,data,upvotes,downvotes,status,user_id) values((select coalesce(max(id),0)+1 from public.content_update),'ability-block',${ref??'null'},842,'UPDATE',${quote(JSON.stringify(data))}::jsonb,'{}'::json[],'{}'::json[],'{"state":"PENDING"}'::jsonb,${quote(userId)}::uuid);`;
+    await capsule('mode-count-pending-'+name,clean+pending+status,[fail]);
+  }
+  await capsule('mode-count-protected-row-drift',clean+"update public.item set description=description||' unreviewed' where id=12183;"+status,[fail]);
+  const template=inputs.helper.proof.templates.find(row=>row.table==='item');assert(template);
+  await capsule('mode-count-template-drift',clean+`update public.item set name=name||' unreviewed' where uuid=${quote(template.uuid)}::bigint;`+status,[fail]);
+  const original=originalModeCountBody(inputs.helper.body);
+  const predecessor=inputs.helper.definition.replace(inputs.helper.body,()=>original).replace('create function ','create or replace function ');
+  await capsule('mode-count-deployed-upgrade-replay',predecessor+clean+status+inputs.modeCountCompatibility.upgrade+status+inputs.modeCountCompatibility.upgrade+status,[fail,pass,pass]);
+  for(const [name,mutation] of [['body',predecessor.replace(original,()=>original+'\n')],['metadata',`alter function ${inputs.helper.signature} cost 1;`],['acl',`grant execute on function ${inputs.helper.signature} to public;`]])
+    await capsule('mode-count-predecessor-'+name,predecessor+mutation+inputs.modeCountCompatibility.upgrade,[],true);
+  const replays=[...inputs.actualWrapperMetadata,inputs.completionWrapper,inputs.display];assert.equal(replays.length,41);
+  const replay=replays.map(row=>row.sql.replace(/^begin;\n/,'').replace(/commit;\n$/,'')).join('\n');
+  await capsule('mode-count-historical-replays',clean+replay+status,[pass]);
 }

@@ -448,5 +448,9 @@
   "20261027000000_curator_book_count_compatibility.sql": {
     "check": "treasure-vault-terminal-status.sql",
     "order": "before-functions"
+  },
+  "20261029000000_overflowing_mode_count_compatibility.sql": {
+    "check": "treasure-vault-terminal-status.sql",
+    "order": "before-functions"
   }
 }

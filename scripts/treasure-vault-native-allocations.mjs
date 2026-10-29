@@ -81,16 +81,16 @@ export function proveWholeHelperTokenBoundary() {
 
 /**
  * Two authentic fixtures, not a delete/reinsert/sequence-remap capsule. The driver
- * owns startup/cleanup and exact119 chronology; callbacks below own the evidence.
+ * owns startup/cleanup and exact120 chronology; callbacks below own the evidence.
  * Importing/constructing this module executes no SQL or creates any resource.
  */
 export async function runAlternateAllocations({inputs,fixture,withAlternateFixture,primaryChronology,receipt}) {
   assert.equal(typeof withAlternateFixture,'function','A reviewed second authentic fixture driver is mandatory');
-  assert.equal(primaryChronology.length,119,'The primary complete chronology is explicit');
+  assert.equal(primaryChronology.length,120,'The primary complete chronology is explicit');
   assert.deepEqual(primaryChronology.map(row=>row.path),primaryChronology.map(row=>row.path).sort());
-  assert.equal(new Set(primaryChronology.map(row=>row.path)).size,119);
-  assert.equal(primaryChronology.at(-1).path,'20261027000000_curator_book_count_compatibility.sql','Exact reviewed release recovery chronology successor');
-  assert.deepEqual(primaryChronology.slice(-7).map(row=>row.path),['20261010000100_shared_ancestries.sql','20261011000000_restore_heal_companion.sql','20261011000100_incarnate_release_compatibility.sql','20261015000000_rust_cloud_release_compatibility.sql','20261026000000_mine_mod_rules.sql','20261026010000_curator_release_compatibility.sql','20261027000000_curator_book_count_compatibility.sql']);
+  assert.equal(new Set(primaryChronology.map(row=>row.path)).size,120);
+  assert.equal(primaryChronology.at(-1).path,'20261029000000_overflowing_mode_count_compatibility.sql','Exact reviewed release recovery chronology successor');
+  assert.deepEqual(primaryChronology.slice(-8).map(row=>row.path),['20261010000100_shared_ancestries.sql','20261011000000_restore_heal_companion.sql','20261011000100_incarnate_release_compatibility.sql','20261015000000_rust_cloud_release_compatibility.sql','20261026000000_mine_mod_rules.sql','20261026010000_curator_release_compatibility.sql','20261027000000_curator_book_count_compatibility.sql','20261029000000_overflowing_mode_count_compatibility.sql']);
   assert.equal(primaryChronology.filter(row=>row.path==='20261008105800_treasure_vault_terminal_catalog_compatibility.sql').length,1,'Exact reviewed catalog compatibility successor');
   for(const row of primaryChronology){assert.match(row.path,/^[0-9]{14}_[a-z0-9_]+\.sql$/);assert.match(row.sha256,/^[a-f0-9]{64}$/);}
   const primaryBefore=fixture.snapshot();
