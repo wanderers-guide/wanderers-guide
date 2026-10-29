@@ -225,7 +225,10 @@ export async function runNativeModeCountControls({inputs,fixture,capsule,userId}
   await capsule('mode-count-description-drift',clean+"update public.ability_block set description='' where id=60082;"+status,[fail]);
   await capsule('mode-count-operation-drift',clean+"update public.ability_block set operations='{}'::json[] where id=60082;"+status,[fail]);
   await capsule('mode-count-identity-drift',clean+"update public.ability_block set uuid=900000000000000052 where id=60082;"+status,[fail]);
-  await capsule('mode-count-uuid-alias',clean+insert({...extra,type:'feat',uuid:modeCountSpec.mode.uuid})+status,[fail]);
+  // The owned rollback capsule removes the unique fence only to exercise the helper's
+  // independent alias rejection. PostgreSQL restores the constraint on rollback.
+  await capsule('mode-count-uuid-alias',clean+'alter table public.ability_block drop constraint ability_block_uuid_key;'+insert({...extra,type:'feat',uuid:modeCountSpec.mode.uuid})+status,[fail]);
+  assert.equal(fixture.query("select count(*) from pg_constraint where conrelid='public.ability_block'::regclass and conname='ability_block_uuid_key';"),'1');
   await capsule('mode-count-name-alias',clean+insert({...extra,type:'feat',name:modeCountSpec.mode.name})+status,[fail]);
   for(const [name,data,ref] of [['ref',{},60082],['id',{id:60082},null],['name',{name:modeCountSpec.mode.name},null],['uuid',{uuid:modeCountSpec.mode.uuid},null]]) {
     const pending=`insert into public.content_update(id,type,ref_id,content_source_id,action,data,upvotes,downvotes,status,user_id) values((select coalesce(max(id),0)+1 from public.content_update),'ability-block',${ref??'null'},842,'UPDATE',${quote(JSON.stringify(data))}::jsonb,'{}'::json[],'{}'::json[],'{"state":"PENDING"}'::jsonb,${quote(userId)}::uuid);`;
