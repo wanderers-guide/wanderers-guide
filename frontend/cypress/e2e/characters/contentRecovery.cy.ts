@@ -1,6 +1,7 @@
 describe('Incomplete content recovery', () => {
   let characterId: number;
   let token: string;
+  let releaseReads: Array<() => void> = [];
   const login = () =>
     cy.session('quiet-content-recovery', () => cy.login());
 
@@ -20,6 +21,7 @@ describe('Incomplete content recovery', () => {
   });
 
   afterEach(() => {
+    releaseReads.splice(0).forEach((release) => release());
     cy.then(() =>
       Cypress.automation('remote:debugger:protocol', {
         command: 'Network.setBypassServiceWorker',
@@ -83,6 +85,40 @@ describe('Incomplete content recovery', () => {
       cy.screenshot(`quiet-${surface}-recovered-mobile`);
     });
   }
+  it('keeps the sheet covered until a failed character read and its calculation recover', () => {
+    login();
+    let broken = true;
+    cy.intercept('POST', '**/functions/v1/find-character', (req) => {
+      // Content prefetch uses the route's string ID; only interrupt the authoritative hook read.
+      if (req.body.id !== characterId) return req.continue();
+      if (broken) {
+        req.alias = 'initialReadFailure';
+        return req.reply({ statusCode: 200, body: { status: 'error', message: 'Fixture character outage' } });
+      }
+      return new Promise<void>((resolve) => {
+        releaseReads.push(() => {
+          req.continue();
+          resolve();
+        });
+      });
+    });
+    cy.visit(`/sheet/${characterId}`);
+    cy.wait('@initialReadFailure', { requestTimeout: 45000 });
+    cy.get('[role="status"][aria-label="Loading character"]').should('be.visible');
+    cy.window().then((win) => new Promise<void>((resolve) => {
+      win.requestAnimationFrame(() => {
+        broken = false;
+        win.dispatchEvent(new win.Event('online'));
+        resolve();
+      });
+    }));
+    cy.wrap(null).should(() => expect(releaseReads.length, 'recovered read is held').to.be.greaterThan(0));
+    cy.get('[role="status"][aria-label="Loading character"]').should('be.visible');
+    cy.then(() => releaseReads.splice(0).forEach((release) => release()));
+    cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
+    cy.get('[role="status"][aria-label="Loading character"]').should('not.be.visible');
+  });
+
   it('keeps fatal route diagnostics private and offers a simple path home', () => {
     login();
     // CI serves immutable assets; bypass both browser and worker caches so the failure is real.

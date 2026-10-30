@@ -580,7 +580,9 @@ The `characters/contentRecovery.cy.ts` cases verify automatic content recovery
 without technical error screens or partial saves. Already loaded views keep their
 last complete library during retries; source changes pause calculations and derived
 saves until a complete matching replacement arrives. Character reads, drawers and
-content selectors also retry quietly. App updates never display reload prompts.
+content selectors also retry quietly. A failed initial character read keeps the sheet
+covered through the recovered read and calculation; it must never signal readiness
+from the read-error path. App updates never display reload prompts.
 
 The stateless Functions transport cancels an allowlisted record read if response headers
 have not arrived within eight seconds, including connection, preflight and server

@@ -2115,3 +2115,29 @@ test('an account change while derived inventory waits retires the old completion
   assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
   harness.unmount();
 });
+
+test('an initial read failure cannot finish loading before the recovered calculation', async (t) => {
+  const host = harness;
+  t.after(() => host.unmount());
+  let finished = 0;
+  const calculation = deferred();
+  harness.options = {
+    type: 'EXECUTE_OPS',
+    data: { content: { items: [] }, context: 'CHARACTER-SHEET', onFinishLoading: () => finished++ },
+  };
+  harness.request = async () => { throw new Error('Temporary read outage'); };
+  harness.calculate = () => calculation.promise;
+  harness.render();
+  await harness.flush();
+  assert.equal(harness.value.loadError, true);
+  assert.equal(finished, 0, 'a failed initial read must not expose the inner sheet');
+  harness.request = async () => row();
+  events.get('online')?.();
+  await harness.flush();
+  assert.equal(harness.value.isLoaded, true);
+  assert.equal(finished, 0, 'recovered data alone does not expose unfinished stats');
+  calculation.resolve({ complete: true });
+  await harness.flush();
+  assert.equal(finished, 1);
+  assert.deepEqual(harness.value.results, { complete: true });
+});
