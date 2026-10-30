@@ -292,3 +292,21 @@ test('an already-canceled read cannot start a live transfer', async () => {
     assert.equal(timers.size, 0);
   });
 });
+
+test('a legitimate catalog may also take more than eight seconds to produce its headers', async () => {
+  await withRecoveryTransport(async ({ api, state, requests, advance, timers }) => {
+    let finish;
+    state.fetch = () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      });
+    const reading = api.makeRequest('find-ability-block', { content_sources: [3] }, false, { anonymous: true });
+    await advance(0);
+    await advance(45000);
+    assert.equal(requests[0].signal.aborted, false, 'catalog generation retains the full download allowance');
+    finish(response());
+    assert.deepEqual(await reading, { id: 1 });
+    assert.equal(requests.length, 1);
+    assert.equal(timers.size, 0);
+  });
+});

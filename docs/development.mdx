@@ -582,16 +582,17 @@ last complete library during retries; source changes pause calculations and deri
 saves until a complete matching replacement arrives. Character reads, drawers and
 content selectors also retry quietly. App updates never display reload prompts.
 
-The stateless Functions transport cancels an allowlisted read if response headers
+The stateless Functions transport cancels an allowlisted record read if response headers
 have not arrived within eight seconds, including connection, preflight and server
 processing time. That failure uses the existing single transient retry and rechecks
-the captured account before replaying. Once headers arrive, the existing full-body
-budget remains: 30 seconds for record reads and 120 seconds for catalogs. A slow
-catalog transfer is therefore not restarted just because its body takes more than
-eight seconds. Expired body reads also use the same bounded retry. Writes keep
+the captured account before replaying. The complete-request limit remains 30
+seconds for record reads. Catalog queries and ID batches retain their full 120-second
+allowance for both response generation and transfer; the early deadline never
+interrupts them. Expired body reads also use the same bounded retry. Writes keep
 their existing deadline and are never replayed after an uncertain timeout. The
-real-SDK tests in `session-transport.test.mjs` cover stalled headers, a 45-second
-streaming body, cancellation, account changes and the write boundary.
+real-SDK tests in `session-transport.test.mjs` cover stalled record headers, both
+45-second catalog generation and streaming, cancellation, account changes and the
+write boundary.
 
 The startup recovery watchdog is compiled from `src/startup-recovery.ts` into an
 inline classic script before the main module. A worker-stalled module download

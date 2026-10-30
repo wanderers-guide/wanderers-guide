@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { FunctionsClient } from '@supabase/functions-js';
-import { RETRYABLE_READS } from '@requests/request-policy';
+import { isCatalogRead, RETRYABLE_READS } from '@requests/request-policy';
 
 const READ_RESPONSE_START_TIMEOUT_MS = 8000;
 
@@ -9,6 +9,13 @@ async function fetchFunction(input: RequestInfo | URL, init?: RequestInit): Prom
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
   const type = new URL(url).pathname.split('/').pop() ?? '';
   if (!RETRYABLE_READS.has(type)) return fetch(input, init);
+  let body: unknown;
+  try {
+    body = typeof init?.body === 'string' ? JSON.parse(init.body) : undefined;
+  } catch {
+    // An opaque body cannot prove that a catalog endpoint is a small record read.
+  }
+  if (isCatalogRead(type, body)) return fetch(input, init);
 
   const controller = new AbortController();
   const source = init?.signal ?? (input instanceof Request ? input.signal : undefined);

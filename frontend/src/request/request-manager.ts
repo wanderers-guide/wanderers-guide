@@ -5,7 +5,7 @@ import { logError, throwError } from '@utils/error-handling';
 import { functions, supabase } from '../supabase-client';
 import { readSession, withinSessionBudget, SessionChangedError } from '@auth/session-reader';
 import { RequestRejectedError } from './request-rejection';
-import { CONTENT_DOWNLOAD_READS, RETRYABLE_READS } from './request-policy';
+import { isCatalogRead, RETRYABLE_READS } from './request-policy';
 
 const MAX_TRANSIENT_RETRIES = 1;
 
@@ -129,10 +129,7 @@ export async function makeRequest<T = Record<string, any>>(
   }
 
   while (true) {
-    const timeout =
-      CONTENT_DOWNLOAD_READS.has(type) && (body.id === undefined || Array.isArray(body.id))
-        ? CONTENT_DOWNLOAD_TIMEOUT_MS
-        : DEFAULT_TIMEOUT_MS;
+    const timeout = isCatalogRead(type, body) ? CONTENT_DOWNLOAD_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
     const { data, error } = await invokeWithTimeout(type, body, timeout, requestSession?.access_token);
     if (!error) {
       if (!data) return failure();
