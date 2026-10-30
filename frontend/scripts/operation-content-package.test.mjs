@@ -184,7 +184,7 @@ for (const [field, label] of [
   ['ancestry', 'ancestry'],
 ]) {
   test(`a missing selected ${label} rejects partial math and a complete package recovers`, async () => {
-    const { content, wizard } = await coreWizardFixture();
+    const { content, character: wizard } = await coreClassFixture();
     const incomplete = { ...character(), details: { [field]: { id: 987654 } } };
     await self.onmessage({
       data: {
@@ -497,8 +497,72 @@ test('older packets without trait metadata retain the original implicit lookup f
   assert.equal(api.getWorkerContentReader(), undefined);
 });
 
-/** Load the same official Wizard content and character used by the sheet integration test. */
-async function coreWizardFixture() {
+test('missing optional metadata keeps package-satisfied trait IDs fully offline', async () => {
+  const content = packet();
+  const trait = { id: 30, name: 'Known trait', content_source_id: 1 };
+  content.traits.push(trait);
+  await api.withWorkerContentPackage(content, async () => {
+    assert.deepEqual(await api.fetchContent('trait', { id: 30 }), [trait]);
+    assert.deepEqual(await api.fetchContent('trait', { id: [30, 30] }), [trait]);
+  });
+  assert.equal(networkCalls, 0);
+});
+
+test('trait fallback retries failures, isolates returned rows, and expires with its job', async () => {
+  allowCrossBookLookup();
+  const sourceRequest = globalThis.__workerPackageTest.request;
+  let traitReads = 0;
+  globalThis.__workerPackageTest.request = async (type, body) => {
+    if (type !== 'find-trait') return sourceRequest(type, body);
+    traitReads++;
+    if (traitReads === 1) throw new Error('Temporary trait outage');
+    return { id: 10, name: 'Shared trait', content_source_id: 9, meta_data: { important: true } };
+  };
+  await api.withWorkerContentPackage(packet(), async () => {
+    await assert.rejects(api.fetchContent('trait', { name: 'Shared trait' }), /Temporary trait outage/);
+    const first = await api.fetchContent('trait', { name: 'Shared trait' });
+    first[0].name = 'Caller adjustment';
+    first[0].meta_data.important = false;
+    const next = await api.fetchContent('trait', { name: 'Shared trait' });
+    assert.equal(next[0].name, 'Shared trait');
+    assert.equal(next[0].meta_data.important, true);
+    assert.equal(traitReads, 2, 'Only successful results are retained');
+    assert.deepEqual(api.getCachedContent('trait'), [], 'INFO metadata never expands PAGE');
+  });
+  await api.withWorkerContentPackage(packet(), async () => {
+    assert.equal((await api.fetchContent('trait', { name: 'Shared trait' }))[0].id, 10);
+  });
+  assert.equal(traitReads, 3, 'A later job cannot reuse the previous metadata');
+  assert.deepEqual(api.getCachedContent('trait'), []);
+});
+
+test('trait fallback keys include the resolved source scope and complete request', async () => {
+  allowCrossBookLookup();
+  const sourceRequest = globalThis.__workerPackageTest.request;
+  let traitReads = 0;
+  globalThis.__workerPackageTest.request = async (type, body) => {
+    if (type !== 'find-trait') return sourceRequest(type, body);
+    traitReads++;
+    const id = body.id ?? (body.content_sources.includes(9) ? 10 : 30);
+    return { id, name: 'Shared trait', content_source_id: id === 10 ? 9 : 1 };
+  };
+  api.defineDefaultSources('BOTH', [1]);
+  try {
+    await api.withWorkerContentPackage(packet(), async () => {
+      assert.equal((await api.fetchContent('trait', { name: 'Shared trait' }))[0].id, 30);
+      api.defineDefaultSources('INFO', [9]);
+      assert.equal((await api.fetchContent('trait', { name: 'Shared trait' }))[0].id, 10);
+      assert.equal((await api.fetchContent('trait', { name: 'Shared trait', id: 20 }))[0].id, 20);
+      assert.equal((await api.fetchContent('trait', { name: 'Shared trait' }))[0].id, 10);
+    });
+    assert.equal(traitReads, 3);
+  } finally {
+    api.defineDefaultSources('BOTH', 'ALL-USER-ACCESSIBLE');
+  }
+});
+
+/** Load an official class and its books through the same fixture used by sheet tests. */
+async function coreClassFixture(sourceIds = [1, 3], classId = 26) {
   const tables = {
     ability_block: 'abilityBlocks',
     ancestry: 'ancestries',
@@ -516,9 +580,8 @@ async function coreWizardFixture() {
   const rows = await readContentRows([
     ...Object.keys(tables)
       .filter((table) => table !== 'creature')
-      .map((table) => ({ table, sourceIds: [1, 3] })),
-    { table: 'content_source', id: 1 },
-    { table: 'content_source', id: 3 },
+      .map((table) => ({ table, sourceIds })),
+    ...sourceIds.map((id) => ({ table: 'content_source', id })),
   ]);
   const content = {
     ...Object.fromEntries(
@@ -529,19 +592,19 @@ async function coreWizardFixture() {
     ),
     sources: rows.filter((entry) => entry.table === 'content_source').map((entry) => entry.row),
     lookupTraits: rows.filter((entry) => entry.table === 'trait').map((entry) => entry.row),
-    defaultSources: { PAGE: [1, 3], INFO: [1, 3] },
+    defaultSources: { PAGE: sourceIds, INFO: sourceIds },
   };
-  const wizard = {
+  const fixtureCharacter = {
     ...character(),
     custom_operations: [],
-    details: { class: content.classes.find((row) => row.id === 26) },
+    details: { class: content.classes.find((row) => row.id === classId) },
   };
-  assert.equal(wizard.details.class?.name, 'Wizard');
-  return { content, wizard };
+  assert.ok(fixtureCharacter.details.class, 'The selected official class must exist');
+  return { content, character: fixtureCharacter };
 }
 
 test('a real core Wizard resolves its complete selection catalog without another network request', async () => {
-  const { content, wizard } = await coreWizardFixture();
+  const { content, character: wizard } = await coreClassFixture();
   await self.onmessage({
     data: { id: 1, execution: { type: 'CHARACTER', data: { character: wizard, content, context: 'CHARACTER-SHEET' } } },
   });
@@ -550,8 +613,44 @@ test('a real core Wizard resolves its complete selection catalog without another
   assert.equal(networkCalls, 0, JSON.stringify(requests));
 });
 
+test('real multipass Oracle reuses missing trait metadata without changing its calculation', async () => {
+  const { content, character: oracle } = await coreClassFixture([3, 256], 112);
+  oracle.level = 3;
+  await self.onmessage({
+    data: { id: 1, execution: { type: 'CHARACTER', data: { character: oracle, content, context: 'CHARACTER-SHEET' } } },
+  });
+  const complete = messages.pop();
+  assert.equal(complete.status, 'success', complete.message);
+  delete content.lookupTraits;
+  globalThis.__workerPackageTest.session = async () => ({ data: { session: null } });
+  globalThis.__workerPackageTest.user = async () => null;
+  globalThis.__workerPackageTest.request = async (type, body) => {
+    requests.push({ type, body });
+    if (type === 'find-content-source')
+      return Array.isArray(body.id) ? content.sources.filter((row) => body.id.includes(row.id)) : content.sources;
+    assert.equal(type, 'find-trait');
+    return content.traits.find((row) => row.name.toLowerCase() === body.name?.trim().toLowerCase()) ?? null;
+  };
+  await self.onmessage({
+    data: { id: 2, execution: { type: 'CHARACTER', data: { character: oracle, content, context: 'CHARACTER-SHEET' } } },
+  });
+  const fallback = messages.pop();
+  assert.equal(fallback.status, 'success', fallback.message);
+  const traitReads = requests.filter(({ type }) => type === 'find-trait');
+  const names = new Set(traitReads.map(({ body }) => body.name));
+  assert.ok(names.size >= 4, 'The real Oracle filters must exercise multiple trait lookups');
+  assert.equal(traitReads.length, names.size, 'Repeated calculation passes share each successful trait lookup');
+  // Independent runs have different audit times; every recorded transition still matches.
+  const calculation = (store) => ({
+    ...store,
+    history: JSON.parse(JSON.stringify(store.history, (key, value) => (key === 'timestamp' ? undefined : value))),
+  });
+  assert.deepEqual(calculation(fallback.data.store), calculation(complete.data.store));
+  assert.deepEqual(api.getCachedContent('trait'), [], 'Fallback metadata must not enter the normal content cache');
+});
+
 test('a real core Wizard with optional trait metadata missing reuses source resolution across fallback names', async () => {
-  const { content, wizard } = await coreWizardFixture();
+  const { content, character: wizard } = await coreClassFixture();
   delete content.lookupTraits;
   globalThis.__workerPackageTest.session = async () => ({ data: { session: null } });
   globalThis.__workerPackageTest.user = async () => null;
@@ -568,7 +667,9 @@ test('a real core Wizard with optional trait metadata missing reuses source reso
   });
   const result = messages.pop();
   assert.equal(result.status, 'success', result.message);
-  assert.ok(requests.filter(({ type }) => type === 'find-trait').length >= 3);
+  const traitReads = requests.filter(({ type }) => type === 'find-trait');
+  assert.ok(traitReads.length > 0);
+  assert.equal(traitReads.length, new Set(traitReads.map(({ body }) => body.name)).size);
   assert.equal(requests.filter(({ type }) => type === 'find-content-source').length, 1);
   assert.equal(api.getWorkerContentReader(), undefined);
 });

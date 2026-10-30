@@ -20,6 +20,20 @@ const TABLES = {
 
 type PackageRow = { id: number; name: string; content_source_id?: number };
 
+/** Share successful job-local reads while allowing failed requests to retry. */
+async function memoizeJobLookup<T>(cache: Map<string, Promise<T>>, key: string, fetch: () => Promise<T>): Promise<T> {
+  const active = cache.get(key);
+  if (active) return active;
+  const request = fetch();
+  cache.set(key, request);
+  try {
+    return await request;
+  } catch (error) {
+    if (cache.get(key) === request) cache.delete(key);
+    throw error;
+  }
+}
+
 /** Match the endpoint's case-insensitive SQL LIKE name filter, including explicit wildcards. */
 function namePattern(pattern: string): RegExp {
   let expression = '';
@@ -52,6 +66,7 @@ export function createOperationContentReader(content: ContentPackage) {
   const scopedTables = new Map<ContentType, PackageRow[]>();
   const indexedTables = new Map<ContentType, Map<number, PackageRow>>();
   const fallbackSourceLookups = new Map<string, Promise<ContentSource[]>>();
+  const fallbackTraitLookups = new Map<string, Promise<Trait[]>>();
   const lookupTraits = content.lookupTraits
     ? [...content.lookupTraits].sort((left, right) => left.id - right.id)
     : undefined;
@@ -93,17 +108,15 @@ export function createOperationContentReader(content: ContentPackage) {
       generation: number,
       fetch: () => Promise<ContentSource[]>
     ): Promise<ContentSource[]> {
-      const key = JSON.stringify([generation, scope]);
-      const active = fallbackSourceLookups.get(key);
-      if (active) return active;
-      const request = fetch();
-      fallbackSourceLookups.set(key, request);
-      try {
-        return await request;
-      } catch (error) {
-        if (fallbackSourceLookups.get(key) === request) fallbackSourceLookups.delete(key);
-        throw error;
-      }
+      return memoizeJobLookup(fallbackSourceLookups, JSON.stringify([generation, scope]), fetch);
+    },
+    /** Retain implicit trait metadata for this job's repeated passes, outside PAGE catalogs. */
+    fallbackTraits(
+      generation: number,
+      request: Record<string, unknown>,
+      fetch: () => Promise<Trait[]>
+    ): Promise<Trait[]> {
+      return memoizeJobLookup(fallbackTraitLookups, JSON.stringify([generation, request]), fetch);
     },
     /** Match find-trait's implicit scope, ID precedence, trimming and first-row behavior. */
     lookupTrait(data: Record<string, unknown>): Trait[] | undefined {

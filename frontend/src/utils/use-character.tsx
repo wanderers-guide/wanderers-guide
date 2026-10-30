@@ -301,7 +301,6 @@ export default function useCharacter(
       if (!active) return;
       console.error('Could not load character:', error);
       setLoadError(true);
-      if (options.type === 'EXECUTE_OPS') options.data.onFinishLoading();
     });
     return () => {
       active = false;

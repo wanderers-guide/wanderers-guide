@@ -555,6 +555,24 @@ export async function fetchContentAll<T = Record<string, any>>(
   return await fetchContent<T>(type, { content_sources: sources }, false, false, scope);
 }
 
+/** Capture the same resolved INFO/PAGE scope for ordinary reads and worker metadata. */
+async function resolveRequestSources(
+  sources: SourceValue | undefined,
+  bypassWorkerPackage: boolean,
+  readScope: ContentReadScope
+): Promise<number[]> {
+  const info = getDefaultSources('INFO');
+  const page = getDefaultSources('PAGE');
+  if (Array.isArray(sources)) return uniq(sources).sort((a, b) => a - b);
+  const resolved = sources
+    ? await fetchContentSources(sources, bypassWorkerPackage, readScope)
+    : [
+        ...(await fetchContentSources(info, bypassWorkerPackage, readScope)),
+        ...(await fetchContentSources(page, bypassWorkerPackage, readScope)),
+      ];
+  return uniq(resolved.map((source) => source.id)).sort((a, b) => a - b);
+}
+
 export async function fetchContent<T = Record<string, any>>(
   type: ContentType,
   data: Record<string, any>,
@@ -609,6 +627,21 @@ export async function fetchContent<T = Record<string, any>>(
     if (type === 'trait' && data.content_sources === undefined) {
       const traits = workerContent.lookupTrait(data);
       if (traits !== undefined) return traits as T[];
+      if (data.id !== undefined) {
+        const local = workerContent.fetch<Trait>('trait', data);
+        const ids = new Set((Array.isArray(data.id) ? data.id : [data.id]).map(Number));
+        if (local.length === ids.size) return local as T[];
+      }
+      const request = cloneDeep(data);
+      const scope = await ensureCacheActor(readScope);
+      request.content_sources = await resolveRequestSources(undefined, true, scope);
+      assertContentReadScope(scope);
+      const result = await workerContent.fallbackTraits(scope.generation, request, () =>
+        fetchContent<Trait>('trait', request, true, true, scope)
+      );
+      assertContentReadScope(scope);
+      // Callers can adjust descriptors without changing another pass's metadata.
+      return cloneDeep(result) as T[];
     }
     // Name/filter reads with the implicit INFO+PAGE scope may have more matches
     // outside the posted PAGE package. Preserve their original scoped lookup.
@@ -631,20 +664,7 @@ export async function fetchContent<T = Record<string, any>>(
   // now so a later view change cannot alter this request's meaning.
   data = cloneDeep({ ...data });
   if (type !== 'content-source') {
-    const scope: SourceValue | undefined = data.content_sources;
-    const info = getDefaultSources('INFO');
-    const page = getDefaultSources('PAGE');
-    data.content_sources = Array.isArray(scope)
-      ? uniq(scope).sort((a, b) => a - b)
-      : uniq(
-          (scope
-            ? await fetchContentSources(scope, bypassWorkerPackage, requestScope)
-            : [
-                ...(await fetchContentSources(info, bypassWorkerPackage, requestScope)),
-                ...(await fetchContentSources(page, bypassWorkerPackage, requestScope)),
-              ]
-          ).map((source) => source.id)
-        ).sort((a, b) => a - b);
+    data.content_sources = await resolveRequestSources(data.content_sources, bypassWorkerPackage, requestScope);
     assertCurrentGeneration(generation);
   }
 

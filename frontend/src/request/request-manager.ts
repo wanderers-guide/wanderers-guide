@@ -5,39 +5,18 @@ import { logError, throwError } from '@utils/error-handling';
 import { functions, supabase } from '../supabase-client';
 import { readSession, withinSessionBudget, SessionChangedError } from '@auth/session-reader';
 import { RequestRejectedError } from './request-rejection';
+import { isCatalogRead, RETRYABLE_READS } from './request-policy';
 
 const MAX_TRANSIENT_RETRIES = 1;
-// Complete catalogs can exceed 10 MB. Their transfer and JSON parsing need a
-// larger budget than a record lookup, especially when several books load together.
-const CONTENT_DOWNLOAD_READS = new Set<RequestType>([
-  'search-data',
-  'find-content-source',
-  'find-trait',
-  'find-ability-block',
-  'find-ancestry',
-  'find-background',
-  'find-class',
-  'find-archetype',
-  'find-versatile-heritage',
-  'find-class-archetype',
-  'find-item',
-  'find-language',
-  'find-creature',
-  'find-spell',
-]);
-// A lost response can follow a committed write. Only explicitly read-only handlers
-// may be retried after an ambiguous network, gateway or worker resource failure.
-const RETRYABLE_READS = new Set<RequestType>([
-  ...CONTENT_DOWNLOAD_READS,
-  'gm-users-in-group',
-  'get-user',
-  'get-content-source-stats',
-  'get-content-versions',
-  'find-character',
-  'find-content-update',
-  'find-encounter',
-  'find-campaign',
-]);
+
+/** A locally expired request is transient only for the explicit read allowlist. */
+class RequestTimeoutError extends Error {
+  constructor() {
+    super('Timeout');
+    this.name = 'RequestTimeoutError';
+  }
+}
+
 const DEFAULT_TIMEOUT_MS = 30000;
 const CONTENT_DOWNLOAD_TIMEOUT_MS = 120000;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -150,10 +129,7 @@ export async function makeRequest<T = Record<string, any>>(
   }
 
   while (true) {
-    const timeout =
-      CONTENT_DOWNLOAD_READS.has(type) && (body.id === undefined || Array.isArray(body.id))
-        ? CONTENT_DOWNLOAD_TIMEOUT_MS
-        : DEFAULT_TIMEOUT_MS;
+    const timeout = isCatalogRead(type, body) ? CONTENT_DOWNLOAD_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
     const { data, error } = await invokeWithTimeout(type, body, timeout, requestSession?.access_token);
     if (!error) {
       if (!data) return failure();
@@ -215,7 +191,10 @@ export async function makeRequest<T = Record<string, any>>(
       }
     }
 
-    const isTransientNetwork = error instanceof FunctionsFetchError || error instanceof FunctionsRelayError;
+    const isTransientNetwork =
+      error instanceof FunctionsFetchError ||
+      error instanceof FunctionsRelayError ||
+      error instanceof RequestTimeoutError;
     const isTransientHttp = error instanceof FunctionsHttpError && [502, 503, 504, 546].includes(error.context?.status);
     if (
       RETRYABLE_READS.has(type) &&
@@ -267,7 +246,7 @@ async function invokeWithTimeout(
       // Stop expired reads before React Query or the user starts another transfer.
       // Writes retain their existing uncertain-outcome handling and are never replayed here.
       if (RETRYABLE_READS.has(type)) controller.abort();
-      resolve({ data: null, error: new Error('Timeout') });
+      resolve({ data: null, error: new RequestTimeoutError() });
     }, timeout);
 
     functions

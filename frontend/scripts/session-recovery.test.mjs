@@ -1028,10 +1028,14 @@ test('stalled catalogs are bounded and abort their transfer before a later retry
     await advance(119999);
     assert.equal(outcome, 'pending');
     await advance(1);
+    assert.equal(calls[0].signal.aborted, true);
+    await advance(500);
+    assert.equal(calls.length, 2);
+    await advance(120000);
     await downloading;
     assert.equal(outcome, null);
-    assert.equal(calls.length, 1);
-    assert.equal(calls[0].signal.aborted, true, 'expired download no longer consumes bandwidth');
+    assert.equal(calls.length, 2);
+    assert.equal(calls[1].signal.aborted, true, 'expired download no longer consumes bandwidth');
     finish(ok());
     await advance(0);
     assert.equal(outcome, null, 'late responses cannot replace the settled failure');
@@ -1048,8 +1052,13 @@ test('single-record reads retain the short deadline and mutations are never repl
       const pending = api.makeRequest(type, { id: 1 }, false);
       await advance(0);
       await advance(30000);
+      const read = type.startsWith('find-');
+      if (read) {
+        await advance(500);
+        await advance(30000);
+      }
       assert.equal(await pending, null);
-      assert.equal(calls.length, 1);
+      assert.equal(calls.length, read ? 2 : 1);
       assert.equal(calls[0].signal.aborted, type.startsWith('find-'));
       assert.equal(timers.size, 0);
     });
