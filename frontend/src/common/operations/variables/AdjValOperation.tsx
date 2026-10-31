@@ -93,12 +93,17 @@ export function AdjustValueInput(props: {
           prefix={value.value >= 0 ? '+' : undefined}
           placeholder='Number to Add'
           value={value.value}
-          onChange={(val) =>
+          min={-1}
+          max={1}
+          clampBehavior='strict'
+          onChange={(val) => {
+            /** Persist only engine-supported adjustments, never empty input or a lone minus sign. */
+            if (val !== -1 && val !== 0 && val !== 1) return;
             props.onChange({
-              value: parseInt(`${val}`),
+              value: val,
               partial: value.partial,
-            } as AttributeValue)
-          }
+            });
+          }}
           allowDecimal={false}
         />
         {/* <Box>
