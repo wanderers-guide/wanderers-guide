@@ -8,7 +8,7 @@ describe('Incoming character updates', () => {
     cy
       .request({
         method: 'POST',
-        url: `${Cypress.env('functions_url')}/${endpoint}`,
+        url: `${Cypress.expose('functions_url')}/${endpoint}`,
         headers: { Authorization: `Bearer ${token}` },
         body,
         log: false,
@@ -28,7 +28,7 @@ describe('Incoming character updates', () => {
   beforeEach(() => {
     characterId = undefined;
     cy.intercept('POST', '**/auth/v1/token*').as('signIn');
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
     cy.wait('@signIn').then(({ response }) => {
       token = response?.body.access_token;
       actorId = response?.body.user.id;

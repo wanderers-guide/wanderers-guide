@@ -4,7 +4,6 @@ import { getSpellStats } from '@spells/spell-handler';
 import { CastingSource, LivingEntity, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from '@schemas/content';
 import { rankNumber, sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
-import { Dictionary } from 'node_modules/cypress/types/lodash';
 import SpellListEntrySection from './SpellListEntrySection';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { drawerState } from '@atoms/navAtoms';
@@ -49,7 +48,8 @@ export default function PreparedSpellsList(props: {
       rank_max?: number;
     }
   ) => void;
-  slots: Dictionary<
+  slots: Record<
+    string,
     {
       spell: Spell | undefined;
       rank: number;

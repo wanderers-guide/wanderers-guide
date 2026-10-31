@@ -1,3 +1,4 @@
+import { showNotification } from '@mantine/notifications';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { getCachedPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
@@ -59,11 +60,23 @@ export function Component() {
   const [loadingCreateZeroCampaign, setLoadingCreateZeroCampaign] = useState(false);
 
   const handleCreateCampaign = async () => {
-    const campaign = await createCampaign();
-    if (campaign) {
-      navigate(`/campaign/${campaign.id}`);
+    try {
+      const campaign = await createCampaign();
+      if (campaign) {
+        navigate(`/campaign/${campaign.id}`);
+      }
+    } catch (error) {
+      console.error('Could not create campaign:', error);
+      showNotification({
+        title: 'Could not create campaign',
+        message: error instanceof Error ? error.message : 'Please try again.',
+        color: 'red',
+      });
+    } finally {
+      // Both entry points must recover without replaying a possibly committed write.
+      setLoadingCreateCampaign(false);
+      setLoadingCreateZeroCampaign(false);
     }
-    setLoadingCreateCampaign(false);
   };
 
   const reachedCampaignLimit = (data?.length ?? 0) >= CAMPAIGN_SLOT_CAP && !hasPatreonAccess(getCachedPublicUser(), 2);
@@ -360,14 +373,19 @@ function CampaignCard(props: { campaign: Campaign }) {
 }
 
 async function createCampaign() {
-  const result = await makeRequest<Campaign>('create-campaign', {
-    name: 'My Campaign',
-    description: 'A new adventure begins...',
-    meta_data: {
-      settings: {
-        show_party_member_status: 'STATUS',
+  const result = await makeRequest<Campaign>(
+    'create-campaign',
+    {
+      name: 'My Campaign',
+      description: 'A new adventure begins...',
+      meta_data: {
+        settings: {
+          show_party_member_status: 'STATUS',
+        },
       },
     },
-  });
+    true,
+    { throwOnFailure: true }
+  );
   return result;
 }

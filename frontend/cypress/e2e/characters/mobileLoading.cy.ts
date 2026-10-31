@@ -40,7 +40,7 @@ describe('Mobile content loading', () => {
           cy
             .request({
               method: 'POST',
-              url: `${Cypress.env('functions_url')}/${endpoint}`,
+              url: `${Cypress.expose('functions_url')}/${endpoint}`,
               headers: { Authorization: `Bearer ${token}` },
               body,
               log: false,

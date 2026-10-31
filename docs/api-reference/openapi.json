@@ -291,7 +291,7 @@
               },
               "starfinder": {
                 "type": "object",
-                "description": "Optional equipment metadata. Final armor opts in with paired base_grade and base_upgrade_slots; printed stats and price remain the starting printing. Selected grade derives improvements without rewriting saved items. Built-in upgrades are fixed and do not consume available slots.",
+                "description": "Optional equipment metadata. Final armor and pregraded weapons opt in with paired base_grade and base_upgrade_slots; printed stats and price remain the starting printing. Selected grade derives only improvements above that baseline without rewriting saved items. Weapon Tracking follows the selected grade. Built-in upgrades are armor-only, fixed, and do not consume available slots.",
                 "dependentRequired": {
                   "base_grade": ["base_upgrade_slots"],
                   "base_upgrade_slots": ["base_grade"],
@@ -1307,9 +1307,11 @@
     },
     "/find-ability-block": {
       "post": {
-        "tags": ["Content"],
+        "tags": [
+          "Content"
+        ],
         "summary": "Find ability blocks (feats, actions, class features, etc.)",
-        "description": "Ability blocks cover feats, actions, physical-features, senses, class-features, heritages, and modes. Filter by `type` to narrow.",
+        "description": "Ability blocks cover feats, actions, physical-features, senses, class-features, heritages, and modes. Filter by `type` to narrow. For large lists, page_size (1–1000) returns one ID-ordered page. Send its last ID as after_id with the same filters until a shorter or empty page arrives. after_id requires page_size. Without pagination, legacy complete-array and scalar-ID responses are unchanged.",
         "operationId": "findAbilityBlock",
         "requestBody": {
           "required": false,
@@ -1318,12 +1320,60 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "id": { "oneOf": [{ "type": "integer" }, { "type": "array", "items": { "type": "integer" } }] },
-                  "type": { "$ref": "#/components/schemas/AbilityBlockType" },
-                  "name": { "type": "string" },
-                  "content_sources": { "type": "array", "items": { "type": "integer" } },
-                  "traits": { "type": "array", "items": { "type": "integer" } },
-                  "prerequisites": { "type": "array", "items": { "type": "string" } }
+                  "id": {
+                    "oneOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "integer"
+                        }
+                      }
+                    ]
+                  },
+                  "type": {
+                    "$ref": "#/components/schemas/AbilityBlockType"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "content_sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "traits": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "prerequisites": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "page_size": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1000,
+                    "description": "Maximum rows in this page; omit for the legacy complete response."
+                  },
+                  "after_id": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991,
+                    "description": "Exclusive ID cursor from the previous page; requires page_size."
+                  }
+                },
+                "dependentRequired": {
+                  "after_id": [
+                    "page_size"
+                  ]
                 }
               }
             }
@@ -1331,21 +1381,42 @@
         },
         "responses": {
           "200": {
-            "description": "JSend success.",
+            "description": "JSend success, or JSend fail for invalid pagination.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": { "type": "string", "enum": ["success"] },
-                    "data": {
-                      "oneOf": [
-                        { "type": "array", "items": { "$ref": "#/components/schemas/AbilityBlock" } },
-                        { "$ref": "#/components/schemas/AbilityBlock" },
-                        { "type": "null" }
-                      ]
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "success"
+                          ]
+                        },
+                        "data": {
+                          "oneOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/AbilityBlock"
+                              }
+                            },
+                            {
+                              "$ref": "#/components/schemas/AbilityBlock"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/JSendFail"
                     }
-                  }
+                  ]
                 }
               }
             }
@@ -2442,7 +2513,7 @@
       "post": {
         "tags": ["Characters"],
         "summary": "Create or update a character",
-        "description": "Free users are limited to 6 characters. Patreon tier 2+ removes the cap. Pass `id` to update.",
+        "description": "Free users are limited to 6 characters. Patreon tier 2+ removes the cap. Pass `id` to update. Additional character slots require verified Wanderer membership. If access cannot be verified, the existing error response directs the user to check Patreon in Account; no creation is retried automatically.",
         "operationId": "createCharacter",
         "requestBody": {
           "required": true,
@@ -2559,7 +2630,7 @@
       "post": {
         "tags": ["Campaigns"],
         "summary": "Create or update a campaign",
-        "description": "Creating a new campaign requires Patreon tier 1+ (free users cannot create campaigns).",
+        "description": "Free users may create one campaign. Verified Patreon tier 2+ (Wanderer or higher) removes the cap. Additional campaigns require verified Wanderer membership. If access cannot be verified, the existing error response directs the user to check Patreon in Account; no creation is retried automatically.",
         "operationId": "createCampaign",
         "requestBody": {
           "required": true,

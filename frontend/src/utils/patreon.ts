@@ -6,13 +6,13 @@ export function hasPatreonAccess(user: PublicUser | null, accessLevel: 0 | 1 | 2
   if (accessLevel === 4) return user.patreon?.tier === 'GAME-MASTER';
   if (accessLevel === 3) return user.patreon?.tier === 'LEGEND' || user.patreon?.tier === 'GAME-MASTER';
 
-  if (user.patreon?.game_master?.virtual_tier?.game_master_user_id && user.patreon?.tier !== 'GAME-MASTER') {
-    // If in Game Master group (and it's implied that accessLevel is now a tier that we have access to)
+  // If they're a great member of the community, they have access
+  if (user.is_community_paragon || user.is_developer) {
     return true;
   }
 
-  // If they're a great member of the community, they have access
-  if (user.is_community_paragon || user.is_developer) {
+  if (user.patreon?.game_master?.virtual_tier?.game_master_user_id && user.patreon?.tier !== 'GAME-MASTER') {
+    // If in Game Master group (and it's implied that accessLevel is now a tier that we have access to)
     return true;
   }
 

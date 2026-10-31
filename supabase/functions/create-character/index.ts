@@ -45,7 +45,7 @@ serve(async (req: Request) => {
       if (!user) {
         return {
           status: 'error',
-          message: 'User not found',
+          message: 'Sign in again to create a character.',
         };
       }
 
@@ -59,7 +59,7 @@ serve(async (req: Request) => {
           if (!access) {
             return {
               status: 'error',
-              message: 'User does not have access',
+              message: 'Additional character slots require an active Wanderer membership. Check Patreon in Account.',
             };
           }
         }

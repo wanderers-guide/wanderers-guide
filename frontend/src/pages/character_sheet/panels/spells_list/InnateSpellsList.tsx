@@ -12,7 +12,6 @@ import {
   SpellSlot,
 } from '@schemas/content';
 import { rankNumber, sign } from '@utils/numbers';
-import { Dictionary } from 'node_modules/cypress/types/lodash';
 import { SetterOrUpdater } from '@utils/type-fixing';
 import { SpellSlotSelect } from '../SpellsPanel';
 import SpellListEntrySection from './SpellListEntrySection';
@@ -46,7 +45,8 @@ export default function InnateSpellsList(props: {
   hasFilters: boolean;
   openManageSpells?: (source: string, type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY') => void;
   castSpell: (cast: boolean, spell: Spell, innate: SpellInnateEntry) => void;
-  innateSpells: Dictionary<
+  innateSpells: Record<
+    string,
     {
       spell: Spell | undefined;
       spell_id: number;

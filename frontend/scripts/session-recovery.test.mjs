@@ -43,9 +43,14 @@ let notices;
 let hides;
 let invoke;
 let refresh;
+let sessionReads;
+let readAuthSession;
 const client = {
   auth: {
-    getSession: async () => ({ data: { session }, error: null }),
+    getSession: () => {
+      sessionReads++;
+      return readAuthSession();
+    },
     refreshSession: async () => {
       refreshes++;
       return refresh();
@@ -73,7 +78,7 @@ await build({
     'import.meta.env.PROD': 'false',
   },
   stdin: {
-    contents: `export * from './src/request/request-manager'; export * from './src/request/request-rejection'; export * from './src/utils/character-save-buffer';`,
+    contents: `export * from './src/request/request-manager'; export * from './src/request/request-rejection'; export * from './src/utils/character-save-buffer'; export {invalidateSessionRead} from './src/auth/session-reader';`,
     resolveDir: root,
   },
   outfile: join(directory, 'session.mjs'),
@@ -95,7 +100,7 @@ await build({
           contents: args.path.includes('supabase-js')
             ? 'export const {FunctionsHttpError,FunctionsFetchError,FunctionsRelayError} = globalThis.__sessionTest;'
             : args.path.includes('supabase-client')
-              ? 'export const supabase = globalThis.__sessionTest.client;'
+              ? 'export const supabase = globalThis.__sessionTest.client; export const functions = supabase.functions;'
               : args.path.includes('notifications')
                 ? 'export const {showNotification,hideNotification} = globalThis.__sessionTest;'
                 : 'export const logError = () => {}; export const throwError = () => {};',
@@ -131,6 +136,8 @@ const savedDraft = (actor = 'owner') => api.getBufferedCharacterSave(1, actor);
 beforeEach(() => {
   globalThis.localStorage = new MemoryStorage();
   session = signedIn();
+  sessionReads = 0;
+  readAuthSession = async () => ({ data: { session }, error: null });
   calls = [];
   refreshes = 0;
   notices = 0;
@@ -141,7 +148,146 @@ beforeEach(() => {
     return { data: { session }, error: null };
   };
   api.resetSessionExpired();
+  api.invalidateSessionRead();
   hides = 0;
+});
+
+test('explicit public reads bypass a stalled Auth read and cannot write or list private characters', async () => {
+  readAuthSession = () => new Promise(() => {});
+  assert.deepEqual(await api.makeRequest('find-character', { id: 1 }, false, { anonymous: true }), [{ id: 1 }]);
+  assert.equal(sessionReads, 0);
+  assert.equal(calls[0].headers.Authorization, 'Bearer anonymous-project-key');
+  for (const [type, body] of [
+    ['update-character', { id: 1 }],
+    ['find-character', {}],
+  ]) {
+    assert.equal(await api.makeRequest(type, body, false, { anonymous: true }), null);
+  }
+  assert.equal(calls.length, 1);
+  assert.equal(api.hasSessionExpired(), false);
+});
+
+test('unknown private identities fail within a shared budget without clearing drafts or marking expiry', async () => {
+  let finish;
+  readAuthSession = () =>
+    new Promise((resolve) => {
+      finish = resolve;
+    });
+  api.bufferCharacterSave(character(), 'owner', 'version-1', { base: character('Saved name') });
+  localStorage.setItem('user-data', '{"id":"owner"}');
+  const results = await Promise.all(
+    Array.from({ length: 12 }, () =>
+      api.makeRequest('update-character', { id: 1 }, false, { expectedActorId: 'owner' })
+    )
+  );
+  assert.ok(results.every((result) => result === null));
+  assert.equal(sessionReads, 1);
+  assert.equal(calls.length, 0);
+  assert.equal(api.hasSessionExpired(), false);
+  assert.equal(savedDraft().draft.body.name, 'Local draft');
+  assert.equal(localStorage.getItem('user-data'), '{"id":"owner"}');
+  readAuthSession = async () => ({ data: { session: signedIn('new-token', 'new-owner') }, error: null });
+  finish({ data: { session: signedIn('old-token') }, error: null });
+  assert.deepEqual(await api.makeRequest('find-character', { id: 1 }, false, { expectedActorId: 'new-owner' }), [
+    { id: 1 },
+  ]);
+  assert.equal(calls[0].headers.Authorization, 'Bearer new-token');
+});
+
+test('an initial Auth event can establish the same account before its current read resolves', async () => {
+  const initial = await import(pathToFileURL(join(directory, 'session.mjs')).href + '?uncontested-initial');
+  let finish;
+  readAuthSession = () =>
+    new Promise((resolve) => {
+      finish = resolve;
+    });
+  const pending = initial.makeRequest('find-content-update', { id: 1 }, false, { throwOnFailure: true });
+  initial.invalidateSessionRead('owner');
+  finish({ data: { session: signedIn() }, error: null });
+  assert.deepEqual(await pending, [{ id: 1 }]);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].headers.Authorization, 'Bearer current-token');
+});
+
+test('an older private identity is still cancelled when Auth establishes a different account', async () => {
+  let finish;
+  readAuthSession = () =>
+    new Promise((resolve) => {
+      finish = resolve;
+    });
+  const pending = api.makeRequest('update-character', { id: 1 }, false, { expectedActorId: 'owner' });
+  api.invalidateSessionRead('other-account');
+  finish({ data: { session: signedIn() }, error: null });
+  assert.equal(await pending, null);
+  assert.equal(calls.length, 0);
+  assert.equal(api.hasSessionExpired(), false);
+});
+
+test('a pending request with a known actor cannot change to the new account returned by Auth', async () => {
+  api.invalidateSessionRead('owner');
+  let finish;
+  readAuthSession = () =>
+    new Promise((resolve) => {
+      finish = resolve;
+    });
+  const pending = api.makeRequest('create-character', { name: 'Captured owner input' }, false);
+  api.invalidateSessionRead('other-account');
+  finish({ data: { session: signedIn('other-token', 'other-account') }, error: null });
+  assert.equal(await pending, null);
+  assert.equal(calls.length, 0);
+});
+
+test('sign-out cancels a pending private request without an anonymous downgrade', async () => {
+  api.invalidateSessionRead('owner');
+  let finish;
+  readAuthSession = () =>
+    new Promise((resolve) => {
+      finish = resolve;
+    });
+  const pending = api.makeRequest('create-character', { name: 'Retained input' }, false);
+  api.invalidateSessionRead(null);
+  finish({ data: { session: null }, error: null });
+  assert.equal(await pending, null);
+  assert.equal(calls.length, 0);
+  assert.equal(api.hasSessionExpired(), false);
+});
+
+for (const [name, transitions] of [
+  ['two account events', ['owner', 'other-account']],
+  ['sign-out then sign-in', [null, 'other-account']],
+  ['reset then sign-in', [undefined, 'other-account']],
+])
+  test(`an initially unknown request is cancelled after ${name}`, async () => {
+    const initial = await import(
+      pathToFileURL(join(directory, 'session.mjs')).href + '?cancelled-' + name.replaceAll(' ', '-')
+    );
+    let finish;
+    readAuthSession = () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      });
+    const pending = initial.makeRequest('create-character', { name: 'Uncontested identity required' }, false);
+    for (const actor of transitions) initial.invalidateSessionRead(actor);
+    finish({ data: { session: signedIn('other-token', 'other-account') }, error: null });
+    assert.equal(await pending, null);
+    assert.equal(calls.length, 0);
+    assert.equal(initial.hasSessionExpired(), false);
+  });
+
+test('an unscoped reset preserves the confirmed account for subsequent pending work', async () => {
+  const scoped = await import(pathToFileURL(join(directory, 'session.mjs')).href + '?preserved-known-actor');
+  scoped.invalidateSessionRead('owner');
+  scoped.invalidateSessionRead();
+  let finish;
+  readAuthSession = () =>
+    new Promise((resolve) => {
+      finish = resolve;
+    });
+  const pending = scoped.makeRequest('create-character', { name: 'Owner input' }, false);
+  scoped.invalidateSessionRead('other-account');
+  finish({ data: { session: signedIn('other-token', 'other-account') }, error: null });
+  assert.equal(await pending, null);
+  assert.equal(calls.length, 0);
 });
 
 test('legacy HTTP 400/PGRST301 refreshes and replays exactly once with the fresh token', async () => {
@@ -411,6 +557,78 @@ test('ambiguous lost responses retry reads once and never duplicate mutations', 
   invoke = async () => (calls.length === 1 ? { data: null, error: new FunctionsFetchError('offline') } : ok());
   assert.deepEqual(await api.makeRequest('find-character', { id: 1 }), [{ id: 1 }]);
   assert.equal(calls.length, 2);
+});
+
+test('a worker resource limit retries a catalog read once with the original account', async () => {
+  const body = { id: [42], content_sources: [3] };
+  const records = [{ id: 42, name: 'Recovered feat' }];
+  invoke = async () =>
+    calls.length === 1
+      ? http(546, { code: 'WORKER_RESOURCE_LIMIT', message: 'Worker resources exhausted' })
+      : ok(records);
+  assert.deepEqual(
+    await api.makeRequest('find-ability-block', body, false, { expectedActorId: 'owner', throwOnFailure: true }),
+    records
+  );
+  assert.equal(calls.length, 2);
+  assert.ok(calls.every((call) => call.type === 'find-ability-block' && call.body === body));
+  assert.deepEqual(
+    calls.map((call) => call.headers.Authorization),
+    ['Bearer current-token', 'Bearer current-token']
+  );
+  assert.equal(refreshes, 0);
+  assert.equal(api.hasSessionExpired(), false);
+  assert.equal(notices, 0);
+});
+
+test('persistent worker resource limits stop after one read retry even without a JSON error body', async () => {
+  invoke = async () => ({
+    data: null,
+    error: new FunctionsHttpError(new Response('Resources exhausted', { status: 546 })),
+  });
+  await assert.rejects(
+    api.makeRequest('find-ability-block', { content_sources: [3] }, false, { throwOnFailure: true }),
+    /Request failed: find-ability-block/
+  );
+  assert.equal(calls.length, 2);
+  assert.equal(refreshes, 0);
+  assert.equal(api.hasSessionExpired(), false);
+});
+
+test('a worker resource limit cannot replay a read as a different account', async () => {
+  invoke = async () => {
+    session = signedIn('other-token', 'other');
+    return http(546, { code: 'WORKER_RESOURCE_LIMIT' });
+  };
+  await assert.rejects(
+    api.makeRequest('find-ability-block', { content_sources: [3] }, false, {
+      expectedActorId: 'owner',
+      throwOnFailure: true,
+    }),
+    /Request failed: find-ability-block/
+  );
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].headers.Authorization, 'Bearer current-token');
+  assert.equal(refreshes, 0);
+  assert.equal(api.hasSessionExpired(), false);
+});
+
+test('worker resource limits never automatically repeat mutations or paid work', async () => {
+  for (const type of [
+    'create-character',
+    'create-campaign',
+    'update-character',
+    'create-content-source',
+    'open-ai-request',
+    'vector-db-populate-collection',
+  ]) {
+    calls = [];
+    invoke = async () => http(546, { code: 'WORKER_RESOURCE_LIMIT' });
+    assert.equal(await api.makeRequest(type, { id: 1 }, false), null);
+    assert.equal(calls.length, 1, type);
+  }
+  assert.equal(refreshes, 0);
+  assert.equal(api.hasSessionExpired(), false);
 });
 
 test('a signed-out request is explicitly anonymous even if sign-in races invocation', async () => {
@@ -810,10 +1028,14 @@ test('stalled catalogs are bounded and abort their transfer before a later retry
     await advance(119999);
     assert.equal(outcome, 'pending');
     await advance(1);
+    assert.equal(calls[0].signal.aborted, true);
+    await advance(500);
+    assert.equal(calls.length, 2);
+    await advance(120000);
     await downloading;
     assert.equal(outcome, null);
-    assert.equal(calls.length, 1);
-    assert.equal(calls[0].signal.aborted, true, 'expired download no longer consumes bandwidth');
+    assert.equal(calls.length, 2);
+    assert.equal(calls[1].signal.aborted, true, 'expired download no longer consumes bandwidth');
     finish(ok());
     await advance(0);
     assert.equal(outcome, null, 'late responses cannot replace the settled failure');
@@ -830,8 +1052,13 @@ test('single-record reads retain the short deadline and mutations are never repl
       const pending = api.makeRequest(type, { id: 1 }, false);
       await advance(0);
       await advance(30000);
+      const read = type.startsWith('find-');
+      if (read) {
+        await advance(500);
+        await advance(30000);
+      }
       assert.equal(await pending, null);
-      assert.equal(calls.length, 1);
+      assert.equal(calls.length, read ? 2 : 1);
       assert.equal(calls[0].signal.aborted, type.startsWith('find-'));
       assert.equal(timers.size, 0);
     });

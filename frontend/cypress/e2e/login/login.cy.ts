@@ -7,7 +7,7 @@ describe('Login', () => {
     cy.viewport(1280, 900);
     cy.contains('.mantine-AppShell-header button', 'Sign in').should('be.visible').as('signIn');
     cy.get('@signIn').find('button, [role="button"], [tabindex]').should('not.exist');
-    // Cypress 13 synthesizes a non-bubbling Enter click, so this checks focus and pointer activation.
+    // Check focus and pointer activation through the decorative icon.
     cy.get('@signIn').focus().should('be.focused');
     cy.get('@signIn')
       .find('span.mantine-ActionIcon-root')
@@ -28,8 +28,12 @@ describe('Login', () => {
     cy.get('button').contains('Sign in').click();
     cy.location('pathname').should('eq', '/login');
 
-    cy.get('input[name="email"]').type(Cypress.env('TEST_EMAIL'));
-    cy.get('input[name="password"]').type(Cypress.env('TEST_PASSWORD'));
+    cy.env(['TEST_EMAIL', 'TEST_PASSWORD']).then(({ TEST_EMAIL, TEST_PASSWORD }) => {
+      if (typeof TEST_EMAIL !== 'string' || typeof TEST_PASSWORD !== 'string')
+        throw new Error('UI sign-in requires the owned test credentials');
+      cy.get('input[name="email"]').type(TEST_EMAIL);
+      cy.get('input[name="password"]').type(TEST_PASSWORD, { log: false });
+    });
     cy.contains('button', 'Sign in with Email').click();
     cy.location('pathname', { timeout: 10000 }).should('eq', '/characters');
   });
@@ -45,7 +49,7 @@ describe('Login', () => {
   });
 
   it('should logout and return to the public homepage', () => {
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
 
     cy.get('button').contains('User Name').click();
     cy.get('div.mantine-Menu-dropdown').contains('Logout').click();

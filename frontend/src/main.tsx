@@ -14,6 +14,8 @@ import { createRoot } from 'react-dom/client';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import App from './App.tsx';
 import { installClientErrorReporting } from '@utils/client-errors';
+// Stop pre-bundle recovery before any route can mount an editor or accept input.
+window.dispatchEvent(new Event('wg:app-started'));
 installClientErrorReporting();
 import './index.css';
 import { ErrorPage } from './pages/ErrorPage.tsx';

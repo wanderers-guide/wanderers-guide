@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict gvpv6UWGFLDIF3hx3fQIZtEWSFEo88TSc6NgxUjIzbuCJaiDwRH19Ob00yjatio
+\restrict WRDYDNhpukfKmVhqclKqPZzhDYHiWNdviOv0k1ZxunE0iqhhrbi5HsMsCHdlRyj
 
--- Dumped from database version 15.1 (Ubuntu 15.1-1.pgdg20.04+1)
--- Dumped by pg_dump version 16.15 (Ubuntu 16.15-1.pgdg24.04+2)
+-- Dumped from database version 17.11
+-- Dumped by pg_dump version 17.11 (Ubuntu 17.11-1.pgdg24.04+2)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2503,10 +2503,10 @@ ALTER TABLE public.versatile_heritage ENABLE ROW LEVEL SECURITY;
 -- Name: TABLE ability_block; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.ability_block TO anon;
-GRANT ALL ON TABLE public.ability_block TO authenticated;
-GRANT ALL ON TABLE public.ability_block TO service_role;
-GRANT ALL ON TABLE public.ability_block TO github;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.ability_block TO anon;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.ability_block TO authenticated;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.ability_block TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.ability_block TO github;
 
 
 --
@@ -2523,10 +2523,10 @@ GRANT SELECT,USAGE ON SEQUENCE public.ability_block_id_seq TO github;
 -- Name: TABLE ancestry; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.ancestry TO anon;
-GRANT ALL ON TABLE public.ancestry TO authenticated;
-GRANT ALL ON TABLE public.ancestry TO service_role;
-GRANT ALL ON TABLE public.ancestry TO github;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.ancestry TO anon;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.ancestry TO authenticated;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.ancestry TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.ancestry TO github;
 
 
 --
@@ -2543,10 +2543,10 @@ GRANT SELECT,USAGE ON SEQUENCE public.ancestry_id_seq TO github;
 -- Name: TABLE archetype; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.archetype TO anon;
-GRANT ALL ON TABLE public.archetype TO authenticated;
-GRANT ALL ON TABLE public.archetype TO service_role;
-GRANT ALL ON TABLE public.archetype TO github;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.archetype TO anon;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.archetype TO authenticated;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.archetype TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.archetype TO github;
 
 
 --
@@ -2563,10 +2563,10 @@ GRANT SELECT,USAGE ON SEQUENCE public.archetype_id_seq TO github;
 -- Name: TABLE background; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.background TO anon;
-GRANT ALL ON TABLE public.background TO authenticated;
-GRANT ALL ON TABLE public.background TO service_role;
-GRANT ALL ON TABLE public.background TO github;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.background TO anon;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.background TO authenticated;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.background TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.background TO github;
 
 
 --
@@ -2585,8 +2585,8 @@ GRANT SELECT,USAGE ON SEQUENCE public.background_id_seq TO github;
 
 GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.campaign TO anon;
 GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.campaign TO authenticated;
-GRANT ALL ON TABLE public.campaign TO service_role;
-GRANT ALL ON TABLE public.campaign TO github;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.campaign TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.campaign TO github;
 
 
 --
@@ -2691,19 +2691,19 @@ GRANT SELECT,USAGE ON SEQUENCE public.campaign_id_seq TO github;
 -- Name: TABLE campaign_join_grant; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.campaign_join_grant TO anon;
-GRANT ALL ON TABLE public.campaign_join_grant TO authenticated;
-GRANT ALL ON TABLE public.campaign_join_grant TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.campaign_join_grant TO anon;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.campaign_join_grant TO authenticated;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.campaign_join_grant TO service_role;
 
 
 --
 -- Name: TABLE "character"; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public."character" TO anon;
-GRANT ALL ON TABLE public."character" TO authenticated;
-GRANT ALL ON TABLE public."character" TO service_role;
-GRANT ALL ON TABLE public."character" TO github;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public."character" TO anon;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public."character" TO authenticated;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public."character" TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public."character" TO github;
 
 
 --
@@ -2720,19 +2720,19 @@ GRANT SELECT,USAGE ON SEQUENCE public.character_id_seq TO github;
 -- Name: TABLE class; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.class TO anon;
-GRANT ALL ON TABLE public.class TO authenticated;
-GRANT ALL ON TABLE public.class TO service_role;
-GRANT ALL ON TABLE public.class TO github;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.class TO anon;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.class TO authenticated;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.class TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.class TO github;
 
 
 --
 -- Name: TABLE class_archetype; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.class_archetype TO anon;
-GRANT ALL ON TABLE public.class_archetype TO authenticated;
-GRANT ALL ON TABLE public.class_archetype TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.class_archetype TO anon;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.class_archetype TO authenticated;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.class_archetype TO service_role;
 
 
 --
@@ -2758,10 +2758,10 @@ GRANT SELECT,USAGE ON SEQUENCE public.class_id_seq TO github;
 -- Name: TABLE content_source; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.content_source TO anon;
-GRANT ALL ON TABLE public.content_source TO authenticated;
-GRANT ALL ON TABLE public.content_source TO service_role;
-GRANT ALL ON TABLE public.content_source TO github;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.content_source TO anon;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.content_source TO authenticated;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.content_source TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.content_source TO github;
 
 
 --
@@ -2780,8 +2780,8 @@ GRANT SELECT,USAGE ON SEQUENCE public.content_source_id_seq TO github;
 
 GRANT SELECT ON TABLE public.content_update TO anon;
 GRANT SELECT ON TABLE public.content_update TO authenticated;
-GRANT ALL ON TABLE public.content_update TO service_role;
-GRANT ALL ON TABLE public.content_update TO github;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.content_update TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.content_update TO github;
 
 
 --
@@ -2798,10 +2798,10 @@ GRANT SELECT,USAGE ON SEQUENCE public.content_update_id_seq TO github;
 -- Name: TABLE creature; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.creature TO anon;
-GRANT ALL ON TABLE public.creature TO authenticated;
-GRANT ALL ON TABLE public.creature TO service_role;
-GRANT ALL ON TABLE public.creature TO github;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.creature TO anon;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.creature TO authenticated;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.creature TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.creature TO github;
 
 
 --
@@ -2818,17 +2818,17 @@ GRANT SELECT,USAGE ON SEQUENCE public.creature_id_seq TO github;
 -- Name: TABLE edge_work_budget; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.edge_work_budget TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.edge_work_budget TO service_role;
 
 
 --
 -- Name: TABLE encounter; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.encounter TO anon;
-GRANT ALL ON TABLE public.encounter TO authenticated;
-GRANT ALL ON TABLE public.encounter TO service_role;
-GRANT ALL ON TABLE public.encounter TO github;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.encounter TO anon;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.encounter TO authenticated;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.encounter TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.encounter TO github;
 
 
 --
@@ -2845,10 +2845,10 @@ GRANT SELECT,USAGE ON SEQUENCE public.encounter_id_seq TO github;
 -- Name: TABLE item; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.item TO anon;
-GRANT ALL ON TABLE public.item TO authenticated;
-GRANT ALL ON TABLE public.item TO service_role;
-GRANT ALL ON TABLE public.item TO github;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.item TO anon;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.item TO authenticated;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.item TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.item TO github;
 
 
 --
@@ -2865,10 +2865,10 @@ GRANT SELECT,USAGE ON SEQUENCE public.item_id_seq TO github;
 -- Name: TABLE language; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.language TO anon;
-GRANT ALL ON TABLE public.language TO authenticated;
-GRANT ALL ON TABLE public.language TO service_role;
-GRANT ALL ON TABLE public.language TO github;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.language TO anon;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.language TO authenticated;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.language TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.language TO github;
 
 
 --
@@ -2885,8 +2885,8 @@ GRANT SELECT,USAGE ON SEQUENCE public.language_id_seq TO github;
 -- Name: TABLE public_user; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.public_user TO service_role;
-GRANT ALL ON TABLE public.public_user TO github;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.public_user TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.public_user TO github;
 
 
 --
@@ -3023,10 +3023,10 @@ GRANT SELECT,USAGE ON SEQUENCE public.public_user_id_seq TO github;
 -- Name: TABLE spell; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.spell TO anon;
-GRANT ALL ON TABLE public.spell TO authenticated;
-GRANT ALL ON TABLE public.spell TO service_role;
-GRANT ALL ON TABLE public.spell TO github;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.spell TO anon;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.spell TO authenticated;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.spell TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.spell TO github;
 
 
 --
@@ -3043,10 +3043,10 @@ GRANT SELECT,USAGE ON SEQUENCE public.spell_id_seq TO github;
 -- Name: TABLE trait; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.trait TO anon;
-GRANT ALL ON TABLE public.trait TO authenticated;
-GRANT ALL ON TABLE public.trait TO service_role;
-GRANT ALL ON TABLE public.trait TO github;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.trait TO anon;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.trait TO authenticated;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.trait TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.trait TO github;
 
 
 --
@@ -3063,9 +3063,9 @@ GRANT SELECT,USAGE ON SEQUENCE public.trait_id_seq TO github;
 -- Name: TABLE versatile_heritage; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.versatile_heritage TO anon;
-GRANT ALL ON TABLE public.versatile_heritage TO authenticated;
-GRANT ALL ON TABLE public.versatile_heritage TO service_role;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.versatile_heritage TO anon;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.versatile_heritage TO authenticated;
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.versatile_heritage TO service_role;
 
 
 --
@@ -3081,5 +3081,5 @@ GRANT ALL ON SEQUENCE public.versatile_heritage_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict gvpv6UWGFLDIF3hx3fQIZtEWSFEo88TSc6NgxUjIzbuCJaiDwRH19Ob00yjatio
+\unrestrict WRDYDNhpukfKmVhqclKqPZzhDYHiWNdviOv0k1ZxunE0iqhhrbi5HsMsCHdlRyj
 

@@ -14,16 +14,37 @@
 // ***********************************************************
 
 // Import commands.js using ES2015 syntax:
-import './commands'
+import './commands';
 
-// Cypress 13 cannot instrument HTML returned from a service-worker cache, causing
+// Keep functional navigation on the network so a cached HTML response cannot bypass
 // cy.visit() to hang even though the page rendered. Keep functional request/recovery
 // tests on the network; browser-recovery.test.mjs exercises the actual update lifecycle.
 // https://github.com/cypress-io/cypress/issues/30405
-const isolateServiceWorker = () => cy.intercept('GET', '**/sw.js', {
-  body: '/* Functional test worker: no cache or fetch interception. */',
-  headers: { 'content-type': 'application/javascript', 'cache-control': 'no-store' },
-});
+const isolateServiceWorker = () => {
+  // The recovery regression needs actual worker interception and multiple controlled clients.
+  if (Cypress.spec.name === 'startupRecovery.cy.ts') {
+    cy.then(() =>
+      Cypress.automation('remote:debugger:protocol', {
+        command: 'Network.setBypassServiceWorker',
+        params: { bypass: false },
+      })
+    );
+    return;
+  }
+  cy.intercept('GET', '**/sw.js', {
+    body: '/* Functional test worker: no cache or fetch interception. */',
+    headers: { 'content-type': 'application/javascript', 'cache-control': 'no-store' },
+  });
+  // Background worker updates bypass cy.intercept, and an active worker survives test isolation.
+  if (Cypress.isBrowser({ family: 'chromium' })) {
+    cy.then(() =>
+      Cypress.automation('remote:debugger:protocol', {
+        command: 'Network.setBypassServiceWorker',
+        params: { bypass: true },
+      })
+    );
+  }
+};
 before(isolateServiceWorker);
 beforeEach(isolateServiceWorker);
 

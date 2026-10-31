@@ -1,6 +1,6 @@
 import { makeRequest } from '@requests/request-manager';
 import { PublicUser } from '@schemas/content';
-import { supabase } from '../supabase-client';
+import { invalidateSessionRead, readSession } from './session-reader';
 
 type SharedProfileRequest = {
   scope: number;
@@ -21,9 +21,7 @@ async function fetchCurrentUser(actorId: string, generation: number): Promise<Pu
     expectedActorId: actorId,
     throwOnFailure: true,
   });
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const session = await readSession();
   if (generation !== userDataGeneration || session?.user.id !== actorId) {
     throw new Error('Current account changed while loading the profile.');
   }
@@ -41,9 +39,7 @@ export async function getPublicUser(
   try {
     if (!id) {
       const generation = userDataGeneration;
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const session = await readSession();
       if (!session) return null;
       if (generation !== userDataGeneration) throw new Error('Current account changed while loading the profile.');
 
@@ -100,6 +96,7 @@ export function getCachedPublicUser(): PublicUser | null {
 
 /** Clear the display profile and invalidate pending current-account reads. */
 export function clearUserData(): void {
+  invalidateSessionRead();
   userDataGeneration += 1;
   currentUserRequests.clear();
   if (typeof localStorage !== 'undefined') {

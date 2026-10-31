@@ -29,11 +29,6 @@ async function checkAccessLevel(client: SupabaseClient<any, 'public', any>, user
 		}
 	}
 
-	// If they're a great member of the community, they have access
-	if (user.is_community_paragon || user.is_developer) {
-		return true;
-	}
-
 	if (accessLevel === 2) return user.patreon?.tier === 'WANDERER' || user.patreon?.tier === 'LEGEND' || user.patreon?.tier === 'GAME-MASTER';
 	if (accessLevel === 1) return user.patreon?.tier === 'ADVOCATE' || user.patreon?.tier === 'WANDERER' || user.patreon?.tier === 'LEGEND' || user.patreon?.tier === 'GAME-MASTER';
 
@@ -80,6 +75,9 @@ async function addPatreonData(
 /** Verify v2 entitlements without erasing linked data during provider failures. */
 export async function hasPatreonAccess(user: PublicUser, accessLevel: 0 | 1 | 2 | 3 | 4): Promise<boolean> {
 	if (accessLevel === 0) return true;
+	// Paragons and developers have level 1-2 access on their own, so a stale or unreachable
+	// Patreon link (or a lapsed GM group) can't revoke it.
+	if (accessLevel <= 2 && (user.is_community_paragon || user.is_developer)) return true;
 	const client = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
 	user = _.cloneDeep(user);
 	const stored = user.patreon;

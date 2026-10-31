@@ -7,7 +7,7 @@ describe('Condition math and recovery through the real sheet', () => {
     cy
       .request({
         method: 'POST',
-        url: `${Cypress.env('functions_url')}/${endpoint}`,
+        url: `${Cypress.expose('functions_url')}/${endpoint}`,
         headers: { Authorization: `Bearer ${token}` },
         body,
         log: false,
@@ -76,7 +76,7 @@ describe('Condition math and recovery through the real sheet', () => {
     releaseContent = undefined;
     cy.viewport(1280, 900);
     cy.intercept('POST', '**/auth/v1/token*').as('signIn');
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
     cy.wait('@signIn').then(({ response }) => {
       token = response?.body.access_token;
       request('find-class', { id: 26 })
@@ -401,7 +401,10 @@ describe('Condition math and recovery through the real sheet', () => {
     cy.contains('Hit Points', { timeout: 30000 }).parent().find('a', { timeout: 30000 }).should('have.text', '53');
   });
 
-  it('keeps a cyclic homebrew failure silent without saving partial math and recovers after correction', () => {
+  it('reports an exhausted cyclic homebrew calculation without saving partial math and recovers after correction', () => {
+    cy.on('uncaught:exception', (error) => {
+      if (error.message.includes('Cyclic variable binding:')) return false;
+    });
     cy.intercept('POST', '**/functions/v1/update-character').as('baselineHomebrewSave');
     cy.visit(`/sheet/${characterId}`);
     cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
@@ -435,13 +438,15 @@ describe('Condition math and recovery through the real sheet', () => {
     });
     cy.viewport(390, 844);
     cy.reload();
-    cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
+    cy.contains('Unable to open this page', { timeout: 30000 }).should('be.visible');
+    cy.contains('Cyclic variable binding:').should('not.exist');
+    cy.contains('Hit Points').should('not.exist');
     cy.contains("Couldn't calculate this character").should('not.exist');
     cy.contains('button', 'Retry calculation').should('not.exist');
     cy.wait(2500);
     cy.then(() => expect(saves, 'failed homebrew cannot save derived state').to.eq(0));
     read().its('meta_data.calculated_stats.hp_max').should('eq', 48);
-    cy.screenshot('homebrew-cycle-silent-mobile');
+    cy.screenshot('homebrew-cycle-error-mobile');
     read().then((base) =>
       request('update-character', {
         id: characterId,

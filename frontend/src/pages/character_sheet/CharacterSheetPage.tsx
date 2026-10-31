@@ -90,7 +90,8 @@ export function Component(props: {}) {
   };
 
   const theme = useMantineTheme();
-  const actorId = useAtomValue(sessionState)?.user.id ?? null;
+  const session = useAtomValue(sessionState);
+  const actorId = session?.user.id ?? null;
   const [doneLoading, setDoneLoading] = useState(false);
   const [sourceRequest, setSourceRequest] = useState<{ id: string; actor: string | null; sources: number[] }>();
   const requestedSources =
@@ -100,6 +101,7 @@ export function Component(props: {}) {
   const content = useCharacterContent({
     characterId: characterId,
     actorId,
+    authPending: session === undefined,
     sources: requestedSources,
     context: 'sheet',
   });
@@ -116,22 +118,16 @@ export function Component(props: {}) {
   }, []);
 
   const loader = (
-    <Box
-      style={{
-        width: '100%',
-        height: '300px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <D20Loader
-        size={100}
-        color={theme.colors[theme.primaryColor][5]}
-        percentage={percentage}
-        status='Loading...'
-        hasStatusBg
-      />
+    <Box w='100%' mih='var(--wg-page-content-height)' pos='relative' role='status' aria-label='Loading character'>
+      <Box pos='absolute' top='40%' left='50%' style={{ transform: 'translate(-50%, -50%)' }}>
+        <D20Loader
+          size={100}
+          color={theme.colors[theme.primaryColor][5]}
+          percentage={percentage}
+          status='Loading...'
+          hasStatusBg
+        />
+      </Box>
     </Box>
   );
 
@@ -185,7 +181,7 @@ function CharacterSheetInner(props: {
 
   // EXECUTE_OPS triggers the character's operation pipeline and calls
   // onFinishLoading when it completes, which dismisses the loading screen.
-  const { character, setCharacter, isLoading, loadError } = useCharacter(props.characterId, {
+  const { character, setCharacter, isLoading, loadError, calculationError, results } = useCharacter(props.characterId, {
     type: 'EXECUTE_OPS',
     data: {
       content: props.content,
@@ -216,6 +212,9 @@ function CharacterSheetInner(props: {
   }, [character, isLoading, props.content]);
 
   if (loadError) return <CharacterLoader />;
+
+  // Without a committed calculation the stat sections would display default zeros.
+  if (calculationError && !results) throw calculationError;
 
   return (
     <Center>

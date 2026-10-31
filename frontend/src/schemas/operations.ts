@@ -198,7 +198,12 @@ export const OperationBindValueSchema = z.object({
   type: z.literal('bindValue'),
   data: z.object({
     variable: z.string(),
-    value: z.object({ storeId: StoreIDSchema, variable: z.string() }),
+    value: z.object({
+      storeId: StoreIDSchema,
+      variable: z.string(),
+      offset: z.number().finite().optional(),
+      includeBonuses: z.boolean().optional(),
+    }),
   }),
 });
 export type OperationBindValue = z.infer<typeof OperationBindValueSchema>;
@@ -418,6 +423,8 @@ export const OperationSelectFiltersAdjValueSchema = z.object({
   type: z.literal('ADJ_VALUE'),
   group: z.enum(['ATTRIBUTE', 'SKILL', 'ADD-LORE', 'WEAPON-GROUP', 'WEAPON', 'ARMOR-GROUP', 'ARMOR']),
   value: z.union([VariableValueSchema, ExtendedProficiencyValueSchema]),
+  // Restrict this printed grant using ranks before its own occurrence.
+  skillRules: z.literal('expert-mechanic').optional(),
   // For item-backed groups (WEAPON / ARMOR) only: restrict the list to items that have at least
   // ONE of these traits (any-match, unlike ability block filters which require all).
   // Trait IDs, or legacy trait names — matches the ability-block filter above.

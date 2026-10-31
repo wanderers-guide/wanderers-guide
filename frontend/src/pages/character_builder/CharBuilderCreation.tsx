@@ -1,8 +1,6 @@
 import { CharacterLoader } from '@common/CharacterLoader';
-import { useCharacterContent } from '@utils/use-character-content';
 import D20Loader from '@assets/images/D20Loader';
 import { characterState } from '@atoms/characterAtoms';
-import { sessionState } from '@atoms/supabaseAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import { CharacterInfo } from '@common/CharacterInfo';
 import RichText from '@common/RichText';
@@ -59,29 +57,22 @@ import { isEqual, truncate } from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
 import { SetterOrUpdater, isTruthy } from '@utils/type-fixing';
-import useCharacter from '@utils/use-character';
+import type useCharacter from '@utils/use-character';
 import { phoneQuery } from '@utils/mobile-responsive';
 import ImprintButton from '@common/ImprintButton';
 
 // Determines how often to check for choice counts
 const CHOICE_COUNT_INTERVAL = 1500;
 
-export default function CharBuilderCreation(props: { characterId: number; pageHeight: number }) {
+export default function CharBuilderCreation(props: {
+  characterId: number;
+  pageHeight: number;
+  controller: ReturnType<typeof useCharacter>;
+  content: ContentPackage | undefined;
+  calculationReady: boolean;
+}) {
   const theme = useMantineTheme();
-  const actorId = useAtomValue(sessionState)?.user.id ?? null;
-  const [doneLoading, setDoneLoading] = useState(false);
-  const [sourceRequest, setSourceRequest] = useState<{ id: number; actor: string | null; sources: number[] }>();
-  const requestedSources =
-    sourceRequest?.id === props.characterId && sourceRequest.actor === actorId ? sourceRequest.sources : undefined;
-  useEffect(() => setDoneLoading(false), [props.characterId, actorId]);
-
-  const content = useCharacterContent({
-    characterId: props.characterId,
-    actorId,
-    sources: requestedSources,
-    context: 'builder',
-  });
-
+  const { content, calculationReady: doneLoading } = props;
   // Just load progress manually
   const [percentage, setPercentage] = useState(0);
   const interval = useInterval(() => setPercentage(percentage + 2), 50);
@@ -89,6 +80,9 @@ export default function CharBuilderCreation(props: { characterId: number; pageHe
     interval.start();
     return interval.stop;
   }, []);
+  useEffect(() => {
+    if (doneLoading) interval.stop();
+  }, [doneLoading]);
 
   const loader = (
     <Box
@@ -111,18 +105,12 @@ export default function CharBuilderCreation(props: { characterId: number; pageHe
       <>
         <div style={{ display: doneLoading ? 'none' : undefined }}>{loader}</div>
         <div style={{ display: doneLoading ? undefined : 'none' }}>
-          <CharBuilderCreationInner
+          <CharBuilderCreationView
             key={props.characterId}
             characterId={props.characterId}
             content={content}
-            onSourcesChange={(sources) => {
-              setSourceRequest({ id: props.characterId, actor: actorId, sources });
-            }}
+            controller={props.controller}
             pageHeight={props.pageHeight}
-            onFinishLoading={() => {
-              interval.stop();
-              setDoneLoading(true);
-            }}
           />
         </div>
       </>
@@ -130,12 +118,12 @@ export default function CharBuilderCreation(props: { characterId: number; pageHe
   }
 }
 
-export function CharBuilderCreationInner(props: {
+/** Render the Builder using its route's existing calculation/save owner. */
+function CharBuilderCreationView(props: {
   characterId: number;
   content: ContentPackage;
   pageHeight: number;
-  onFinishLoading: () => void;
-  onSourcesChange: (sources: number[]) => void;
+  controller: ReturnType<typeof useCharacter>;
 }) {
   const isMobile = isCharacterBuilderMobile();
   const isPhone = useMediaQuery(phoneQuery());
@@ -143,15 +131,7 @@ export function CharBuilderCreationInner(props: {
 
   const [levelItemValue, setLevelItemValue] = useState<string | null>(null);
 
-  const { character, setCharacter, results, loadError } = useCharacter(props.characterId, {
-    type: 'EXECUTE_OPS',
-    data: {
-      content: props.content,
-      context: 'CHARACTER-BUILDER',
-      onFinishLoading: props.onFinishLoading,
-      onSourcesChange: props.onSourcesChange,
-    },
-  });
+  const { character, setCharacter, results, loadError } = props.controller;
 
   if (loadError) return <CharacterLoader />;
 

@@ -21,7 +21,7 @@ describe('Treasure Vault item spell references', () => {
     cy
       .request({
         method: 'POST',
-        url: `${Cypress.env('functions_url')}/${endpoint}`,
+        url: `${Cypress.expose('functions_url')}/${endpoint}`,
         headers: { Authorization: `Bearer ${token}` },
         body,
         log: false,
@@ -180,7 +180,7 @@ describe('Treasure Vault item spell references', () => {
         else pendingContentReads.delete(endpoint);
       });
     });
-    for (const origin of [Cypress.env('functions_url'), Cypress.config('baseUrl')]) {
+    for (const origin of [Cypress.expose('functions_url'), Cypress.config('baseUrl')]) {
       const url = new URL(String(origin));
       expect(url.protocol, 'local HTTP test origin').to.eq('http:');
       expect(['localhost', '127.0.0.1', '[::1]'], 'local test hostname').to.include(url.hostname);

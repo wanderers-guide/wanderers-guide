@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readContentRows } from './operation-test-harness.mjs';
 import { test } from 'node:test';
 import { build } from 'esbuild';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
@@ -46,7 +47,12 @@ test('content packages and cache respect failures, sources, actors and generatio
   try {
     const result = await build({
       absWorkingDir: frontend,
-      stdin: { contents: "export * from './src/process/content/content-store';", resolveDir: frontend, loader: 'ts' },
+      stdin: {
+        contents:
+          "export * from './src/process/content/content-store'; export {hashData as fixtureHash} from './src/utils/numbers';",
+        resolveDir: frontend,
+        loader: 'ts',
+      },
       tsconfig: join(frontend, 'tsconfig.json'),
       bundle: true,
       write: false,
@@ -72,6 +78,477 @@ test('content packages and cache respect failures, sources, actors and generatio
     });
     await writeFile(join(directory, 'store.mjs'), result.outputFiles[0].text);
     store = await import(pathToFileURL(join(directory, 'store.mjs')).href);
+    await t.test(
+      'anonymous package reads carry one scope through pagination and optional lookups without Auth',
+      async () => {
+        const originalSession = state.session;
+        store.setContentCacheActor(null);
+        store.resetContentStore(true, true);
+        state.session = () => {
+          throw new Error('Public content must not read Auth');
+        };
+        state.requests.length = 0;
+        state.request = async () => [];
+        try {
+          const scope = store.captureContentReadScope(null);
+          await store.fetchContentPackage([1], { fetchSources: true, fetchCreatures: true, readScope: scope });
+          assert.ok(state.requests.length > 10, 'exercise the full package and optional lookups');
+          for (const [type, , , options] of state.requests) {
+            assert.equal(options.anonymous, true, type);
+            assert.equal(options.expectedActorId, undefined, type);
+          }
+          const language = deferred();
+          const started = deferred();
+          state.request = async () => {
+            started.resolve();
+            return language.promise;
+          };
+          const pending = store.fetchContent('language', { id: 999, content_sources: [1] }, false, false, scope);
+          const rejected = assert.rejects(pending, /Content changed/);
+          await started.promise;
+          store.setContentCacheActor('B');
+          language.resolve([{ id: 999, content_source_id: 1, name: 'Old anonymous data' }]);
+          await rejected;
+          assert.deepEqual(store.getCachedContent('language'), []);
+          assert.throws(() => store.assertContentReadScope(scope), /Content changed/);
+          store.captureContentReadScope('B');
+        } finally {
+          state.session = originalSession;
+          state.actor = 'A';
+          state.request = async () => [];
+          store.setContentCacheActor('A');
+          store.resetContentStore(true, true);
+        }
+      }
+    );
+    await t.test(
+      'a same-account token refresh can finish the pending session read without invalidating content',
+      async () => {
+        const originalSession = state.session;
+        const refreshed = deferred();
+        store.setContentCacheActor('A');
+        store.resetContentStore(true, true);
+        const scope = store.captureContentReadScope('A');
+        state.session = () => refreshed.promise;
+        state.requests.length = 0;
+        state.request = async () => [];
+        try {
+          const pending = store.fetchContent('language', { id: 999, content_sources: [1] });
+          store.setContentCacheActor('A');
+          refreshed.resolve({ data: { session: { user: { id: 'A' }, access_token: 'refreshed-A-token' } } });
+          assert.deepEqual(await pending, []);
+          store.assertContentReadScope(scope);
+          assert.equal(state.requests[0][3].expectedActorId, 'A');
+        } finally {
+          state.session = originalSession;
+          store.resetContentStore(true, true);
+        }
+      }
+    );
+    await t.test('dedications prefer their own printing when an older archetype shares the feat ID', async () => {
+      store.defineDefaultSources('BOTH', [371, 842]);
+      const base = {
+        created_at: '',
+        name: 'Magus',
+        rarity: 'COMMON',
+        description: '',
+        artwork_url: null,
+        deprecated: null,
+        version: '1.0',
+        dedication_feat_id: 22549,
+        meta_data: null,
+      };
+      state.request = async () => [
+        { ...base, id: 282, content_source_id: 371, trait_id: 3995 },
+        { ...base, id: 307, content_source_id: 842, trait_id: 4260 },
+      ];
+      assert.equal(
+        (await store.fetchArchetypeByDedicationFeat(22549, { content_source_id: 842, traits: [4260] })).id,
+        307
+      );
+      assert.equal(
+        (await store.fetchArchetypeByDedicationFeat(22549, { content_source_id: 371, traits: [3995] })).id,
+        282
+      );
+      store.resetContentStore(true, true);
+    });
+
+    await t.test('an account without subscriptions never issues an unrestricted empty-ID source query', async () => {
+      const [{ row: source }] = await readContentRows([{ table: 'content_source', id: 1 }]);
+      state.request = async (type, body) => {
+        assert.equal(type, 'find-content-source');
+        assert.notDeepEqual(body.id, [], 'empty subscription filters would return every source');
+        return [source];
+      };
+      const available = await store.fetchContentSources('ALL-USER-ACCESSIBLE');
+      assert.deepEqual(
+        available.map((entry) => entry.id),
+        [1]
+      );
+      store.resetContentStore(true, true);
+    });
+
+    const [{ row: abilityTemplate }] = await readContentRows([{ table: 'ability_block', id: 22549 }]);
+    const abilityRows = (count, start = 91000) =>
+      Array.from({ length: count }, (_, i) => ({
+        ...abilityTemplate,
+        id: start + i,
+        uuid: start + i,
+        name: `Paged feat ${start + i}`,
+        content_source_id: 81000,
+      }));
+    const preparePages = (child) => {
+      const reset = () => {
+        state.actor = 'A';
+        store.setContentCacheActor('A');
+        store.resetContentStore(true, true);
+        state.requests = [];
+      };
+      reset();
+      child.after(reset);
+    };
+    await t.test(
+      'paged catalogs coalesce and publish only after every page succeeds',
+      { timeout: 10000 },
+      async (child) => {
+        preparePages(child);
+        const rows = abilityRows(1003),
+          held = deferred(),
+          started = deferred();
+        state.request = async (type, body) => {
+          assert.equal(type, 'find-ability-block');
+          assert.equal(body.page_size, 1000);
+          assert.deepEqual(body.content_sources, [81000]);
+          if (body.after_id === undefined) return rows.slice(0, 1000);
+          assert.equal(body.after_id, rows[999].id);
+          started.resolve();
+          return held.promise;
+        };
+        const first = store.fetchContentAll('ability-block', [81000]);
+        const second = store.fetchContentAll('ability-block', [81000]);
+        await started.promise;
+        assert.deepEqual(store.getCachedContent('ability-block'), [], 'a staged page is not a cached catalog');
+        assert.equal(state.requests.length, 2, 'concurrent readers share one page chain');
+        held.resolve(rows.slice(1000));
+        for (const result of await Promise.all([first, second]))
+          assert.deepEqual(
+            result.map((row) => row.id),
+            rows.map((row) => row.id)
+          );
+        assert.equal(store.getCachedContent('ability-block').length, 1003);
+        await store.fetchContentAll('ability-block', [81000]);
+        assert.equal(state.requests.length, 2, 'the complete logical query is cached');
+      }
+    );
+    await t.test(
+      'large catalogs use at most three disjoint source chains and publish only the complete sorted result',
+      async (child) => {
+        preparePages(child);
+        const sources = [81000, 81001, 81002, 81003, 81004, 81005];
+        const rows = Array.from({ length: 3600 }, (_, index) => ({
+          ...abilityRows(1, index + 1)[0],
+          content_source_id: sources[index % sources.length],
+        }));
+        const first = deferred(),
+          second = deferred(),
+          firstStarted = deferred(),
+          secondStarted = deferred();
+        let active = 0,
+          maximum = 0,
+          firstCount = 0,
+          secondCount = 0;
+        state.request = async (type, body) => {
+          assert.equal(type, 'find-ability-block');
+          assert.equal(body.page_size, 1000);
+          active++;
+          maximum = Math.max(maximum, active);
+          try {
+            if (body.after_id === undefined) {
+              if (++firstCount === 3) firstStarted.resolve();
+              await first.promise;
+            } else {
+              if (++secondCount === 3) secondStarted.resolve();
+              await second.promise;
+            }
+            return rows
+              .filter(
+                (row) =>
+                  body.content_sources.includes(row.content_source_id) &&
+                  (body.after_id === undefined || row.id > body.after_id)
+              )
+              .slice(0, 1000);
+          } finally {
+            active--;
+          }
+        };
+        const one = store.fetchContentAll('ability-block', sources),
+          two = store.fetchContentAll('ability-block', sources);
+        await firstStarted.promise;
+        assert.equal(state.requests.length, 3, 'concurrent readers share the same bounded source chains');
+        const partitions = state.requests.map(([, body]) => body.content_sources);
+        assert.deepEqual(
+          partitions.flat().sort((a, b) => a - b),
+          sources
+        );
+        assert.equal(new Set(partitions.flat()).size, sources.length, 'a source belongs to exactly one chain');
+        assert.deepEqual(store.getCachedContent('ability-block'), []);
+        first.resolve();
+        await secondStarted.promise;
+        assert.deepEqual(
+          store.getCachedContent('ability-block'),
+          [],
+          'completed first pages are not a published catalog'
+        );
+        second.resolve();
+        for (const actual of await Promise.all([one, two]))
+          assert.deepEqual(
+            actual.map((row) => row.id),
+            rows.map((row) => row.id)
+          );
+        assert.equal(maximum, 3);
+        assert.equal(state.requests.length, 6, 'six requests complete in two controlled network waves');
+        assert.equal(store.getCachedContent('ability-block').length, 3600);
+      }
+    );
+    await t.test(
+      'a failed parallel source chain never publishes a partial library and can retry completely',
+      async (child) => {
+        preparePages(child);
+        const sources = [81000, 81001, 81002, 81003];
+        const rows = Array.from({ length: 1004 }, (_, index) => ({
+          ...abilityRows(1, index + 1)[0],
+          content_source_id: index < 1001 ? 81000 : sources[index - 1000],
+        }));
+        const response = (body) =>
+          rows
+            .filter(
+              (row) =>
+                body.content_sources.includes(row.content_source_id) &&
+                (body.after_id === undefined || row.id > body.after_id)
+            )
+            .slice(0, 1000);
+        state.request = async (_type, body) => (body.after_id !== undefined ? null : response(body));
+        await assert.rejects(store.fetchContentAll('ability-block', sources), /Could not load ability-block/);
+        assert.deepEqual(store.getCachedContent('ability-block'), []);
+        state.request = async (_type, body) => response(body);
+        assert.deepEqual(
+          (await store.fetchContentAll('ability-block', sources)).map((row) => row.id),
+          rows.map((row) => row.id)
+        );
+      }
+    );
+    await t.test('account changes cancel all parallel source chains before any page is stored', async (child) => {
+      preparePages(child);
+      const held = deferred(),
+        started = deferred();
+      let calls = 0;
+      state.request = async (_type, body) => {
+        if (++calls === 3) started.resolve();
+        await held.promise;
+        return [{ ...abilityRows(1, calls)[0], content_source_id: body.content_sources[0] }];
+      };
+      const request = store.fetchContentAll('ability-block', [81000, 81001, 81002, 81003]);
+      const rejected = assert.rejects(request, /Content changed/);
+      await started.promise;
+      store.setContentCacheActor('B');
+      held.resolve();
+      await rejected;
+      assert.deepEqual(store.getCachedContent('ability-block'), []);
+      assert.equal(calls, 3);
+    });
+    await t.test('a source partition rejects rows from outside its requested books', async (child) => {
+      preparePages(child);
+      state.request = async () => [{ ...abilityRows(1)[0], content_source_id: 999999 }];
+      await assert.rejects(
+        store.fetchContentAll('ability-block', [81000, 81001, 81002, 81003]),
+        /did not match its requested sources/
+      );
+      assert.deepEqual(store.getCachedContent('ability-block'), []);
+    });
+    await t.test(
+      'failed chains drain their siblings before a retry can start another three requests',
+      async (child) => {
+        preparePages(child);
+        const sources = [81000, 81001, 81002, 81003],
+          held = deferred(),
+          started = deferred();
+        let active = 0,
+          maximum = 0,
+          calls = 0;
+        state.request = async (_type, body) => {
+          calls++;
+          active++;
+          maximum = Math.max(maximum, active);
+          if (calls === 3) started.resolve();
+          try {
+            if (body.content_sources.includes(81000)) return null;
+            await held.promise;
+            return abilityRows(1000).map((row) => ({ ...row, content_source_id: body.content_sources[0] }));
+          } finally {
+            active--;
+          }
+        };
+        const first = store.fetchContentAll('ability-block', sources),
+          rejectedFirst = assert.rejects(first, /Could not load ability-block/);
+        await started.promise;
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.equal(active, 2, 'two sibling requests remain in flight');
+        const retry = store.fetchContentAll('ability-block', sources),
+          rejectedRetry = assert.rejects(retry, /Could not load ability-block/);
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.equal(calls, 3, 'the failed logical fetch still owns its pending siblings');
+        held.resolve();
+        await Promise.all([rejectedFirst, rejectedRetry]);
+        assert.equal(calls, 3, 'siblings do not start another page after the failure');
+        assert.deepEqual(store.getCachedContent('ability-block'), []);
+        assert.ok(maximum <= 3);
+        state.request = async () => {
+          calls++;
+          active++;
+          maximum = Math.max(maximum, active);
+          await Promise.resolve();
+          active--;
+          return [];
+        };
+        assert.deepEqual(await store.fetchContentAll('ability-block', sources), []);
+        assert.equal(calls, 6);
+        assert.equal(maximum, 3);
+      }
+    );
+    await t.test('an exactly full final page requires an empty read and empty catalogs stay valid', async (child) => {
+      preparePages(child);
+      const rows = abilityRows(1000);
+      state.request = async (_type, body) => (body.after_id === undefined ? rows : []);
+      assert.equal((await store.fetchContentAll('ability-block', [81000])).length, 1000);
+      assert.deepEqual(
+        state.requests.map(([, body]) => body.after_id),
+        [undefined, rows.at(-1).id]
+      );
+      store.resetContentStore(true, true);
+      state.requests = [];
+      state.request = async () => [];
+      assert.deepEqual(await store.fetchContentAll('ability-block', [81000]), []);
+      assert.deepEqual(await store.fetchContentAll('ability-block', [81000]), []);
+      assert.equal(state.requests.length, 1, 'a successful empty catalog is complete and reusable');
+    });
+    await t.test(
+      'every page and the cache key retain captured filters when the caller changes its arrays',
+      { timeout: 10000 },
+      async (child) => {
+        preparePages(child);
+        const rows = abilityRows(1001),
+          held = deferred(),
+          started = deferred();
+        const traits = [471],
+          prerequisites = ['Original requirement'];
+        state.request = async (_type, body) => {
+          assert.deepEqual(body.traits, [471]);
+          assert.deepEqual(body.prerequisites, ['Original requirement']);
+          if (body.after_id === undefined) {
+            started.resolve();
+            return held.promise;
+          }
+          return rows.slice(1000);
+        };
+        const pending = store.fetchContent('ability-block', { content_sources: [81000], traits, prerequisites });
+        await started.promise;
+        traits[0] = 999;
+        prerequisites[0] = 'Changed requirement';
+        held.resolve(rows.slice(0, 1000));
+        assert.equal((await pending).length, 1001);
+        assert.equal(
+          (
+            await store.fetchContent('ability-block', {
+              content_sources: [81000],
+              traits: [471],
+              prerequisites: ['Original requirement'],
+            })
+          ).length,
+          1001
+        );
+        assert.equal(state.requests.length, 2, 'the original filter scope is cached, not the mutated caller state');
+      }
+    );
+    await t.test('a failed later page publishes nothing and a retry restarts the complete catalog', async (child) => {
+      preparePages(child);
+      const rows = abilityRows(1002);
+      let unavailable = true;
+      state.request = async (_type, body) => {
+        if (body.after_id === undefined) return rows.slice(0, 1000);
+        if (unavailable) throw new Error('Second page unavailable');
+        return rows.slice(1000);
+      };
+      await assert.rejects(store.fetchContentAll('ability-block', [81000]), /Second page unavailable/);
+      assert.deepEqual(store.getCachedContent('ability-block'), []);
+      unavailable = false;
+      assert.equal((await store.fetchContentAll('ability-block', [81000])).length, 1002);
+      assert.deepEqual(
+        state.requests.map(([, body]) => body.after_id),
+        [undefined, rows[999].id, undefined, rows[999].id]
+      );
+    });
+    await t.test('account and source resets discard a catalog between pages', { timeout: 10000 }, async (child) => {
+      preparePages(child);
+      for (const change of ['account', 'source']) {
+        store.resetContentStore(true, true);
+        const rows = abilityRows(1001),
+          held = deferred(),
+          started = deferred();
+        state.request = async (_type, body) => {
+          assert.deepEqual(body.content_sources, [81000]);
+          if (body.after_id === undefined) return rows.slice(0, 1000);
+          started.resolve();
+          return held.promise;
+        };
+        const pending = store.fetchContentAll('ability-block', [81000]);
+        await started.promise;
+        if (change === 'account') {
+          state.actor = 'B';
+          store.setContentCacheActor('B');
+        } else {
+          store.resetContentStore(true, true);
+          store.defineDefaultSources('BOTH', [81009]);
+        }
+        const rejected = assert.rejects(pending, /Content changed while loading/);
+        held.resolve(rows.slice(1000));
+        await rejected;
+        assert.deepEqual(store.getCachedContent('ability-block'), []);
+      }
+    });
+    await t.test('oversized, unordered and non-advancing pages cannot become complete catalogs', async (child) => {
+      preparePages(child);
+      for (const invalid of ['oversized', 'duplicate', 'backward', 'unsafe-id']) {
+        store.resetContentStore(true, true);
+        const rows = abilityRows(1001);
+        state.request = async (_type, body) => {
+          if (invalid === 'oversized') return rows;
+          if (invalid === 'duplicate') return [rows[0], rows[0]];
+          if (invalid === 'unsafe-id') return [{ ...rows[0], id: Number.MAX_SAFE_INTEGER + 1 }];
+          return body.after_id === undefined ? rows.slice(0, 1000) : [rows[999]];
+        };
+        await assert.rejects(
+          store.fetchContentAll('ability-block', [81000]),
+          /Could not load ability-block|pagination did not advance/
+        );
+        assert.deepEqual(store.getCachedContent('ability-block'), [], invalid);
+      }
+    });
+    await t.test('single-record ability lookups retain their existing request and response shape', async (child) => {
+      preparePages(child);
+      const record = abilityRows(1)[0];
+      state.request = async (_type, body) => {
+        assert.equal(body.id, record.id);
+        assert.equal(body.page_size, undefined);
+        assert.equal(body.after_id, undefined);
+        return record;
+      };
+      assert.equal(
+        (await store.fetchContent('ability-block', { id: record.id, content_sources: [81000] }))[0].id,
+        record.id
+      );
+      assert.equal(state.requests.length, 1);
+    });
+
     const row = {
       id: 81001,
       uuid: 81001,
@@ -126,6 +603,7 @@ test('content packages and cache respect failures, sources, actors and generatio
     const oldSession = deferred();
     state.session = () => oldSession.promise;
     const oldLookup = store.fetchContent('language', query);
+    const oldRejected = assert.rejects(oldLookup, /Content changed|Current account changed/);
     state.actor = 'C';
     store.setContentCacheActor('C');
     state.session = async () => ({ data: { session: { user: { id: state.actor } } } });
@@ -133,7 +611,7 @@ test('content packages and cache respect failures, sources, actors and generatio
     await store.fetchContent('language', query);
     const requestsAfterSwitch = state.requests.length;
     oldSession.resolve({ data: { session: { user: { id: 'B' } } } });
-    await oldLookup;
+    await oldRejected;
     await store.fetchContent('language', query);
     assert.equal(state.requests.length, requestsAfterSwitch, 'an old session read cannot restore actor B over actor C');
 
@@ -166,6 +644,26 @@ test('content packages and cache respect failures, sources, actors and generatio
     for (let i = 0; i < 10; i++) await Promise.resolve();
     assert.deepEqual(store.getCachedContent('language'), [], 'obsolete hydration never repopulates reset cache');
     state.read = async (key) => state.records.get(key);
+
+    await t.test('a malformed persisted query result cannot replace fresh content', async () => {
+      store.resetContentStore(true, true);
+      await new Promise((resolve) => setImmediate(resolve));
+      state.records.set('content-store:C', {
+        version: 4,
+        actorId: 'C',
+        savedAt: Date.now(),
+        idStore: new Map(),
+        contentStore: new Map([[store.fixtureHash({ type: 'language', data: query }), 'broken cached result']]),
+      });
+      state.request = async () => [row];
+      store.resetContentStore(false);
+      const reads = state.requests.length;
+      const result = await store.fetchContent('language', query);
+      assert.equal(result[0].id, row.id);
+      assert.equal(result[0].name, row.name);
+      assert.equal(state.requests.length, reads + 1, 'malformed storage must not bypass the network');
+      store.resetContentStore(true, true);
+    });
 
     state.request = async (type) => (type === 'find-ability-block' ? null : []);
     await assert.rejects(

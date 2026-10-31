@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import { test } from 'node:test';
 import { sha256 } from './release.mjs';
-import { HISTORICAL_CONTENT_FIXTURE } from './historical-content-fixture.mjs';
+import { HISTORICAL_CONTENT_FIXTURE, TECH_CORE_CONTENT_FIXTURE } from './historical-content-fixture.mjs';
 import { createNativeRegisteredCiReplayControls } from './treasure-vault-native-registered-ci-replays.mjs';
 
 const root = new URL('../', import.meta.url);
@@ -84,7 +84,7 @@ test('normal release wiring preserves legacy requirements and uses the complete 
   const requirements = JSON.parse(await read('supabase/release/requirements.json'));
   assert.equal(requirements['20261001000000_repair_heal_companion.sql'].check, 'heal-companion.sql');
   assert.equal(requirements['20261011000000_restore_heal_companion.sql'].check, 'heal-companion-recovery.sql');
-  const check = 'tech-core-general-spells-incarnate-compatibility.sql';
+  const check = 'tech-core-general-spells-citation-compatibility.sql';
   assert.equal(requirements['20261008190000_tech_core_general_spells.sql'].check, check);
   assert.equal(requirements['20261011000100_incarnate_release_compatibility.sql'].check, check);
   for (const name of [
@@ -118,6 +118,9 @@ test('bounded construction model retains all original replay groups and adds exa
     '.github/workflows/e2e.yml',
     'supabase/release/war-of-immortals-index.sql',
     'supabase/release/war-of-immortals-index-regression.sql',
+    'supabase/release/tech-core-introductory-spells.sql',
+    'supabase/release/tech-core-general-spells.sql',
+    'supabase/release/tech-core-general-spells-incarnate-compatibility.sql',
     ...new Set(Object.values(requirements).map(({ check }) => 'supabase/release/' + check)),
   ])
     await capture(path);
@@ -141,7 +144,7 @@ test('bounded construction model retains all original replay groups and adds exa
     manifest: {
       schema: 'wg-tv-native-checked-in-input-manifest-v2',
       entries: [...files].map(([path, sql]) => ({ path, bytes: Buffer.byteLength(sql), sha256: sha256(sql) })),
-      historical_git_inputs: [HISTORICAL_CONTENT_FIXTURE],
+      historical_git_inputs: [HISTORICAL_CONTENT_FIXTURE, TECH_CORE_CONTENT_FIXTURE],
       current_catalog_path: 'data/data.sql',
       historical_bootstrap_mode: 'pinned-git-predecessor',
       external_private_inputs: [],
@@ -155,12 +158,12 @@ test('bounded construction model retains all original replay groups and adds exa
     receipt: {},
   };
   const { plan } = createNativeRegisteredCiReplayControls(context);
-  assert.equal(migrations.length, 115);
+  assert.equal(migrations.length, 120);
   assert.equal(plan.schema, 'wg-tv-native-registered-ci-replays-v4');
-  assert.equal(plan.registered_requirements, 108);
-  assert.equal(plan.checks.length, 70);
+  assert.equal(plan.registered_requirements, 113);
+  assert.equal(plan.checks.length, 71);
   assert.equal(plan.replays.length, 91);
-  assert.equal(plan.expected_native_statements, 393);
+  assert.equal(plan.expected_native_statements, 396);
   assert.equal(plan.passed, false);
   assert.deepEqual(
     ['20260927', '20260928', '20260929', '20260930', '20261001', '20261002'].map(
@@ -175,7 +178,7 @@ test('bounded construction model retains all original replay groups and adds exa
   for (const path of [
     'supabase/release/heal-companion.sql',
     'supabase/release/heal-companion-recovery.sql',
-    'supabase/release/tech-core-general-spells-incarnate-compatibility.sql',
+    'supabase/release/tech-core-general-spells-citation-compatibility.sql',
   ])
     assert.equal(plan.checks.filter((check) => check.path === path).length, 1);
   for (const path of ['supabase/release/heal-companion.sql', 'supabase/release/heal-companion-recovery.sql']) {

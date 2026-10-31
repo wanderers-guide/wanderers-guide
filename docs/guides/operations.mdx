@@ -672,3 +672,16 @@ The `value` shape is `<name>:::<tradition>:::<type>:::<attribute>`. The engine p
 - [`frontend/src/schemas/operations.ts`](https://github.com/wanderers-guide/wanderers-guide/blob/main/frontend/src/schemas/operations.ts): Zod schemas, source of truth.
 - [`frontend/src/process/variables/variable-manager.ts`](https://github.com/wanderers-guide/wanderers-guide/blob/main/frontend/src/process/variables/variable-manager.ts): full list of named variables.
 - [`/create-spell`](/api-reference/content/create-spell), [`/create-ability-block`](/api-reference/content/create-ability-block), and the rest of the `create-*` endpoints: how operations get persisted via the public API.
+
+Numeric `bindValue.data.value` may include a finite `offset` and
+`includeBonuses: true` to copy resolved item and status modifiers. A fly Speed bound to
+`SPEED` with `offset: 10` grants a base equal to land Speed plus 10 feet; a higher
+independent fly-speed grant remains in effect.
+
+Expert Mechanic uses the opt-in ADJ_VALUE skill filter
+`skillRules: 'expert-mechanic'`. The selector evaluates ranks before its own
+occurrence. It offers Computers and Crafting below expert, or other trained skills
+when both preferred skills are already expert. It defers until conditional skill
+grants are known and retains the original occurrence when applying a saved choice.
+Its predefined Computers/Crafting options remain a conservative fallback for older
+clients that have not loaded this filter yet.

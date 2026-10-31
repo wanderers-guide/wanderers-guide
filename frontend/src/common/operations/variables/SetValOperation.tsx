@@ -140,10 +140,13 @@ export function SetValueInput(props: {
       />
     );
   } else if (props.variableType === 'prof') {
-    const value = (props.value || { value: 'U' }) as ProficiencyValue;
-    if (!value.value) {
-      value.value = 'U';
-    }
+    // Type switches and older pasted operations can retain a primitive value.
+    // Normalize a local copy, never mutate the saved operation while rendering.
+    const previous =
+      typeof props.value === 'object' && props.value !== null && !Array.isArray(props.value)
+        ? (props.value as ProficiencyValue)
+        : undefined;
+    const value: ProficiencyValue = { ...previous, value: previous?.value || 'U' };
 
     return (
       <>

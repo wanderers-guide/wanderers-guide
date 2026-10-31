@@ -1,15 +1,6 @@
-type CacheFixtureRow = { table: string; row: { id: number; name: string; [key: string]: any } };
+import { paginateAbilityFixture } from '../../support/content-pagination';
 
-const fixtureScript = `
-  import { readContentRows } from "./scripts/operation-test-harness.mjs";
-  const rows = await readContentRows([
-    {table:"ability_block",id:19873}, {table:"content_source",id:3}
-  ]);
-  const feat = rows.find(entry => entry.table === "ability_block").row;
-  feat.name = "Content Cache Fixture";
-  feat.description = "Cached description before publication.";
-  console.log(JSON.stringify(rows));
-`;
+type CacheFixtureRow = { table: string; row: { id: number; name: string; [key: string]: any } };
 
 describe('Published content cache refresh', () => {
   let fixtures: CacheFixtureRow[];
@@ -42,8 +33,8 @@ describe('Published content cache refresh', () => {
     });
 
   before(() => {
-    cy.exec(`node --input-type=module -e '${fixtureScript}'`, { log: false, timeout: 60000 }).then(({ stdout }) => {
-      fixtures = JSON.parse(stdout);
+    cy.task<any>('contentFixture:cache', null, { log: false, timeout: 60000 }).then((rows) => {
+      fixtures = rows;
     });
   });
 
@@ -76,6 +67,7 @@ describe('Published content cache refresh', () => {
         if (body.name) rows = rows.filter((row) => row.name.toLowerCase() === body.name.toLowerCase());
         if (Array.isArray(body.content_sources))
           rows = rows.filter((row) => body.content_sources.includes(row.content_source_id));
+        if (table === 'ability_block') rows = paginateAbilityFixture(rows, body);
         for (const row of rows) {
           if (table === 'content_source') row.updated_at = published ? newToken : oldToken;
           if (table === 'ability_block' && published) {

@@ -21,20 +21,51 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  e2e:
+  native-scope:
     if: ${{ !inputs.private-content }}
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 3
+    outputs:
+      run_native: ${{ steps.scope.outputs.run_native }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch exact PR endpoints
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git fetch --no-tags --depth=1 origin "$BASE_SHA" "$HEAD_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Determine native input scope
+        id: scope
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CI_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/ci-native-scope.mjs
+
+  e2e-browser:
+    if: ${{ !inputs.private-content }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Fetch pinned historical content fixture
-        run: git fetch --no-tags --depth=1 origin b5dd54c018ecd414be4dc5659a7c28e7ad4633b7
+        run: |
+          git fetch --no-tags --depth=1 origin b5dd54c018ecd414be4dc5659a7c28e7ad4633b7
+          git fetch --no-tags --depth=1 origin 756a80011e1d0e3ac9db0e14a304d8cf0f1479a5
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -64,14 +95,19 @@ jobs:
             const sig = crypto.createHmac('sha256', secret).update(`${header}.${payload}`).digest('base64url');
             return `${header}.${payload}.${sig}`;
           };
-          const env = [
-            `JWT_SECRET=${secret}`,
-            `ANON_KEY=${sign('anon')}`,
-            `SERVICE_ROLE_KEY=${sign('service_role')}`,
-            `POSTGRES_PASSWORD=${crypto.randomBytes(16).toString('hex')}`,
+          const generated = {
+            JWT_SECRET: secret,
+            ANON_KEY: sign('anon'),
+            SERVICE_ROLE_KEY: sign('service_role'),
+            POSTGRES_PASSWORD: crypto.randomBytes(16).toString('hex'),
             // Shared secret for the content-updates webhook; minting one lets the
             // update-content-update tests run in CI instead of skipping.
-            `CONTENT_UPDATE_KEY=${crypto.randomBytes(24).toString('hex')}`,
+            CONTENT_UPDATE_KEY: crypto.randomBytes(24).toString('hex'),
+          };
+          // Mask before exporting: later action environment dumps must not reveal these values.
+          for (const value of Object.values(generated)) console.log(`::add-mask::${value}`);
+          const env = [
+            ...Object.entries(generated).map(([name, value]) => `${name}=${value}`),
             `PUBLIC_SUPABASE_URL=http://localhost:8000`,
             `SITE_URL=http://localhost:3000`,
             `VITE_ENV=production`,
@@ -130,7 +166,13 @@ jobs:
           verify_registered
           for pass in 1 2; do
             for migration in supabase/migrations/20260927*.sql supabase/migrations/20260928*.sql supabase/migrations/20260929*.sql supabase/migrations/20260930*.sql supabase/migrations/20261001*.sql supabase/migrations/20261002*.sql supabase/migrations/20261011000000_restore_heal_companion.sql supabase/migrations/20261011000100_incarnate_release_compatibility.sql; do
-              docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"
+              if [ "${migration##*/}" = '20261011000100_incarnate_release_compatibility.sql' ]; then
+                { printf 'BEGIN READ ONLY;\n'; cat supabase/release/tech-core-general-spells-citation-compatibility.sql; printf '\nROLLBACK;\n'; } \
+                  | docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -qAt -f - \
+                  | awk -F'|' 'NF != 2 || $1 != "tech-core-general-spells" || $2 != "t" { failed = 1 } END { if (NR != 1) failed = 1; exit failed }'
+              else
+                docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"
+              fi
             done
             verify_registered
           done
@@ -156,7 +198,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: contribution-authoring-screenshots
+          name: contribution-authoring-screenshots-${{ matrix.shard }}
           path: ${{ runner.temp }}/contribution-authoring
           if-no-files-found: ignore
 
@@ -198,16 +240,20 @@ jobs:
       - name: API tests (Edge Functions)
         run: cd supabase && deno test --no-check --allow-net --allow-env --allow-read functions/_tests/
 
+      - name: Partition all browser specs
+        id: shard
+        run: node scripts/cypress-shard.mjs --index=${{ matrix.shard }} --count=3
+
       - name: Cypress run
-        uses: cypress-io/github-action@v6
+        uses: cypress-io/github-action@01e3b659a495b41649cdd0aa82e1d1624e26520b # v7.4.4; Node 24 readiness fix
         with:
           working-directory: ./frontend
           install: false
           # Only the two mounted-Rest fixture cases use source-module access.
           # All other browser cases retain the compiled Docker app as their base URL.
           start: npm run dev -- --host 127.0.0.1 --port 5174 --strictPort
-          wait-on: "http://localhost:5174"
-          command: npm run cy:run -- --browser chrome
+          wait-on: "http://127.0.0.1:5174"
+          command: npm run cy:run -- --browser chrome --spec ${{ steps.shard.outputs.spec }}
         env:
           CYPRESS_BASE_URL: http://localhost:3000
           CYPRESS_TEST_EMAIL: test@wanderersguide.app
@@ -222,7 +268,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: cypress-screenshots
+          name: cypress-screenshots-${{ matrix.shard }}
           path: frontend/cypress/screenshots
           if-no-files-found: ignore
 
@@ -230,7 +276,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: cypress-videos
+          name: cypress-videos-${{ matrix.shard }}
           path: frontend/cypress/videos
           if-no-files-found: ignore
 
@@ -246,7 +292,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: compose-logs
+          name: compose-logs-${{ matrix.shard }}
           path: compose-logs.txt
           if-no-files-found: ignore
 
@@ -254,8 +300,21 @@ jobs:
         if: always()
         run: docker compose down -v
 
+  # Keep one stable check name and require every shard to pass.
+  e2e:
+    if: ${{ always() && !inputs.private-content }}
+    needs: e2e-browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Require all browser shards
+        env:
+          RESULT: ${{ needs.e2e-browser.result }}
+        run: test "$RESULT" = success
+
   content-native:
-    if: ${{ !inputs.private-content }}
+    needs: native-scope
+    if: ${{ !cancelled() && !inputs.private-content && (needs.native-scope.result != 'success' || needs.native-scope.outputs.run_native != 'false') }}
     runs-on: ubuntu-latest
     # Routine releases use representative failures with complete preservation.
     # The exhaustive matrix is available through an explicit manual run.
@@ -265,11 +324,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Fetch pinned historical content fixture
-        run: git fetch --no-tags --depth=1 origin b5dd54c018ecd414be4dc5659a7c28e7ad4633b7
+        run: |
+          git fetch --no-tags --depth=1 origin b5dd54c018ecd414be4dc5659a7c28e7ad4633b7
+          git fetch --no-tags --depth=1 origin 756a80011e1d0e3ac9db0e14a304d8cf0f1479a5
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Install content schema test dependencies
         working-directory: ./frontend
@@ -305,16 +366,20 @@ jobs:
           if-no-files-found: warn
 
   tech-core-content:
-    if: ${{ !inputs.private-content }}
+    needs: native-scope
+    if: ${{ !cancelled() && !inputs.private-content && (needs.native-scope.result != 'success' || needs.native-scope.outputs.run_native != 'false') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Fetch pinned Tech Core import fixture
+        run: git fetch --no-tags --depth=1 origin 756a80011e1d0e3ac9db0e14a304d8cf0f1479a5
+
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Pull pinned native fixture images
         run: |
@@ -355,7 +420,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "22"
       - name: Install content test dependencies
         working-directory: ./frontend
         run: npm ci --legacy-peer-deps --no-audit --no-fund

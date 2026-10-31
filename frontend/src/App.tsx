@@ -105,10 +105,14 @@ export default function App() {
   const [session, setSession] = useAtom(sessionState);
   useEffect(() => {
     resetContentStore();
+    let mounted: boolean = true;
+    let authRevision: number = 0;
 
     supabase.auth
       .getSession()
       .then(({ data: { session } }) => {
+        // A completed sign-in/out is newer than this initial storage snapshot.
+        if (!mounted || authRevision > 0) return;
         setContentCacheActor(session?.user.id ?? null);
         setSession(session);
         // Clear stale account chrome quietly; character drafts remain account-scoped.
@@ -117,6 +121,7 @@ export default function App() {
         }
       })
       .catch(() => {
+        if (!mounted || authRevision > 0) return;
         // A failed initial read may offer sign-in, but must not strand the route.
         setSession((current) => (current === undefined ? null : current));
       });
@@ -124,10 +129,16 @@ export default function App() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted || (event === 'INITIAL_SESSION' && authRevision > 0)) return;
+      authRevision += 1;
       setContentCacheActor(session?.user.id ?? null);
       setSession(session);
       if (session) resetSessionExpired();
 
+      if (event === 'INITIAL_SESSION' && !session && getCachedPublicUser()) {
+        // Initial absence is not an unexpected expiry, but cached account chrome is stale.
+        clearUserData();
+      }
       if (event === 'SIGNED_OUT') {
         // Unexpected expiry pauses saves quietly. Intentional logout already cleared the user cache.
         const hadUser = !!getCachedPublicUser();
@@ -138,7 +149,10 @@ export default function App() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const activeCharacer = useAtomValue(characterState);
@@ -388,7 +402,7 @@ export default function App() {
         <Notifications position='top-right' zIndex={9400} containerWidth={350} />
         <AppUpdates />
         <DrawerBase />
-        <Box style={{ zoom: sheetTheme.zoom ?? 1 }}>
+        <Box style={{ zoom: sheetTheme.zoom ?? 1, '--wg-page-zoom': sheetTheme.zoom ?? 1 }}>
           <Layout>
             {/* Outlet is where react-router will render child routes */}
             <Outlet />

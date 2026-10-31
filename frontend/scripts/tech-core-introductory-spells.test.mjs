@@ -165,7 +165,7 @@ test('current dependencies are exact official records and the batch never edits 
     await readFile(new URL('../../supabase/release/requirements.json', import.meta.url), 'utf8')
   );
   assert.deepEqual(requirements[migrationPath], {
-    check: 'tech-core-introductory-spells.sql',
+    check: 'tech-core-introductory-spells-citation-compatibility.sql',
     order: 'before-functions',
   });
 });

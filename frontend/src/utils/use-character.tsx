@@ -83,15 +83,19 @@ export default function useCharacter(
   setCharacter: SetterOrUpdater<Character | null>;
   //
   isLoading: boolean;
+  isLoaded: boolean;
+  requiresCalculation: boolean;
   results: OperationCharacterResultPackage | null;
   saveState: CharacterSaveState;
   draftStored: boolean;
   retrySave: () => void;
   loadError: boolean;
+  calculationError: Error | null;
 } {
   const [character, setCharacter] = useAtom(characterState);
   const session = useAtomValue(sessionState);
   const sessionActorId = session?.user.id ?? null;
+  const isSessionPending = session === undefined;
   const [loadedIdentity, setLoadedIdentity] = useState<{ id: number; actor: string | null } | null>(null);
   const hasLoadedCharacter = loadedIdentity?.id === characterId && loadedIdentity.actor === sessionActorId;
   const loadedActorRef = useRef<string | null>(null);
@@ -237,9 +241,11 @@ export default function useCharacter(
       // A failed request is not an authorization decision. Keep the route while retrying quietly.
       const dbCharacter = await makeRequest<Character>('find-character', { id: characterId }, false, {
         throwOnFailure: true,
+        ...(sessionActorId ? { expectedActorId: sessionActorId } : { anonymous: true }),
       });
       if (!active) return;
       if (!dbCharacter) {
+        if (isSessionPending) throw new Error('Waiting for the saved session before loading this character.');
         handleFetchedCharacter(dbCharacter);
         return;
       }
@@ -295,19 +301,19 @@ export default function useCharacter(
       if (!active) return;
       console.error('Could not load character:', error);
       setLoadError(true);
-      if (options.type === 'EXECUTE_OPS') options.data.onFinishLoading();
     });
     return () => {
       active = false;
       saveScopeRef.current = scope + 1;
       clearSaveRetry();
     };
-  }, [characterId, sessionActorId, loadAttempt, handleFetchedCharacter, pauseConflictingSave]);
+  }, [characterId, sessionActorId, isSessionPending, loadAttempt, handleFetchedCharacter, pauseConflictingSave]);
 
   // Execute operations
   const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
   const executingOperations = useRef<number | null>(null);
   const [calculationFailed, setCalculationFailed] = useState(false);
+  const [calculationError, setCalculationError] = useState<Error | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [operationAttempt, setOperationAttempt] = useState(0);
   const retriedOperationsHash = useRef<number | null>(null);
@@ -317,6 +323,7 @@ export default function useCharacter(
     // character's or account's results after navigation.
     setOperationResults(undefined);
     setCalculationFailed(false);
+    setCalculationError(null);
     retriedOperationsHash.current = null;
     if (options.type === 'EXECUTE_OPS') resetVariables('CHARACTER');
   }, [characterId, sessionActorId, options.type]);
@@ -396,22 +403,27 @@ export default function useCharacter(
       },
       { signal: controller.signal }
     )
-      .then((results) => {
+      .then(async (results) => {
         if (controller.signal.aborted) return;
-        handleOperationResults(results, controller.signal);
+        await handleOperationResults(results, controller.signal);
+        if (controller.signal.aborted) return;
         setCalculationFailed(false);
+        setCalculationError(null);
         retriedOperationsHash.current = null;
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted || isOperationCancelled(error)) return;
         console.error('Character calculation failed:', error);
         setCalculationFailed(true);
-        options.data.onFinishLoading();
         // A transient worker failure gets one quiet retry. Changed inputs start a
         // fresh calculation; persistent failures never loop or publish partial math.
         if (retriedOperationsHash.current !== debouncedOperationsHash) {
           retriedOperationsHash.current = debouncedOperationsHash;
           retryTimer = setTimeout(() => setOperationAttempt((attempt) => attempt + 1), 2000);
+        } else {
+          // Let the existing route error boundary handle an exhausted initial calculation.
+          setCalculationError(error instanceof Error ? error : new Error('Character calculation failed'));
+          options.data.onFinishLoading();
         }
       })
       .finally(() => {
@@ -434,7 +446,7 @@ export default function useCharacter(
     contentSourcesMatch,
   ]);
 
-  const handleOperationResults = (results: OperationCharacterResultPackage, signal: AbortSignal) => {
+  const handleOperationResults = async (results: OperationCharacterResultPackage, signal: AbortSignal) => {
     if (options.type !== 'EXECUTE_OPS') return;
     if (!debouncedCharacter) return;
     if (signal.aborted) return;
@@ -458,16 +470,18 @@ export default function useCharacter(
       setVariable('CHARACTER', 'STAMINA_VARIANT', true);
     }
 
-    // Add the extra items to the inventory from variables
-    addExtraItems('CHARACTER', options.data.content.items, debouncedCharacter, convertToSetEntity(commitCharacter));
-
-    // Check bulk limits
-    checkBulkLimit(
-      'CHARACTER',
-      debouncedCharacter,
-      convertToSetEntity(commitCharacter),
-      debouncedCharacter.options?.ignore_bulk_limit !== true
-    );
+    // Grants, removals and encumbrance can change calculation inputs. Keep the
+    // writer blocked until these delayed updates settle or invalidate this run.
+    await Promise.all([
+      addExtraItems('CHARACTER', options.data.content.items, debouncedCharacter, convertToSetEntity(commitCharacter)),
+      checkBulkLimit(
+        'CHARACTER',
+        debouncedCharacter,
+        convertToSetEntity(commitCharacter),
+        debouncedCharacter.options?.ignore_bulk_limit !== true
+      ),
+    ]);
+    if (signal.aborted) return;
 
     // Apply armor/shield penalties
     applyEquipmentPenalties('CHARACTER', debouncedCharacter);
@@ -497,8 +511,9 @@ export default function useCharacter(
       return normalized;
     });
 
-    // Save calculated stats
-    saveCalculatedStats('CHARACTER', debouncedCharacter, convertToSetEntity(commitCharacter));
+    // Keep persistence blocked until delayed derived stats have joined this state.
+    await saveCalculatedStats('CHARACTER', debouncedCharacter, convertToSetEntity(commitCharacter));
+    if (signal.aborted) return;
 
     setOperationResults(results);
 
@@ -831,7 +846,7 @@ export default function useCharacter(
         writeRevision: writeRevisionRef.current,
       };
       const remote = await makeRequest<Character>('find-character', { id: characterId }, false, {
-        ...(context.actor ? { expectedActorId: context.actor } : {}),
+        ...(context.actor ? { expectedActorId: context.actor } : { anonymous: true }),
         throwOnFailure: true,
       });
       if (!remote) return { ...context, character: null };
@@ -933,11 +948,14 @@ export default function useCharacter(
   return {
     character,
     setCharacter,
-    isLoading: !isFinished && !calculationFailed && !loadError,
+    isLoading: !isFinished && !calculationError && !loadError,
+    isLoaded: hasLoadedCharacter,
+    requiresCalculation: needsCalculationRef.current,
     saveState,
     draftStored,
     retrySave: () => retrySaveRef.current(),
     loadError,
+    calculationError,
     results: operationResults ?? null,
   };
 }

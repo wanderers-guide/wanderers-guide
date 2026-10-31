@@ -40,6 +40,12 @@ class HookHost {
     this.sessionExpired = false;
     this.characterId = 1;
     this.options = { type: 'SIMPLE' };
+    this.builderMode = false;
+    this.builderActive = false;
+    this.contentReads = [];
+    this.builderContent = { defaultSources: { PAGE: [3] }, items: [] };
+    this.addExtraItems = () => {};
+    this.checkBulkLimit = () => {};
     this.slots = [];
     this.cursor = 0;
     this.effects = [];
@@ -139,7 +145,10 @@ class HookHost {
     this.cursor = 0;
     this.effects = [];
     this.dirty = false;
-    this.value = useCharacter(this.characterId, this.options);
+    if (this.builderMode) {
+      this.builderValue = useBuilderCharacter(this.characterId, this.builderActive);
+      this.value = this.builderValue.controller;
+    } else this.value = useCharacter(this.characterId, this.options);
     for (const effect of this.effects) effect();
     return this.value;
   }
@@ -196,6 +205,12 @@ globalThis.__saveHooks = {
   hideNotice: (id) => harness.hiddenNotices.push(id),
   hasSessionExpired: () => harness.sessionExpired,
   calculate: () => harness.calculate(),
+  builderContent: (options) => {
+    harness.contentReads.push(options);
+    return options.enabled ? harness.builderContent : undefined;
+  },
+  addExtraItems: (...args) => harness.addExtraItems(...args),
+  checkBulkLimit: (...args) => harness.checkBulkLimit(...args),
   confirmHealth: (...args) => harness.confirmHealth(...args),
   saveCalculatedStats: (...args) => harness.saveCalculatedStats(...args),
   debounce: (value) => harness.debouncedCharacter ?? value,
@@ -231,6 +246,7 @@ const boundaries = {
   '@operations/operations.main':
     'export const executeOperations = globalThis.__saveHooks.calculate; export const isOperationCancelled = () => false;',
   '@tabler/icons-react': 'export const IconRefresh = () => null; export const IconAlertCircle = () => null;',
+  './use-character-content': 'export const useCharacterContent = globalThis.__saveHooks.builderContent;',
   './numbers': 'export const hashData = value => JSON.stringify(value);',
   './objects': 'export const getDeepDiff = (a,b) => JSON.stringify(a) === JSON.stringify(b) ? {} : { changed: true };',
   './type-fixing': 'export const convertToSetEntity = value => value;',
@@ -251,7 +267,7 @@ const boundaries = {
   './variable-utils': 'export const labelToVariable = value => value;',
   '@utils/objects':
     'export const getDeepDiff = (a,b) => JSON.stringify(a) === JSON.stringify(b) ? {} : { changed: true };',
-  '@items/inv-handlers': 'export const addExtraItems = () => {}; export const checkBulkLimit = () => {};',
+  '@items/inv-handlers': 'export const {addExtraItems,checkBulkLimit} = globalThis.__saveHooks;',
   '@variables/variable-helpers':
     'export const getFinalHealthValue = () => 10; export const getHealthValueParts = () => ({classHp: 6}); export const getFinalResolveValue = () => 0; export const getFinalStaminaValue = () => 0; export const isStaminaVariant = () => false;',
 };
@@ -260,7 +276,7 @@ await build({
   define: { 'import.meta.env.PROD': 'false' },
   stdin: {
     contents:
-      "export {default} from './src/utils/use-character'; export * from './src/utils/character-save-buffer'; export * from './src/utils/character-merge'; export * from './src/request/request-rejection'; export {confirmHealth as actualConfirmHealth} from './src/pages/character_sheet/entity-handler'; export {saveCalculatedStats as actualSaveCalculatedStats} from './src/process/variables/calculated-stats';",
+      "export {default} from './src/utils/use-character'; export {useBuilderCharacter} from './src/utils/use-builder-character'; export * from './src/utils/character-save-buffer'; export * from './src/utils/character-merge'; export * from './src/request/request-rejection'; export {confirmHealth as actualConfirmHealth} from './src/pages/character_sheet/entity-handler'; export {saveCalculatedStats as actualSaveCalculatedStats} from './src/process/variables/calculated-stats';",
     resolveDir: root,
   },
   bundle: true,
@@ -285,6 +301,7 @@ await build({
 });
 const {
   default: useCharacter,
+  useBuilderCharacter,
   bufferCharacterSave,
   getBufferedCharacterSave,
   journalCharacterSaveSubmission,
@@ -646,6 +663,7 @@ test('an empty success payload remains a failed save with a retained draft', asy
   await harness.flush();
   assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Retained edit');
   assert.equal(harness.value.saveState, 'failed');
+  assert.equal(harness.value.calculationError, null, 'save failures are not calculation failures');
   harness.unmount();
 });
 
@@ -669,12 +687,46 @@ test('pending and failed calculations retain inputs locally without writing deri
   assert.equal(getBufferedCharacterSave(1, 'owner').draft.requiresCalculation, true);
   assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Edit during calculation');
   assert.equal(harness.requests.filter((value) => value.type === 'update-character').length, 0);
-  assert.equal(harness.value.isLoading, false);
+  assert.equal(harness.value.isLoading, true, 'initial stats stay loading during the quiet retry');
+  assert.equal(harness.value.calculationError, null);
   assert.equal('operationError' in harness.value, false);
   assert.equal('retryOperations' in harness.value, false);
   events.get('focus')();
   await harness.flush();
   assert.equal(harness.notices.length, 0, 'calculation failures stay silent');
+  harness.unmount();
+});
+
+test('only an exhausted calculation exposes an error without publishing default stats or dropping drafts', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let finished = 0;
+  harness.options = {
+    type: 'EXECUTE_OPS',
+    data: { content: {}, context: 'CHARACTER-SHEET', onFinishLoading: () => finished++ },
+  };
+  harness.calculate = async () => {
+    throw new Error('worker crashed');
+  };
+  harness.render();
+  await harness.flush();
+  harness.edit({ name: 'Retained retry input' });
+  await harness.flush();
+  assert.equal(harness.value.calculationError, null);
+  assert.equal(harness.value.isLoading, true);
+  assert.equal(finished, 0);
+  t.mock.timers.tick(2000);
+  await harness.flush();
+  assert.equal(harness.value.calculationError.message, 'worker crashed');
+  assert.equal(finished, 1);
+  assert.equal(harness.value.results, null);
+  assert.equal(harness.requests.filter((value) => value.type === 'update-character').length, 0);
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.body.name, 'Retained retry input');
+  harness.calculate = async () => ({ marker: 'recovered' });
+  harness.edit({ level: 2 });
+  await harness.flush();
+  assert.equal(harness.value.calculationError, null);
+  assert.deepEqual(harness.value.results, { marker: 'recovered' });
+  assert.equal(harness.character.name, 'Retained retry input');
   harness.unmount();
 });
 
@@ -1387,6 +1439,31 @@ test('one calculation preserves both health normalization and calculated-stat co
   harness.unmount();
 });
 
+test('the first full save waits for real delayed calculated stats', async () => {
+  const calculation = deferred();
+  harness.options = {
+    type: 'EXECUTE_OPS',
+    data: { content: { items: [] }, context: 'CHARACTER-BUILDER', onFinishLoading() {} },
+  };
+  harness.saveCalculatedStats = actualSaveCalculatedStats;
+  harness.calculate = () => calculation.promise;
+  harness.render();
+  await harness.flush();
+  harness.edit({ name: 'Waiting for complete math' });
+  await harness.flush();
+  calculation.resolve({ complete: true });
+  await harness.flush();
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.requiresCalculation, true);
+  await new Promise((resolve) => setTimeout(resolve, 120));
+  await harness.flush();
+  const writes = harness.requests.filter(({ type }) => type === 'update-character');
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0].body.name, 'Waiting for complete math');
+  assert.equal(writes[0].body.meta_data.calculated_stats.hp_max, 10);
+  harness.unmount();
+});
+
 test('JSON-normalized save acknowledgements clear the draft without a notification', async () => {
   harness.request = async (type, body) =>
     type === 'find-character' ? row() : JSON.parse(JSON.stringify([{ ...row(), ...body, updated_at: 'version-2' }]));
@@ -1826,4 +1903,241 @@ test('a restored Builder Home conflict resumes safely without requiring a calcul
   assert.equal(getBufferedCharacterSave(1, 'owner').status, 'none');
   assert.equal(harness.notices.length, 0);
   harness.unmount();
+});
+
+/** Home needs no catalog until Builder or a retained calculation actually needs it. */
+test('the Builder route keeps ordinary Home edits fast without loading the content library', async () => {
+  harness.builderMode = true;
+  harness.render();
+  await harness.flush();
+  assert.equal(harness.value.isLoaded, true);
+  assert.ok(harness.contentReads.every((read) => read.enabled === false));
+  harness.edit({ name: 'Saved from Home' });
+  await harness.flush();
+  const writes = harness.requests.filter((request) => request.type === 'update-character');
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0].body.name, 'Saved from Home');
+  harness.unmount();
+});
+
+/** A tab is a view transition, so it must not retire the route's pending writer/calculation. */
+test('Builder to Home retains one owner and saves the name only after pending derived values settle', async () => {
+  harness.builderMode = true;
+  harness.render();
+  await harness.flush();
+  const calculation = deferred();
+  harness.calculate = () => calculation.promise;
+  harness.builderActive = true;
+  harness.render();
+  await harness.flush();
+  harness.edit({ details: { class: { id: 1, name: 'Wizard' } } });
+  await harness.flush();
+  harness.builderActive = false;
+  harness.render();
+  harness.edit({ name: 'Home edit while calculating' });
+  await harness.flush();
+  assert.equal(harness.requests.filter((request) => request.type === 'update-character').length, 0);
+  assert.equal(getBufferedCharacterSave(1, 'owner').draft.requiresCalculation, true);
+  harness.saveCalculatedStats = (_store, _character, update) =>
+    update((previous) => ({ ...previous, meta_data: { calculated_stats: { hp_max: 12 } } }));
+  calculation.resolve({ complete: true });
+  await harness.flush();
+  const writes = harness.requests.filter((request) => request.type === 'update-character');
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0].body.name, 'Home edit while calculating');
+  assert.equal(writes[0].body.details.class.name, 'Wizard');
+  assert.equal(writes[0].body.meta_data.calculated_stats.hp_max, 12);
+  assert.equal(writes[0].body.expected_updated_at, 'version-1');
+  assert.equal(harness.requests.filter((request) => request.type === 'find-character').length, 1);
+  assert.deepEqual(getBufferedCharacterSave(1, 'owner'), { status: 'none' });
+  harness.unmount();
+});
+
+/** A hard reload may start on Home while a previous Builder's durable draft still needs math. */
+test('Home reload automatically recalculates a retained draft before saving its new name', async () => {
+  bufferCharacterSave({ ...row(), details: { class: { id: 1, name: 'Wizard' } } }, 'owner', 'version-1', {
+    requiresCalculation: true,
+    base: row(),
+  });
+  harness.builderMode = true;
+  harness.builderContent = undefined;
+  harness.render();
+  await harness.flush();
+  harness.edit({ name: 'Recovered on Home' });
+  await harness.flush();
+  assert.ok(harness.contentReads.some((read) => read.enabled === true));
+  assert.equal(harness.requests.filter((request) => request.type === 'update-character').length, 0);
+  const calculation = deferred();
+  harness.calculate = () => calculation.promise;
+  harness.builderContent = { defaultSources: { PAGE: [3] }, items: [] };
+  harness.render();
+  await harness.flush();
+  calculation.resolve({ complete: true });
+  await harness.flush();
+  const writes = harness.requests.filter((request) => request.type === 'update-character');
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0].body.name, 'Recovered on Home');
+  assert.equal(writes[0].body.details.class.name, 'Wizard');
+  assert.deepEqual(getBufferedCharacterSave(1, 'owner'), { status: 'none' });
+  harness.unmount();
+});
+
+/** Granted inventory changes may arrive after the first worker reports completion. */
+test('a delayed Builder item grant still recalculates and persists after switching Home', async () => {
+  harness.builderMode = true;
+  harness.builderActive = true;
+  let grant;
+  harness.addExtraItems = (_store, _items, _character, update) => {
+    grant ??= () => update((previous) => ({ ...previous, inventory: { items: [{ id: 'fist' }] } }));
+  };
+  harness.calculate = async () => ({ complete: true });
+  harness.render();
+  await harness.flush();
+  const secondCalculation = deferred();
+  harness.calculate = () => secondCalculation.promise;
+  harness.builderActive = false;
+  harness.render();
+  grant();
+  await harness.flush();
+  harness.edit({ name: 'Home with granted Fist' });
+  await harness.flush();
+  const before = harness.requests.filter((request) => request.type === 'update-character').length;
+  secondCalculation.resolve({ complete: true });
+  await harness.flush();
+  const writes = harness.requests.filter((request) => request.type === 'update-character');
+  assert.equal(writes.length, before + 1);
+  assert.equal(writes.at(-1).body.name, 'Home with granted Fist');
+  assert.deepEqual(writes.at(-1).body.inventory.items, [{ id: 'fist' }]);
+  harness.unmount();
+});
+
+for (const phase of ['inventory', 'bulk']) {
+  test(`Builder Home waits for ${phase} completion before the first save and hard reload`, async () => {
+    const calculation = deferred();
+    const completion = deferred();
+    let remote = {
+      ...row(),
+      inventory: { items: phase === 'inventory' ? [{ id: 'retired-grant' }] : [] },
+      meta_data: { given_item_ids: phase === 'inventory' ? [42] : [] },
+      details: { conditions: [] },
+    };
+    harness.builderMode = true;
+    harness.builderActive = true;
+    harness.saveCalculatedStats = actualSaveCalculatedStats;
+    harness.calculate = () => calculation.promise;
+    const finish = (character, update) => {
+      const finished =
+        phase === 'inventory'
+          ? character.inventory.items.length === 0
+          : character.details.conditions.some((condition) => condition.name === 'Encumbered');
+      if (finished) return;
+      return completion.promise.then(() =>
+        update((previous) =>
+          phase === 'inventory'
+            ? { ...previous, inventory: { items: [] }, meta_data: { ...previous.meta_data, given_item_ids: [] } }
+            : { ...previous, details: { ...previous.details, conditions: [{ name: 'Encumbered', value: 1 }] } }
+        )
+      );
+    };
+    if (phase === 'inventory') harness.addExtraItems = (_store, _items, character, update) => finish(character, update);
+    else harness.checkBulkLimit = (_store, character, update) => finish(character, update);
+    const request = async (type, body) => {
+      if (type === 'find-character') return structuredClone(remote);
+      remote = { ...remote, ...body, updated_at: 'version-2' };
+      return [structuredClone(remote)];
+    };
+    harness.request = request;
+    try {
+      harness.render();
+      await harness.flush();
+      harness.builderActive = false;
+      harness.render();
+      harness.edit({ name: 'Home with completed derived state' });
+      await harness.flush();
+      calculation.resolve({ complete: true });
+      await harness.flush();
+      await new Promise((resolve) => setTimeout(resolve, 120));
+      await harness.flush();
+      assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
+      assert.equal(getBufferedCharacterSave(1, 'owner').draft.requiresCalculation, true);
+      completion.resolve();
+      await harness.flush();
+      await new Promise((resolve) => setTimeout(resolve, 120));
+      await harness.flush();
+      const writes = harness.requests.filter(({ type }) => type === 'update-character');
+      assert.equal(writes.length, 1);
+      assert.equal(writes[0].body.name, 'Home with completed derived state');
+      assert.equal(writes[0].body.meta_data.calculated_stats.hp_max, 10);
+      if (phase === 'inventory') {
+        assert.deepEqual(writes[0].body.inventory.items, []);
+        assert.deepEqual(writes[0].body.meta_data.given_item_ids, []);
+      } else assert.equal(writes[0].body.details.conditions[0].name, 'Encumbered');
+      harness.unmount();
+      harness = new HookHost();
+      harness.builderMode = true;
+      harness.request = request;
+      harness.render();
+      await harness.flush();
+      assert.equal(harness.character.name, remote.name);
+      assert.deepEqual(harness.character.inventory, remote.inventory);
+      assert.deepEqual(harness.character.details.conditions, remote.details.conditions);
+      assert.ok(harness.contentReads.every((read) => read.enabled === false));
+    } finally {
+      completion.resolve();
+      harness.unmount();
+    }
+  });
+}
+
+test('an account change while derived inventory waits retires the old completion pipeline', async () => {
+  const calculation = deferred();
+  const inventory = deferred();
+  let statCommits = 0;
+  harness.options = {
+    type: 'EXECUTE_OPS',
+    data: { content: { items: [] }, context: 'CHARACTER-BUILDER', onFinishLoading() {} },
+  };
+  harness.addExtraItems = () => inventory.promise;
+  harness.saveCalculatedStats = () => statCommits++;
+  harness.calculate = () => calculation.promise;
+  harness.render();
+  await harness.flush();
+  calculation.resolve({ complete: true });
+  await harness.flush();
+  assert.equal(statCommits, 0);
+  harness.session = { user: { id: 'other' } };
+  harness.options = { type: 'SIMPLE' };
+  harness.render();
+  await harness.flush();
+  inventory.resolve();
+  await harness.flush();
+  assert.equal(statCommits, 0);
+  assert.equal(harness.requests.filter(({ type }) => type === 'update-character').length, 0);
+  harness.unmount();
+});
+
+test('an initial read failure cannot finish loading before the recovered calculation', async (t) => {
+  const host = harness;
+  t.after(() => host.unmount());
+  let finished = 0;
+  const calculation = deferred();
+  harness.options = {
+    type: 'EXECUTE_OPS',
+    data: { content: { items: [] }, context: 'CHARACTER-SHEET', onFinishLoading: () => finished++ },
+  };
+  harness.request = async () => { throw new Error('Temporary read outage'); };
+  harness.calculate = () => calculation.promise;
+  harness.render();
+  await harness.flush();
+  assert.equal(harness.value.loadError, true);
+  assert.equal(finished, 0, 'a failed initial read must not expose the inner sheet');
+  harness.request = async () => row();
+  events.get('online')?.();
+  await harness.flush();
+  assert.equal(harness.value.isLoaded, true);
+  assert.equal(finished, 0, 'recovered data alone does not expose unfinished stats');
+  calculation.resolve({ complete: true });
+  await harness.flush();
+  assert.equal(finished, 1);
+  assert.deepEqual(harness.value.results, { complete: true });
 });

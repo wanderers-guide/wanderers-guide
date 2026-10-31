@@ -2,41 +2,21 @@ import { reportClientFailure } from '@utils/client-errors';
 import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError, type Session } from '@supabase/supabase-js';
 import { JSendResponse, RequestType } from '@schemas/requests';
 import { logError, throwError } from '@utils/error-handling';
-import { supabase } from '../supabase-client';
+import { functions, supabase } from '../supabase-client';
+import { readSession, withinSessionBudget, SessionChangedError } from '@auth/session-reader';
 import { RequestRejectedError } from './request-rejection';
+import { isCatalogRead, RETRYABLE_READS } from './request-policy';
 
 const MAX_TRANSIENT_RETRIES = 1;
-// Complete catalogs can exceed 10 MB. Their transfer and JSON parsing need a
-// larger budget than a record lookup, especially when several books load together.
-const CONTENT_DOWNLOAD_READS = new Set<RequestType>([
-  'search-data',
-  'find-content-source',
-  'find-trait',
-  'find-ability-block',
-  'find-ancestry',
-  'find-background',
-  'find-class',
-  'find-archetype',
-  'find-versatile-heritage',
-  'find-class-archetype',
-  'find-item',
-  'find-language',
-  'find-creature',
-  'find-spell',
-]);
-// A lost response can follow a committed write. Only explicitly read-only handlers
-// may be retried after an ambiguous network or gateway failure.
-const RETRYABLE_READS = new Set<RequestType>([
-  ...CONTENT_DOWNLOAD_READS,
-  'gm-users-in-group',
-  'get-user',
-  'get-content-source-stats',
-  'get-content-versions',
-  'find-character',
-  'find-content-update',
-  'find-encounter',
-  'find-campaign',
-]);
+
+/** A locally expired request is transient only for the explicit read allowlist. */
+class RequestTimeoutError extends Error {
+  constructor() {
+    super('Timeout');
+    this.name = 'RequestTimeoutError';
+  }
+}
+
 const DEFAULT_TIMEOUT_MS = 30000;
 const CONTENT_DOWNLOAD_TIMEOUT_MS = 120000;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -56,16 +36,12 @@ export function resetSessionExpired(): void {
   sessionExpired = false;
 }
 
-/** Read authentication without allowing a storage/refresh failure to discard the pending request. */
-async function getSession(): Promise<Session | null> {
-  try {
-    const { data, error } = await supabase.auth.getSession();
-    return error ? null : data.session;
-  } catch (error) {
-    console.error('Could not read the current session:', error);
-    return null;
-  }
-}
+export type RequestOptions = {
+  expectedActorId?: string;
+  anonymous?: boolean;
+  throwOnFailure?: boolean;
+  throwOnRejection?: boolean;
+};
 
 /** Only these responses prove JWT validation failed before the handler could write. */
 function isRejectedJwt(status: number, body: unknown): boolean {
@@ -95,13 +71,13 @@ function isCharacterStatementTimeout(type: RequestType, status: number, body: un
 
 /** Refresh once for concurrent failures, and never replay a request as a different account. */
 async function recoverSession(failedSession: Session | null): Promise<Session | null> {
-  const current = await getSession();
+  const current = await readSession();
   if (!failedSession || !current || current.user.id !== failedSession.user.id) return null;
   if (current.access_token !== failedSession.access_token) return current;
   if (!refreshingSession) {
     refreshingSession = (async () => {
       try {
-        const { data, error } = await supabase.auth.refreshSession();
+        const { data, error } = await withinSessionBudget(supabase.auth.refreshSession());
         return error ? null : data.session;
       } catch (error) {
         console.error('Could not refresh the session:', error);
@@ -112,7 +88,7 @@ async function recoverSession(failedSession: Session | null): Promise<Session | 
     })();
   }
   const refreshed = await refreshingSession;
-  const latest = await getSession();
+  const latest = await readSession();
   return refreshed && latest?.user.id === failedSession.user.id && latest.access_token === refreshed.access_token
     ? refreshed
     : null;
@@ -123,24 +99,37 @@ export async function makeRequest<T = Record<string, any>>(
   type: RequestType,
   body: Record<string, any>,
   notifyFailure = true,
-  options?: { expectedActorId?: string; throwOnFailure?: boolean; throwOnRejection?: boolean }
+  options?: RequestOptions
 ): Promise<T | null> {
   let lastError: any = null;
   let lastErrorBody: unknown = null;
   let transientRetries = 0;
   let retriedAuthentication = false;
-  let requestSession = await getSession();
   const failure = (): null => {
     if (options?.throwOnFailure) throw new Error(`Request failed: ${type}`);
     return null;
   };
-  if (options?.expectedActorId && requestSession?.user.id !== options.expectedActorId) return failure();
+  // Anonymous is an explicit public read, never a fallback for an unavailable session.
+  if (
+    options?.anonymous &&
+    (!RETRYABLE_READS.has(type) || options.expectedActorId || (type === 'find-character' && body.id === undefined))
+  )
+    return failure();
+  let requestSession: Session | null;
+  try {
+    requestSession = options?.anonymous ? null : await readSession();
+  } catch (error) {
+    if (!(error instanceof SessionChangedError))
+      console.error(`Could not establish request identity for ${type}:`, error);
+    return failure();
+  }
+  if (options?.expectedActorId && requestSession?.user.id !== options.expectedActorId) {
+    console.error(`Request actor mismatch before ${type}: ${requestSession ? 'different account' : 'no session'}`);
+    return failure();
+  }
 
   while (true) {
-    const timeout =
-      CONTENT_DOWNLOAD_READS.has(type) && (body.id === undefined || Array.isArray(body.id))
-        ? CONTENT_DOWNLOAD_TIMEOUT_MS
-        : DEFAULT_TIMEOUT_MS;
+    const timeout = isCatalogRead(type, body) ? CONTENT_DOWNLOAD_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
     const { data, error } = await invokeWithTimeout(type, body, timeout, requestSession?.access_token);
     if (!error) {
       if (!data) return failure();
@@ -166,16 +155,22 @@ export async function makeRequest<T = Record<string, any>>(
         // Some gateway failures have no JSON body. They are not authentication failures.
       }
       if (isRejectedJwt(error.context.status, lastErrorBody)) {
+        if (options?.anonymous) break;
         if (!retriedAuthentication) {
           retriedAuthentication = true;
-          const recovered = await recoverSession(requestSession);
+          const recovered = await recoverSession(requestSession).catch(() => null);
           if (recovered) {
             requestSession = recovered;
             resetSessionExpired();
             continue;
           }
         }
-        const current = await getSession();
+        let current: Session | null;
+        try {
+          current = await readSession();
+        } catch {
+          break;
+        }
         // A request from a previous account must not change the new account's authentication state.
         if (
           (!current || current.user.id === requestSession?.user.id) &&
@@ -196,17 +191,25 @@ export async function makeRequest<T = Record<string, any>>(
       }
     }
 
-    const isTransientNetwork = error instanceof FunctionsFetchError || error instanceof FunctionsRelayError;
-    const isGatewayError = error instanceof FunctionsHttpError && [502, 503, 504].includes(error.context?.status);
+    const isTransientNetwork =
+      error instanceof FunctionsFetchError ||
+      error instanceof FunctionsRelayError ||
+      error instanceof RequestTimeoutError;
+    const isTransientHttp = error instanceof FunctionsHttpError && [502, 503, 504, 546].includes(error.context?.status);
     if (
       RETRYABLE_READS.has(type) &&
       transientRetries < MAX_TRANSIENT_RETRIES &&
-      (isTransientNetwork || isGatewayError)
+      (isTransientNetwork || isTransientHttp)
     ) {
       transientRetries++;
       await sleep(250 + Math.random() * 250);
       // Keep the original identity on retries. An account switch cannot replay its write.
-      const current = await getSession();
+      let current: Session | null;
+      try {
+        current = options?.anonymous ? null : await readSession();
+      } catch {
+        break;
+      }
       if (current?.user.id !== requestSession?.user.id) break;
       requestSession = current;
       continue;
@@ -243,10 +246,10 @@ async function invokeWithTimeout(
       // Stop expired reads before React Query or the user starts another transfer.
       // Writes retain their existing uncertain-outcome handling and are never replayed here.
       if (RETRYABLE_READS.has(type)) controller.abort();
-      resolve({ data: null, error: new Error('Timeout') });
+      resolve({ data: null, error: new RequestTimeoutError() });
     }, timeout);
 
-    supabase.functions
+    functions
       .invoke(type, {
         body,
         signal: controller.signal,

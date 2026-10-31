@@ -3,14 +3,17 @@ describe('Character builder', () => {
   let token: string;
   before(() => {
     cy.intercept('POST', '**/auth/v1/token*').as('signIn');
-    cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
+    cy.login();
     cy.wait('@signIn').then(({ response }) => {
       token = response?.body.access_token;
     });
+    cy.intercept('POST', '**/functions/v1/find-character').as('characterList');
     cy.visit('/characters');
+    cy.wait('@characterList', { requestTimeout: 30000, responseTimeout: 30000 });
     cy.intercept('POST', '**/functions/v1/create-character').as('created');
     cy.get('button[aria-label="Create Character"]').click();
-    cy.wait('@created').then(({ response }) => {
+    cy.wait('@created', { requestTimeout: 30000, responseTimeout: 30000 }).then(({ response }) => {
+      expect(response?.body.status).to.eq('success');
       characterId = response?.body.data.id;
     });
     cy.location('pathname', { timeout: 10000 }).should('include', '/builder');
@@ -30,7 +33,7 @@ describe('Character builder', () => {
     if (!characterId || !token) return;
     cy.request({
       method: 'POST',
-      url: `${Cypress.env('functions_url')}/delete-content`,
+      url: `${Cypress.expose('functions_url')}/delete-content`,
       headers: { Authorization: `Bearer ${token}` },
       body: { id: characterId, type: 'character' },
       log: false,

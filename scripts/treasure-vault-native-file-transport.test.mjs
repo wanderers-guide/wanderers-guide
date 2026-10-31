@@ -281,7 +281,7 @@ test('Only existing fixture logins and lossless UTF8 are accepted before any com
 /** These are the actual pure fixture validators, not a cached current-container row. */
 function fullOwnedRow() {
   return {Id:id,Name:'/owned-db',Image:'sha256:'+'c'.repeat(64),Config:{Labels:{'wg.native.owner':'owned-model'}},
-    HostConfig:{NetworkMode:'none',PortBindings:{},Memory:1073741824,MemorySwap:1073741824,NanoCpus:1000000000},State:{Running:true}};
+    HostConfig:{NetworkMode:'none',PortBindings:{},Memory:1073741824,MemorySwap:1073741824,NanoCpus:3000000000},State:{Running:true}};
 }
 function verifyOwnedRow(row) {
   assertNativeContainerIdentity({row,name:'owned-db',id,owner:'owned-model',imageId:'sha256:'+'c'.repeat(64)});

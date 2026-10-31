@@ -50,6 +50,7 @@ import { GiveSpellOperation } from './spell/GiveSpellOperation';
 import { AdjValOperation } from './variables/AdjValOperation';
 import { SetValOperation } from './variables/SetValOperation';
 import { CreateValOperation } from './variables/CreateValOperation';
+import { getDefaultSetValue } from './variables/operation-value-defaults';
 import { useDidUpdate } from '@mantine/hooks';
 import { SelectionOperation } from './selection/SelectionOperation';
 import { GiveLanguageOperation } from './language/GiveLanguageOperation';
@@ -674,6 +675,7 @@ export function OperationDisplay(props: {
           variableType={opCreateValue.data.type}
           onTypeChange={(variableType) => {
             opCreateValue.data.type = variableType;
+            opCreateValue.data.value = getDefaultSetValue(variableType);
             props.onChange(cloneDeep(opCreateValue));
           }}
           value={opCreateValue.data.value as ProficiencyType}

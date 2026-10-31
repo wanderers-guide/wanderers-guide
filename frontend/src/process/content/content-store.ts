@@ -1,8 +1,8 @@
 import { reportClientFailure } from '@utils/client-errors';
-import { supabase } from '../../supabase-client';
+import { invalidateSessionRead, readSession } from '@auth/session-reader';
 import { getPublicUser } from '@auth/user-manager';
 import { COMMON_CORE_ID } from '@constants/data';
-import { makeRequest } from '@requests/request-manager';
+import { makeRequest, type RequestOptions } from '@requests/request-manager';
 import { idbGet, idbSet, idbDelete, idbDeleteIf } from './content-cache-db';
 import {
   AbilityBlock,
@@ -195,19 +195,44 @@ function writeCache(action: () => Promise<void>): Promise<void> {
 }
 
 /** Cache identity follows the actual session, never the cached display profile. */
-async function ensureCacheActor(): Promise<void> {
+async function ensureCacheActor(scope?: ContentReadScope): Promise<ContentReadScope> {
+  if (scope) {
+    assertContentReadScope(scope);
+    return scope;
+  }
   const generation = cacheGeneration;
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const session = await readSession();
   // An Auth event may have switched accounts while this older session read awaited.
-  if (generation === cacheGeneration) setContentCacheActor(session?.user.id ?? null);
+  assertCurrentGeneration(generation);
+  setContentCacheActor(session?.user.id ?? null);
+  return captureContentReadScope(session?.user.id ?? null);
+}
+
+export type ContentReadScope = Readonly<{ actorId: string | null; generation: number }>;
+
+/** Capture a route's identity without allowing old work to change the active cache actor. */
+export function captureContentReadScope(actorId: string | null): ContentReadScope {
+  const scope = { actorId, generation: cacheGeneration };
+  assertContentReadScope(scope);
+  return scope;
+}
+
+/** Check before publishing content or changing route defaults after an awaited read. */
+export function assertContentReadScope(scope: ContentReadScope): void {
+  assertCurrentGeneration(scope.generation);
+  if ((scope.actorId ?? 'anonymous') !== cacheActorId) throw new Error('Content account changed while loading.');
+}
+
+/** Use the captured identity for every descendant read, including optional cache work. */
+function contentRequestOptions(actorId: string | null): RequestOptions {
+  return actorId === null ? { anonymous: true } : { expectedActorId: actorId };
 }
 
 /** Invalidate immediately on Auth events, before any synchronous content consumer runs. */
 export function setContentCacheActor(userId: string | null): void {
   const actorId = userId ?? 'anonymous';
   if (actorId !== cacheActorId) {
+    invalidateSessionRead(userId);
     cacheActorId = actorId;
     resetContentStore(false);
   }
@@ -243,7 +268,8 @@ async function verifyPersistedContentVersions(rec: PersistedContentCache): Promi
   const result = await makeRequest<{ id: number; updated_at: string }[]>(
     'get-content-versions',
     { ids: sources.map((s) => s.id) },
-    false
+    false,
+    contentRequestOptions(rec.actorId === 'anonymous' ? null : rec.actorId)
   );
   if (!Array.isArray(result)) return { status: 'unverified' };
 
@@ -307,6 +333,12 @@ async function hydrateContentCache(generation: number, actorId: string): Promise
       Date.now() - rec.savedAt > CONTENT_CACHE_TTL_MS
     )
       return;
+    // Fetch results are always arrays. Ignore malformed optional cache data before
+    // it can bypass network reads and enter a character's calculation package.
+    if (rec.contentStore instanceof Map && [...rec.contentStore.values()].some((value) => !Array.isArray(value))) {
+      console.warn('[CONTENT-CACHE] Ignoring malformed saved query results');
+      return;
+    }
     // A slow freshness endpoint must not turn a usable local snapshot into a full download.
     // Keep this visit consistent: a late verdict cannot swap content during calculations.
     const verification = verifyPersistedContentVersions(rec);
@@ -515,15 +547,38 @@ export async function fetchContentById<T = Record<string, any>>(type: ContentTyp
   return results.length > 0 ? results[0] : null;
 }
 
-export async function fetchContentAll<T = Record<string, any>>(type: ContentType, sources?: SourceValue) {
-  return await fetchContent<T>(type, { content_sources: sources });
+export async function fetchContentAll<T = Record<string, any>>(
+  type: ContentType,
+  sources?: SourceValue,
+  scope?: ContentReadScope
+) {
+  return await fetchContent<T>(type, { content_sources: sources }, false, false, scope);
+}
+
+/** Capture the same resolved INFO/PAGE scope for ordinary reads and worker metadata. */
+async function resolveRequestSources(
+  sources: SourceValue | undefined,
+  bypassWorkerPackage: boolean,
+  readScope: ContentReadScope
+): Promise<number[]> {
+  const info = getDefaultSources('INFO');
+  const page = getDefaultSources('PAGE');
+  if (Array.isArray(sources)) return uniq(sources).sort((a, b) => a - b);
+  const resolved = sources
+    ? await fetchContentSources(sources, bypassWorkerPackage, readScope)
+    : [
+        ...(await fetchContentSources(info, bypassWorkerPackage, readScope)),
+        ...(await fetchContentSources(page, bypassWorkerPackage, readScope)),
+      ];
+  return uniq(resolved.map((source) => source.id)).sort((a, b) => a - b);
 }
 
 export async function fetchContent<T = Record<string, any>>(
   type: ContentType,
   data: Record<string, any>,
   dontStore?: boolean,
-  bypassWorkerPackage = false
+  bypassWorkerPackage = false,
+  readScope?: ContentReadScope
 ) {
   const CONTENT_SCHEMA_MAP: Record<ContentType, z.ZodTypeAny> = {
     'ability-block': AbilityBlockSchema,
@@ -572,41 +627,44 @@ export async function fetchContent<T = Record<string, any>>(
     if (type === 'trait' && data.content_sources === undefined) {
       const traits = workerContent.lookupTrait(data);
       if (traits !== undefined) return traits as T[];
+      if (data.id !== undefined) {
+        const local = workerContent.fetch<Trait>('trait', data);
+        const ids = new Set((Array.isArray(data.id) ? data.id : [data.id]).map(Number));
+        if (local.length === ids.size) return local as T[];
+      }
+      const request = cloneDeep(data);
+      const scope = await ensureCacheActor(readScope);
+      request.content_sources = await resolveRequestSources(undefined, true, scope);
+      assertContentReadScope(scope);
+      const result = await workerContent.fallbackTraits(scope.generation, request, () =>
+        fetchContent<Trait>('trait', request, true, true, scope)
+      );
+      assertContentReadScope(scope);
+      // Callers can adjust descriptors without changing another pass's metadata.
+      return cloneDeep(result) as T[];
     }
     // Name/filter reads with the implicit INFO+PAGE scope may have more matches
     // outside the posted PAGE package. Preserve their original scoped lookup.
     if (type !== 'content-source' && data.id === undefined && data.content_sources === undefined)
-      return await fetchContent<T>(type, data, true, true);
+      return await fetchContent<T>(type, data, true, true, readScope);
     const rows = workerContent.fetch<T>(type, data);
     const ids = data.id === undefined ? null : [...new Set((Array.isArray(data.id) ? data.id : [data.id]).map(Number))];
-    if (ids && rows.length !== ids.length) return await fetchContent<T>(type, data, true, true);
+    if (ids && rows.length !== ids.length) return await fetchContent<T>(type, data, true, true, readScope);
     return rows;
   }
   if (bypassWorkerPackage) dontStore = true;
 
-  await ensureCacheActor();
-  const generation = cacheGeneration;
+  const requestScope = await ensureCacheActor(readScope);
+  const generation = requestScope.generation;
+  const requestOptions = contentRequestOptions(requestScope.actorId);
   await hydrationPromise;
   assertCurrentGeneration(generation);
 
   // Resolve source scope BEFORE any cache hit, including IDs and names. Capture defaults
   // now so a later view change cannot alter this request's meaning.
-  data = { ...data };
+  data = cloneDeep({ ...data });
   if (type !== 'content-source') {
-    const scope: SourceValue | undefined = data.content_sources;
-    const info = getDefaultSources('INFO');
-    const page = getDefaultSources('PAGE');
-    data.content_sources = Array.isArray(scope)
-      ? uniq(scope).sort((a, b) => a - b)
-      : uniq(
-          (scope
-            ? await fetchContentSources(scope, bypassWorkerPackage)
-            : [
-                ...(await fetchContentSources(info, bypassWorkerPackage)),
-                ...(await fetchContentSources(page, bypassWorkerPackage)),
-              ]
-          ).map((source) => source.id)
-        ).sort((a, b) => a - b);
+    data.content_sources = await resolveRequestSources(data.content_sources, bypassWorkerPackage, requestScope);
     assertCurrentGeneration(generation);
   }
 
@@ -636,7 +694,92 @@ export async function fetchContent<T = Record<string, any>>(
 
     const fetchPromise = (async () => {
       const newData = data;
-      const rawResult = await makeRequest<T>(FETCH_REQUEST_MAP[type], newData, false, { throwOnFailure: true });
+      let rawResult: T | T[] | null;
+      if (type === 'ability-block' && (data.id === undefined || Array.isArray(data.id))) {
+        // Keep every response bounded. Large libraries use three disjoint source
+        // chains so cold loading does not serialize every network roundtrip.
+        const pageSize = 1000;
+        const sourceIds = newData.content_sources;
+        const splitSources =
+          Array.isArray(sourceIds) &&
+          sourceIds.length > 3 &&
+          Object.keys(newData).every((key) => key === 'content_sources');
+        const sourceGroups = splitSources
+          ? Array.from({ length: 3 }, (_, group) => sourceIds.filter((_, index) => index % 3 === group))
+          : [sourceIds];
+        const recordId = (record: T): number => {
+          if (
+            !record ||
+            typeof record !== 'object' ||
+            !('id' in record) ||
+            typeof record.id !== 'number' ||
+            !Number.isSafeInteger(record.id)
+          )
+            throw new Error('Ability-block pagination did not advance. Retry the request.');
+          return record.id;
+        };
+        let failed = false;
+        let failure: unknown;
+        // Drain outstanding requests before releasing this coalesced fetch, so
+        // a retry cannot overlap unfinished sibling chains and exceed the bound.
+        const groups = await Promise.all(
+          sourceGroups.map(async (contentSources) => {
+            try {
+              const records: T[] = [];
+              let afterId: number | undefined;
+              while (!failed) {
+                const page = await makeRequest<T[]>(
+                  FETCH_REQUEST_MAP[type],
+                  { ...newData, content_sources: contentSources, page_size: pageSize, after_id: afterId },
+                  false,
+                  { ...requestOptions, throwOnFailure: true }
+                );
+                assertCurrentGeneration(generation);
+                if (failed) return [];
+                if (!Array.isArray(page) || page.length > pageSize) {
+                  throw new Error('Could not load ability-block content. Retry the request.');
+                }
+                for (const record of page) {
+                  const id = recordId(record);
+                  if (afterId !== undefined && id <= afterId) {
+                    throw new Error('Ability-block pagination did not advance. Retry the request.');
+                  }
+                  if (
+                    splitSources &&
+                    (!record ||
+                      typeof record !== 'object' ||
+                      !('content_source_id' in record) ||
+                      typeof record.content_source_id !== 'number' ||
+                      !contentSources.includes(record.content_source_id))
+                  )
+                    throw new Error('Ability-block content did not match its requested sources. Retry the request.');
+                  afterId = id;
+                  records.push(record);
+                }
+                if (page.length < pageSize) return records;
+              }
+              return [];
+            } catch (error: unknown) {
+              if (!failed) failure = error;
+              failed = true;
+              return [];
+            }
+          })
+        );
+        if (failed) throw failure;
+        const records = groups.flat().sort((left, right) => recordId(left) - recordId(right));
+        for (let index = 1; index < records.length; index++) {
+          if (recordId(records[index - 1]) === recordId(records[index])) {
+            throw new Error('Ability-block pagination returned a duplicate identity. Retry the request.');
+          }
+        }
+        rawResult = records;
+      } else {
+        rawResult = await makeRequest<T>(FETCH_REQUEST_MAP[type], newData, false, {
+          ...requestOptions,
+          throwOnFailure: true,
+        });
+      }
       assertCurrentGeneration(generation);
       if ((rawResult === null || rawResult === undefined) && (data.id === undefined || Array.isArray(data.id))) {
         throw new Error(`Could not load ${type} content. Retry the request.`);
@@ -723,14 +866,19 @@ export function resetContentStore(resetSources = true, clearPersisted = false) {
 //                 Utility Functions                 //
 ///////////////////////////////////////////////////////
 
-export async function fetchContentSources(sources: SourceValue, bypassWorkerPackage = false) {
+export async function fetchContentSources(
+  sources: SourceValue,
+  bypassWorkerPackage = false,
+  readScope?: ContentReadScope
+) {
   const workerContent = getWorkerContentReader();
   if (workerContent && !bypassWorkerPackage) return workerContent.sources(sources);
-  await ensureCacheActor();
-  const generation = cacheGeneration;
+  const scope = await ensureCacheActor(readScope);
+  const generation = scope.generation;
+  assertContentReadScope(scope);
   const resolveSources = async (): Promise<ContentSource[]> => {
     const fetchSources = (data: Record<string, unknown>) =>
-      fetchContent<ContentSource>('content-source', data, bypassWorkerPackage, bypassWorkerPackage);
+      fetchContent<ContentSource>('content-source', data, bypassWorkerPackage, bypassWorkerPackage, scope);
     let results: ContentSource[] = [];
 
     if (Array.isArray(sources)) {
@@ -767,12 +915,15 @@ export async function fetchContentSources(sources: SourceValue, bypassWorkerPack
       });
 
       assertCurrentGeneration(generation);
-      const user = await getPublicUser(undefined, { throwOnFailure: true, sharedReadScope: generation });
+      const user =
+        scope.actorId === null
+          ? null
+          : await getPublicUser(undefined, { throwOnFailure: true, sharedReadScope: generation });
       assertCurrentGeneration(generation);
       // Now fetch all the other sources the user has subscribed to
-      const ur = await fetchSources({
-        id: user?.subscribed_content_sources?.map((s) => s.source_id) ?? [],
-      });
+      const subscriptions = user?.subscribed_content_sources?.map((subscription) => subscription.source_id) ?? [];
+      // An empty ID filter means “all” to the API, not “no subscriptions”.
+      const ur = subscriptions.length > 0 ? await fetchSources({ id: subscriptions }) : [];
 
       results = uniqBy([...pr, ...ur], (source) => source.id);
     } else if (sources === 'ALL-HOMEBREW-ACCESSIBLE') {
@@ -783,7 +934,10 @@ export async function fetchContentSources(sources: SourceValue, bypassWorkerPack
       });
 
       assertCurrentGeneration(generation);
-      const user = await getPublicUser(undefined, { throwOnFailure: true, sharedReadScope: generation });
+      const user =
+        scope.actorId === null
+          ? null
+          : await getPublicUser(undefined, { throwOnFailure: true, sharedReadScope: generation });
       assertCurrentGeneration(generation);
       // Filter out the homebrew
       results = pr.filter(
@@ -811,37 +965,45 @@ export async function fetchContentPackage(
   options?: {
     fetchSources?: boolean;
     fetchCreatures?: boolean;
+    readScope?: ContentReadScope;
   }
 ): Promise<ContentPackage> {
-  await ensureCacheActor();
-  const generation = cacheGeneration;
+  const scope = await ensureCacheActor(options?.readScope);
+  const generation = scope.generation;
+  assertContentReadScope(scope);
   const defaultSources = { PAGE: getDefaultSources('PAGE'), INFO: getDefaultSources('INFO') };
   // Legacy operation filters resolve trait names across INFO+PAGE. Capture that
   // full catalog without expanding PAGE candidates or blocking unrelated sheets.
   const lookupTraitsPromise: Promise<Trait[] | undefined> = (async () => {
     const lookupSources = await Promise.all([
-      fetchContentSources(defaultSources.INFO),
-      fetchContentSources(defaultSources.PAGE),
+      fetchContentSources(defaultSources.INFO, false, scope),
+      fetchContentSources(defaultSources.PAGE, false, scope),
     ]);
     assertCurrentGeneration(generation);
-    return await fetchContent<Trait>('trait', {
-      content_sources: uniq(lookupSources.flat().map((source) => source.id)),
-    });
+    return await fetchContent<Trait>(
+      'trait',
+      {
+        content_sources: uniq(lookupSources.flat().map((source) => source.id)),
+      },
+      false,
+      false,
+      scope
+    );
   })().catch(() => undefined);
   const content = await Promise.all([
-    fetchContentAll<Ancestry>('ancestry', sources),
-    fetchContentAll<Background>('background', sources),
-    fetchContentAll<Class>('class', sources),
-    fetchContentAll<AbilityBlock>('ability-block', sources),
-    fetchContentAll<Item>('item', sources),
-    fetchContentAll<Language>('language', sources),
-    fetchContentAll<Spell>('spell', sources),
-    fetchContentAll<Trait>('trait', sources),
-    options?.fetchCreatures ? fetchContentAll<Creature>('creature', sources) : [],
-    fetchContentAll<Archetype>('archetype', sources),
-    fetchContentAll<VersatileHeritage>('versatile-heritage', sources),
-    fetchContentAll<ClassArchetype>('class-archetype', sources),
-    options?.fetchSources ? fetchContentSources(sources) : null,
+    fetchContentAll<Ancestry>('ancestry', sources, scope),
+    fetchContentAll<Background>('background', sources, scope),
+    fetchContentAll<Class>('class', sources, scope),
+    fetchContentAll<AbilityBlock>('ability-block', sources, scope),
+    fetchContentAll<Item>('item', sources, scope),
+    fetchContentAll<Language>('language', sources, scope),
+    fetchContentAll<Spell>('spell', sources, scope),
+    fetchContentAll<Trait>('trait', sources, scope),
+    options?.fetchCreatures ? fetchContentAll<Creature>('creature', sources, scope) : [],
+    fetchContentAll<Archetype>('archetype', sources, scope),
+    fetchContentAll<VersatileHeritage>('versatile-heritage', sources, scope),
+    fetchContentAll<ClassArchetype>('class-archetype', sources, scope),
+    options?.fetchSources ? fetchContentSources(sources, false, scope) : null,
   ]);
 
   const lookupTraits = await withinCacheBudget(lookupTraitsPromise, CONTENT_LOOKUP_TIMEOUT_MS, undefined);
@@ -910,11 +1072,20 @@ export async function findRequiredContentSources(sourceIds?: number[]) {
   };
 }
 
-export async function fetchArchetypeByDedicationFeat(feat_id: number) {
+/** Resolve a dedication within its own printing before considering cross-book archetypes. */
+export async function fetchArchetypeByDedicationFeat(
+  feat_id: number,
+  feat?: { content_source_id?: number; traits?: number[] | null }
+): Promise<Archetype | null> {
   const archetypes = await fetchContent<Archetype>('archetype', {
     dedication_feat_id: feat_id,
   });
-  return archetypes.length > 0 ? archetypes[0] : null;
+  return (
+    archetypes.find((archetype) => archetype.content_source_id === feat?.content_source_id) ??
+    archetypes.find((archetype) => feat?.traits?.includes(archetype.trait_id)) ??
+    archetypes[0] ??
+    null
+  );
 }
 export async function fetchVersHeritageByHeritage(heritage_id: number) {
   const versatileHeritages = await fetchContent<VersatileHeritage>('versatile-heritage', {

@@ -4,6 +4,7 @@ describe('Slow content downloads', () => {
   let fixture: DownloadFixture;
   let characterId: number;
   let token: string;
+  let releaseCatalogResponse: (() => void) | undefined;
   const downloadKey = Date.now();
   const characterName = `Slow Download Check ${downloadKey}`;
   const loginFixture = () =>
@@ -25,6 +26,7 @@ describe('Slow content downloads', () => {
     });
   const slowCatalog = () => {
     let requests = 0;
+    let initialPages = 0;
     let saves = 0;
     cy.intercept('POST', '**/functions/v1/update-character', () => {
       saves++;
@@ -35,12 +37,13 @@ describe('Slow content downloads', () => {
         return;
       }
       requests++;
+      if (req.body.after_id === undefined) initialPages++;
       req.responseTimeout = 120000;
       req.continue((res) => {
-        res.setDelay(31000);
+        if (req.body.after_id === undefined) res.setDelay(31000);
       });
     }).as('library');
-    return { requests: () => requests, saves: () => saves };
+    return { requests: () => requests, initialPages: () => initialPages, saves: () => saves };
   };
   const waitForCatalog = () =>
     cy.wait('@library', { requestTimeout: 60000, responseTimeout: 120000 }).then(({ response }) => {
@@ -56,7 +59,7 @@ describe('Slow content downloads', () => {
       cy.then(() => {
         cy.request({
           method: 'POST',
-          url: `${Cypress.env('functions_url')}/create-character`,
+          url: `${Cypress.expose('functions_url')}/create-character`,
           headers: { Authorization: `Bearer ${token}` },
           log: false,
           body: {
@@ -80,6 +83,11 @@ describe('Slow content downloads', () => {
     if (fixture) cy.task('campaignFixture:cleanup', fixture.key, { log: false });
   });
 
+  afterEach(() => {
+    releaseCatalogResponse?.();
+    releaseCatalogResponse = undefined;
+  });
+
   it('opens Oracle with a slow, class-scoped feat download', () => {
     const counts = slowCatalog();
     coldVisit('/?open=link_class_112');
@@ -92,7 +100,7 @@ describe('Slow content downloads', () => {
     cy.contains('h3', 'Class Features', { timeout: 30000 }).scrollIntoView().should('exist');
     cy.contains('a', 'Mystery').should('exist');
     cy.contains("Couldn't load this content").should('not.exist');
-    cy.then(() => expect(counts.requests(), 'one uninterrupted catalog download').to.eq(1));
+    cy.then(() => expect(counts.initialPages(), 'one uninterrupted catalog traversal').to.eq(1));
     cy.viewport(1280, 900);
     cy.screenshot('slow-oracle-desktop');
     cy.viewport(390, 844);
@@ -107,8 +115,61 @@ describe('Slow content downloads', () => {
     waitForCatalog();
     cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
     cy.contains("Couldn't load game content").should('not.exist');
-    cy.then(() => expect(counts.requests()).to.eq(1));
+    cy.then(() => expect(counts.initialPages(), 'the catalog traversal starts once').to.eq(1));
     cy.screenshot('slow-sheet-loaded');
+  });
+
+  it('recovers a worker resource-limited catalog without a partial save or page reload', () => {
+    loginFixture();
+    let attempts = 0;
+    let saves = 0;
+    let firstBody: unknown;
+    cy.intercept('POST', '**/functions/v1/update-character', (req) => {
+      saves++;
+      req.continue();
+    });
+    cy.intercept('POST', '**/functions/v1/find-ability-block', (req) => {
+      if (req.body.id !== undefined || req.body.after_id !== undefined) {
+        req.continue();
+        return;
+      }
+      req.alias = 'resourceCatalog';
+      attempts++;
+      if (attempts === 1) {
+        firstBody = structuredClone(req.body);
+        req.reply({
+          statusCode: 546,
+          body: { code: 'WORKER_RESOURCE_LIMIT', message: 'Fixture worker resources exhausted' },
+        });
+      } else {
+        expect(req.body, 'retry keeps the original catalog scope').to.deep.eq(firstBody);
+        // Keep the real response pending until the incomplete-state assertions finish.
+        req.continue(
+          () =>
+            new Promise<void>((resolve) => {
+              releaseCatalogResponse = resolve;
+            })
+        );
+      }
+    });
+    coldVisit(`/sheet/${characterId}`);
+    cy.wait('@resourceCatalog', { requestTimeout: 30000 }).its('response.statusCode').should('eq', 546);
+    cy.wrap(null, { timeout: 30000, log: false }).should(() => {
+      expect(releaseCatalogResponse, 'the successful retry is held').to.be.a('function');
+    });
+    cy.contains('Hit Points').should('not.exist');
+    cy.then(() => {
+      expect(saves, 'no save uses incomplete content').to.eq(0);
+      releaseCatalogResponse!();
+    });
+    cy.wait('@resourceCatalog', { responseTimeout: 120000 }).then(({ response }) => {
+      expect(response?.statusCode).to.eq(200);
+      expect(response?.body.status).to.eq('success');
+      expect(response?.body.data.length).to.be.greaterThan(0);
+    });
+    cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');
+    cy.then(() => expect(attempts, 'one bounded request retry').to.eq(2));
+    cy.screenshot('worker-resource-catalog-recovered');
   });
 
   it('keeps Home working and opens Builder after the slow catalog completes', () => {
@@ -119,9 +180,11 @@ describe('Slow content downloads', () => {
     cy.then(() => expect(counts.requests(), 'Home does not download the feat catalog').to.eq(0));
     cy.contains('button', 'Builder').click();
     waitForCatalog();
-    cy.contains('Select Ancestry', { timeout: 30000 }).scrollIntoView().should('be.visible');
+    // Choices mount hidden while the worker finishes. Keep readiness in the
+    // existing retryable query instead of freezing a hidden element by scrolling it.
+    cy.contains('button:visible', 'Select Ancestry', { timeout: 30000 }).scrollIntoView().should('be.visible');
     cy.contains("Couldn't load game content").should('not.exist');
-    cy.then(() => expect(counts.requests()).to.eq(1));
+    cy.then(() => expect(counts.initialPages(), 'the catalog traversal starts once').to.eq(1));
     cy.screenshot('slow-builder-loaded');
   });
 
@@ -144,7 +207,7 @@ describe('Slow content downloads', () => {
           expect(file.slice(0, 5), 'PDF header').to.eq('%PDF-');
           expect(file.trimEnd().endsWith('%%EOF'), 'complete PDF').to.eq(true);
         });
-      cy.then(() => expect(counts.requests()).to.eq(1));
+      cy.then(() => expect(counts.initialPages(), 'the catalog traversal starts once').to.eq(1));
     });
   }
 });

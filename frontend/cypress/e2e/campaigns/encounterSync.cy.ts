@@ -34,7 +34,14 @@ describe('Campaign encounter synchronization', () => {
   });
 
   afterEach(() => {
-    if (fixture) cy.task('campaignFixture:cleanup', fixture.key, { log: false });
+    if (!fixture) return;
+    // Unload polling and debounced writes before deleting their signed-in fixture account.
+    cy.intercept('GET', '/__cypress_fixture_cleanup__', {
+      headers: { 'content-type': 'text/html' },
+      body: '<!doctype html><html><body></body></html>',
+    });
+    cy.visit('/__cypress_fixture_cleanup__');
+    cy.task('campaignFixture:cleanup', fixture.key, { log: false });
   });
 
   const readPlayer = () => cy.task<any>('campaignFixture:read', fixture!.key, { log: false });

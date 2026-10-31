@@ -207,6 +207,22 @@ async function executeCharacterOperations(
 ): ReturnType<typeof _executeCharacterOperations> {
   const { character, content, context } = data;
 
+  const class_ = content.classes.find((c) => c.id === character.details?.class?.id);
+  const class_2 = content.classes.find((c) => c.id === character.details?.class_2?.id);
+  const background = content.backgrounds.find((b) => b.id === character.details?.background?.id);
+  const ancestry = content.ancestries.find((a) => a.id === character.details?.ancestry?.id);
+  // Unselected Builder choices are valid. Persisted choices must resolve before
+  // resetting the store, so an incomplete package cannot publish default math.
+  for (const selection of [
+    { type: 'class', id: character.details?.class?.id, resolved: class_ },
+    { type: 'secondary class', id: character.details?.class_2?.id, resolved: class_2 },
+    { type: 'background', id: character.details?.background?.id, resolved: background },
+    { type: 'ancestry', id: character.details?.ancestry?.id, resolved: ancestry },
+  ]) {
+    if (selection.id !== undefined && !selection.resolved)
+      throw new Error(`Calculation is missing the selected ${selection.type} content.`);
+  }
+
   resetVariables('CHARACTER');
   bindSpellDatabase(
     'CHARACTER',
@@ -234,10 +250,6 @@ async function executeCharacterOperations(
     'Loaded'
   );
 
-  const class_ = content.classes.find((c) => c.id === character.details?.class?.id);
-  const class_2 = content.classes.find((c) => c.id === character.details?.class_2?.id);
-  const background = content.backgrounds.find((b) => b.id === character.details?.background?.id);
-  const ancestry = content.ancestries.find((a) => a.id === character.details?.ancestry?.id);
   /** Calculate from current content while retaining saved archetype snapshots when their source is unavailable. */
   const resolveClassArchetype = (selected?: ClassArchetype): ClassArchetype | undefined =>
     selected ? (content.classArchetypes?.find((archetype) => archetype.id === selected.id) ?? selected) : undefined;
@@ -1490,6 +1502,7 @@ function clearConflictingBoostSelections(operations: Operation[], node?: Selecti
   walk(operations, node);
 }
 
+/** Keep boosts distinct within their owning source, including nested custom ancestry choices. */
 function limitBoostOptions(operations: Operation[], operationResults: OperationResult[]): OperationResult[] {
   operationResults = cloneDeep(operationResults);
   const unselectedOptions: string[] = [];
@@ -1497,6 +1510,14 @@ function limitBoostOptions(operations: Operation[], operationResults: OperationR
   const collect = (results: OperationResult[]): void => {
     for (const result of results) {
       if (!result) continue;
+      const source = result.result?.source;
+      if (result.result && source?._content_type === 'ability-block' && source.type === 'class-feature') {
+        // A granted class feature owns its boost set, just like a top-level class feature.
+        // Eidolon Advancement grants several levels here; custom choices still share their parent's set.
+        const grantedOperations: Operation[] = source.operations ?? [];
+        result.result.results = limitBoostOptions(grantedOperations, result.result.results ?? []);
+        continue;
+      }
       allResults.push(result);
       collect(result.result?.results ?? []);
     }

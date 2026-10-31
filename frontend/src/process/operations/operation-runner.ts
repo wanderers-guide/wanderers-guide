@@ -402,7 +402,10 @@ async function runSelect(
     }
     return null;
   }
-  if (requiresFinalSkillSelection(operation.id) && !finalizingSkillSelections) {
+  const occurrenceSkillFilter =
+    operation.data.optionsFilters?.type === 'ADJ_VALUE' &&
+    operation.data.optionsFilters.skillRules === 'expert-mechanic';
+  if ((requiresFinalSkillSelection(operation.id) || occurrenceSkillFilter) && !finalizingSkillSelections) {
     const result: OperationResult = {
       selection: {
         id: savedIdentity?.id ?? operation.id,
@@ -423,6 +426,7 @@ async function runSelect(
         sourceLabel,
         savedIdentity,
         scopes: getVariableEffectScopes(varId),
+        skillContext: getSkillEffectContext(varId),
       });
       Object.assign(result, { [qualifiedResultKey]: key });
     }
@@ -430,7 +434,7 @@ async function runSelect(
   }
   let optionList: ObjectWithUUID[] = [];
 
-  if (operation.data.modeType === 'FILTERED' && operation.data.optionsFilters) {
+  if ((operation.data.modeType === 'FILTERED' || occurrenceSkillFilter) && operation.data.optionsFilters) {
     optionList = await determineFilteredSelectionList(varId, operation.id, operation.data.optionsFilters, owner);
   } else if (operation.data.modeType === 'PREDEFINED' && operation.data.optionsPredefined) {
     optionList = await determinePredefinedSelectionList(
@@ -867,7 +871,14 @@ async function resolveBindings(pending: DeferredOperation[]): Promise<void> {
       const source = getVariable(binding.value.storeId, binding.value.variable);
       if (!source) continue;
       await withVariableEffectScopes(binding.varId, binding.scopes, async () => {
-        setVariable(binding.varId, binding.variable, source.value, binding.sourceLabel);
+        const offset = binding.value.offset ?? 0;
+        const resolved = binding.value.includeBonuses
+          ? getFinalVariableValue(binding.value.storeId, binding.value.variable).total
+          : source.value;
+        if ((offset !== 0 || binding.value.includeBonuses) && typeof resolved !== 'number')
+          throw new Error('Numeric bindings require a numeric source.');
+        const value = typeof resolved === 'number' ? resolved + offset : resolved;
+        setVariable(binding.varId, binding.variable, value, binding.sourceLabel);
       });
     }
   }
@@ -911,6 +922,7 @@ const finalSkillSelections = new Map<
     options?: OperationOptions;
     sourceLabel?: string;
     savedIdentity?: { id: string; aliases?: string[] };
+    skillContext: ReturnType<typeof getSkillEffectContext>;
   }
 >();
 let finalizingSkillSelections = false;
@@ -972,16 +984,20 @@ export async function resolveFinalSkillSelections(): Promise<void> {
   finalizingSkillSelections = true;
   try {
     for (const entry of finalSkillSelections.values()) {
-      const result = await withVariableEffectScopes(entry.varId, entry.scopes, () =>
-        runSelect(
-          entry.varId,
-          entry.selectionTrack,
-          entry.operation,
-          { ...entry.options, doOnlyConditionals: false, doConditionals: true },
-          entry.sourceLabel,
-          entry.savedIdentity
-        )
-      );
+      const execute = () =>
+        withVariableEffectScopes(entry.varId, entry.scopes, () =>
+          runSelect(
+            entry.varId,
+            entry.selectionTrack,
+            entry.operation,
+            { ...entry.options, doOnlyConditionals: false, doConditionals: true },
+            entry.sourceLabel,
+            entry.savedIdentity
+          )
+        );
+      const result = entry.skillContext
+        ? await withSkillEffectContext(entry.varId, entry.skillContext.key, entry.skillContext.level, execute)
+        : await execute();
       qualifiedResults.set(entry.key, result ?? null);
     }
   } finally {

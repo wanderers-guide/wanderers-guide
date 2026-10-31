@@ -35,6 +35,15 @@ level, capacity and resilience from the difference between selected and starting
 grades. An absent selected grade uses the starting grade without changing the row.
 Unmarked saved and playtest equipment retains its existing grade behavior.
 
+Pregraded Starfinder weapons use the same paired `base_grade` and
+`base_upgrade_slots` fields. Keep the printed damage dice, level, price, and
+available capacity intact. Only increases above that starting grade add dice,
+price, and capacity; Tracking follows the selected grade. For example, a Superior
+Blast Knife starts at 2d4 and 15002 credits, and its Elite grade is 3d4 and 25002
+credits. The editor cannot select below the starting grade. No starting grade is
+inferred for existing saved weapons, and armor-only `built_in_upgrades` remains
+unavailable to weapons.
+
 Fixed preinstalled upgrades belong in `built_in_upgrades`, using the same
 `name`, `id` and optional embedded `upgrade` fields as ordinary `slots`. Built-ins
 do not consume the printed available capacity and cannot be removed through the
@@ -106,10 +115,11 @@ The remaining editors reload their own contents, and deleting the last page leav
 one blank Notes page. Editing or removing an imported creature ability affects only
 the selected row, even when legacy rows share an ID.
 
-Character calculation failures stay in background diagnostics. The sheet and builder
-remain editable, and retain the last successful calculation during the current session.
-A transient failure gets one automatic retry. Persistent failures wait for changed
-inputs; raw edits remain buffered locally, and incomplete derived stats never save.
+Character calculation failures retain the last successful calculation during the current
+session. A transient failure gets one automatic retry. If both initial attempts fail
+before any calculation succeeds, the sheet uses the existing error page instead of
+showing default zero statistics. Raw edits remain buffered locally, and incomplete
+derived stats never save.
 
 Predefined ability, spell, and language choices in the operation editor have an X
 to remove that choice. Other choices retain their existing IDs and values, including
@@ -170,11 +180,24 @@ records, including operations and metadata omitted from the rules preview. The
 original and updated rules previews remain available alongside these review details.
 Reviewing a request does not edit or approve it; moderation still happens in Discord.
 
+Dedication lookups prefer the archetype from the dedication's own content source,
+then a matching archetype trait. This preserves separate printings when older
+archetypes reference the same dedication. Accounts without subscribed books do not
+issue an empty-ID query, which the API interprets as an unrestricted source lookup.
+Named prerequisite alternatives such as “Guiding Shot or Set-Up Strike” accept either
+owned feature. Exact feature names containing conjunctions are checked first.
+
 ### Loading and saving safely
 
 A content package becomes available only after every requested table and source lookup
 succeeds. A successful empty table is valid; a failed request remains an error. The
 sheet and builder offer Retry and do not calculate or save against a partial package.
+Ability-block catalog reads use sequential pages of at most 1,000 rows to avoid
+assembling a whole multi-book response in one Edge Function worker. The browser
+stages every page before publishing the complete scoped catalog. A failed page,
+invalid cursor, or account/source reset discards that staged result; a later retry
+starts the complete read again. Single-record lookups keep their existing shape.
+
 Browser caches follow the signed-in account and resolved source set, and resets discard
 late requests and hydration from the previous cache generation. Content cache cleanup
 preserves unsynced character drafts.
@@ -210,8 +233,15 @@ catalog, preserving the endpoint's first-by-ID choice when names occur in more t
 book. This optional metadata starts loading with the PAGE package and gets at most
 750 milliseconds of extra wait after the required tables finish. Failure or a late result
 cannot block an unrelated character or mutate a posted package; an actual missing lookup
-uses the existing scoped request. Spell panels use the same complete page package, so an
-early render cannot cache an empty catalog while a character is being restored.
+uses the existing scoped request. Repeated calculation passes share successful implicit
+trait lookups within that job, keyed by the resolved source scope and request. Failed
+lookups remain retryable, returned rows are independent copies, and this metadata never
+enters PAGE catalogs or a later job. Trait IDs already present in PAGE remain local.
+The worker has its own in-memory stores; it receives these rows in the posted
+package rather than sharing the page's JavaScript cache. Missing scoped content
+uses the same bounded read transport as the page. Spell panels use the same
+complete page package, so an early render cannot cache an empty catalog while a
+character is being restored.
 
 The builder waits for the current character's authoritative save context before
 exposing editable controls. A cached route row cannot make the form ready early.
@@ -302,6 +332,11 @@ The saved character and companion records stay unchanged; import still reads `ch
 
 ## Operations
 
+Each granted class feature keeps its own attribute-boost selection group. Eidolon
+Advancement can boost the same attribute at levels 5, 10, 15, and 20, while each
+level's four choices still require different attributes. Saved choices keep their
+existing identities when recalculated or reloaded.
+
 Speed assignments establish a base speed; when several sources grant one, the highest
 base applies. Speed adjustments add to or subtract from that base, regardless of which
 source runs first. For example, a Human's 25-foot base speed and a custom +5 adjustment
@@ -317,6 +352,15 @@ Companion `bindValue` operations keep their saved source store and variable visi
 when reopened, including custom destination values created only in the companion.
 Companion conditions can read bindings from the already calculated parent character.
 Binding to the character's `FEAT_NAMES` lets companion conditionals inspect those feats.
+Numeric bindings may add an optional `value.offset` and opt in to
+`value.includeBonuses`, for example a fly Speed equal
+to land Speed plus 10 feet. They retain the highest independently granted base speed.
+
+Expert Mechanic's skill choice uses `optionsFilters.skillRules: 'expert-mechanic'`.
+It reads proficiency before that feat's occurrence, offers Computers or Crafting
+below expert, and otherwise offers only trained skills, including trained Lore.
+Its saved choice remains valid when recalculated and cannot grant expert in an
+untrained alternative skill.
 
 Known spells use the saved ranks for their own casting source. A spell learned from
 two sources appears once per rank in each source; distinct heightened versions remain

@@ -451,12 +451,26 @@ export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
       const metadata = item.meta_data?.starfinder;
       if (
         metadata?.base_grade !== undefined &&
-        (item.group !== 'ARMOR' || item.meta_data?.dex_cap === undefined || item.meta_data.ac_bonus === undefined)
+        !(
+          (item.group === 'ARMOR' && item.meta_data?.dex_cap !== undefined && item.meta_data.ac_bonus !== undefined) ||
+          (item.group === 'WEAPON' &&
+            Number.isInteger(Number(item.meta_data?.damage?.dice)) &&
+            Number(item.meta_data?.damage?.dice) > 0 &&
+            item.meta_data?.damage?.die &&
+            item.meta_data.damage.damageType)
+        )
       ) {
         context.addIssue({
           code: 'custom',
           path: ['meta_data', 'starfinder'],
-          message: 'Starting armor grade requires an armor stat block.',
+          message: 'Starting grade requires an armor or weapon stat block.',
+        });
+      }
+      if (metadata?.built_in_upgrades !== undefined && item.group !== 'ARMOR') {
+        context.addIssue({
+          code: 'custom',
+          path: ['meta_data', 'starfinder', 'built_in_upgrades'],
+          message: 'Built-in upgrades require an armor stat block.',
         });
       }
       for (const [index, slot] of (metadata?.built_in_upgrades ?? []).entries()) {

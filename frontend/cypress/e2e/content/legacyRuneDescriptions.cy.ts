@@ -1,3 +1,5 @@
+import { paginateAbilityFixture } from '../../support/content-pagination';
+
 type RuneCatalogFixture = { table: string; row: { id: number; name: string; [key: string]: any } };
 
 type RuneViewportMetrics = {
@@ -80,31 +82,11 @@ const scrollRuneLabelIntoView = (label: string): void => {
   cy.get('@drawer').contains(label).should('be.visible');
 };
 
-const runeFixtureScript = `
-  import { readContentRows } from "./scripts/operation-test-harness.mjs";
-  const rows = await readContentRows([
-    ...[7090, 7950, 6961].map(id => ({ table: "item", id }))
-  ]);
-  rows.push(...await readContentRows([
-    ...[...new Set(rows.flatMap(({row}) => row.traits ?? []))].map(id => ({table:"trait",id})),
-    ...[...new Set(rows.map(({row}) => row.content_source_id))].map(id => ({table:"content_source",id}))
-  ]));
-  const host = rows.find(entry => entry.table === "item" && entry.row.id === 7090).row;
-  const flaming = rows.find(entry => entry.table === "item" && entry.row.id === 6961).row;
-  for (const [id, property] of [
-    [990010, ["Shock", "Frost"]],
-    [990011, ["Shock", { id: flaming.id, name: flaming.name, rune: flaming }, "Frost"]]
-  ]) rows.push({ table: "item", row: { ...host, id, name: "Legacy rune verification", meta_data: {
-    ...host.meta_data, runes: { potency: 1, property }
-  } } });
-  console.log(JSON.stringify(rows));
-`;
-
 describe('Legacy property rune descriptions', () => {
   let fixtures: RuneCatalogFixture[];
   before(() => {
-    cy.exec(`node --input-type=module -e '${runeFixtureScript}'`, { log: false, timeout: 60000 }).then(({ stdout }) => {
-      fixtures = JSON.parse(stdout);
+    cy.task<any>('contentFixture:runes', null, { log: false, timeout: 60000 }).then((rows) => {
+      fixtures = rows;
     });
   });
   beforeEach(() => {
@@ -128,6 +110,7 @@ describe('Legacy property rune descriptions', () => {
       if (body.name) rows = rows.filter((row) => row.name.toLowerCase() === body.name.toLowerCase());
       if (Array.isArray(body.content_sources))
         rows = rows.filter((row) => body.content_sources.includes(row.content_source_id));
+      if (table === 'ability_block') rows = paginateAbilityFixture(rows, body);
       request.reply({ body: { status: 'success', data: rows } });
     });
   });

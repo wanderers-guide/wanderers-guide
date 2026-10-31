@@ -18,11 +18,15 @@ if ! docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
 fi
 
 run_psql_quiet() {
-  docker exec -i "$CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -q
+  docker exec -i "$CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -q "$@"
 }
 
 run_psql() {
   docker exec -i "$CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1
+}
+
+run_content_check() {
+  { printf 'BEGIN READ ONLY;\n'; cat "$SCRIPT_DIR/../supabase/release/$1"; printf '\nROLLBACK;\n'; } | run_psql_quiet -At
 }
 
 # 1. The dump references a 'github' CI role; create it if missing so GRANT
@@ -71,11 +75,11 @@ SQL
 #    the function) — which imposes the invariant that any trigger added to prod
 #    must come from a migration, or local/CI databases will silently lack it.
 echo "==> Loading schema.sql"
-sed -e '/^\\restrict /d' -e '/^\\unrestrict /d' -e '/^CREATE TRIGGER /d' "$SCRIPT_DIR/schema.sql" | run_psql_quiet
+"$SCRIPT_DIR/filter-pg-dump.sh" schema < "$SCRIPT_DIR/schema.sql" | run_psql_quiet
 
 # 5. Load data.
 echo "==> Loading data.sql (~45 MB, this may take a minute)"
-sed -e '/^\\restrict /d' -e '/^\\unrestrict /d' "$SCRIPT_DIR/data.sql" | run_psql_quiet
+"$SCRIPT_DIR/filter-pg-dump.sh" data < "$SCRIPT_DIR/data.sql" | run_psql_quiet
 
 # 6. Supabase services connect as anon/authenticated/service_role; they need
 #    USAGE on the schema and CRUD on its objects. RLS policies (defined in
@@ -105,7 +109,33 @@ run_psql < "$SCRIPT_DIR/auth-trigger.sql"
 echo "==> Applying migrations from supabase/migrations"
 for migration in "$SCRIPT_DIR"/../supabase/migrations/*.sql; do
   echo "    -> $(basename "$migration")"
+  # These imports have complete registered successor checks. A refreshed dump
+  # can already contain their approved citations, which the original imports reject.
+  check_file=''
+  case "$(basename "$migration")" in
+    20261008160000_tech_core_introductory_spells.sql)
+      check_file='tech-core-introductory-spells-citation-compatibility.sql'
+      check_id='tech-core-introductory-spells' ;;
+    20261008190000_tech_core_general_spells.sql|20261011000100_incarnate_release_compatibility.sql)
+      check_file='tech-core-general-spells-citation-compatibility.sql'
+      check_id='tech-core-general-spells' ;;
+  esac
+  if [ -n "$check_file" ]; then
+    check_result=$(run_content_check "$check_file")
+    case "$check_result" in
+      "$check_id|t") continue ;;
+      "$check_id|f") ;; # The unchanged migration handles absent imports or refuses incompatible data.
+      *) echo "Error: invalid Tech Core compatibility result for $(basename "$migration")" >&2; exit 1 ;;
+    esac
+  fi
   run_psql_quiet < "$migration"
+  if [ -n "$check_file" ]; then
+    check_result=$(run_content_check "$check_file")
+    if [ "$check_result" != "$check_id|t" ]; then
+      echo "Error: Tech Core compatibility check failed after $(basename "$migration")" >&2
+      exit 1
+    fi
+  fi
 done
 
 echo "==> Done. Project schema and content data loaded."

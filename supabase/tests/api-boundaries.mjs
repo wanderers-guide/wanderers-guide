@@ -19,6 +19,7 @@ let upstreamBody;
 let upstreamCalls = 0;
 let reserved = [];
 let fetchMode = 'success';
+let abilityReads = 0;
 const rows = [{ id: 1, uuid: 'fixture-one', name: 'Fixture', content_source_id: 1 }];
 globalThis.Deno = { env: { get: key => key === 'AI_FUNCTION_URL' ? 'https://fixture.invalid/ai' : 'fixture-placeholder' } };
 globalThis.fetch = async (url, options) => {
@@ -34,6 +35,7 @@ globalThis.__client = {
   auth: { getUser: async () => ({ data: { user: actor }, error: null }) },
   rpc: async (_name, params) => { reserved.push(params); return { data: budget, error: budgetError }; },
   from(table) {
+    if (table === 'ability_block') abilityReads++;
     let head = false;
     const q = {
       select(_columns, options) { head = !!options?.head; return this; },
@@ -69,7 +71,7 @@ async function handler(name) {
   return globalThis.__handler;
 }
 try {
-  const api = await bundle('shared', `export { connect } from './supabase/functions/_shared/helpers.ts'; export * from './supabase/functions/_shared/rate-limit.ts'; export { fetchWorkText } from './supabase/functions/_shared/costly-requests.ts';`);
+  const api = await bundle('shared', `export { connect, fetchData } from './supabase/functions/_shared/helpers.ts'; export * from './supabase/functions/_shared/rate-limit.ts'; export { fetchWorkText } from './supabase/functions/_shared/costly-requests.ts';`);
   assert.notEqual(api.bucketFor({ token: 'anon.public.jwt', ip: 'one' }).bucket, api.bucketFor({ token: 'anon.public.jwt', ip: 'two' }).bucket);
   let called = 0;
   for (let i = 0; i < 240; i++) assert.equal((await api.connect(request({}, `rotate.${i}.jwt`), async () => { called++; return { status: 'success', data: true }; })).status, 200);
@@ -91,6 +93,52 @@ try {
   assert.equal(expired.status, 401);
   assert.equal((await expired.json()).data.code, 'AUTH_REQUIRED');
   console.log('PASS admission, streamed body bounds, bucket retention and expired JWT normalization');
+
+  const catalog = Array.from({ length: 5001 }, (_, i) => ({ id: i + 1, content_source_id: 1 }));
+  catalog.push({ id: 5002, content_source_id: 2 });
+  const pageQueries = [];
+  const pageClient = { from(table) {
+    assert.equal(table, 'ability_block');
+    const filters = [];
+    let cursor;
+    return {
+      select() { return this; },
+      in(column, values) { filters.push(row => values.includes(row[column])); return this; },
+      gt(column, value) { assert.equal(column, 'id'); cursor = value; filters.push(row => row.id > value); return this; },
+      order(column, options) { assert.equal(column, 'id'); assert.equal(options.ascending, true); return this; },
+      async limit(size) {
+        pageQueries.push({ size, cursor });
+        return { data: catalog.filter(row => filters.every(matches => matches(row))).slice(0, size), error: null };
+      },
+    };
+  } };
+  const filters = [{ column: 'content_source_id', value: [1] }];
+  const bounded = await api.fetchData(pageClient, 'ability_block', filters, undefined, { size: 1000, afterId: 1000 });
+  assert.equal(bounded.length, 1000);
+  assert.equal(bounded[0].id, 1001);
+  assert.equal(bounded.at(-1).id, 2000);
+  assert.deepEqual(pageQueries.splice(0), [{ size: 1000, cursor: 1000 }], 'a full bounded page does not aggregate another page');
+  assert.deepEqual(await api.fetchData(pageClient, 'ability_block', filters, undefined, { size: 1000, afterId: 5000 }), [{ id: 5001, content_source_id: 1 }]);
+  pageQueries.length = 0;
+  assert.equal((await api.fetchData(pageClient, 'ability_block', filters)).length, 5001);
+  assert.deepEqual(pageQueries, [{ size: 5000, cursor: undefined }, { size: 5000, cursor: 5000 }], 'legacy reads retain complete keyset traversal');
+  const missingPageClient = { from() {
+    return { select() { return this; }, order() { return this; }, limit: async () => ({ data: null, error: null }) };
+  } };
+  await assert.rejects(api.fetchData(missingPageClient, 'ability_block', [], undefined, { size: 1000 }), /Invalid query result/, 'a missing database page is not a successful empty catalog');
+
+  const ability = await handler('find-ability-block');
+  for (const invalid of [{ page_size: 0 }, { page_size: 1001 }, { page_size: 1.5 }, { page_size: '1000' }, { after_id: 1 }, { page_size: 1, after_id: 1.5 }, { page_size: 1, after_id: Number.MAX_SAFE_INTEGER + 1 }]) {
+    const before = abilityReads;
+    const response = await ability(request(invalid));
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).status, 'fail');
+    assert.equal(abilityReads, before, 'invalid pagination must not read the table');
+  }
+  assert.deepEqual((await (await ability(request({ content_sources: [1], page_size: 1 }))).json()).data, rows);
+  assert.deepEqual((await (await ability(request({ content_sources: [1] }))).json()).data, rows);
+  assert.deepEqual((await (await ability(request({ id: 1 }))).json()).data, rows[0]);
+  console.log('PASS bounded catalog pages, source filters, cursor ordering, input rejection and legacy response shapes');
 
   const ai = await handler('open-ai-request');
   assert.equal((await ai(request({ content: 'hello' }))).status, 401);

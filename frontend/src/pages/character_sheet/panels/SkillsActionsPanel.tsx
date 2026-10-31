@@ -446,8 +446,8 @@ export default function SkillsActionsPanel(props: {
                     });
                   }}
                 >
-                  <Box>
-                    <Text c='gray.0' fz='sm'>
+                  <Box miw={0}>
+                    <Text c='gray.0' fz='sm' truncate title={variableToLabel(skill)}>
                       {variableToLabel(skill)}
                     </Text>
                   </Box>
@@ -821,11 +821,11 @@ export default function SkillsActionsPanel(props: {
     );
   } else {
     return (
-      <Group gap={10} align='flex-start' justify='center' style={{ minHeight: props.panelHeight }}>
-        <Box style={{ flexBasis: 'calc(30% - 10px)' }} h='100%'>
+      <Group gap={10} wrap='nowrap' align='flex-start' justify='center' style={{ minHeight: props.panelHeight }}>
+        <Box miw={0} style={{ flexBasis: 'calc(30% - 10px)' }} h='100%'>
           {getSkillsSection()}
         </Box>
-        <Box style={{ flexBasis: '70%' }} h='100%'>
+        <Box miw={0} style={{ flexBasis: '70%' }} h='100%'>
           {getActionsSection()}
         </Box>
       </Group>

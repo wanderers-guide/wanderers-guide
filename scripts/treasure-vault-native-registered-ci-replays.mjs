@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {HISTORICAL_CONTENT_FIXTURE} from './historical-content-fixture.mjs';
+import {HISTORICAL_CONTENT_FIXTURE,TECH_CORE_CONTENT_FIXTURE} from './historical-content-fixture.mjs';
 
 const sha=text=>createHash('sha256').update(text).digest('hex');
 const migrationName=/^[0-9]{14}_[a-z0-9_]+\.sql$/;
@@ -10,7 +10,7 @@ const compatibilityReplay='20261011000100_incarnate_release_compatibility.sql';
 const recoveryReplayPaths=['20261011000000_restore_heal_companion.sql',compatibilityReplay];
 const indexPaths=['supabase/release/war-of-immortals-index.sql','supabase/release/war-of-immortals-index-regression.sql'];
 const workflowPath='.github/workflows/e2e.yml';
-export const APPROVED_REGISTERED_CI_REPLAY_STEP_SHA256="db68504d89617abde15a58a4814d2b17a9a5eecd5fc6dbf77736375881596970";
+export const APPROVED_REGISTERED_CI_REPLAY_STEP_SHA256="04910874f21cb4cecc8f0dac6bc25c8186aeac3f889b54b977dd0f90b3fd86c1";
 
 
 /** Pin the exact reviewed shell step, not a reconstructed or normalized workflow. */
@@ -33,12 +33,20 @@ export function assertRegisteredCiWorkflowRecipe(workflow) {
   assert.equal([...step.matchAll(/^            verify_registered$/gm)].length,1);
   const replayBlock='          for pass in 1 2; do\n'+
     '            for migration in '+[...replayPrefixes.map(prefix=>'supabase/migrations/'+prefix+'*.sql'),...recoveryReplayPaths.map(name=>'supabase/migrations/'+name)].join(' ')+'; do\n'+
-    '              docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"\n'+
+    '              if [ "${migration##*/}" = \'20261011000100_incarnate_release_compatibility.sql\' ]; then\n'+
+    "                { printf 'BEGIN READ ONLY;\\n'; cat supabase/release/tech-core-general-spells-citation-compatibility.sql; printf '\\nROLLBACK;\\n'; } \\\n"+
+    '                  | docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -qAt -f - \\\n'+
+    '                  | awk -F\'|\' \'NF != 2 || $1 != "tech-core-general-spells" || $2 != "t" { failed = 1 } END { if (NR != 1) failed = 1; exit failed }\'\n'+
+    '              else\n'+
+    '                docker compose exec -T db psql -X -U postgres -v ON_ERROR_STOP=1 -q -f - < "$migration"\n'+
+    '              fi\n'+
     '            done\n            verify_registered\n          done\n';
   assert.ok(step.includes(replayBlock),'Exact two date-glob passes and verification order');
   assert.ok(step.includes('          { cat '+indexPaths[0]+'; cat '+indexPaths[1]+'; }'));
   const readers=[...step.matchAll(/awk -F'\|' '([^'\n]*)'/g)].map(match=>match[1]);
-  assert.equal(readers.length,2);
+  assert.equal(readers.length,3);
+  const compatibilityReader=readers.splice(1,1)[0];
+  assert.equal(compatibilityReader,'NF != 2 || $1 != "tech-core-general-spells" || $2 != "t" { failed = 1 } END { if (NR != 1) failed = 1; exit failed }');
   for(const reader of readers){
     assert.ok(reader.includes('NF != 2 || $1 !~ /[^[:space:]]/ || $2 != "t"'));
     assert.ok(reader.includes('END { if (NR == 0)'));
@@ -73,7 +81,7 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
   assert.equal(typeof stage,'function');assert.equal(typeof checkpoint,'function');
   const manifest=inputManifest.manifest;
   assert.equal(manifest.schema,'wg-tv-native-checked-in-input-manifest-v2');
-  assert.deepEqual(manifest.historical_git_inputs,[HISTORICAL_CONTENT_FIXTURE]);
+  assert.deepEqual(manifest.historical_git_inputs,[HISTORICAL_CONTENT_FIXTURE,TECH_CORE_CONTENT_FIXTURE]);
   assert.equal(manifest.current_catalog_path,'data/data.sql');
   assert.equal(manifest.historical_bootstrap_mode,'pinned-git-predecessor');
   assert.equal(manifest.external_private_inputs.length,0);
@@ -88,14 +96,14 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
   const workflow=assertRegisteredCiWorkflowRecipe(read(workflowPath));
   const requirements=JSON.parse(read('supabase/release/requirements.json'));
   const chronology=inputManifest.migrations;
-  assert.equal(chronology.length,115);
-  assert.equal(chronology.at(-1).path,'20261011000100_incarnate_release_compatibility.sql');
-  assert.equal(Object.keys(requirements).length,108,'Exact reviewed registered requirement inventory');
-  assert.deepEqual(requirements['20261008160000_tech_core_introductory_spells.sql'],{check:'tech-core-introductory-spells.sql',order:'before-functions'});
-  assert.deepEqual(requirements['20261008190000_tech_core_general_spells.sql'],{check:'tech-core-general-spells-incarnate-compatibility.sql',order:'before-functions'});
+  assert.equal(chronology.length,120);
+  assert.equal(chronology.at(-1).path,'20261029000000_overflowing_mode_count_compatibility.sql');
+  assert.equal(Object.keys(requirements).length,113,'Exact reviewed registered requirement inventory');
+  assert.deepEqual(requirements['20261008160000_tech_core_introductory_spells.sql'],{check:'tech-core-introductory-spells-citation-compatibility.sql',order:'before-functions'});
+  assert.deepEqual(requirements['20261008190000_tech_core_general_spells.sql'],{check:'tech-core-general-spells-citation-compatibility.sql',order:'before-functions'});
   assert.deepEqual(requirements[recoveryReplayPaths[0]],{check:'heal-companion-recovery.sql',order:'before-functions'});
   assert.deepEqual(requirements['20261008105800_treasure_vault_terminal_catalog_compatibility.sql'],{check:'treasure-vault-terminal-catalog-compatibility.sql',order:'before-functions'});
-  assert.deepEqual(requirements[compatibilityReplay],{check:'tech-core-general-spells-incarnate-compatibility.sql',order:'before-functions'});
+  assert.deepEqual(requirements[compatibilityReplay],{check:'tech-core-general-spells-citation-compatibility.sql',order:'before-functions'});
   const names=chronology.map(row=>row.path);
   assert.deepEqual([...names].sort(),names);assert.equal(new Set(names).size,names.length);
   for(const name of names)assert.match(name,migrationName);
@@ -104,7 +112,7 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
     assert.ok(requirement&&typeof requirement==='object');assert.match(requirement.check,releaseName);
   }
   const checkNames=[...new Set(Object.values(requirements).map(row=>row.check))].sort();
-  assert.equal(checkNames.length,70,'Exact reviewed distinct registered check inventory');
+  assert.equal(checkNames.length,71,'Exact reviewed distinct registered check inventory');
   const checks=checkNames.map(name=>({path:'supabase/release/'+name,sql:read('supabase/release/'+name)}));
   const replays=chronology.filter(row=>replayPrefixes.some(prefix=>row.path.startsWith(prefix))||recoveryReplayPaths.includes(row.path)).map(row=>{
     const sql=read('supabase/migrations/'+row.path);assert.equal(sha(sql),row.sha256);
@@ -132,13 +140,14 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
     async function execute(label,statement,kind,meta) {
       await checkpoint('registered CI '+label);fixture.assertOwned();
       const start=Date.now(),stdout=await stage('registered-ci:'+label,statement);
-      const ids=kind==='release'||kind==='footer'?assertRegisteredCiRows(stdout,label):null;
+      const ids=kind==='release'||kind==='footer'||meta.compatibility_check?assertRegisteredCiRows(stdout,label):null;
+      if(meta.compatibility_check)assert.deepEqual(ids,['tech-core-general-spells']);
       // Each statement is checked against the same complete native terminal
       // baseline, including tuples, saved/Auth/queue rows, all sequences,
       // helper schema/ACLs, roles and generated fields. No reset/remap occurs.
       assert.deepEqual(fixture.snapshot(),baseline,label+': whole terminal must remain unchanged');
       proof.stages.push({label,kind,...meta,sql_sha256:sha(statement),elapsed_ms:Date.now()-start,
-        ...(ids?{ids,strict_boolean_checks:ids.length,read_only:kind==='release'}:{}),
+        ...(ids?{ids,strict_boolean_checks:ids.length,read_only:kind==='release'||!!meta.compatibility_check}:{}),
         ...(kind==='footer'?{schema_temp_scope:true,mutations_rolled_back:true}:{}),full_state_preserved:true});
       await checkpoint('after registered CI '+label);
     }
@@ -148,7 +157,10 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
     }
     await verify(0);
     for(const pass of [1,2]) {
-      for(const replay of replays)await execute('pass-'+pass+':'+replay.path,replay.sql,'migration',{pass,path:replay.path});
+      for(const replay of replays){
+        const check=replay.path===compatibilityReplay?'supabase/release/tech-core-general-spells-citation-compatibility.sql':null;
+        await execute('pass-'+pass+':'+replay.path,check?'BEGIN READ ONLY;\n'+read(check)+'\nROLLBACK;\n':replay.sql,'migration',{pass,path:replay.path,...(check?{compatibility_check:check}:{})});
+      }
       await verify(pass);
     }
     // Preserve the workflow footer's ordinary same-session execution exactly.

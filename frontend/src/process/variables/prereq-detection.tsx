@@ -78,6 +78,13 @@ function meetPreq(id: StoreID, prereq: string): PrereqMet {
   result = checkForOwnedContent(id, prereq);
   if (result) return result;
 
+  // Resolve alternatives as named content only when every part is recognized.
+  // Exact names above take precedence, including names containing “and” or “or”.
+  const namedRequirements = checkingSplitter(prereq).options;
+  if (namedRequirements.length > 1 && namedRequirements.every((name) => checkForOwnedContent(id, name) !== null)) {
+    return handleChecking(prereq, (name) => checkForOwnedContent(id, name));
+  }
+
   result = checkForFeat(id, prereq);
   if (result) return result;
 
@@ -99,9 +106,9 @@ function checkingSplitter(checking: string) {
   // Split the string into parts
   let options: string[] = [];
   if (type === 'OR') {
-    options = checking.split(/,?\s*or\s*/i).map((s) => s.trim());
+    options = checking.split(/,?\s+or\s+/i).map((s) => s.trim());
   } else {
-    options = checking.split(/,?\s*and\s*/i).map((s) => s.trim());
+    options = checking.split(/,?\s+and\s+/i).map((s) => s.trim());
   }
 
   // Further split by comma if necessary
