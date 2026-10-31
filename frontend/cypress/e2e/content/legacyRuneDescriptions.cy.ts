@@ -127,6 +127,12 @@ describe('Legacy property rune descriptions', () => {
         cy.get('@drawer')
           .contains('button', /^Runes$/)
           .click();
+        /** Mantine clears the animated panel height once its contents join the scroll extent. */
+        cy.get('@drawer')
+          .find('.mantine-Accordion-panel')
+          .should(($panel) => {
+            expect($panel[0].style.height, 'rune expansion has completed').to.eq('');
+          });
         scrollRuneLabelIntoView('Frost');
         scrollRuneLabelIntoView('Shock');
         scrollRuneLabelIntoView('Fundamental Runes');
