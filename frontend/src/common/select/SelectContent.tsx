@@ -356,7 +356,11 @@ export function selectContent<T = Record<string, any>>(
 
   openContextModal({
     modal: 'selectContent',
-    title: <Title order={3}>{label}</Title>,
+    title: (
+      <Title order={3} component='span' style={{ display: 'block' }}>
+        {label}
+      </Title>
+    ),
     zIndex: options?.zIndex ?? 499,
     innerProps: {
       type,
@@ -1420,7 +1424,11 @@ function SelectionOptionsRoot(props: {
     const addNewLore = (option: AbilityBlock) => {
       openContextModal({
         modal: 'addNewLore',
-        title: <Title order={3}>Add New Lore</Title>,
+        title: (
+          <Title order={3} component='span' style={{ display: 'block' }}>
+            Add New Lore
+          </Title>
+        ),
         innerProps: {
           onConfirm: (loreName: string) => {
             props.onClick({
@@ -2354,7 +2362,11 @@ export function ClassSelectionOption(props: {
   const openConfirmModal = () =>
     modals.openConfirmModal({
       id: 'change-option',
-      title: <Title order={4}>Change Class</Title>,
+      title: (
+        <Title order={4} component='span' style={{ display: 'block' }}>
+          Change Class
+        </Title>
+      ),
       children: (
         <Text size='sm'>Are you sure you want to change your class? Any previous class selections will be erased.</Text>
       ),
@@ -2489,7 +2501,11 @@ export function AncestrySelectionOption(props: {
   const openConfirmModal = () =>
     modals.openConfirmModal({
       id: 'change-option',
-      title: <Title order={4}>Change Ancestry</Title>,
+      title: (
+        <Title order={4} component='span' style={{ display: 'block' }}>
+          Change Ancestry
+        </Title>
+      ),
       children: (
         <Text size='sm'>
           Are you sure you want to change your ancestry? Any previous ancestry selections will be erased.
@@ -2625,7 +2641,11 @@ export function BackgroundSelectionOption(props: {
   const openConfirmModal = () =>
     modals.openConfirmModal({
       id: 'change-option',
-      title: <Title order={4}>Change Background</Title>,
+      title: (
+        <Title order={4} component='span' style={{ display: 'block' }}>
+          Change Background
+        </Title>
+      ),
       children: (
         <Text size='sm'>
           Are you sure you want to change your background? Any previous background selections will be erased.

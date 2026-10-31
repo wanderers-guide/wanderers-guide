@@ -171,7 +171,7 @@ export default function RichText(props: RichTextProps) {
           const { children, className } = innerProps;
           return (
             <List.Item className={className}>
-              <Text {...textProps} mr={25}>
+              <Text {...textProps} component='div' mr={25}>
                 {children}
               </Text>
             </List.Item>

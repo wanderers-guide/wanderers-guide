@@ -373,7 +373,13 @@ export function ClassInitialOverview(props: {
           <Text c='gray.2' ta='center'>
             Key Attribute
           </Text>
-          <Text c='gray.4' fw={700} ta='center' style={{ display: 'flex', justifyContent: 'center' }}>
+          <Text
+            component={MODE === 'READ' ? 'p' : 'div'}
+            c='gray.4'
+            fw={700}
+            ta='center'
+            style={{ display: 'flex', justifyContent: 'center' }}
+          >
             {display.keyAttribute.ui ?? 'Varies'}
           </Text>
         </Box>
@@ -411,7 +417,7 @@ export function ClassInitialOverview(props: {
           <Text c='gray.2' ta='center'>
             Hit Points
           </Text>
-          <Text c='gray.4' fw={700} ta='center'>
+          <Text component={MODE === 'READ' ? 'p' : 'div'} c='gray.4' fw={700} ta='center'>
             {display.classHp.ui ?? 'Varies'}
           </Text>
         </Box>
@@ -420,7 +426,7 @@ export function ClassInitialOverview(props: {
         <Divider
           px='xs'
           label={
-            <Text fz='xs' c='gray.6'>
+            <Text component='div' fz='xs' c='gray.6'>
               <Group gap={5}>
                 <IconEyeFilled size='0.8rem' />
                 <Box>Perception</Box>
@@ -429,7 +435,7 @@ export function ClassInitialOverview(props: {
           }
           labelPosition='left'
         />
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
+        <IndentedText component={MODE === 'READ' ? 'p' : 'div'} disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.perception.ui}
         </IndentedText>
       </Box>
@@ -437,7 +443,7 @@ export function ClassInitialOverview(props: {
         <Divider
           px='xs'
           label={
-            <Text fz='xs' c='gray.6'>
+            <Text component='div' fz='xs' c='gray.6'>
               <Group gap={5}>
                 <IconBadgesFilled size='0.8rem' />
                 <Box>Skills</Box>
@@ -447,12 +453,26 @@ export function ClassInitialOverview(props: {
           labelPosition='left'
         />
         {display.skills.map((skill, index) => (
-          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
+          <IndentedText
+            component={MODE === 'READ' ? 'p' : 'div'}
+            key={index}
+            disabled={MODE !== 'READ'}
+            px='xs'
+            c='gray.2'
+            fz='sm'
+          >
             {skill.ui}
           </IndentedText>
         ))}
         {display.additionalSkillTrainings.map((record, index) => (
-          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
+          <IndentedText
+            component={MODE === 'READ' ? 'p' : 'div'}
+            key={index}
+            disabled={MODE !== 'READ'}
+            px='xs'
+            c='gray.2'
+            fz='sm'
+          >
             {record.ui}
           </IndentedText>
         ))}
@@ -461,7 +481,7 @@ export function ClassInitialOverview(props: {
         <Divider
           px='xs'
           label={
-            <Text fz='xs' c='gray.6'>
+            <Text component='div' fz='xs' c='gray.6'>
               <Group gap={5}>
                 <IconHeartHandshake size='0.8rem' />
                 <Box>Saving Throws</Box>
@@ -471,7 +491,14 @@ export function ClassInitialOverview(props: {
           labelPosition='left'
         />
         {display.saves.map((save, index) => (
-          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
+          <IndentedText
+            component={MODE === 'READ' ? 'p' : 'div'}
+            key={index}
+            disabled={MODE !== 'READ'}
+            px='xs'
+            c='gray.2'
+            fz='sm'
+          >
             {save.ui}
           </IndentedText>
         ))}
@@ -480,7 +507,7 @@ export function ClassInitialOverview(props: {
         <Divider
           px='xs'
           label={
-            <Text fz='xs' c='gray.6'>
+            <Text component='div' fz='xs' c='gray.6'>
               <Group gap={5}>
                 <IconSword size='0.8rem' />
                 <Box>Attacks</Box>
@@ -489,16 +516,16 @@ export function ClassInitialOverview(props: {
           }
           labelPosition='left'
         />
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
+        <IndentedText component={MODE === 'READ' ? 'p' : 'div'} disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.simpleWeapons.ui}
         </IndentedText>
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
+        <IndentedText component={MODE === 'READ' ? 'p' : 'div'} disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.martialWeapons.ui}
         </IndentedText>
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
+        <IndentedText component={MODE === 'READ' ? 'p' : 'div'} disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.advancedWeapons.ui}
         </IndentedText>
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
+        <IndentedText component={MODE === 'READ' ? 'p' : 'div'} disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.unarmedAttacks.ui}
         </IndentedText>
       </Box>
@@ -506,7 +533,7 @@ export function ClassInitialOverview(props: {
         <Divider
           px='xs'
           label={
-            <Text fz='xs' c='gray.6'>
+            <Text component='div' fz='xs' c='gray.6'>
               <Group gap={5}>
                 <IconShieldCheckeredFilled size='0.8rem' />
                 <Box>Defenses</Box>
@@ -515,16 +542,16 @@ export function ClassInitialOverview(props: {
           }
           labelPosition='left'
         />
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
+        <IndentedText component={MODE === 'READ' ? 'p' : 'div'} disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.lightArmor.ui}
         </IndentedText>
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
+        <IndentedText component={MODE === 'READ' ? 'p' : 'div'} disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.mediumArmor.ui}
         </IndentedText>
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
+        <IndentedText component={MODE === 'READ' ? 'p' : 'div'} disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.heavyArmor.ui}
         </IndentedText>
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
+        <IndentedText component={MODE === 'READ' ? 'p' : 'div'} disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.unarmoredDefense.ui}
         </IndentedText>
       </Box>
@@ -533,7 +560,7 @@ export function ClassInitialOverview(props: {
           <Divider
             px='xs'
             label={
-              <Text fz='xs' c='gray.6'>
+              <Text component='div' fz='xs' c='gray.6'>
                 <Group gap={5}>
                   <IconFlare size='0.8rem' />
                   <Box>Spells</Box>
@@ -554,7 +581,7 @@ export function ClassInitialOverview(props: {
         <Divider
           px='xs'
           label={
-            <Text fz='xs' c='gray.6'>
+            <Text component='div' fz='xs' c='gray.6'>
               <Group gap={5}>
                 <IconVocabulary size='0.8rem' />
                 <Box>Class DC</Box>

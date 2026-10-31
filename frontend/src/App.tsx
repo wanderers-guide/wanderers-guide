@@ -235,6 +235,10 @@ export default function App() {
         Drawer: {
           defaultProps: { removeScrollProps: { allowPinchZoom: true } },
         },
+        /** Drawer titles already provide their own heading inside the shared wrapper. */
+        DrawerTitle: {
+          defaultProps: { component: 'div' },
+        },
         Popover: {
           vars: () => ({
             dropdown: {
