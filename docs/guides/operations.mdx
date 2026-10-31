@@ -103,6 +103,7 @@ Native array values are also supported. Unknown or ambiguous names, unknown IDs,
 Adjust a value. The exact behaviour depends on the variable type:
 
 - **`num`**: additive (`+1`, `-2`). Stacks with other `adjValue`s on the same variable.
+- **`attr`**: one boost (`{ "value": 1 }`), one flaw (`{ "value": -1 }`), or no change (`{ "value": 0 }`). The editor restricts adjustments to these values. Use separate operations for multiple boosts or flaws; boosts at +4 or higher follow the partial-boost rules.
 - **`prof`**: increase a proficiency rank (`'U' → 'T' → 'E' → 'M' → 'L'`). Pass `'1'` to step up, `'-1'` to step down.
 - **`list-str`**: append. The string is the entry to add (e.g. `"fire, 5"` for resistances).
 - **`bool`**: set to true.
