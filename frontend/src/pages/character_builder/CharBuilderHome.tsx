@@ -68,8 +68,10 @@ import FantasyGen_dev from '@assets/images/fantasygen_dev.png';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   defineDefaultSources,
+  fetchContentById,
   fetchContentSources,
   findRequiredContentSources,
+  getCachedContent,
   resetContentStore,
 } from '@content/content-store';
 import { displayPatronOnly } from '@utils/notifications';
@@ -79,7 +81,7 @@ import OperationsModal from '@modals/OperationsModal';
 import { hasPatreonAccess } from '@utils/patreon';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { drawerState } from '@atoms/navAtoms';
-import { Campaign, PublicUser } from '@schemas/content';
+import { Campaign, ContentSource, ContentType, PublicUser } from '@schemas/content';
 import { userState } from '@atoms/userAtoms';
 import { makeRequest } from '@requests/request-manager';
 import { updateSubscriptions } from '@content/homebrew';
@@ -89,6 +91,7 @@ import BlurBox from '@common/BlurBox';
 import { DisplayIcon } from '@common/IconDisplay';
 import type useCharacter from '@utils/use-character';
 import { resolveThemeColor } from '@utils/theme-color';
+import { listToLabel } from '@utils/display-strings';
 
 export default function CharBuilderHome(props: {
   characterId: number;
@@ -188,22 +191,20 @@ export default function CharBuilderHome(props: {
     return character?.content_sources?.enabled?.includes(bookId);
   };
 
+  /** Confirm removal of a selected build option's source before changing character state or refreshing content. */
   const setBooksEnabled = async (inputIds: number[], enabled: boolean) => {
-    // For the sake of a responsive UI, let's change the clicked book immediately
-    setCharacter((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        content_sources: {
-          ...prev.content_sources,
-          enabled: enabled
-            ? uniq([...(prev.content_sources?.enabled ?? []), ...inputIds])
-            : prev.content_sources?.enabled?.filter((id: number) => !inputIds.includes(id)),
-        },
-      };
-    });
-    //
-
+    // Enabling stays responsive; disabling must wait until any warning is confirmed.
+    if (enabled)
+      setCharacter((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          content_sources: {
+            ...prev.content_sources,
+            enabled: uniq([...(prev.content_sources?.enabled ?? []), ...inputIds]),
+          },
+        };
+      });
     const changeBooks = (bookIds: number[]) => {
       // Update character content sources
       setCharacter((prev) => {
@@ -278,7 +279,54 @@ export default function CharBuilderHome(props: {
         changeBooks(inputIds);
       }
     } else {
-      changeBooks(inputIds);
+      const removedIds: number[] = inputIds.filter((id) => hasBookEnabled(id));
+      const choices: {
+        type: ContentType;
+        label: string;
+        content: { id: number; name: string; content_source_id: number } | undefined;
+      }[] = [
+        { type: 'ancestry', label: 'ancestry', content: character?.details?.ancestry },
+        { type: 'background', label: 'background', content: character?.details?.background },
+        { type: 'class', label: 'class', content: character?.details?.class },
+        { type: 'class', label: 'secondary class', content: character?.details?.class_2 },
+      ];
+      const affected: string[] = (
+        await Promise.all(
+          choices.map(async ({ type, label, content }) => {
+            if (!content) return [];
+            // Reprints can move a saved selection to a new source, even before Builder has loaded its catalog.
+            const current =
+              getCachedContent<typeof content>(type).find((entry) => entry.id === content.id) ??
+              (await fetchContentById<typeof content>(type, content.id)) ??
+              content;
+            return removedIds.includes(current.content_source_id) ? [`${current.name} ${label}`] : [];
+          })
+        )
+      ).flat();
+
+      if (affected.length === 0) {
+        changeBooks(inputIds);
+        return;
+      }
+
+      const sourceNames: string[] = removedIds.map(
+        (id) =>
+          books.find((book) => book.id === id)?.name ??
+          getCachedContent<ContentSource>('content-source').find((book) => book.id === id)?.name ??
+          'this source'
+      );
+      modals.openConfirmModal({
+        title: <Title order={4}>{sourceNames.length === 1 ? `Disable ${sourceNames[0]}?` : 'Disable sources?'}</Title>,
+        children: (
+          <Text size='sm'>
+            Your {listToLabel(affected, 'and')} {affected.length === 1 ? 'uses' : 'use'}{' '}
+            {listToLabel(sourceNames, 'and')}. Disabling {sourceNames.length === 1 ? 'this source' : 'these sources'}{' '}
+            may remove character options.
+          </Text>
+        ),
+        labels: { confirm: 'Confirm', cancel: 'Cancel' },
+        onConfirm: () => changeBooks(inputIds),
+      });
     }
   };
 
