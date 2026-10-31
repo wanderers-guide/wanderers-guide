@@ -3,6 +3,27 @@ describe('Login', () => {
     cy.visit('/');
   });
 
+  it('keeps sign in as one focusable button with a clickable decorative icon', () => {
+    cy.viewport(1280, 900);
+    cy.contains('.mantine-AppShell-header button', 'Sign in').should('be.visible').as('signIn');
+    cy.get('@signIn').find('button, [role="button"], [tabindex]').should('not.exist');
+    // Check focus and pointer activation through the decorative icon.
+    cy.get('@signIn').focus().should('be.focused');
+    cy.get('@signIn')
+      .find('span.mantine-ActionIcon-root')
+      .should('be.visible')
+      .and('have.attr', 'aria-hidden', 'true')
+      .click();
+    cy.location('pathname').should('eq', '/login');
+  });
+
+  it('opens sign in through the existing mobile navigation', () => {
+    cy.viewport(375, 812);
+    cy.get('.mantine-Burger-root').should('be.visible').click();
+    cy.contains('.mantine-AppShell-navbar button', 'Sign in / Register').should('be.visible').click();
+    cy.location('pathname').should('eq', '/login');
+  });
+
   it('should login', () => {
     cy.get('button').contains('Sign in').click();
     cy.location('pathname').should('eq', '/login');

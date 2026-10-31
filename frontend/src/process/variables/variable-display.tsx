@@ -34,6 +34,7 @@ export function displayFinalProfValue(
               {<>{value}</>}
               {parts.hasConditionals ? (
                 <Text
+                  span
                   c='guide.5'
                   style={{
                     position: 'absolute',
@@ -48,7 +49,7 @@ export function displayFinalProfValue(
           </HoverCard.Target>
           <HoverCard.Dropdown py={5} px={10}>
             <Box mr={10} my={5}>
-              <Text c='gray.0' size='xs'>
+              <Text component='div' c='gray.0' size='xs'>
                 <List size='xs'>
                   {parts.breakdown.conditionals.map((item, i) => (
                     <List.Item key={i}>
@@ -88,6 +89,7 @@ export function displayFinalVariableValue(id: StoreID, variableName: string) {
               {<>{finalData.total}</>}
               {breakdown.conditionals.length > 0 ? (
                 <Text
+                  span
                   c='guide.5'
                   style={{
                     position: 'absolute',
@@ -102,7 +104,7 @@ export function displayFinalVariableValue(id: StoreID, variableName: string) {
           </HoverCard.Target>
           <HoverCard.Dropdown py={5} px={10}>
             <Box mr={10} my={5}>
-              <Text c='gray.0' size='xs'>
+              <Text component='div' c='gray.0' size='xs'>
                 <List size='xs'>
                   {breakdown.conditionals.map((item, i) => (
                     <List.Item key={i}>
@@ -159,6 +161,7 @@ export function displayFinalAcValue(id: StoreID, item?: Item) {
               {<>{value}</>}
               {parts.hasConditionals ? (
                 <Text
+                  span
                   c='guide.5'
                   style={{
                     position: 'absolute',
@@ -173,7 +176,7 @@ export function displayFinalAcValue(id: StoreID, item?: Item) {
           </HoverCard.Target>
           <HoverCard.Dropdown py={5} px={10}>
             <Box mr={10} my={5}>
-              <Text c='gray.0' size='xs'>
+              <Text component='div' c='gray.0' size='xs'>
                 <List size='xs'>
                   {parts.breakdown.conditionals.map((item, i) => (
                     <List.Item key={i}>
@@ -210,6 +213,7 @@ export function displayFinalSpeedValue(id: StoreID, variableName: string, entity
               {<>{finalData.total}</>}
               {breakdown.conditionals.length > 0 ? (
                 <Text
+                  span
                   c='guide.5'
                   style={{
                     position: 'absolute',
@@ -224,7 +228,7 @@ export function displayFinalSpeedValue(id: StoreID, variableName: string, entity
           </HoverCard.Target>
           <HoverCard.Dropdown py={5} px={10}>
             <Box mr={10} my={5}>
-              <Text c='gray.0' size='xs'>
+              <Text component='div' c='gray.0' size='xs'>
                 <List size='xs'>
                   {breakdown.conditionals.map((item, i) => (
                     <List.Item key={i}>

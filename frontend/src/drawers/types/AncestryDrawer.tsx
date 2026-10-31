@@ -47,11 +47,15 @@ export function AncestryDrawerTitle(props: { data: { id?: number; ancestry?: Anc
 
   const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const { data: _ancestry, isFetching, refetch } = useQuery({
+  const {
+    data: _ancestry,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-ancestry-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       return await fetchContentById<Ancestry>('ancestry', id);
     },
@@ -99,7 +103,7 @@ export function AncestryDrawerContent(props: {
     queryKey: [`find-ancestry-details-${id}`, { id, sources: getDefaultSourcesKey('INFO') }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       const ancestry = await fetchContentById<Ancestry>('ancestry', id);
       const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('INFO'));
@@ -174,9 +178,7 @@ export function AncestryDrawerContent(props: {
   ));
 
   if (!data || !data.ancestry || !data.abilityBlocks) {
-    return (
-      <DrawerLoadState loading={isFetching} onRetry={refetch} />
-    );
+    return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
   }
 
   return (
@@ -369,7 +371,7 @@ export function AncestryInitialOverview(props: {
           <Text c='gray.2' ta='center'>
             Hit Points
           </Text>
-          <Text c='gray.4' fw={700} ta='center'>
+          <Text component={MODE === 'READ' ? 'p' : 'div'} c='gray.4' fw={700} ta='center'>
             {display.ancestryHp.ui ?? 'Varies'}
           </Text>
         </Box>
@@ -409,6 +411,7 @@ export function AncestryInitialOverview(props: {
             Size
           </Text>
           <Text
+            component={MODE === 'READ' ? 'p' : 'div'}
             c='gray.4'
             fw={700}
             ta='center'
@@ -452,7 +455,13 @@ export function AncestryInitialOverview(props: {
           <Text c='gray.2' ta='center'>
             Speed
           </Text>
-          <Text c='gray.4' fw={700} ta='center' style={{ display: 'flex', justifyContent: 'center' }}>
+          <Text
+            component={MODE === 'READ' ? 'p' : 'div'}
+            c='gray.4'
+            fw={700}
+            ta='center'
+            style={{ display: 'flex', justifyContent: 'center' }}
+          >
             {display.speed.ui ?? 'Varies'}
           </Text>
         </Box>
@@ -462,7 +471,7 @@ export function AncestryInitialOverview(props: {
           <Divider
             px='xs'
             label={
-              <Text fz='xs' c='gray.6'>
+              <Text component='div' fz='xs' c='gray.6'>
                 <Group gap={5}>
                   <IconChevronsUp size='0.8rem' />
                   <Box>Attribute Boosts</Box>
@@ -472,7 +481,14 @@ export function AncestryInitialOverview(props: {
             labelPosition='left'
           />
           {display.boostAttributes.map((attribute, index) => (
-            <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
+            <IndentedText
+              component={MODE === 'READ' ? 'p' : 'div'}
+              key={index}
+              disabled={MODE !== 'READ'}
+              px='xs'
+              c='gray.2'
+              fz='sm'
+            >
               {attribute.ui}
             </IndentedText>
           ))}
@@ -483,7 +499,7 @@ export function AncestryInitialOverview(props: {
           <Divider
             px='xs'
             label={
-              <Text fz='xs' c='gray.6'>
+              <Text component='div' fz='xs' c='gray.6'>
                 <Group gap={5}>
                   <IconChevronsDown size='0.8rem' />
                   <Box>Attribute Flaws</Box>
@@ -493,7 +509,14 @@ export function AncestryInitialOverview(props: {
             labelPosition='left'
           />
           {display.flawAttributes.map((skill, index) => (
-            <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
+            <IndentedText
+              component={MODE === 'READ' ? 'p' : 'div'}
+              key={index}
+              disabled={MODE !== 'READ'}
+              px='xs'
+              c='gray.2'
+              fz='sm'
+            >
               {skill.ui}
             </IndentedText>
           ))}
@@ -503,7 +526,7 @@ export function AncestryInitialOverview(props: {
         <Divider
           px='xs'
           label={
-            <Text fz='xs' c='gray.6'>
+            <Text component='div' fz='xs' c='gray.6'>
               <Group gap={5}>
                 {getIconFromContentType('language', '0.8rem')}
                 <Box>Languages</Box>
@@ -518,7 +541,14 @@ export function AncestryInitialOverview(props: {
           </IndentedText>
         ))}
         {display.additionalLanguages.map((record, index) => (
-          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
+          <IndentedText
+            component={MODE === 'READ' ? 'p' : 'div'}
+            key={index}
+            disabled={MODE !== 'READ'}
+            px='xs'
+            c='gray.2'
+            fz='sm'
+          >
             {record.ui}
           </IndentedText>
         ))}
@@ -528,7 +558,7 @@ export function AncestryInitialOverview(props: {
           <Divider
             px='xs'
             label={
-              <Text fz='xs' c='gray.6'>
+              <Text component='div' fz='xs' c='gray.6'>
                 <Group gap={5}>
                   {getIconFromContentType('ability-block', '0.8rem')}
                   <Box>Special Abilities</Box>
