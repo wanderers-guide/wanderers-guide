@@ -117,9 +117,12 @@ the selected row, even when legacy rows share an ID.
 
 Character calculation failures retain the last successful calculation during the current
 session. A transient failure gets one automatic retry. If both initial attempts fail
-before any calculation succeeds, the sheet uses the existing error page instead of
-showing default zero statistics. Raw edits remain buffered locally, and incomplete
-derived stats never save.
+before any calculation succeeds, the sheet hides statistics and offers the character
+owner **Edit character**. This opens Builder Home without requiring a calculation:
+re-enable the source for a saved ancestry, background, or class under Books, or correct
+an invalid custom operation under Options. Then reopen the sheet. Public viewers are
+directed to ask the owner instead. Raw edits remain buffered locally, and incomplete
+derived stats never save. Recovery does not change sources or operations automatically.
 
 Predefined ability, spell, and language choices in the operation editor have an X
 to remove that choice. Other choices retain their existing IDs and values, including
