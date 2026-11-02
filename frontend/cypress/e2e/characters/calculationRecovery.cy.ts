@@ -75,7 +75,7 @@ describe('Calculation recovery', () => {
     cy.screenshot('calculation-recovered-desktop');
   });
 
-  it('uses the existing error page after both initial calculation attempts fail', () => {
+  it('offers Builder recovery after both initial calculation attempts fail', () => {
     cy.login();
     let attempts = 0;
     let saves = 0;
@@ -96,13 +96,17 @@ describe('Calculation recovery', () => {
         });
       },
     });
-    cy.contains('Unable to open this page', { timeout: 30000 }).should('be.visible');
+    cy.contains('Unable to calculate this character', { timeout: 30000 }).should('be.visible');
+    cy.contains('a', 'Edit character').should('have.attr', 'href', `/builder/${characterId}`);
     cy.contains('Simulated exhausted calculation').should('not.exist');
     cy.contains('Hit Points').should('not.exist');
     cy.then(() => {
       expect(attempts).to.eq(2);
       expect(saves).to.eq(0);
     });
+    cy.contains('a', 'Edit character').click();
+    cy.location('pathname').should('eq', `/builder/${characterId}`);
+    cy.get('input[placeholder="Unknown Wanderer"]').should('be.visible').and('be.enabled');
   });
 
   it('calculates published dedication checks with the legacy displayed Untrained default', () => {

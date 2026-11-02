@@ -18,6 +18,7 @@ import {
   Stack,
   Tabs,
   Text,
+  Title,
   rem,
   useMantineTheme,
 } from '@mantine/core';
@@ -45,7 +46,7 @@ import { isPhoneSized, phoneQuery, tabletQuery } from '@utils/mobile-responsive'
 import { toLabel } from '@utils/strings';
 import { getVariable } from '@variables/variable-manager';
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
-import { useLoaderData } from 'react-router-dom';
+import { Link, useLoaderData } from 'react-router-dom';
 import { SetterOrUpdater } from '@utils/type-fixing';
 import CompanionsPanel from './panels/CompanionsPanel';
 import DetailsPanel from './panels/DetailsPanel';
@@ -172,6 +173,7 @@ function CharacterSheetInner(props: {
 }) {
   const isTablet = useMediaQuery(tabletQuery());
   const isPhone = useMediaQuery(phoneQuery());
+  const session = useAtomValue(sessionState);
   const { ref, width, height } = useElementSize();
 
   // Reserve 60px for the tab bar; clamp panel height based on screen height
@@ -213,8 +215,30 @@ function CharacterSheetInner(props: {
 
   if (loadError) return <CharacterLoader />;
 
-  // Without a committed calculation the stat sections would display default zeros.
-  if (calculationError && !results) throw calculationError;
+  // Keep saved inputs editable without ever rendering or saving partial statistics.
+  // Builder Home does not require a calculation, so owners can repair sources and operations there.
+  if (calculationError && !results) {
+    const isOwner: boolean = !!character && character.user_id === session?.user.id;
+    return (
+      <Center mih='var(--wg-page-content-height)' px='md'>
+        <BlurBox p='xl' w='100%' maw='var(--mantine-breakpoint-xs)'>
+          <Stack align='center' gap='md'>
+            <Title order={3} ta='center'>
+              Unable to calculate this character
+            </Title>
+            <Text size='sm' c='dimmed' ta='center'>
+              {isOwner
+                ? 'Review sources and custom operations in Builder.'
+                : 'Ask the owner to review this character’s settings.'}
+            </Text>
+            <Button component={Link} to={isOwner ? `/builder/${props.characterId}` : '/'} variant='light'>
+              {isOwner ? 'Edit character' : 'Back to home'}
+            </Button>
+          </Stack>
+        </BlurBox>
+      </Center>
+    );
+  }
 
   return (
     <Center>

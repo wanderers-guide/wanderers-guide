@@ -438,7 +438,8 @@ describe('Condition math and recovery through the real sheet', () => {
     });
     cy.viewport(390, 844);
     cy.reload();
-    cy.contains('Unable to open this page', { timeout: 30000 }).should('be.visible');
+    cy.contains('Unable to calculate this character', { timeout: 30000 }).should('be.visible');
+    cy.contains('a', 'Edit character').should('have.attr', 'href', `/builder/${characterId}`);
     cy.contains('Cyclic variable binding:').should('not.exist');
     cy.contains('Hit Points').should('not.exist');
     cy.contains("Couldn't calculate this character").should('not.exist');
