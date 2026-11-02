@@ -174,7 +174,7 @@ describe('Recovering saved character inputs', () => {
         cy.contains('a', 'Edit character', { timeout: 30000 }).should('be.visible');
         cy.contains('Hit Points').should('not.exist');
         cy.contains('a', 'Edit character').focus().should('have.focus');
-        cy.contains('Unable to calculate this character').should(($title) => {
+        cy.contains('h3', 'Unable to calculate this character').should(($title) => {
           const title = $title?.[0];
           if (!title) throw new Error('Recovery title is missing');
           const bounds = title.getBoundingClientRect();
