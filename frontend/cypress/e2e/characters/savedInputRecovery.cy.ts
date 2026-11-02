@@ -175,7 +175,9 @@ describe('Recovering saved character inputs', () => {
         cy.contains('Hit Points').should('not.exist');
         cy.contains('a', 'Edit character').focus().should('have.focus');
         cy.contains('Unable to calculate this character').should(($title) => {
-          const bounds = $title[0].getBoundingClientRect();
+          const title = $title?.[0];
+          if (!title) throw new Error('Recovery title is missing');
+          const bounds = title.getBoundingClientRect();
           expect(bounds.left).to.be.at.least(0);
           expect(bounds.right).to.be.at.most(width);
         });
