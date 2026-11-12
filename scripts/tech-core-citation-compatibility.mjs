@@ -308,6 +308,10 @@ export function prepare(repository, proposalPath) {
   const mineRequirement = originalRequirements[mineUpgrade];
   assert.deepEqual(mineRequirement, {check:'mine-mod-rules.sql',order:'before-functions'});
   delete originalRequirements[mineUpgrade];
+  const pathbuilderUpgrade = '20261007000000_pathbuilder_import.sql';
+  const pathbuilderRequirement = originalRequirements[pathbuilderUpgrade];
+  assert.deepEqual(pathbuilderRequirement, {check:'pathbuilder-import.sql',order:'before-functions'});
+  delete originalRequirements[pathbuilderUpgrade];
   for (const [migration, original] of Object.entries(originalCheckPaths)) {
     assert(
       [
@@ -322,13 +326,14 @@ export function prepare(repository, proposalPath) {
   assert.equal(
     sha256(JSON.stringify(originalRequirements, null, 2) + "\n"),
     ORIGINALS["supabase/release/requirements.json"],
-    "Only the three checked registration paths may differ",
+    "Only the checked registration paths may differ",
   );
   originalRequirements[rustUpgrade] = rustRequirement;
   originalRequirements[mineUpgrade] = mineRequirement;
   originalRequirements[curatorUpgrade] = curatorRequirement;
   originalRequirements[bookCountUpgrade] = bookCountRequirement;
   originalRequirements[modeCountUpgrade]=modeCountRequirement;
+  originalRequirements[pathbuilderUpgrade] = pathbuilderRequirement;
   let suppliedRows;
   if (proposalPath) {
     const proposalBytes = fs.readFileSync(proposalPath);
@@ -399,10 +404,10 @@ export function prepare(repository, proposalPath) {
     requirements[migration].check = check;
     return { migration, before, after: requirements[migration] };
   });
-  assert.equal(Object.keys(requirements).length, 113);
+  assert.equal(Object.keys(requirements).length, 114);
   assert.equal(
     new Set(Object.values(requirements).map((entry) => entry.check)).size,
-    71,
+    72,
   );
   if (!proposalPath) {
     assert.equal(

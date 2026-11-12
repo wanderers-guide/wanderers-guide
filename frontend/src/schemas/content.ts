@@ -265,6 +265,13 @@ export interface Item {
     };
     display_traits?: string[];
     inventory_label?: string;
+    /** Verbatim Pathbuilder Custom File provenance kept with an imported item. */
+    pathbuilder?: {
+      uniqueIdentifier: string;
+      type: number;
+      source?: string;
+      raw: unknown;
+    };
     source?: ContentSourceCite;
   } | null;
   operations: Operation[] | null;
@@ -439,6 +446,14 @@ export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
             .optional(),
           display_traits: z.array(z.string()).optional(),
           inventory_label: z.string().optional(),
+          pathbuilder: z
+            .object({
+              uniqueIdentifier: z.string(),
+              type: z.number(),
+              source: z.string().optional(),
+              raw: z.unknown(),
+            })
+            .optional(),
           source: ContentSourceCiteSchema.optional(),
         })
         .passthrough()

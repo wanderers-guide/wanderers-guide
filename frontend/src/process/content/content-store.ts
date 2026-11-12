@@ -139,7 +139,13 @@ const CONTENT_CACHE_KEY = 'content-store';
 // ability blocks) could persist a silently partial corpus that the change-token check then
 // verified as fresh forever. Retire every possibly-partial blob now that pagination is stable.
 // v4: partition by authenticated actor and require complete, successful source downloads.
-const CONTENT_CACHE_VERSION = 4;
+// v5: the edge helper previously paginated with CHUNK_SIZE=5000 while self-hosted PostgREST
+// stacks capped responses at 1000 rows, so multi-page tables (e.g. ability_block) persisted
+// silently-truncated catalogs that the change-token check kept verifying as fresh. Hunter
+// Automaton missing from the block list blocked Pathbuilder heritage resolution (import
+// 1606885 / export 474853). Now fixed server-side to CHUNK_SIZE=1000; retire every blob
+// written under the truncating pagination so clients refetch the complete corpus.
+const CONTENT_CACHE_VERSION = 5;
 // Backstop only: staleness is normally caught by the per-source change-token check against
 // get-content-versions on load (see verifyPersistedContentVersions). The TTL exists for the
 // cases where that check cannot run (offline, endpoint unreachable, >500 sources).

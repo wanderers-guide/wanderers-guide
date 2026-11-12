@@ -121,7 +121,18 @@ try {
   assert.deepEqual(await api.fetchData(pageClient, 'ability_block', filters, undefined, { size: 1000, afterId: 5000 }), [{ id: 5001, content_source_id: 1 }]);
   pageQueries.length = 0;
   assert.equal((await api.fetchData(pageClient, 'ability_block', filters)).length, 5001);
-  assert.deepEqual(pageQueries, [{ size: 5000, cursor: undefined }, { size: 5000, cursor: 5000 }], 'legacy reads retain complete keyset traversal');
+  assert.deepEqual(
+    pageQueries,
+    [
+      { size: 1000, cursor: undefined },
+      { size: 1000, cursor: 1000 },
+      { size: 1000, cursor: 2000 },
+      { size: 1000, cursor: 3000 },
+      { size: 1000, cursor: 4000 },
+      { size: 1000, cursor: 5000 },
+    ],
+    'legacy reads retain complete keyset traversal'
+  );
   const missingPageClient = { from() {
     return { select() { return this; }, order() { return this; }, limit: async () => ({ data: null, error: null }) };
   } };

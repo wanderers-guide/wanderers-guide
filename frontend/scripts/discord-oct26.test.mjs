@@ -151,37 +151,29 @@ test('mine mods appear in Modify rules only while their granting feats are owned
   }
 });
 
-/** Provider/network failures must also release the importer-owned notification. */
-test('Pathbuilder network failure releases its import notification', async () => {
+/** Provider/network failures return null and log the cause instead of escaping the importer. */
+test('Pathbuilder import failure returns null and logs the cause', async () => {
   const source = await readFile(
     new URL('../src/process/import/pathbuilder/import-from-pathbuilder.ts', import.meta.url),
     'utf8'
   );
   const body = source.match(
-    /export async function importFromPathbuilder\(pathbuilderJsonId: number\) \{([\s\S]*?)\n\}/
+    /export async function importFromPathbuilder\(pathbuilderInput: string \| number\): Promise<Character \| null> \{([\s\S]*?)\n\}/
   )?.[1];
   assert.ok(body);
-  const hidden = [];
-  const notices = [];
+  const errors = [];
   const result = await new Function(
-    'pathbuilderJsonId',
-    'fetch',
-    'showNotification',
-    'hideNotification',
+    'pathbuilderInput',
+    'importFromPathbuilderShare',
     'console',
-    `return (async()=>{${body.replaceAll(': unknown', '')}})()`
+    `return (async()=>{${body}})()`
   )(
     123,
-    async () => {
-      throw new Error('Network failed');
-    },
-    (notice) => notices.push(notice),
-    (id) => hidden.push(id),
-    { error() {} }
+    async () => ({ ok: false, error: 'Network failed', warnings: [] }),
+    { error: (message) => errors.push(message), warn() {} }
   );
   assert.equal(result, null);
-  assert.deepEqual(hidden, ['importing-123']);
-  assert.equal(notices.at(-1).title, 'Import failed');
+  assert.match(errors[0] ?? '', /Network failed/);
 });
 
 /** The curator's existing From the Front correction must satisfy Champion's armor check. */

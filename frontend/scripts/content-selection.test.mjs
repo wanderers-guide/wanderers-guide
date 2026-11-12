@@ -768,3 +768,76 @@ test('War item selections retain intrinsic traits with the parent book disabled 
   assert.match(migration, /to_jsonb\(entry\.traits\) is distinct from patch->'before'/);
   assert.match(migration, /type = 'item' and ref_id = entry\.id and status->>'state' = 'PENDING'/);
 });
+
+
+test('weapon ADJ_VALUE choices keep normalized-name collisions unique and preserve legacy selection IDs', async (t) => {
+  const engine = await createOperationEngine();
+  t.after(() => engine.cleanup());
+  engine.defineDefaultSources('PAGE', [1]);
+  engine.setFixtures([
+    {
+      table: 'item',
+      row: {
+        id: 91001,
+        name: 'Briar Sharpness-Points',
+        group: 'WEAPON',
+        rarity: 'common',
+        traits: [],
+        content_source_id: 1,
+        meta_data: { category: 'simple' },
+      },
+    },
+    {
+      table: 'item',
+      row: {
+        id: 91002,
+        name: 'Briar Sharpness Points',
+        group: 'WEAPON',
+        rarity: 'common',
+        traits: [],
+        content_source_id: 1,
+        meta_data: { category: 'martial' },
+      },
+    },
+    {
+      table: 'item',
+      row: {
+        id: 91003,
+        name: 'Briar Sharpness-Points',
+        group: 'WEAPON',
+        rarity: 'common',
+        traits: [],
+        content_source_id: 1,
+        meta_data: { category: 'simple' },
+      },
+    },
+  ]);
+
+  const options = await engine.determineFilteredSelectionList('CHARACTER', 'weapon-collision-test', {
+    type: 'ADJ_VALUE',
+    group: 'WEAPON',
+    value: { value: 'T', increases: 0 },
+    addToFamiliarity: true,
+    familiarityCategories: ['simple', 'martial'],
+  });
+
+  assert.equal(options.length, 2, 'semantically identical catalog rows collapse, but distinct choices remain');
+  assert.deepEqual(
+    options.map((option) => option._select_uuid),
+    ['WEAPON_BRIAR_SHARPNESS_POINTS', 'WEAPON_BRIAR_SHARPNESS_POINTS::item:91002']
+  );
+  assert.equal(new Set(options.map((option) => option._select_uuid)).size, options.length);
+  assert.deepEqual(options.map((option) => option.variable), [
+    'WEAPON_BRIAR_SHARPNESS_POINTS',
+    'WEAPON_BRIAR_SHARPNESS_POINTS',
+  ]);
+  assert.deepEqual(options.map((option) => option.name), [
+    'Briar Sharpness-Points',
+    'Briar Sharpness Points',
+  ]);
+  assert.deepEqual(options.map((option) => option._item_category), ['simple', 'martial']);
+  assert.deepEqual(options.map((option) => option._display_label), [
+    'Briar Sharpness-Points',
+    'Briar Sharpness Points',
+  ]);
+});
