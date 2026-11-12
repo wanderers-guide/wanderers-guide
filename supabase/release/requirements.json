@@ -452,5 +452,9 @@
   "20261029000000_overflowing_mode_count_compatibility.sql": {
     "check": "treasure-vault-terminal-status.sql",
     "order": "before-functions"
+  },
+  "20261007000000_pathbuilder_import.sql": {
+    "check": "pathbuilder-import.sql",
+    "order": "before-functions"
   }
 }

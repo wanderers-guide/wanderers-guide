@@ -361,3 +361,12 @@ verify_jwt = false
 [functions.main]
 enabled = false
 verify_jwt = true
+
+[functions.create-pathbuilder-import]
+verify_jwt = false
+
+[functions.create-pathbuilder-content-source]
+verify_jwt = false
+
+[functions.fetch-pathbuilder]
+verify_jwt = false

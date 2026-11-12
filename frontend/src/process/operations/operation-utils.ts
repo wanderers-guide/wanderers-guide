@@ -800,13 +800,64 @@ async function filterItemsByTraitFilters(items: Item[], filters: OperationSelect
   return filtered;
 }
 
+/**
+ * Build weapon adjustment choices with a unique selection identity and a shared mechanical variable.
+ *
+ * Different weapon names can normalize to the same proficiency variable. Keep distinct names and
+ * familiarity categories selectable, collapse only options with the same effect, and preserve the
+ * historic variable-name selection value for the first canonical option so saved selections remain valid.
+ */
+function buildWeaponSelectionOptions(
+  weapons: Item[],
+  filters: OperationSelectFiltersAdjValue
+): ObjectWithUUID[] {
+  const sortedWeapons = [...weapons].sort((a, b) => a.id - b.id);
+  const seenSemanticOptions = new Set<string>();
+  const candidates: Array<{ weapon: Item; variableName: string; category: string }> = [];
+
+  for (const weapon of sortedWeapons) {
+    const variableName = `WEAPON_${labelToVariable(weapon.name)}`;
+    const category = weapon.meta_data?.category ?? '';
+    const semanticKey = JSON.stringify([variableName, weapon.name, category]);
+    if (seenSemanticOptions.has(semanticKey)) continue;
+    seenSemanticOptions.add(semanticKey);
+    candidates.push({ weapon, variableName, category });
+  }
+
+  const nameCounts = new Map<string, number>();
+  for (const { weapon } of candidates) {
+    const key = weapon.name.trim().toLowerCase();
+    nameCounts.set(key, (nameCounts.get(key) ?? 0) + 1);
+  }
+
+  const seenVariables = new Set<string>();
+  return candidates.map(({ weapon, variableName, category }) => {
+    const isFirstForVariable = !seenVariables.has(variableName);
+    seenVariables.add(variableName);
+    const uuid = isFirstForVariable ? variableName : `${variableName}::item:${weapon.id}`;
+    const displayNameKey = weapon.name.trim().toLowerCase();
+    const displayLabel =
+      (nameCounts.get(displayNameKey) ?? 0) > 1
+        ? `${weapon.name} (${category || 'uncategorized'})`
+        : weapon.name;
+
+    return {
+      _select_uuid: uuid,
+      _content_type: 'ability-block' as ContentType,
+      id: variableName,
+      name: weapon.name,
+      _display_label: displayLabel,
+      _item_category: category,
+      value: filters.value,
+      variable: variableName,
+    };
+  });
+}
+
 async function getAdjValueList(id: StoreID, operationUUID: string, filters: OperationSelectFiltersAdjValue) {
   let variables: Variable[] = [];
-  // Real item names for item-backed groups. The variable-name round trip strips punctuation
-  // ("Filcher's Fork" -> "Filchers Fork"), which both mislabels the option and breaks the
-  // exact-name match WEAPON_FAMILIARITY does for addToFamiliarity selections.
+  // Armor selectors remain variable-backed; retain their authored catalog labels.
   const itemNames = new Map<string, string>();
-  const itemCategories = new Map<string, string>();
 
   if (filters.group === 'SKILL') {
     variables = getAllSkillVariables(id);
@@ -846,16 +897,7 @@ async function getAdjValueList(id: StoreID, operationUUID: string, filters: Oper
       items.filter((item) => item.group === 'WEAPON'),
       filters
     );
-    variables = weapons.map((w) => {
-      const name = `WEAPON_${labelToVariable(w.name)}`;
-      itemNames.set(name, w.name);
-      itemCategories.set(name, w.meta_data?.category ?? '');
-      return {
-        name,
-        type: 'prof',
-        value: { value: 'U', increases: 0 },
-      } satisfies VariableProf;
-    });
+    return buildWeaponSelectionOptions(weapons, filters);
   }
   if (filters.group === 'ARMOR') {
     const items = await fetchContentAll<Item>('item', getDefaultSources('PAGE'));
@@ -874,13 +916,20 @@ async function getAdjValueList(id: StoreID, operationUUID: string, filters: Oper
     });
   }
 
-  return variables.map((variable) => {
+  const seenVariables = new Set<string>();
+  const uniqueVariables = variables.filter((variable) => {
+    if (seenVariables.has(variable.name)) return false;
+    seenVariables.add(variable.name);
+    return true;
+  });
+
+  return uniqueVariables.map((variable) => {
     return {
       _select_uuid: `${variable.name}`,
       _content_type: 'ability-block' as ContentType,
       id: `${variable.name}`,
       name: itemNames.get(variable.name) ?? (variable ? variableToLabel(variable) : 'Unknown Value'),
-      _item_category: itemCategories.get(variable.name),
+      _item_category: undefined,
       value: filters.value,
       variable: variable.name,
     };

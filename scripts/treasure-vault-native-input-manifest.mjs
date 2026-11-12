@@ -30,7 +30,7 @@ export async function captureNativeInputManifest({root}) {
     return text;
   }
   const migrationFiles=(await readdir(root+'/supabase/migrations')).filter(path=>migrationName.test(path)).sort();
-  assert.equal(migrationFiles.length,120,'Complete reviewed chronology is mandatory');
+  assert.equal(migrationFiles.length,121,'Complete reviewed chronology is mandatory');
   assert.equal(migrationFiles.at(-1),'20261029000000_overflowing_mode_count_compatibility.sql','Exact reviewed release recovery chronology successor');
   assert.deepEqual(migrationFiles.slice(-8),['20261010000100_shared_ancestries.sql','20261011000000_restore_heal_companion.sql','20261011000100_incarnate_release_compatibility.sql','20261015000000_rust_cloud_release_compatibility.sql','20261026000000_mine_mod_rules.sql','20261026010000_curator_release_compatibility.sql','20261027000000_curator_book_count_compatibility.sql','20261029000000_overflowing_mode_count_compatibility.sql']);
   const requirements=JSON.parse(await capture('supabase/release/requirements.json'));
