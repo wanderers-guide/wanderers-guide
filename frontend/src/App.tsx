@@ -131,6 +131,24 @@ export default function App() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted || (event === 'INITIAL_SESSION' && authRevision > 0)) return;
       authRevision += 1;
+      if (event === 'SIGNED_IN') {
+        // The SDK can queue SIGNED_IN from an earlier callback after a refresh has revoked it.
+        // Confirm outside the Auth callback's lock; an older callback cannot restore that session.
+        const revision: number = authRevision;
+        queueMicrotask(() => {
+          void supabase.auth
+            .getSession()
+            .then(({ data, error }) => {
+              if (!mounted || authRevision !== revision || error) return;
+              setContentCacheActor(data.session?.user.id ?? null);
+              setSession(data.session);
+              if (data.session) resetSessionExpired();
+              else clearUserData();
+            })
+            .catch(() => console.warn('Unable to confirm the current sign-in session.'));
+        });
+        return;
+      }
       setContentCacheActor(session?.user.id ?? null);
       setSession(session);
       if (session) resetSessionExpired();

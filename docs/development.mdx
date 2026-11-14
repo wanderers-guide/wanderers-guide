@@ -666,13 +666,21 @@ store isolation.
 
 The same suite runs in CI on every PR via the `e2e` workflow. See [`.github/workflows/e2e.yml`](https://github.com/wanderers-guide/wanderers-guide/blob/main/.github/workflows/e2e.yml).
 
+## Deno test dependency integrity
+
+The API test runner maps the generated esm.sh tslib URL to the same `tslib@2.8.1`
+release from npm. Its registry integrity is pinned in `supabase/functions/_tests/deno.lock`; frozen
+lock checking stays enabled. This avoids regional rebuilds of the CDN-generated
+module changing its checksum without changing the package version. Deno uses its
+own package cache rather than requiring a local Node installation directory.
+
 ## Running the API tests
 
 Beyond the UI Cypress suite, the Edge Functions have their own [Deno-based test harness](https://github.com/wanderers-guide/wanderers-guide/tree/main/supabase/functions/_tests):
 
 ```bash
 npm run docker:start                      # supabase stack must be up
-npm run test:api                          # cd supabase && deno test --allow-net --allow-env --allow-read functions/_tests/
+npm run test:api                          # cd supabase && deno test --config=functions/_tests/deno.json --allow-net --allow-env --allow-read functions/_tests/
 ```
 
 The harness covers the auth-routing flow plus one representative test per pattern (find / create / update / delete / search), so a regression in the shared `connect()` wrapper or one of those patterns shows up immediately.

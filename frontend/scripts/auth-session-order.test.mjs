@@ -20,6 +20,8 @@ function mount() {
     cached = true,
     expired = 0,
     unsubscribed = false;
+  let initialReads = 0;
+  let liveSession;
   const initial = new Promise((yes, no) => {
     resolve = yes;
     reject = no;
@@ -39,7 +41,8 @@ function mount() {
     () => {},
     {
       auth: {
-        getSession: () => initial,
+        getSession: () =>
+          initialReads++ === 0 ? initial : Promise.resolve({ data: { session: liveSession }, error: null }),
         onAuthStateChange: (handler) => {
           callback = handler;
           return {
@@ -72,7 +75,13 @@ function mount() {
     { location: { pathname: '/sheet/1' } }
   );
   return {
-    emit: (event, value) => callback(event, value),
+    emit: (event, value) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') liveSession = value;
+      return callback(event, value);
+    },
+    setStoredSession(value) {
+      liveSession = value;
+    },
     cleanup,
     async finish(value) {
       resolve({ data: { session: value } });
@@ -175,4 +184,21 @@ test('cleanup prevents pending reads and retained callbacks changing the next mo
   assert.equal(h.state, undefined);
   assert.equal(h.actor, undefined);
   assert.equal(h.unsubscribed, true);
+});
+
+test('delayed SIGNED_IN payload cannot supersede the current stored actor', async () => {
+  const h = mount();
+  h.emit('SIGNED_IN', older);
+  h.setStoredSession(newer);
+  await h.finish(older);
+  assert.equal(h.state, newer);
+  assert.equal(h.actor, newer.user.id);
+});
+test('delayed SIGNED_IN payload cannot resurrect an absent stored session', async () => {
+  const h = mount();
+  h.emit('SIGNED_IN', older);
+  h.setStoredSession(null);
+  await h.finish(older);
+  assert.equal(h.state, null);
+  assert.equal(h.actor, null);
 });

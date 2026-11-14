@@ -1,0 +1,467 @@
+{
+  "id": 21087,
+  "created_at": "2024-04-06T19:08:50.603326+00:00",
+  "operations": [
+    {
+      "id": "620cf16f-48c7-43d9-a5ab-3223d19b65f5",
+      "type": "select",
+      "data": {
+        "title": "Select a Domain",
+        "modeType": "PREDEFINED",
+        "optionType": "CUSTOM",
+        "optionsPredefined": [
+          {
+            "id": "8a2adcea-be60-4f09-a4dd-1a9e5e79ba9f",
+            "type": "CUSTOM",
+            "title": "Air",
+            "description": "You can control winds and the weather.\n\n**Initial Spell** [Pushing Gust](link_spell_4789)\n\n**Advanced Spell** [Disperse into Air](link_spell_4574)\n\n**Advanced Apocryphal Spell** [Wind Whispers](link_spell_5521)",
+            "operations": []
+          },
+          {
+            "id": "391ed731-76dc-4693-a697-f482e0475bcf",
+            "type": "CUSTOM",
+            "title": "Ambition",
+            "description": "You strive to keep up with and outpace the competition.\n\n**Initial Spell** [Ignite Ambition](link_spell_4673)\n\n**Advanced Spell** [Competitive Edge](link_spell_4532)\n\n**Initial Apocryphal Spell** [Hollow Heart](link_spell_5497)",
+            "operations": []
+          },
+          {
+            "id": "6b7a8fbf-aaea-47d1-883d-f6fed90bbae8",
+            "type": "CUSTOM",
+            "title": "Cities",
+            "description": "You have powers over urban environments and denizens.\n\n**Initial Spell** [Face in the Crowd](link_spell_4611)\n\n**Advanced Spell** [Pulse of Civilization](link_spell_4786)",
+            "operations": []
+          },
+          {
+            "id": "14e5f93c-1710-457e-81aa-1ce72ad45220",
+            "type": "CUSTOM",
+            "title": "Confidence",
+            "description": "You overcome your fear and project pride.\n\n**Initial Spell** [Veil of Confidence](link_spell_4928)\n\n**Advanced Spell** [Delusional Pride](link_spell_4559)\n\n**Advanced Apocryphal Spell** [Shaken Confidence](link_spell_5518)",
+            "operations": []
+          },
+          {
+            "id": "f1de490d-e278-44b2-adb8-5eb9673e90eb",
+            "type": "CUSTOM",
+            "title": "Creation",
+            "description": "You have divine abilities related to crafting and art.\n\n**Initial Spell** [Creative Splash](link_spell_4546)\n\n**Advanced Spell** [Artistic Flourish](link_spell_4403)",
+            "operations": []
+          },
+          {
+            "id": "f9326db0-20fa-47c1-9f1c-1e3b3d85c392",
+            "type": "CUSTOM",
+            "title": "Darkness",
+            "description": "You operate in the darkness and take away the light.\n\n**Initial Spell** [Cloak of Shadow](link_spell_4526)\n\n**Advanced Spell** [Darkened Sight](link_spell_4551)\n\n**Advanced Apocryphal Spell** [Isolation](link_spell_5515)",
+            "operations": []
+          },
+          {
+            "id": "5dfa80a4-7500-4896-a38c-7293253055c9",
+            "type": "CUSTOM",
+            "title": "Death",
+            "description": "You have the power to end lives and destroy undead.\n\n**Initial Spell** [Death's Call](link_spell_4557)\n\n**Advanced Spell** [Eradicate Undeath](link_spell_4606)\n\n**Advanced Apocryphal Spell** [Euphoric Renewal](link_spell_5513)",
+            "operations": []
+          },
+          {
+            "id": "797f43fb-1870-4870-9c41-6cf041cf8e0e",
+            "type": "CUSTOM",
+            "title": "Destruction",
+            "description": "You are a conduit for divine devastation.\n\n**Initial Spell** [Cry of Destruction](link_spell_4548)\n\n**Advanced Spell** [Destructive Aura](link_spell_4561)",
+            "operations": []
+          },
+          {
+            "id": "e50dd539-5f28-40c5-9792-521dba10b3ed",
+            "type": "CUSTOM",
+            "title": "Dreams",
+            "description": "You have the power to enter and manipulate dreams.\n\n**Initial Spell** [Sweet Dreams](link_spell_4882)\n\n**Advanced Spell** [Dreamer's Call](link_spell_4585)",
+            "operations": []
+          },
+          {
+            "id": "81ea6eeb-7b6e-4021-a170-30435c70495e",
+            "type": "CUSTOM",
+            "title": "Earth",
+            "description": "You control soil and stone.\n\n**Initial Spell** [Hurtling Stone](link_spell_4667)\n\n**Advanced Spell** [Localized Quake](link_spell_4703)",
+            "operations": []
+          },
+          {
+            "id": "a5db702e-e771-4bb3-b6d6-2587074f3f28",
+            "type": "CUSTOM",
+            "title": "Family",
+            "description": "You aid and protect your family and community more effectively.\n\n**Initial Spell** [Soothing Words](link_spell_4845)\n\n**Advanced Spell** [Unity](link_spell_4919)",
+            "operations": []
+          },
+          {
+            "id": "3a64c6da-49d7-4feb-98b5-a55ea50c6a39",
+            "type": "CUSTOM",
+            "title": "Fate",
+            "description": "You see and understand hidden inevitabilities.\n\n**Initial Spell** [Read Fate](link_spell_4795)\n\n**Advanced Spell** [Tempt Fate](link_spell_4897)\n\n**Initial Apocryphal Spell** [String of Fate](link_spell_5498)",
+            "operations": []
+          },
+          {
+            "id": "b21d9c4f-c84c-4fe2-8bda-5c8ebfff5f11",
+            "type": "CUSTOM",
+            "title": "Fire",
+            "description": "You control flame.\n\n**Initial Spell** [Fire Ray](link_spell_4621)\n\n**Advanced Spell** [Flame Barrier](link_spell_4624)\n\n**Initial Apocryphal Spell** [Cinder Gaze](link_spell_5495)",
+            "operations": []
+          },
+          {
+            "id": "15e5fc9b-9a73-4a16-bffa-d6e5875a3717",
+            "type": "CUSTOM",
+            "title": "Freedom",
+            "description": "You liberate yourself and others from shackles and constraints.\n\n**Initial Spell** [Unimpeded Stride](link_spell_4918)\n\n**Advanced Spell** [Word of Freedom](link_spell_4956)",
+            "operations": []
+          },
+          {
+            "id": "147d38b8-0b15-424f-afc9-64f2e8ff3cdf",
+            "type": "CUSTOM",
+            "title": "Healing",
+            "description": "Your healing magic is particularly potent.\n\n**Initial Spell** [Healer's Blessing](link_spell_4657)\n\n**Advanced Spell** [Rebuke Death](link_spell_4797)",
+            "operations": []
+          },
+          {
+            "id": "97debb38-10fa-4c54-b14c-0214d359e782",
+            "type": "CUSTOM",
+            "title": "Indulgence",
+            "description": "You feast mightily and can shake off the effects of overindulging.\n\n**Initial Spell** [Overstuff](link_spell_4749)\n\n**Advanced Spell** [Take its Course](link_spell_4886)\n\n**Initial Apocryphal Spell** [Frenzied Revelry](link_spell_5496)",
+            "operations": []
+          },
+          {
+            "id": "405d6c86-65a4-4061-abdd-a2850c838944",
+            "type": "CUSTOM",
+            "title": "Knowledge",
+            "description": "You receive divine insights.\n\n**Initial Spell** [Scholarly Recollection](link_spell_4818)\n\n**Advanced Spell** [Know the Enemy](link_spell_4694)\n\n**Advanced Apocryphal Spell** [Wordsmith](link_spell_5522)",
+            "operations": []
+          },
+          {
+            "id": "def5af8b-8c0b-4b5b-be3e-1ae525c17440",
+            "type": "CUSTOM",
+            "title": "Luck",
+            "description": "You’re unnaturally lucky and keep out of harm’s way.\n\n**Initial Spell** [Bit of Luck](link_spell_4413)\n\n**Advanced Spell** [Lucky Break](link_spell_4707)",
+            "operations": []
+          },
+          {
+            "id": "b19f75f5-a4f5-49c4-a778-e5d01bac0480",
+            "type": "CUSTOM",
+            "title": "Magic",
+            "description": "You perform the unexpected and inexplicable.\n\n**Initial Spell** [Magic's Vessel](link_spell_4711)\n\n**Advanced Spell** [Mystic Beacon](link_spell_4735)",
+            "operations": []
+          },
+          {
+            "id": "1c546a0f-efb7-4adb-a756-61c1d63c68ac",
+            "type": "CUSTOM",
+            "title": "Might",
+            "description": "Your physical power is bolstered by divine strength.\n\n**Initial Spell** [Athletic Rush](link_spell_4404)\n\n**Advanced Spell** [Enduring Might](link_spell_4596)\n\n**Initial Apocryphal Spell** [Victory Cry](link_spell_5500)",
+            "operations": []
+          },
+          {
+            "id": "a4bf13e8-17be-46e4-af1f-2f4af7d5ea56",
+            "type": "CUSTOM",
+            "title": "Moon",
+            "description": "You command powers associated with the moon.\n\n**Initial Spell** [Moonbeam](link_spell_4732)\n\n**Advanced Spell** [Touch of the Moon](link_spell_4902)",
+            "operations": []
+          },
+          {
+            "id": "6b3b3ade-30d3-4ebe-a6ef-a1b0b1242821",
+            "type": "CUSTOM",
+            "title": "Nature",
+            "description": "You hold power over animals and plants.\n\n**Initial Spell** [Vibrant Thorns](link_spell_4933)\n\n**Advanced Spell** [Nature's Bounty](link_spell_4737)",
+            "operations": []
+          },
+          {
+            "id": "f2f8d79f-cf1d-4c77-b013-9ccfe19cf776",
+            "type": "CUSTOM",
+            "title": "Nightmares",
+            "description": "You fill minds with horror and dread.\n\n**Initial Spell** [Waking Nightmare](link_spell_4940)\n\n**Advanced Spell** [Shared Nightmare](link_spell_4829)",
+            "operations": []
+          },
+          {
+            "id": "f8cdfc7d-4177-4926-9aa3-bb65341e0294",
+            "type": "CUSTOM",
+            "title": "Pain",
+            "description": "You punish those who displease you with the sharp sting of pain.\n\n**Initial Spell** [Savor the Sting](link_spell_4817)\n\n**Advanced Spell** [Retributive Pain](link_spell_4804)",
+            "operations": []
+          },
+          {
+            "id": "c713b9cf-244a-4f14-8e4f-b30664a9489b",
+            "type": "CUSTOM",
+            "title": "Passion",
+            "description": "You evoke passion, whether as love or lust.\n\n**Initial Spell** [Charming Touch](link_spell_4518)\n\n**Advanced Spell** [Captivating Adoration](link_spell_4428)",
+            "operations": []
+          },
+          {
+            "id": "bc8281f7-bff0-41f9-95c2-126f9df50cce",
+            "type": "CUSTOM",
+            "title": "Perfection",
+            "description": "You strive to perfect your mind, body, and spirit.\n\n**Initial Spell** [Perfected Mind](link_spell_4757)\n\n**Advanced Spell** [Perfected Body](link_spell_4756)",
+            "operations": []
+          },
+          {
+            "id": "d63a6fe4-2619-403d-bd2d-48e84c2920c7",
+            "type": "CUSTOM",
+            "title": "Protection",
+            "description": "You ward yourself and others.\n\n**Initial Spell** [Protector's Sacrifice](link_spell_4784)\n\n**Advanced Spell** [Protector's Sphere](link_spell_4785)",
+            "operations": []
+          },
+          {
+            "id": "9302b8de-d59b-42d2-9a2f-0c4304934cd8",
+            "type": "CUSTOM",
+            "title": "Secrecy",
+            "description": "You protect secrets and keep them hidden.\n\n**Initial Spell** [Whispering Quiet](link_spell_4953)\n\n**Advanced Spell** [Safeguard Secret](link_spell_4815)\n\n**Advanced Apocryphal Spell** [Weaponize Secret](link_spell_5520)",
+            "operations": []
+          },
+          {
+            "id": "ea647819-917c-4d3b-891c-691578c94118",
+            "type": "CUSTOM",
+            "title": "Sun",
+            "description": "You harness the power of the sun and other light sources, and punish undead.\n\n**Initial Spell** [Dazzling Flash](link_spell_4555)\n\n**Advanced Spell** [Vital Luminance](link_spell_4975)",
+            "operations": []
+          },
+          {
+            "id": "24531ce7-0c50-4277-a275-853b2f12db24",
+            "type": "CUSTOM",
+            "title": "Travel",
+            "description": "You have power over movement and journeys.\n\n**Initial Spell** [Agile Feet](link_spell_4391)\n\n**Advanced Spell** [Traveler's Transit](link_spell_4907)\n\n**Advanced Apocryphal Spell** [Inevitable Destination](link_spell_5514)",
+            "operations": []
+          },
+          {
+            "id": "566fbb30-5203-4ad3-9edb-66f4f135fdb3",
+            "type": "CUSTOM",
+            "title": "Trickery",
+            "description": "You deceive others and cause mischief.\n\n**Initial Spell** [Sudden Shift](link_spell_4864)\n\n**Advanced Spell** [Trickster's Twin](link_spell_4909)",
+            "operations": []
+          },
+          {
+            "id": "2bf0c3a8-ffa6-47f1-ac65-65c3e1d74590",
+            "type": "CUSTOM",
+            "title": "Truth",
+            "description": "You pierce lies and discover the truth.\n\n**Initial Spell** [Word of Truth](link_spell_4957)\n\n**Advanced Spell** [Glimpse the Truth](link_spell_4643)",
+            "operations": []
+          },
+          {
+            "id": "739200ec-40aa-4029-ac12-6d9588cb652a",
+            "type": "CUSTOM",
+            "title": "Tyranny",
+            "description": "You wield power to rule and control others.\n\n**Initial Spell** [Touch of Obedience](link_spell_4901)\n\n**Advanced Spell** [Commanding Lash](link_spell_4529)",
+            "operations": []
+          },
+          {
+            "id": "3ca6e511-93e7-4d6f-9eee-fcb66d871920",
+            "type": "CUSTOM",
+            "title": "Undeath",
+            "description": "Your magic carries close ties to the undead.\n\n**Initial Spell** [Touch of Undeath](link_spell_4903)\n\n**Advanced Spell** [Malignant Sustenance](link_spell_4713)",
+            "operations": []
+          },
+          {
+            "id": "6fb0b235-7a02-4043-ba11-2b5973e7e759",
+            "type": "CUSTOM",
+            "title": "Water",
+            "description": "You control water and bodies of water.\n\n**Initial Spell** [Tidal Surge](link_spell_4900)\n\n**Advanced Spell** [Downpour](link_spell_4582)\n\n**Advanced Apocryphal Spell** [Purifying Veil](link_spell_5517)",
+            "operations": []
+          },
+          {
+            "id": "4ca92484-3f2b-4143-9b8a-dc9a570eaf8d",
+            "type": "CUSTOM",
+            "title": "Wealth",
+            "description": "You hold power over wealth, trade, and treasure.\n\n**Initial Spell** [Appearance of Wealth](link_spell_4400)\n\n**Advanced Spell** [Precious Metals](link_spell_4777)",
+            "operations": []
+          },
+          {
+            "id": "93eacb5f-f381-4f91-91e3-d611a48ebe8d",
+            "type": "CUSTOM",
+            "title": "Zeal",
+            "description": "Your inner fire increases your combat prowess.\n\n**Initial Spell** [Weapon Surge](link_spell_4952)\n\n**Advanced Spell** [Zeal for Battle](link_spell_4959)",
+            "operations": []
+          },
+          {
+            "id": "f6c0fbd7-a375-471f-af4d-697b6d6dd49a",
+            "type": "CUSTOM",
+            "title": "Abomination",
+            "description": "You seek to instill abhorrence and horror in those around you.\n\n**Initial Spell** [Lift Nature's Caul](link_spell_7379)\n\n**Advanced Spell** [Fearful Feast](link_spell_7380)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "b99207e0-664d-4956-9852-2721f819c7a2",
+            "type": "CUSTOM",
+            "title": "Change",
+            "description": "You can restructure the physical and metaphysical.\n\n**Initial Spell** [Adapt Self](link_spell_7381)\n\n**Advanced Spell** [Adaptive Ablation](link_spell_7382)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "eb295330-9218-4920-82c3-386dabc99f09",
+            "type": "CUSTOM",
+            "title": "Cold",
+            "description": "You control ice, snow, and freezing temperatures\n\n**Initial Spell** [Winter Bolt](link_spell_7383)\n\n**Advanced Spell** [Diamond Dust](link_spell_7384)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "c5d8b62b-a36b-4382-b7fb-8c5f217dda25",
+            "type": "CUSTOM",
+            "title": "Decay",
+            "description": "You have the power to spoil and deteriorate matter.\n\n**Initial Spell** [Withering Grasp](link_spell_7385)\n\n**Advanced Spell** [Fallow Field](link_spell_7386)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "e7be7ba6-85cf-4c15-a0da-0bd3bb7ab451",
+            "type": "CUSTOM",
+            "title": "Disorientation",
+            "description": "You can bewilder and perplex your foes.\n\n**Initial Spell** [Clouded Focus](link_spell_7387)\n\n**Advanced Spell** [Ephemeral Hazards](link_spell_7388)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "e6f6e214-9d27-4e02-aebb-7992a17a48cd",
+            "type": "CUSTOM",
+            "title": "Dragon",
+            "description": "You draw on the power of dragons, linnorms, and other powerful reptilian creatures.\n\n**Initial Spell** [Draconic Barrage](link_spell_7389)\n\n**Advanced Spell** [Roar of the Dragon](link_spell_7390)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "1b64c46b-e837-425a-a86f-e70cd46e9363",
+            "type": "CUSTOM",
+            "title": "Dust",
+            "description": "You have the power to dry and crumble what opposes you.\n\n**Initial Spell** [Parch](link_spell_7391)\n\n**Advanced Spell** [Dust Storm](link_spell_7392)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "0340e221-6f3f-4481-a35f-25dc8d2a7885",
+            "type": "CUSTOM",
+            "title": "Duty",
+            "description": "You defend oaths and carry out your divine missions with great dedication.\n\n**Initial Spell** [Swear Oath](link_spell_7393)\n\n**Advanced Spell** [Dutiful Challenge](link_spell_7394)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "735d7bf3-4734-4e6b-b086-d42ce33e34ca",
+            "type": "CUSTOM",
+            "title": "Glyph",
+            "description": "You wield power over written words and symbols.\n\n**Initial Spell** [Redact](link_spell_7395)\n\n**Advanced Spell** [Ghostly Transcription](link_spell_7396)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "03499652-2aef-45f3-b9c2-9dcf23b44cea",
+            "type": "CUSTOM",
+            "title": "Introspection",
+            "description": "You guide others in examining their lives, emotions, and motivations to ultimately become a truer version of themselves—a difficult and often painful process.\n\n**Initial Spell** [Guided Introspection](link_spell_7397)\n\n**Advanced Spell** [Confront Selves](link_spell_7398)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "4a466c58-5990-4cb7-9863-6fbaf5222605",
+            "type": "CUSTOM",
+            "title": "Lightning",
+            "description": "You control electricity, thunder, and storms.\n\n**Initial Spell** [Charged Javelin](link_spell_7399)\n\n**Advanced Spell** [Bottle the Storm](link_spell_7400)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "cbac807d-4f60-428e-82ba-a7be76fecb8c",
+            "type": "CUSTOM",
+            "title": "Metal",
+            "description": "You manipulate flexible mutable metal.\n\n**Initial Spell** [Serrate](link_spell_7401)\n\n**Advanced Spell** [Repel Metal](link_spell_7402)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "8191cf11-b08d-4396-942d-2806b5fa44df",
+            "type": "CUSTOM",
+            "title": "Naga",
+            "description": "Like many nagas, you believe you understand your place in the Universe, try to help those who don’t, and dissuade those who would serve to fool others into straying from their purpose.\n\n**Initial Spell** [Chastising Retort](link_spell_7403)\n\n**Advanced Spell** [Show the Path](link_spell_7404)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "aba192e4-a0f0-496c-94ae-a2dece5e1777",
+            "type": "CUSTOM",
+            "title": "Nothingness",
+            "description": "You draw power from emptiness.\n\n**Initial Spell** [Empty Inside](link_spell_7407)\n\n**Advanced Spell** [Door to Beyond](link_spell_7408)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "63ee6f23-6d98-4440-89ba-0f3823babf5f",
+            "type": "CUSTOM",
+            "title": "Plague",
+            "description": "You wield disease and pestilence like a weapon.\n\n**Initial Spell** [Divine Plagues](link_spell_7409)\n\n**Advanced Spell** [Foul Miasma](link_spell_7410)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "100b9465-50cf-4c24-99bb-b802508c985d",
+            "type": "CUSTOM",
+            "title": "Repose",
+            "description": "You ease mental burdens.\n\n**Initial Spell** [Share Burden](link_spell_7411)\n\n**Advanced Spell** [Font of Serenity](link_spell_7412)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "1365d942-2c45-4fdc-9dee-d6e18795d295",
+            "type": "CUSTOM",
+            "title": "Sorrow",
+            "description": "You have a powerful and painful connection to melancholy and sadness.\n\n**Initial Spell** [Lament](link_spell_7413)\n\n**Advanced Spell** [Overflowing Sorrow](link_spell_7414)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "087aed6c-f861-4182-87db-1c1575d1822d",
+            "type": "CUSTOM",
+            "title": "Soul",
+            "description": "You wield power over the spiritual.\n\n**Initial Spell** [Eject Soul](link_spell_7415)\n\n**Advanced Spell** [Ectoplasmic Interstice](link_spell_7416)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "00d2712c-e082-407e-b850-e2045d7e6d78",
+            "type": "CUSTOM",
+            "title": "Star",
+            "description": "You command the power of the stars.\n\n**Initial Spell** [Zenith Star](link_spell_7417)\n\n**Advanced Spell** [Asterism](link_spell_7418)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "58715833-4190-43d1-82d4-f1aeabdd2db3",
+            "type": "CUSTOM",
+            "title": "Swarm",
+            "description": "You exert control over masses of creatures.\n\n**Initial Spell** [Swarmsense](link_spell_7419)\n\n**Advanced Spell** [Swarm Form](link_spell_7420)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "04dbe7b1-c1a7-4496-94f9-e03d4de20378",
+            "type": "CUSTOM",
+            "title": "Time",
+            "description": "You reign over the flow of time.\n\n**Initial Spell** [Delay Consequence](link_spell_7421)\n\n**Advanced Spell** [Stasis](link_spell_7422)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "de46d4e3-2ba4-499b-8135-4b52a61b555c",
+            "type": "CUSTOM",
+            "title": "Toil",
+            "description": "You work constantly and refuse to let anything stand in your way\n\n**Initial Spell** [Practice Makes Perfect](link_spell_7423)\n\n**Advanced Spell** [Tireless Worker](link_spell_7424)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "321f7c25-f1bb-4871-8902-15efccf0b684",
+            "type": "CUSTOM",
+            "title": "Vigil",
+            "description": "You watch over those long passed and guard their secrets.\n\n**Initial Spell** [Object Memory](link_spell_7425)\n\n**Advanced Spell** [Remember The Lost](link_spell_7426)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          },
+          {
+            "id": "0b920249-5360-4794-ab4c-bd1e0ff10678",
+            "type": "CUSTOM",
+            "title": "Wood",
+            "description": "You command the indomitable power of wood.\n\n**Initial Spell** [Arms of Nature](link_spell_7427)\n\n**Advanced Spell** [Wood Walk](link_spell_7428)\n\n_Enable Lost Omens: Divine Mysteries to access this domain's spells._",
+            "operations": []
+          }
+        ]
+      }
+    }
+  ],
+  "name": "Domains",
+  "actions": null,
+  "level": 1,
+  "rarity": "COMMON",
+  "prerequisites": [],
+  "frequency": "",
+  "cost": "",
+  "trigger": "",
+  "requirements": "",
+  "access": "",
+  "description": "Clerics and some other devotees can gain domain spells from their deities.",
+  "special": "",
+  "type": "feat",
+  "meta_data": {
+    "unselectable": true,
+    "can_select_multiple_times": true
+  },
+  "traits": [],
+  "content_source_id": 1,
+  "version": "1.0",
+  "uuid": 3492930473778634,
+  "availability": null,
+  "updated_at": "2024-04-06T19:08:50.603326+00:00"
+}

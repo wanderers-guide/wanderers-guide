@@ -1,5 +1,10 @@
 import { cloneDeep } from 'lodash-es';
 import { OperationSelect, validateSelectionAliases } from '@schemas/operations';
+import {
+  isConvertedDomainSelection,
+  LEGACY_DOMAIN_SELECTOR_ID,
+  resolveDomainChoice,
+} from './domain-selection-compatibility';
 
 export interface SelectionTreeNode {
   value: string | null;
@@ -19,12 +24,18 @@ export function resolveSelectionNode(
   operation: OperationSelect
 ): { id: string; node: SelectionTreeNode | undefined; aliases?: string[] } {
   validateSelectionAliases(operation);
-  const peers: string[] | undefined = operation.data.selectionAliases;
+  const domainSelection: boolean = isConvertedDomainSelection(operation);
+  const peers: string[] | undefined = domainSelection ? [LEGACY_DOMAIN_SELECTOR_ID] : operation.data.selectionAliases;
   if (!peers?.length) return { id: operation.id, node: parent?.children[operation.id] };
   const aliases: string[] = [operation.id, ...peers];
   // A present primary, even an empty clear marker, must not resurrect a stale peer.
   const id: string = aliases.find((candidate) => parent && Object.hasOwn(parent.children, candidate)) ?? operation.id;
-  return { id, node: parent?.children[id], aliases };
+  const node: SelectionTreeNode | undefined = parent?.children[id];
+  return {
+    id,
+    node: domainSelection && node ? { ...node, value: resolveDomainChoice(node.value) } : node,
+    aliases,
+  };
 }
 
 /** Remove only exact saved choice keys in one immutable update, preserving unrelated owners and siblings. */

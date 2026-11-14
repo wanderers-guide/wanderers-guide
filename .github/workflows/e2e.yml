@@ -238,7 +238,7 @@ jobs:
       # --no-check skips the npm:@types/node type-check that fails in Deno
       # without a node_modules dir (we don't ship one in supabase/).
       - name: API tests (Edge Functions)
-        run: cd supabase && deno test --no-check --allow-net --allow-env --allow-read functions/_tests/
+        run: cd supabase && deno test --config=functions/_tests/deno.json --no-check --allow-net --allow-env --allow-read functions/_tests/
 
       - name: Partition all browser specs
         id: shard
