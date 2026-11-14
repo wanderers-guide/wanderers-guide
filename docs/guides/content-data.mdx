@@ -617,3 +617,12 @@ Numeric conditions use a variable's calculated value, including typed bonuses
 from active modes. This lets a mode raise a counter such as `CURSEBOUND` and have
 dependent conditions match the value shown by inline expressions. Companion
 calculations refresh when their owner's calculated variables change.
+
+### Saved domain choices
+
+The domain picker reads both historical custom-choice UUIDs and the current domain
+feat IDs. Reopening an older character resolves its choice without rewriting saved
+character data. Changing a recovered choice retains its existing selection path;
+clearing it removes both historical selector paths so an old choice cannot reappear.
+Source filters still control the available catalog options. Domain spell selection
+remains explicit through the existing initial and advanced spell pickers.
