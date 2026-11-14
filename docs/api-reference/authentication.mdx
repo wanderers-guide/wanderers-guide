@@ -244,3 +244,10 @@ restored automatically.
 ## Want to look at the source?
 
 The auth flow lives entirely in [`supabase/functions/_shared/helpers.ts`](https://github.com/wanderers-guide/wanderers-guide/blob/main/supabase/functions/_shared/helpers.ts). `connect()` and `handleApiRouting()` are short and worth a read if you’re wiring up automated tests or building a client SDK.
+
+## Browser sign-in recovery
+
+Google OAuth callback validation retries transient network and 502/503/504 read
+failures at most twice. Authentication rejections remain terminal. After a sign-out,
+a delayed sign-in event must match the current stored session before the UI can
+show that account again. Character drafts remain unchanged.

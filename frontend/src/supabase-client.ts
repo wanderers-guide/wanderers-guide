@@ -34,6 +34,24 @@ async function fetchFunction(input: RequestInfo | URL, init?: RequestInit): Prom
   }
 }
 
+/** Retry only the read that validates an OAuth callback; failed reads must not discard a valid grant. */
+async function fetchAuthUser(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const url: string = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+  const method: string = init?.method ?? (input instanceof Request ? input.method : 'GET');
+  if (method.toUpperCase() !== 'GET' || new URL(url).pathname !== '/auth/v1/user') return fetch(input, init);
+  const signal: AbortSignal | null | undefined = init?.signal ?? (input instanceof Request ? input.signal : undefined);
+  for (let attempt: number = 0; ; attempt++) {
+    try {
+      const response: Response = await fetch(input, init);
+      if (attempt >= 2 || ![502, 503, 504].includes(response.status)) return response;
+      await response.body?.cancel();
+    } catch (error) {
+      if (attempt >= 2 || !(error instanceof TypeError) || signal?.aborted) throw error;
+    }
+    await new Promise<void>((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+  }
+}
+
 /**
  * The single shared Supabase client for the entire app.
  *
@@ -45,7 +63,9 @@ async function fetchFunction(input: RequestInfo | URL, init?: RequestInit): Prom
  * inactivity was noticed by one client while the rest of the app kept acting
  * logged in with dead credentials.
  */
-export const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_KEY);
+export const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_KEY, {
+  global: { fetch: fetchAuthUser },
+});
 
 /** Stateless transport uses the request's captured JWT without re-entering the Auth lock. */
 export const functions = new FunctionsClient(
