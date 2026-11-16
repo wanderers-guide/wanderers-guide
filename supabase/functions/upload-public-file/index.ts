@@ -34,7 +34,7 @@ serve(async (req: Request) => {
       };
     }
 
-    const access = await hasPatreonAccess(user, 1);
+    const access = await hasPatreonAccess(user, 1, { throwOnFailure: true });
     if (!access) {
       return {
         status: 'error',

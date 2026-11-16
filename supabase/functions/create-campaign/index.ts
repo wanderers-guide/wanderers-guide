@@ -48,7 +48,7 @@ serve(async (req: Request) => {
         { column: 'user_id', value: user.user_id },
       ]);
       if (campaigns.length >= CAMPAIGN_SLOT_CAP) {
-        const access = await hasPatreonAccess(user, 2);
+        const access = await hasPatreonAccess(user, 2, { throwOnFailure: true });
         if (!access) {
           return {
             status: 'error',

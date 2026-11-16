@@ -1,12 +1,15 @@
 import { exchangePatreonCode, fetchPatreonIdentity, PatreonApiError, refreshPatreonToken } from './patreon-api.ts';
 import type { PublicUser } from './content.d.ts';
+import { HttpError } from './http-errors.ts';
 import _ from 'lodash';
 import { fetchData, logEvent, updateData } from './helpers.ts';
 import { SupabaseClient, createClient } from '@supabase/supabase-js';
 
+type PatreonAccessOptions = { throwOnFailure?: boolean };
+
 const GM_GROUP_SIZE_CAP = 99;
 
-async function checkAccessLevel(client: SupabaseClient<any, 'public', any>, user: PublicUser, accessLevel: 0 | 1 | 2 | 3 | 4) {
+async function checkAccessLevel(client: SupabaseClient<any, 'public', any>, user: PublicUser, accessLevel: 0 | 1 | 2 | 3 | 4, options?: PatreonAccessOptions) {
 	if (accessLevel === 0) return true;
 	if (accessLevel === 4) return user.patreon?.tier === 'GAME-MASTER';
 	if (accessLevel === 3) return user.patreon?.tier === 'LEGEND' || user.patreon?.tier === 'GAME-MASTER';
@@ -23,7 +26,7 @@ async function checkAccessLevel(client: SupabaseClient<any, 'public', any>, user
 			}
 
 			// Confirm the GM has updated access
-			const access = await hasPatreonAccess(gmUser, accessLevel);
+			const access = await hasPatreonAccess(gmUser, accessLevel, options);
 			// A failed provider check must not erase a player's group or own paid link.
 			return access;
 		}
@@ -72,8 +75,8 @@ async function addPatreonData(
 	};
 }
 
-/** Verify v2 entitlements without erasing linked data during provider failures. */
-export async function hasPatreonAccess(user: PublicUser, accessLevel: 0 | 1 | 2 | 3 | 4): Promise<boolean> {
+/** Verify v2 entitlements, optionally surfacing safe provider failures to paid-operation callers. */
+export async function hasPatreonAccess(user: PublicUser, accessLevel: 0 | 1 | 2 | 3 | 4, options?: PatreonAccessOptions): Promise<boolean> {
 	if (accessLevel === 0) return true;
 	// Paragons and developers have level 1-2 access on their own, so a stale or unreachable
 	// Patreon link (or a lapsed GM group) can't revoke it.
@@ -83,7 +86,7 @@ export async function hasPatreonAccess(user: PublicUser, accessLevel: 0 | 1 | 2 
 	const stored = user.patreon;
 	if (!stored?.access_token) {
 		user.patreon = { ...stored, tier: undefined };
-		return await checkAccessLevel(client, user, accessLevel);
+		return await checkAccessLevel(client, user, accessLevel, options);
 	}
 	try {
 		let identity;
@@ -95,21 +98,37 @@ export async function hasPatreonAccess(user: PublicUser, accessLevel: 0 | 1 | 2 
 			user.patreon = { ...stored, ...tokens };
 			// Rotated refresh tokens must be saved before another provider request.
 			const { status, data: rows } = await updateData(client, 'public_user', user.id, { patreon: user.patreon }, true);
-			if (status !== 'SUCCESS' || !rows?.some((row: { id: number }) => row.id === user.id)) return false;
+			if (status !== 'SUCCESS' || !rows?.some((row: { id: number }) => row.id === user.id)) {
+				if (options?.throwOnFailure) throw new Error('Patreon token persistence failed.');
+				return false;
+			}
 			identity = await fetchPatreonIdentity(tokens.access_token);
 		}
 		if (identity.tier !== user.patreon?.tier) {
 			const result = await addPatreonData(client, user, { ...user.patreon, ...identity, access_token: user.patreon?.access_token ?? '' });
-			if (result.status !== 'SUCCESS') return false;
+			if (result.status !== 'SUCCESS') {
+				if (options?.throwOnFailure) throw new Error('Patreon membership persistence failed.');
+				return false;
+			}
 			user = result.user;
 		}
-		return await checkAccessLevel(client, user, accessLevel);
+		return await checkAccessLevel(client, user, accessLevel, options);
 	} catch (error) {
+		if (error instanceof HttpError) throw error;
 		// Fail closed for this paid operation while retaining data for reconnection.
 		logEvent('warn', 'patreon', 'patreon_check_failed', {
 			stage: error instanceof PatreonApiError ? error.stage : 'persistence',
 			status: error instanceof PatreonApiError ? error.status : undefined,
 		});
+		if (options?.throwOnFailure) {
+			const reconnect = error instanceof PatreonApiError &&
+				((error.stage === 'identity' && [401, 403].includes(error.status ?? 0)) ||
+				 (error.stage === 'token' && [400, 401, 403].includes(error.status ?? 0)));
+			throw new HttpError(503,
+				reconnect ? 'Reconnect Patreon in Account to verify your membership.' :
+				'Patreon verification is temporarily unavailable. Please try again shortly.',
+				reconnect ? 'PATREON_RECONNECT_REQUIRED' : 'PATREON_UNAVAILABLE');
+		}
 		return false;
 	}
 }

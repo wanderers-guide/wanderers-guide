@@ -127,6 +127,32 @@
           }
         }
       },
+      "PatreonVerificationError": {
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "code"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "error"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "PATREON_RECONNECT_REQUIRED",
+              "PATREON_UNAVAILABLE"
+            ]
+          }
+        }
+      },
       "JSendError": {
         "type": "object",
         "required": ["status", "message"],
@@ -2203,7 +2229,7 @@
       "post": {
         "tags": ["Content"],
         "summary": "Create or update a content source (book)",
-        "description": "Creating a new homebrew content source requires Patreon tier 2+. Updating an existing source requires ownership.",
+        "description": "Creating a new homebrew content source requires Patreon tier 2+. Updating an existing source requires ownership. Patreon verification failures return HTTP 503 with code PATREON_RECONNECT_REQUIRED for rejected provider authorization or PATREON_UNAVAILABLE for temporary provider or persistence failures. Saved links are preserved.",
         "operationId": "createContentSource",
         "requestBody": {
           "required": true,
@@ -2212,6 +2238,16 @@
           }
         },
         "responses": {
+        "503": {
+          "description": "Patreon authorization must be reconnected, or provider verification is temporarily unavailable.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatreonVerificationError"
+              }
+            }
+          }
+        },
           "200": {
             "description": "JSend success.",
             "content": {
@@ -2513,7 +2549,7 @@
       "post": {
         "tags": ["Characters"],
         "summary": "Create or update a character",
-        "description": "Free users are limited to 6 characters. Patreon tier 2+ removes the cap. Pass `id` to update. Additional character slots require verified Wanderer membership. If access cannot be verified, the existing error response directs the user to check Patreon in Account; no creation is retried automatically.",
+        "description": "Free users are limited to 6 characters. Patreon tier 2+ removes the cap. Pass `id` to update. Additional character slots require verified Wanderer membership. A provider authorization failure returns HTTP 503 with code PATREON_RECONNECT_REQUIRED and directs the user to reconnect Patreon in Account. Provider outages and persistence failures use PATREON_UNAVAILABLE. These failures preserve the saved membership and app session, and creation is never retried automatically.",
         "operationId": "createCharacter",
         "requestBody": {
           "required": true,
@@ -2522,6 +2558,16 @@
           }
         },
         "responses": {
+        "503": {
+          "description": "Patreon authorization must be reconnected, or provider verification is temporarily unavailable.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatreonVerificationError"
+              }
+            }
+          }
+        },
           "200": {
             "description": "JSend envelope.",
             "content": {
@@ -2630,7 +2676,7 @@
       "post": {
         "tags": ["Campaigns"],
         "summary": "Create or update a campaign",
-        "description": "Free users may create one campaign. Verified Patreon tier 2+ (Wanderer or higher) removes the cap. Additional campaigns require verified Wanderer membership. If access cannot be verified, the existing error response directs the user to check Patreon in Account; no creation is retried automatically.",
+        "description": "Free users may create one campaign. Verified Patreon tier 2+ (Wanderer or higher) removes the cap. Additional campaigns require verified Wanderer membership. A provider authorization failure returns HTTP 503 with code PATREON_RECONNECT_REQUIRED and directs the user to reconnect Patreon in Account. Provider outages and persistence failures use PATREON_UNAVAILABLE. These failures preserve the saved membership and app session, and creation is never retried automatically. Patreon verification failures return HTTP 503 with code PATREON_RECONNECT_REQUIRED for rejected provider authorization or PATREON_UNAVAILABLE for temporary provider or persistence failures. Saved links are preserved.",
         "operationId": "createCampaign",
         "requestBody": {
           "required": true,
@@ -2639,6 +2685,16 @@
           }
         },
         "responses": {
+        "503": {
+          "description": "Patreon authorization must be reconnected, or provider verification is temporarily unavailable.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatreonVerificationError"
+              }
+            }
+          }
+        },
           "200": {
             "description": "JSend envelope.",
             "content": {
@@ -3346,7 +3402,7 @@
       "post": {
         "tags": ["Files"],
         "summary": "Upload a portrait or background image",
-        "description": "Accepts a base64-encoded image. Patreon tier 1+ required. Files larger than ~5 MB are rejected.",
+        "description": "Accepts a base64-encoded image. Patreon tier 1+ required. Files larger than ~5 MB are rejected. Patreon verification failures return HTTP 503 with code PATREON_RECONNECT_REQUIRED for rejected provider authorization or PATREON_UNAVAILABLE for temporary provider or persistence failures. Saved links are preserved.",
         "operationId": "uploadPublicFile",
         "requestBody": {
           "required": true,
@@ -3365,6 +3421,16 @@
           }
         },
         "responses": {
+        "503": {
+          "description": "Patreon authorization must be reconnected, or provider verification is temporarily unavailable.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatreonVerificationError"
+              }
+            }
+          }
+        },
           "200": {
             "description": "JSend envelope. On success, `data` contains the uploaded file's public URL.",
             "content": {

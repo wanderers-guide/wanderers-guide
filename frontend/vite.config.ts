@@ -25,6 +25,8 @@ const manifestForPlugin: Partial<VitePWAOptions> = {
   includeAssets: ['apple-icon-180.png', 'maskable_icon.png'],
   workbox: {
     maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15 MiB
+    // Offline sheets need the same bundled fonts as the cached HTML and styles.
+    globPatterns: ['**/*.{js,wasm,css,html,woff2,ttf}'],
     // Developer reports never belong in the offline app. Cache the optional icon set
     // when it is used, without competing with the initial sheet/content download.
     globIgnores: ['**/stats.html', '**/game-icons-*.js'],
