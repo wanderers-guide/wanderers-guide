@@ -1127,7 +1127,133 @@
           "versatile_heritages": { "type": "array", "items": { "$ref": "#/components/schemas/VersatileHeritage" } },
           "class_archetypes": { "type": "array", "items": { "$ref": "#/components/schemas/ClassArchetype" } }
         }
-      }
+      },
+        "PathbuilderImportRequest": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "format": "int64",
+              "description": "Omit or use -1 to create a snapshot. Use the returned snapshot id to attach character_id later."
+            },
+            "character_id": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            },
+            "build_id": {
+              "type": "string",
+              "pattern": "^[0-9]+$"
+            },
+            "source_url": {
+              "type": "string",
+              "format": "uri",
+              "nullable": true
+            },
+            "format_version": {
+              "type": "string",
+              "nullable": true
+            },
+            "character_data": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "custom_files": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            },
+            "derived_data": {
+              "type": "object",
+              "additionalProperties": true,
+              "nullable": true
+            },
+            "unresolved": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "PathbuilderImportFailure": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Per-field client fault details."
+        },
+        "PathbuilderImport": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "user_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "character_id": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            },
+            "build_id": {
+              "type": "string",
+              "pattern": "^[0-9]+$"
+            },
+            "source_url": {
+              "type": "string",
+              "nullable": true
+            },
+            "format_version": {
+              "type": "string",
+              "nullable": true
+            },
+            "imported_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "character_data": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "custom_files": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            },
+            "derived_data": {
+              "type": "object",
+              "additionalProperties": true,
+              "nullable": true
+            },
+            "unresolved": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": [
+            "id",
+            "user_id",
+            "build_id",
+            "imported_at",
+            "character_data",
+            "custom_files",
+            "unresolved"
+          ],
+          "additionalProperties": false
+        }
     },
     "responses": {
       "JSendFail": {
@@ -3957,6 +4083,85 @@
           }
         }
       }
-    }
+    },
+      "/create-pathbuilder-import": {
+        "post": {
+          "tags": [
+            "Characters"
+          ],
+          "summary": "Record a Pathbuilder 2e import snapshot",
+          "description": "Stores the raw Pathbuilder share payload for the authenticated user. The endpoint accepts the initial snapshot with `id: -1`, then accepts a later request with the returned `id` and `character_id` to attach the created character. Snapshot writes are service-role operations inside the Edge Function and updates are guarded by `user_id`, so one user cannot modify another user's snapshot.",
+          "operationId": "createPathbuilderImport",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathbuilderImportRequest"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "JSend success, client fault, or server error.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "success"
+                            ]
+                          },
+                          "data": {
+                            "oneOf": [
+                              {
+                                "$ref": "#/components/schemas/PathbuilderImport"
+                              },
+                              {
+                                "type": "boolean"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "status",
+                          "data"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "fail"
+                            ]
+                          },
+                          "data": {
+                            "$ref": "#/components/schemas/PathbuilderImportFailure"
+                          }
+                        },
+                        "required": [
+                          "status",
+                          "data"
+                        ]
+                      },
+                      {
+                        "$ref": "#/components/schemas/JSendError"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
   }
 }

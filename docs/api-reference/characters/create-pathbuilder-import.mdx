@@ -1,0 +1,11 @@
+---
+title: "Record a Pathbuilder import snapshot"
+description: "Stores the raw Pathbuilder 2e share payload behind an imported character so it can be re-translated later."
+openapi: "POST /create-pathbuilder-import"
+---
+
+This endpoint is used by the Pathbuilder share-link importer. It stores `characterData`, `listCustomFiles`, the optional derived payload, and any details the importer could not resolve.
+
+The first request creates the snapshot with `id: -1` and returns the created row. After the character is created, the importer sends the snapshot `id` together with `character_id`. Updates are authorized atomically against the authenticated user's `user_id`.
+
+The endpoint requires an authenticated user session. Direct table writes are not part of the public API.

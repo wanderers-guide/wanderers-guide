@@ -31,6 +31,14 @@ export async function upsertContentSource(contentSource: ContentSource) {
   return result ? (result === true ? contentSource : result) : null;
 }
 
+/** Create the private content source reserved for a Pathbuilder share import. */
+export async function createPathbuilderContentSource(buildId: string | number) {
+  const result = await makeRequest<ContentSource | true>('create-pathbuilder-content-source', {
+    build_id: buildId,
+  });
+  return result && result !== true ? result : null;
+}
+
 export async function upsertAbilityBlock(abilityBlock: AbilityBlock) {
   const result = await makeRequest<AbilityBlock | true>('create-ability-block', {
     ...abilityBlock,

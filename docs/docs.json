@@ -61,7 +61,8 @@
 				"pages": [
 					"api-reference/characters/find-character",
 					"api-reference/characters/create-character",
-					"api-reference/characters/update-character"
+					"api-reference/characters/update-character",
+					"api-reference/characters/create-pathbuilder-import"
 				]
 			},
 			{

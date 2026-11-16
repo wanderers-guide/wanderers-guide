@@ -15,6 +15,15 @@ import { compileTraits, getGradeImprovements, isItemRangedWeapon } from './inv-u
 import stripMd from 'remove-markdown';
 import { getSharedEidolonRunes } from './eidolon-runes';
 
+type PathbuilderWeaponState = NonNullable<Item['meta_data']>['pathbuilder'] & {
+  attackAbility?: string;
+  twoHanded?: boolean;
+};
+
+function getPathbuilderWeaponState(item: Item): PathbuilderWeaponState | undefined {
+  return item.meta_data?.pathbuilder as PathbuilderWeaponState | undefined;
+}
+
 export function parseOtherDamage(
   damage: { dice: number; die: string; damageType: string; bonus: number }[],
   prefix?: string
@@ -49,8 +58,15 @@ export function getWeaponStats(id: StoreID, item: Item) {
   const minDice = getVariable<VariableNum>(id, 'MINIMUM_WEAPON_DAMAGE_DICE')?.value ?? 1;
   if (!hasNoBaseDamage && dice < minDice) dice = minDice;
 
-  //
-  const baseDie = item.meta_data?.damage?.die ?? '';
+  // Pathbuilder may explicitly select a two-hand mode for a weapon.
+  const pathbuilderState = getPathbuilderWeaponState(item);
+  const twoHandDie = (item.meta_data?.display_traits ?? [])
+    .map((trait) => /two-hand\s+d(4|6|8|10|12)/i.exec(trait)?.[1])
+    .find(Boolean);
+  const baseDie =
+    pathbuilderState?.twoHanded === true && twoHandDie
+      ? `d${twoHandDie}`
+      : item.meta_data?.damage?.die ?? '';
   const humbleStrikes = getVariable<VariableBool>(id, 'EXEMPLAR_HUMBLE_STRIKES')?.value ?? false;
   const die = humbleStrikes && item.meta_data?.category === 'simple' ? increaseDamageDie(baseDie) : baseDie;
   const damageType = convertDamageType(item.meta_data?.damage?.damageType ?? '');
@@ -121,11 +137,21 @@ function increaseDamageDie(die: string): string {
 
 /** Resolve a weapon attack using only its actual attack attribute and one shared typed-modifier pool. */
 function getAttackBonus(id: StoreID, item: Item) {
+  const pathbuilderState = getPathbuilderWeaponState(item);
   const traits = compileTraits(item);
   const ranged = isItemRangedWeapon(item);
   const brutal = hasTraitType('BRUTAL', traits);
   const finesse = !ranged && hasTraitType('FINESSE', traits);
-  const attributes = ranged ? [brutal ? 'STR' : 'DEX'] : finesse ? ['STR', 'DEX'] : ['STR'];
+  const configuredAttackAbility = pathbuilderState?.attackAbility?.toLowerCase();
+  const configuredAttribute =
+    configuredAttackAbility === 'str' ? 'STR' : configuredAttackAbility === 'dex' ? 'DEX' : undefined;
+  const attributes = configuredAttribute
+    ? [configuredAttribute]
+    : ranged
+      ? [brutal ? 'STR' : 'DEX']
+      : finesse
+        ? ['STR', 'DEX']
+        : ['STR'];
   const proficiency = getProfTotal(id, item);
   const sharedPotency = getSharedEidolonRunes(id, item).potency;
   const ownPotency = Math.min(item.meta_data?.runes?.potency ?? 0, 4);

@@ -1,0 +1,614 @@
+{
+  "success": true,
+  "build": {
+    "name": "Kasane",
+    "class": "Champion",
+    "dualClass": null,
+    "level": 7,
+    "xp": 0,
+    "ancestry": "Automaton",
+    "heritage": "Hunter Automaton",
+    "background": "Bounty Hunter",
+    "alignment": "N",
+    "gender": "Female?",
+    "age": "Not set",
+    "deity": "Not set",
+    "size": 2,
+    "sizeName": "Medium",
+    "keyability": "str",
+    "languages": [
+      "Common"
+    ],
+    "rituals": [],
+    "resistances": [
+      "slashing 3"
+    ],
+    "inventorMods": [],
+    "abilities": {
+      "str": 19,
+      "dex": 14,
+      "con": 16,
+      "int": 10,
+      "wis": 12,
+      "cha": 16,
+      "breakdown": {
+        "ancestryFree": [
+          "Con"
+        ],
+        "ancestryBoosts": [
+          "Str"
+        ],
+        "ancestryFlaws": [],
+        "backgroundBoosts": [
+          "Str",
+          "Wis"
+        ],
+        "classBoosts": [
+          "Str"
+        ],
+        "mapLevelledBoosts": {
+          "1": [
+            "Con",
+            "Str",
+            "Dex",
+            "Cha"
+          ],
+          "2": [
+            "Con"
+          ],
+          "3": [
+            "Cha"
+          ],
+          "4": [
+            "Dex"
+          ],
+          "5": [
+            "Str"
+          ],
+          "7": [
+            "Cha"
+          ]
+        }
+      }
+    },
+    "attributes": {
+      "ancestryhp": 8,
+      "classhp": 10,
+      "bonushp": 0,
+      "bonushpPerLevel": 0,
+      "speed": 25,
+      "speedBonus": 20
+    },
+    "proficiencies": {
+      "classDC": 2,
+      "perception": 2,
+      "fortitude": 4,
+      "reflex": 2,
+      "will": 4,
+      "heavy": 4,
+      "medium": 4,
+      "light": 4,
+      "unarmored": 4,
+      "advanced": 0,
+      "martial": 4,
+      "simple": 4,
+      "unarmed": 4,
+      "castingArcane": 2,
+      "castingDivine": 2,
+      "castingOccult": 0,
+      "castingPrimal": 0,
+      "acrobatics": 2,
+      "arcana": 0,
+      "athletics": 6,
+      "crafting": 0,
+      "deception": 0,
+      "diplomacy": 0,
+      "intimidation": 0,
+      "medicine": 0,
+      "nature": 0,
+      "occultism": 0,
+      "performance": 0,
+      "religion": 2,
+      "society": 0,
+      "stealth": 2,
+      "survival": 4,
+      "thievery": 0,
+      "piloting": 0,
+      "computers": 0
+    },
+    "mods": {
+      "Reflex": {
+        "Item Bonus": 1
+      },
+      "Athletics": {
+        "Item Bonus": 1
+      },
+      "Will": {
+        "Item Bonus": 1
+      },
+      "Fortitude": {
+        "Item Bonus": 1
+      }
+    },
+    "feats": [
+      [
+        "Shield Block",
+        null,
+        "Awarded Feat",
+        1
+      ],
+      [
+        "Experienced Tracker",
+        null,
+        "Awarded Feat",
+        1
+      ],
+      [
+        "Automaton Armament",
+        null,
+        "Ancestry Feat",
+        1,
+        "Automaton Feat 1",
+        "standardChoice",
+        null
+      ],
+      [
+        "Deity's Domain",
+        null,
+        "Class Feat",
+        1,
+        "Champion Feat 1",
+        "standardChoice",
+        null
+      ],
+      [
+        "Hunter Automaton",
+        null,
+        "Heritage",
+        1,
+        "Heritage Feat",
+        "standardChoice",
+        null
+      ],
+      [
+        "Reinforced Chassis",
+        null,
+        "Ancestry Feat",
+        1,
+        "Ancestry Paragon 1",
+        "standardChoice",
+        null
+      ],
+      [
+        "Titan Wrestler",
+        null,
+        "Skill Feat",
+        2,
+        "Skill Feat 2",
+        "standardChoice",
+        null
+      ],
+      [
+        "Desperate Prayer",
+        null,
+        "Class Feat",
+        2,
+        "Champion Feat 2",
+        "standardChoice",
+        null
+      ],
+      [
+        "Thlipit Contestant Dedication",
+        null,
+        "Archetype Feat",
+        2,
+        "Free Archetype 2",
+        "standardChoice",
+        null
+      ],
+      [
+        "Fleet",
+        null,
+        "General Feat",
+        3,
+        "General Feat 3",
+        "standardChoice",
+        null
+      ],
+      [
+        "Reincarnation Feat",
+        null,
+        "Ancestry Feat",
+        3,
+        "Ancestry Paragon 3",
+        "parentChoice",
+        null
+      ],
+      [
+        "Let's Try That Again",
+        null,
+        "Reincarnation Feat",
+        3,
+        "Reincarnation FeatAncestry Paragon 3",
+        "childChoice",
+        "Ancestry Paragon 3"
+      ],
+      [
+        "Acrobatic Performer",
+        null,
+        "Skill Feat",
+        4,
+        "Skill Feat 4",
+        "standardChoice",
+        null
+      ],
+      [
+        "Lassoing Lash",
+        null,
+        "Archetype Feat",
+        4,
+        "Free Archetype 4",
+        "standardChoice",
+        null
+      ],
+      [
+        "Sun Blade",
+        null,
+        "Class Feat",
+        4,
+        "Champion Feat 4",
+        "standardChoice",
+        null
+      ],
+      [
+        "Hardened Chassis",
+        null,
+        "Ancestry Feat",
+        5,
+        "Automaton Feat 5",
+        "standardChoice",
+        null
+      ],
+      [
+        "Powerful Lash",
+        null,
+        "Archetype Feat",
+        6,
+        "Free Archetype 6",
+        "standardChoice",
+        null
+      ],
+      [
+        "Combat Climber",
+        null,
+        "Skill Feat",
+        6,
+        "Skill Feat 6",
+        "standardChoice",
+        null
+      ],
+      [
+        "Smite",
+        null,
+        "Class Feat",
+        6,
+        "Champion Feat 6",
+        "standardChoice",
+        null
+      ],
+      [
+        "Messenger",
+        null,
+        "Ancestry Feat",
+        7,
+        "Ancestry Paragon 7",
+        "standardChoice",
+        null
+      ],
+      [
+        "Pick up the Pace",
+        null,
+        "General Feat",
+        7,
+        "General Feat 7",
+        "standardChoice",
+        null
+      ]
+    ],
+    "specials": [
+      "Destructive Vengeance",
+      "Anathema",
+      "Sanctification",
+      "Low-Light Vision",
+      "Iniquity Cause (Unholy)",
+      "Automaton Core",
+      "Deific Weapon",
+      "Constructed Body",
+      "Champion's Aura",
+      "Lay on Hands",
+      "Medium",
+      "Domain: Metal",
+      "Unholy Aura",
+      "Deity Skill",
+      "Blessed Swiftness",
+      "slashing",
+      "Weapon Expertise",
+      "Weapon Specialization",
+      "Armor Expertise",
+      "Hunter Automaton"
+    ],
+    "lores": [
+      [
+        "Legal",
+        2
+      ]
+    ],
+    "equipmentContainers": {
+      "c2a7a90d-b1ac-4a9b-a8ff-8e5536a7a3ab": {
+        "containerName": "Backpack",
+        "bagOfHolding": false,
+        "backpack": true,
+        "augmentations": false
+      }
+    },
+    "equipment": [
+      [
+        "Backpack",
+        1,
+        "Invested"
+      ],
+      [
+        "Chalk",
+        10,
+        "c2a7a90d-b1ac-4a9b-a8ff-8e5536a7a3ab",
+        "Invested"
+      ],
+      [
+        "Flint and Steel",
+        1,
+        "c2a7a90d-b1ac-4a9b-a8ff-8e5536a7a3ab",
+        "Invested"
+      ],
+      [
+        "Rope",
+        1,
+        "c2a7a90d-b1ac-4a9b-a8ff-8e5536a7a3ab",
+        "Invested"
+      ],
+      [
+        "Rations",
+        2,
+        "c2a7a90d-b1ac-4a9b-a8ff-8e5536a7a3ab",
+        "Invested"
+      ],
+      [
+        "Waterskin",
+        1,
+        "c2a7a90d-b1ac-4a9b-a8ff-8e5536a7a3ab",
+        "Invested"
+      ],
+      [
+        "Soap",
+        1,
+        "c2a7a90d-b1ac-4a9b-a8ff-8e5536a7a3ab",
+        "Invested"
+      ],
+      [
+        "Crowbar",
+        1,
+        "Invested"
+      ],
+      [
+        "Grappling Hook",
+        1,
+        "Invested"
+      ],
+      [
+        "Bracers of Missile Deflection",
+        1,
+        "Invested"
+      ],
+      [
+        "Smoke Ball (Lesser)",
+        1,
+        "Invested"
+      ]
+    ],
+    "specificProficiencies": {
+      "trained": [],
+      "expert": [],
+      "master": [],
+      "legendary": []
+    },
+    "weapons": [
+      {
+        "name": "Javelin",
+        "qty": 4,
+        "prof": "simple",
+        "die": "d6",
+        "pot": 1,
+        "str": "striking",
+        "mat": null,
+        "display": "+1 Striking Returning Javelin (x4)",
+        "runes": [
+          "Returning"
+        ],
+        "damageType": "P",
+        "attack": 14,
+        "damageBonus": 6,
+        "extraDamage": [],
+        "increasedDice": false,
+        "isInventor": false,
+        "grade": ""
+      },
+      {
+        "name": "Dagger",
+        "qty": 1,
+        "prof": "simple",
+        "die": "d4",
+        "pot": 1,
+        "str": "striking",
+        "mat": null,
+        "display": "+1 Striking Dagger",
+        "runes": [],
+        "damageType": "P",
+        "attack": 16,
+        "damageBonus": 6,
+        "extraDamage": [],
+        "increasedDice": false,
+        "isInventor": false,
+        "grade": ""
+      },
+      {
+        "name": "Special Unarmed (1d4)",
+        "qty": 1,
+        "prof": "unarmed",
+        "die": "d4",
+        "pot": 1,
+        "str": "striking",
+        "mat": null,
+        "display": "Claw",
+        "runes": [],
+        "damageType": "B, P or S",
+        "attack": 16,
+        "damageBonus": 6,
+        "extraDamage": [],
+        "increasedDice": false,
+        "isInventor": false,
+        "grade": ""
+      },
+      {
+        "name": "Stinger",
+        "qty": 1,
+        "prof": "unarmed",
+        "die": "d6",
+        "pot": 1,
+        "str": "striking",
+        "mat": null,
+        "display": "+1 Striking Stinger",
+        "runes": [],
+        "damageType": "P",
+        "attack": 16,
+        "damageBonus": 6,
+        "extraDamage": [],
+        "increasedDice": false,
+        "isInventor": false,
+        "grade": ""
+      },
+      {
+        "name": "Crimson Blade",
+        "qty": 1,
+        "prof": "simple",
+        "die": "d12",
+        "pot": 1,
+        "str": "striking",
+        "mat": null,
+        "display": "+1 Striking Wounding Crimson Blade (2h)",
+        "runes": [
+          "Wounding"
+        ],
+        "damageType": "S",
+        "attack": 16,
+        "damageBonus": 6,
+        "extraDamage": [],
+        "increasedDice": false,
+        "isInventor": false,
+        "grade": ""
+      }
+    ],
+    "money": {
+      "cp": 0,
+      "sp": 0,
+      "gp": 273,
+      "pp": 0
+    },
+    "armor": [
+      {
+        "name": "Automaton Chassi (5th level)",
+        "qty": 1,
+        "prof": "unarmored",
+        "pot": 1,
+        "res": "resilient",
+        "mat": null,
+        "display": "+1 Armor Resilient Raiment Automaton Chassi (5th level)",
+        "worn": true,
+        "runes": [
+          "Raiment"
+        ],
+        "grade": ""
+      },
+      {
+        "name": "Cold Iron Buckler (Low-Grade)",
+        "qty": 1,
+        "prof": "shield",
+        "pot": 0,
+        "res": "",
+        "mat": null,
+        "display": "",
+        "worn": true,
+        "runes": [],
+        "grade": ""
+      }
+    ],
+    "spellCasters": [
+      {
+        "name": "Messenger",
+        "magicTradition": "arcane",
+        "spellcastingType": "prepared",
+        "ability": "cha",
+        "proficiency": 2,
+        "focusPoints": 0,
+        "innate": true,
+        "perDay": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "spells": [
+          {
+            "spellLevel": 0,
+            "list": [
+              "Message"
+            ]
+          }
+        ],
+        "prepared": [],
+        "blendedSpells": []
+      }
+    ],
+    "focusPoints": 3,
+    "focus": {
+      "divine": {
+        "cha": {
+          "abilityBonus": 3,
+          "proficiency": 2,
+          "itemBonus": 0,
+          "focusCantrips": [],
+          "focusSpells": [
+            "Lay on Hands",
+            "Serrate",
+            "Sun Blade"
+          ]
+        }
+      }
+    },
+    "formula": [],
+    "acTotal": {
+      "acProfBonus": 11,
+      "acAbilityBonus": 1,
+      "acItemBonus": 5,
+      "acTotal": 27,
+      "shieldBonus": "1"
+    },
+    "pets": [],
+    "familiars": []
+  }
+}

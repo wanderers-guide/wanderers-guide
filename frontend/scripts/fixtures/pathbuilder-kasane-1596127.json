@@ -1,0 +1,371 @@
+{
+  "_provenance": "Captured Pathbuilder v121 regression payload, sanitized for repository tests. Personal identifiers and free-form notes are replaced with test-safe values.",
+  "captured_at": "2026-10-07T00:52:00.000Z",
+  "source": "fetch_emailed.php",
+  "build_id": "1596127",
+  "format_version": "121",
+  "build": {
+    "characterData": {
+      "characterLevel": 20,
+      "hashMapPlayerSpells": {
+        "Messenger&0&0": {
+          "spellList": 0,
+          "spellName": "Message",
+          "heighten": 0
+        }
+      },
+      "spentSpellPoints": 3,
+      "webID": "00000000-0000-0000-0000-000000000000",
+      "characterName": "Kasane",
+      "gender": "Female?",
+      "ancestry": "Automaton",
+      "className": "Champion",
+      "background": "BACKGROUND_Bounty Hunter",
+      "classOptionalTrainedSkill": "Athletics",
+      "gold": 273,
+      "hashMapAncestryFreeBoostSelections": {
+        "0": 2
+      },
+      "backgroundBoostLimitedSelection": 0,
+      "getBackgroundBoostFreeSelection": 4,
+      "hashMapFeatSelections": {
+        "Champion Feat 8": "CHAMPION_Advanced Deity's Domain",
+        "Ancestry Paragon 1": "AUTOMATON_Reinforced Chassis",
+        "Skill Feat 4": "GENERAL_Acrobatic Performer",
+        "Ancestry Paragon 7": "AUTOMATON_Messenger",
+        "Skill Feat 6": "GENERAL_Combat Climber",
+        "Ancestry Paragon 3": "ANCESTRY_GENERAL_Reincarnation Feat",
+        "Reincarnation FeatAncestry Paragon 3": "REINCARNATION_Let's Try That Again",
+        "Skill Feat 2": "GENERAL_Titan Wrestler",
+        "General Feat 7": "GENERAL_Pick up the Pace",
+        "Champion Feat 20": "CHAMPION_Sacred Defender",
+        "Skill Feat 8": "GENERAL_Quick Climber",
+        "General Feat 3": "GENERAL_Fleet",
+        "Automaton Feat 5": "AUTOMATON_Hardened Chassis",
+        "Automaton Feat 1": "AUTOMATON_Automaton Armament",
+        "Heritage Feat": "AUTOMATON_Hunter Automaton",
+        "Automaton Feat 9": "AUTOMATON_Arcane Propulsion",
+        "Free Archetype 12": "ARCHETYPE_Slingshot Maneuver",
+        "Champion Feat 12": "CHAMPION_Gruesome Strike",
+        "Free Archetype 6": "ARCHETYPE_Powerful Lash",
+        "Champion Feat 14": "CHAMPION_Divine Reflexes",
+        "Free Archetype 4": "ARCHETYPE_Lassoing Lash",
+        "Champion Feat 16": "CHAMPION_Instrument of Slaughter",
+        "Champion Feat 18": "CHAMPION_Rejuvenating Touch",
+        "Free Archetype 10": "ARCHETYPE_EXEMPLAR_Exemplar Dedication",
+        "Free Archetype 8": "ARCHETYPE_Tail Guard",
+        "Champion Feat 1": "CHAMPION_Deity's Domain",
+        "Ancestry Paragon 11": "AUTOMATON_Lesser Augmentation",
+        "Champion Feat 2": "CHAMPION_Desperate Prayer",
+        "Automaton Feat 13": "AUTOMATON_Core Rejuvenation",
+        "Champion Feat 6": "CHAMPION_Smite Evil",
+        "Free Archetype 2": "ARCHETYPE_Thlipit Contestant Dedication",
+        "Champion Feat 10": "CHAMPION_Light of Revelation",
+        "Champion Feat 4": "CHAMPION_Sun Blade",
+        "Automaton Feat 17": "AUTOMATON_Greater Augmentation"
+      },
+      "hashMapSpecialSelections": {
+        "Automaton Feat 5": {
+          "Automaton Hardened Chassis": "slashing"
+        },
+        "Champion Feat 8": {
+          "Select Domain": "Metal"
+        },
+        "Blessing of the Devoted": {
+          "Select Blessing of the Devoted": "Blessed Swiftness"
+        },
+        "Greater Augmentation": {
+          "Select Augmentation": "Core Rejuvenation"
+        },
+        "Enhanced Lesser Augmentation": {},
+        "Deity and Cause": {
+          "Select Cause": "Iniquity Cause (Unholy)"
+        },
+        "Skill Feat 4": {},
+        "Automaton Lore Skill": {},
+        "Free Archetype 10": {
+          "Select Exemplar Ikon": "Skybearer's Belt"
+        },
+        "Automaton Size": {
+          "Select Size": "Medium"
+        },
+        "Devotion Spells": {
+          "Select Initial Devotion Spell": "Lay on Hands"
+        },
+        "Champion Feat 1": {
+          "Select Domain": "Metal"
+        },
+        "General Feat 7": {},
+        "Lesser Augmentation": {
+          "Select Augmentation": "Messenger"
+        },
+        "Basic GloryFree Archetype 12": {}
+      },
+      "hashMapAbilityBoosts": {
+        "1": [
+          2,
+          0,
+          1,
+          5
+        ],
+        "2": [
+          2
+        ],
+        "3": [
+          5
+        ],
+        "4": [
+          1
+        ],
+        "5": [
+          0
+        ],
+        "7": [
+          5
+        ],
+        "8": [
+          0
+        ],
+        "9": [
+          4
+        ],
+        "10": [
+          2
+        ],
+        "12": [
+          0
+        ],
+        "13": [],
+        "14": [],
+        "15": [],
+        "17": [],
+        "18": [],
+        "19": [],
+        "20": []
+      },
+      "hashMapSkillIncreases": {
+        "1": [],
+        "2": [],
+        "3": [
+          "Athletics"
+        ],
+        "4": [],
+        "5": [
+          "Survival"
+        ],
+        "6": [],
+        "7": [
+          "Athletics"
+        ],
+        "8": [],
+        "9": [
+          "Acrobatics"
+        ],
+        "10": [],
+        "11": [
+          "Acrobatics"
+        ],
+        "12": [],
+        "13": [
+          "Diplomacy"
+        ],
+        "14": [],
+        "15": [
+          "Athletics"
+        ],
+        "17": [
+          "Crafting"
+        ],
+        "19": [
+          "Stealth"
+        ]
+      },
+      "hashMapTrainedOnlySkillChoices": {
+        "Ancestral Paragon FeatGeneral Feat 7a": [],
+        "Ancestral Paragon FeatGeneral Feat 7b": [],
+        "standardSelection": [
+          "Acrobatics",
+          "Stealth"
+        ]
+      },
+      "listPlayerWeapons": [
+        {
+          "amount": 4,
+          "weaponName": "Javelin",
+          "attackAbilityRef": 1,
+          "itemStriking": 1,
+          "listPropertyRunes": [
+            "Returning"
+          ],
+          "potency": 1
+        },
+        {
+          "weaponName": "Dagger",
+          "attackAbilityRef": 0,
+          "itemStriking": 1,
+          "potency": 1
+        },
+        {
+          "weaponName": "Special Unarmed (1d4)",
+          "attackAbilityRef": 0,
+          "itemStriking": 1,
+          "nameOverride": "Claw",
+          "potency": 1
+        },
+        {
+          "weaponName": "aed7ec78-7487-4428-80f6-8f4334f7dce7",
+          "attackAbilityRef": 0,
+          "itemStriking": 1,
+          "potency": 1
+        },
+        {
+          "weaponName": "de586c2c-938e-413e-b3e9-38ed676b83b7",
+          "attackAbilityRef": 0,
+          "itemStriking": 1,
+          "listPropertyRunes": [
+            "Wounding"
+          ],
+          "use2H": true,
+          "potency": 1
+        }
+      ],
+      "playerArmor": {
+        "potency": 1,
+        "listPropertyRunes": [
+          "Raiment"
+        ]
+      },
+      "playerShieldNew": {
+        "shieldName": "Cold Iron Buckler (Low-Grade)",
+        "shieldDamage": 0
+      },
+      "listPlayerEquipment": [
+        {
+          "name": "Backpack"
+        },
+        {
+          "inContainerID": "c2a7a90d-b1ac-4a9b-a8ff-8e5536a7a3ab",
+          "name": "Chalk",
+          "quantity": 10
+        },
+        {
+          "inContainerID": "c2a7a90d-b1ac-4a9b-a8ff-8e5536a7a3ab",
+          "name": "Flint and Steel"
+        },
+        {
+          "inContainerID": "c2a7a90d-b1ac-4a9b-a8ff-8e5536a7a3ab",
+          "name": "Rope"
+        },
+        {
+          "inContainerID": "c2a7a90d-b1ac-4a9b-a8ff-8e5536a7a3ab",
+          "name": "Rations",
+          "quantity": 2
+        },
+        {
+          "inContainerID": "c2a7a90d-b1ac-4a9b-a8ff-8e5536a7a3ab",
+          "name": "Waterskin"
+        },
+        {
+          "inContainerID": "c2a7a90d-b1ac-4a9b-a8ff-8e5536a7a3ab",
+          "name": "Soap"
+        },
+        {
+          "name": "Crowbar"
+        },
+        {
+          "name": "Grappling Hook"
+        },
+        {
+          "name": "Bracers of Missile Deflection"
+        },
+        {
+          "name": "Smoke Ball (Lesser)"
+        }
+      ],
+      "notes": "Fixture notes for importer regression tests.",
+      "hashMapActiveCustomBuffs": {
+        "59119c8a-ae8a-43c7-bfe7-b0529d76ca7f": 1
+      },
+      "emailedBuildID": 1596127,
+      "listDisabledRulebooks": [
+        "CRB",
+        "APG",
+        "GNG",
+        "TV",
+        "BZA: Dragons",
+        "Battlezoo Bestiary"
+      ],
+      "allowHalfHeritages": true,
+      "hashMapEquipmentContainers": {
+        "c2a7a90d-b1ac-4a9b-a8ff-8e5536a7a3ab": {
+          "containerName": "Backpack",
+          "backpack": true
+        }
+      },
+      "hashMapCustomSkillIncreases": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0,
+        "6": 0,
+        "7": 0,
+        "8": 0,
+        "9": 0,
+        "10": 0,
+        "11": 0,
+        "12": 0,
+        "13": 0,
+        "14": 0,
+        "15": 0,
+        "16": 0,
+        "17": 0,
+        "18": 0,
+        "19": 0,
+        "20": 0
+      },
+      "listLanguages": [
+        "Common"
+      ],
+      "dialects": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "freeArchetype": true,
+      "ignoreFreeArcheRest": true,
+      "ignoreFreeArcheAbilityReq": true,
+      "ancestryParagon": true,
+      "gradualAbilityBoost": true,
+      "booksLastChecked": 17,
+      "remastered": true,
+      "useUpdatedSpells": true,
+      "listOptInBooks": [
+        "PC2"
+      ]
+    },
+    "listCustomFiles": [
+      {
+        "type": 1,
+        "json": "{\"timestamp\": \"2026-08-16 20:49:15\", \"uniqueIdentifier\": \"59119c8a-ae8a-43c7-bfe7-b0529d76ca7f\", \"name\": \"ABP Spell Attack Bonus\", \"listCustomEffects\": [{\"effectType\": 8, \"bonusAmount\": 1, \"reference\": \"24410797-2a4e-44e0-8c06-dcd27778d44a\"}]}",
+        "timestamp": "1791332864888",
+        "uniqueIdentifier": "59119c8a-ae8a-43c7-bfe7-b0529d76ca7f"
+      },
+      {
+        "type": 3,
+        "json": "{\"timestamp\": \"2026-08-16 20:49:15\", \"uniqueIdentiier\": \"aed7ec78-7487-4428-80f6-8f4334f7dce7\", \"name\": \"Stinger\", \"hands\": \"1\", \"src\": \"Custom\", \"proficiencyType\": 3, \"damage\": 6, \"damageType\": \"P\", \"group\": \"Brawling\", \"weaponTraits\": \"Grapple, Unarmed, 3rd Party, Sweep, Reach\"}",
+        "timestamp": "1791332864889",
+        "uniqueIdentifier": "aed7ec78-7487-4428-80f6-8f4334f7dce7"
+      },
+      {
+        "type": 3,
+        "json": "{\"timestamp\": \"2026-08-16 20:49:15\", \"listCustomEffects\": [{\"proficiencyName\": \"Athletics\", \"bonusAmount\": 1, \"reference\": \"786f3a26-774d-429a-a06f-9ab1f1c11463\"}, {\"effectType\": 1, \"bonusAmount\": 5, \"reference\": \"fc768963-a0f6-4bd2-afd6-1e01a85a7a83\"}, {\"reference\": \"6a613979-5d5d-422d-a883-ed258f1ee39a\"}], \"uniqueIdentiier\": \"de586c2c-938e-413e-b3e9-38ed676b83b7\", \"name\": \"Crimson Blade\", \"itemLevel\": 9, \"price\": 600, \"hands\": \"1+\", \"description\": \"This weapon was created to fuse itself with the core of an automaton, becoming a part of its master. The weapon is stored in the automaton's core and can be manifested with an action and demanifested with a free action. If you are disarmed or the weapon somehow leaves your reach, it becomes incorporeal and flies back to you after 1 minute using your speed. For every minute you spend without your weapon, you take 2d4 void damage that can't be negated or reduced in any way. If this damage reduces you to 0 hp, you die. This weapon is a +1 striking bastard sword with the sweep trait and wounding property rune<br><br>While attuned with this weapon, you gain a +1 item-bonus to Athletics checks and Survival checks to Track and gain a +5ft item-bonus to Speed. You also increase the circumstances bonus of the Sweep trait to +2. \", \"src\": \"Custom\", \"action0\": -1, \"action0desc\": \"Trigger: A creature within your reach is reduced to 0 hit points. Frequency: Once per day. Effect: The crimson blade revels in your enemies deaths and absorb their vital fluids to empower you. For 1 minute, your item bonus to Speed increases to +10ft and you gain a bonus to the next time you heal a creature with an effect with a Vitality Effect. This bonus is equal to the slain creature's level x 2 (minimum of 2)\\n\\nTrigger: You roll initiative. Effect: The crimson blade becomes aware when you're in danger and come forth to aid you. You Interact to manifest the Crimson Blade as a free action\", \"weaponTraits\": \"Unique, Sweep, Two-Hand d12, Cursed, 3rd Party\"}",
+        "timestamp": "1791332864890",
+        "uniqueIdentifier": "de586c2c-938e-413e-b3e9-38ed676b83b7"
+      }
+    ]
+  }
+}

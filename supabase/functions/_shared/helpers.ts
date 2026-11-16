@@ -417,7 +417,8 @@ export type TableName =
   | 'spell'
   | 'creature'
   | 'language'
-  | 'encounter';
+  | 'encounter'
+  | 'pathbuilder_import';
 
 interface SelectFilter {
   column: string;
@@ -664,7 +665,11 @@ export async function fetchData<T = Record<string, any>>(
   // Postgres guarantees no row order across the separate chunk queries, so a plan flip
   // mid-pagination silently drops or duplicates rows — an HTTP 200 with a partial corpus
   // that clients then persist as complete. Every fetchData table has an `id` bigint PK.
-  const CHUNK_SIZE = page?.size ?? 5000;
+  // Default to the observed PostgREST response cap. The pagination loop stops
+  // when a page is shorter than CHUNK_SIZE; requesting 5000 while PostgREST caps
+  // each response at 1000 silently truncated the content catalog. Explicit
+  // caller page sizes (the paginated find-* endpoints) are still honored.
+  const CHUNK_SIZE = Math.min(page?.size ?? 1000, 1000);
   let lastId: number | null = page?.afterId ?? null;
   let allRows: T[] = [];
   let hasMore = true;

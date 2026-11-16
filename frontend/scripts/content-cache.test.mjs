@@ -586,7 +586,7 @@ test('content packages and cache respect failures, sources, actors and generatio
     );
 
     state.records.set('content-store:A', {
-      version: 4,
+      version: 5,
       actorId: 'A',
       savedAt: Date.now(),
       idStore: new Map([['language', new Map([[row.id, row]])]]),
@@ -635,7 +635,7 @@ test('content packages and cache respect failures, sources, actors and generatio
     store.resetContentStore();
     store.resetContentStore(true, true);
     hydration.resolve({
-      version: 4,
+      version: 5,
       actorId: 'B',
       savedAt: Date.now(),
       idStore: new Map([['language', new Map([[row.id, row]])]]),
@@ -649,7 +649,7 @@ test('content packages and cache respect failures, sources, actors and generatio
       store.resetContentStore(true, true);
       await new Promise((resolve) => setImmediate(resolve));
       state.records.set('content-store:C', {
-        version: 4,
+        version: 5,
         actorId: 'C',
         savedAt: Date.now(),
         idStore: new Map(),
@@ -814,7 +814,7 @@ test('content packages and cache respect failures, sources, actors and generatio
       try {
         assert.deepEqual(await store.fetchContent('language', { content_sources: [81000] }), []);
         reading.resolve({
-          version: 4,
+          version: 5,
           actorId: state.actor,
           savedAt: Date.now(),
           idStore: new Map([['language', new Map([[row.id, row]])]]),
@@ -877,7 +877,7 @@ test('content packages and cache respect failures, sources, actors and generatio
       }
     });
     const cachedSnapshot = (savedAt = Date.now()) => ({
-      version: 4,
+      version: 5,
       actorId: state.actor,
       savedAt,
       idStore: new Map([

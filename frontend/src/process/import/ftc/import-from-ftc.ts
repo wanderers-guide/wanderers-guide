@@ -10,7 +10,7 @@ import {
 import { isItemEquippable, isItemImplantable, isItemInvestable } from '@items/inv-utils';
 import { executeOperations } from '@operations/operations.main';
 import { OperationResult } from '@schemas/operations';
-import { ObjectWithUUID, convertKeyToBasePrefix, hasOperationSelection } from '@operations/operation-utils';
+import { ObjectWithUUID, convertKeyToBasePrefix } from '@operations/operation-utils';
 import { makeRequest } from '@requests/request-manager';
 import { Character, OperationCharacterResultPackage } from '@schemas/content';
 import { selectRandom } from '@utils/random';
@@ -380,7 +380,7 @@ export async function importFromFTC(d: FTC) {
   );
 }
 
-function findMatchingOption(selections: { name: string; level: number }[], options: ObjectWithUUID[], level: number) {
+export function findMatchingOption(selections: { name: string; level: number }[], options: ObjectWithUUID[], level: number) {
   for (const selection of selections.filter((s) => s.level === level)) {
     if (selection.name === 'RANDOM') {
       return selectRandom(options);
@@ -396,7 +396,7 @@ function findMatchingOption(selections: { name: string; level: number }[], optio
   return null;
 }
 
-function findFirstSelection(
+export function findFirstSelection(
   resultPackage: OperationCharacterResultPackage,
   checked: Set<string>
 ): {
@@ -446,29 +446,32 @@ function innerFindFirstSelection(
   basePath: string = ''
 ): { selection: OperationResult; path: string } | null {
   for (const result of results) {
-    if (hasOperationSelection(result)) {
-      // Base case: if the current result has a selection, return it and the constructed path
-      let path = basePath;
-      const selectionUUID = result?.selection?.id ?? '';
-      const resultUUID = result?.result?.source?._select_uuid ?? '';
+    const selectionUUID = result?.selection?.id ?? '';
+    const resultUUID = result?.result?.source?._select_uuid ?? '';
 
-      if (selectionUUID) path += (path ? '_' : '') + selectionUUID;
-      if (resultUUID) path += (path ? '_' : '') + resultUUID;
+    // A selection path identifies the selector, not its selected value. Keep the
+    // selected value in the path only when descending into that option's nested
+    // operations. Otherwise each rerun looks like a second selector and can save
+    // duplicate parent choices instead of reaching child selectors (notably Free
+    // Archetype's Add Dedication -> Select a Feat branch).
+    let selectionPath = basePath;
+    if (selectionUUID) selectionPath += (selectionPath ? '_' : '') + selectionUUID;
 
-      if (checked.has(prefix + '_' + path)) continue; // Skip if this path has already been checked
+    if (result?.selection && !checked.has(prefix + '_' + selectionPath)) {
+      return { selection: result, path: selectionPath };
+    }
 
-      return { selection: result, path };
-    } else if (result?.result?.results && result.result.results.length > 0) {
-      // Recursive case: dive deeper if there are nested results
-      const resultUUID = result.result?.source?._select_uuid ?? '';
-      let newPath = basePath;
-      if (resultUUID) newPath += (newPath ? '_' : '') + resultUUID;
+    // A resolved parent selector may still exist in the result tree. Once its
+    // exact selector path is checked, continue into the selected option's nested
+    // results instead of skipping the entire branch.
+    if (result?.result?.results && result.result.results.length > 0) {
+      let nestedPath = selectionPath;
+      if (resultUUID) nestedPath += (nestedPath ? '_' : '') + resultUUID;
 
-      const deepSearch = innerFindFirstSelection(result.result.results, checked, newPath);
-      if (deepSearch && deepSearch.selection) return deepSearch; // If a selection is found in deeper levels, return it
+      const deepSearch = innerFindFirstSelection(result.result.results, checked, prefix, nestedPath);
+      if (deepSearch && deepSearch.selection) return deepSearch;
     }
   }
 
-  // If no selection is found in the current branch
   return null;
 }

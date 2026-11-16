@@ -13,7 +13,7 @@ import { importFromFTC } from '@import/ftc/import-from-ftc';
 import importFromGUIDECHAR from '@import/guidechar/import-from-guidechar';
 import importFromJSON from '@import/json/import-from-json';
 import PathbuilderInputModal from '@import/pathbuilder/PathbuilderInputModal';
-import { importFromPathbuilder } from '@import/pathbuilder/import-from-pathbuilder';
+import { importFromPathbuilderWithExportId, preflightPathbuilderImport } from '@import/pathbuilder/import-from-pathbuilder';
 import {
   ActionIcon,
   Box,
@@ -407,22 +407,30 @@ export function Component() {
             </VisuallyHidden>
             <PathbuilderInputModal
               open={openedPathbuilderModal}
-              onConfirm={async (pathbuilderId) => {
-                setOpenedPathbuilderModal(false);
+              loading={loadingImportCharacter}
+              onConfirm={async (pathbuilderId, jsonExportId, selectionOverrides) => {
                 setLoadingImportCharacter(true);
                 try {
-                  const character = await importFromPathbuilder(pathbuilderId);
-                  refetch();
-                } catch (error: unknown) {
-                  showNotification({
-                    title: 'Could not import character',
-                    message: error instanceof Error ? error.message : 'Please try again.',
-                    color: 'red',
-                  });
+                  const result = await importFromPathbuilderWithExportId(
+                    pathbuilderId,
+                    jsonExportId,
+                    selectionOverrides
+                  );
+                  if (result.status === 'imported') {
+                    refetch();
+                    setOpenedPathbuilderModal(false);
+                  }
+                  return result;
                 } finally {
                   setLoadingImportCharacter(false);
                 }
               }}
+              onPreview={(pathbuilderId, jsonExportId, selectionOverrides) =>
+                preflightPathbuilderImport(pathbuilderId, {
+                  derivedBuildId: jsonExportId,
+                  selectionOverrides,
+                })
+              }
               onClose={() => setOpenedPathbuilderModal(false)}
             />
           </Group>
