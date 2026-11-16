@@ -39,7 +39,8 @@ const session = (suffix = 'initial') => ({
   user,
 });
 /** Create an isolated browser seam without replacing the real SDK, session storage, or App auth effect. */
-async function withAuth(run) {
+async function withAuth(run, provider = 'google') {
+  const callbackUser = { ...user, app_metadata: { provider, providers: [provider] } };
   const directory = await mkdtemp(join(tmpdir(), 'wg-google-auth-'));
   const names = ['window', 'document', 'localStorage', 'BroadcastChannel', 'fetch'];
   const descriptors = new Map(names.map((name) => [name, Object.getOwnPropertyDescriptor(globalThis, name)]));
@@ -49,6 +50,7 @@ async function withAuth(run) {
   let fetchMode = 'success',
     refreshes = 0,
     userReads = 0;
+  let finishOldRefresh;
   const requests = [];
   const storage = {
     getItem: (key) => values.get(key) ?? null,
@@ -83,10 +85,24 @@ async function withAuth(run) {
         userReads++;
         if (fetchMode === 'callback-transient' && userReads === 1)
           return Response.json({ message: 'temporary callback validation outage' }, { status: 503 });
-        return Response.json(user);
+        return Response.json(callbackUser);
       }
       if (url.includes('/auth/v1/token')) {
         refreshes++;
+        if (fetchMode === 'delayed-revoked' || fetchMode === 'delayed-success') {
+          const outcome = fetchMode;
+          return await new Promise((resolve) => {
+            finishOldRefresh = () =>
+              resolve(
+                outcome === 'delayed-revoked'
+                  ? Response.json(
+                      { error_code: 'refresh_token_not_found', msg: 'Invalid Refresh Token' },
+                      { status: 400 }
+                    )
+                  : Response.json(session('older-refresh'))
+              );
+          });
+        }
         if (fetchMode === 'transient' && refreshes === 1)
           return Response.json({ message: 'temporary fixture outage' }, { status: 503 });
         if (fetchMode === 'revoked')
@@ -179,6 +195,14 @@ async function withAuth(run) {
       },
       getUrl: () => location,
       refreshCount: () => refreshes,
+      finishOldRefresh: () => finishOldRefresh(),
+      expireStoredSession: () => {
+        for (const [key, value] of values) {
+          const stored = JSON.parse(value);
+          if (stored?.refresh_token)
+            values.set(key, JSON.stringify({ ...stored, expires_at: Math.floor(Date.now() / 1000) - 10 }));
+        }
+      },
     });
   } finally {
     for (const client of clients) await client.auth.stopAutoRefresh();
@@ -188,30 +212,31 @@ async function withAuth(run) {
     await rm(directory, { recursive: true, force: true });
   }
 }
-test('Google callback persists the same actor across App startup and reload, removing callback tokens', async () =>
-  withAuth(async (h) => {
-    const supplied = session();
-    h.setUrl(
-      'https://site.example.test/#' +
-        new URLSearchParams({
-          access_token: supplied.access_token,
-          refresh_token: supplied.refresh_token,
-          expires_in: '3600',
-          token_type: 'bearer',
-          provider_token: 'fixture-google-token',
-        })
-    );
-    const first = await h.load();
-    assert.equal(first.state?.user.id, user.id);
-    assert.equal(h.getUrl().hash, '');
-    assert(!first.events.includes('SIGNED_OUT'));
-    first.cleanup();
-    const reloaded = await h.load();
-    assert.equal(reloaded.state?.user.id, user.id);
-    assert(!reloaded.events.includes('SIGNED_OUT'));
-    assert.equal((await reloaded.supabase.auth.getSession()).data.session.user.id, user.id);
-    reloaded.cleanup();
-  }));
+for (const provider of ['google', 'discord'])
+  test(`${provider} callback persists the same actor across App startup and reload, removing callback tokens`, async () =>
+    withAuth(async (h) => {
+      const supplied = session();
+      h.setUrl(
+        'https://site.example.test/#' +
+          new URLSearchParams({
+            access_token: supplied.access_token,
+            refresh_token: supplied.refresh_token,
+            expires_in: '3600',
+            token_type: 'bearer',
+            provider_token: 'fixture-google-token',
+          })
+      );
+      const first = await h.load();
+      assert.equal(first.state?.user.id, user.id);
+      assert.equal(h.getUrl().hash, '');
+      assert(!first.events.includes('SIGNED_OUT'));
+      first.cleanup();
+      const reloaded = await h.load();
+      assert.equal(reloaded.state?.user.id, user.id);
+      assert(!reloaded.events.includes('SIGNED_OUT'));
+      assert.equal((await reloaded.supabase.auth.getSession()).data.session.user.id, user.id);
+      reloaded.cleanup();
+    }, provider));
 test('a transient refresh response preserves the signed-in actor and retries rather than signing out', async () =>
   withAuth(async (h) => {
     h.setUrl(
@@ -234,6 +259,7 @@ test('a revoked refresh token clears the session instead of retaining a falsely 
       'https://site.example.test/#' + new URLSearchParams({ ...session(), user: undefined, expires_in: '3600' })
     );
     const client = await h.load();
+    h.expireStoredSession();
     h.setMode('revoked');
     const refreshed = await client.supabase.auth.refreshSession();
     await new Promise(setImmediate);
@@ -274,6 +300,7 @@ test('a genuinely new login remains possible after rejecting a revoked session',
       'https://site.example.test/#' + new URLSearchParams({ ...session(), user: undefined, expires_in: '3600' })
     );
     const client = await h.load();
+    h.expireStoredSession();
     h.setMode('revoked');
     await client.supabase.auth.refreshSession();
     await new Promise(setImmediate);
@@ -296,5 +323,51 @@ test('persistent callback outages stop after three user-validation reads', async
     const client = await h.load();
     assert.equal(client.state, null);
     assert.equal(h.requests.filter((path) => path === '/auth/v1/user').length, 3);
+    client.cleanup();
+  }));
+
+test('an older tab refresh rejection cannot erase a newer callback session', async () =>
+  withAuth(async (h) => {
+    h.setUrl('https://site.example.test/#' + new URLSearchParams({ ...session('old'), user: undefined }));
+    const old = await h.load();
+    h.setMode('delayed-revoked');
+    const pending = old.supabase.auth.refreshSession();
+    await new Promise(setImmediate);
+    h.setMode('success');
+    h.setUrl('https://site.example.test/#' + new URLSearchParams({ ...session('fresh'), user: undefined }));
+    const fresh = await h.load();
+    assert.equal(fresh.state?.access_token, session('fresh').access_token);
+    h.finishOldRefresh();
+    await pending;
+    assert.equal((await fresh.supabase.auth.getSession()).data.session?.access_token, session('fresh').access_token);
+    old.cleanup();
+    fresh.cleanup();
+  }));
+
+test('an older tab successful refresh cannot overwrite a newer callback session', async () =>
+  withAuth(async (h) => {
+    h.setUrl('https://site.example.test/#' + new URLSearchParams({ ...session('old'), user: undefined }));
+    const old = await h.load();
+    h.setMode('delayed-success');
+    const pending = old.supabase.auth.refreshSession();
+    await new Promise(setImmediate);
+    h.setMode('success');
+    h.setUrl('https://site.example.test/#' + new URLSearchParams({ ...session('fresh'), user: undefined }));
+    const fresh = await h.load();
+    h.finishOldRefresh();
+    await pending;
+    assert.equal((await fresh.supabase.auth.getSession()).data.session?.access_token, session('fresh').access_token);
+    old.cleanup();
+    fresh.cleanup();
+  }));
+
+test('a failed proactive refresh preserves an access token that is still valid', async () =>
+  withAuth(async (h) => {
+    h.setUrl('https://site.example.test/#' + new URLSearchParams({ ...session(), user: undefined }));
+    const client = await h.load();
+    h.setMode('revoked');
+    assert((await client.supabase.auth.refreshSession()).error);
+    assert.equal(client.state?.user.id, user.id);
+    assert.equal((await client.supabase.auth.getSession()).data.session?.user.id, user.id);
     client.cleanup();
   }));

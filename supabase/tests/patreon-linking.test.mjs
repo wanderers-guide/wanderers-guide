@@ -480,3 +480,26 @@ test('provider timeout aborts the request and returns only a safe stage', async 
     globalThis.clearTimeout = realClear;
   }
 });
+
+test('creation distinguishes a rejected Patreon link from a missing membership', async () => {
+  setup(new Response('{}', { status: 401 }), tokens, new Response('{}', { status: 401 }));
+  const user = { ...original, patreon: { ...tokens, tier: 'WANDERER' } };
+  await assert.rejects(api.hasPatreonAccess(user, 2, { throwOnFailure: true }), (error) => {
+    assert.equal(error.code, 'PATREON_RECONNECT_REQUIRED');
+    assert.match(error.message, /Reconnect Patreon in Account/);
+    assert.equal(error.status, 503);
+    return true;
+  });
+  assert.equal(user.patreon.tier, 'WANDERER');
+});
+
+test('creation distinguishes a provider outage from a missing membership', async () => {
+  setup(new Response('{}', { status: 503 }));
+  const user = { ...original, patreon: { ...tokens, tier: 'WANDERER' } };
+  await assert.rejects(api.hasPatreonAccess(user, 2, { throwOnFailure: true }), (error) => {
+    assert.equal(error.code, 'PATREON_UNAVAILABLE');
+    assert.match(error.message, /temporarily unavailable/);
+    return true;
+  });
+  assert.equal(writes.length, 0);
+});

@@ -247,7 +247,12 @@ The auth flow lives entirely in [`supabase/functions/_shared/helpers.ts`](https:
 
 ## Browser sign-in recovery
 
-Google OAuth callback validation retries transient network and 502/503/504 read
+Google and Discord OAuth callback validation retries transient network and 502/503/504 read
 failures at most twice. Authentication rejections remain terminal. After a sign-out,
 a delayed sign-in event must match the current stored session before the UI can
 show that account again. Character drafts remain unchanged.
+
+The browser SDK preserves a newer saved session when an older tab finishes a token
+refresh. Late refresh success cannot replace a newer callback session, and a late
+rejection cannot delete it. A failed proactive refresh retains an access token until
+its actual expiration. An expired session with a rejected refresh token is cleared.

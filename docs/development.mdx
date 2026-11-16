@@ -136,6 +136,9 @@ To be able to log in, you need to have a user in the local database.
 </Step>
 </Steps>
 
+Bundled application fonts are included in the offline app cache with its HTML and
+styles, so a cached sheet retains its typography when the network is unavailable.
+
 ## Patreon API v2 configuration
 
 Patreon retired API v1 on October 7, 2026. Register a v2 application under the
@@ -166,8 +169,10 @@ patron can connect and receive their correct tier before declaring the incident
 resolved. Fixtures cannot verify client registration, secrets, approved redirects,
 or whether an existing v1 grant is accepted by v2. Some old grants may require a
 fresh connection using Reconnect in Account's Patreon section; provider failures
-retain stored links and group data while paid operations fail closed. They produce no
-recovery messages. See [Patreon's migration guide](https://docs.patreon.com/#migrating-from-api-v1-to-api-v2).
+retain stored links and group data while paid operations fail closed. Rejected
+provider authorization directs the user to Reconnect Patreon in Account. Temporary
+provider or persistence failures ask the user to try again. These errors preserve the
+application session, and creation requests are never replayed automatically. See [Patreon's migration guide](https://docs.patreon.com/#migrating-from-api-v1-to-api-v2).
 
 Regression coverage is included in `npm run test:api:boundaries`,
 `npm --prefix frontend run test:infra`, and

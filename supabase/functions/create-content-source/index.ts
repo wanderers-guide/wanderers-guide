@@ -33,7 +33,7 @@ serve(async (req: Request) => {
       user_id = user.user_id;
 
       // Check if user has access
-      const access = await hasPatreonAccess(user, 2);
+      const access = await hasPatreonAccess(user, 2, { throwOnFailure: true });
       if (!access) {
         return {
           status: 'error',

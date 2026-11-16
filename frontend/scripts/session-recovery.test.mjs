@@ -40,6 +40,7 @@ let session;
 let calls;
 let refreshes;
 let notices;
+let errors;
 let hides;
 let invoke;
 let refresh;
@@ -64,6 +65,7 @@ const client = {
   },
 };
 globalThis.__sessionTest = {
+  reportError: (message) => errors.push(message),
   client,
   FunctionsHttpError,
   FunctionsFetchError,
@@ -103,7 +105,7 @@ await build({
               ? 'export const supabase = globalThis.__sessionTest.client; export const functions = supabase.functions;'
               : args.path.includes('notifications')
                 ? 'export const {showNotification,hideNotification} = globalThis.__sessionTest;'
-                : 'export const logError = () => {}; export const throwError = () => {};',
+                : 'export const logError = () => {}; export const throwError = globalThis.__sessionTest.reportError;',
         }));
       },
     },
@@ -141,6 +143,7 @@ beforeEach(() => {
   calls = [];
   refreshes = 0;
   notices = 0;
+  errors = [];
   hides = 0;
   invoke = async () => ok();
   refresh = async () => {
@@ -1063,4 +1066,14 @@ test('single-record reads retain the short deadline and mutations are never repl
       assert.equal(timers.size, 0);
     });
   }
+});
+
+test('a Patreon verification failure displays its recovery message without expiring app Auth or replaying creation', async () => {
+  const message = 'Reconnect Patreon in Account to verify your membership.';
+  invoke = async () => http(503, { status: 'error', code: 'PATREON_RECONNECT_REQUIRED', message });
+  assert.equal(await api.makeRequest('create-character', { name: 'New character' }), null);
+  assert.deepEqual(errors, [message]);
+  assert.equal(api.hasSessionExpired(), false);
+  assert.equal(refreshes, 0);
+  assert.equal(calls.length, 1);
 });
