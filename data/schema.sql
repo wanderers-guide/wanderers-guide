@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict 9VGjNDgbRRxopilM5RB63NSNIEw4zU1mS1IWhBVW7TGyfMOwNqks7dFcDauaJcH
+\restrict 8swbnhpvz6QuCgl9C0OSkSlOL2eCyMRb2Bymaz3BCKh2DWAmqnX1RIcssUmaeoP
 
 -- Dumped from database version 17.11
--- Dumped by pg_dump version 17.11 (Ubuntu 17.11-1.pgdg26.04+2)
+-- Dumped by pg_dump version 17.12 (Ubuntu 17.12-1.pgdg26.04+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -3081,5 +3081,5 @@ GRANT ALL ON SEQUENCE public.versatile_heritage_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 9VGjNDgbRRxopilM5RB63NSNIEw4zU1mS1IWhBVW7TGyfMOwNqks7dFcDauaJcH
+\unrestrict 8swbnhpvz6QuCgl9C0OSkSlOL2eCyMRb2Bymaz3BCKh2DWAmqnX1RIcssUmaeoP
 
