@@ -1,6 +1,6 @@
 // @ts-ignore
 import { serve } from 'std/server';
-import { connect, createServiceClient, fetchData, getPublicUser } from '../_shared/helpers.ts';
+import { connect, createServiceClient, fetchData, getPublicUser, logEvent } from '../_shared/helpers.ts';
 import { getPatreonConnectionStatus } from '../_shared/patreon-connection.ts';
 import { applyCreatorMembership } from '../_shared/patreon-creator.ts';
 import type { PublicUser } from '../_shared/content';
@@ -71,6 +71,7 @@ serve(async (req: Request) => {
           ? 'connected'
           : getPatreonConnectionStatus(user.patreon);
       } catch {
+        logEvent('warn', 'get-user', 'creator_membership_unavailable', { lookup: 'self' });
         user.patreon.connection_status = 'verification_unavailable';
       }
       const virtual = user.patreon.game_master?.virtual_tier;
@@ -86,6 +87,7 @@ serve(async (req: Request) => {
               ? 'connected'
               : getPatreonConnectionStatus(sponsor?.patreon);
         } catch {
+          logEvent('warn', 'get-user', 'creator_membership_unavailable', { lookup: 'sponsor' });
           status = 'verification_unavailable';
         }
         virtual.access_status =

@@ -128,8 +128,15 @@ service. Do not reset an existing database to repair a runtime timeout.
   `PATREON_V2_CLIENT_SECRET` for a v2 application registered under your creator
   account. Compose passes the public ID into the frontend build as
   `VITE_PATREON_CLIENT_ID`; rebuild the frontend after changing it. Legacy client
-  credentials are unused. Existing v1 links must authorize the new v2 client; a
-  token refresh cannot upgrade permissions.
+  credentials are unused. A personal v1 token refresh cannot upgrade permissions.
+  Creator-side v2 verification can preserve existing links when their saved Patreon
+  IDs match current campaign members. Set `PATREON_CREATOR_ENABLED=true` after the
+  creator grant is initialized in Supabase Vault with the two-account allowlist.
+  Expand the rollout only after that pilot passes.
+  For scheduled reconciliation, configure `PATREON_SYNC_SECRET_SHA256` in the
+  functions service and keep the matching raw capability server-only. Compose
+  defaults this integration to disabled. See the development guide for the
+  15-minute scheduler and automatic creator-token refresh.
   Register your site's `/auth/patreon/redirect` URL with Patreon. Leave these
   variables empty if Patreon linking is unused. See the
   [development guide](/development#patreon-api-v2-configuration) for migration

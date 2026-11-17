@@ -38,6 +38,7 @@ globalThis.fetch = async (url) => {
   return Response.json({ message_id: 'fixture-message' });
 };
 globalThis.__accountFixture = {
+  logEvent: () => {},
   connect: async (request, fn) => fn({}, await request.json(), 'fixture'),
   createServiceClient: () => {
     assert(user, 'must authenticate before service access');

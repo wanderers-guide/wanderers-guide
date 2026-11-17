@@ -285,10 +285,6 @@ export async function removeFromGameMasterGroup(currentUser: PublicUser, userId:
 export async function getAllUsersInGameMasterGroup(
   user: PublicUser
 ): Promise<{ user_id: string; display_name: string }[]> {
-  if (user.patreon?.tier !== 'GAME-MASTER') {
-    return [];
-  }
-
   const client = createClient(
     // @ts-ignore
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -296,7 +292,8 @@ export async function getAllUsersInGameMasterGroup(
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
 
-  // Listing existing members remains available for cleanup during migration.
+  // Owners can inspect their own existing group for cleanup after a downgrade,
+  // or before a creator-confirmed upgrade has changed any cached personal tier.
   const { data, error } = await client
     .from('public_user')
     .select('user_id,display_name')

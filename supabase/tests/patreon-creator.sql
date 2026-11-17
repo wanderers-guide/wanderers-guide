@@ -14,10 +14,11 @@ INSERT INTO public.public_user(user_id,patreon) VALUES
 ON CONFLICT(user_id) DO UPDATE SET patreon=excluded.patreon;
 CREATE TEMP TABLE previous_profiles AS SELECT user_id,patreon FROM public.public_user;
 SET LOCAL ROLE service_role;
-DO $$ DECLARE a uuid='10000000-0000-4000-8000-000000000001'; b uuid='10000000-0000-4000-8000-000000000002'; BEGIN
+DO $$ DECLARE a uuid='10000000-0000-4000-8000-000000000001'; b uuid='10000000-0000-4000-8000-000000000002'; scan_started_before timestamptz; BEGIN
  IF NOT public.patreon_creator_initialize('{"client_id":"fixture-v2","access_token":"creator-access","refresh_token":"creator-refresh"}') THEN RAISE EXCEPTION 'Bootstrap failed'; END IF;
  IF public.patreon_creator_initialize('{"client_id":"fixture-v2","access_token":"replacement","refresh_token":"replacement"}') THEN RAISE EXCEPTION 'Bootstrap overwrote grant'; END IF;
  IF public.patreon_creator_acquire(a)->>'access_token' IS DISTINCT FROM 'creator-access' THEN RAISE EXCEPTION 'Acquire failed'; END IF;
+ scan_started_before=clock_timestamp();
  IF public.patreon_creator_acquire(b) IS NOT NULL THEN RAISE EXCEPTION 'Concurrent lease accepted'; END IF;
  IF NOT public.patreon_creator_begin_refresh(a) OR public.patreon_creator_begin_refresh(a) THEN RAISE EXCEPTION 'Exchange can repeat'; END IF;
  IF public.patreon_creator_publish(a,'{}',false) THEN RAISE EXCEPTION 'Unpersisted grant published'; END IF;
@@ -29,6 +30,7 @@ DO $$ DECLARE a uuid='10000000-0000-4000-8000-000000000001'; b uuid='10000000-00
  IF public.patreon_creator_membership('00000000-0000-4000-8000-000000000001')->>'enabled' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'Unconfigured patron enabled'; END IF;
  PERFORM public.patreon_creator_configure(ARRAY['00000000-0000-4000-8000-000000000001'::uuid],false);
  IF public.patreon_creator_membership('00000000-0000-4000-8000-000000000001')->>'tier' IS DISTINCT FROM 'WANDERER' THEN RAISE EXCEPTION 'Paid-through cancellation lost entitlement'; END IF;
+ IF (public.patreon_creator_membership('00000000-0000-4000-8000-000000000001')->>'observed_at')::timestamptz > scan_started_before THEN RAISE EXCEPTION 'Scan publication could override an in-flight authorization'; END IF;
  IF public.patreon_creator_membership('00000000-0000-4000-8000-000000000002')->>'enabled' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'Pilot leaked to others'; END IF;
  PERFORM public.patreon_creator_configure('{}',true);
  IF public.patreon_creator_membership('00000000-0000-4000-8000-000000000002')->>'available' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'Absent identity falsely treated as cancelled'; END IF;

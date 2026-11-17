@@ -195,6 +195,8 @@ as the edge secret `PATREON_SYNC_SECRET_SHA256`. The scheduler also uses the exi
 `WG_MONITOR_ANON_KEY` repository variable. `patreon-memberships.yml` reconciles every 15
 minutes (Actions schedules may be delayed). It follows every pagination cursor and
 publishes one complete snapshot atomically; incomplete scans never remove benefits.
+Observation ordering uses scan start rather than publication time, so a personal v2
+authorization completed during pagination remains newer than earlier pages.
 Paid operations require a snapshot no older than one hour and preserve the application
 session and saved connection on errors. Creator access tokens refresh automatically
 before known expiry, or once on a 401, using the existing v2 client secret. A durable

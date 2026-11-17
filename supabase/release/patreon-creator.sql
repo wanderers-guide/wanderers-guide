@@ -4,7 +4,7 @@ with expected(signature,body_hash,return_type,args) as (values
 ('patreon_creator_acquire(uuid)','b0cc0982108b21b5e395f303e2a9b10b','jsonb',ARRAY['p_lease']::text[]),
 ('patreon_creator_begin_refresh(uuid)','1975340f93c31d566de1467b9cf12df3','boolean',ARRAY['p_lease']::text[]),
 ('patreon_creator_save(uuid,jsonb)','9c89c4289d595b2e6493c049b9508910','boolean',ARRAY['p_lease','p_tokens']::text[]),
-('patreon_creator_publish(uuid,jsonb,boolean)','643fa108f7a0397dc279c747e82c829e','boolean',ARRAY['p_lease','p_members','p_unidentified']::text[]),
+('patreon_creator_publish(uuid,jsonb,boolean)','c5bc008fd560ad715aa32edab506ee26','boolean',ARRAY['p_lease','p_members','p_unidentified']::text[]),
 ('patreon_creator_release(uuid)','4334d1f04681255e18e4cbfdaec4cdc9','boolean',ARRAY['p_lease']::text[]),
 ('patreon_creator_configure(uuid[],boolean)','4b5fd5148347ee2a2075c2804a68ed8b','boolean',ARRAY['p_users','p_all']::text[]),
 ('patreon_creator_membership(uuid)','de58d29f9076b0b338710d2d6618fb21','jsonb',ARRAY['p_user']::text[])

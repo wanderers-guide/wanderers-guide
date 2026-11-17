@@ -42,6 +42,12 @@
   ],
   "components": {
     "securitySchemes": {
+      "patreonSyncCapability": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-WG-Patreon-Sync",
+        "description": "Internal scheduler capability, distinct from a WG API key or Patreon token. Provision its SHA-256 digest as PATREON_SYNC_SECRET_SHA256. Never expose the value to web clients."
+      },
       "apiKeyAuth": {
         "type": "http",
         "scheme": "bearer",
@@ -1068,6 +1074,8 @@
             "properties": {
               "oauth_client_id": { "type": "string" },
               "oauth_scopes": { "type": "array", "items": { "type": "string" } },
+              "membership_verified_at": {"type":"string","format":"date-time","readOnly":true,"description":"Conservative start of the creator campaign observation; self profile only."},
+              "identity_verified_at": {"type":"string","format":"date-time","readOnly":true,"description":"Time the personal v2 identity was verified."},
               "connection_status": { "type": "string", "readOnly": true, "enum": ["not_connected", "connected", "migration_required", "reconnect_required", "verification_unavailable"], "description": "Derived from creator-side v2 campaign verification when enabled, otherwise personal v2 grant provenance. Connected alone does not guarantee a paid tier. A stale or unavailable creator check preserves the link and returns verification_unavailable; virtual access_status follows the sponsor." }
             }
           },
@@ -1180,6 +1188,105 @@
     }
   },
   "paths": {
+    "/sync-patreon-memberships": {
+      "post": {
+        "tags": [
+          "Integrations"
+        ],
+        "summary": "Reconcile current Patreon memberships (internal scheduler)",
+        "operationId": "syncPatreonMemberships",
+        "description": "Internal service endpoint. Requires a valid Supabase gateway JWT (the scheduler uses the public anon JWT) AND the X-WG-Patreon-Sync capability. WG API keys alone are not accepted. The body is unused; send {}. Reads every page of the fixed WG campaign, refreshes the creator grant when necessary, and atomically publishes current entitlement observations. Does not charge patrons or replace personal connections. A failed/incomplete scan preserves the previous snapshot. Response contains only aggregate counts.",
+        "security": [
+          {
+            "bearerAuth": [],
+            "patreonSyncCapability": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "description": "Unused; scheduler sends an empty JSON object. No account identifiers or credentials are accepted in the body.",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Complete campaign reconciliation published.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "success"
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "members",
+                        "pages"
+                      ],
+                      "properties": {
+                        "members": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "pages": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Supabase gateway JWT missing or rejected."
+          },
+          "403": {
+            "description": "Missing/invalid scheduler capability or server configuration. No creator credential is acquired.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Only POST is supported.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendFail"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Reconciliation unavailable or busy; existing customer connections preserved. code=PATREON_SYNC_UNAVAILABLE. Inspect scheduler/integration state; do not replay an ambiguous OAuth exchange.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSendError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/report-client-error": {
       "post": {
         "summary": "Report a bounded browser failure",

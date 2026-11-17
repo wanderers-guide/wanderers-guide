@@ -89,7 +89,9 @@ BEGIN
       OR coalesce(length(e.value->>'member_id'),0)=0
       OR (e.value->>'tier' IS NOT NULL AND e.value->>'tier' NOT IN ('ADVOCATE','WANDERER','LEGEND','GAME-MASTER'))
   ) THEN RAISE EXCEPTION 'Invalid campaign observations' USING ERRCODE='22023'; END IF;
-  UPDATE wg_patreon_private.creator SET members=p_members,unidentified=p_unidentified,observed_at=clock_timestamp()
+  -- Use the beginning of this fixed three-minute lease, not publication time:
+  -- a new personal authorization during pagination must outrank earlier pages.
+  UPDATE wg_patreon_private.creator SET members=p_members,unidentified=p_unidentified,observed_at=lease_until-interval '3 minutes'
     WHERE singleton AND lease_id=p_lease AND lease_until>clock_timestamp() AND NOT refresh_pending;
   RETURN FOUND;
 END $$;

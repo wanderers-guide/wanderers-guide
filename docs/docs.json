@@ -98,7 +98,8 @@
 					"api-reference/integrations/open-ai-request",
 					"api-reference/integrations/vector-db-query-collection",
 					"api-reference/integrations/vector-db-populate-collection",
-					"api-reference/integrations/report-client-error"
+					"api-reference/integrations/report-client-error",
+					"api-reference/integrations/sync-patreon-memberships"
 				]
 			}
 		],

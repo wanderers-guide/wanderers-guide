@@ -13,16 +13,21 @@ after(()=>rm(dir,{recursive:true,force:true}));
 const env={PATREON_V2_CLIENT_ID:'v2',PATREON_V2_CLIENT_SECRET:'fixture-secret',PATREON_CREATOR_ENABLED:'true'};
 globalThis.Deno={env:{get:key=>env[key]}};
 let calls=[],responses=[],operations=[],tokens,failSave=false,observation;
-let profileWrites=[];
+let profileWrites=[], groupRows=[], leaseObservedAt;
 const client={from(table){
   assert.equal(table,'public_user');
   return {
-    select:()=>({eq:async()=>({count:0,error:null})}),
+    select:(columns,options)=>({eq:async(column)=>{
+      if(options?.head)return {count:0,error:null};
+      assert.equal(columns,'user_id,display_name');
+      assert.equal(column,'patreon->game_master->virtual_tier->>game_master_user_id');
+      return {data:groupRows,error:null};
+    }}),
     update(body){let id;const query={eq(key,value){if(key==='id')id=value;return query;},is(){return query;},async select(){profileWrites.push(structuredClone(body));return {data:[{id}],error:null};}};return query;},
   };
 },async rpc(name,args){
   operations.push({name,args:structuredClone(args)});
-  if(name.endsWith('_acquire'))return {data:tokens,error:null};
+  if(name.endsWith('_acquire')){leaseObservedAt=new Date().toISOString();return {data:tokens,error:null};}
   if(name.endsWith('_membership'))return {data:typeof observation==='function'?observation(args.p_user):observation,error:null};
   if(name.endsWith('_save') && failSave)return {error:{message:'private credential in driver error'},data:null};
   return {data:true,error:null};
@@ -41,7 +46,7 @@ function member(id='patron',tiers=['5628112'],attributes={}){return {id:'member-
 function page(members=[member()],next=null,total=members.length){return {data:members,meta:{pagination:{cursors:{next},total}}};}
 function setup(...values){
  calls=[];responses=values;operations=[];failSave=false;tokens={client_id:'v2',access_token:'creator',refresh_token:'creator-refresh'};
- profileWrites=[];globalThis.__creatorProfiles=[];
+ profileWrites=[];groupRows=[];globalThis.__creatorProfiles=[];
  observation={enabled:true,available:true,tier:'WANDERER',observed_at:new Date().toISOString()};
  globalThis.fetch=async(url,init)=>{calls.push({url:String(url),init});const response=responses.shift();assert(response,'Unexpected provider I/O');if(response instanceof Error)throw response;return response;};
 }
@@ -120,6 +125,16 @@ test('a fresh personal authorization is not overridden by an older campaign snap
  const user={user_id:'fixture',patreon:{patreon_user_id:'patron',oauth_client_id:'v2',tier:'WANDERER',identity_verified_at:'2026-11-16T01:00:00Z'}};
  assert.equal(await api.applyCreatorMembership(client,user),false);assert.equal(user.patreon.tier,'WANDERER');
 });
+test('personal authorization completed during pagination outranks the scan-start observation',async()=>{
+ setup(response(page([member('patron',[])],'next',2)),response(page([member('other')],null,2)));
+ const fresh={user_id:'fixture',patreon:{patreon_user_id:'patron',oauth_client_id:'v2',tier:'WANDERER',access_token:'fresh-personal'}};
+ const originalFetch=globalThis.fetch;
+ globalThis.fetch=async(...args)=>{const result=await originalFetch(...args);if(calls.length===2)fresh.patreon.identity_verified_at=new Date().toISOString();return result;};
+ await api.syncCreatorMemberships(client);
+ observation={enabled:true,available:true,tier:null,observed_at:leaseObservedAt};
+ assert(Date.parse(fresh.patreon.identity_verified_at)>Date.parse(leaseObservedAt));
+ assert.equal(await api.applyCreatorMembership(client,fresh),false);assert.equal(fresh.patreon.tier,'WANDERER');assert.equal(fresh.patreon.access_token,'fresh-personal');
+});
 test('creator outage preserves the working personal v2 verification path',async()=>{
  setup(response({data:{id:'patron',type:'user',attributes:{},relationships:{memberships:{data:[]}}},included:[]}));
  observation={enabled:true,available:false};
@@ -146,6 +161,12 @@ test('creator-confirmed GM upgrade can regenerate code without changing personal
  globalThis.__creatorProfiles=[gm];
  const result=await api.regenerateGameMasterAccessCode(client,gm);assert.equal(result.status,'SUCCESS');
  assert.equal(profileWrites.length,1);assert.equal(profileWrites[0].patreon.access_token,'personal-access');assert.equal(profileWrites[0].patreon.refresh_token,'personal-refresh');assert.equal(profileWrites[0].patreon.membership_verified_at,undefined);assert.notEqual(profileWrites[0].patreon.game_master.access_code,'old-code');assert.equal(calls.length,0);
+});
+test('owners can list existing group members across tier changes without leaking member secrets',async()=>{
+ setup();groupRows=[{user_id:'member',display_name:'Member',patreon:{access_token:'must-not-escape'}}];
+ const gm={user_id:'sponsor',patreon:{patreon_user_id:'gm-patron',tier:'WANDERER'}};
+ assert.deepEqual(await api.getAllUsersInGameMasterGroup(gm),[{user_id:'member',display_name:'Member'}]);
+ assert.equal(operations.length,0);assert.equal(calls.length,0);assert.equal(profileWrites.length,0);
 });
 test('player with an unavailable personal link can join a creator-verified GM group',async()=>{
  setup();observation=id=>id==='sponsor'?{enabled:true,available:true,tier:'GAME-MASTER',observed_at:new Date().toISOString()}:{enabled:true,available:false};
