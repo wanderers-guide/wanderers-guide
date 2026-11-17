@@ -221,7 +221,9 @@ export async function makeRequest<T = Record<string, any>>(
     const response = lastErrorBody as Record<string, unknown>;
     // A provider authorization failure must not be presented as an expired app session.
     if (
-      ['PATREON_RECONNECT_REQUIRED', 'PATREON_UNAVAILABLE'].includes(String(response.code)) &&
+      ['PATREON_RECONNECT_REQUIRED', 'PATREON_SPONSOR_RECONNECT_REQUIRED', 'PATREON_UNAVAILABLE'].includes(
+        String(response.code)
+      ) &&
       typeof response.message === 'string'
     )
       throwError(response.message);

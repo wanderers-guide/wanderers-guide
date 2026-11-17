@@ -11,6 +11,18 @@ const profile = {
 
 describe('Quiet Patreon account linking', () => {
   for (const scenario of [
+    { name: 'unmarked connection', query: '', connected: true, legacy: true, migration: true, width: 1280 },
+    { name: 'legacy membership', query: '', connected: true, legacy: true, width: 1280 },
+    { name: 'phone legacy membership', query: '', connected: true, legacy: true, width: 390 },
+    { name: 'legacy Game Master', query: '', connected: true, legacy: true, gm: true, width: 390 },
+    { name: 'sponsor migration', query: '', connected: false, virtual: true, sponsorMigration: true, width: 390 },
+    {
+      name: 'legacy reconnect completes',
+      query: 'code=fixture-code',
+      connected: true,
+      legacyBefore: true,
+      width: 1280,
+    },
     { name: 'success', query: 'code=fixture-code', connected: true, width: 1280 },
     { name: 'phone success', query: 'code=fixture-code', connected: true, width: 390 },
     { name: 'connected without a paid tier', query: 'code=fixture-code', connected: true, noTier: true, width: 1280 },
@@ -69,23 +81,31 @@ describe('Quiet Patreon account linking', () => {
         if (endpoint === 'get-user')
           data = {
             ...profile,
-            patreon: linked
-              ? {
-                  patreon_user_id: 'fixture-patreon-user',
-                  tier: scenario.noTier ? undefined : scenario.gm ? 'GAME-MASTER' : 'WANDERER',
-                  game_master: scenario.gm ? { access_code: 'fixture-group-code' } : undefined,
-                }
-              : scenario.virtual
+            patreon:
+              linked || scenario.legacy
                 ? {
-                    game_master: {
-                      virtual_tier: {
-                        game_master_user_id: 'fixture-game-master',
-                        game_master_name: 'Fixture Game Master',
-                        added_at: '2026-10-09T00:00:00Z',
-                      },
-                    },
+                    patreon_user_id: 'fixture-patreon-user',
+                    oauth_client_id: scenario.legacy ? undefined : 'fixture-v2-client',
+                    connection_status: scenario.migration
+                      ? 'migration_required'
+                      : scenario.legacy
+                        ? 'reconnect_required'
+                        : 'connected',
+                    tier: scenario.noTier ? undefined : scenario.gm ? 'GAME-MASTER' : 'WANDERER',
+                    game_master: scenario.gm ? { access_code: 'fixture-group-code' } : undefined,
                   }
-                : undefined,
+                : scenario.virtual
+                  ? {
+                      game_master: {
+                        virtual_tier: {
+                          game_master_user_id: 'fixture-game-master',
+                          game_master_name: 'Fixture Game Master',
+                          added_at: '2026-10-09T00:00:00Z',
+                          access_status: scenario.sponsorMigration ? 'reconnect_required' : 'connected',
+                        },
+                      },
+                    }
+                  : undefined,
           };
         else if (endpoint === 'gm-users-in-group' && scenario.gm)
           data = [{ ...profile, user_id: 'fixture-group-member', display_name: 'AlexandriaTheWandererOfWestbridge' }];
@@ -121,14 +141,36 @@ describe('Quiet Patreon account linking', () => {
               },
             })
           );
-          win.localStorage.setItem('user-data', JSON.stringify(profile));
+          win.localStorage.setItem(
+            'user-data',
+            JSON.stringify({
+              ...profile,
+              ...(scenario.legacyBefore
+                ? {
+                    patreon: {
+                      patreon_user_id: 'fixture-patreon-user',
+                      tier: 'WANDERER',
+                      connection_status: 'reconnect_required',
+                    },
+                  }
+                : {}),
+            })
+          );
         },
       });
       cy.location('pathname', { timeout: 30000 }).should('eq', '/account');
       cy.location('search').should('eq', '');
       // The status control must expand settings rather than behave as an OAuth link.
       cy.get('[data-testid="patreon-settings"] .mantine-Accordion-control', { timeout: 30000 }).should(($control) => {
-        expect($control).to.contain(scenario.connected ? 'Connected' : 'Not connected');
+        expect($control).to.contain(
+          scenario.migration
+            ? 'Update required'
+            : scenario.legacy
+              ? 'Reconnect required'
+              : scenario.connected
+                ? 'Connected'
+                : 'Not connected'
+        );
         expect($control).to.have.attr('aria-expanded', 'false');
         expect($control).not.to.have.attr('href');
       });
@@ -139,7 +181,7 @@ describe('Quiet Patreon account linking', () => {
         .should('have.attr', 'aria-expanded', 'true');
       cy.location('pathname').should('eq', '/account');
       cy.get('[data-testid="patreon-settings"]').within(() => {
-        cy.contains('Membership').should('be.visible');
+        cy.contains(scenario.legacy ? 'Last known membership' : 'Membership').should('be.visible');
         cy.contains('a', scenario.connected ? 'Reconnect' : 'Connect to Patreon')
           .should('be.visible')
           .invoke('attr', 'href')
@@ -156,16 +198,24 @@ describe('Quiet Patreon account linking', () => {
           cy.contains('Game Master').should('be.visible');
           cy.contains('Users in your Group').should('be.visible');
           cy.contains('AlexandriaTheWandererOfWestbridge').should('be.visible');
-          cy.contains('button', 'Copy').should('be.visible');
-          cy.contains('button', 'Regenerate').should('be.visible');
-          cy.contains('fixture-group-code').should('be.visible');
-          cy.screenshot(`patreon-${scenario.name.replaceAll(' ', '-')}-summary`, { capture: 'fullPage' });
-          // Account scrolls inside the app shell, so a full-page capture alone misses its lower controls.
-          cy.contains('fixture-group-code').scrollIntoView().should('be.visible');
-          cy.screenshot(`patreon-${scenario.name.replaceAll(' ', '-')}-sharing`, { capture: 'fullPage' });
+          if (!scenario.legacy) {
+            cy.contains('button', 'Copy').should('be.visible');
+            cy.contains('button', 'Regenerate').should('be.visible');
+            cy.contains('fixture-group-code').should('be.visible');
+            cy.screenshot(`patreon-${scenario.name.replaceAll(' ', '-')}-summary`, { capture: 'fullPage' });
+            // Account scrolls inside the app shell, so a full-page capture alone misses its lower controls.
+            cy.contains('fixture-group-code').scrollIntoView().should('be.visible');
+            cy.screenshot(`patreon-${scenario.name.replaceAll(' ', '-')}-sharing`, { capture: 'fullPage' });
+          } else {
+            cy.contains('button', 'Regenerate').should('not.exist');
+            cy.contains('button', 'Copy').should('not.exist');
+          }
         } else cy.contains('Users in your Group').should('not.exist');
-        if (scenario.virtual) cy.contains('Wanderer (Virtual)').should('be.visible');
+        if (scenario.virtual && !scenario.sponsorMigration) cy.contains('Wanderer (Virtual)').should('be.visible');
       });
+      if (scenario.legacy || scenario.sponsorMigration)
+        cy.get('[data-testid="patreon-migration-notice"]').scrollIntoView().should('be.visible');
+      else cy.get('[data-testid="patreon-migration-notice"]').should('not.exist');
       cy.get('.mantine-Notification-root').should('not.exist');
       if (scenario.noTier) {
         cy.contains('Non-Patron').should('be.visible');

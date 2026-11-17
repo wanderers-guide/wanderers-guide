@@ -1,6 +1,7 @@
 // @ts-ignore
 import { serve } from 'std/server';
 import { connect, createServiceClient, fetchData, getPublicUser } from '../_shared/helpers.ts';
+import { getPatreonConnectionStatus } from '../_shared/patreon-connection.ts';
 import type { PublicUser } from '../_shared/content';
 
 serve(async (req: Request) => {
@@ -62,6 +63,21 @@ serve(async (req: Request) => {
       };
     }
 
+    if (user.patreon) {
+      user.patreon.connection_status = getPatreonConnectionStatus(user.patreon);
+      const virtual = user.patreon.game_master?.virtual_tier;
+      if (virtual) {
+        const sponsors = await fetchData<PublicUser>(createServiceClient(), 'public_user', [
+          { column: 'user_id', value: virtual.game_master_user_id },
+        ]);
+        const sponsor = sponsors[0];
+        const status = getPatreonConnectionStatus(sponsor?.patreon);
+        virtual.access_status =
+          ['connected', 'migration_required'].includes(status) && sponsor?.patreon?.tier !== 'GAME-MASTER'
+            ? 'not_connected'
+            : status;
+      }
+    }
     return {
       status: 'success',
       data: user,

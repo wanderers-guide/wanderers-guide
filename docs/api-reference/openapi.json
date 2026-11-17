@@ -148,6 +148,7 @@
             "type": "string",
             "enum": [
               "PATREON_RECONNECT_REQUIRED",
+              "PATREON_SPONSOR_RECONNECT_REQUIRED",
               "PATREON_UNAVAILABLE"
             ]
           }
@@ -1061,7 +1062,15 @@
               }
             }
           },
-          "patreon": { "type": "object", "additionalProperties": true },
+          "patreon": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "oauth_client_id": { "type": "string" },
+              "oauth_scopes": { "type": "array", "items": { "type": "string" } },
+              "connection_status": { "type": "string", "readOnly": true, "enum": ["not_connected", "connected", "migration_required", "reconnect_required"], "description": "Derived on the account response from v2 grant provenance. Missing provenance is migration_required and does not invalidate a working v2 token. Connected is not a live paid-membership guarantee. Virtual group access_status uses the same values for the sponsor's connection and saved GM tier." }
+            }
+          },
           "api": {
             "type": "object",
             "properties": {
@@ -2872,7 +2881,7 @@
       "post": {
         "tags": ["GM"],
         "summary": "Join a Game Master's virtual-tier group",
-        "description": "A GM with the GAME-MASTER Patreon tier shares an `access_code` so members of their group inherit Patreon perks. The caller exchanges the code for membership. Profile and moderation writes run only in the authenticated server handler; direct database writes to these tables are denied. The handler selects the caller and writable fields. Role, entitlement, approval and voting fields cannot be set through account settings or a submission.",
+        "description": "A GM with the GAME-MASTER Patreon tier shares an `access_code` so members of their group inherit Patreon perks. The caller exchanges the code for membership. Profile and moderation writes run only in the authenticated server handler; direct database writes to these tables are denied. The handler selects the caller and writable fields. Role, entitlement, approval and voting fields cannot be set through account settings or a submission. Requires a live v2 Game Master membership for the sponsor. Legacy links return reconnect guidance without removing existing group data.",
         "operationId": "gmAddToGroup",
         "requestBody": {
           "required": true,
@@ -2890,6 +2899,10 @@
           }
         },
         "responses": {
+          "503": {
+            "description": "Patreon reconnect or temporary verification failure.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PatreonVerificationError" } } }
+          },
           "200": {
             "description": "JSend envelope.",
             "content": {
@@ -2977,8 +2990,7 @@
                         "type": "object",
                         "properties": {
                           "user_id": { "type": "string", "format": "uuid" },
-                          "display_name": { "type": "string" },
-                          "added_at": { "type": "string", "format": "date-time" }
+                          "display_name": { "type": "string" }
                         }
                       }
                     }
@@ -2994,13 +3006,17 @@
       "post": {
         "tags": ["GM"],
         "summary": "Regenerate your GM access code",
-        "description": "Invalidates the previous code; existing members stay in the group. Profile and moderation writes run only in the authenticated server handler; direct database writes to these tables are denied. The handler selects the caller and writable fields. Role, entitlement, approval and voting fields cannot be set through account settings or a submission.",
+        "description": "Invalidates the previous code; existing members stay in the group. Profile and moderation writes run only in the authenticated server handler; direct database writes to these tables are denied. The handler selects the caller and writable fields. Role, entitlement, approval and voting fields cannot be set through account settings or a submission. Requires a live v2 Game Master membership for the sponsor. Legacy links return reconnect guidance without removing existing group data.",
         "operationId": "gmRegenerateCode",
         "requestBody": {
           "required": false,
           "content": { "application/json": { "schema": { "type": "object" } } }
         },
         "responses": {
+          "503": {
+            "description": "Patreon reconnect or temporary verification failure.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PatreonVerificationError" } } }
+          },
           "200": {
             "description": "JSend envelope.",
             "content": {
@@ -3027,7 +3043,7 @@
       "post": {
         "tags": ["Users"],
         "summary": "Get a public user profile",
-        "description": "Without a body, returns the caller's own profile. Pass `id` (Supabase auth user id, UUID) or `_id` (numeric `public_user.id`) to look up another user. Sensitive fields (Patreon tokens, API keys) are stripped from the response.",
+        "description": "Without a body, returns the caller's own profile. Pass `id` (Supabase auth user id, UUID) or `_id` (numeric `public_user.id`) to look up another user. Lookups of another user redact private fields. The self response derives Patreon connection_status and virtual-group access_status without changing the saved connection or contacting Patreon. Legacy grants require explicit reconnect; cached paid tiers alone do not prove v2 access.",
         "operationId": "getUser",
         "requestBody": {
           "required": false,

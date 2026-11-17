@@ -83,12 +83,18 @@ interface PublicUser {
     refresh_token?: string;
     /** OAuth client that issued this pair; unmarked pairs belong to the legacy client. */
     oauth_client_id?: string;
+    oauth_scopes?: string[];
+    /** Nonsecret optimistic-concurrency marker for all Patreon writes. */
+    revision?: string;
+    /** Derived for the account response; never a substitute for live entitlement checks. */
+    connection_status?: 'not_connected' | 'connected' | 'migration_required' | 'reconnect_required';
     game_master?: {
       access_code?: string;
       virtual_tier?: {
         game_master_user_id: string;
         game_master_name: string;
         added_at: string;
+        access_status?: 'not_connected' | 'connected' | 'migration_required' | 'reconnect_required';
       };
     };
   };

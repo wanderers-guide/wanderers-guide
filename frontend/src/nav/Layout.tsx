@@ -1,5 +1,6 @@
 import { clearSessionDataPreservingDrafts } from '@utils/character-save-buffer';
 import { sessionState } from '@atoms/supabaseAtoms';
+import { userState } from '@atoms/userAtoms';
 import { glassStyle } from '@utils/colors';
 import classes from '@css/Layout.module.css';
 import {
@@ -33,13 +34,12 @@ import {
 } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAtomValue } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { supabase } from '../main';
 import { LoginButton } from './LoginButton';
 import { SearchBar } from './Searchbar';
 import WanderersGuideLogo from './WanderersGuideLogo';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
-import { PublicUser } from '@schemas/content';
 import { useQueryClient } from '@tanstack/react-query';
 import { isTouchDevice, phoneQuery, tabletQuery } from '@utils/mobile-responsive';
 import { DISCORD_URL, DOCS_URL, LEGACY_URL, PATREON_URL } from '@constants/urls';
@@ -52,24 +52,32 @@ export default function Layout(props: { children: React.ReactNode }) {
   const session = useAtomValue(sessionState);
   const queryClient = useQueryClient();
 
-  const [user, setUser] = useState<PublicUser | null>(getCachedPublicUser());
+  const [currentUser, setUser] = useAtom(userState);
+  const user = currentUser ?? getCachedPublicUser();
   //const [userIcon, setUserIcon] = useAtom(userIconState);
   const [userMenuOpened, setUserMenuOpened] = useState(false);
 
   const { width } = useViewportSize();
 
   useEffect(() => {
-    if (!session) return;
+    if (!session) {
+      setUser(null);
+      return;
+    }
     //if (userIcon) return;
     // getIcon(session.user.id).then((svg) => {
     //   setUserIcon(svg);
     // });
-    getPublicUser().then((user) => {
-      if (user) {
-        setUser(user);
-      }
+    let active = true;
+    getPublicUser().then((profile) => {
+      // The shared reader publishes only its newest response to this cache.
+      const current = getCachedPublicUser();
+      if (active && profile && current?.user_id === session.user.id) setUser(current);
     });
-  }, [session]);
+    return () => {
+      active = false;
+    };
+  }, [session, setUser]);
 
   // Scroll to hide header,
   const [pinned, setPinned] = useState(true);

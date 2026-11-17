@@ -59,7 +59,7 @@ import { displayPatronOnly } from '@utils/notifications';
 import { useAtom, useAtomValue } from 'jotai';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { modals, openContextModal } from '@mantine/modals';
-import { hasPatreonAccess } from '@utils/patreon';
+import { getPatreonReconnectTarget, hasPatreonAccess } from '@utils/patreon';
 import { userState } from '@atoms/userAtoms';
 import { findApprovedContentUpdates } from '@content/content-update';
 import { resetContentStore, fetchContentSources } from '@content/content-store';
@@ -184,7 +184,7 @@ function ProfileSection() {
   const { data: benefitingUsers, refetch: refetchBenefitingUsers } = useQuery({
     queryKey: [`find-benefiting-users`],
     queryFn: async () => {
-      return await makeRequest<PublicUser[]>('gm-users-in-group', {});
+      return await makeRequest<Pick<PublicUser, 'user_id' | 'display_name'>[]>('gm-users-in-group', {});
     },
     enabled: user.patreon?.tier === 'GAME-MASTER',
   });
@@ -234,7 +234,15 @@ function ProfileSection() {
   // Determine patron tier
   // A saved Patreon identity remains connected even when it has no paid WG tier.
   const isPatreonConnected = Boolean(user.patreon?.patreon_user_id || user.patreon?.tier);
-  const patreonConnectionStatus = isPatreonConnected ? 'Connected' : 'Not connected';
+  const requiresPatreonReconnect = getPatreonReconnectTarget(user) === 'self';
+  const patreonConnectionStatus =
+    user.patreon?.connection_status === 'migration_required'
+      ? 'Update required'
+      : requiresPatreonReconnect
+        ? 'Reconnect required'
+        : isPatreonConnected
+          ? 'Connected'
+          : 'Not connected';
   let patronTier = user.patreon?.tier === 'GAME-MASTER' ? 'Game Master' : toLabel(user.patreon?.tier) || 'Non-Patron';
   let patronColor: MantineColor = 'gray';
   if (patronTier === 'Non-Patron') patronColor = 'gray';
@@ -245,7 +253,7 @@ function ProfileSection() {
 
   if (
     (patronTier === 'Non-Patron' || patronTier === 'Advocate') &&
-    user.patreon?.game_master?.virtual_tier?.game_master_user_id
+    ['connected', 'migration_required'].includes(user.patreon?.game_master?.virtual_tier?.access_status ?? '')
   ) {
     patronTier = 'Wanderer (Virtual)';
     patronColor = 'blue';
@@ -519,8 +527,14 @@ function ProfileSection() {
                   <Badge
                     size='sm'
                     variant='light'
-                    color={isPatreonConnected ? 'guide' : 'gray'}
-                    leftSection={isPatreonConnected ? <IconCheck size='0.75rem' aria-hidden /> : undefined}
+                    color={requiresPatreonReconnect ? 'yellow' : isPatreonConnected ? 'guide' : 'gray'}
+                    leftSection={
+                      requiresPatreonReconnect ? (
+                        <IconRefresh size='0.75rem' aria-hidden />
+                      ) : isPatreonConnected ? (
+                        <IconCheck size='0.75rem' aria-hidden />
+                      ) : undefined
+                    }
                     styles={{ root: { textTransform: 'initial' } }}
                   >
                     {patreonConnectionStatus}
@@ -531,7 +545,7 @@ function ProfileSection() {
                 <Stack gap='md'>
                   <Group justify='space-between' gap='xs'>
                     <Text size='xs' c='dimmed'>
-                      Membership
+                      {requiresPatreonReconnect ? 'Last known membership' : 'Membership'}
                     </Text>
                     <Text size='sm' c='dimmed'>
                       {patronTier}
@@ -617,7 +631,7 @@ function ProfileSection() {
                           ))}
                           {benefitingUsers?.length === 0 && (
                             <Text ta='center' fz='sm' c='dimmed' py='xs'>
-                              No one yet, share your link!
+                              {requiresPatreonReconnect ? 'No group members.' : 'No one yet, share your link!'}
                             </Text>
                           )}
                           {(benefitingUsers === undefined || benefitingUsers === null) && (
@@ -627,26 +641,28 @@ function ProfileSection() {
                           )}
                         </ScrollArea.Autosize>
                       </Paper>
-                      <Paper style={{ backgroundColor: 'transparent' }} withBorder mt={10} p='md'>
-                        <Group justify='space-between' gap='xs' mb='xs'>
-                          <Text fz='sm'>Send them this link:</Text>
-                          <Group wrap='nowrap' gap='xs'>
-                            <CopyButton value={gmShareURL}>
-                              {({ copied, copy }) => (
-                                <Button color={copied ? 'teal' : 'blue'} size='compact-xs' onClick={copy}>
-                                  {copied ? 'Copied' : 'Copy'}
-                                </Button>
-                              )}
-                            </CopyButton>
-                            <Button color='teal' size='compact-xs' onClick={regenerateCode}>
-                              Regenerate
-                            </Button>
+                      {hasPatreonAccess(user, 4) && (
+                        <Paper style={{ backgroundColor: 'transparent' }} withBorder mt={10} p='md'>
+                          <Group justify='space-between' gap='xs' mb='xs'>
+                            <Text fz='sm'>Send them this link:</Text>
+                            <Group wrap='nowrap' gap='xs'>
+                              <CopyButton value={gmShareURL}>
+                                {({ copied, copy }) => (
+                                  <Button color={copied ? 'teal' : 'blue'} size='compact-xs' onClick={copy}>
+                                    {copied ? 'Copied' : 'Copy'}
+                                  </Button>
+                                )}
+                              </CopyButton>
+                              <Button color='teal' size='compact-xs' onClick={regenerateCode}>
+                                Regenerate
+                              </Button>
+                            </Group>
                           </Group>
-                        </Group>
-                        <Anchor fz='xs' fs='italic' style={{ wordBreak: 'break-all', overflowWrap: 'break-word' }}>
-                          {gmShareURL}
-                        </Anchor>
-                      </Paper>
+                          <Anchor fz='xs' fs='italic' style={{ wordBreak: 'break-all', overflowWrap: 'break-word' }}>
+                            {gmShareURL}
+                          </Anchor>
+                        </Paper>
+                      )}
                     </Box>
                   )}
                 </Stack>

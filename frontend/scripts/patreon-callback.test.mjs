@@ -33,7 +33,7 @@ globalThis.window = { location: { origin: 'https://fixture.invalid', replace: (v
 const outfile = join(directory, 'callback.mjs');
 await build({
   stdin: {
-    contents: `export {Component} from './src/pages/PatreonRedirectPage'; export {AuthRouteWrapper} from './src/auth/AuthedRouteWrapper'; export {PATREON_AUTH_URL} from './src/constants/urls';`,
+    contents: `export {Component} from './src/pages/PatreonRedirectPage'; export {AuthRouteWrapper} from './src/auth/AuthedRouteWrapper'; export {PATREON_AUTH_URL} from './src/constants/urls'; export {hasPatreonAccess,getPatreonReconnectTarget} from './src/utils/patreon';`,
     resolveDir: root,
   },
   outfile,
@@ -62,7 +62,9 @@ await build({
     },
   ],
 });
-const { Component, AuthRouteWrapper, PATREON_AUTH_URL } = await import(pathToFileURL(outfile).href);
+const { Component, AuthRouteWrapper, PATREON_AUTH_URL, hasPatreonAccess, getPatreonReconnectTarget } = await import(
+  pathToFileURL(outfile).href
+);
 async function render(query, action, run, strict = false) {
   params = new URLSearchParams(query);
   ref = { current: false };
@@ -186,4 +188,31 @@ test('only a confirmed signed-out session redirects, preserving the callback des
 test('an established session mounts the protected route', () => {
   globalThis.__patreonCallback.session = { user: { id: 'fixture-actor' } };
   assert.equal(AuthRouteWrapper().component, 'Outlet');
+});
+
+test('migration UI preserves v2 paid/free connections, virtual benefits and role exemptions', () => {
+  for (const tier of ['ADVOCATE', 'WANDERER', 'LEGEND', 'GAME-MASTER', undefined]) {
+    const user = { patreon: { patreon_user_id: 'synthetic', tier, connection_status: 'connected' } };
+    assert.equal(getPatreonReconnectTarget(user), null);
+    assert.equal(hasPatreonAccess(user, 2), ['WANDERER', 'LEGEND', 'GAME-MASTER'].includes(tier));
+  }
+  const legacy = {
+    patreon: { patreon_user_id: 'synthetic', tier: 'WANDERER', connection_status: 'reconnect_required' },
+  };
+  assert.equal(getPatreonReconnectTarget(legacy), 'self');
+  assert.equal(hasPatreonAccess(legacy, 2), false);
+  assert.equal(hasPatreonAccess({ ...legacy, is_developer: true }, 2), true);
+  assert.equal(hasPatreonAccess({ ...legacy, is_developer: true }, 3), false);
+  for (const access_status of ['connected', 'reconnect_required', 'not_connected']) {
+    const user = { patreon: { game_master: { virtual_tier: { game_master_user_id: 'gm', access_status } } } };
+    assert.equal(hasPatreonAccess(user, 2), access_status === 'connected');
+    assert.equal(getPatreonReconnectTarget(user), access_status === 'reconnect_required' ? 'game_master' : null);
+  }
+});
+
+test('a cached profile without migration state does not start a needless reconnect', () => {
+  assert.equal(getPatreonReconnectTarget({ patreon: { patreon_user_id: 'synthetic', tier: 'WANDERER' } }), null);
+  const user = { patreon: { patreon_user_id: 'synthetic', tier: 'WANDERER', connection_status: 'migration_required' } };
+  assert.equal(getPatreonReconnectTarget(user), 'self');
+  assert.equal(hasPatreonAccess(user, 2), true, 'the paid server call still verifies the existing token through v2');
 });

@@ -34,13 +34,31 @@ const tiers = [
   ['5612688', 'ADVOCATE'],
 ] as const;
 export type PatreonTier = (typeof tiers)[number][1];
-export type PatreonTokens = z.infer<typeof tokenSchema>;
+export type PatreonTokens = { access_token: string; refresh_token: string; oauth_scopes?: string[] };
+
+/** Preserve rotated credentials even when their permissions require a new authorization. */
+function parseTokens(raw: unknown): PatreonTokens {
+  const parsed = tokenSchema.safeParse(raw);
+  if (!parsed.success) throw new PatreonApiError('token');
+  const { access_token, refresh_token } = parsed.data;
+  const metadata = z.object({ scope: z.unknown().optional() }).parse(raw);
+  const scopes = z.union([z.string(), z.array(z.string())]).safeParse(metadata.scope);
+  return {
+    access_token,
+    refresh_token,
+    oauth_scopes: scopes.success
+      ? Array.isArray(scopes.data)
+        ? scopes.data
+        : scopes.data.split(/\s+/).filter(Boolean)
+      : undefined,
+  };
+}
 
 /** Safe provider diagnostics; response bodies and credentials never enter errors. */
 export class PatreonApiError extends Error {
   constructor(
-    readonly stage: 'token' | 'identity' | 'configuration',
-    readonly status?: number
+    readonly stage: 'token' | 'identity' | 'configuration' | 'scope' | 'migration' | 'identity_mismatch',
+    readonly status?: number,
   ) {
     super('Patreon connection could not be completed.');
   }
@@ -73,33 +91,19 @@ async function request(path: string, stage: 'token' | 'identity', init: RequestI
   }
 }
 
-/** New grants use v2 credentials; stored grants keep their original OAuth client. */
-export function patreonClient(clientId?: string): {
-  id: string;
-  secret: string;
-} {
-  const legacy = {
-    id: Deno.env.get('PATREON_CLIENT_ID') ?? '',
-    secret: Deno.env.get('PATREON_CLIENT_SECRET') ?? '',
-  };
-  const v2Id = Deno.env.get('PATREON_V2_CLIENT_ID');
-  const v2Secret = Deno.env.get('PATREON_V2_CLIENT_SECRET');
-  if (Boolean(v2Id) !== Boolean(v2Secret)) throw new PatreonApiError('configuration');
-  const current = { id: v2Id || legacy.id, secret: v2Secret || legacy.secret };
-  const client =
-    clientId === undefined || clientId === current.id
-      ? current
-      : clientId === legacy.id || clientId === ''
-        ? legacy
-        : null;
-  if (!client?.id || !client.secret) throw new PatreonApiError('configuration');
-  return client;
+/** Every grant must belong to the configured v2 client; refresh cannot migrate v1 permissions. */
+export function patreonClient(clientId?: string): { id: string; secret: string } {
+  const id = Deno.env.get('PATREON_V2_CLIENT_ID') ?? '';
+  const secret = Deno.env.get('PATREON_V2_CLIENT_SECRET') ?? '';
+  if (!id || !secret) throw new PatreonApiError('configuration');
+  if (clientId !== undefined && clientId !== id) throw new PatreonApiError('migration');
+  return { id, secret };
 }
 
 /** Exchange a one-use authorization code once; ambiguous failures must not replay it. */
 export async function exchangePatreonCode(
   code: string,
-  redirectURL: string
+  redirectURL: string,
 ): Promise<PatreonTokens & { oauth_client_id: string }> {
   const client = patreonClient();
   const raw = await request('/api/oauth2/token', 'token', {
@@ -113,12 +117,12 @@ export async function exchangePatreonCode(
       client_secret: client.secret,
     }),
   });
-  const parsed = tokenSchema.safeParse(raw);
-  if (!parsed.success) throw new PatreonApiError('token');
-  return { ...parsed.data, oauth_client_id: client.id };
+  const tokens = parseTokens(raw);
+  if (!tokens.oauth_scopes?.includes('identity')) throw new PatreonApiError('scope');
+  return { ...tokens, oauth_client_id: client.id };
 }
 
-/** Refresh with the issuing client, including existing pre-migration grants. */
+/** Refresh only v2 grants, retaining returned scope metadata for validation after persistence. */
 export async function refreshPatreonToken(refreshToken: string, clientId: string): Promise<PatreonTokens> {
   const client = patreonClient(clientId);
   const raw = await request('/api/oauth2/token', 'token', {
@@ -131,9 +135,7 @@ export async function refreshPatreonToken(refreshToken: string, clientId: string
       client_secret: client.secret,
     }),
   });
-  const parsed = tokenSchema.safeParse(raw);
-  if (!parsed.success) throw new PatreonApiError('token');
-  return parsed.data;
+  return parseTokens(raw);
 }
 
 /** Read the top-level identity and only its current entitlement to WG's campaign. */
