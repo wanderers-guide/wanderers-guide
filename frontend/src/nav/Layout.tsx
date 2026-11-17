@@ -68,13 +68,8 @@ export default function Layout(props: { children: React.ReactNode }) {
     // getIcon(session.user.id).then((svg) => {
     //   setUserIcon(svg);
     // });
-    let active = true;
     const refreshProfile = () => {
-      void getPublicUser().then((profile) => {
-        // The shared reader publishes only its newest response to this cache.
-        const current = getCachedPublicUser();
-        if (active && profile && current?.user_id === session.user.id) setUser(current);
-      });
+      void getPublicUser();
     };
     refreshProfile();
     // Reconciled subscription changes also reach a tab that stays open across billing.
@@ -83,7 +78,6 @@ export default function Layout(props: { children: React.ReactNode }) {
     }, 5 * 60_000);
     window.addEventListener('focus', refreshProfile);
     return () => {
-      active = false;
       window.clearInterval(timer);
       window.removeEventListener('focus', refreshProfile);
     };

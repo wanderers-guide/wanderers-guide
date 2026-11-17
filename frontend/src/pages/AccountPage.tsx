@@ -72,18 +72,19 @@ import { resolveThemeColor } from '@utils/theme-color';
 export function Component() {
   setPageTitle(`Account`);
 
-  const [user, setUser] = useAtom(userState);
+  const [user] = useAtom(userState);
 
   const { data } = useQuery({
     queryKey: [`find-account-self`],
     queryFn: async () => {
       const user = await getPublicUser();
-      setUser(user);
       return user;
     },
   });
 
-  if (!data)
+  // A concurrent reader can own the newest publication. Its response must arrive
+  // before the profile section assumes the shared account is available.
+  if (!data || !user)
     return (
       <Loader
         size='lg'
@@ -193,8 +194,7 @@ function ProfileSection() {
   const regenerateCode = async () => {
     setLoading(true);
     await makeRequest('gm-regenerate-code', {});
-    const newUser = await getPublicUser();
-    if (newUser) setUser(newUser);
+    await getPublicUser();
     setLoading(false);
   };
 

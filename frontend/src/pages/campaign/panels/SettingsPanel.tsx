@@ -73,13 +73,11 @@ export default function SettingsPanel(props: {
 
   const [openedOperations, setOpenedOperations] = useState(false);
 
-  const [user, setUser] = useAtom(userState);
+  const [user] = useAtom(userState);
   useQuery({
     queryKey: [`find-account-self`],
     queryFn: async () => {
-      const user = await getPublicUser();
-      setUser(user);
-      return user;
+      return await getPublicUser();
     },
   });
 

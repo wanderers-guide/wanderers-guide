@@ -9,6 +9,31 @@ const profile = {
   background_image_url: null,
 };
 
+/** Install an isolated fake session; every account/provider request is intercepted. */
+function seedAuthenticatedSession(win: Pick<Window, 'btoa' | 'localStorage'>) {
+  const host = new URL(Cypress.expose('functions_url')).hostname.split('.')[0];
+  const token = `${win.btoa('{}')}.${win.btoa(JSON.stringify({ sub: actor, exp: 4102444800 }))}.fixture`;
+  win.localStorage.setItem(
+    `sb-${host}-auth-token`,
+    JSON.stringify({
+      access_token: token,
+      refresh_token: 'fixture',
+      token_type: 'bearer',
+      expires_at: 4102444800,
+      expires_in: 3600,
+      user: {
+        id: actor,
+        aud: 'authenticated',
+        role: 'authenticated',
+        email: 'fixture@example.invalid',
+        app_metadata: {},
+        user_metadata: {},
+        created_at: '',
+      },
+    })
+  );
+}
+
 describe('Quiet Patreon account linking', () => {
   for (const scenario of [
     { name: 'creator verified legacy grant', query: '', connected: true, creator: true, width: 1280 },
@@ -132,27 +157,7 @@ describe('Quiet Patreon account linking', () => {
       });
       cy.visit(`/auth/patreon/redirect?${scenario.query}`, {
         onBeforeLoad(win) {
-          const host = new URL(Cypress.expose('functions_url')).hostname.split('.')[0];
-          const token = `${win.btoa('{}')}.${win.btoa(JSON.stringify({ sub: actor, exp: 4102444800 }))}.fixture`;
-          win.localStorage.setItem(
-            `sb-${host}-auth-token`,
-            JSON.stringify({
-              access_token: token,
-              refresh_token: 'fixture',
-              token_type: 'bearer',
-              expires_at: 4102444800,
-              expires_in: 3600,
-              user: {
-                id: actor,
-                aud: 'authenticated',
-                role: 'authenticated',
-                email: 'fixture@example.invalid',
-                app_metadata: {},
-                user_metadata: {},
-                created_at: '',
-              },
-            })
-          );
+          seedAuthenticatedSession(win);
           win.localStorage.setItem(
             'user-data',
             JSON.stringify({
@@ -247,4 +252,34 @@ describe('Quiet Patreon account linking', () => {
       cy.screenshot(`patreon-${scenario.name.replaceAll(' ', '-')}`, { capture: 'fullPage' });
     });
   }
+});
+
+describe('Latest profile publication', () => {
+  if (Cypress.expose('patreonCase') && Cypress.expose('patreonCase') !== 'profile publication') return;
+  it('updates the account menu when the latest independent profile read belongs to another caller', () => {
+    let profileReads = 0;
+    cy.viewport(1280, 900);
+    cy.intercept('**/auth/v1/**', () => {
+      throw new Error('Isolated profile fixture must not contact authentication');
+    });
+    cy.intercept('POST', '**/functions/v1/*', (req) => {
+      const endpoint = new URL(req.url).pathname.split('/').pop();
+      if (endpoint === 'get-user') {
+        profileReads++;
+        return req.reply({
+          statusCode: 200,
+          delay: profileReads === 1 ? 50 : 300,
+          body: { status: 'success', data: profile },
+        });
+      }
+      if (endpoint?.startsWith('find-') || endpoint === 'get-content-versions')
+        return req.reply({ status: 'success', data: [] });
+      if (endpoint === 'report-client-error') return req.reply({ status: 'success', data: null });
+      throw new Error(`Unexpected profile fixture request: ${endpoint}`);
+    });
+    cy.visit('/characters', { onBeforeLoad: seedAuthenticatedSession });
+    cy.contains('.mantine-AppShell-header button', profile.display_name, { timeout: 30000 }).should('be.visible');
+    cy.then(() => expect(profileReads).to.be.greaterThan(1));
+    cy.screenshot('profile-publication-latest-reader', { capture: 'fullPage' });
+  });
 });

@@ -276,13 +276,11 @@ function BrowseSection(props: { searchQuery: string }) {
 
 function SubscriptionsSection(props: { searchQuery: string }) {
   const isPhone = useMediaQuery(phoneQuery());
-  const [user, setUser] = useAtom(userState);
+  const [user] = useAtom(userState);
   const { refetch } = useQuery({
     queryKey: [`find-account-self`],
     queryFn: async () => {
-      const user = await getPublicUser();
-      setUser(user);
-      return user;
+      return await getPublicUser();
     },
     refetchOnWindowFocus: false,
   });
@@ -372,9 +370,7 @@ function CreationsSection(props: { searchQuery: string }) {
   useQuery({
     queryKey: [`find-account-self`],
     queryFn: async () => {
-      const user = await getPublicUser();
-      setUser(user);
-      return user;
+      return await getPublicUser();
     },
     refetchOnWindowFocus: false,
   });
