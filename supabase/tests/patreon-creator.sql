@@ -2,16 +2,24 @@
 BEGIN;
 SET LOCAL statement_timeout='15s';
 DO $$ BEGIN
- IF to_regclass('auth.users') IS NOT NULL THEN
-   EXECUTE $q$INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES
-     ('00000000-0000-4000-8000-000000000001','wg-creator-1@example.invalid','{"display_name":"Creator fixture"}'),
-     ('00000000-0000-4000-8000-000000000002','wg-creator-2@example.invalid','{"display_name":"Creator fixture"}')$q$;
+ PERFORM set_config('test.creator_actor',gen_random_uuid()::text,true);
+ PERFORM set_config('test.creator_other',gen_random_uuid()::text,true);
+END $$;
+INSERT INTO auth.users(id,email,raw_user_meta_data)
+SELECT current_setting(setting)::uuid,'wg-creator-'||current_setting(setting)||'@example.invalid',
+ '{"display_name":"Creator fixture"}'::jsonb
+FROM unnest(ARRAY['test.creator_actor','test.creator_other']) setting;
+-- Use the real signup-created profiles. user_id is indexed, not unique; the
+-- account's numeric id is its primary key, so ON CONFLICT(user_id) is invalid.
+UPDATE public.public_user SET patreon='{"patreon_user_id":"fixture-paid","access_token":"personal-unchanged","refresh_token":"refresh-unchanged","game_master":{"virtual_tier":{"group":"unchanged"}}}'
+ WHERE user_id=current_setting('test.creator_actor')::uuid;
+UPDATE public.public_user SET patreon='{"patreon_user_id":"fixture-absent","access_token":"other-unchanged"}'
+ WHERE user_id=current_setting('test.creator_other')::uuid;
+DO $$ BEGIN
+ IF (SELECT count(*) FROM public.public_user WHERE user_id IN(current_setting('test.creator_actor')::uuid,current_setting('test.creator_other')::uuid))<>2 THEN
+  RAISE EXCEPTION 'Expected two real signup profiles';
  END IF;
 END $$;
-INSERT INTO public.public_user(user_id,patreon) VALUES
- ('00000000-0000-4000-8000-000000000001','{"patreon_user_id":"fixture-paid","access_token":"personal-unchanged","refresh_token":"refresh-unchanged","game_master":{"virtual_tier":{"group":"unchanged"}}}'),
- ('00000000-0000-4000-8000-000000000002','{"patreon_user_id":"fixture-absent","access_token":"other-unchanged"}')
-ON CONFLICT(user_id) DO UPDATE SET patreon=excluded.patreon;
 CREATE TEMP TABLE previous_profiles AS SELECT user_id,patreon FROM public.public_user;
 SET LOCAL ROLE service_role;
 DO $$ DECLARE a uuid='10000000-0000-4000-8000-000000000001'; b uuid='10000000-0000-4000-8000-000000000002'; scan_started_before timestamptz; BEGIN
@@ -27,15 +35,15 @@ DO $$ DECLARE a uuid='10000000-0000-4000-8000-000000000001'; b uuid='10000000-00
  IF NOT public.patreon_creator_save(a,'{"client_id":"fixture-v2","access_token":"rotated","refresh_token":"rotated-refresh"}') THEN RAISE EXCEPTION 'Idempotent save failed'; END IF;
  IF public.patreon_creator_save(a,'{"client_id":"fixture-v2","access_token":"stale","refresh_token":"stale"}') THEN RAISE EXCEPTION 'Stale overwrite allowed'; END IF;
  IF NOT public.patreon_creator_publish(a,'{"fixture-paid":{"member_id":"member-id-not-user-id","tier":"WANDERER","next_charge_date":null,"patron_status":"former_patron"}}',false) THEN RAISE EXCEPTION 'Publish failed'; END IF;
- IF public.patreon_creator_membership('00000000-0000-4000-8000-000000000001')->>'enabled' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'Unconfigured patron enabled'; END IF;
- PERFORM public.patreon_creator_configure(ARRAY['00000000-0000-4000-8000-000000000001'::uuid],false);
- IF public.patreon_creator_membership('00000000-0000-4000-8000-000000000001')->>'tier' IS DISTINCT FROM 'WANDERER' THEN RAISE EXCEPTION 'Paid-through cancellation lost entitlement'; END IF;
- IF (public.patreon_creator_membership('00000000-0000-4000-8000-000000000001')->>'observed_at')::timestamptz > scan_started_before THEN RAISE EXCEPTION 'Scan publication could override an in-flight authorization'; END IF;
- IF public.patreon_creator_membership('00000000-0000-4000-8000-000000000002')->>'enabled' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'Pilot leaked to others'; END IF;
+ IF public.patreon_creator_membership(current_setting('test.creator_actor')::uuid)->>'enabled' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'Unconfigured patron enabled'; END IF;
+ PERFORM public.patreon_creator_configure(ARRAY[current_setting('test.creator_actor')::uuid],false);
+ IF public.patreon_creator_membership(current_setting('test.creator_actor')::uuid)->>'tier' IS DISTINCT FROM 'WANDERER' THEN RAISE EXCEPTION 'Paid-through cancellation lost entitlement'; END IF;
+ IF (public.patreon_creator_membership(current_setting('test.creator_actor')::uuid)->>'observed_at')::timestamptz > scan_started_before THEN RAISE EXCEPTION 'Scan publication could override an in-flight authorization'; END IF;
+ IF public.patreon_creator_membership(current_setting('test.creator_other')::uuid)->>'enabled' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'Pilot leaked to others'; END IF;
  PERFORM public.patreon_creator_configure('{}',true);
- IF public.patreon_creator_membership('00000000-0000-4000-8000-000000000002')->>'available' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'Absent identity falsely treated as cancelled'; END IF;
+ IF public.patreon_creator_membership(current_setting('test.creator_other')::uuid)->>'available' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'Absent identity falsely treated as cancelled'; END IF;
  PERFORM public.patreon_creator_publish(a,'{}',true);
- IF public.patreon_creator_membership('00000000-0000-4000-8000-000000000002')->>'available' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'Unidentified member treated as absent'; END IF;
+ IF public.patreon_creator_membership(current_setting('test.creator_other')::uuid)->>'available' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'Unidentified member treated as absent'; END IF;
  PERFORM public.patreon_creator_release(a);
  IF public.patreon_creator_acquire(b)->>'refresh_token' IS DISTINCT FROM 'rotated-refresh' THEN RAISE EXCEPTION 'Rotation not durable'; END IF;
  PERFORM public.patreon_creator_begin_refresh(b);
@@ -44,7 +52,7 @@ RESET ROLE;
 SET LOCAL ROLE anon;
 DO $$ BEGIN
  BEGIN PERFORM public.patreon_creator_acquire(gen_random_uuid()); RAISE EXCEPTION 'Anon acquired creator'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
- BEGIN PERFORM public.patreon_creator_membership('00000000-0000-4000-8000-000000000001'); RAISE EXCEPTION 'Anon read membership'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN PERFORM public.patreon_creator_membership(current_setting('test.creator_actor')::uuid); RAISE EXCEPTION 'Anon read membership'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN PERFORM 1 FROM wg_patreon_private.creator; RAISE EXCEPTION 'Anon read private state'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $$;
 RESET ROLE;
@@ -64,7 +72,7 @@ RESET ROLE;
 UPDATE wg_patreon_private.creator SET observed_at=now()-interval '2 hours';
 SET LOCAL ROLE service_role;
 DO $$ BEGIN
- IF public.patreon_creator_membership('00000000-0000-4000-8000-000000000001')->>'available' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'Stale snapshot trusted'; END IF;
+ IF public.patreon_creator_membership(current_setting('test.creator_actor')::uuid)->>'available' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'Stale snapshot trusted'; END IF;
 END $$;
 RESET ROLE;
 DO $$ DECLARE f record; role_name text; BEGIN
