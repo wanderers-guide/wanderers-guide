@@ -9,8 +9,55 @@ const profile = {
   background_image_url: null,
 };
 
+/** Install an isolated fake session; every account/provider request is intercepted. */
+function seedAuthenticatedSession(win: Pick<Window, 'btoa' | 'localStorage'>) {
+  const host = new URL(Cypress.expose('functions_url')).hostname.split('.')[0];
+  const token = `${win.btoa('{}')}.${win.btoa(JSON.stringify({ sub: actor, exp: 4102444800 }))}.fixture`;
+  win.localStorage.setItem(
+    `sb-${host}-auth-token`,
+    JSON.stringify({
+      access_token: token,
+      refresh_token: 'fixture',
+      token_type: 'bearer',
+      expires_at: 4102444800,
+      expires_in: 3600,
+      user: {
+        id: actor,
+        aud: 'authenticated',
+        role: 'authenticated',
+        email: 'fixture@example.invalid',
+        app_metadata: {},
+        user_metadata: {},
+        created_at: '',
+      },
+    })
+  );
+}
+
 describe('Quiet Patreon account linking', () => {
   for (const scenario of [
+    { name: 'creator verified legacy grant', query: '', connected: true, creator: true, width: 1280 },
+    { name: 'phone creator verified legacy grant', query: '', connected: true, creator: true, width: 390 },
+    {
+      name: 'creator verification unavailable',
+      query: '',
+      connected: true,
+      creator: true,
+      unavailable: true,
+      width: 390,
+    },
+    { name: 'unmarked connection', query: '', connected: true, legacy: true, migration: true, width: 1280 },
+    { name: 'legacy membership', query: '', connected: true, legacy: true, width: 1280 },
+    { name: 'phone legacy membership', query: '', connected: true, legacy: true, width: 390 },
+    { name: 'legacy Game Master', query: '', connected: true, legacy: true, gm: true, width: 390 },
+    { name: 'sponsor migration', query: '', connected: false, virtual: true, sponsorMigration: true, width: 390 },
+    {
+      name: 'legacy reconnect completes',
+      query: 'code=fixture-code',
+      connected: true,
+      legacyBefore: true,
+      width: 1280,
+    },
     { name: 'success', query: 'code=fixture-code', connected: true, width: 1280 },
     { name: 'phone success', query: 'code=fixture-code', connected: true, width: 390 },
     { name: 'connected without a paid tier', query: 'code=fixture-code', connected: true, noTier: true, width: 1280 },
@@ -69,23 +116,33 @@ describe('Quiet Patreon account linking', () => {
         if (endpoint === 'get-user')
           data = {
             ...profile,
-            patreon: linked
-              ? {
-                  patreon_user_id: 'fixture-patreon-user',
-                  tier: scenario.noTier ? undefined : scenario.gm ? 'GAME-MASTER' : 'WANDERER',
-                  game_master: scenario.gm ? { access_code: 'fixture-group-code' } : undefined,
-                }
-              : scenario.virtual
+            patreon:
+              linked || scenario.legacy || scenario.creator
                 ? {
-                    game_master: {
-                      virtual_tier: {
-                        game_master_user_id: 'fixture-game-master',
-                        game_master_name: 'Fixture Game Master',
-                        added_at: '2026-10-09T00:00:00Z',
-                      },
-                    },
+                    patreon_user_id: 'fixture-patreon-user',
+                    oauth_client_id: scenario.legacy || scenario.creator ? undefined : 'fixture-v2-client',
+                    connection_status: scenario.unavailable
+                      ? 'verification_unavailable'
+                      : scenario.migration
+                        ? 'migration_required'
+                        : scenario.legacy
+                          ? 'reconnect_required'
+                          : 'connected',
+                    tier: scenario.noTier ? undefined : scenario.gm ? 'GAME-MASTER' : 'WANDERER',
+                    game_master: scenario.gm ? { access_code: 'fixture-group-code' } : undefined,
                   }
-                : undefined,
+                : scenario.virtual
+                  ? {
+                      game_master: {
+                        virtual_tier: {
+                          game_master_user_id: 'fixture-game-master',
+                          game_master_name: 'Fixture Game Master',
+                          added_at: '2026-10-09T00:00:00Z',
+                          access_status: scenario.sponsorMigration ? 'reconnect_required' : 'connected',
+                        },
+                      },
+                    }
+                  : undefined,
           };
         else if (endpoint === 'gm-users-in-group' && scenario.gm)
           data = [{ ...profile, user_id: 'fixture-group-member', display_name: 'AlexandriaTheWandererOfWestbridge' }];
@@ -100,35 +157,39 @@ describe('Quiet Patreon account linking', () => {
       });
       cy.visit(`/auth/patreon/redirect?${scenario.query}`, {
         onBeforeLoad(win) {
-          const host = new URL(Cypress.expose('functions_url')).hostname.split('.')[0];
-          const token = `${win.btoa('{}')}.${win.btoa(JSON.stringify({ sub: actor, exp: 4102444800 }))}.fixture`;
+          seedAuthenticatedSession(win);
           win.localStorage.setItem(
-            `sb-${host}-auth-token`,
+            'user-data',
             JSON.stringify({
-              access_token: token,
-              refresh_token: 'fixture',
-              token_type: 'bearer',
-              expires_at: 4102444800,
-              expires_in: 3600,
-              user: {
-                id: actor,
-                aud: 'authenticated',
-                role: 'authenticated',
-                email: 'fixture@example.invalid',
-                app_metadata: {},
-                user_metadata: {},
-                created_at: '',
-              },
+              ...profile,
+              ...(scenario.legacyBefore
+                ? {
+                    patreon: {
+                      patreon_user_id: 'fixture-patreon-user',
+                      tier: 'WANDERER',
+                      connection_status: 'reconnect_required',
+                    },
+                  }
+                : {}),
             })
           );
-          win.localStorage.setItem('user-data', JSON.stringify(profile));
         },
       });
       cy.location('pathname', { timeout: 30000 }).should('eq', '/account');
       cy.location('search').should('eq', '');
       // The status control must expand settings rather than behave as an OAuth link.
       cy.get('[data-testid="patreon-settings"] .mantine-Accordion-control', { timeout: 30000 }).should(($control) => {
-        expect($control).to.contain(scenario.connected ? 'Connected' : 'Not connected');
+        expect($control).to.contain(
+          scenario.unavailable
+            ? 'Verification unavailable'
+            : scenario.migration
+              ? 'Update required'
+              : scenario.legacy
+                ? 'Reconnect required'
+                : scenario.connected
+                  ? 'Connected'
+                  : 'Not connected'
+        );
         expect($control).to.have.attr('aria-expanded', 'false');
         expect($control).not.to.have.attr('href');
       });
@@ -139,7 +200,9 @@ describe('Quiet Patreon account linking', () => {
         .should('have.attr', 'aria-expanded', 'true');
       cy.location('pathname').should('eq', '/account');
       cy.get('[data-testid="patreon-settings"]').within(() => {
-        cy.contains('Membership').should('be.visible');
+        cy.contains(scenario.legacy || scenario.unavailable ? 'Last known membership' : 'Membership').should(
+          'be.visible'
+        );
         cy.contains('a', scenario.connected ? 'Reconnect' : 'Connect to Patreon')
           .should('be.visible')
           .invoke('attr', 'href')
@@ -156,16 +219,24 @@ describe('Quiet Patreon account linking', () => {
           cy.contains('Game Master').should('be.visible');
           cy.contains('Users in your Group').should('be.visible');
           cy.contains('AlexandriaTheWandererOfWestbridge').should('be.visible');
-          cy.contains('button', 'Copy').should('be.visible');
-          cy.contains('button', 'Regenerate').should('be.visible');
-          cy.contains('fixture-group-code').should('be.visible');
-          cy.screenshot(`patreon-${scenario.name.replaceAll(' ', '-')}-summary`, { capture: 'fullPage' });
-          // Account scrolls inside the app shell, so a full-page capture alone misses its lower controls.
-          cy.contains('fixture-group-code').scrollIntoView().should('be.visible');
-          cy.screenshot(`patreon-${scenario.name.replaceAll(' ', '-')}-sharing`, { capture: 'fullPage' });
+          if (!scenario.legacy) {
+            cy.contains('button', 'Copy').should('be.visible');
+            cy.contains('button', 'Regenerate').should('be.visible');
+            cy.contains('fixture-group-code').should('be.visible');
+            cy.screenshot(`patreon-${scenario.name.replaceAll(' ', '-')}-summary`, { capture: 'fullPage' });
+            // Account scrolls inside the app shell, so a full-page capture alone misses its lower controls.
+            cy.contains('fixture-group-code').scrollIntoView().should('be.visible');
+            cy.screenshot(`patreon-${scenario.name.replaceAll(' ', '-')}-sharing`, { capture: 'fullPage' });
+          } else {
+            cy.contains('button', 'Regenerate').should('not.exist');
+            cy.contains('button', 'Copy').should('not.exist');
+          }
         } else cy.contains('Users in your Group').should('not.exist');
-        if (scenario.virtual) cy.contains('Wanderer (Virtual)').should('be.visible');
+        if (scenario.virtual && !scenario.sponsorMigration) cy.contains('Wanderer (Virtual)').should('be.visible');
       });
+      if (scenario.legacy || scenario.sponsorMigration)
+        cy.get('[data-testid="patreon-migration-notice"]').scrollIntoView().should('be.visible');
+      else cy.get('[data-testid="patreon-migration-notice"]').should('not.exist');
       cy.get('.mantine-Notification-root').should('not.exist');
       if (scenario.noTier) {
         cy.contains('Non-Patron').should('be.visible');
@@ -181,4 +252,34 @@ describe('Quiet Patreon account linking', () => {
       cy.screenshot(`patreon-${scenario.name.replaceAll(' ', '-')}`, { capture: 'fullPage' });
     });
   }
+});
+
+describe('Latest profile publication', () => {
+  if (Cypress.expose('patreonCase') && Cypress.expose('patreonCase') !== 'profile publication') return;
+  it('updates the account menu when the latest independent profile read belongs to another caller', () => {
+    let profileReads = 0;
+    cy.viewport(1280, 900);
+    cy.intercept('**/auth/v1/**', () => {
+      throw new Error('Isolated profile fixture must not contact authentication');
+    });
+    cy.intercept('POST', '**/functions/v1/*', (req) => {
+      const endpoint = new URL(req.url).pathname.split('/').pop();
+      if (endpoint === 'get-user') {
+        profileReads++;
+        return req.reply({
+          statusCode: 200,
+          delay: profileReads === 1 ? 50 : 300,
+          body: { status: 'success', data: profile },
+        });
+      }
+      if (endpoint?.startsWith('find-') || endpoint === 'get-content-versions')
+        return req.reply({ status: 'success', data: [] });
+      if (endpoint === 'report-client-error') return req.reply({ status: 'success', data: null });
+      throw new Error(`Unexpected profile fixture request: ${endpoint}`);
+    });
+    cy.visit('/characters', { onBeforeLoad: seedAuthenticatedSession });
+    cy.contains('.mantine-AppShell-header button', profile.display_name, { timeout: 30000 }).should('be.visible');
+    cy.then(() => expect(profileReads).to.be.greaterThan(1));
+    cy.screenshot('profile-publication-latest-reader', { capture: 'fullPage' });
+  });
 });

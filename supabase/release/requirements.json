@@ -452,5 +452,9 @@
   "20261029000000_overflowing_mode_count_compatibility.sql": {
     "check": "treasure-vault-terminal-status.sql",
     "order": "before-functions"
+  },
+  "20261117000000_patreon_creator_verification.sql": {
+    "check": "patreon-creator.sql",
+    "order": "before-functions"
   }
 }

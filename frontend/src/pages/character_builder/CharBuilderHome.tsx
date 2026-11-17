@@ -115,9 +115,7 @@ export default function CharBuilderHome(props: {
   useQuery({
     queryKey: [`find-account-self`],
     queryFn: async () => {
-      const user = await getPublicUser();
-      setUser(user);
-      return user;
+      return await getPublicUser();
     },
   });
 

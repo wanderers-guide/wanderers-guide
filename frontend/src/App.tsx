@@ -31,6 +31,7 @@ import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import { useAtom, useAtomValue } from 'jotai';
 import { supabase } from './main';
 import Layout from './nav/Layout';
+import { PatreonMigrationNotice } from './nav/PatreonMigrationNotice';
 import AddNewLoreModal from '@modals/AddNewLoreModal';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { resetContentStore, setContentCacheActor } from '@content/content-store';
@@ -423,6 +424,7 @@ export default function App() {
         <Box style={{ zoom: sheetTheme.zoom ?? 1, '--wg-page-zoom': sheetTheme.zoom ?? 1 }}>
           <Layout>
             {/* Outlet is where react-router will render child routes */}
+            {session && location.pathname !== '/auth/patreon/redirect' && <PatreonMigrationNotice user={account} />}
             <Outlet />
           </Layout>
         </Box>

@@ -151,10 +151,17 @@ set `VITE_PATREON_CLIENT_ID` to the same public ID before building the frontend.
 WG's hosted frontend defaults to its registered v2 public client ID; self-hosts
 must override it with their own creator application's ID. Client secrets remain
 server-only.
-Keep `PATREON_CLIENT_ID` and `PATREON_CLIENT_SECRET` for existing grants. New
-links record their issuing client so token refresh uses the correct credentials.
+Only the configured v2 client can authorize or refresh a link. New links record
+their issuing client and granted scopes. The old `PATREON_CLIENT_ID` and
+`PATREON_CLIENT_SECRET` are unused; refreshing a v1 token preserves v1 scopes and
+cannot migrate it to v2.
 The Account settings contain a collapsed Patreon section whose header shows the
-saved connection independently of paid tier. Expand it to view Membership and
+connection independently of paid tier. Unmarked links show **Update required**;
+proven incompatible grants show
+**Reconnect required**. Both provide an explicit in-app action and label their
+membership last known. Missing metadata does not invalidate a working v2 token:
+paid operations verify that token through v2 without relabeling its issuer.
+Expand it to view Membership and
 the explicit Connect to Patreon or Reconnect action. Clicking the section header
 only opens settings; it does not start OAuth. GM sharing controls remain inside
 the Patreon section for Game Master members.
@@ -163,16 +170,58 @@ no paid access from the connection alone.
 The authorization request needs only `identity identity[email]`: Patreon returns
 memberships to the app creator's campaign without access to unrelated memberships.
 
-Release the matching frontend and all functions that import `_shared/patreon.ts`
-together, using the repository's release inventory. Verify a real consenting
-patron can connect and receive their correct tier before declaring the incident
-resolved. Fixtures cannot verify client registration, secrets, approved redirects,
-or whether an existing v1 grant is accepted by v2. Some old grants may require a
-fresh connection using Reconnect in Account's Patreon section; provider failures
-retain stored links and group data while paid operations fail closed. Rejected
-provider authorization directs the user to Reconnect Patreon in Account. Temporary
-provider or persistence failures ask the user to try again. These errors preserve the
-application session, and creation requests are never replayed automatically. See [Patreon's migration guide](https://docs.patreon.com/#migrating-from-api-v1-to-api-v2).
+Creator-side verification can keep existing patrons working without replacing their
+personal OAuth grants. WG matches the saved Patreon **user ID** to the fixed campaign's
+v2 member relationship, and uses `currently_entitled_tiers` as the authority. A member
+UUID differs from a user ID. Cancellation and a null next charge date do not end benefits
+while Patreon still reports an entitled tier, including paid-through annual memberships,
+gifts and trials. There are no billing/charge writes.
+
+Apply `20261117000000_patreon_creator_verification.sql` before the matching functions.
+Creator access/refresh credentials belong to the existing v2 client and are initialized
+once through the service-only `patreon_creator_initialize` RPC. They are encrypted in
+Supabase Vault; campaign observations and rollout state live in the unexposed
+`wg_patreon_private` schema, outside public data exports. Never paste tokens into chats,
+logs or issue descriptions, and never copy creator credentials into a customer profile.
+`patreon_creator_configure` initially allowlists at most two account UUIDs. Only expand
+`p_all` after a real two-account pilot verifies paid access, correct tier, and unchanged
+personal tokens, links, group metadata and characters. The pilot requires no patron
+reauthorization. Existing v1 personal grants remain v1; creator verification supplies the
+v2 membership check without claiming to convert their scopes.
+
+Set `PATREON_CREATOR_ENABLED=true` only after provisioning. Configure a random scheduler
+capability as the GitHub Actions secret `WG_PATREON_SYNC_SECRET`, and its SHA-256 hex digest
+as the edge secret `PATREON_SYNC_SECRET_SHA256`. The scheduler also uses the existing
+`WG_MONITOR_ANON_KEY` repository variable. `patreon-memberships.yml` reconciles every 15
+minutes (Actions schedules may be delayed). It follows every pagination cursor and
+publishes one complete snapshot atomically; incomplete scans never remove benefits.
+Observation ordering uses scan start rather than publication time, so a personal v2
+authorization completed during pagination remains newer than earlier pages.
+Paid operations require a snapshot no older than one hour and preserve the application
+session and saved connection on errors. Creator access tokens refresh automatically
+before known expiry, or once on a 401, using the existing v2 client secret. A durable
+lease fences refreshes; save the rotated pair in Vault before any further provider I/O.
+An ambiguous refresh or uncertain persistence blocks further exchanges for operator
+recovery rather than replaying an old refresh grant. Inspect the scheduled workflow's
+failure status and creator state; never recover by overwriting a possibly rotated pair
+with an old portal value. Reprovision only from a confirmed current creator grant.
+
+Release the matching frontend and all functions that import `_shared/patreon.ts`, plus
+`get-user` and `sync-patreon-memberships`, using the release inventory. The Account status
+becomes Connected under creator verification; an unavailable check displays Last known
+membership rather than requesting a personal reconnect. Visible tabs refresh their
+profile every five minutes and on focus. New personal v2 authorizations newer than the
+campaign snapshot retain their verified tier until reconciliation catches up. Creation
+requests are never replayed automatically. Without creator provisioning, personal links
+still require valid v2 authorization; v1 refresh cannot add v2 permissions.
+
+A v2-connected GM must still have the live Game Master tier to sponsor virtual
+benefits. Players with a healthy sponsor need no personal Patreon link; a sponsor
+migration error directs them to their GM. Existing group listing and removal
+remain available for cleanup, while adding members and regenerating codes require
+verified v2 access. Member lists contain only user IDs and display names.
+Rotated credentials are saved before validating their returned scopes, and
+conditional writes cannot replace a newer connection or group update. See [Patreon's migration guide](https://docs.patreon.com/#migrating-from-api-v1-to-api-v2).
 
 Regression coverage is included in `npm run test:api:boundaries`,
 `npm --prefix frontend run test:infra`, and

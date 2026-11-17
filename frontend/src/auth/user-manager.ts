@@ -1,6 +1,8 @@
 import { makeRequest } from '@requests/request-manager';
 import { PublicUser } from '@schemas/content';
 import { invalidateSessionRead, readSession } from './session-reader';
+import { getDefaultStore } from 'jotai/vanilla';
+import { userState } from '@atoms/userAtoms';
 
 type SharedProfileRequest = {
   scope: number;
@@ -25,8 +27,13 @@ async function fetchCurrentUser(actorId: string, generation: number): Promise<Pu
   if (generation !== userDataGeneration || session?.user.id !== actorId) {
     throw new Error('Current account changed while loading the profile.');
   }
-  if (typeof localStorage !== 'undefined' && user && requestNumber === latestProfileRequest) {
-    localStorage.setItem('user-data', JSON.stringify(user));
+  if (user && requestNumber === latestProfileRequest) {
+    const serialized = JSON.stringify(user);
+    if (typeof localStorage !== 'undefined') localStorage.setItem('user-data', serialized);
+    // Publish at the same guarded boundary as the cache. A different caller may
+    // own the newest read, so a component's earlier response cannot do this safely.
+    const store = getDefaultStore();
+    if (JSON.stringify(store.get(userState)) !== serialized) store.set(userState, user);
   }
   return user;
 }
@@ -99,6 +106,7 @@ export function clearUserData(): void {
   invalidateSessionRead();
   userDataGeneration += 1;
   currentUserRequests.clear();
+  getDefaultStore().set(userState, null);
   if (typeof localStorage !== 'undefined') {
     localStorage.removeItem('user-data');
   }

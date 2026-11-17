@@ -1,6 +1,8 @@
 // @ts-ignore
 import { serve } from 'std/server';
-import { connect, createServiceClient, fetchData, getPublicUser } from '../_shared/helpers.ts';
+import { connect, createServiceClient, fetchData, getPublicUser, logEvent } from '../_shared/helpers.ts';
+import { getPatreonConnectionStatus } from '../_shared/patreon-connection.ts';
+import { applyCreatorMembership } from '../_shared/patreon-creator.ts';
 import type { PublicUser } from '../_shared/content';
 
 serve(async (req: Request) => {
@@ -62,6 +64,38 @@ serve(async (req: Request) => {
       };
     }
 
+    if (user.patreon) {
+      const service = createServiceClient();
+      try {
+        user.patreon.connection_status = (await applyCreatorMembership(service, user))
+          ? 'connected'
+          : getPatreonConnectionStatus(user.patreon);
+      } catch {
+        logEvent('warn', 'get-user', 'creator_membership_unavailable', { lookup: 'self' });
+        user.patreon.connection_status = 'verification_unavailable';
+      }
+      const virtual = user.patreon.game_master?.virtual_tier;
+      if (virtual) {
+        const sponsors = await fetchData<PublicUser>(createServiceClient(), 'public_user', [
+          { column: 'user_id', value: virtual.game_master_user_id },
+        ]);
+        const sponsor = sponsors[0];
+        let status: NonNullable<PublicUser['patreon']>['connection_status'];
+        try {
+          status =
+            sponsor && (await applyCreatorMembership(service, sponsor))
+              ? 'connected'
+              : getPatreonConnectionStatus(sponsor?.patreon);
+        } catch {
+          logEvent('warn', 'get-user', 'creator_membership_unavailable', { lookup: 'sponsor' });
+          status = 'verification_unavailable';
+        }
+        virtual.access_status =
+          ['connected', 'migration_required'].includes(status) && sponsor?.patreon?.tier !== 'GAME-MASTER'
+            ? 'not_connected'
+            : status;
+      }
+    }
     return {
       status: 'success',
       data: user,

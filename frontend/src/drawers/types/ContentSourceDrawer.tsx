@@ -44,7 +44,7 @@ export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: 
     queryKey: [`find-content-source-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id }] = queryKey;
       const sources = await fetchContentSources([id]);
       return sources?.find((s) => s.id === id) ?? null;
@@ -58,9 +58,7 @@ export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: 
   const { refetch } = useQuery({
     queryKey: [`find-account-self`],
     queryFn: async () => {
-      const user = await getPublicUser();
-      setUser(user);
-      return user;
+      return await getPublicUser();
     },
     enabled: !!source?.user_id,
   });
@@ -148,11 +146,15 @@ export function ContentSourceDrawerContent(props: {
   const [_creatureDrawer, openCreatureDrawer] = useAtom(creatureDrawerState);
   const [_feedbackData, setFeedbackData] = useAtom(feedbackState);
 
-  const { data: content, isFetching, refetch } = useQuery({
+  const {
+    data: content,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: [`find-content-source-package-${id}`, { id, source: props.data.source }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
-       
+
       const [_key, { id, source }] = queryKey;
       const _id = id ?? source?.id;
       return await fetchContentPackage([_id], { fetchSources: true, fetchCreatures: true });
@@ -177,9 +179,7 @@ export function ContentSourceDrawerContent(props: {
   }, [source]);
 
   if (!content || !source) {
-    return (
-      <DrawerLoadState loading={isFetching} onRetry={refetch} />
-    );
+    return <DrawerLoadState loading={isFetching} onRetry={refetch} />;
   }
 
   const description =
@@ -528,10 +528,14 @@ export function ContentSourceDrawerContent(props: {
             <Accordion.Item value='hazards' w='100%'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='white' fz='sm'>Hazards</Text>
+                  <Text c='white' fz='sm'>
+                    Hazards
+                  </Text>
                   {!!hazardQuery.data?.length && (
                     <Badge mr='sm' variant='outline' color='gray.5' size='sm'>
-                      <Text c='gray.2' span inherit>{hazardQuery.data.length}</Text>
+                      <Text c='gray.2' span inherit>
+                        {hazardQuery.data.length}
+                      </Text>
                     </Badge>
                   )}
                 </Group>
@@ -539,7 +543,9 @@ export function ContentSourceDrawerContent(props: {
               <Accordion.Panel>
                 <Divider color='dark.6' />
                 {hazardQuery.isError ? (
-                  <Button variant='subtle' size='compact-sm' onClick={() => hazardQuery.refetch()}>Retry</Button>
+                  <Button variant='subtle' size='compact-sm' onClick={() => hazardQuery.refetch()}>
+                    Retry
+                  </Button>
                 ) : (
                   hazardQuery.data?.map((record) => (
                     <HazardSelectionOption

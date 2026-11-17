@@ -14,14 +14,7 @@ type ActionCost =
   | 'ONE-TO-THREE-ACTIONS'
   | 'TWO-TO-THREE-ACTIONS'
   | null;
-type AbilityBlockType =
-  | 'action'
-  | 'feat'
-  | 'physical-feature'
-  | 'sense'
-  | 'class-feature'
-  | 'heritage'
-  | 'mode';
+type AbilityBlockType = 'action' | 'feat' | 'physical-feature' | 'sense' | 'class-feature' | 'heritage' | 'mode';
 type ContentType =
   | 'trait'
   | 'item'
@@ -83,12 +76,30 @@ interface PublicUser {
     refresh_token?: string;
     /** OAuth client that issued this pair; unmarked pairs belong to the legacy client. */
     oauth_client_id?: string;
+    oauth_scopes?: string[];
+    /** Nonsecret optimistic-concurrency marker for all Patreon writes. */
+    revision?: string;
+    /** Derived for the account response; never a substitute for live entitlement checks. */
+    connection_status?:
+      | 'not_connected'
+      | 'connected'
+      | 'migration_required'
+      | 'reconnect_required'
+      | 'verification_unavailable';
+    membership_verified_at?: string;
+    identity_verified_at?: string;
     game_master?: {
       access_code?: string;
       virtual_tier?: {
         game_master_user_id: string;
         game_master_name: string;
         added_at: string;
+        access_status?:
+          | 'not_connected'
+          | 'connected'
+          | 'migration_required'
+          | 'reconnect_required'
+          | 'verification_unavailable';
       };
     };
   };
@@ -104,7 +115,11 @@ interface PublicUser {
   deactivated: boolean;
   summary?: string;
   organized_play_id?: string;
-  subscribed_content_sources?: { source_id: number; source_name: string; added_at: string }[];
+  subscribed_content_sources?: {
+    source_id: number;
+    source_name: string;
+    added_at: string;
+  }[];
 }
 
 interface Trait {
@@ -480,7 +495,11 @@ interface Character extends LivingEntity {
       color: string;
     };
     api_clients?: {
-      client_access: { publicUserId: string; clientId: string; addedAt: number }[];
+      client_access: {
+        publicUserId: string;
+        clientId: string;
+        addedAt: number;
+      }[];
     };
     ancestry?: Ancestry;
     background?: Background;

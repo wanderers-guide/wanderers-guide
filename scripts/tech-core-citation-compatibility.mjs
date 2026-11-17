@@ -288,6 +288,10 @@ export function prepare(repository, proposalPath) {
   const originalRequirements = JSON.parse(
     files["supabase/release/requirements.json"],
   );
+  const creatorUpgrade = '20261117000000_patreon_creator_verification.sql';
+  const creatorRequirement = originalRequirements[creatorUpgrade];
+  assert.deepEqual(creatorRequirement, {check:'patreon-creator.sql',order:'before-functions'});
+  delete originalRequirements[creatorUpgrade];
   const rustUpgrade = '20261015000000_rust_cloud_release_compatibility.sql';
   const rustRequirement = originalRequirements[rustUpgrade];
   assert.deepEqual(rustRequirement, {check:'treasure-vault-terminal-status.sql',order:'before-functions'});
@@ -329,6 +333,7 @@ export function prepare(repository, proposalPath) {
   originalRequirements[curatorUpgrade] = curatorRequirement;
   originalRequirements[bookCountUpgrade] = bookCountRequirement;
   originalRequirements[modeCountUpgrade]=modeCountRequirement;
+  originalRequirements[creatorUpgrade]=creatorRequirement;
   let suppliedRows;
   if (proposalPath) {
     const proposalBytes = fs.readFileSync(proposalPath);
@@ -399,10 +404,10 @@ export function prepare(repository, proposalPath) {
     requirements[migration].check = check;
     return { migration, before, after: requirements[migration] };
   });
-  assert.equal(Object.keys(requirements).length, 113);
+  assert.equal(Object.keys(requirements).length, 114);
   assert.equal(
     new Set(Object.values(requirements).map((entry) => entry.check)).size,
-    71,
+    72,
   );
   if (!proposalPath) {
     assert.equal(

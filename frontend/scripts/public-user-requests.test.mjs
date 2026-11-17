@@ -44,7 +44,12 @@ after(async () => {
 
 await build({
   absWorkingDir: frontend,
-  stdin: { contents: "export * from './src/auth/user-manager';", resolveDir: frontend, loader: 'ts' },
+  stdin: {
+    contents:
+      "export * from './src/auth/user-manager'; import {getDefaultStore} from 'jotai/vanilla'; import {userState} from './src/atoms/userAtoms'; export const publishedProfile = () => getDefaultStore().get(userState);",
+    resolveDir: frontend,
+    loader: 'ts',
+  },
   outfile: join(directory, 'user-manager.mjs'),
   platform: 'node',
   format: 'esm',
@@ -82,6 +87,32 @@ function deferred() {
   });
   return { promise, resolve };
 }
+
+test('the latest independent profile read publishes to every subscriber when an earlier caller finishes first', async () => {
+  const firstResponse = deferred(),
+    secondResponse = deferred();
+  state.response = () => firstResponse.promise;
+  const first = users.getPublicUser();
+  await new Promise((resolve) => setImmediate(resolve));
+  state.response = () => secondResponse.promise;
+  const second = users.getPublicUser();
+  await new Promise((resolve) => setImmediate(resolve));
+  firstResponse.resolve({ id: 1, user_id: 'actor-A', display_name: 'Earlier profile' });
+  await first;
+  assert.equal(users.publishedProfile(), null);
+  const latest = {
+    id: 1,
+    user_id: 'actor-A',
+    display_name: 'Current profile',
+    patreon: { connection_status: 'connected' },
+  };
+  secondResponse.resolve(latest);
+  await second;
+  assert.deepEqual(users.publishedProfile(), latest);
+  assert.deepEqual(users.getCachedPublicUser(), latest);
+  users.clearUserData();
+  assert.equal(users.publishedProfile(), null);
+});
 
 beforeEach(() => {
   state.actor = 'actor-A';

@@ -1,5 +1,7 @@
 import { DEBUG_MODE } from '@constants/data';
-import { PATREON_URL } from '@constants/urls';
+import { PATREON_AUTH_URL, PATREON_URL } from '@constants/urls';
+import { getCachedPublicUser } from '@auth/user-manager';
+import { getPatreonReconnectTarget } from './patreon';
 import { Anchor, Title } from '@mantine/core';
 import { hideNotification, showNotification, updateNotification } from '@mantine/notifications';
 import { IconBrandPatreonFilled, IconCheck, IconCubeSend, IconX } from '@tabler/icons-react';
@@ -93,12 +95,21 @@ export function displayComingSoon() {
 }
 
 export function displayPatronOnly(message = 'This feature is only available to patrons!') {
+  const target = getPatreonReconnectTarget(getCachedPublicUser());
   const id = 'patron-only';
   hideNotification(id);
   showNotification({
     id: id,
-    title: <Title order={5}>Patron Only</Title>,
-    message: (
+    title: <Title order={5}>{target ? 'Update your Patreon connection' : 'Patron Only'}</Title>,
+    message: target ? (
+      target === 'self' ? (
+        <Anchor href={PATREON_AUTH_URL} size='sm'>
+          Reconnect Patreon to verify your membership.
+        </Anchor>
+      ) : (
+        'Ask your Game Master to reconnect Patreon.'
+      )
+    ) : (
       <>
         {message} Consider supporting me on{' '}
         <Anchor href={PATREON_URL} size='sm' target='_blank'>

@@ -112,7 +112,11 @@ describe('Incomplete content recovery', () => {
         resolve();
       });
     }));
-    cy.wrap(null).should(() => expect(releaseReads.length, 'recovered read is held').to.be.greaterThan(0));
+    // The response can settle after the online event on a loaded runner; quiet
+    // recovery then uses its existing bounded 30-second retry rather than the event.
+    cy.wrap(null, { timeout: 45000 }).should(() =>
+      expect(releaseReads.length, 'recovered read is held').to.be.greaterThan(0)
+    );
     cy.get('[role="status"][aria-label="Loading character"]').should('be.visible');
     cy.then(() => releaseReads.splice(0).forEach((release) => release()));
     cy.contains('Hit Points', { timeout: 30000 }).should('be.visible');

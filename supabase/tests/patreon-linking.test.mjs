@@ -11,8 +11,46 @@ const require = createRequire(`${repo}/frontend/package.json`);
 const { build } = require('esbuild');
 const directory = await mkdtemp(join(tmpdir(), 'wg-patreon-tests-'));
 after(() => rm(directory, { recursive: true, force: true }));
-const service = {};
+const service = {
+  from(table) {
+    assert.equal(table, 'public_user');
+    return {
+      select(columns, options) {
+        assert.equal(columns, 'user_id');
+        assert.equal(options.count, 'exact');
+        assert.equal(options.head, true);
+        return { eq: async () => ({ count: 0, error: null }) };
+      },
+      update(body) {
+        let guard;
+        const query = {
+          eq(column, value) {
+            if (column === 'id') assert.equal(value, original.id);
+            else if (column === 'user_id') assert.equal(value, original.user_id);
+            else guard = { column, value };
+            return query;
+          },
+          is(column, value) {
+            guard = { column, value };
+            return query;
+          },
+          async select(columns) {
+            assert.equal(columns, 'id');
+            writes.push(structuredClone(body));
+            writeGuards.push(guard);
+            if (status === 'ERROR_UNKNOWN')
+              return { data: null, error: { message: 'private database failure' } };
+            return { data: status === 'SUCCESS' && !emptyWrite ? [{ id: original.id }] : [], error: null };
+          },
+        };
+        return query;
+      },
+    };
+  },
+};
 let gmProfiles = [];
+let gmProfileResolver;
+let writeGuards = [];
 let writes = [],
   requests = [],
   responses = [],
@@ -46,22 +84,12 @@ globalThis.__patreonFixture = {
   },
   connect: async (req, fn) => fn({}, await req.json(), 'fixture-session'),
   logEvent: (...args) => logs.push(args),
-  fetchData: async () => gmProfiles,
-  updateData: async (client, table, id, body, returnData) => {
-    assert.equal(client, service);
-    assert.equal(table, 'public_user');
-    assert.equal(id, original.id);
-    writes.push(structuredClone(body));
-    return {
-      status,
-      data: returnData ? (status === 'SUCCESS' && !emptyWrite ? [{ id }] : []) : null,
-    };
-  },
+  fetchData: async () => (gmProfileResolver ? gmProfileResolver() : gmProfiles),
 };
 const outfile = join(directory, 'patreon.mjs');
 await build({
   stdin: {
-    contents: `export * from './supabase/functions/_shared/patreon.ts'; export * from './supabase/functions/_shared/patreon-api.ts';`,
+    contents: `export * from './supabase/functions/_shared/patreon.ts'; export * from './supabase/functions/_shared/patreon-api.ts'; export * from './supabase/functions/_shared/patreon-store.ts';`,
     resolveDir: repo,
   },
   outfile,
@@ -94,6 +122,8 @@ const api = await import(pathToFileURL(outfile).href);
 const tokens = {
   access_token: 'fixture-access',
   refresh_token: 'fixture-refresh',
+  scope: 'identity identity[email]',
+  oauth_client_id: 'v2-client',
 };
 function identity(tierIds = ['5628112'], campaign = '4805226') {
   return {
@@ -129,7 +159,9 @@ function identity(tierIds = ['5628112'], campaign = '4805226') {
 }
 function setup(...values) {
   gmProfiles = [];
+  gmProfileResolver = undefined;
   writes = [];
+  writeGuards = [];
   requests = [];
   responses = values;
   status = 'SUCCESS';
@@ -141,7 +173,8 @@ function setup(...values) {
     assert.equal(new URL(url).origin, 'https://www.patreon.com');
     assert(init.headers['User-Agent']);
     assert(init.signal instanceof AbortSignal);
-    const result = responses.shift();
+    let result = responses.shift();
+    if (typeof result === 'function') result = await result();
     if (result instanceof Error) throw result;
     assert(result !== undefined, 'Unexpected extra provider request');
     return result instanceof Response ? result : Response.json(result);
@@ -154,9 +187,9 @@ test('native link exchanges once, reads v2 identity and persists the authenticat
       service,
       original,
       'one-use-code',
-      'https://wanderersguide.app/auth/patreon/redirect'
+      'https://wanderersguide.app/auth/patreon/redirect',
     ),
-    true
+    true,
   );
   assert.equal(requests.length, 2);
   assert.equal(requests[0].url.pathname, '/api/oauth2/token');
@@ -166,7 +199,7 @@ test('native link exchanges once, reads v2 identity and persists the authenticat
   assert.equal(requests[1].url.pathname, '/api/oauth2/v2/identity');
   assert.equal(
     requests[1].url.searchParams.get('include'),
-    'memberships.currently_entitled_tiers,memberships.campaign'
+    'memberships.currently_entitled_tiers,memberships.campaign',
   );
   assert.equal(writes[0].patreon.patreon_user_id, 'correct-patron');
   assert.equal(writes[0].patreon.tier, 'WANDERER');
@@ -200,13 +233,23 @@ test('hidden Patreon names/email and free members still link', async () => {
   const value = identity([]);
   value.data.attributes = { full_name: null, email: null };
   setup(tokens, value);
-  await api.handlePatreonRedirect(service, original, 'code', 'https://wanderersguide.app/auth/patreon/redirect');
+  await api.handlePatreonRedirect(
+    service,
+    original,
+    'code',
+    'https://wanderersguide.app/auth/patreon/redirect',
+  );
   assert.equal(writes[0].patreon.patreon_user_id, 'correct-patron');
   assert.equal(writes[0].patreon.tier, undefined);
 });
 test('a new GM receives an access code in the same successful account write', async () => {
   setup(tokens, identity(['22622808']));
-  await api.handlePatreonRedirect(service, original, 'code', 'https://wanderersguide.app/auth/patreon/redirect');
+  await api.handlePatreonRedirect(
+    service,
+    original,
+    'code',
+    'https://wanderersguide.app/auth/patreon/redirect',
+  );
   assert.equal(writes.length, 1);
   assert(writes[0].patreon.game_master.access_code?.length >= 12);
 });
@@ -222,7 +265,7 @@ test('reconnecting a GM preserves their existing group code', async () => {
       },
     },
     'code',
-    'https://wanderersguide.app/auth/patreon/redirect'
+    'https://wanderersguide.app/auth/patreon/redirect',
   );
   assert.equal(writes[0].patreon.game_master.access_code, 'existing-group-code');
 });
@@ -237,36 +280,56 @@ for (const failure of [
   test(`provider failure does not save, expose credentials, or replay the authorization: ${failure.status ?? failure.message ?? 'malformed'}`, async () => {
     setup(tokens, failure);
     await assert.rejects(
-      api.handlePatreonRedirect(service, original, 'code', 'https://wanderersguide.app/auth/patreon/redirect'),
-      /Patreon connection could not be completed/
+      api.handlePatreonRedirect(
+        service,
+        original,
+        'code',
+        'https://wanderersguide.app/auth/patreon/redirect',
+      ),
+      /Patreon connection could not be completed/,
     );
     assert.equal(writes.length, 0);
     assert.equal(requests.length, 2);
   });
 }
-test('failed persistence cannot claim a connected account', async () => {
+test('failed persistence cannot claim a connected account or expose database details', async () => {
   setup(tokens, identity());
   status = 'ERROR_UNKNOWN';
-  assert.equal(
-    await api.handlePatreonRedirect(service, original, 'code', 'https://wanderersguide.app/auth/patreon/redirect'),
-    false
+  await assert.rejects(
+    api.handlePatreonRedirect(service, original, 'code', 'https://wanderersguide.app/auth/patreon/redirect'),
+    (error) => error.message === 'Patreon connection persistence failed.',
   );
 });
 test('an account row that disappeared cannot claim a successful write', async () => {
   setup(tokens, identity());
   emptyWrite = true;
   assert.equal(
-    await api.handlePatreonRedirect(service, original, 'code', 'https://wanderersguide.app/auth/patreon/redirect'),
-    false
+    await api.handlePatreonRedirect(
+      service,
+      original,
+      'code',
+      'https://wanderersguide.app/auth/patreon/redirect',
+    ),
+    false,
   );
 });
-test('legacy refresh retains its issuing client while new grants use v2 credentials', async () => {
-  setup(tokens);
-  await api.refreshPatreonToken('old-refresh', '');
-  assert.equal(new URLSearchParams(requests[0].init.body).get('client_id'), 'legacy-client');
+test('refresh rejects legacy clients before provider I/O and new grants require v2 configuration', async () => {
+  setup();
+  await assert.rejects(api.refreshPatreonToken('old-refresh', ''), (error) => error.stage === 'migration');
+  assert.equal(requests.length, 0);
   setup(tokens);
   await api.refreshPatreonToken('new-refresh', 'v2-client');
   assert.equal(new URLSearchParams(requests[0].init.body).get('client_id'), 'v2-client');
+  const saved = environment.PATREON_V2_CLIENT_ID;
+  delete environment.PATREON_V2_CLIENT_ID;
+  try {
+    assert.throws(
+      () => api.patreonClient(),
+      (error) => error.stage === 'configuration',
+    );
+  } finally {
+    environment.PATREON_V2_CLIENT_ID = saved;
+  }
 });
 test('identity outages fail paid checks quietly and preserve all linked account data', async () => {
   setup(new Response('{}', { status: 503 }));
@@ -283,13 +346,14 @@ test('expired access refreshes once and saves rotated tokens before checking mem
     patreon: {
       access_token: 'expired',
       refresh_token: 'original-refresh',
+      oauth_client_id: 'v2-client',
       tier: 'WANDERER',
     },
   };
   assert.equal(await api.hasPatreonAccess(user, 2), true);
   assert.equal(requests.length, 3);
   assert.equal(writes[0].patreon.refresh_token, 'fixture-refresh');
-  assert.equal(new URLSearchParams(requests[1].init.body).get('client_id'), 'legacy-client');
+  assert.equal(new URLSearchParams(requests[1].init.body).get('client_id'), 'v2-client');
 });
 test('rotated tokens survive a subsequent identity outage', async () => {
   setup(new Response('{}', { status: 401 }), tokens, new Response('{}', { status: 503 }));
@@ -298,6 +362,7 @@ test('rotated tokens survive a subsequent identity outage', async () => {
     patreon: {
       access_token: 'expired',
       refresh_token: 'original-refresh',
+      oauth_client_id: 'v2-client',
       tier: 'WANDERER',
     },
   };
@@ -308,7 +373,10 @@ test('rotated tokens survive a subsequent identity outage', async () => {
 });
 test('verified empty entitlement removes paid access, while an absent token cannot grant a cached paid tier', async () => {
   setup(identity([]));
-  assert.equal(await api.hasPatreonAccess({ ...original, patreon: { ...tokens, tier: 'WANDERER' } }, 2), false);
+  assert.equal(
+    await api.hasPatreonAccess({ ...original, patreon: { ...tokens, tier: 'WANDERER' } }, 2),
+    false,
+  );
   assert.equal(writes[0].patreon.tier, undefined);
   setup();
   assert.equal(await api.hasPatreonAccess({ ...original, patreon: { tier: 'WANDERER' } }, 2), false);
@@ -318,11 +386,11 @@ test('token exchange failure never proceeds to identity or persistence', async (
   setup(
     new Response('{"error":"invalid_grant","private":"secret"}', {
       status: 400,
-    })
+    }),
   );
   await assert.rejects(
     api.handlePatreonRedirect(service, original, 'code', 'https://wanderersguide.app/auth/patreon/redirect'),
-    (e) => e.stage === 'token' && !JSON.stringify(e).includes('secret')
+    (e) => e.stage === 'token' && !JSON.stringify(e).includes('secret'),
   );
   assert.equal(requests.length, 1);
   assert.equal(writes.length, 0);
@@ -368,7 +436,7 @@ const invoke = (body) =>
     new Request('https://fixture.invalid', {
       method: 'POST',
       body: JSON.stringify(body),
-    })
+    }),
   );
 test('entry point rejects missing/deactivated actors before provider or service access', async () => {
   for (const user of [null, { ...original, deactivated: true }]) {
@@ -381,7 +449,7 @@ test('entry point rejects missing/deactivated actors before provider or service 
           redirectOrigin: 'https://wanderersguide.app',
         })
       ).status,
-      'error'
+      'error',
     );
     assert.equal(requests.length, 0);
     assert.equal(writes.length, 0);
@@ -467,13 +535,15 @@ test('provider timeout aborts the request and returns only a safe stage', async 
   };
   globalThis.clearTimeout = (id) => assert.equal(id, 123);
   globalThis.fetch = async (_url, { signal }) =>
-    new Promise((resolve, reject) => signal.addEventListener('abort', () => reject(Error('private timeout body'))));
+    new Promise((resolve, reject) =>
+      signal.addEventListener('abort', () => reject(Error('private timeout body'))),
+    );
   try {
     const promise = api.fetchPatreonIdentity('fixture-access');
     deadline();
     await assert.rejects(
       promise,
-      (e) => e.stage === 'identity' && e.message === 'Patreon connection could not be completed.'
+      (e) => e.stage === 'identity' && e.message === 'Patreon connection could not be completed.',
     );
   } finally {
     globalThis.setTimeout = realSet;
@@ -501,5 +571,395 @@ test('creation distinguishes a provider outage from a missing membership', async
     assert.match(error.message, /temporarily unavailable/);
     return true;
   });
+  assert.equal(writes.length, 0);
+});
+
+test('legacy grants request migration without trying a retired API or rotating their token', async () => {
+  setup();
+  const user = {
+    ...original,
+    patreon: { ...tokens, tier: 'WANDERER', oauth_scopes: ['users', 'pledges-to-me'] },
+  };
+  delete user.patreon.oauth_client_id;
+  await assert.rejects(
+    api.hasPatreonAccess(user, 2, { throwOnFailure: true }),
+    (error) => error.code === 'PATREON_RECONNECT_REQUIRED',
+  );
+  assert.equal(requests.length, 0);
+  assert.equal(writes.length, 0);
+});
+
+test('new authorization cannot save v1 scopes as a v2 connection', async () => {
+  setup({ ...tokens, scope: 'users pledges-to-me my-campaign' }, identity());
+  await assert.rejects(
+    api.handlePatreonRedirect(service, original, 'code', 'https://wanderersguide.app/auth/patreon/redirect'),
+    (error) => error.stage === 'scope',
+  );
+  assert.equal(writes.length, 0);
+  assert.equal(requests.length, 1);
+});
+
+test('a downgraded sponsor cannot grant virtual Game Master benefits', async () => {
+  setup(identity(['5628112']));
+  gmProfiles = [
+    { id: 18, user_id: 'fixture-gm', patreon: { ...tokens, oauth_client_id: 'v2-client', tier: 'WANDERER' } },
+  ];
+  assert.equal(await api.hasPatreonAccess(original, 2), false);
+});
+
+test('Game Master member summaries never return account credentials', async () => {
+  setup(identity(['22622808']));
+  const secret = {
+    user_id: 'fixture-member',
+    display_name: 'Member',
+    patreon: {
+      access_token: 'PRIVATE_ACCESS',
+      refresh_token: 'PRIVATE_REFRESH',
+      patreon_email: 'PRIVATE_EMAIL',
+    },
+    api: { clients: [{ api_key: 'PRIVATE_KEY' }] },
+  };
+  const originalFrom = service.from;
+  service.from = () => ({ select: () => ({ eq: async () => ({ data: [secret], error: null }) }) });
+  try {
+    const members = await api.getAllUsersInGameMasterGroup({
+      ...original,
+      patreon: { ...tokens, oauth_client_id: 'v2-client', tier: 'GAME-MASTER' },
+    });
+    assert.deepEqual(members, [{ user_id: 'fixture-member', display_name: 'Member' }]);
+    assert(!JSON.stringify(members).includes('PRIVATE_'));
+  } finally {
+    service.from = originalFrom;
+  }
+});
+
+test('rotated v2 credentials are saved before rejecting an invalid scope response', async () => {
+  setup(new Response('{}', { status: 401 }), { ...tokens, scope: 'users pledges-to-me' });
+  const user = { ...original, patreon: { ...tokens, tier: 'WANDERER' } };
+  await assert.rejects(
+    api.hasPatreonAccess(user, 2, { throwOnFailure: true }),
+    (error) => error.code === 'PATREON_RECONNECT_REQUIRED',
+  );
+  assert.equal(requests.length, 2);
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0].patreon.refresh_token, tokens.refresh_token);
+  assert.deepEqual(writes[0].patreon.oauth_scopes, ['users', 'pledges-to-me']);
+});
+
+test('a healthy v2 sponsor benefits a virtual-only player and a player with a legacy personal link', async () => {
+  for (const linked of [false, true]) {
+    setup(identity(['22622808']));
+    gmProfiles = [{ id: 18, user_id: 'fixture-gm', patreon: { ...tokens, tier: 'GAME-MASTER' } }];
+    const player = {
+      ...original,
+      patreon: {
+        ...original.patreon,
+        ...(linked
+          ? {
+              access_token: 'legacy-access',
+              refresh_token: 'legacy-refresh',
+              tier: 'WANDERER',
+              oauth_scopes: ['users', 'pledges-to-me'],
+            }
+          : {}),
+      },
+    };
+    assert.equal(await api.hasPatreonAccess(player, 2, { throwOnFailure: true }), true);
+    assert.equal(requests.length, 1);
+    assert.equal(writes.length, 0);
+  }
+});
+
+test('a virtual-only player is directed to their sponsor for migration', async () => {
+  setup(new Response('{}', { status: 401 }));
+  gmProfiles = [{ id: 18, user_id: 'fixture-gm', patreon: { access_token: 'legacy', tier: 'GAME-MASTER' } }];
+  await assert.rejects(
+    api.hasPatreonAccess(original, 2, { throwOnFailure: true }),
+    (error) => error.code === 'PATREON_SPONSOR_RECONNECT_REQUIRED',
+  );
+  assert.equal(requests.length, 1);
+});
+
+test('a concurrent reconnect cannot be overwritten by an older refresh result', async () => {
+  setup(new Response('{}', { status: 401 }), tokens);
+  status = 'CONFLICT';
+  const user = {
+    ...original,
+    patreon: { ...tokens, access_token: 'older-access', refresh_token: 'older-refresh', tier: 'WANDERER' },
+  };
+  const before = structuredClone(user.patreon);
+  await assert.rejects(
+    api.hasPatreonAccess(user, 2, { throwOnFailure: true }),
+    (error) => error.code === 'PATREON_UNAVAILABLE',
+  );
+  assert.deepEqual(writeGuards, [{ column: 'patreon->>revision', value: null }]);
+  assert.equal(requests.length, 2, 'never use a refresh result after a failed guarded save');
+  assert.deepEqual(user.patreon, before);
+});
+
+test('failed scope authorization retains the previous connection and group code', async () => {
+  for (const scope of [undefined, 'users pledges-to-me']) {
+    setup({ ...tokens, scope });
+    const before = structuredClone(original);
+    await assert.rejects(
+      api.handlePatreonRedirect(
+        service,
+        original,
+        'code',
+        'https://wanderersguide.app/auth/patreon/redirect',
+      ),
+      (error) => error.stage === 'scope',
+    );
+    assert.equal(writes.length, 0);
+    assert.deepEqual(original, before);
+  }
+});
+
+test('legacy Game Masters retain read-only member cleanup without provider requests', async () => {
+  setup();
+  const originalFrom = service.from;
+  service.from = () => ({
+    select: (columns) => {
+      assert.equal(columns, 'user_id,display_name');
+      return { eq: async () => ({ data: [{ user_id: 'member', display_name: 'Member' }], error: null }) };
+    },
+  });
+  try {
+    assert.deepEqual(
+      await api.getAllUsersInGameMasterGroup({
+        ...original,
+        patreon: { tier: 'GAME-MASTER', access_token: 'legacy' },
+      }),
+      [{ user_id: 'member', display_name: 'Member' }],
+    );
+    assert.equal(requests.length, 0);
+    assert.equal(writes.length, 0);
+  } finally {
+    service.from = originalFrom;
+  }
+});
+
+test('a missing server configuration never instructs an already connected patron to reconnect', async () => {
+  setup();
+  const saved = environment.PATREON_V2_CLIENT_ID;
+  delete environment.PATREON_V2_CLIENT_ID;
+  try {
+    await assert.rejects(
+      api.hasPatreonAccess({ ...original, patreon: { ...tokens, tier: 'WANDERER' } }, 2, {
+        throwOnFailure: true,
+      }),
+      (error) => error.code === 'PATREON_UNAVAILABLE',
+    );
+    assert.equal(writes.length, 0);
+    assert.equal(requests.length, 0);
+  } finally {
+    environment.PATREON_V2_CLIENT_ID = saved;
+  }
+});
+
+test('an unmarked record with a working v2 token keeps its connection and benefits', async () => {
+  setup(identity(['5628112']));
+  const user = {
+    ...original,
+    patreon: { access_token: 'unmarked-v2-access', refresh_token: 'unmarked-refresh', tier: 'WANDERER' },
+  };
+  const before = structuredClone(user);
+  assert.equal(await api.hasPatreonAccess(user, 2, { throwOnFailure: true }), true);
+  assert.equal(requests.length, 1);
+  assert.equal(writes.length, 0);
+  assert.deepEqual(user, before);
+});
+
+test('a different Patreon identity cannot change the saved membership', async () => {
+  setup(identity(['22622808']));
+  const user = {
+    ...original,
+    patreon: { ...tokens, patreon_user_id: 'different-stored-patron', tier: 'WANDERER' },
+  };
+  const before = structuredClone(user);
+  await assert.rejects(
+    api.hasPatreonAccess(user, 2, { throwOnFailure: true }),
+    (error) => error.code === 'PATREON_RECONNECT_REQUIRED',
+  );
+  assert.equal(writes.length, 0);
+  assert.deepEqual(user, before);
+});
+
+/** Real PostgREST SDK transport with an isolated atomic row fixture and no production I/O. */
+function storeSandbox(initial, beforePatch) {
+  const { createClient } = require('@supabase/supabase-js');
+  let row = { id: original.id, user_id: original.user_id, patreon: structuredClone(initial) };
+  const ledger = [];
+  const client = createClient('https://store-fixture.invalid', 'fixture-key', {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    global: {
+      fetch: async (input, init = {}) => {
+        const url = new URL(input instanceof Request ? input.url : input);
+        assert.equal(url.origin, 'https://store-fixture.invalid');
+        assert.equal(url.pathname, '/rest/v1/public_user');
+        assert.equal(url.searchParams.get('id'), `eq.${original.id}`);
+        assert.equal(url.searchParams.get('user_id'), `eq.${original.user_id}`);
+        assert(!url.href.includes('secret-access'));
+        assert(!url.href.includes('secret-refresh'));
+        ledger.push({ method: init.method ?? 'GET', url: url.href });
+        if (init.method === 'PATCH') {
+          beforePatch?.(row, ledger.filter((x) => x.method === 'PATCH').length);
+          const expected = url.searchParams.get('patreon->>revision');
+          const actual = row.patreon?.revision;
+          if (expected !== (actual ? `eq.${actual}` : 'is.null')) return Response.json([]);
+          row.patreon = JSON.parse(init.body).patreon;
+          return Response.json([{ id: row.id }]);
+        }
+        assert.equal(init.method, 'GET');
+        assert.equal(url.searchParams.get('select'), 'patreon');
+        return Response.json({ patreon: row.patreon });
+      },
+    },
+  });
+  return { client, ledger, row: () => row };
+}
+
+for (const previous of [null, {}, { revision: null }]) {
+  test(`first Patreon write safely guards ${JSON.stringify(previous)}`, async () => {
+    const sandbox = storeSandbox(previous);
+    const next = {
+      access_token: 'secret-access-first',
+      refresh_token: 'secret-refresh-first',
+      oauth_client_id: 'v2-client',
+    };
+    const saved = await api.savePatreonConnection(sandbox.client, original, previous, next);
+    assert(saved?.revision);
+    assert.equal(sandbox.row().patreon.access_token, next.access_token);
+    assert.equal(new URL(sandbox.ledger[0].url).searchParams.get('patreon->>revision'), 'is.null');
+  });
+}
+
+test('two first links cannot overwrite one another and use no credential-bearing URL filters', async () => {
+  const sandbox = storeSandbox(null);
+  const links = [
+    { access_token: 'secret-access-A', refresh_token: 'secret-refresh-A' },
+    { access_token: 'secret-access-B', refresh_token: 'secret-refresh-B' },
+  ];
+  const results = await Promise.all(
+    links.map((link) => api.savePatreonConnection(sandbox.client, original, null, link)),
+  );
+  assert.equal(results.filter(Boolean).length, 1);
+  assert.deepEqual(sandbox.row().patreon, results.find(Boolean));
+});
+
+test('a metadata-only race retains group edits and saves the rotated pair without another refresh', async () => {
+  const previous = {
+    access_token: 'secret-access-old',
+    refresh_token: 'secret-refresh-old',
+    oauth_client_id: 'v2-client',
+    patreon_user_id: 'correct-patron',
+    revision: crypto.randomUUID(),
+    game_master: { access_code: 'old-code' },
+  };
+  const sandbox = storeSandbox(previous, (row, attempt) => {
+    if (attempt === 1)
+      row.patreon = {
+        ...row.patreon,
+        revision: crypto.randomUUID(),
+        game_master: { access_code: 'concurrent-code' },
+      };
+  });
+  const saved = await api.saveRefreshedPatreonConnection(sandbox.client, original, previous, {
+    access_token: 'secret-access-new',
+    refresh_token: 'secret-refresh-new',
+    oauth_scopes: ['identity'],
+  });
+  assert.equal(saved.access_token, 'secret-access-new');
+  assert.equal(saved.refresh_token, 'secret-refresh-new');
+  assert.equal(saved.game_master.access_code, 'concurrent-code');
+  assert.equal(sandbox.ledger.filter((x) => x.method === 'PATCH').length, 2);
+  assert.equal(sandbox.ledger.filter((x) => x.method === 'GET').length, 1);
+});
+
+test('a newer OAuth grant wins against an older rotated response', async () => {
+  const previous = {
+    access_token: 'secret-access-old',
+    refresh_token: 'secret-refresh-old',
+    oauth_client_id: 'v2-client',
+    revision: crypto.randomUUID(),
+  };
+  const newer = {
+    ...previous,
+    access_token: 'secret-access-reconnected',
+    refresh_token: 'secret-refresh-reconnected',
+    revision: crypto.randomUUID(),
+  };
+  const sandbox = storeSandbox(previous, (row, attempt) => {
+    if (attempt === 1) row.patreon = structuredClone(newer);
+  });
+  assert.equal(
+    await api.saveRefreshedPatreonConnection(sandbox.client, original, previous, {
+      access_token: 'secret-access-late',
+      refresh_token: 'secret-refresh-late',
+    }),
+    null,
+  );
+  assert.deepEqual(sandbox.row().patreon, newer);
+  assert.equal(sandbox.ledger.filter((x) => x.method === 'PATCH').length, 1);
+});
+
+for (const scope of [undefined, null, { unexpected: 'metadata' }, ['identity', 17]]) {
+  test(`refresh retains the rotated pair when scope metadata is unknown: ${JSON.stringify(scope)}`, async () => {
+    setup(new Response('{}', { status: 401 }), { ...tokens, scope }, identity());
+    const user = { ...original, patreon: { ...tokens, oauth_scopes: ['identity'], tier: 'WANDERER' } };
+    assert.equal(await api.hasPatreonAccess(user, 2, { throwOnFailure: true }), true);
+    assert.equal(writes.length, 1);
+    assert.equal(writes[0].patreon.refresh_token, tokens.refresh_token);
+    assert.deepEqual(writes[0].patreon.oauth_scopes, ['identity']);
+    assert.equal(requests.length, 3);
+  });
+}
+
+test('a revoked GM code cannot enroll a player after a slow membership verification', async () => {
+  const gm = {
+    id: 18,
+    user_id: 'fixture-gm',
+    display_name: 'Sponsor',
+    patreon: { ...tokens, tier: 'GAME-MASTER', game_master: { access_code: 'old-code' } },
+  };
+  setup(() => {
+    gmProfiles = [{ ...gm, patreon: { ...gm.patreon, game_master: { access_code: 'new-code' } } }];
+    return identity(['22622808']);
+  });
+  gmProfiles = [gm];
+  const result = await api.addToGameMasterGroup(service, original, 'fixture-gm', 'old-code');
+  assert.equal(result.status, 'ERROR_UNKNOWN');
+  assert.equal(writes.length, 0);
+});
+
+test('group code regeneration retains the freshly rotated credential pair and revision', async () => {
+  setup(new Response('{}', { status: 401 }), tokens, identity(['22622808']));
+  const user = {
+    ...original,
+    patreon: {
+      ...tokens,
+      access_token: 'expired',
+      refresh_token: 'old-refresh',
+      tier: 'GAME-MASTER',
+      game_master: { access_code: 'old-code' },
+    },
+  };
+  gmProfileResolver = () => [{ ...user, patreon: writes[0].patreon }];
+  const result = await api.regenerateGameMasterAccessCode(service, user);
+  assert.equal(result.status, 'SUCCESS');
+  assert.equal(writes.length, 2);
+  assert.equal(writes[1].patreon.access_token, tokens.access_token);
+  assert.equal(writes[1].patreon.refresh_token, tokens.refresh_token);
+  assert.equal(writeGuards[1].value, writes[0].patreon.revision);
+});
+
+test('a freshly downgraded sponsor cannot regenerate a GM group code', async () => {
+  setup(identity(['22622808']));
+  const user = {
+    ...original,
+    patreon: { ...tokens, tier: 'GAME-MASTER', game_master: { access_code: 'old-code' } },
+  };
+  gmProfileResolver = () => [{ ...user, patreon: { ...user.patreon, tier: 'WANDERER' } }];
+  assert.equal((await api.regenerateGameMasterAccessCode(service, user)).status, 'ERROR_UNKNOWN');
   assert.equal(writes.length, 0);
 });
