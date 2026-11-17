@@ -136,7 +136,7 @@ service. Do not reset an existing database to repair a runtime timeout.
   For scheduled reconciliation, configure `PATREON_SYNC_SECRET_SHA256` in the
   functions service and keep the matching raw capability server-only. Compose
   defaults this integration to disabled. See the development guide for the
-  15-minute scheduler and automatic creator-token refresh.
+  15-minute Supabase Cron scheduler and automatic creator-token refresh. Apply the scheduler migration with the stock Supabase Postgres configuration; local jobs remain inactive until separately provisioned. The signing key belongs in Vault and `PATREON_SCHEDULER_KEY`, never outgoing HTTP headers. GitHub Actions remains manual recovery only.
   Register your site's `/auth/patreon/redirect` URL with Patreon. Leave these
   variables empty if Patreon linking is unused. See the
   [development guide](/development#patreon-api-v2-configuration) for migration

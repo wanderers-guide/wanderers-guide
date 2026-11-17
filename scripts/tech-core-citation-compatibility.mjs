@@ -288,6 +288,10 @@ export function prepare(repository, proposalPath) {
   const originalRequirements = JSON.parse(
     files["supabase/release/requirements.json"],
   );
+  const schedulerUpgrade = '20261117010000_patreon_creator_scheduler.sql';
+  const schedulerRequirement = originalRequirements[schedulerUpgrade];
+  assert.deepEqual(schedulerRequirement, {check:'patreon-scheduler.sql',order:'before-functions'});
+  delete originalRequirements[schedulerUpgrade];
   const creatorUpgrade = '20261117000000_patreon_creator_verification.sql';
   const creatorRequirement = originalRequirements[creatorUpgrade];
   assert.deepEqual(creatorRequirement, {check:'patreon-creator.sql',order:'before-functions'});
@@ -334,6 +338,7 @@ export function prepare(repository, proposalPath) {
   originalRequirements[bookCountUpgrade] = bookCountRequirement;
   originalRequirements[modeCountUpgrade]=modeCountRequirement;
   originalRequirements[creatorUpgrade]=creatorRequirement;
+  originalRequirements[schedulerUpgrade]=schedulerRequirement;
   let suppliedRows;
   if (proposalPath) {
     const proposalBytes = fs.readFileSync(proposalPath);
@@ -404,10 +409,10 @@ export function prepare(repository, proposalPath) {
     requirements[migration].check = check;
     return { migration, before, after: requirements[migration] };
   });
-  assert.equal(Object.keys(requirements).length, 114);
+  assert.equal(Object.keys(requirements).length, 115);
   assert.equal(
     new Set(Object.values(requirements).map((entry) => entry.check)).size,
-    72,
+    73,
   );
   if (!proposalPath) {
     assert.equal(

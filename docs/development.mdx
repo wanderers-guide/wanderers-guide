@@ -189,12 +189,44 @@ personal tokens, links, group metadata and characters. The pilot requires no pat
 reauthorization. Existing v1 personal grants remain v1; creator verification supplies the
 v2 membership check without claiming to convert their scopes.
 
-Set `PATREON_CREATOR_ENABLED=true` only after provisioning. Configure a random scheduler
-capability as the GitHub Actions secret `WG_PATREON_SYNC_SECRET`, and its SHA-256 hex digest
-as the edge secret `PATREON_SYNC_SECRET_SHA256`. The scheduler also uses the existing
-`WG_MONITOR_ANON_KEY` repository variable. `patreon-memberships.yml` reconciles every 15
-minutes (Actions schedules may be delayed). It follows every pagination cursor and
-publishes one complete snapshot atomically; incomplete scans never remove benefits.
+Set `PATREON_CREATOR_ENABLED=true` only after provisioning. Apply
+`20261117010000_patreon_creator_scheduler.sql` for the periodic trigger. It enables
+Supabase's `pg_cron` and `pg_net` extensions and registers an **inactive, unprovisioned**
+`wg-patreon-memberships` job. Use the pinned Docker image's stock configuration
+(`postgres -D /etc/postgresql`), which includes Supautils' extension permissions.
+Managed Supabase uses the same supported extension-enablement path.
+
+Generate a random 32-byte signing key encoded as 64 lowercase hex characters. Set it
+as the edge secret `PATREON_SCHEDULER_KEY`, then provision it in Vault through the
+service-only `patreon_creator_scheduler_configure(p_endpoint, p_anon_key,
+p_signing_key, p_active)` RPC. Use this project's HTTPS function URL and **public anon
+JWT**, never a service key. Provision with `p_active=false`, verify the deployed signed receiver, then enable
+a supervised periodic pilot and verify its HTTP results and snapshot advances. Only
+then rely on the unattended job. The final schedule is `3,18,33,48 * * * *` in UTC, every 15 minutes.
+
+The timer invokes the existing fenced reconciliation endpoint. It sends only the public
+anon JWT, a timestamp and an HMAC-SHA256 signature of the fixed operation
+`POST\nsync-patreon-memberships\n<unix_seconds>`. The body is unused. Signatures expire
+after five minutes and cannot control an account or operation. Signing material stays
+in Vault and edge secrets: `pg_net` temporarily stores outgoing headers in a queue that
+database-login roles can read. Never put a creator grant, service key, or reusable
+manual capability in that queue or `cron.job.command`. Verify cron execution, the
+correlated `last_request_id` HTTP result, and an advancing creator `observed_at`;
+a successful enqueue alone does not prove reconciliation succeeded.
+
+GitHub Actions is **manual recovery only**, because its scheduled events can be delayed
+or dropped beyond the one-hour freshness limit. The retained `patreon-memberships.yml`
+`workflow_dispatch` uses the random capability in GitHub secret `WG_PATREON_SYNC_SECRET`
+and its edge-secret SHA-256 digest `PATREON_SYNC_SECRET_SHA256`, plus the public
+`WG_MONITOR_ANON_KEY` variable. Both authentication modes retain gateway JWT verification
+and call the same complete, atomic campaign scan. Incomplete scans never remove benefits.
+
+Fresh databases and branches without data have no scheduler credentials and send no
+requests. A full-data branch or physical restore can copy active jobs and Vault keys:
+rotate the signing key in **production Vault and the edge receiver** immediately after
+creating such a copy, and disable copied jobs. An inactive migration default does not
+protect full-data restores by itself. See [Supabase's restore guidance](https://supabase.com/kb/troubleshooting/how-to-stop-pg_cron-jobs-from-running-on-a-restored-project-or-branch).
+
 Observation ordering uses scan start rather than publication time, so a personal v2
 authorization completed during pagination remains newer than earlier pages.
 Paid operations require a snapshot no older than one hour and preserve the application

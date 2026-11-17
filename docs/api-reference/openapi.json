@@ -42,11 +42,23 @@
   ],
   "components": {
     "securitySchemes": {
+      "patreonSyncSignature": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-WG-Patreon-Signature",
+        "description": "Internal Supabase Cron HMAC-SHA256 signature of POST\nsync-patreon-memberships\n<unix_seconds>, using the hex-decoded PATREON_SCHEDULER_KEY. The signing key stays in Vault and edge secrets; it never enters the HTTP queue. Requires the timestamp header and gateway JWT."
+      },
+      "patreonSyncTimestamp": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-WG-Patreon-Timestamp",
+        "description": "Unix seconds signed with the fixed operation. Accepted for at most five minutes, with at most 30 seconds of future clock skew. Both signed headers are required; malformed signed requests cannot fall back to manual capability authentication."
+      },
       "patreonSyncCapability": {
         "type": "apiKey",
         "in": "header",
         "name": "X-WG-Patreon-Sync",
-        "description": "Internal scheduler capability, distinct from a WG API key or Patreon token. Provision its SHA-256 digest as PATREON_SYNC_SECRET_SHA256. Never expose the value to web clients."
+        "description": "Manual recovery capability, distinct from a WG API key or Patreon token. Provision its SHA-256 digest as PATREON_SYNC_SECRET_SHA256. Never expose the value to web clients."
       },
       "apiKeyAuth": {
         "type": "http",
@@ -1195,11 +1207,16 @@
         ],
         "summary": "Reconcile current Patreon memberships (internal scheduler)",
         "operationId": "syncPatreonMemberships",
-        "description": "Internal service endpoint. Requires a valid Supabase gateway JWT (the scheduler uses the public anon JWT) AND the X-WG-Patreon-Sync capability. WG API keys alone are not accepted. The body is unused; send {}. Reads every page of the fixed WG campaign, refreshes the creator grant when necessary, and atomically publishes current entitlement observations. Does not charge patrons or replace personal connections. A failed/incomplete scan preserves the previous snapshot. Response contains only aggregate counts.",
+        "description": "Internal service endpoint. Requires a valid Supabase gateway JWT (callers use the public anon JWT) AND either the paired X-WG-Patreon-Signature/X-WG-Patreon-Timestamp headers from Supabase Cron or the X-WG-Patreon-Sync manual recovery capability. WG API keys alone are not accepted. The body is unused; send {}. Reads every page of the fixed WG campaign, refreshes the creator grant when necessary, and atomically publishes current entitlement observations. Does not charge patrons or replace personal connections. A failed/incomplete scan preserves the previous snapshot. Response contains only aggregate counts.",
         "security": [
           {
             "bearerAuth": [],
             "patreonSyncCapability": []
+          },
+          {
+            "bearerAuth": [],
+            "patreonSyncSignature": [],
+            "patreonSyncTimestamp": []
           }
         ],
         "requestBody": {
@@ -1255,7 +1272,7 @@
             "description": "Supabase gateway JWT missing or rejected."
           },
           "403": {
-            "description": "Missing/invalid scheduler capability or server configuration. No creator credential is acquired.",
+            "description": "Missing/invalid manual capability or timestamped signature, or missing server configuration. No creator credential is acquired.",
             "content": {
               "application/json": {
                 "schema": {
