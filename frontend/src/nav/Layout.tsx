@@ -69,13 +69,23 @@ export default function Layout(props: { children: React.ReactNode }) {
     //   setUserIcon(svg);
     // });
     let active = true;
-    getPublicUser().then((profile) => {
-      // The shared reader publishes only its newest response to this cache.
-      const current = getCachedPublicUser();
-      if (active && profile && current?.user_id === session.user.id) setUser(current);
-    });
+    const refreshProfile = () => {
+      void getPublicUser().then((profile) => {
+        // The shared reader publishes only its newest response to this cache.
+        const current = getCachedPublicUser();
+        if (active && profile && current?.user_id === session.user.id) setUser(current);
+      });
+    };
+    refreshProfile();
+    // Reconciled subscription changes also reach a tab that stays open across billing.
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') refreshProfile();
+    }, 5 * 60_000);
+    window.addEventListener('focus', refreshProfile);
     return () => {
       active = false;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refreshProfile);
     };
   }, [session, setUser]);
 

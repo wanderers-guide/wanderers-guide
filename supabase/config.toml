@@ -357,6 +357,10 @@ verify_jwt = true
 [functions.report-client-error]
 verify_jwt = false
 
+# Scheduler also requires the narrow application capability.
+[functions.sync-patreon-memberships]
+verify_jwt = true
+
 # Used only by docker-compose, not a cloud endpoint.
 [functions.main]
 enabled = false

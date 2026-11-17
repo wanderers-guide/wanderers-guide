@@ -1068,7 +1068,7 @@
             "properties": {
               "oauth_client_id": { "type": "string" },
               "oauth_scopes": { "type": "array", "items": { "type": "string" } },
-              "connection_status": { "type": "string", "readOnly": true, "enum": ["not_connected", "connected", "migration_required", "reconnect_required"], "description": "Derived on the account response from v2 grant provenance. Missing provenance is migration_required and does not invalidate a working v2 token. Connected is not a live paid-membership guarantee. Virtual group access_status uses the same values for the sponsor's connection and saved GM tier." }
+              "connection_status": { "type": "string", "readOnly": true, "enum": ["not_connected", "connected", "migration_required", "reconnect_required", "verification_unavailable"], "description": "Derived from creator-side v2 campaign verification when enabled, otherwise personal v2 grant provenance. Connected alone does not guarantee a paid tier. A stale or unavailable creator check preserves the link and returns verification_unavailable; virtual access_status follows the sponsor." }
             }
           },
           "api": {
@@ -3043,7 +3043,7 @@
       "post": {
         "tags": ["Users"],
         "summary": "Get a public user profile",
-        "description": "Without a body, returns the caller's own profile. Pass `id` (Supabase auth user id, UUID) or `_id` (numeric `public_user.id`) to look up another user. Lookups of another user redact private fields. The self response derives Patreon connection_status and virtual-group access_status without changing the saved connection or contacting Patreon. Legacy grants require explicit reconnect; cached paid tiers alone do not prove v2 access.",
+        "description": "Without a body, returns the caller's own profile. Pass `id` (Supabase auth user id, UUID) or `_id` (numeric `public_user.id`) to look up another user. Lookups of another user redact private fields. The self response derives Patreon connection_status and virtual-group access_status without changing the saved connection or contacting Patreon. Creator-side verification can verify existing saved Patreon identities without replacing personal grants. Without creator verification, legacy grants require explicit v2 reconnect. Cached paid tiers alone do not prove paid access.",
         "operationId": "getUser",
         "requestBody": {
           "required": false,

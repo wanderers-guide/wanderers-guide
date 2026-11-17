@@ -6,14 +6,21 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 const repo = fileURLToPath(new URL('../../', import.meta.url));
-const { build } = createRequire(`${repo}/frontend/package.json`)('esbuild');
+const require = createRequire(`${repo}/frontend/package.json`);
+const { build } = require('esbuild');
 const directory = await mkdtemp(join(tmpdir(), 'wg-account-handlers-'));
 const writes = [];
 const member = { id: 17, user_id: 'fixture-owner', is_admin: false };
 let user = member;
 let profileRows = [member];
 let messages = 0;
+let creatorEnabled = false;
+let creatorObservation;
 const service = {
+  rpc: async (name) => {
+    assert.equal(name, 'patreon_creator_membership');
+    return { data: creatorObservation, error: null };
+  },
   from(table) {
     assert.equal(table, 'content_update', 'submission cannot write content counters');
     return {
@@ -24,7 +31,7 @@ const service = {
     };
   },
 };
-globalThis.Deno = { env: { get: () => 'fixture-only' } };
+globalThis.Deno = { env: { get: (key) => key === 'PATREON_CREATOR_ENABLED' ? String(creatorEnabled) : 'fixture-only' } };
 globalThis.fetch = async (url) => {
   assert.equal(url, 'https://content-updates-bot.onrender.com/update');
   messages++;
@@ -63,6 +70,7 @@ const plugins = [
   {
     name: 'explicit-boundaries',
     setup(b) {
+      b.onResolve({filter:/^https:\/\/esm.sh\/zod@3/},()=>({path:require.resolve('zod/v3')}));
       b.onResolve({ filter: /^(std\/server|\.\.\/_shared\/(helpers|patreon)\.ts)$/ }, (a) => ({
         path: a.path,
         namespace: 'fixture',
@@ -190,6 +198,19 @@ try {
     assert.equal(result.data.patreon.game_master.virtual_tier.access_status, expected);
     assert.equal(result.data.patreon.access_token, undefined);
     assert.equal(result.data.patreon.game_master.virtual_tier.access_token, undefined);
+  }
+  creatorEnabled = true;
+  for (const [observation, expected] of [
+    [{ enabled: true, available: true, tier: 'WANDERER', observed_at: new Date().toISOString() }, 'connected'],
+    [{ enabled: true, available: false }, 'verification_unavailable'],
+  ]) {
+    creatorObservation = observation;
+    user = { ...member, patreon: { patreon_user_id: 'legacy-patron', access_token: 'legacy-access', refresh_token: 'legacy-refresh', oauth_scopes: ['users'], tier: 'ADVOCATE' } };
+    const result = await getProfile(request({}));
+    assert.equal(result.data.patreon.connection_status, expected);
+    assert.equal(result.data.patreon.access_token, 'legacy-access');
+    assert.equal(result.data.patreon.refresh_token, 'legacy-refresh');
+    assert.equal(result.data.patreon.tier, observation.available ? 'WANDERER' : 'ADVOCATE');
   }
   assert.equal(writes.length, beforeProfileWrites, 'profile reads never rewrite connections');
   console.log(

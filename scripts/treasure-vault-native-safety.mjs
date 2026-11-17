@@ -141,9 +141,9 @@ export function assertRequiredNativeEvidence(receipt) {
   assert.ok(metadata.filter(row=>!privileged.includes(row)).every(row=>row.setup_login==='postgres'));
   const ci=receipt.alternate_fixture.registered_ci_replays;
   assert.equal(ci?.schema,'wg-tv-native-registered-ci-replays-v4');assert.equal(ci.passed,true);
-  assert.equal(ci.registered_requirements,113);assert.equal(ci.checks.length,71);assert.equal(ci.replays.length,91);
-  assert.equal(ci.passes,2);assert.equal(ci.registered_verification_rounds,3);assert.equal(ci.expected_native_statements,396);
-  assert.equal(ci.stages.length,396);assert.equal(new Set(ci.stages.map(row=>row.label)).size,396);
+  assert.equal(ci.registered_requirements,114);assert.equal(ci.checks.length,72);assert.equal(ci.replays.length,91);
+  assert.equal(ci.passes,2);assert.equal(ci.registered_verification_rounds,3);assert.equal(ci.expected_native_statements,399);
+  assert.equal(ci.stages.length,399);assert.equal(new Set(ci.stages.map(row=>row.label)).size,399);
   assert.equal(ci.checks.filter(row=>row.path==='supabase/release/tech-core-introductory-spells-citation-compatibility.sql').length,1);
   assert.equal(ci.checks.filter(row=>row.path==='supabase/release/tech-core-general-spells-citation-compatibility.sql').length,1);
   assert.equal(ci.checks.filter(row=>row.path==='supabase/release/treasure-vault-terminal-catalog-compatibility.sql').length,1);
@@ -154,14 +154,14 @@ export function assertRequiredNativeEvidence(receipt) {
   assert.equal(ci.registered_release_read_only_transactions,true);assert.equal(ci.full_state_after_each_statement,true);
   assert.match(ci.baseline_sha256,/^[a-f0-9]{64}$/);
   const nativeCiStages=receipt.alternate_fixture.stages.filter(row=>row.name.startsWith('registered-ci:'));
-  assert.equal(nativeCiStages.length,396);assert.equal(new Set(nativeCiStages.map(row=>row.name)).size,396);
+  assert.equal(nativeCiStages.length,399);assert.equal(new Set(nativeCiStages.map(row=>row.name)).size,399);
   const actualStages=new Map(receipt.alternate_fixture.stages.map(row=>[row.name,row]));
   for(const row of ci.stages){
     assert.equal(row.full_state_preserved,true);
     const actual=actualStages.get('registered-ci:'+row.label);assert.ok(actual);
     assert.equal(actual.sql_sha256,row.sql_sha256);assert.equal(actual.status,0);assert.equal(actual.signal,null);assert.equal(actual.passed,true);
   }
-  assert.deepEqual(ci.stages.filter(row=>row.kind==='release').map(row=>row.round),[...Array(71).fill(0),...Array(71).fill(1),...Array(71).fill(2)]);
+  assert.deepEqual(ci.stages.filter(row=>row.kind==='release').map(row=>row.round),[...Array(72).fill(0),...Array(72).fill(1),...Array(72).fill(2)]);
   assert.ok(ci.stages.filter(row=>row.kind==='release').every(row=>row.read_only===true&&row.strict_boolean_checks>0&&Array.isArray(row.ids)&&row.ids.length===row.strict_boolean_checks&&row.ids.every(id=>typeof id==='string'&&id.trim())));
   assert.deepEqual(ci.stages.filter(row=>row.kind==='migration').map(row=>row.pass),[...Array(91).fill(1),...Array(91).fill(2)]);
   const compatibleGuard=ci.stages.filter(row=>row.path==='20261011000100_incarnate_release_compatibility.sql');
@@ -191,7 +191,7 @@ export function assertRequiredNativeEvidence(receipt) {
 /** Pure plan: explicit membership/chronology, never glob-skip unknown or future migrations. */
 export function buildNativeVerificationPlan({inputs,files,selectedNegativeFiles = null,releaseScope=false}) {
   assert.equal(inputs.input_provenance.mode, 'checked-in-default');
-  assert.equal(files.length, 120, 'Exact reviewed complete CI chronology');
+  assert.equal(files.length, 121, 'Exact reviewed complete CI chronology');
   assert.deepEqual([...files].sort(), files);
   assert.equal(new Set(files).size, files.length);
   assert.ok(files.includes('20261001010000_repair_weapon_stat_fields.sql'));

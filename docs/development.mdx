@@ -170,18 +170,49 @@ no paid access from the connection alone.
 The authorization request needs only `identity identity[email]`: Patreon returns
 memberships to the app creator's campaign without access to unrelated memberships.
 
-Release the matching frontend and all functions that import `_shared/patreon.ts`
-together, using the repository's release inventory. Verify a real consenting
-patron can connect and receive their correct tier before declaring the incident
-resolved. Complete a real two-account authorization pilot before a broader
-rollout. Read-only checks and token refresh attempts are not completed migrations.
-Fixtures cannot verify patron consent, registration or approved redirects. V1
-grants require a new v2 authorization: refreshing retains their old scopes, and
-a refresh grant cannot simply be moved to another client. Provider failures
-retain stored links and group data while paid operations fail closed. Rejected
-provider authorization directs the user to Reconnect Patreon in Account. Temporary
-provider or persistence failures ask the user to try again. These errors preserve the
-application session, and creation requests are never replayed automatically.
+Creator-side verification can keep existing patrons working without replacing their
+personal OAuth grants. WG matches the saved Patreon **user ID** to the fixed campaign's
+v2 member relationship, and uses `currently_entitled_tiers` as the authority. A member
+UUID differs from a user ID. Cancellation and a null next charge date do not end benefits
+while Patreon still reports an entitled tier, including paid-through annual memberships,
+gifts and trials. There are no billing/charge writes.
+
+Apply `20261117000000_patreon_creator_verification.sql` before the matching functions.
+Creator access/refresh credentials belong to the existing v2 client and are initialized
+once through the service-only `patreon_creator_initialize` RPC. They are encrypted in
+Supabase Vault; campaign observations and rollout state live in the unexposed
+`wg_patreon_private` schema, outside public data exports. Never paste tokens into chats,
+logs or issue descriptions, and never copy creator credentials into a customer profile.
+`patreon_creator_configure` initially allowlists at most two account UUIDs. Only expand
+`p_all` after a real two-account pilot verifies paid access, correct tier, and unchanged
+personal tokens, links, group metadata and characters. The pilot requires no patron
+reauthorization. Existing v1 personal grants remain v1; creator verification supplies the
+v2 membership check without claiming to convert their scopes.
+
+Set `PATREON_CREATOR_ENABLED=true` only after provisioning. Configure a random scheduler
+capability as the GitHub Actions secret `WG_PATREON_SYNC_SECRET`, and its SHA-256 hex digest
+as the edge secret `PATREON_SYNC_SECRET_SHA256`. The scheduler also uses the existing
+`WG_MONITOR_ANON_KEY` repository variable. `patreon-memberships.yml` reconciles every 15
+minutes (Actions schedules may be delayed). It follows every pagination cursor and
+publishes one complete snapshot atomically; incomplete scans never remove benefits.
+Paid operations require a snapshot no older than one hour and preserve the application
+session and saved connection on errors. Creator access tokens refresh automatically
+before known expiry, or once on a 401, using the existing v2 client secret. A durable
+lease fences refreshes; save the rotated pair in Vault before any further provider I/O.
+An ambiguous refresh or uncertain persistence blocks further exchanges for operator
+recovery rather than replaying an old refresh grant. Inspect the scheduled workflow's
+failure status and creator state; never recover by overwriting a possibly rotated pair
+with an old portal value. Reprovision only from a confirmed current creator grant.
+
+Release the matching frontend and all functions that import `_shared/patreon.ts`, plus
+`get-user` and `sync-patreon-memberships`, using the release inventory. The Account status
+becomes Connected under creator verification; an unavailable check displays Last known
+membership rather than requesting a personal reconnect. Visible tabs refresh their
+profile every five minutes and on focus. New personal v2 authorizations newer than the
+campaign snapshot retain their verified tier until reconciliation catches up. Creation
+requests are never replayed automatically. Without creator provisioning, personal links
+still require valid v2 authorization; v1 refresh cannot add v2 permissions.
+
 A v2-connected GM must still have the live Game Master tier to sponsor virtual
 benefits. Players with a healthy sponsor need no personal Patreon link; a sponsor
 migration error directs them to their GM. Existing group listing and removal

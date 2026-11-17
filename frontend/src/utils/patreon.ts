@@ -16,12 +16,14 @@ export function hasPatreonAccess(user: PublicUser | null, accessLevel: 0 | 1 | 2
   if (!user) return false;
   if (accessLevel === 0) return true;
   if (accessLevel <= 2 && (user.is_community_paragon || user.is_developer)) return true;
-  if (['connected', 'migration_required'].includes(user.patreon?.connection_status ?? '')) {
+  if (['connected', 'migration_required', 'verification_unavailable'].includes(user.patreon?.connection_status ?? '')) {
     const tiers = ['ADVOCATE', 'WANDERER', 'LEGEND', 'GAME-MASTER'];
     if (tiers.indexOf(user.patreon?.tier ?? '') >= accessLevel - 1) return true;
   }
   return (
     accessLevel <= 2 &&
-    ['connected', 'migration_required'].includes(user.patreon?.game_master?.virtual_tier?.access_status ?? '')
+    ['connected', 'migration_required', 'verification_unavailable'].includes(
+      user.patreon?.game_master?.virtual_tier?.access_status ?? ''
+    )
   );
 }

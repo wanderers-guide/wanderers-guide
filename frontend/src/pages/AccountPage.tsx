@@ -235,8 +235,10 @@ function ProfileSection() {
   // A saved Patreon identity remains connected even when it has no paid WG tier.
   const isPatreonConnected = Boolean(user.patreon?.patreon_user_id || user.patreon?.tier);
   const requiresPatreonReconnect = getPatreonReconnectTarget(user) === 'self';
-  const patreonConnectionStatus =
-    user.patreon?.connection_status === 'migration_required'
+  const verificationUnavailable = user.patreon?.connection_status === 'verification_unavailable';
+  const patreonConnectionStatus = verificationUnavailable
+    ? 'Verification unavailable'
+    : user.patreon?.connection_status === 'migration_required'
       ? 'Update required'
       : requiresPatreonReconnect
         ? 'Reconnect required'
@@ -527,9 +529,15 @@ function ProfileSection() {
                   <Badge
                     size='sm'
                     variant='light'
-                    color={requiresPatreonReconnect ? 'yellow' : isPatreonConnected ? 'guide' : 'gray'}
+                    color={
+                      requiresPatreonReconnect || verificationUnavailable
+                        ? 'yellow'
+                        : isPatreonConnected
+                          ? 'guide'
+                          : 'gray'
+                    }
                     leftSection={
-                      requiresPatreonReconnect ? (
+                      requiresPatreonReconnect || verificationUnavailable ? (
                         <IconRefresh size='0.75rem' aria-hidden />
                       ) : isPatreonConnected ? (
                         <IconCheck size='0.75rem' aria-hidden />
@@ -545,7 +553,7 @@ function ProfileSection() {
                 <Stack gap='md'>
                   <Group justify='space-between' gap='xs'>
                     <Text size='xs' c='dimmed'>
-                      {requiresPatreonReconnect ? 'Last known membership' : 'Membership'}
+                      {requiresPatreonReconnect || verificationUnavailable ? 'Last known membership' : 'Membership'}
                     </Text>
                     <Text size='sm' c='dimmed'>
                       {patronTier}

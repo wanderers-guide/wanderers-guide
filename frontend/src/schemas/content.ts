@@ -1225,7 +1225,11 @@ export const PublicUserSchema = z.object({
       refresh_token: z.string().optional(),
       oauth_client_id: z.string().optional(),
       oauth_scopes: z.array(z.string()).optional(),
-      connection_status: z.enum(['not_connected', 'connected', 'migration_required', 'reconnect_required']).optional(),
+      connection_status: z
+        .enum(['not_connected', 'connected', 'migration_required', 'reconnect_required', 'verification_unavailable'])
+        .optional(),
+      membership_verified_at: z.string().optional(),
+      identity_verified_at: z.string().optional(),
       game_master: z
         .object({
           access_code: z.string().optional(),
@@ -1235,7 +1239,13 @@ export const PublicUserSchema = z.object({
               game_master_name: z.string(),
               added_at: z.string(),
               access_status: z
-                .enum(['not_connected', 'connected', 'migration_required', 'reconnect_required'])
+                .enum([
+                  'not_connected',
+                  'connected',
+                  'migration_required',
+                  'reconnect_required',
+                  'verification_unavailable',
+                ])
                 .optional(),
             })
             .optional(),

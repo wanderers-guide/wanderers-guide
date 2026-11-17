@@ -1,0 +1,24 @@
+name: Patreon membership reconciliation
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '3,18,33,48 * * * *'
+permissions:
+  contents: read
+concurrency:
+  group: patreon-membership-reconciliation
+  cancel-in-progress: false
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Reconcile current Patreon entitlements
+        env:
+          WG_MONITOR_ANON_KEY: ${{ vars.WG_MONITOR_ANON_KEY }}
+          WG_PATREON_SYNC_SECRET: ${{ secrets.WG_PATREON_SYNC_SECRET }}
+        run: node scripts/sync-patreon-memberships.mjs

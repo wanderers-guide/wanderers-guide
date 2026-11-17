@@ -23,7 +23,7 @@ export async function savePatreonConnection(
   client: SupabaseClient<any, 'public', any>,
   user: Account,
   previous: PublicUser['patreon'],
-  next: PatreonLink,
+  next: PatreonLink
 ): Promise<PatreonLink | null> {
   const revision = previous?.revision ?? undefined;
   if (
@@ -33,11 +33,14 @@ export async function savePatreonConnection(
     throw new Error('Patreon connection revision is invalid.');
   }
   const replacement: PatreonLink = { ...next, revision: crypto.randomUUID() };
-  let query = client
-    .from('public_user')
-    .update({ patreon: replacement })
-    .eq('id', user.id)
-    .eq('user_id', user.user_id);
+  delete replacement.membership_verified_at;
+  delete replacement.connection_status;
+  if (replacement.game_master?.virtual_tier) {
+    const virtualTier = { ...replacement.game_master.virtual_tier };
+    delete virtualTier.access_status;
+    replacement.game_master = { ...replacement.game_master, virtual_tier: virtualTier };
+  }
+  let query = client.from('public_user').update({ patreon: replacement }).eq('id', user.id).eq('user_id', user.user_id);
   query = revision ? query.eq('patreon->>revision', revision) : query.is('patreon->>revision', null);
   const { data, error } = await query.select('id');
   // Driver failures can contain request details. Keep those details out of API errors and logs.
@@ -50,11 +53,15 @@ export async function saveRefreshedPatreonConnection(
   client: SupabaseClient<any, 'public', any>,
   user: Account,
   previous: PatreonLink,
-  tokens: PatreonTokens,
+  tokens: PatreonTokens
 ): Promise<PatreonLink | null> {
   let current = previous;
   for (let attempt = 0; attempt < 3; attempt++) {
-    const next = { ...current, ...tokens, oauth_scopes: tokens.oauth_scopes ?? current.oauth_scopes };
+    const next = {
+      ...current,
+      ...tokens,
+      oauth_scopes: tokens.oauth_scopes ?? current.oauth_scopes,
+    };
     const saved = await savePatreonConnection(client, user, current, next);
     if (saved) return saved;
     if (attempt === 2) return null;

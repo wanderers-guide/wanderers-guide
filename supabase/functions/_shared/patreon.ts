@@ -9,6 +9,7 @@ import type { PublicUser } from './content.d.ts';
 import { HttpError } from './http-errors.ts';
 import { getPatreonConnectionStatus } from './patreon-connection.ts';
 import { savePatreonConnection, saveRefreshedPatreonConnection } from './patreon-store.ts';
+import { applyCreatorMembership } from './patreon-creator.ts';
 import _ from 'lodash';
 import { fetchData, logEvent } from './helpers.ts';
 import { SupabaseClient, createClient } from '@supabase/supabase-js';
@@ -36,7 +37,7 @@ async function addPatreonData(
     refresh_token?: string;
     oauth_client_id?: string;
     oauth_scopes?: string[];
-  },
+  }
 ) {
   const previousPatreon = user.patreon;
   user = _.cloneDeep(user);
@@ -50,6 +51,7 @@ async function addPatreonData(
     refresh_token: data.refresh_token,
     oauth_client_id: data.oauth_client_id,
     oauth_scopes: data.oauth_scopes,
+    identity_verified_at: new Date().toISOString(),
   };
   // Create a new GM's code atomically with their membership; preserve existing groups.
   if (data.tier === 'GAME-MASTER' && !user.patreon.game_master?.access_code) {
@@ -80,59 +82,68 @@ function verificationFailure(error: unknown): HttpError {
     reconnect
       ? 'Reconnect Patreon in Account to verify your membership.'
       : 'Patreon verification is temporarily unavailable. Please try again shortly.',
-    reconnect ? 'PATREON_RECONNECT_REQUIRED' : 'PATREON_UNAVAILABLE',
+    reconnect ? 'PATREON_RECONNECT_REQUIRED' : 'PATREON_UNAVAILABLE'
   );
+}
+
+/** Surface group-verification outages as recoverable errors, preserving group data. */
+async function creatorGroupTier(client: SupabaseClient<any, 'public', any>, user: PublicUser): Promise<boolean> {
+  try {
+    return await applyCreatorMembership(client, user);
+  } catch (error) {
+    throw verificationFailure(error);
+  }
 }
 
 /** Verify only v2 entitlements. Virtual benefits require the sponsor's live Game Master tier. */
 export async function hasPatreonAccess(
   user: PublicUser,
   accessLevel: 0 | 1 | 2 | 3 | 4,
-  options?: PatreonAccessOptions,
+  options?: PatreonAccessOptions
 ): Promise<boolean> {
   if (accessLevel === 0) return true;
   if (accessLevel <= 2 && (user.is_community_paragon || user.is_developer)) return true;
-  const client = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-  );
+  const client = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
   user = _.cloneDeep(user);
   let failure: HttpError | undefined;
   try {
-    if (user.patreon?.patreon_user_id || user.patreon?.access_token || user.patreon?.tier) patreonClient();
-    const state = getPatreonConnectionStatus(user.patreon);
-    if (state === 'reconnect_required') throw new PatreonApiError('migration');
-    if ((state === 'connected' || state === 'migration_required') && user.patreon) {
-      const stored = user.patreon;
-      let identity;
-      try {
-        identity = await fetchPatreonIdentity(stored.access_token ?? '');
-      } catch (error) {
-        if (!(error instanceof PatreonApiError) || error.status !== 401) throw error;
-        if (state === 'migration_required') throw new PatreonApiError('migration');
-        if (!stored.refresh_token) throw error;
-        const tokens = await refreshPatreonToken(stored.refresh_token, stored.oauth_client_id ?? '');
-        user.patreon = { ...stored, ...tokens };
-        // Persist every valid rotated pair before rejecting permissions or making another provider request.
-        const saved = await saveRefreshedPatreonConnection(client, user, stored, tokens);
-        if (!saved) throw new Error('Patreon token persistence conflicted.');
-        user.patreon = saved;
-        if (tokens.oauth_scopes && !tokens.oauth_scopes.includes('identity'))
-          throw new PatreonApiError('scope');
-        identity = await fetchPatreonIdentity(tokens.access_token);
+    const creatorVerified = await applyCreatorMembership(client, user);
+    if (creatorVerified && checkAccessLevel(user, accessLevel)) return true;
+    if (!creatorVerified) {
+      if (user.patreon?.patreon_user_id || user.patreon?.access_token || user.patreon?.tier) patreonClient();
+      const state = getPatreonConnectionStatus(user.patreon);
+      if (state === 'reconnect_required') throw new PatreonApiError('migration');
+      if ((state === 'connected' || state === 'migration_required') && user.patreon) {
+        const stored = user.patreon;
+        let identity;
+        try {
+          identity = await fetchPatreonIdentity(stored.access_token ?? '');
+        } catch (error) {
+          if (!(error instanceof PatreonApiError) || error.status !== 401) throw error;
+          if (state === 'migration_required') throw new PatreonApiError('migration');
+          if (!stored.refresh_token) throw error;
+          const tokens = await refreshPatreonToken(stored.refresh_token, stored.oauth_client_id ?? '');
+          user.patreon = { ...stored, ...tokens };
+          // Persist every valid rotated pair before rejecting permissions or making another provider request.
+          const saved = await saveRefreshedPatreonConnection(client, user, stored, tokens);
+          if (!saved) throw new Error('Patreon token persistence conflicted.');
+          user.patreon = saved;
+          if (tokens.oauth_scopes && !tokens.oauth_scopes.includes('identity')) throw new PatreonApiError('scope');
+          identity = await fetchPatreonIdentity(tokens.access_token);
+        }
+        if (stored.patreon_user_id && identity.patreon_user_id !== stored.patreon_user_id)
+          throw new PatreonApiError('identity_mismatch');
+        if (identity.tier !== user.patreon.tier) {
+          const result = await addPatreonData(client, user, {
+            ...user.patreon,
+            ...identity,
+            access_token: user.patreon.access_token ?? '',
+          });
+          if (result.status !== 'SUCCESS') throw new Error('Patreon membership persistence failed.');
+          user = result.user;
+        }
+        if (checkAccessLevel(user, accessLevel)) return true;
       }
-      if (stored.patreon_user_id && identity.patreon_user_id !== stored.patreon_user_id)
-        throw new PatreonApiError('identity_mismatch');
-      if (identity.tier !== user.patreon.tier) {
-        const result = await addPatreonData(client, user, {
-          ...user.patreon,
-          ...identity,
-          access_token: user.patreon.access_token ?? '',
-        });
-        if (result.status !== 'SUCCESS') throw new Error('Patreon membership persistence failed.');
-        user = result.user;
-      }
-      if (checkAccessLevel(user, accessLevel)) return true;
     }
   } catch (error) {
     failure = verificationFailure(error);
@@ -141,19 +152,13 @@ export async function hasPatreonAccess(
   const sponsorId = user.patreon?.game_master?.virtual_tier?.game_master_user_id;
   if (accessLevel <= 2 && sponsorId && sponsorId !== user.user_id) {
     try {
-      const sponsors = await fetchData<PublicUser>(client, 'public_user', [
-        { column: 'user_id', value: sponsorId },
-      ]);
+      const sponsors = await fetchData<PublicUser>(client, 'public_user', [{ column: 'user_id', value: sponsorId }]);
       if (sponsors[0] && (await hasPatreonAccess(sponsors[0], 4, { throwOnFailure: true }))) return true;
     } catch (error) {
       const sponsorFailure = verificationFailure(error);
       failure ??=
         sponsorFailure.code === 'PATREON_RECONNECT_REQUIRED'
-          ? new HttpError(
-              503,
-              'Your Game Master needs to reconnect Patreon.',
-              'PATREON_SPONSOR_RECONNECT_REQUIRED',
-            )
+          ? new HttpError(503, 'Your Game Master needs to reconnect Patreon.', 'PATREON_SPONSOR_RECONNECT_REQUIRED')
           : sponsorFailure;
     }
   }
@@ -165,10 +170,16 @@ export async function addToGameMasterGroup(
   client: SupabaseClient<any, 'public', any>,
   user: PublicUser,
   gmUserID: string,
-  accessCode: string,
+  accessCode: string
 ) {
   const previousPatreon = user.patreon;
   user = _.cloneDeep(user);
+  // A player's unavailable personal link must not prevent joining a verified sponsor.
+  try {
+    await applyCreatorMembership(client, user);
+  } catch {
+    /* Sponsor verification below remains authoritative. */
+  }
   if (user.patreon?.tier === 'GAME-MASTER') {
     return {
       status: 'ERROR_UNKNOWN',
@@ -176,9 +187,7 @@ export async function addToGameMasterGroup(
     };
   }
 
-  const gmUsers = await fetchData<PublicUser>(client, 'public_user', [
-    { column: 'user_id', value: gmUserID },
-  ]);
+  const gmUsers = await fetchData<PublicUser>(client, 'public_user', [{ column: 'user_id', value: gmUserID }]);
   const gmUser = gmUsers.length > 0 ? gmUsers[0] : null;
   if (!gmUser) {
     return {
@@ -194,19 +203,18 @@ export async function addToGameMasterGroup(
     };
   }
 
-  if (!(await hasPatreonAccess(gmUser, 4, { throwOnFailure: true })))
-    return { status: 'ERROR_UNKNOWN', user };
+  if (!(await hasPatreonAccess(gmUser, 4, { throwOnFailure: true }))) return { status: 'ERROR_UNKNOWN', user };
   // Verification can outlive a code regeneration or sponsor change. Recheck before joining.
-  const latestSponsors = await fetchData<PublicUser>(client, 'public_user', [
-    { column: 'user_id', value: gmUserID },
-  ]);
+  const latestSponsors = await fetchData<PublicUser>(client, 'public_user', [{ column: 'user_id', value: gmUserID }]);
   const latestSponsor = latestSponsors[0];
+  const creatorSponsor = latestSponsor ? await creatorGroupTier(client, latestSponsor) : false;
   if (
     !latestSponsor ||
     latestSponsor.deactivated ||
     latestSponsor.patreon?.tier !== 'GAME-MASTER' ||
     latestSponsor.patreon.game_master?.access_code !== accessCode ||
-    ['not_connected', 'reconnect_required'].includes(getPatreonConnectionStatus(latestSponsor.patreon))
+    (!creatorSponsor &&
+      ['not_connected', 'reconnect_required'].includes(getPatreonConnectionStatus(latestSponsor.patreon)))
   )
     return { status: 'ERROR_UNKNOWN', user };
   // Count members without loading their private account records.
@@ -241,7 +249,7 @@ export async function removeFromGameMasterGroup(currentUser: PublicUser, userId:
     // @ts-ignore
     Deno.env.get('SUPABASE_URL') ?? '',
     // @ts-ignore
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
 
   const users = await fetchData<PublicUser>(client, 'public_user', [{ column: 'user_id', value: userId }]);
@@ -275,7 +283,7 @@ export async function removeFromGameMasterGroup(currentUser: PublicUser, userId:
 }
 
 export async function getAllUsersInGameMasterGroup(
-  user: PublicUser,
+  user: PublicUser
 ): Promise<{ user_id: string; display_name: string }[]> {
   if (user.patreon?.tier !== 'GAME-MASTER') {
     return [];
@@ -285,7 +293,7 @@ export async function getAllUsersInGameMasterGroup(
     // @ts-ignore
     Deno.env.get('SUPABASE_URL') ?? '',
     // @ts-ignore
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
 
   // Listing existing members remains available for cleanup during migration.
@@ -304,10 +312,9 @@ export async function getAllUsersInGameMasterGroup(
   }));
 }
 
-export async function regenerateGameMasterAccessCode(
-  client: SupabaseClient<any, 'public', any>,
-  user: PublicUser,
-) {
+export async function regenerateGameMasterAccessCode(client: SupabaseClient<any, 'public', any>, user: PublicUser) {
+  user = _.cloneDeep(user);
+  await creatorGroupTier(client, user);
   if (user.patreon?.tier !== 'GAME-MASTER' || !(await hasPatreonAccess(user, 4, { throwOnFailure: true }))) {
     return {
       status: 'ERROR_UNKNOWN',
@@ -316,13 +323,12 @@ export async function regenerateGameMasterAccessCode(
   }
 
   // Live verification may have rotated the grant. Re-read it before changing group metadata.
-  const latest = await fetchData<PublicUser>(client, 'public_user', [
-    { column: 'user_id', value: user.user_id },
-  ]);
+  const latest = await fetchData<PublicUser>(client, 'public_user', [{ column: 'user_id', value: user.user_id }]);
+  const creatorVerified = latest[0] ? await creatorGroupTier(client, latest[0]) : false;
   if (
     !latest[0] ||
     latest[0].patreon?.tier !== 'GAME-MASTER' ||
-    getPatreonConnectionStatus(latest[0].patreon) === 'reconnect_required'
+    (!creatorVerified && getPatreonConnectionStatus(latest[0].patreon) === 'reconnect_required')
   )
     return { status: 'ERROR_UNKNOWN', user };
   user = _.cloneDeep(latest[0]);
@@ -344,7 +350,7 @@ export async function handlePatreonRedirect(
   client: SupabaseClient<any, 'public', any>,
   user: PublicUser,
   code: string,
-  redirectURL: string,
+  redirectURL: string
 ): Promise<boolean> {
   const tokens = await exchangePatreonCode(code, redirectURL);
   const identity = await fetchPatreonIdentity(tokens.access_token);

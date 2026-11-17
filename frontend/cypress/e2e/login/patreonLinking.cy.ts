@@ -11,6 +11,16 @@ const profile = {
 
 describe('Quiet Patreon account linking', () => {
   for (const scenario of [
+    { name: 'creator verified legacy grant', query: '', connected: true, creator: true, width: 1280 },
+    { name: 'phone creator verified legacy grant', query: '', connected: true, creator: true, width: 390 },
+    {
+      name: 'creator verification unavailable',
+      query: '',
+      connected: true,
+      creator: true,
+      unavailable: true,
+      width: 390,
+    },
     { name: 'unmarked connection', query: '', connected: true, legacy: true, migration: true, width: 1280 },
     { name: 'legacy membership', query: '', connected: true, legacy: true, width: 1280 },
     { name: 'phone legacy membership', query: '', connected: true, legacy: true, width: 390 },
@@ -82,15 +92,17 @@ describe('Quiet Patreon account linking', () => {
           data = {
             ...profile,
             patreon:
-              linked || scenario.legacy
+              linked || scenario.legacy || scenario.creator
                 ? {
                     patreon_user_id: 'fixture-patreon-user',
-                    oauth_client_id: scenario.legacy ? undefined : 'fixture-v2-client',
-                    connection_status: scenario.migration
-                      ? 'migration_required'
-                      : scenario.legacy
-                        ? 'reconnect_required'
-                        : 'connected',
+                    oauth_client_id: scenario.legacy || scenario.creator ? undefined : 'fixture-v2-client',
+                    connection_status: scenario.unavailable
+                      ? 'verification_unavailable'
+                      : scenario.migration
+                        ? 'migration_required'
+                        : scenario.legacy
+                          ? 'reconnect_required'
+                          : 'connected',
                     tier: scenario.noTier ? undefined : scenario.gm ? 'GAME-MASTER' : 'WANDERER',
                     game_master: scenario.gm ? { access_code: 'fixture-group-code' } : undefined,
                   }
@@ -163,13 +175,15 @@ describe('Quiet Patreon account linking', () => {
       // The status control must expand settings rather than behave as an OAuth link.
       cy.get('[data-testid="patreon-settings"] .mantine-Accordion-control', { timeout: 30000 }).should(($control) => {
         expect($control).to.contain(
-          scenario.migration
-            ? 'Update required'
-            : scenario.legacy
-              ? 'Reconnect required'
-              : scenario.connected
-                ? 'Connected'
-                : 'Not connected'
+          scenario.unavailable
+            ? 'Verification unavailable'
+            : scenario.migration
+              ? 'Update required'
+              : scenario.legacy
+                ? 'Reconnect required'
+                : scenario.connected
+                  ? 'Connected'
+                  : 'Not connected'
         );
         expect($control).to.have.attr('aria-expanded', 'false');
         expect($control).not.to.have.attr('href');
@@ -181,7 +195,9 @@ describe('Quiet Patreon account linking', () => {
         .should('have.attr', 'aria-expanded', 'true');
       cy.location('pathname').should('eq', '/account');
       cy.get('[data-testid="patreon-settings"]').within(() => {
-        cy.contains(scenario.legacy ? 'Last known membership' : 'Membership').should('be.visible');
+        cy.contains(scenario.legacy || scenario.unavailable ? 'Last known membership' : 'Membership').should(
+          'be.visible'
+        );
         cy.contains('a', scenario.connected ? 'Reconnect' : 'Connect to Patreon')
           .should('be.visible')
           .invoke('attr', 'href')
