@@ -1,8 +1,7 @@
 name: Patreon membership reconciliation
+# Periodic execution lives in Supabase Cron; Actions remains explicit recovery only.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '3,18,33,48 * * * *'
 permissions:
   contents: read
 concurrency:

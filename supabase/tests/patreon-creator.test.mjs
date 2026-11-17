@@ -179,3 +179,60 @@ test('scheduler rejects missing/wrong capability before acquiring credentials',a
  for(const secret of ['', 'wrong'.repeat(10)]){const result=await api.handlePatreonSync(new Request('https://fixture.invalid',{method:'POST',headers:{'X-WG-Patreon-Sync':secret}}));assert.equal(result.status,403);}
  assert.equal(operations.length,0);assert.equal(calls.length,0);
 });
+
+/** The SQL sender signs this exact fixed operation; request bodies have no authority. */
+async function signedSchedulerHeaders({key='ab'.repeat(32),timestamp=Math.floor(Date.now()/1000),purpose='sync-patreon-memberships'}={}) {
+ const raw=Uint8Array.from(key.match(/../g),pair=>Number.parseInt(pair,16));
+ const signingKey=await crypto.subtle.importKey('raw',raw,{name:'HMAC',hash:'SHA-256'},false,['sign']);
+ const signature=new Uint8Array(await crypto.subtle.sign('HMAC',signingKey,new TextEncoder().encode(`POST\n${purpose}\n${timestamp}`)));
+ return {'X-WG-Patreon-Timestamp':String(timestamp),'X-WG-Patreon-Signature':Array.from(signature,x=>x.toString(16).padStart(2,'0')).join('')};
+}
+test('short-lived SQL scheduler signature reaches the same complete reconciliation without raw credentials',async()=>{
+ setup(response(page()));env.PATREON_SCHEDULER_KEY='ab'.repeat(32);
+ const headers=await signedSchedulerHeaders();
+ assert(!Object.values(headers).includes(env.PATREON_SCHEDULER_KEY));
+ const result=await api.handlePatreonSync(new Request('https://fixture.invalid',{method:'POST',headers,body:'{}'}));
+ assert.equal(result.status,200);assert.equal((await result.json()).status,'success');
+ assert(operations.some(x=>x.name.endsWith('_publish')));assert.equal(profileWrites.length,0);
+});
+for(const [name,options] of [
+ ['expired',{timestamp:Math.floor(Date.now()/1000)-301}],
+ ['future',{timestamp:Math.floor(Date.now()/1000)+61}],
+ ['wrong signing key',{key:'cd'.repeat(32)}],
+ ['different operation',{purpose:'other-operation'}],
+])test(`scheduler rejects ${name} signature before credential acquisition`,async()=>{
+ setup();env.PATREON_SCHEDULER_KEY='ab'.repeat(32);
+ const headers=await signedSchedulerHeaders(options);
+ const result=await api.handlePatreonSync(new Request('https://fixture.invalid',{method:'POST',headers}));
+ assert.equal(result.status,403);assert.equal(operations.length,0);assert.equal(calls.length,0);
+});
+test('malformed or incomplete signed requests fail closed, even with a valid manual capability',async()=>{
+ setup();env.PATREON_SCHEDULER_KEY='ab'.repeat(32);
+ const manual='manual-fixture-'.repeat(4);
+ env.PATREON_SYNC_SECRET_SHA256=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(manual))),x=>x.toString(16).padStart(2,'0')).join('');
+ for(const headers of [
+  {'X-WG-Patreon-Timestamp':String(Math.floor(Date.now()/1000))},
+  {'X-WG-Patreon-Signature':'f'.repeat(64)},
+  {'X-WG-Patreon-Timestamp':'invalid','X-WG-Patreon-Signature':'f'.repeat(64)},
+ ]){
+  const result=await api.handlePatreonSync(new Request('https://fixture.invalid',{method:'POST',headers:{...headers,'X-WG-Patreon-Sync':manual}}));
+  assert.equal(result.status,403);
+ }
+ assert.equal(operations.length,0);assert.equal(calls.length,0);
+});
+test('manual recovery capability continues working independently of the SQL signing key',async()=>{
+ setup(response(page()));delete env.PATREON_SCHEDULER_KEY;
+ const manual='manual-fixture-'.repeat(4);
+ env.PATREON_SYNC_SECRET_SHA256=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(manual))),x=>x.toString(16).padStart(2,'0')).join('');
+ const result=await api.handlePatreonSync(new Request('https://fixture.invalid',{method:'POST',headers:{'X-WG-Patreon-Sync':manual}}));
+ assert.equal(result.status,200);assert(operations.some(x=>x.name.endsWith('_publish')));assert.equal(profileWrites.length,0);
+});
+
+test('SQL/Python known-answer signature is accepted by the real receiver',async()=>{
+ setup(response(page()));env.PATREON_SCHEDULER_KEY='ab'.repeat(32);
+ const previous=Date.now;Date.now=()=>1794880000*1000;
+ try {
+  const result=await api.handlePatreonSync(new Request('https://fixture.invalid',{method:'POST',headers:{'X-WG-Patreon-Timestamp':'1794880000','X-WG-Patreon-Signature':'6e2f9bc14d50fa0dbb3c2a65f9e656f82420dcf53b62c6aea945ffe1aa5bdb25'}}));
+  assert.equal(result.status,200);assert(operations.some(x=>x.name.endsWith('_publish')));
+ } finally {Date.now=previous;}
+});
