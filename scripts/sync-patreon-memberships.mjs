@@ -11,7 +11,8 @@ try {
   const result=await response.json();
   if (!response.ok || result?.status!=='success' || !Number.isInteger(result.data?.members) || !Number.isInteger(result.data?.pages))
     throw new Error('Reconciliation failed');
-  console.log(JSON.stringify({status:'success',checked_at:new Date().toISOString(),members:result.data.members,pages:result.data.pages}));
+  // Public workflow logs need health, not private campaign membership totals.
+  console.log(JSON.stringify({status:'success',checked_at:new Date().toISOString()}));
 } catch {
   console.error('Patreon reconciliation failed. Check the creator integration; customer connections were not replaced.');
   process.exitCode=1;
