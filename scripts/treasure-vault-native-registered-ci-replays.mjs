@@ -96,9 +96,9 @@ export function createNativeRegisteredCiReplayControls({inputManifest,fixture,st
   const workflow=assertRegisteredCiWorkflowRecipe(read(workflowPath));
   const requirements=JSON.parse(read('supabase/release/requirements.json'));
   const chronology=inputManifest.migrations;
-  assert.equal(chronology.length,123);
-  assert.equal(chronology.at(-1).path,'20261118000000_shared_skill_choices.sql');
-  assert.equal(Object.keys(requirements).length,116,'Exact reviewed registered requirement inventory');
+  assert.equal(chronology.length,124);
+  assert.equal(chronology.at(-1).path,'20261118010000_treasure_vault_snapshot_counts.sql');
+  assert.equal(Object.keys(requirements).length,117,'Exact reviewed registered requirement inventory');
   assert.deepEqual(requirements['20261008160000_tech_core_introductory_spells.sql'],{check:'tech-core-introductory-spells-citation-compatibility.sql',order:'before-functions'});
   assert.deepEqual(requirements['20261008190000_tech_core_general_spells.sql'],{check:'tech-core-general-spells-citation-compatibility.sql',order:'before-functions'});
   assert.deepEqual(requirements[recoveryReplayPaths[0]],{check:'heal-companion-recovery.sql',order:'before-functions'});

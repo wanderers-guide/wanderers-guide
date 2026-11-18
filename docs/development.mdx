@@ -858,6 +858,12 @@ dependency representations are equivalent; nonempty dependencies still fail.
 Run `node --test scripts/content-bootstrap.test.mjs` for the shell boundary checks;
 these do not start Docker and do not replace the native PostgreSQL checks.
 
+The Treasure Vault replay accepts the reviewed November snapshot feat counts for
+Player Core, Monster Core, and Divine Mysteries only when the actual feat rows
+match. The compatibility helper projects the prior counter values for the
+historical comparison. The rest of each source record and all protected content
+still have to match the original proof, and seeding retains the published counts.
+
 The historical native fixture adds
 only the exact captured Tech Core source and Junk trait immediately before the
 introductory spell migration. It includes Station only when the captured chronology

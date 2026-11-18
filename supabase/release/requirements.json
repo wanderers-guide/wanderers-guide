@@ -464,5 +464,9 @@
   "20261118000000_shared_skill_choices.sql": {
     "check": "shared-skill-choices.sql",
     "order": "before-functions"
+  },
+  "20261118010000_treasure_vault_snapshot_counts.sql": {
+    "check": "treasure-vault-terminal-status.sql",
+    "order": "before-functions"
   }
 }

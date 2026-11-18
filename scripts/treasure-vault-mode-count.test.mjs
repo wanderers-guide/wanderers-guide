@@ -4,6 +4,13 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import {
+  originalSnapshotCountsBody,
+  snapshotCountsReplacement,
+  SNAPSHOT_COUNTS_PREDECESSOR,
+  SNAPSHOT_COUNTS_SHA256,
+  SNAPSHOT_FEAT_COUNTS,
+} from './treasure-vault-native-snapshot-counts.mjs';
+import {
   modeCountSpec,
   MODE_COUNT_TERMINAL_SHA256,
   PREVIOUS_MODE_TERMINAL_SHA256,
@@ -15,8 +22,21 @@ import {
 
 const migration = readFileSync(new URL('../supabase/migrations/20260927245900_treasure_vault_terminal_status.sql', import.meta.url), 'utf8');
 const definition = migration.split('$terminal_definition$')[1];
-const body = definition.split('$$')[1];
+const body = originalSnapshotCountsBody(definition.split('$$')[1]);
 const sha = value => createHash('sha256').update(value).digest('hex');
+
+test('the snapshot compatibility layer preserves the pinned proof and projects only reviewed feat counts', () => {
+  const successor = definition.split('$$')[1];
+  assert.equal(sha(successor), SNAPSHOT_COUNTS_SHA256);
+  assert.equal(sha(body), SNAPSHOT_COUNTS_PREDECESSOR);
+  const [before, after] = snapshotCountsReplacement(body);
+  assert.equal(body.replace(before, () => after), successor);
+  for (const [id, , next] of SNAPSHOT_FEAT_COUNTS) {
+    assert.ok(after.includes(`when s.id=${id} and s.meta_data::jsonb#>'{counts,feat}'='${next}'::jsonb`));
+    assert.ok(after.includes(`where content_source_id=s.id and type='feat')=${next}`));
+  }
+  assert.throws(() => originalSnapshotCountsBody(successor.replace("s.id=420", "s.id=421")));
+});
 
 test('the complete prior helper is recovered byte for byte', () => {
   assert.equal(sha(body), MODE_COUNT_TERMINAL_SHA256);
