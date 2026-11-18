@@ -148,6 +148,19 @@ export function terminalFunctionState(bodySha256) {
     and pg_catalog.has_function_privilege('supabase_read_only_user',p.oid,'EXECUTE'))`;
 }
 
+/** Tie the snapshot replay wrapper to the exact predecessor and reviewed current helper. */
+export function snapshotCountsReplay(helper) {
+  const previousState = terminalFunctionState(MODE_COUNT_TERMINAL_SHA256);
+  const upgrade = snapshotCountsUpgrade({
+    body: originalSnapshotCountsBody(helper.body),
+    previousState,
+    state: helper.state,
+    signature: helper.signature,
+  });
+  return { previousState, upgrade, wrap: (sql) => wrapSnapshotCountsReplay(sql, helper.state, upgrade) };
+}
+
+
 /** Extract the one actual checked-in helper and exact installer/release skeleton. */
 export function extractReviewedTerminalHelper({ migrationSql, releaseSql }) {
   const definition = literal(migrationSql, '$terminal_definition$');
@@ -507,9 +520,7 @@ export function loadTreasureVaultDefaultNativeInputs({ root, readText = path => 
     const rustRows = rustCloudRows(display.spec);
     const rustState = terminalFunctionState(RUST_CLOUD_TERMINAL_SHA256);
     const rustUpgrade = rustCloudUpgrade({ rows: rustRows, previousState: sharedState, state: rustState, signature: helper.signature });
-    const legacyState = terminalFunctionState(MODE_COUNT_TERMINAL_SHA256);
-    const snapshotUpgrade = snapshotCountsUpgrade({body:originalSnapshotCountsBody(helper.body),previousState:legacyState,state:helper.state,signature:helper.signature});
-    const wrapSnapshot = (sql) => wrapSnapshotCountsReplay(sql, helper.state, snapshotUpgrade);
+    const { previousState: legacyState, upgrade: snapshotUpgrade, wrap: wrapSnapshot } = snapshotCountsReplay(helper);
     const legacyCurator = curatorUpgrade({body:helper.rustBody,previousState:rustState,state:legacyState,signature:helper.signature});
     const curator = wrapSnapshot(legacyCurator);
     assert.equal(snapshotCountsSql,`begin;\n${snapshotUpgrade}commit;\n`);
