@@ -288,6 +288,10 @@ export function prepare(repository, proposalPath) {
   const originalRequirements = JSON.parse(
     files["supabase/release/requirements.json"],
   );
+  const championDomain = '20261118020000_champion_domain_casting_source.sql';
+  const championRequirement = originalRequirements[championDomain];
+  assert.deepEqual(championRequirement, { check: 'champion-domain-casting-source.sql', order: 'before-functions' });
+  delete originalRequirements[championDomain];
   const snapshotCounts = '20261118010000_treasure_vault_snapshot_counts.sql';
   const snapshotCountsRequirement = originalRequirements[snapshotCounts];
   assert.deepEqual(snapshotCountsRequirement, {check:'treasure-vault-terminal-status.sql',order:'before-functions'});
@@ -349,6 +353,7 @@ export function prepare(repository, proposalPath) {
   originalRequirements[schedulerUpgrade]=schedulerRequirement;
   originalRequirements[sharedSkillChoices]=sharedSkillChoiceRequirement;
   originalRequirements[snapshotCounts]=snapshotCountsRequirement;
+  originalRequirements[championDomain] = championRequirement;
   let suppliedRows;
   if (proposalPath) {
     const proposalBytes = fs.readFileSync(proposalPath);
@@ -419,10 +424,10 @@ export function prepare(repository, proposalPath) {
     requirements[migration].check = check;
     return { migration, before, after: requirements[migration] };
   });
-  assert.equal(Object.keys(requirements).length, 117);
+  assert.equal(Object.keys(requirements).length, 118);
   assert.equal(
     new Set(Object.values(requirements).map((entry) => entry.check)).size,
-    74,
+    75,
   );
   if (!proposalPath) {
     assert.equal(
