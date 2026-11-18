@@ -405,6 +405,9 @@ async function executeCharacterOperations(
         version: '1.0',
       } satisfies AbilityBlock);
     }
+    // Evaluate earlier archetype grants before later class feats that depend on them.
+    // Stable sorting preserves the existing precedence between features at the same level.
+    classFeatures.sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
   }
 
   // Gradual Attribute Boosts

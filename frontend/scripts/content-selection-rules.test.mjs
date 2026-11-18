@@ -387,3 +387,61 @@ test('Advanced Thaumaturgy caps available class feats at half character level, r
     assert.ok(selected.options.some((option) => option.level === Math.floor(level / 2) - (Math.floor(level / 2) % 2)));
   }
 });
+
+// Persisted Builder keys exercise the feature slots used by existing character sheets.
+const sorcererFeat2 = 'class-feature-31148_2d9f4548-bdb8-4eec-a1ac-830f714295c2';
+const freeSlot2 = 'class-feature-1110485945182216_9594307d-b111-437f-a55a-de101e8d46b1-2';
+const addDedication = 'a525eb70-e18f-4a95-80d9-29f6aaee0d3e-2';
+const generalFeat3 = 'class-feature-30970_8be52fe8-0e0f-4c15-be23-13943282f27f';
+
+for (const freeArchetype of [false, true]) {
+  test(`Champion Dedication progresses to heavy armor in the ${freeArchetype ? 'Free Archetype' : 'class feat'} slot`, async () => {
+    const selections = freeArchetype
+      ? {
+          [freeSlot2]: addDedication,
+          [`${freeSlot2}_${addDedication}_1c575456-4cb7-44eb-a153-9d6884b272a8-2`]: '32001',
+        }
+      : { [sorcererFeat2]: '32001' };
+    const character = base(2, [], { ...selections, [generalFeat3]: '19917' }, { class: { id: 113 } });
+    character.variants = { free_archetype: freeArchetype };
+    for (const [level, heavy] of [
+      [2, 'U'],
+      [3, 'T'],
+      [6, 'T'],
+      [13, 'E'],
+    ]) {
+      character.level = level;
+      await calculate(character);
+      assert.equal(rank('HEAVY_ARMOR'), heavy, `level ${level}`);
+      if (level === 2) assert.deepEqual([rank('LIGHT_ARMOR'), rank('MEDIUM_ARMOR')], ['T', 'T']);
+    }
+  });
+}
+
+test('Basic Devotion exposes the saved domain spell in the Champion focus list alongside sorcerer casting', async () => {
+  const classFeat6 = 'class-feature-31150_e49662ab-3ee9-4832-8e51-9462101114a8';
+  const basicDevotion = `${classFeat6}_32105_f09d5685-bb1b-41eb-9a87-18bc741b4c00`;
+  const character = base(
+    6,
+    [],
+    {
+      'class-feature-30959_0aa21132-5766-4c71-a877-92d843a6b035': '33783',
+      [sorcererFeat2]: '32001',
+      [classFeat6]: '32105',
+      [basicDevotion]: '31855',
+      [`${basicDevotion}_31855_28484407-de11-4d97-a724-4852813208e4`]: '4901',
+    },
+    { class: { id: 113 } }
+  );
+  await calculate(character);
+  const { focus, sources } = engine.collectEntitySpellcasting('CHARACTER', character);
+  assert.ok(sources.some((source) => source.name === 'SORCERER'));
+  assert.deepEqual(
+    sources.filter((source) => source.name === 'CHAMPION'),
+    [{ name: 'CHAMPION', type: '-', tradition: 'DIVINE', attribute: 'ATTRIBUTE_CHA' }]
+  );
+  assert.deepEqual(
+    focus.filter((spell) => spell.source === 'CHAMPION').map((spell) => spell.spell_id),
+    [4901]
+  );
+});
