@@ -6,6 +6,8 @@ import { RUST_CLOUD_TERMINAL_SHA256 } from "./treasure-vault-native-rust-cloud.m
 import { bookCountReplacement, originalBookCountBody, upgradeBookCountBody, PREVIOUS_CURATOR_TERMINAL_SHA256, BOOK_COUNT_NATIVE_CONTROLS, runNativeBookCountControls, MODE_COUNT_TERMINAL_SHA256, originalModeCountBody, modeCountUpgrade, wrapModeCountUpgrade, MODE_COUNT_NATIVE_CONTROLS, runNativeModeCountControls } from './treasure-vault-native-book-count.mjs';
 export const CURATOR_UPGRADE_PATH =
   "20261026010000_curator_release_compatibility.sql";
+import { originalSnapshotCountsBody, SNAPSHOT_COUNTS_SHA256 } from './treasure-vault-native-snapshot-counts.mjs';
+
 export const CURATOR_TERMINAL_SHA256 =
   "a07223d6cd719e484a994ea965405c8f72820d927fb1ea3086b27b6e3981adca";
 export const curatorRows = JSON.parse(
@@ -55,6 +57,7 @@ export function upgradeCuratorBody(body) {
 }
 /** Restore and hash the complete predecessor, retaining all immutable native ledgers. */
 export function originalCuratorBody(body) {
+  if (sha(body) === SNAPSHOT_COUNTS_SHA256) body = originalSnapshotCountsBody(body);
   let result = originalBookCountBody(sha(body)===MODE_COUNT_TERMINAL_SHA256?originalModeCountBody(body):body);
   assert.equal(result.split(fencedEnding).length, 2);
   result = result.replace(fencedEnding, ending);

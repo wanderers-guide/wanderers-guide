@@ -1,5 +1,5 @@
 import { cloneDeep } from 'lodash-es';
-import { OperationSelect, validateSelectionAliases } from '@schemas/operations';
+import { OperationSelect, validateSelectionAliases, validateSkillChoice } from '@schemas/operations';
 import {
   isConvertedDomainSelection,
   LEGACY_DOMAIN_SELECTOR_ID,
@@ -18,23 +18,37 @@ export interface SelectionTrack {
   choiceOwner?: string;
 }
 
-/** Resolve an explicitly authored sibling only within this selection's current owner path. */
+/** Read exact historical saves without treating arbitrary option strings as mapping keys. */
+function resolveSkillChoiceValue(choice: NonNullable<OperationSelect['data']['skillChoice']>, value: string): string {
+  const previous = choice.previousOptions;
+  return previous && Object.hasOwn(previous, value) ? previous[value] : value;
+}
+
+/** Resolve compatible saved choices only within this selection's current owner path. */
 export function resolveSelectionNode(
   parent: SelectionTreeNode | undefined,
   operation: OperationSelect
 ): { id: string; node: SelectionTreeNode | undefined; aliases?: string[] } {
   validateSelectionAliases(operation);
+  validateSkillChoice(operation);
+  const skillChoice = operation.data.skillChoice;
   const domainSelection: boolean = isConvertedDomainSelection(operation);
-  const peers: string[] | undefined = domainSelection ? [LEGACY_DOMAIN_SELECTOR_ID] : operation.data.selectionAliases;
-  if (!peers?.length) return { id: operation.id, node: parent?.children[operation.id] };
-  const aliases: string[] = [operation.id, ...peers];
-  // A present primary, even an empty clear marker, must not resurrect a stale peer.
-  const id: string = aliases.find((candidate) => parent && Object.hasOwn(parent.children, candidate)) ?? operation.id;
-  const node: SelectionTreeNode | undefined = parent?.children[id];
+  const primary = skillChoice?.id ?? operation.id;
+  const previousIds = skillChoice
+    ? skillChoice.previousIds
+    : domainSelection
+      ? [LEGACY_DOMAIN_SELECTOR_ID]
+      : operation.data.selectionAliases;
+  const aliases = [primary, ...(previousIds ?? [])];
+  // A present preferred key, even an empty clear marker, must not resurrect a stale peer.
+  const savedId = aliases.find((candidate) => parent && Object.hasOwn(parent.children, candidate));
+  let node = savedId === undefined ? undefined : parent?.children[savedId];
+  if (domainSelection && node) node = { ...node, value: resolveDomainChoice(node.value) };
+  if (skillChoice && node?.value) node = { ...node, value: resolveSkillChoiceValue(skillChoice, node.value) };
   return {
-    id,
-    node: domainSelection && node ? { ...node, value: resolveDomainChoice(node.value) } : node,
-    aliases,
+    id: skillChoice ? primary : (savedId ?? primary),
+    node,
+    ...(aliases.length > 1 ? { aliases } : {}),
   };
 }
 
@@ -50,7 +64,7 @@ let selectionTree: SelectionTreeNode = { value: null, children: {} };
 /**
  *
  * @param key - Key, format: <primary source ID>_<UUID>_<UUID>_<UUID>...
- * @param value - UUID of the selected option
+ * @param value - Saved identity of the selected option
  *
  */
 export function setSelections(metadata: { key: string; value: string }[]) {

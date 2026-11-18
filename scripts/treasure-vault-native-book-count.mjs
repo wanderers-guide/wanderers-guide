@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { originalSnapshotCountsBody, SNAPSHOT_COUNTS_SHA256 } from './treasure-vault-native-snapshot-counts.mjs';
 
 export const BOOK_COUNT_UPGRADE_PATH = '20261027000000_curator_book_count_compatibility.sql';
 export const PREVIOUS_CURATOR_TERMINAL_SHA256 = '798819e3febae6a944bd3cfdec2ae84d8ff893ee6c7859e7266a5bff3f333444';
@@ -106,7 +107,7 @@ export async function runNativeBookCountControls({ inputs, fixture, capsule, use
   const template=inputs.helper.proof.templates.find(row=>row.table==='item');
   assert(template);
   await capsule('book-count-template-drift',clean+`update public.item set name=name||' unreviewed' where uuid=${quote(template.uuid)}::bigint;`+status,[fail]);
-  const original=originalBookCountBody(sha(inputs.helper.body)===MODE_COUNT_TERMINAL_SHA256?originalModeCountBody(inputs.helper.body):inputs.helper.body);
+  const original=originalBookCountBody([MODE_COUNT_TERMINAL_SHA256,SNAPSHOT_COUNTS_SHA256].includes(sha(inputs.helper.body))?originalModeCountBody(inputs.helper.body):inputs.helper.body);
   const predecessor=inputs.helper.definition.replace(inputs.helper.body,()=>original).replace('create function ','create or replace function ');
   await capsule('book-count-deployed-upgrade-replay',predecessor+clean+status+inputs.curatorCompatibility.upgrade+status+inputs.curatorCompatibility.upgrade+status,[fail,pass,pass]);
   for(const [name,mutation] of [
@@ -158,6 +159,7 @@ export function upgradeModeCountBody(body) {
 }
 /** Recover and hash the entire predecessor, rejecting any altered allowance. */
 export function originalModeCountBody(body) {
+  if (sha(body) === SNAPSHOT_COUNTS_SHA256) body = originalSnapshotCountsBody(body);
   const start=body.indexOf(prefix)+prefix.length,end=body.indexOf(suffix,start),expression=body.slice(start,end);
   assert.equal(expression.split(modeMarker).length,2);
   assert(expression.endsWith(') end'));

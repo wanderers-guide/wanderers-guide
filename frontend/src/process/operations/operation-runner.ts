@@ -67,6 +67,7 @@ import {
 } from '@variables/variable-utils';
 import {
   ObjectWithUUID,
+  applySkillChoiceIdentity,
   determineFilteredSelectionList,
   determinePredefinedSelectionList,
   extendOperations,
@@ -444,6 +445,7 @@ async function runSelect(
       operation.data.optionsPredefined
     );
   }
+  optionList = applySkillChoiceIdentity(operation, optionList);
 
   // An active daily owner must expire on Rest even before selecting a spell or filling its database.
   if (

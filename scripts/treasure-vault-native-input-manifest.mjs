@@ -30,9 +30,9 @@ export async function captureNativeInputManifest({root}) {
     return text;
   }
   const migrationFiles=(await readdir(root+'/supabase/migrations')).filter(path=>migrationName.test(path)).sort();
-  assert.equal(migrationFiles.length,122,'Complete reviewed chronology is mandatory');
-  assert.equal(migrationFiles.at(-1),'20261117010000_patreon_creator_scheduler.sql','Exact reviewed release recovery chronology successor');
-  assert.deepEqual(migrationFiles.slice(-10),['20261010000100_shared_ancestries.sql','20261011000000_restore_heal_companion.sql','20261011000100_incarnate_release_compatibility.sql','20261015000000_rust_cloud_release_compatibility.sql','20261026000000_mine_mod_rules.sql','20261026010000_curator_release_compatibility.sql','20261027000000_curator_book_count_compatibility.sql','20261029000000_overflowing_mode_count_compatibility.sql','20261117000000_patreon_creator_verification.sql','20261117010000_patreon_creator_scheduler.sql']);
+  assert.equal(migrationFiles.length,124,'Complete reviewed chronology is mandatory');
+  assert.equal(migrationFiles.at(-1),'20261118010000_treasure_vault_snapshot_counts.sql','Exact reviewed release recovery chronology successor');
+  assert.deepEqual(migrationFiles.slice(-12),['20261010000100_shared_ancestries.sql','20261011000000_restore_heal_companion.sql','20261011000100_incarnate_release_compatibility.sql','20261015000000_rust_cloud_release_compatibility.sql','20261026000000_mine_mod_rules.sql','20261026010000_curator_release_compatibility.sql','20261027000000_curator_book_count_compatibility.sql','20261029000000_overflowing_mode_count_compatibility.sql','20261117000000_patreon_creator_verification.sql','20261117010000_patreon_creator_scheduler.sql','20261118000000_shared_skill_choices.sql','20261118010000_treasure_vault_snapshot_counts.sql']);
   const requirements=JSON.parse(await capture('supabase/release/requirements.json'));
   assert.deepEqual(requirements['20261008105800_treasure_vault_terminal_catalog_compatibility.sql'],{check:'treasure-vault-terminal-catalog-compatibility.sql',order:'before-functions'});
   await capture('supabase/release/shared-ancestries.json');
@@ -74,6 +74,7 @@ export async function captureNativeInputManifest({root}) {
   await capture('scripts/treasure-vault-curator-successors.json');
   await capture('scripts/treasure-vault-book-count-successor.json');
   await capture('scripts/treasure-vault-mode-count-successor.json');
+  await capture('scripts/treasure-vault-native-snapshot-counts.mjs');
   const entries=[...records.values()].sort((a,b)=>a.path.localeCompare(b.path));
   const manifest={schema:'wg-tv-native-checked-in-input-manifest-v2',entries,historical_git_inputs:historicalGitInputs,
     sha256:sha(JSON.stringify({entries,historical_git_inputs:historicalGitInputs})),chronology:migrations.map(({path,sha256})=>({path,sha256})),

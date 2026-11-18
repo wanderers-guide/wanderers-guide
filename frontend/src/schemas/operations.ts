@@ -540,6 +540,7 @@ export type OperationSelect = {
     optionsPredefined?: OperationSelectOption[];
     optionsFilters?: OperationSelectFilters;
     selectionAliases?: string[];
+    skillChoice?: SkillChoice;
   };
 };
 
@@ -552,6 +553,57 @@ const selectionIdentityListSchema = (maximum: number) =>
 
 export const SelectionAliasesSchema = selectionIdentityListSchema(16);
 const SelectionResultAliasesSchema = selectionIdentityListSchema(17);
+
+const SkillVariableSchema = z.string().regex(/^SKILL_[A-Z0-9_]+$/);
+const SkillChoiceSchema = z
+  .strictObject({
+    id: z.string().uuid(),
+    previousIds: SelectionAliasesSchema.optional(),
+    previousOptions: z.record(z.string().uuid(), SkillVariableSchema).optional(),
+  })
+  .refine(({ id, previousIds }) => !previousIds?.includes(id), 'The stable skill key cannot also be a previous key.');
+
+export type SkillChoice = z.infer<typeof SkillChoiceSchema>;
+
+/** A shared proficiency choice must have unambiguous skill identities. */
+export function supportsSkillChoice(data: OperationSelect['data']): boolean {
+  if (data.optionType !== 'ADJ_VALUE') return false;
+  if (data.modeType === 'FILTERED') {
+    const filter = data.optionsFilters;
+    return filter?.type === 'ADJ_VALUE' && (filter.group === 'SKILL' || filter.group === 'ADD-LORE');
+  }
+  const options = data.optionsPredefined ?? [];
+  const skills = options.map((option) =>
+    option.type === 'ADJ_VALUE' && option.operation.type === 'adjValue' ? option.operation.data.variable : undefined
+  );
+  return (
+    skills.length > 0 &&
+    skills.every((skill) => SkillVariableSchema.safeParse(skill).success) &&
+    new Set(skills).size === skills.length
+  );
+}
+
+/** Validate the shared key without changing the older additional Lore alias contract. */
+export function validateSkillChoice(operation: OperationSelect): void {
+  if (operation.data.skillChoice === undefined) return;
+  const identity = SkillChoiceSchema.parse(operation.data.skillChoice);
+  if (!supportsSkillChoice(operation.data) || operation.data.selectionAliases !== undefined) {
+    throw new Error('A stable skill choice requires a skill or Lore selector without selection aliases.');
+  }
+  const optionMappings = Object.entries(identity.previousOptions ?? {});
+  if (operation.data.modeType === 'FILTERED' && optionMappings.length) {
+    throw new Error('Filtered skills already use stable option keys.');
+  }
+  if (operation.data.modeType === 'PREDEFINED') {
+    const options = (operation.data.optionsPredefined ?? []).filter((option) => option.type === 'ADJ_VALUE');
+    for (const { operation: adjustment } of options) {
+      const mapped = identity.previousOptions?.[adjustment.id];
+      if (mapped && mapped !== adjustment.data.variable) {
+        throw new Error('A previous option key cannot point to another skill.');
+      }
+    }
+  }
+}
 
 /** Validate opt-in aliases without accepting names, transitive links, or unrelated selection kinds. */
 export function validateSelectionAliases(operation: OperationSelect): void {
@@ -663,11 +715,13 @@ export const OperationSchema: z.ZodType<Operation> = z.lazy(() =>
             .optional(),
           optionsFilters: OperationSelectFiltersSchema.optional(),
           selectionAliases: SelectionAliasesSchema.optional(),
+          skillChoice: SkillChoiceSchema.optional(),
         }),
       })
       .superRefine((operation, context) => {
         try {
           validateSelectionAliases(operation);
+          validateSkillChoice(operation);
         } catch (error) {
           context.addIssue({ code: 'custom', message: error instanceof Error ? error.message : String(error) });
         }

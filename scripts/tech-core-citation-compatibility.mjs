@@ -288,6 +288,14 @@ export function prepare(repository, proposalPath) {
   const originalRequirements = JSON.parse(
     files["supabase/release/requirements.json"],
   );
+  const snapshotCounts = '20261118010000_treasure_vault_snapshot_counts.sql';
+  const snapshotCountsRequirement = originalRequirements[snapshotCounts];
+  assert.deepEqual(snapshotCountsRequirement, {check:'treasure-vault-terminal-status.sql',order:'before-functions'});
+  delete originalRequirements[snapshotCounts];
+  const sharedSkillChoices = '20261118000000_shared_skill_choices.sql';
+  const sharedSkillChoiceRequirement = originalRequirements[sharedSkillChoices];
+  assert.deepEqual(sharedSkillChoiceRequirement, {check:'shared-skill-choices.sql',order:'before-functions'});
+  delete originalRequirements[sharedSkillChoices];
   const schedulerUpgrade = '20261117010000_patreon_creator_scheduler.sql';
   const schedulerRequirement = originalRequirements[schedulerUpgrade];
   assert.deepEqual(schedulerRequirement, {check:'patreon-scheduler.sql',order:'before-functions'});
@@ -339,6 +347,8 @@ export function prepare(repository, proposalPath) {
   originalRequirements[modeCountUpgrade]=modeCountRequirement;
   originalRequirements[creatorUpgrade]=creatorRequirement;
   originalRequirements[schedulerUpgrade]=schedulerRequirement;
+  originalRequirements[sharedSkillChoices]=sharedSkillChoiceRequirement;
+  originalRequirements[snapshotCounts]=snapshotCountsRequirement;
   let suppliedRows;
   if (proposalPath) {
     const proposalBytes = fs.readFileSync(proposalPath);
@@ -409,10 +419,10 @@ export function prepare(repository, proposalPath) {
     requirements[migration].check = check;
     return { migration, before, after: requirements[migration] };
   });
-  assert.equal(Object.keys(requirements).length, 115);
+  assert.equal(Object.keys(requirements).length, 117);
   assert.equal(
     new Set(Object.values(requirements).map((entry) => entry.check)).size,
-    73,
+    74,
   );
   if (!proposalPath) {
     assert.equal(

@@ -1,4 +1,4 @@
-import { originalCuratorBody, curatorUpgrade, wrapCuratorUpgrade } from './treasure-vault-native-curator-successors.mjs';
+import { curatorUpgrade, wrapCuratorUpgrade } from './treasure-vault-native-curator-successors.mjs';
 import { RUST_CLOUD_TERMINAL_SHA256 as rustHash } from './treasure-vault-native-rust-cloud.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -7,6 +7,7 @@ import { createHash } from "node:crypto";
 import {
   loadTreasureVaultDefaultNativeInputs,
   terminalFunctionState,
+  snapshotCountsReplay,
 } from "./treasure-vault-native-inputs.mjs";
 import { SHARED_TERMINAL_SHA256 } from "./treasure-vault-native-shared-ancestries.mjs";
 import {
@@ -27,6 +28,7 @@ const inputs = await loadTreasureVaultDefaultNativeInputs({
   root: new URL("../", import.meta.url).pathname,
 });
 const { helper, rustCloudCompatibility: batch } = inputs;
+const { previousState, wrap: wrapSnapshot } = snapshotCountsReplay(helper);
 
 test("the complete terminal guard recognizes the exact cleaned Rust Cloud row", async () => {
   const migration = await read(
@@ -97,7 +99,14 @@ test("the additive migration changes only the exact function, with complete meta
     state: terminalFunctionState(rustHash),
     signature: helper.signature,
   });
-  assert.equal(batch.sql, wrapCuratorUpgrade(`begin;\n${generated}commit;\n`,curatorUpgrade({body:helper.rustBody,previousState:terminalFunctionState(rustHash),state:helper.state,signature:helper.signature}),helper.state));
+  const curator = curatorUpgrade({
+    body: helper.rustBody,
+    previousState: terminalFunctionState(rustHash),
+    state: previousState,
+    signature: helper.signature,
+  });
+  const historical = wrapCuratorUpgrade(`begin;\n${generated}commit;\n`, curator, previousState);
+  assert.equal(batch.sql, wrapSnapshot(historical));
   assert.equal(
     await read("supabase/migrations/" + RUST_CLOUD_UPGRADE_PATH),
     batch.sql,

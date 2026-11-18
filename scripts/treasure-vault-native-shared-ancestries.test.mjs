@@ -1,4 +1,4 @@
-import { originalCuratorBody, curatorUpgrade, wrapCuratorUpgrade } from './treasure-vault-native-curator-successors.mjs';
+import { curatorUpgrade, wrapCuratorUpgrade } from './treasure-vault-native-curator-successors.mjs';
 import { RUST_CLOUD_TERMINAL_SHA256 as rustHash } from './treasure-vault-native-rust-cloud.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -25,6 +25,7 @@ import {
 import {
   extractReviewedTerminalHelper,
   terminalFunctionState,
+  snapshotCountsReplay,
   TERMINAL_HELPER,
 } from "./treasure-vault-native-inputs.mjs";
 import { originalRustCloudBody, rustCloudRows, rustCloudUpgrade, wrapRustCloudUpgrade } from './treasure-vault-native-rust-cloud.mjs';
@@ -34,6 +35,8 @@ const helper = extractReviewedTerminalHelper({
   migrationSql: await read("supabase/migrations/" + TERMINAL_HELPER.migration),
   releaseSql: await read("supabase/release/" + TERMINAL_HELPER.release),
 });
+const { previousState, wrap: wrapSnapshot } = snapshotCountsReplay(helper);
+
 const spec = JSON.parse(await read("supabase/release/shared-ancestries.json")),
   patches = sharedAncestryRows(spec);
 const require = createRequire(
@@ -217,12 +220,12 @@ test("registered SQL is exactly reproducible and rejects pending routes under bo
   const rustUpgrade = rustCloudUpgrade({rows:rustCloudRows(display),previousState:sharedState,state:terminalFunctionState(rustHash),signature:helper.signature});
   assert.equal(
     await read("supabase/migrations/" + SHARED_UPGRADE_PATH),
-    wrapCuratorUpgrade(wrapRustCloudUpgrade(sharedAncestryUpgrade({
+    wrapSnapshot(wrapCuratorUpgrade(wrapRustCloudUpgrade(sharedAncestryUpgrade({
       spec,
       previousState: terminalFunctionState(SHARED_PREDECESSOR_SHA256),
       state: sharedState,
       signature: helper.signature,
-    }), rustUpgrade, terminalFunctionState(rustHash)), curatorUpgrade({body:helper.rustBody,previousState:terminalFunctionState(rustHash),state:helper.state,signature:helper.signature}),helper.state),
+    }), rustUpgrade, terminalFunctionState(rustHash)), curatorUpgrade({body:helper.rustBody,previousState:terminalFunctionState(rustHash),state:previousState,signature:helper.signature}),previousState)),
   );
   assert.equal(
     await read("supabase/migrations/" + SHARED_MOVE_PATH),

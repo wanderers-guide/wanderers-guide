@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { PREVIOUS_TERMINAL_BODY_SHA256, SOURCE_CORRECTION_TERMINAL_BODY_SHA256, SOURCE_CORRECTION_CONTROL_NAMES, sourceCorrectionRows, sourceCorrectionCtes, sourceCorrectionProjection, upgradeSourceCorrectionBody, terminalSourceCorrectionUpgrade, createNativeSourceCorrectionControls, catalogCompatibilityRows, catalogCompatibilityCtes, catalogCompatibilityProjection, upgradeCatalogCompatibilityBody, CATALOG_COMPATIBILITY_TERMINAL_BODY_SHA256, terminalCatalogCompatibilityUpgrade, wrapSourceCorrectionUpgrade } from './treasure-vault-native-source-corrections.mjs';
-import { extractReviewedTerminalHelper, extractReviewedDisplaySourceWrapper, terminalFunctionState, APPROVED_CANDIDATES } from './treasure-vault-native-inputs.mjs';
+import { extractReviewedTerminalHelper, extractReviewedDisplaySourceWrapper, terminalFunctionState, snapshotCountsReplay, APPROVED_CANDIDATES } from './treasure-vault-native-inputs.mjs';
 
 const sha = value => createHash('sha256').update(value).digest('hex');
 const helperSql = await readFile(new URL('../supabase/migrations/20260927245900_treasure_vault_terminal_status.sql', import.meta.url), 'utf8');
@@ -22,6 +22,7 @@ const displayReleaseSql = await readFile(new URL('../supabase/release/treasure-v
 const helper = extractReviewedTerminalHelper({ migrationSql: helperSql, releaseSql: helperReleaseSql });
 const sharedState = terminalFunctionState(SHARED_TERMINAL_SHA256);
 const rustUpgrade = rustCloudUpgrade({rows:rustCloudRows(JSON.parse(displaySql.split('$display101$')[1])),previousState:sharedState,state:terminalFunctionState(rustHash),signature:helper.signature});
+const { previousState: snapshotPredecessor, wrap: wrapSnapshot } = snapshotCountsReplay(helper);
 const sourceBody = body.replace(catalogCompatibilityCtes(catalogPatches), '').replace(catalogCompatibilityProjection(), sourceCorrectionProjection());
 const same = (left, right) => {
   try { assert.deepEqual(left, right); return true; } catch { return false; }
@@ -147,7 +148,7 @@ test('the late upgrade is reproducible and accepts only the exact reviewed prede
   const oldState = terminalFunctionState(SHARED_PREDECESSOR_SHA256);
   const oldCatalog = terminalCatalogCompatibilityUpgrade({state:oldState,previousState,sourceState,sourcePatches:patches,patches:catalogPatches,signature:helper.signature});
   const upgrade = sharedAncestryUpgrade({spec:sharedSpec,previousState:oldState,state:sharedState,signature:helper.signature});
-  assert.equal(actual, wrapCuratorUpgrade(wrapRustCloudUpgrade(wrapSharedUpgrade(wrapSourceCorrectionUpgrade({originalSql,originalReleaseSql,state:oldState}).migration,oldCatalog+upgrade,sharedState),rustUpgrade,terminalFunctionState(rustHash)),curatorUpgrade({body:helper.rustBody,previousState:terminalFunctionState(rustHash),state:helper.state,signature:helper.signature}),helper.state));
+  assert.equal(actual, wrapSnapshot(wrapCuratorUpgrade(wrapRustCloudUpgrade(wrapSharedUpgrade(wrapSourceCorrectionUpgrade({originalSql,originalReleaseSql,state:oldState}).migration,oldCatalog+upgrade,sharedState),rustUpgrade,terminalFunctionState(rustHash)),curatorUpgrade({body:helper.rustBody,previousState:terminalFunctionState(rustHash),state:snapshotPredecessor,signature:helper.signature}),snapshotPredecessor)));
   assert.equal(actual.split('$source_upgrade_original$')[1], originalSql, 'Original source upgrade body remains byte-identical');
   assert.throws(() => wrapSourceCorrectionUpgrade({ originalSql: originalSql + '\n', originalReleaseSql, state: helper.state }));
   assert.throws(() => wrapSourceCorrectionUpgrade({ originalSql, originalReleaseSql: originalReleaseSql + '\n', state: helper.state }));
@@ -162,7 +163,7 @@ test('the exact paired catalog upgrade is reproducible and does not write conten
   const oldState = terminalFunctionState(SHARED_PREDECESSOR_SHA256);
   const original = terminalCatalogCompatibilityUpgrade({state:oldState,previousState,sourceState,sourcePatches:patches,patches:catalogPatches,signature:helper.signature});
   const upgrade = sharedAncestryUpgrade({spec:sharedSpec,previousState:oldState,state:sharedState,signature:helper.signature});
-  assert.equal(actual,wrapCuratorUpgrade(wrapRustCloudUpgrade(wrapSharedUpgrade(original,upgrade,sharedState),rustUpgrade,terminalFunctionState(rustHash)),curatorUpgrade({body:helper.rustBody,previousState:terminalFunctionState(rustHash),state:helper.state,signature:helper.signature}),helper.state));
+  assert.equal(actual, wrapSnapshot(wrapCuratorUpgrade(wrapRustCloudUpgrade(wrapSharedUpgrade(original,upgrade,sharedState),rustUpgrade,terminalFunctionState(rustHash)),curatorUpgrade({body:helper.rustBody,previousState:terminalFunctionState(rustHash),state:snapshotPredecessor,signature:helper.signature}),snapshotPredecessor)));
   assert.ok(actual.includes(previousState) && actual.includes(sourceState) && actual.includes(helper.state));
   assert.doesNotMatch(actual, /update public\.|delete from|insert into|grant (?:execute|select|all|usage)|revoke (?:execute|select|all|usage)/i);
 });

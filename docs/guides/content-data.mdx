@@ -365,6 +365,28 @@ below expert, and otherwise offers only trained skills, including trained Lore.
 Its saved choice remains valid when recalculated and cannot grant expert in an
 untrained alternative skill.
 
+When conditional operations represent the same skill or Lore pick at different
+ranks, give them distinct operation IDs and the same `data.skillChoice.id`.
+Keep a different choice ID for each independent pick, such as Lorekeeper Shisk's
+Lore and regular skill. The saved key is scoped to the choice's owning occurrence.
+The active branch still determines the options and applies its own rank.
+
+For existing content, list exact old selector IDs in `skillChoice.previousIds`
+in precedence order. For predefined skill options, `skillChoice.previousOptions`
+maps old adjustment UUIDs to skill variables such as `SKILL_ARCANA`. New predefined
+choices save the skill variable. Older choices are read in place, and a new
+selection saves under the shared ID. A present shared key wins over old keys.
+Clearing the choice removes its shared key and the listed previous keys.
+
+Common Core Skilled Human and Lorekeeper Shisk now retain the chosen skills at
+level 5. Dual Studies retains its skill when its rule switches at level 7.
+Stage `20261118000000_shared_skill_choices.sql` immediately before publishing
+the compatible frontend so the catalog can pass release verification. Older
+clients still use the existing selector IDs until they reload. Once players
+save under the new shared keys, keep `skillChoice` support in rollback builds.
+The migration checks the exact previous operations and leaves character rows
+alone.
+
 Known spells use the saved ranks for their own casting source. A spell learned from
 two sources appears once per rank in each source; distinct heightened versions remain
 available within that source.

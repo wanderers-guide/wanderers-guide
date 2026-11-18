@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { after, before, beforeEach, test } from 'node:test';
 import { createOperationEngine, readContentRows } from './operation-test-harness.mjs';
 
 let engine;
 let fixtures;
 let content;
+let skillChoices;
 const official = (id) => fixtures.find(({ table, row }) => table === 'ability_block' && row.id === id).row;
 const rank = (name) => engine.compileProficiencyType(engine.getVariable('CHARACTER', name).value);
 
@@ -53,7 +55,14 @@ before(async () => {
   engine = await createOperationEngine();
   fixtures = await readContentRows([
     { table: 'class', id: 20 },
+    { table: 'ancestry', id: 8 },
+    { table: 'language', id: 81 },
     { table: 'trait', id: 1339 },
+    { table: 'trait', id: 1436 },
+    { table: 'trait', id: 2399 },
+    { table: 'ability_block', id: 20753 },
+    { table: 'ability_block', id: 22505 },
+    { table: 'ability_block', id: 26793 },
     ...[19297, 19298, 19301, 19302, 19379, 19380, 19381, 19385, 31987, 22191, 20544, 33685, 22339].map((id) => ({
       table: 'ability_block',
       id,
@@ -63,9 +72,9 @@ before(async () => {
     abilityBlocks: fixtures.filter(({ table }) => table === 'ability_block').map(({ row }) => row),
     classes: fixtures.filter(({ table }) => table === 'class').map(({ row }) => row),
     traits: fixtures.filter(({ table }) => table === 'trait').map(({ row }) => row),
-    ancestries: [],
+    ancestries: fixtures.filter(({ table }) => table === 'ancestry').map(({ row }) => row),
     backgrounds: [],
-    languages: [],
+    languages: fixtures.filter(({ table }) => table === 'language').map(({ row }) => row),
     items: [],
     spells: [],
     archetypes: [],
@@ -74,11 +83,201 @@ before(async () => {
     sources: [],
     defaultSources: { INFO: [1, 14, 256], PAGE: [1, 14, 256] },
   };
+  const migration = await readFile(
+    new URL('../../supabase/migrations/20261118000000_shared_skill_choices.sql', import.meta.url),
+    'utf8'
+  );
+  skillChoices = JSON.parse(migration.split('$skill_choices$')[1]);
+  for (const record of skillChoices) {
+    const row = official(record.id);
+    const gate = row.operations[0];
+    assert.equal(gate.id, record.gate);
+    for (const branch of [gate.data.trueOperations, gate.data.falseOperations]) {
+      for (const { index, identity } of record.choices) {
+        assert.ok(identity.previousIds.includes(branch[index].id));
+        branch[index].data.skillChoice = identity;
+        assert.deepEqual(engine.OperationSchema.parse(branch[index]).data.skillChoice, identity);
+      }
+    }
+  }
 });
 after(async () => engine?.cleanup());
 beforeEach(() => {
   engine.resetVariables();
   engine.setFixtures(fixtures);
+});
+
+/** Build the actual saved paths for the Common Core heritage and both of its rank branches. */
+function skilledHuman() {
+  const ancestry = content.ancestries[0];
+  const heritage = official(20753);
+  const section = engine.getAncestrySections('CHARACTER', ancestry, false)[0];
+  const sectionPath = `ancestry-section-${section.id}_${section.operations[0].id}`;
+  const skillPath = `${sectionPath}_${heritage.id}`;
+  const { falseOperations, trueOperations } = heritage.operations[0].data;
+  const character = {
+    id: 1,
+    level: 4,
+    details: { ancestry },
+    inventory: { items: [] },
+    content_sources: { enabled: [3] },
+    operation_data: { selections: { [sectionPath]: String(heritage.id) } },
+  };
+  return {
+    character,
+    skillPath,
+    trainedId: falseOperations[0].id,
+    expertId: trueOperations[0].id,
+    stableId: trueOperations[0].data.skillChoice.id,
+  };
+}
+
+test('Skilled Human keeps the trained skill at level 5 after reloading a saved character', async () => {
+  const { character, skillPath, trainedId } = skilledHuman();
+  character.operation_data.selections[`${skillPath}_${trainedId}`] = 'SKILL_MEDICINE';
+  await calculate(character);
+  assert.equal(rank('SKILL_MEDICINE'), 'T');
+
+  character.level = 5;
+  const saved = JSON.stringify(character);
+  for (let load = 0; load < 2; load++) {
+    engine.resetVariables();
+    const reloaded = JSON.parse(saved);
+    await calculate(reloaded);
+    assert.equal(rank('SKILL_MEDICINE'), 'E');
+    assert.equal(JSON.stringify(reloaded), saved);
+  }
+});
+
+test('Skilled Human retains an existing Expert choice across levels and clears both saved paths', async () => {
+  const { character, skillPath, stableId, trainedId, expertId } = skilledHuman();
+  const selections = character.operation_data.selections;
+  selections[`${skillPath}_${expertId}`] = 'SKILL_MEDICINE';
+  await calculate(character);
+  assert.equal(rank('SKILL_MEDICINE'), 'T', 'Expert-only saves also work below level 5');
+
+  selections[`${skillPath}_${trainedId}`] = 'SKILL_ARCANA';
+  for (const [level, expectedRank] of [
+    [5, 'E'],
+    [4, 'T'],
+    [5, 'E'],
+  ]) {
+    engine.resetVariables();
+    character.level = level;
+    const result = await calculate(character);
+    assert.equal(rank('SKILL_MEDICINE'), expectedRank);
+    assert.equal(rank('SKILL_ARCANA'), 'U');
+    const skill = result.ors.ancestrySectionResults[0].baseResults[0].result.results[0].result.results[0].selection;
+    assert.deepEqual(skill.aliases, [stableId, expertId, trainedId]);
+    assert.equal(skill.id, stableId);
+  }
+
+  selections[`${skillPath}_${stableId}`] = 'SKILL_NATURE';
+  await calculate(JSON.parse(JSON.stringify(character)));
+  assert.equal(rank('SKILL_NATURE'), 'E');
+  assert.equal(rank('SKILL_MEDICINE'), 'U', 'the current stable choice wins over legacy keys');
+
+  character.operation_data.selections = engine.clearSelectionPaths(
+    [stableId, expertId, trainedId].map((id) => `${skillPath}_${id}`),
+    selections
+  );
+  await calculate(character);
+  assert.equal(rank('SKILL_MEDICINE'), 'U');
+  assert.equal(rank('SKILL_ARCANA'), 'U');
+  assert.equal(rank('SKILL_NATURE'), 'U');
+});
+
+/** Run a real catalog operation through both ranks with the same stored selector and option. */
+async function calculateSharedSkills(row, level, selections) {
+  engine.resetVariables();
+  engine.setVariable('CHARACTER', 'LEVEL', level);
+  engine.addVariable('CHARACTER', 'prof', 'SKILL_LORE_SAILING', { value: 'U', attribute: 'ATTRIBUTE_INT' });
+  const owner = `fixture-${row.id}`;
+  const saved = JSON.parse(JSON.stringify(selections));
+  engine.setSelections(Object.entries(saved).map(([id, value]) => ({ key: `${owner}_${id}`, value })));
+  const root = engine.getRootSelection();
+  const results = await engine.runOperations(
+    'CHARACTER',
+    { path: owner, node: root.children[owner], choiceOwner: owner },
+    row.operations,
+    { doConditionals: true, sourceLevel: 1 }
+  );
+  await engine.resolveFinalSkillSelections();
+  engine.normalizeProficiencies('CHARACTER');
+  return results[0].result.results;
+}
+
+test('Dual Studies keeps its skill across the level-7 rule and writes a stable selector', async () => {
+  const row = official(22505);
+  const { id, previousIds } = skillChoices.find((record) => record.id === row.id).choices[0].identity;
+  const [expertId, trainedId] = previousIds;
+  const old = { [trainedId]: 'SKILL_MEDICINE' };
+  const [trained] = await calculateSharedSkills(row, 6, old);
+  assert.equal(trained.selection.id, id);
+  assert.equal(rank('SKILL_MEDICINE'), 'T');
+  await calculateSharedSkills(row, 7, old);
+  assert.equal(rank('SKILL_MEDICINE'), 'E');
+  await calculateSharedSkills(row, 7, { [expertId]: 'SKILL_ARCANA' });
+  assert.equal(rank('SKILL_ARCANA'), 'E');
+  await calculateSharedSkills(row, 6, { [id]: 'SKILL_NATURE', ...old });
+  assert.equal(rank('SKILL_NATURE'), 'T');
+  assert.equal(rank('SKILL_MEDICINE'), 'U');
+});
+
+test('Lorekeeper Shisk retains both separate choices and reads old predefined option IDs', async () => {
+  const row = official(26793);
+  const [lore, skill] = skillChoices.find((record) => record.id === row.id).choices.map(({ identity }) => identity);
+  const { trueOperations, falseOperations } = row.operations[0].data;
+  const old = {
+    [lore.previousIds[1]]: 'SKILL_LORE_SAILING',
+    [skill.previousIds[1]]: falseOperations[1].data.optionsPredefined[0].operation.id,
+  };
+  await calculateSharedSkills(row, 4, old);
+  assert.equal(rank('SKILL_LORE_SAILING'), 'T');
+  assert.equal(rank('SKILL_ARCANA'), 'T');
+  const [loreResult, skillResult] = await calculateSharedSkills(row, 5, old);
+  assert.equal(loreResult.selection.id, lore.id);
+  assert.equal(skillResult.selection.id, skill.id);
+  assert.equal(skillResult.result.source._select_uuid, 'SKILL_ARCANA');
+  assert.equal(rank('SKILL_LORE_SAILING'), 'E');
+  assert.equal(rank('SKILL_ARCANA'), 'E');
+
+  await calculateSharedSkills(row, 5, {
+    [skill.previousIds[0]]: trueOperations[1].data.optionsPredefined[0].operation.id,
+  });
+  assert.equal(rank('SKILL_ARCANA'), 'E');
+  await calculateSharedSkills(row, 5, { ...old, [skill.id]: '' });
+  assert.equal(rank('SKILL_ARCANA'), 'U', 'an explicit clear takes precedence over a saved legacy option');
+  assert.equal(rank('SKILL_LORE_SAILING'), 'E', 'clearing one choice does not affect the other');
+});
+
+test('a stable skill choice is scoped to its owner and refuses ambiguous options', async () => {
+  const row = official(26793);
+  const { trueOperations, falseOperations } = row.operations[0].data;
+  const expert = trueOperations[1];
+  const trained = falseOperations[1];
+  const id = expert.data.skillChoice.id;
+  const oldArcana = trained.data.optionsPredefined[0].operation.id;
+  const entity = {
+    operation_data: {
+      selections: {
+        [`first_${trained.id}`]: oldArcana,
+        [`second_${id}`]: 'SKILL_NATURE',
+        [`third_${trained.id}`]: oldArcana,
+        [`third_${id}`]: '',
+      },
+    },
+  };
+  const selected = await engine.getSelectedOptions(entity, expert);
+  assert.deepEqual(selected.map((option) => option._select_uuid).sort(), ['SKILL_ARCANA', 'SKILL_NATURE']);
+  const invalid = structuredClone(expert);
+  invalid.data.optionsPredefined[1].operation.data.variable = invalid.data.optionsPredefined[0].operation.data.variable;
+  assert.equal(engine.OperationSchema.safeParse(invalid).success, false);
+  assert.throws(() => engine.resolveSelectionNode(undefined, invalid), /requires a skill or Lore selector/);
+  const mismatched = structuredClone(expert);
+  const nativeArcana = mismatched.data.optionsPredefined[0].operation.id;
+  mismatched.data.skillChoice.previousOptions[nativeArcana] = 'SKILL_NATURE';
+  assert.equal(engine.OperationSchema.safeParse(mismatched).success, false);
 });
 
 test('Medic Dedication plus the level-7 increase reaches master in both official versions', async () => {
