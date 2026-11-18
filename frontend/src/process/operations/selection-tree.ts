@@ -1,5 +1,5 @@
 import { cloneDeep } from 'lodash-es';
-import { OperationSelect, validateSelectionAliases } from '@schemas/operations';
+import { OperationSelect, validateSelectionAliases, validateSkillChoice } from '@schemas/operations';
 import {
   isConvertedDomainSelection,
   LEGACY_DOMAIN_SELECTOR_ID,
@@ -18,23 +18,10 @@ export interface SelectionTrack {
   choiceOwner?: string;
 }
 
-const SKILLED_HUMAN_EXPERT_SELECTOR = '756bd886-c321-4dec-8ea9-112568382526';
-const SKILLED_HUMAN_TRAINED_SELECTOR = 'b00d9373-98fe-45a0-83a1-c8be11076851';
-
-/** Both branches of Common Core Skilled Human represent the same printed skill choice. */
-function isSkilledHumanSkillSelection(operation: OperationSelect): boolean {
-  const filter: OperationSelect['data']['optionsFilters'] = operation.data.optionsFilters;
-  return (
-    operation.data.modeType === 'FILTERED' &&
-    operation.data.optionType === 'ADJ_VALUE' &&
-    filter?.type === 'ADJ_VALUE' &&
-    filter.group === 'SKILL' &&
-    typeof filter.value === 'object' &&
-    filter.value !== null &&
-    'value' in filter.value &&
-    ((operation.id === SKILLED_HUMAN_EXPERT_SELECTOR && filter.value.value === 'E') ||
-      (operation.id === SKILLED_HUMAN_TRAINED_SELECTOR && filter.value.value === 'T'))
-  );
+/** Read exact historical saves without treating arbitrary option strings as mapping keys. */
+function resolveSkillChoiceValue(choice: NonNullable<OperationSelect['data']['skillChoice']>, value: string): string {
+  const previous = choice.previousOptions;
+  return previous && Object.hasOwn(previous, value) ? previous[value] : value;
 }
 
 /** Resolve compatible saved choices only within this selection's current owner path. */
@@ -43,24 +30,25 @@ export function resolveSelectionNode(
   operation: OperationSelect
 ): { id: string; node: SelectionTreeNode | undefined; aliases?: string[] } {
   validateSelectionAliases(operation);
+  validateSkillChoice(operation);
+  const skillChoice = operation.data.skillChoice;
   const domainSelection: boolean = isConvertedDomainSelection(operation);
-  let aliases: string[] | undefined;
-  if (domainSelection) {
-    aliases = [operation.id, LEGACY_DOMAIN_SELECTOR_ID];
-  } else if (isSkilledHumanSkillSelection(operation)) {
-    // Preserve the explicitly reselected Expert choice if an older Trained choice also exists.
-    aliases = [SKILLED_HUMAN_EXPERT_SELECTOR, SKILLED_HUMAN_TRAINED_SELECTOR];
-  } else if (operation.data.selectionAliases?.length) {
-    aliases = [operation.id, ...operation.data.selectionAliases];
-  }
-  if (!aliases) return { id: operation.id, node: parent?.children[operation.id] };
+  const primary = skillChoice?.id ?? operation.id;
+  const previousIds = skillChoice
+    ? skillChoice.previousIds
+    : domainSelection
+      ? [LEGACY_DOMAIN_SELECTOR_ID]
+      : operation.data.selectionAliases;
+  const aliases = [primary, ...(previousIds ?? [])];
   // A present preferred key, even an empty clear marker, must not resurrect a stale peer.
-  const id: string = aliases.find((candidate) => parent && Object.hasOwn(parent.children, candidate)) ?? operation.id;
-  const node: SelectionTreeNode | undefined = parent?.children[id];
+  const savedId = aliases.find((candidate) => parent && Object.hasOwn(parent.children, candidate));
+  let node = savedId === undefined ? undefined : parent?.children[savedId];
+  if (domainSelection && node) node = { ...node, value: resolveDomainChoice(node.value) };
+  if (skillChoice && node?.value) node = { ...node, value: resolveSkillChoiceValue(skillChoice, node.value) };
   return {
-    id,
-    node: domainSelection && node ? { ...node, value: resolveDomainChoice(node.value) } : node,
-    aliases,
+    id: skillChoice ? primary : (savedId ?? primary),
+    node,
+    ...(aliases.length > 1 ? { aliases } : {}),
   };
 }
 
@@ -76,7 +64,7 @@ let selectionTree: SelectionTreeNode = { value: null, children: {} };
 /**
  *
  * @param key - Key, format: <primary source ID>_<UUID>_<UUID>_<UUID>...
- * @param value - UUID of the selected option
+ * @param value - Saved identity of the selected option
  *
  */
 export function setSelections(metadata: { key: string; value: string }[]) {

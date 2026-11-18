@@ -72,7 +72,7 @@ import { isTruthy } from '@utils/type-fixing';
 import { escapeRegExp, isNumber, intersection } from 'lodash-es';
 import { throwError } from '@utils/error-handling';
 import { GenericData } from '@schemas/index';
-import { getRootSelection, SelectionTreeNode } from './selection-tree';
+import { getRootSelection, resolveSelectionNode, SelectionTreeNode } from './selection-tree';
 import { applyCustomSelectionRules } from './custom-selection-rules';
 import {
   getDatabaseSpells,
@@ -312,9 +312,26 @@ export function getSelectedCustomOption(
 
 /** Resolve every saved occurrence of a selection, such as Anvil Dwarf's two crafting specialties. */
 export async function getSelectedOptions(entity: LivingEntity | null, op: OperationSelect): Promise<ObjectWithUUID[]> {
-  const selections = Object.entries(entity?.operation_data?.selections ?? {})
-    .filter(([key]) => key.endsWith(`_${op.id}`))
-    .map(([, value]) => value);
+  const entries = Object.entries(entity?.operation_data?.selections ?? {});
+  let selections: string[];
+  const skillChoice = op.data.skillChoice;
+  if (skillChoice) {
+    const ids = new Set([skillChoice.id, ...(skillChoice.previousIds ?? [])]);
+    const owners = new Map<string, SelectionTreeNode>();
+    for (const [path, value] of entries) {
+      const split = path.lastIndexOf('_');
+      if (split < 0) continue;
+      const id = path.slice(split + 1);
+      if (!ids.has(id)) continue;
+      const pathPrefix = path.slice(0, split);
+      const owner = owners.get(pathPrefix) ?? { value: null, children: {} };
+      owner.children[id] = { value, children: {} };
+      owners.set(pathPrefix, owner);
+    }
+    selections = [...owners.values()].map((owner) => resolveSelectionNode(owner, op).node?.value).filter(isTruthy);
+  } else {
+    selections = entries.filter(([key]) => key.endsWith(`_${op.id}`)).map(([, value]) => value);
+  }
   if (selections.length === 0) return [];
   let options: ObjectWithUUID[];
   if (op.data.modeType === 'PREDEFINED') {
@@ -337,7 +354,13 @@ export async function getSelectedOptions(entity: LivingEntity | null, op: Operat
       _content_type: type,
     }));
   }
-  return options.filter((option) => selections.includes(option._select_uuid));
+  return applySkillChoiceIdentity(op, options).filter((option) => selections.includes(option._select_uuid));
+}
+
+/** A predefined skill's saved value identifies the skill rather than its adjustment operation. */
+export function applySkillChoiceIdentity(op: OperationSelect, options: ObjectWithUUID[]): ObjectWithUUID[] {
+  if (!op.data.skillChoice || op.data.modeType !== 'PREDEFINED') return options;
+  return options.map((option) => (option.variable ? { ...option, _select_uuid: option.variable } : option));
 }
 
 export function convertKeyToBasePrefix(key: string, id?: number): string {

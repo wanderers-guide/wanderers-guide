@@ -345,7 +345,7 @@ export async function createOperationEngine({
           export { toggleActiveMode, getExecutableModes } from '@common/modes/mode-rules';
           export { determineFilteredSelectionList, determinePredefinedSelectionList, getSelectedOptions } from '@operations/operation-utils';
           export { getWeaponSpecialization, getWeaponSpecializations } from '@specializations/weapon-specializations';
-          export { OperationSelectFiltersAbilityBlockSchema } from '@schemas/operations';
+          export { OperationSchema, OperationSelectFiltersAbilityBlockSchema } from '@schemas/operations';
           export { collectEntityAbilityBlocks, collectEntitySenses, collectEntitySpellcasting } from '@content/collect-content';
           ${inspectInitialStats ? "export { getStatBlockDisplay } from '@variables/initial-stats-display';" : ''}
           export { displaySense } from '@utils/senses';

@@ -51,6 +51,7 @@ import {
   OperationSelectOptionLanguage,
   OperationSelectOptionSpell,
   OperationSelectOptionType,
+  supportsSkillChoice,
 } from '@schemas/operations';
 import { ExtendedProficiencyValue, ExtendedVariableValue, VariableType, VariableValue } from '@schemas/variables';
 import useRefresh from '@utils/use-refresh';
@@ -118,6 +119,7 @@ export function SelectionOperation(props: {
     ) {
       delete next.selectionAliases;
     }
+    if (next.skillChoice && !supportsSkillChoice(next)) delete next.skillChoice;
     if ((next.modeType !== 'FILTERED' || next.optionType !== 'SPELL') && next.optionsFilters?.type === 'SPELL') {
       next.optionsFilters = { ...next.optionsFilters };
       delete next.optionsFilters.knownSpellSource;
