@@ -53,7 +53,12 @@ before(async () => {
   engine = await createOperationEngine();
   fixtures = await readContentRows([
     { table: 'class', id: 20 },
+    { table: 'ancestry', id: 8 },
+    { table: 'language', id: 81 },
     { table: 'trait', id: 1339 },
+    { table: 'trait', id: 1436 },
+    { table: 'trait', id: 2399 },
+    { table: 'ability_block', id: 20753 },
     ...[19297, 19298, 19301, 19302, 19379, 19380, 19381, 19385, 31987, 22191, 20544, 33685, 22339].map((id) => ({
       table: 'ability_block',
       id,
@@ -63,9 +68,9 @@ before(async () => {
     abilityBlocks: fixtures.filter(({ table }) => table === 'ability_block').map(({ row }) => row),
     classes: fixtures.filter(({ table }) => table === 'class').map(({ row }) => row),
     traits: fixtures.filter(({ table }) => table === 'trait').map(({ row }) => row),
-    ancestries: [],
+    ancestries: fixtures.filter(({ table }) => table === 'ancestry').map(({ row }) => row),
     backgrounds: [],
-    languages: [],
+    languages: fixtures.filter(({ table }) => table === 'language').map(({ row }) => row),
     items: [],
     spells: [],
     archetypes: [],
@@ -79,6 +84,79 @@ after(async () => engine?.cleanup());
 beforeEach(() => {
   engine.resetVariables();
   engine.setFixtures(fixtures);
+});
+
+/** Build the actual saved paths for the Common Core heritage and both of its rank branches. */
+function skilledHuman() {
+  const ancestry = content.ancestries[0];
+  const heritage = official(20753);
+  const section = engine.getAncestrySections('CHARACTER', ancestry, false)[0];
+  const sectionPath = `ancestry-section-${section.id}_${section.operations[0].id}`;
+  const skillPath = `${sectionPath}_${heritage.id}`;
+  const { falseOperations, trueOperations } = heritage.operations[0].data;
+  const character = {
+    id: 1,
+    level: 4,
+    details: { ancestry },
+    inventory: { items: [] },
+    content_sources: { enabled: [3] },
+    operation_data: { selections: { [sectionPath]: String(heritage.id) } },
+  };
+  return {
+    character,
+    skillPath,
+    trainedId: falseOperations[0].id,
+    expertId: trueOperations[0].id,
+  };
+}
+
+test('Skilled Human keeps the trained skill at level 5 after reloading a saved character', async () => {
+  const { character, skillPath, trainedId } = skilledHuman();
+  character.operation_data.selections[`${skillPath}_${trainedId}`] = 'SKILL_MEDICINE';
+  await calculate(character);
+  assert.equal(rank('SKILL_MEDICINE'), 'T');
+
+  character.level = 5;
+  const saved = JSON.stringify(character);
+  for (let load = 0; load < 2; load++) {
+    engine.resetVariables();
+    const reloaded = JSON.parse(saved);
+    await calculate(reloaded);
+    assert.equal(rank('SKILL_MEDICINE'), 'E');
+    assert.equal(JSON.stringify(reloaded), saved);
+  }
+});
+
+test('Skilled Human retains an existing Expert choice across levels and clears both saved paths', async () => {
+  const { character, skillPath, trainedId, expertId } = skilledHuman();
+  const selections = character.operation_data.selections;
+  selections[`${skillPath}_${expertId}`] = 'SKILL_MEDICINE';
+  await calculate(character);
+  assert.equal(rank('SKILL_MEDICINE'), 'T', 'Expert-only saves also work below level 5');
+
+  selections[`${skillPath}_${trainedId}`] = 'SKILL_ARCANA';
+  for (const [level, expectedRank] of [
+    [5, 'E'],
+    [4, 'T'],
+    [5, 'E'],
+  ]) {
+    engine.resetVariables();
+    character.level = level;
+    const result = await calculate(character);
+    assert.equal(rank('SKILL_MEDICINE'), expectedRank);
+    assert.equal(rank('SKILL_ARCANA'), 'U');
+    const skill = result.ors.ancestrySectionResults[0].baseResults[0].result.results[0].result.results[0].selection;
+    assert.deepEqual(skill.aliases, [expertId, trainedId]);
+    assert.equal(skill.id, expertId);
+  }
+
+  character.operation_data.selections = engine.clearSelectionPaths(
+    [expertId, trainedId].map((id) => `${skillPath}_${id}`),
+    selections
+  );
+  await calculate(character);
+  assert.equal(rank('SKILL_MEDICINE'), 'U');
+  assert.equal(rank('SKILL_ARCANA'), 'U');
 });
 
 test('Medic Dedication plus the level-7 increase reaches master in both official versions', async () => {
