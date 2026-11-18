@@ -468,5 +468,9 @@
   "20261118010000_treasure_vault_snapshot_counts.sql": {
     "check": "treasure-vault-terminal-status.sql",
     "order": "before-functions"
+  },
+  "20261118020000_champion_domain_casting_source.sql": {
+    "check": "champion-domain-casting-source.sql",
+    "order": "before-functions"
   }
 }
