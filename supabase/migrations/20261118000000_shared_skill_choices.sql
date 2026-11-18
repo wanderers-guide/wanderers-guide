@@ -1,4 +1,4 @@
--- The frontend must understand skillChoice before this catalog migration is applied.
+-- Stage immediately before publishing the frontend that reads and writes skillChoice.
 -- Keep the original operations and their evaluation order. Give each pair one saved identity.
 DO $repair$
 DECLARE

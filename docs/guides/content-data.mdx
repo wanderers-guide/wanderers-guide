@@ -380,10 +380,12 @@ Clearing the choice removes its shared key and the listed previous keys.
 
 Common Core Skilled Human and Lorekeeper Shisk now retain the chosen skills at
 level 5. Dual Studies retains its skill when its rule switches at level 7.
-Publish a frontend release that supports `skillChoice` before applying
-`20261118000000_shared_skill_choices.sql` so clients can read and write the new
-choice keys. The migration changes the catalog operations and checks their exact
-previous state. It leaves character rows alone.
+Stage `20261118000000_shared_skill_choices.sql` immediately before publishing
+the compatible frontend so the catalog can pass release verification. Older
+clients still use the existing selector IDs until they reload. Once players
+save under the new shared keys, keep `skillChoice` support in rollback builds.
+The migration checks the exact previous operations and leaves character rows
+alone.
 
 Known spells use the saved ranks for their own casting source. A spell learned from
 two sources appears once per rank in each source; distinct heightened versions remain
